@@ -13,163 +13,149 @@ const enum Direction {
   LEFT = 'D'
 }
 
-export class AltClickHandler {
+/**
+ * Concatenates all the arrow sequences together.
+ * Resets the starting row to an unwrapped row, moves to the requested row,
+ * then moves to requested col.
+ */
+export function moveToCellSequence(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+  const startX = bufferService.buffer.x;
+  const startY = bufferService.buffer.y;
 
-  constructor(
-  ) {
+  // The alt buffer should try to navigate between rows
+  if (!bufferService.buffer.hasScrollback) {
+    return resetStartingRow(startX, startY, targetX, targetY, bufferService, applicationCursor) +
+      moveToRequestedRow(startY, targetY, bufferService, applicationCursor) +
+      moveToRequestedCol(startX, startY, targetX, targetY, bufferService, applicationCursor);
   }
 
-  /**
-   * Writes the escape sequences of arrows to the terminal
-   */
-  public move(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    return this._arrowSequences(targetX, targetY, bufferService, applicationCursor);
+  // Only move horizontally for the normal buffer
+  return moveHorizontallyOnly(startX, startY, targetX, targetY, bufferService, applicationCursor);
+}
+
+/**
+ * If the initial position of the cursor is on a row that is wrapped, move the
+ * cursor up to the first row that is not wrapped to have accurate vertical
+ * positioning.
+ */
+function resetStartingRow(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+  if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length === 0) {
+    return '';
+  }
+  return repeat(bufferLine(
+    startX, startY, startX,
+    startY - wrappedRowsForRow(bufferService, startY), false, bufferService
+  ).length, sequence(Direction.LEFT, applicationCursor));
+}
+
+/**
+ * Using the reset starting and ending row, move to the requested row,
+ * ignoring wrapped rows
+ */
+function moveToRequestedRow(startY: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+  const startRow = startY - wrappedRowsForRow(bufferService, startY);
+  const endRow = targetY - wrappedRowsForRow(bufferService, targetY);
+
+  const rowsToMove = Math.abs(startRow - endRow) - wrappedRowsCount(startY, targetY, bufferService);
+
+  return repeat(rowsToMove, sequence(verticalDirection(startY, targetY), applicationCursor));
+}
+
+/**
+ * Move to the requested col on the ending row
+ */
+function moveToRequestedCol(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+  let startRow;
+  if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length > 0) {
+    startRow = targetY - wrappedRowsForRow(bufferService, targetY);
+  } else {
+    startRow = startY;
   }
 
-  /**
-   * Concatenates all the arrow sequences together.
-   * Resets the starting row to an unwrapped row, moves to the requested row,
-   * then moves to requested col.
-   */
-  private _arrowSequences(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    const startX = bufferService.buffer.x;
-    const startY = bufferService.buffer.y;
+  const endRow = targetY;
+  const direction = horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
 
-    // The alt buffer should try to navigate between rows
-    if (!bufferService.buffer.hasScrollback) {
-      return this._resetStartingRow(startX, startY, targetX, targetY, bufferService, applicationCursor) +
-        this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor) +
-        this._moveToRequestedCol(startX, startY, targetX, targetY, bufferService, applicationCursor);
+  return repeat(bufferLine(
+    startX, startRow, targetX, endRow,
+    direction === Direction.RIGHT, bufferService
+  ).length, sequence(direction, applicationCursor));
+}
+
+function moveHorizontallyOnly(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+  const direction = horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
+  return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
+}
+
+/**
+ * Utility functions
+ */
+
+/**
+ * Calculates the number of wrapped rows between the unwrapped starting and
+ * ending rows. These rows need to ignored since the cursor skips over them.
+ */
+function wrappedRowsCount(startY: number, targetY: number, bufferService: IBufferService): number {
+  let wrappedRows = 0;
+  const startRow = startY - wrappedRowsForRow(bufferService, startY);
+  const endRow = targetY - wrappedRowsForRow(bufferService, targetY);
+
+  for (let i = 0; i < Math.abs(startRow - endRow); i++) {
+    const direction = verticalDirection(startY, targetY) === Direction.UP ? -1 : 1;
+
+    if (bufferService.buffer.lines.get(startRow + (direction * i)).isWrapped) {
+      wrappedRows++;
     }
-
-    // Only move horizontally for the normal buffer
-    return this._moveHorizontallyOnly(startX, startY, targetX, targetY, bufferService, applicationCursor);
   }
 
-  /**
-   * If the initial position of the cursor is on a row that is wrapped, move the
-   * cursor up to the first row that is not wrapped to have accurate vertical
-   * positioning.
-   */
-  private _resetStartingRow(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    if (this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length === 0) {
-      return '';
-    }
-    return repeat(bufferLine(
-      startX, startY, startX,
-      startY - this._wrappedRowsForRow(bufferService, startY), false, bufferService
-    ).length, sequence(Direction.LEFT, applicationCursor));
+  return wrappedRows;
+}
+
+/**
+ * Calculates the number of wrapped rows that make up a given row.
+ * @param currentRow The row to determine how many wrapped rows make it up
+ */
+function wrappedRowsForRow(bufferService: IBufferService, currentRow: number): number {
+  let rowCount = 0;
+  let lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
+
+  while (lineWraps && currentRow >= 0 && currentRow < bufferService.rows) {
+    rowCount++;
+    currentRow--;
+    lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
   }
 
-  /**
-   * Using the reset starting and ending row, move to the requested row,
-   * ignoring wrapped rows
-   */
-  private _moveToRequestedRow(startY: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    const startRow = startY - this._wrappedRowsForRow(bufferService, startY);
-    const endRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
+  return rowCount;
+}
 
-    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount(startY, targetY, bufferService);
+/**
+ * Direction determiners
+ */
 
-    return repeat(rowsToMove, sequence(this._verticalDirection(startY, targetY), applicationCursor));
+/**
+ * Determines if the right or left arrow is needed
+ */
+function horizontalDirection(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): Direction {
+  let startRow;
+  if (moveToRequestedRow(targetX, targetY, bufferService, applicationCursor).length > 0) {
+    startRow = targetY - wrappedRowsForRow(bufferService, targetY);
+  } else {
+    startRow = startY;
   }
 
-  /**
-   * Move to the requested col on the ending row
-   */
-  private _moveToRequestedCol(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    let startRow;
-    if (this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length > 0) {
-      startRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
-    } else {
-      startRow = startY;
-    }
-
-    const endRow = targetY;
-    const direction = this._horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
-
-    return repeat(bufferLine(
-      startX, startRow, targetX, endRow,
-      direction === Direction.RIGHT, bufferService
-    ).length, sequence(direction, applicationCursor));
+  if ((startX < targetX &&
+    startRow <= targetY) || // down/right or same y/right
+    (startX >= targetX &&
+    startRow < targetY)) {  // down/left or same y/left
+    return Direction.RIGHT;
   }
+  return Direction.LEFT;
+}
 
-  private _moveHorizontallyOnly(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    const direction = this._horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
-    return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
-  }
-
-  /**
-   * Utility functions
-   */
-
-  /**
-   * Calculates the number of wrapped rows between the unwrapped starting and
-   * ending rows. These rows need to ignored since the cursor skips over them.
-   */
-  private _wrappedRowsCount(startY: number, targetY: number, bufferService: IBufferService): number {
-    let wrappedRows = 0;
-    const startRow = startY - this._wrappedRowsForRow(bufferService, startY);
-    const endRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
-
-    for (let i = 0; i < Math.abs(startRow - endRow); i++) {
-      const direction = this._verticalDirection(startY, targetY) === Direction.UP ? -1 : 1;
-
-      if (bufferService.buffer.lines.get(startRow + (direction * i)).isWrapped) {
-        wrappedRows++;
-      }
-    }
-
-    return wrappedRows;
-  }
-
-  /**
-   * Calculates the number of wrapped rows that make up a given row.
-   * @param currentRow The row to determine how many wrapped rows make it up
-   */
-  private _wrappedRowsForRow(bufferService: IBufferService, currentRow: number): number {
-    let rowCount = 0;
-    let lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
-
-    while (lineWraps && currentRow >= 0 && currentRow < bufferService.rows) {
-      rowCount++;
-      currentRow--;
-      lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
-    }
-
-    return rowCount;
-  }
-
-  /**
-   * Direction determiners
-   */
-
-  /**
-   * Determines if the right or left arrow is needed
-   */
-  private _horizontalDirection(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): Direction {
-    let startRow;
-    if (this._moveToRequestedRow(targetX, targetY, bufferService, applicationCursor).length > 0) {
-      startRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
-    } else {
-      startRow = startY;
-    }
-
-    if ((startX < targetX &&
-      startRow <= targetY) || // down/right or same y/right
-      (startX >= targetX &&
-      startRow < targetY)) {  // down/left or same y/left
-      return Direction.RIGHT;
-    }
-    return Direction.LEFT;
-  }
-
-  /**
-   * Determines if the up or down arrow is needed
-   */
-  private _verticalDirection(startY: number, targetY: number): Direction {
-    return startY > targetY ? Direction.UP : Direction.DOWN;
-  }
+/**
+ * Determines if the up or down arrow is needed
+ */
+function verticalDirection(startY: number, targetY: number): Direction {
+  return startY > targetY ? Direction.UP : Direction.DOWN;
 }
 
 /**
