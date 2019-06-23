@@ -14,7 +14,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
-import { moveToCellSequence } from 'handlers/AltClickHandler';
+import { moveToCellSequence } from 'browser/input/MoveToCell';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
