@@ -73,7 +73,6 @@ export interface IInputHandlingTerminal {
   refresh(start: number, end: number): void;
   error(text: string, data?: any): void;
   tabSet(): void;
-  handler(data: string): void;
   handleTitle(title: string): void;
   index(): void;
   reverseIndex(): void;
@@ -217,7 +216,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
 
-  handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;

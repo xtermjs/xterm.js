@@ -5,6 +5,7 @@
 
 import { ITerminal } from './Types';
 import { ICharSizeService } from 'browser/services/Services';
+import { ICoreService } from 'common/services/Services';
 
 interface IPosition {
   start: number;
@@ -41,10 +42,11 @@ export class CompositionHelper {
    * @param _terminal The Terminal to forward the finished composition to.
    */
   constructor(
-    private _textarea: HTMLTextAreaElement,
-    private _compositionView: HTMLElement,
-    private _terminal: ITerminal,
-    private _charSizeService: ICharSizeService
+    private readonly _textarea: HTMLTextAreaElement,
+    private readonly _compositionView: HTMLElement,
+    private readonly _terminal: ITerminal,
+    private readonly _charSizeService: ICharSizeService,
+    private readonly _coreService: ICoreService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
@@ -127,7 +129,7 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._terminal.handler(input);
+      this._coreService.triggerDataEvent(input, true);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -159,7 +161,7 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._terminal.handler(input);
+          this._coreService.triggerDataEvent(input, true);
         }
       }, 0);
     }
@@ -179,7 +181,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
-          this._terminal.handler(diff);
+          this._coreService.triggerDataEvent(diff, true);
         }
       }
     }, 0);

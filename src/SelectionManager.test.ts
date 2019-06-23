@@ -10,7 +10,7 @@ import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import { MockTerminal } from './TestUtils.test';
-import { MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { MockBufferService, MockOptionsService, MockCoreService } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
@@ -26,7 +26,7 @@ class TestSelectionManager extends SelectionManager {
     bufferService: IBufferService,
     optionsService: IOptionsService
   ) {
-    super(terminal, null, new MockCharSizeService(10, 10), bufferService, new MockMouseService(), optionsService);
+    super(terminal, null, new MockCharSizeService(10, 10), bufferService, new MockCoreService(), new MockMouseService(), optionsService);
   }
 
   public get model(): SelectionModel { return this._model; }

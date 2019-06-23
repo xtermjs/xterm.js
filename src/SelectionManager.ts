@@ -13,7 +13,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
 
@@ -117,6 +117,7 @@ export class SelectionManager implements ISelectionManager {
     private readonly _screenElement: HTMLElement,
     private readonly _charSizeService: ICharSizeService,
     private readonly _bufferService: IBufferService,
+    private readonly _coreService: ICoreService,
     private readonly _mouseService: IMouseService,
     private readonly _optionsService: IOptionsService
   ) {
@@ -137,7 +138,11 @@ export class SelectionManager implements ISelectionManager {
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-
+    this._coreService.onUserInput(() => {
+      if (this.hasSelection) {
+        this.clearSelection();
+      }
+    });
     this.initBuffersListeners();
   }
 
@@ -661,7 +666,7 @@ export class SelectionManager implements ISelectionManager {
         );
         if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
           const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor);
-          this._terminal.handler(sequence);
+          this._coreService.triggerDataEvent(sequence, true);
         }
       }
     } else if (this.hasSelection) {
