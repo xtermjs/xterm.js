@@ -19,6 +19,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { ICoreService } from 'common/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -113,8 +114,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
   private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter<number>();
@@ -122,6 +121,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
+      private _coreService: ICoreService,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -1098,24 +1098,24 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     if (!collect) {
       if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
-        this._terminal.handler(C0.ESC + '[?1;2c');
+        this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
       } else if (this._terminal.is('linux')) {
-        this._terminal.handler(C0.ESC + '[?6c');
+        this._coreService.triggerDataEvent(C0.ESC + '[?6c');
       }
     } else if (collect === '>') {
       // xterm and urxvt
       // seem to spit this
       // out around ~370 times (?).
       if (this._terminal.is('xterm')) {
-        this._terminal.handler(C0.ESC + '[>0;276;0c');
+        this._coreService.triggerDataEvent(C0.ESC + '[>0;276;0c');
       } else if (this._terminal.is('rxvt-unicode')) {
-        this._terminal.handler(C0.ESC + '[>85;95;0c');
+        this._coreService.triggerDataEvent(C0.ESC + '[>85;95;0c');
       } else if (this._terminal.is('linux')) {
         // not supported by linux console.
         // linux console echoes parameters.
-        this._terminal.handler(params[0] + 'c');
+        this._coreService.triggerDataEvent(params[0] + 'c');
       } else if (this._terminal.is('screen')) {
-        this._terminal.handler(C0.ESC + '[>83;40003;0c');
+        this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
       }
     }
   }
@@ -1799,13 +1799,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (params[0]) {
         case 5:
           // status report
-          this._onData.fire(`${C0.ESC}[0n`);
+          this._coreService.triggerDataEvent(`${C0.ESC}[0n`);
           break;
         case 6:
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._onData.fire(`${C0.ESC}[${y};${x}R`);
+          this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
           break;
       }
     } else if (collect === '?') {
@@ -1816,7 +1816,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._onData.fire(`${C0.ESC}[?${y};${x}R`);
+          this._coreService.triggerDataEvent(`${C0.ESC}[?${y};${x}R`);
           break;
         case 15:
           // no printer
