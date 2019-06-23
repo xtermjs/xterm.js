@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, ISelectionRedrawRequestEvent } from './Types';
+import { ITerminal } from './Types';
+import { ISelectionManager, ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import * as Browser from 'common/Platform';

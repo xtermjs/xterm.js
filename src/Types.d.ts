@@ -9,6 +9,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { ISelectionManager } from 'browser/selection/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -294,24 +295,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface ISelectionManager {
-  selectionText: string;
-  selectionStart: [number, number];
-  selectionEnd: [number, number];
-
-  disable(): void;
-  enable(): void;
-  setSelection(row: number, col: number, length: number): void;
-  isClickInSelection(event: MouseEvent): boolean;
-  selectWordAtCursor(event: MouseEvent): void;
-}
-
-export interface ISelectionRedrawRequestEvent {
-  start: [number, number];
-  end: [number, number];
-  columnSelectMode: boolean;
 }
 
 export interface ILinkifier {
