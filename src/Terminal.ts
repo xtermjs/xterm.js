@@ -641,7 +641,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this.screenElement, this._charSizeService, this._bufferService, this._coreService, this._mouseService, this.optionsService);
+    this.selectionManager = new SelectionManager(
+      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
+      this.element, this.screenElement, this._charSizeService, this._bufferService, this._coreService,
+      this._mouseService, this.optionsService
+    );
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));

@@ -3,14 +3,12 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
 import { ISelectionManager, ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
-import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
@@ -113,7 +111,8 @@ export class SelectionManager implements ISelectionManager {
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(
-    private readonly _terminal: ITerminal,
+    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
+    private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _charSizeService: ICharSizeService,
     private readonly _bufferService: IBufferService,
@@ -625,7 +624,7 @@ export class SelectionManager implements ISelectionManager {
    */
   private _dragScroll(): void {
     if (this._dragScrollAmount) {
-      this._terminal.scrollLines(this._dragScrollAmount, false);
+      this._scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
@@ -659,7 +658,7 @@ export class SelectionManager implements ISelectionManager {
       if (event.altKey) {
         const coordinates = this._mouseService.getCoords(
           event,
-          this._terminal.element,
+          this._element,
           this._bufferService.cols,
           this._bufferService.rows,
           false
