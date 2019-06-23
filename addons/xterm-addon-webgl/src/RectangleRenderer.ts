@@ -275,7 +275,6 @@ export class RectangleRenderer {
     if (bg === INVERTED_DEFAULT_COLOR) {
       color = this._colors.foreground;
     } else if (is256Color(bg)) {
-      // TODO: Need to do a separate set for 16 color palette?
       color = this._colors.ansi[bg];
     } else {
       // TODO: Add support for true color
