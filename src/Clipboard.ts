@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ISelectionManager } from './Types';
+import { ISelectionManager } from 'browser/selection/Types';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings

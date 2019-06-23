@@ -3,18 +3,19 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, ISelectionRedrawRequestEvent } from './Types';
+import { ITerminal } from './Types';
+import { ISelectionManager, ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
-import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
+import { moveToCellSequence } from 'browser/input/MoveToCell';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -650,7 +651,19 @@ export class SelectionManager implements ISelectionManager {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      (new AltClickHandler(event, this._terminal, this._mouseService)).move();
+      if (event.altKey) {
+        const coordinates = this._mouseService.getCoords(
+          event,
+          this._terminal.element,
+          this._bufferService.cols,
+          this._bufferService.rows,
+          false
+        );
+        if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
+          const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor);
+          this._terminal.handler(sequence);
+        }
+      }
     } else if (this.hasSelection) {
       this._onSelectionChange.fire();
     }
