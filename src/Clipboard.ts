@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager } from './Types';
+import { ISelectionManager } from 'browser/selection/Types';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
@@ -28,7 +28,7 @@ export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): 
  * Binds copy functionality to the given terminal.
  * @param ev The original copy event to be handled
  */
-export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager): void {
+export function copyHandler(ev: ClipboardEvent, selectionManager: ISelectionManager): void {
   ev.clipboardData.setData('text/plain', selectionManager.selectionText);
   // Prevent or the original text will be copied.
   ev.preventDefault();
@@ -39,17 +39,16 @@ export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManage
  * @param ev The original paste event to be handled
  * @param term The terminal on which to apply the handled paste event
  */
-export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
+export function pasteHandler(ev: ClipboardEvent, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, triggerUserInput: (data: string) => void): void {
   ev.stopPropagation();
 
   let text: string;
 
   const dispatchPaste = function(text: string): void {
     text = prepareTextForTerminal(text);
-    text = bracketTextForPaste(text, term.bracketedPasteMode);
-    term.handler(text);
-    term.textarea.value = '';
-    term.cancel(ev);
+    text = bracketTextForPaste(text, bracketedPasteMode);
+    triggerUserInput(text);
+    textarea.value = '';
   };
 
   if (ev.clipboardData) {
@@ -63,32 +62,32 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
  */
-export function moveTextAreaUnderMouseCursor(ev: MouseEvent, term: ITerminal): void {
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement): void {
 
   // Calculate textarea position relative to the screen element
-  const pos = term.screenElement.getBoundingClientRect();
+  const pos = screenElement.getBoundingClientRect();
   const left = ev.clientX - pos.left - 10;
   const top = ev.clientY - pos.top - 10;
 
   // Bring textarea at the cursor position
-  term.textarea.style.position = 'absolute';
-  term.textarea.style.width = '20px';
-  term.textarea.style.height = '20px';
-  term.textarea.style.left = `${left}px`;
-  term.textarea.style.top = `${top}px`;
-  term.textarea.style.zIndex = '1000';
+  textarea.style.position = 'absolute';
+  textarea.style.width = '20px';
+  textarea.style.height = '20px';
+  textarea.style.left = `${left}px`;
+  textarea.style.top = `${top}px`;
+  textarea.style.zIndex = '1000';
 
-  term.textarea.focus();
+  textarea.focus();
 
   // Reset the terminal textarea's styling
   // Timeout needs to be long enough for click event to be handled.
   setTimeout(() => {
-    term.textarea.style.position = null;
-    term.textarea.style.width = null;
-    term.textarea.style.height = null;
-    term.textarea.style.left = null;
-    term.textarea.style.top = null;
-    term.textarea.style.zIndex = null;
+    textarea.style.position = null;
+    textarea.style.width = null;
+    textarea.style.height = null;
+    textarea.style.left = null;
+    textarea.style.top = null;
+    textarea.style.zIndex = null;
   }, 200);
 }
 
@@ -99,14 +98,14 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, term: ITerminal): v
  * @param selectionManager The terminal's selection manager.
  * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
-export function rightClickHandler(ev: MouseEvent, term: ITerminal, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
-  moveTextAreaUnderMouseCursor(ev, term);
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
+  moveTextAreaUnderMouseCursor(ev, textarea, screenElement);
 
   if (shouldSelectWord && !selectionManager.isClickInSelection(ev)) {
     selectionManager.selectWordAtCursor(ev);
   }
 
   // Get textarea ready to copy from the context menu
-  term.textarea.value = selectionManager.selectionText;
-  term.textarea.select();
+  textarea.value = selectionManager.selectionText;
+  textarea.select();
 }
