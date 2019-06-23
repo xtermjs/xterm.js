@@ -118,7 +118,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // modes
   public applicationKeypad: boolean;
-  public applicationCursor: boolean;
   public originMode: boolean;
   public insertMode: boolean;
   public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
@@ -269,7 +268,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // modes
     this.applicationKeypad = false;
-    this.applicationCursor = false;
     this.originMode = false;
     this.insertMode = false;
     this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
@@ -1013,7 +1011,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           }
 
           // Construct and send sequences
-          const sequence = C0.ESC + (this.applicationCursor ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
+          const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
           let data = '';
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
@@ -1555,7 +1553,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return false;
     }
 
-    const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
 
@@ -1885,6 +1883,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setup();
     this._bufferService.reset();
+    this._coreService.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;

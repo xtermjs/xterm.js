@@ -1299,7 +1299,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (collect === '?') {
       switch (params[0]) {
         case 1:
-          this._terminal.applicationCursor = true;
+          this._coreService.decPrivateModes.applicationCursorKeys = true;
           break;
         case 2:
           this._terminal.setgCharset(0, DEFAULT_CHARSET);
@@ -1504,7 +1504,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (collect === '?') {
       switch (params[0]) {
         case 1:
-          this._terminal.applicationCursor = false;
+          this._coreService.decPrivateModes.applicationCursorKeys = false;
           break;
         case 3:
           if (this._terminal.cols === 132 && this._terminal.savedCols) {
@@ -1852,7 +1852,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (this._terminal.viewport) {
         this._terminal.viewport.syncScrollArea();
       }
-      this._terminal.applicationCursor = false;
+      this._coreService.decPrivateModes.applicationCursorKeys = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
       this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();

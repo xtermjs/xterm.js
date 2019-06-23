@@ -9,6 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
+import { IDecPrivateModes } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
@@ -28,8 +29,10 @@ export class MockBufferService implements IBufferService {
 }
 
 export class MockCoreService implements ICoreService {
+  decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
+  reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
 }
 

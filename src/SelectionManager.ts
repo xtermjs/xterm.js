@@ -665,7 +665,7 @@ export class SelectionManager implements ISelectionManager {
           false
         );
         if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
-          const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor);
+          const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._coreService.decPrivateModes.applicationCursorKeys);
           this._coreService.triggerDataEvent(sequence, true);
         }
       }

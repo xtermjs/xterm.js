@@ -33,7 +33,6 @@ export interface IInputHandlingTerminal {
   glevel: number;
   charsets: ICharset[];
   applicationKeypad: boolean;
-  applicationCursor: boolean;
   originMode: boolean;
   insertMode: boolean;
   wraparoundMode: boolean;
@@ -206,7 +205,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   isFocused: boolean;
   viewport: IViewport;
   bracketedPasteMode: boolean;
-  applicationCursor: boolean;
   optionsService: IOptionsService;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
