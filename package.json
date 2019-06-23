@@ -20,7 +20,7 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
-    "clean": "rm -rf lib out addons/*/lib"
+    "clean": "rm -rf lib out addons/*/lib addons/*/out"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
