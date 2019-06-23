@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
-import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { IBufferService } from 'common/services/Services';
 
@@ -16,27 +14,16 @@ const enum Direction {
 }
 
 export class AltClickHandler {
-  private _startRow: number;
-  private _startCol: number;
-  private _endRow: number;
-  private _endCol: number;
-  private _lines: ICircularList<IBufferLine>;
 
   constructor(
-    private _terminal: ITerminal
   ) {
-    this._lines = this._terminal.buffer.lines;
-    this._startCol = this._terminal.buffer.x;
-    this._startRow = this._terminal.buffer.y;
   }
 
   /**
    * Writes the escape sequences of arrows to the terminal
    */
   public move(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-    this._endCol = targetX;
-    this._endRow = targetY;
-    return this._arrowSequences(bufferService, applicationCursor);
+    return this._arrowSequences(targetX, targetY, bufferService, applicationCursor);
   }
 
   /**
@@ -44,16 +31,19 @@ export class AltClickHandler {
    * Resets the starting row to an unwrapped row, moves to the requested row,
    * then moves to requested col.
    */
-  private _arrowSequences(bufferService: IBufferService, applicationCursor: boolean): string {
+  private _arrowSequences(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+    const startX = bufferService.buffer.x;
+    const startY = bufferService.buffer.y;
+
     // The alt buffer should try to navigate between rows
     if (!bufferService.buffer.hasScrollback) {
-      return this._resetStartingRow(bufferService, applicationCursor) +
-        this._moveToRequestedRow(bufferService, applicationCursor) +
-        this._moveToRequestedCol(bufferService, applicationCursor);
+      return this._resetStartingRow(startX, startY, targetX, targetY, bufferService, applicationCursor) +
+        this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor) +
+        this._moveToRequestedCol(startX, startY, targetX, targetY, bufferService, applicationCursor);
     }
 
     // Only move horizontally for the normal buffer
-    return this._moveHorizontallyOnly(bufferService, applicationCursor);
+    return this._moveHorizontallyOnly(startX, startY, targetX, targetY, bufferService, applicationCursor);
   }
 
   /**
@@ -61,13 +51,13 @@ export class AltClickHandler {
    * cursor up to the first row that is not wrapped to have accurate vertical
    * positioning.
    */
-  private _resetStartingRow(bufferService: IBufferService, applicationCursor: boolean): string {
-    if (this._moveToRequestedRow(bufferService, applicationCursor).length === 0) {
+  private _resetStartingRow(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+    if (this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length === 0) {
       return '';
     }
     return repeat(bufferLine(
-      this._startCol, this._startRow, this._startCol,
-      this._startRow - this._wrappedRowsForRow(bufferService, this._startRow), false, bufferService
+      startX, startY, startX,
+      startY - this._wrappedRowsForRow(bufferService, startY), false, bufferService
     ).length, sequence(Direction.LEFT, applicationCursor));
   }
 
@@ -75,38 +65,38 @@ export class AltClickHandler {
    * Using the reset starting and ending row, move to the requested row,
    * ignoring wrapped rows
    */
-  private _moveToRequestedRow(bufferService: IBufferService, applicationCursor: boolean): string {
-    const startRow = this._startRow - this._wrappedRowsForRow(bufferService, this._startRow);
-    const endRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
+  private _moveToRequestedRow(startY: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+    const startRow = startY - this._wrappedRowsForRow(bufferService, startY);
+    const endRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
 
-    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount(bufferService);
+    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount(startY, targetY, bufferService);
 
-    return repeat(rowsToMove, sequence(this._verticalDirection(), applicationCursor));
+    return repeat(rowsToMove, sequence(this._verticalDirection(startY, targetY), applicationCursor));
   }
 
   /**
    * Move to the requested col on the ending row
    */
-  private _moveToRequestedCol(bufferService: IBufferService, applicationCursor: boolean): string {
+  private _moveToRequestedCol(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
     let startRow;
-    if (this._moveToRequestedRow(bufferService, applicationCursor).length > 0) {
-      startRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
+    if (this._moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length > 0) {
+      startRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
     } else {
-      startRow = this._startRow;
+      startRow = startY;
     }
 
-    const endRow = this._endRow;
-    const direction = this._horizontalDirection(bufferService, applicationCursor);
+    const endRow = targetY;
+    const direction = this._horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
 
     return repeat(bufferLine(
-      this._startCol, startRow, this._endCol, endRow,
+      startX, startRow, targetX, endRow,
       direction === Direction.RIGHT, bufferService
     ).length, sequence(direction, applicationCursor));
   }
 
-  private _moveHorizontallyOnly(bufferService: IBufferService, applicationCursor: boolean): string {
-    const direction = this._horizontalDirection(bufferService, applicationCursor);
-    return repeat(Math.abs(this._startCol - this._endCol), sequence(direction, applicationCursor));
+  private _moveHorizontallyOnly(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+    const direction = this._horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
+    return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
   }
 
   /**
@@ -117,15 +107,15 @@ export class AltClickHandler {
    * Calculates the number of wrapped rows between the unwrapped starting and
    * ending rows. These rows need to ignored since the cursor skips over them.
    */
-  private _wrappedRowsCount(bufferService: IBufferService): number {
+  private _wrappedRowsCount(startY: number, targetY: number, bufferService: IBufferService): number {
     let wrappedRows = 0;
-    const startRow = this._startRow - this._wrappedRowsForRow(bufferService, this._startRow);
-    const endRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
+    const startRow = startY - this._wrappedRowsForRow(bufferService, startY);
+    const endRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
 
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
-      const direction = this._verticalDirection() === Direction.UP ? -1 : 1;
+      const direction = this._verticalDirection(startY, targetY) === Direction.UP ? -1 : 1;
 
-      if (this._lines.get(startRow + (direction * i)).isWrapped) {
+      if (bufferService.buffer.lines.get(startRow + (direction * i)).isWrapped) {
         wrappedRows++;
       }
     }
@@ -157,18 +147,18 @@ export class AltClickHandler {
   /**
    * Determines if the right or left arrow is needed
    */
-  private _horizontalDirection(bufferService: IBufferService, applicationCursor: boolean): Direction {
+  private _horizontalDirection(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): Direction {
     let startRow;
-    if (this._moveToRequestedRow(bufferService, applicationCursor).length > 0) {
-      startRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
+    if (this._moveToRequestedRow(targetX, targetY, bufferService, applicationCursor).length > 0) {
+      startRow = targetY - this._wrappedRowsForRow(bufferService, targetY);
     } else {
-      startRow = this._startRow;
+      startRow = startY;
     }
 
-    if ((this._startCol < this._endCol &&
-      startRow <= this._endRow) || // down/right or same y/right
-      (this._startCol >= this._endCol &&
-      startRow < this._endRow)) {  // down/left or same y/left
+    if ((startX < targetX &&
+      startRow <= targetY) || // down/right or same y/right
+      (startX >= targetX &&
+      startRow < targetY)) {  // down/left or same y/left
       return Direction.RIGHT;
     }
     return Direction.LEFT;
@@ -177,11 +167,8 @@ export class AltClickHandler {
   /**
    * Determines if the up or down arrow is needed
    */
-  private _verticalDirection(): Direction {
-    if (this._startRow > this._endRow) {
-      return Direction.UP;
-    }
-    return Direction.DOWN;
+  private _verticalDirection(startY: number, targetY: number): Direction {
+    return startY > targetY ? Direction.UP : Direction.DOWN;
   }
 }
 

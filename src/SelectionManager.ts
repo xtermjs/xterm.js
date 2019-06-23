@@ -660,7 +660,7 @@ export class SelectionManager implements ISelectionManager {
         );
         if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
           this._terminal.handler(
-            (new AltClickHandler(this._terminal)).move(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor)
+            (new AltClickHandler()).move(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor)
           );
         }
       }
