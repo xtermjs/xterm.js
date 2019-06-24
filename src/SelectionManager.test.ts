@@ -10,9 +10,9 @@ import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import { MockTerminal } from './TestUtils.test';
-import { MockBufferService } from 'common/TestUtils.test';
+import { MockBufferService, MockOptionsService, MockCoreService } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 
@@ -23,9 +23,10 @@ class TestMockTerminal extends MockTerminal {
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    bufferService: IBufferService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
-    super(terminal, new MockCharSizeService(10, 10), bufferService, new MockMouseService());
+    super(terminal, null, new MockCharSizeService(10, 10), bufferService, new MockCoreService(), new MockMouseService(), optionsService);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -46,17 +47,19 @@ describe('SelectionManager', () => {
   let terminal: ITerminal;
   let buffer: IBuffer;
   let bufferService: IBufferService;
+  let optionsService: IOptionsService;
   let selectionManager: TestSelectionManager;
 
   beforeEach(() => {
     terminal = new TestMockTerminal();
-    bufferService = new MockBufferService(20, 20);
+    optionsService = new MockOptionsService();
+    bufferService = new MockBufferService(20, 20, optionsService);
     terminal.buffers = bufferService.buffers;
     terminal.cols = 20;
     terminal.rows = 20;
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
-    selectionManager = new TestSelectionManager(terminal, bufferService);
+    selectionManager = new TestSelectionManager(terminal, bufferService, optionsService);
   });
 
   function stringToRow(text: string): IBufferLine {

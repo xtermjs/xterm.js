@@ -7,6 +7,7 @@ import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 import { ITerminal } from './Types';
 import { MockCharSizeService } from 'browser/TestUtils.test';
+import { MockCoreService } from '../out/common/TestUtils.test';
 
 describe('CompositionHelper', () => {
   let terminal: ITerminal;
@@ -43,9 +44,6 @@ describe('CompositionHelper', () => {
           return { offsetLeft: 0, offsetTop: 0 };
         }
       },
-      handler: (text: string) => {
-        handledText += text;
-      },
       buffer: {
         isCursorInViewport: true
       },
@@ -53,8 +51,12 @@ describe('CompositionHelper', () => {
         lineHeight: 1
       }
     } as any;
+    const coreService = new MockCoreService();
+    coreService.triggerDataEvent = (text: string) => {
+      handledText += text;
+    };
     handledText = '';
-    compositionHelper = new CompositionHelper(textarea, compositionView, terminal, new MockCharSizeService(10, 10));
+    compositionHelper = new CompositionHelper(textarea, compositionView, terminal, new MockCharSizeService(10, 10), coreService);
   });
 
   describe('Input', () => {

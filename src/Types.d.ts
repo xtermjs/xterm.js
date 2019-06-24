@@ -9,6 +9,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { ISelectionManager } from 'browser/selection/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -72,7 +73,6 @@ export interface IInputHandlingTerminal {
   refresh(start: number, end: number): void;
   error(text: string, data?: any): void;
   tabSet(): void;
-  handler(data: string): void;
   handleTitle(title: string): void;
   index(): void;
   reverseIndex(): void;
@@ -216,7 +216,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
 
-  handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
@@ -294,24 +293,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface ISelectionManager {
-  selectionText: string;
-  selectionStart: [number, number];
-  selectionEnd: [number, number];
-
-  disable(): void;
-  enable(): void;
-  setSelection(row: number, col: number, length: number): void;
-  isClickInSelection(event: MouseEvent): boolean;
-  selectWordAtCursor(event: MouseEvent): void;
-}
-
-export interface ISelectionRedrawRequestEvent {
-  start: [number, number];
-  end: [number, number];
-  columnSelectMode: boolean;
 }
 
 export interface ILinkifier {
