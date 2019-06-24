@@ -83,32 +83,6 @@ jobs:
       yarn test-api --headless
     displayName: 'Integration tests'
 
-- job: Benchmarks
-  pool:
-    vmImage: 'ubuntu-16.04'
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '8.x'
-    displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
-    inputs:
-      versionSpec: "1.9.4"
-    displayName: 'Install Yarn'
-  - script: |
-      yarn
-    displayName: 'Install dependencies and build'
-  - script: |
-      yarn benchmark-baseline
-    displayName: 'Baseline data'
-  - script: |
-      git checkout
-      yarn clean && yarn
-    displayName: 'Checkout target'
-  - script: |
-      yarn benchmark-eval
-    displayName: 'Eval changes'
-
 - job: Release
   dependsOn:
   - Linux
