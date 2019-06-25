@@ -13,6 +13,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes } from 'common/buffer/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
+import { MockCoreService } from 'common/TestUtils.test';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -21,7 +22,7 @@ describe('InputHandler', () => {
     terminal.buffer.y = 2;
     terminal.buffer.ybase = 0;
     terminal.curAttrData.fg = 3;
-    const inputHandler = new InputHandler(terminal);
+    const inputHandler = new InputHandler(terminal, new MockCoreService());
     // Save cursor position
     inputHandler.saveCursor();
     assert.equal(terminal.buffer.x, 1);
@@ -40,7 +41,7 @@ describe('InputHandler', () => {
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       const terminal = new MockInputHandlingTerminal();
-      const inputHandler = new InputHandler(terminal);
+      const inputHandler = new InputHandler(terminal, new MockCoreService());
       const collect = ' ';
 
       inputHandler.setCursorStyle(Params.fromArray([0]), collect);
@@ -83,7 +84,7 @@ describe('InputHandler', () => {
       const terminal = new MockInputHandlingTerminal();
       const collect = '?';
       terminal.bracketedPasteMode = false;
-      const inputHandler = new InputHandler(terminal);
+      const inputHandler = new InputHandler(terminal, new MockCoreService());
       // Set bracketed paste mode
       inputHandler.setMode(Params.fromArray([2004]), collect);
       assert.equal(terminal.bracketedPasteMode, true);
@@ -101,7 +102,7 @@ describe('InputHandler', () => {
 
     it('insertChars', function(): void {
       const term = new Terminal();
-      const inputHandler = new InputHandler(term);
+      const inputHandler = new InputHandler(term, new MockCoreService());
 
       // insert some data in first and second line
       inputHandler.parse(Array(term.cols - 9).join('a'));
@@ -138,7 +139,7 @@ describe('InputHandler', () => {
     });
     it('deleteChars', function(): void {
       const term = new Terminal();
-      const inputHandler = new InputHandler(term);
+      const inputHandler = new InputHandler(term, new MockCoreService());
 
       // insert some data in first and second line
       inputHandler.parse(Array(term.cols - 9).join('a'));
@@ -178,7 +179,7 @@ describe('InputHandler', () => {
     });
     it('eraseInLine', function(): void {
       const term = new Terminal();
-      const inputHandler = new InputHandler(term);
+      const inputHandler = new InputHandler(term, new MockCoreService());
 
       // fill 6 lines to test 3 different states
       inputHandler.parse(Array(term.cols + 1).join('a'));
@@ -206,7 +207,7 @@ describe('InputHandler', () => {
     });
     it('eraseInDisplay', function(): void {
       const term = new Terminal({cols: 80, rows: 7});
-      const inputHandler = new InputHandler(term);
+      const inputHandler = new InputHandler(term, new MockCoreService());
 
       // fill display with a's
       for (let i = 0; i < term.rows; ++i) inputHandler.parse(Array(term.cols + 1).join('a'));
@@ -341,7 +342,7 @@ describe('InputHandler', () => {
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
       const term = new Terminal();
-      const inputHandler = new InputHandler(term);
+      const inputHandler = new InputHandler(term, new MockCoreService());
       const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
@@ -354,7 +355,7 @@ describe('InputHandler', () => {
 
     beforeEach(() => {
       term = new Terminal();
-      handler = new InputHandler(term);
+      handler = new InputHandler(term, new MockCoreService());
     });
     it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
       handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');

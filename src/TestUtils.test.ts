@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -16,6 +16,7 @@ import { IColorManager, IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParams } from 'common/parser/Types';
+import { ISelectionManager } from 'browser/selection/Types';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {

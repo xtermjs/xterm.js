@@ -18,6 +18,21 @@ export interface IBufferService {
   reset(): void;
 }
 
+export interface ICoreService {
+  readonly onData: IEvent<string>;
+  readonly onUserInput: IEvent<void>;
+
+  /**
+   * Triggers the onData event in the public API.
+   * @param data The data that is being emitted.
+   * @param wasFromUser Whether the data originated from the user (as opposed to
+   * resulting from parsing incoming data). When true this will also:
+   * - Scroll to the bottom of the buffer.s
+   * - Fire the `onUserInput` event (so selection can be cleared).
+    */
+    triggerDataEvent(data: string, wasUserInput?: boolean): void;
+}
+
 export interface IOptionsService {
   readonly options: ITerminalOptions;
 
@@ -56,6 +71,7 @@ export interface IPartialTerminalOptions {
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
+  wordSeparator?: string;
 }
 
 export interface ITerminalOptions {
@@ -91,6 +107,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
+  wordSeparator?: string;
 }
 
 export interface ITheme {

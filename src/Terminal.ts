@@ -47,7 +47,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -57,6 +57,7 @@ import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams } from 'common/parser/Types';
+import { CoreService } from 'common/services/CoreService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -108,6 +109,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // common services
   private _bufferService: IBufferService;
+  private _coreService: ICoreService;
   public optionsService: IOptionsService;
 
   // browser services
@@ -238,6 +240,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // Setup and initialize common services
     this.optionsService = new OptionsService(options);
     this._bufferService = new BufferService(this.optionsService);
+    this._coreService = new CoreService(() => this.scrollToBottom(), this._bufferService, this.optionsService);
+    this._coreService.onData(e => this._onData.fire(e));
+
     this._setupOptionsListeners();
     this._setup();
   }
@@ -250,7 +255,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
-    this.handler = () => {};
     this.write = () => {};
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
@@ -295,10 +299,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this);
+    this._inputHandler = new InputHandler(this, this._coreService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
-    this._inputHandler.onData(e => this._onData.fire(e));
     this.register(this._inputHandler);
 
     this.selectionManager = this.selectionManager || null;
@@ -435,7 +438,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _onTextAreaFocus(ev: KeyboardEvent): void {
     if (this.sendFocus) {
-      this.handler(C0.ESC + '[I');
+      this._coreService.triggerDataEvent(C0.ESC + '[I');
     }
     this.updateCursorStyle(ev);
     this.element.classList.add('focus');
@@ -460,7 +463,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
-      this.handler(C0.ESC + '[O');
+      this._coreService.triggerDataEvent(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
     this._onBlur.fire();
@@ -479,9 +482,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       if (!this.hasSelection()) {
         return;
       }
-      copyHandler(event, this, this.selectionManager);
+      copyHandler(event, this.selectionManager);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this);
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this._coreService.triggerDataEvent(e, true));
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -490,12 +493,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -507,7 +510,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // that the regular click event doesn't fire for the middle mouse button.
       this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this);
+          moveTextAreaUnderMouseCursor(event, this.textarea, this.screenElement);
         }
       }));
     }
@@ -608,7 +611,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this, this._charSizeService);
+    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this, this._charSizeService, this._coreService);
     this._helperContainer.appendChild(this._compositionView);
 
     // Performance: Add viewport and helper elements from the fragment
@@ -641,7 +644,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService, this._mouseService);
+    this.selectionManager = new SelectionManager(this, this.screenElement, this._charSizeService, this._bufferService, this._coreService, this._mouseService, this.optionsService);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
@@ -815,7 +818,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         else if (button === 3) return;
         else data += '0';
         data += '~[' + pos.x + ',' + pos.y + ']\r';
-        self.handler(data);
+        self._coreService.triggerDataEvent(data, true);
         return;
       }
 
@@ -828,7 +831,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         else if (button === 1) button = 4;
         else if (button === 2) button = 6;
         else if (button === 3) button = 3;
-        self.handler(C0.ESC + '['
+        self._coreService.triggerDataEvent(C0.ESC + '['
                   + button
                   + ';'
                   + (button === 3 ? 4 : 0)
@@ -839,7 +842,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
                   + ';'
                   // Not sure what page is meant to be
                   + (<any>pos).page || 0
-                  + '&w');
+                  + '&w', true);
         return;
       }
 
@@ -848,20 +851,20 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         pos.y -= 32;
         pos.x++;
         pos.y++;
-        self.handler(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
+        self._coreService.triggerDataEvent(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M', true);
         return;
       }
 
       if (self.sgrMouse) {
         pos.x -= 32;
         pos.y -= 32;
-        self.handler(C0.ESC + '[<'
+        self._coreService.triggerDataEvent(C0.ESC + '[<'
                   + (((button & 3) === 3 ? button & ~3 : button) - 32)
                   + ';'
                   + pos.x
                   + ';'
                   + pos.y
-                  + ((button & 3) === 3 ? 'm' : 'M'));
+                  + ((button & 3) === 3 ? 'm' : 'M'), true);
         return;
       }
 
@@ -871,7 +874,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       encode(data, pos.x);
       encode(data, pos.y);
 
-      self.handler(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
+      self._coreService.triggerDataEvent(C0.ESC + '[M' + String.fromCharCode.apply(String, data), true);
     }
 
     function getButton(ev: MouseEvent): number {
@@ -1016,7 +1019,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
           }
-          this.handler(data);
+          this._coreService.triggerDataEvent(data, true);
         }
         return;
       }
@@ -1241,7 +1244,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
       // XOFF - stop pty pipe
       // XON will be triggered by emulator before processing data chunk
-      this.handler(C0.DC3);
+      this._coreService.triggerDataEvent(C0.DC3);
       this._xoffSentToCatchUp = true;
     }
 
@@ -1269,7 +1272,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // we reached the end of the writeBuffer to allow more data to come in.
       if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
-        this.handler(C0.DC1);
+        this._coreService.triggerDataEvent(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
 
@@ -1328,7 +1331,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
       // XOFF - stop pty pipe
       // XON will be triggered by emulator before processing data chunk
-      this.handler(C0.DC3);
+      this._coreService.triggerDataEvent(C0.DC3);
       this._xoffSentToCatchUp = true;
     }
 
@@ -1356,7 +1359,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // we reached the end of the writeBuffer to allow more data to come in.
       if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
-        this.handler(C0.DC1);
+        this._coreService.triggerDataEvent(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
 
@@ -1588,7 +1591,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
-    this.handler(result.key);
+    this._coreService.triggerDataEvent(result.key, true);
 
     return this.cancel(event, true);
   }
@@ -1666,7 +1669,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
-    this.handler(key);
+    this._coreService.triggerDataEvent(key, true);
 
     return true;
   }
@@ -1797,23 +1800,23 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Emit the data event and populate the given data.
    * @param data The data to populate in the event.
    */
-  public handler(data: string): void {
-    // Prevents all events to pty process if stdin is disabled
-    if (this.options.disableStdin) {
-      return;
-    }
+  // public handler(data: string): void {
+  //   // Prevents all events to pty process if stdin is disabled
+  //   if (this.options.disableStdin) {
+  //     return;
+  //   }
 
-    // Clear the selection if the selection manager is available and has an active selection
-    if (this.selectionManager && this.selectionManager.hasSelection) {
-      this.selectionManager.clearSelection();
-    }
+  //   // Clear the selection if the selection manager is available and has an active selection
+  //   if (this.selectionManager && this.selectionManager.hasSelection) {
+  //     this.selectionManager.clearSelection();
+  //   }
 
-    // Input is being sent to the terminal, the terminal should focus the prompt.
-    if (this.buffer.ybase !== this.buffer.ydisp) {
-      this.scrollToBottom();
-    }
-    this._onData.fire(data);
-  }
+  //   // Input is being sent to the terminal, the terminal should focus the prompt.
+  //   if (this.buffer.ybase !== this.buffer.ydisp) {
+  //     this.scrollToBottom();
+  //   }
+  //   this._onData.fire(data);
+  // }
 
   /**
    * Emit the 'title' event and populate the given title.

@@ -46,7 +46,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   debug: false,
   cancelEvents: false,
-  useFlowControl: false
+  useFlowControl: false,
+  wordSeparator: ' ()[]{}\'"'
 });
 
 /**
@@ -99,6 +100,7 @@ export class OptionsService implements IOptionsService {
       case 'fontWeight':
       case 'fontWeightBold':
       case 'rendererType':
+      case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];
         }

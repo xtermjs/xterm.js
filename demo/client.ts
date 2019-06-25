@@ -13,6 +13,7 @@ import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
+import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -20,6 +21,7 @@ import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon
 // import { FitAddon } from 'xterm-addon-fit';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
+// import { WebglAddon } from 'xterm-addon-webgl';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -32,6 +34,7 @@ export interface IWindowWithTerminal extends Window {
   FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
+  WebglAddon?: typeof WebglAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -84,9 +87,11 @@ if (document.location.pathname === '/test') {
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
+  window.WebglAddon = WebglAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+  document.getElementById('webgl').addEventListener('click', () => term.loadAddon(new WebglAddon()));
 }
 
 function createTerminal(): void {
@@ -230,7 +235,8 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas']
+    rendererType: ['dom', 'canvas'],
+    wordSeparator: null
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];
