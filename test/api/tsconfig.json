@@ -5,9 +5,9 @@
       "es6",
     ],
     "rootDir": ".",
-    "outDir": "../out/test",
+    "outDir": "../../out-test/api",
     "types": [
-      "../node_modules/@types/mocha"
+      "../../node_modules/@types/mocha"
     ],
     "sourceMap": true,
     "removeComments": true,
@@ -16,6 +16,6 @@
   },
   "include": [
     "./**/*",
-    "../typings/xterm.d.ts"
+    "../../typings/xterm.d.ts"
   ]
 }
