@@ -6,6 +6,9 @@
 !*.js
 !*.json
 
+# Whitelist - css/
+!css/**/*.css
+
 # Whitelist - dist/
 !dist/**/*.js
 !dist/**/*.js.map
