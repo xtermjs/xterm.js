@@ -31,12 +31,12 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
   private _clearCurrentLink(): void {
     if (this._state) {
-      this.clearCells(this._state.x1, this._state.y1, this._state.cols - this._state.x1, 1);
+      this._clearCells(this._state.x1, this._state.y1, this._state.cols - this._state.x1, 1);
       const middleRowCount = this._state.y2 - this._state.y1 - 1;
       if (middleRowCount > 0) {
-        this.clearCells(0, this._state.y1 + 1, this._state.cols, middleRowCount);
+        this._clearCells(0, this._state.y1 + 1, this._state.cols, middleRowCount);
       }
-      this.clearCells(0, this._state.y2, this._state.x2, 1);
+      this._clearCells(0, this._state.y2, this._state.x2, 1);
       this._state = null;
     }
   }
@@ -53,14 +53,14 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
     if (e.y1 === e.y2) {
       // Single line link
-      this.fillBottomLineAtCells(e.x1, e.y1, e.x2 - e.x1);
+      this._fillBottomLineAtCells(e.x1, e.y1, e.x2 - e.x1);
     } else {
       // Multi-line link
-      this.fillBottomLineAtCells(e.x1, e.y1, e.cols - e.x1);
+      this._fillBottomLineAtCells(e.x1, e.y1, e.cols - e.x1);
       for (let y = e.y1 + 1; y < e.y2; y++) {
-        this.fillBottomLineAtCells(0, y, e.cols);
+        this._fillBottomLineAtCells(0, y, e.cols);
       }
-      this.fillBottomLineAtCells(0, e.y2, e.x2);
+      this._fillBottomLineAtCells(0, e.y2, e.x2);
     }
     this._state = e;
   }

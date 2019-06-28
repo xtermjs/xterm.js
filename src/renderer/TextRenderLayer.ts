@@ -52,7 +52,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
   public reset(terminal: ITerminal): void {
     this._state.clear();
-    this.clearAll();
+    this._clearAll();
   }
 
   private _forEachCell(
@@ -179,13 +179,13 @@ export class TextRenderLayer extends BaseRenderLayer {
       } if (y !== startY) {
         // our row changed, draw the previous row
         ctx.fillStyle = prevFillStyle;
-        this.fillCells(startX, startY, cols - startX, 1);
+        this._fillCells(startX, startY, cols - startX, 1);
         startX = x;
         startY = y;
       } else if (prevFillStyle !== nextFillStyle) {
         // our color changed, draw the previous characters in this row
         ctx.fillStyle = prevFillStyle;
-        this.fillCells(startX, startY, x - startX, 1);
+        this._fillCells(startX, startY, x - startX, 1);
         startX = x;
         startY = y;
       }
@@ -196,7 +196,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     // flush the last color we encountered
     if (prevFillStyle !== null) {
       ctx.fillStyle = prevFillStyle;
-      this.fillCells(startX, startY, cols - startX, 1);
+      this._fillCells(startX, startY, cols - startX, 1);
     }
 
     ctx.restore();
@@ -207,7 +207,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       if (cell.isInvisible()) {
         return;
       }
-      this.drawChars(terminal, cell, x, y);
+      this._drawChars(terminal, cell, x, y);
       if (cell.isUnderline()) {
         this._ctx.save();
 
@@ -233,7 +233,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        this.fillBottomLineAtCells(x, y, cell.getWidth());
+        this._fillBottomLineAtCells(x, y, cell.getWidth());
         this._ctx.restore();
       }
     });
@@ -249,13 +249,13 @@ export class TextRenderLayer extends BaseRenderLayer {
       this._charAtlas.beginFrame();
     }
 
-    this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
+    this._clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
     this._drawBackground(terminal, firstRow, lastRow);
     this._drawForeground(terminal, firstRow, lastRow);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
-    this.setTransparency(terminal, terminal.options.allowTransparency);
+    this._setTransparency(terminal, terminal.options.allowTransparency);
   }
 
   /**

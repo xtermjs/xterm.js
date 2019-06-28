@@ -41,7 +41,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   public reset(terminal: ITerminal): void {
     if (this._state.start && this._state.end) {
       this._clearState();
-      this.clearAll();
+      this._clearAll();
     }
   }
 
@@ -52,7 +52,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     // Remove all selections
-    this.clearAll();
+    this._clearAll();
 
     // Selection does not exist
     if (!start || !end) {
@@ -77,22 +77,22 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       const startCol = start[0];
       const width = end[0] - startCol;
       const height = viewportCappedEndRow - viewportCappedStartRow + 1;
-      this.fillCells(startCol, viewportCappedStartRow, width, height);
+      this._fillCells(startCol, viewportCappedStartRow, width, height);
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
       const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
-      this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
+      this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
       // Draw middle rows
       const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-      this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+      this._fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
 
       // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
         const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-        this.fillCells(0, viewportCappedEndRow, endCol, 1);
+        this._fillCells(0, viewportCappedEndRow, endCol, 1);
       }
     }
 
