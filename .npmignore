@@ -36,6 +36,7 @@
 !typings/*.d.ts
 
 # Blacklist - (normal behavior) these will override any whitelist
+*.d.ts.map
 *.test.ts
 *.test.d.ts
 *.test.js
