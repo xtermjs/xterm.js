@@ -15,7 +15,7 @@ import { CellData } from 'common/buffer/CellData';
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
     super(terminal);
-    (<any>Linkifier).TIME_BEFORE_LINKIFY = 0;
+    Linkifier._timeBeforeLatency = 0;
   }
 
   public get linkMatchers(): ILinkMatcher[] { return this._linkMatchers; }

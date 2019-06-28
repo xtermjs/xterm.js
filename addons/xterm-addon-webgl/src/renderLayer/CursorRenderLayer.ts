@@ -182,7 +182,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      this.clearCells(this._state.x, this._state.y, this._state.width, 1);
+      this._clearCells(this._state.x, this._state.y, this._state.width, 1);
       this._state = {
         x: null,
         y: null,
@@ -196,30 +196,30 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this.fillLeftLineAtCell(x, y);
+    this._fillLeftLineAtCell(x, y);
     this._ctx.restore();
   }
 
   private _renderBlockCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this.fillCells(x, y, cell.getWidth(), 1);
+    this._fillCells(x, y, cell.getWidth(), 1);
     this._ctx.fillStyle = this._colors.cursorAccent.css;
-    this.fillCharTrueColor(terminal, cell, x, y);
+    this._fillCharTrueColor(terminal, cell, x, y);
     this._ctx.restore();
   }
 
   private _renderUnderlineCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this.fillBottomLineAtCells(x, y);
+    this._fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.strokeStyle = this._colors.cursor.css;
-    this.strokeRectAtCell(x, y, cell.getWidth(), 1);
+    this._strokeRectAtCell(x, y, cell.getWidth(), 1);
     this._ctx.restore();
   }
 }
