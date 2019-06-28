@@ -3,6 +3,7 @@ node_modules/
 .lock-wscript
 lib/
 out/
+out-test/
 Makefile.gyp
 *.Makefile
 *.target.gyp.mk
