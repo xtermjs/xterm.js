@@ -3,6 +3,7 @@ node_modules/
 .lock-wscript
 lib/
 out/
+out-test/
 Makefile.gyp
 *.Makefile
 *.target.gyp.mk
@@ -19,3 +20,7 @@ package-lock.json
 # Keep bundled code out of Git
 dist/
 demo/dist/
+
+# dont commit benchmark folders
+.benchmark/
+timeline/
