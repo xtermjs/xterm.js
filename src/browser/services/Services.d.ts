@@ -6,6 +6,7 @@
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
+import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 
 export interface ICharSizeService {
   readonly width: number;
@@ -48,13 +49,26 @@ export interface IRenderService {
 }
 
 export interface ISelectionService {
-  selectionText: string;
-  selectionStart: [number, number];
-  selectionEnd: [number, number];
+  readonly selectionText: string;
+  readonly hasSelection: boolean;
+  readonly selectionStart: [number, number];
+  readonly selectionEnd: [number, number];
+
+  readonly onLinuxMouseSelection: IEvent<string>;
+  readonly onRedrawRequest: IEvent<ISelectionRedrawRequestEvent>
+  readonly onSelectionChange: IEvent<void>;
 
   disable(): void;
   enable(): void;
+  reset(): void;
   setSelection(row: number, col: number, length: number): void;
+  selectAll(): void;
+  selectLines(start: number, end: number): void;
+  clearSelection(): void;
   isClickInSelection(event: MouseEvent): boolean;
   selectWordAtCursor(event: MouseEvent): void;
+  shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean;
+  shouldForceSelection(event: MouseEvent): boolean;
+  refresh(isLinuxMouseSelection?: boolean): void;
+  onMouseDown(event: MouseEvent): void;
 }

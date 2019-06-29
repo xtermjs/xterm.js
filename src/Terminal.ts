@@ -49,7 +49,7 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
@@ -113,8 +113,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // browser services
   private _charSizeService: ICharSizeService;
-  private _renderService: IRenderService;
   private _mouseService: IMouseService;
+  private _renderService: IRenderService;
+  public selectionService: ISelectionService;
 
   // modes
   public applicationKeypad: boolean;
@@ -174,7 +175,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  public selectionService: SelectionService;
   public linkifier: ILinkifier;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
@@ -305,11 +305,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
     this.soundManager = this.soundManager || new SoundManager(this);
-
-    if (this.selectionService) {
-      this.selectionService.clearSelection();
-      this.selectionService.initBuffersListeners();
-    }
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -1888,6 +1883,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setup();
     this._bufferService.reset();
     this._coreService.reset();
+    if (this.selectionService) {
+      this.selectionService.reset();
+    }
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;

@@ -145,6 +145,10 @@ export class SelectionService implements ISelectionService {
     this.initBuffersListeners();
   }
 
+  public reset(): void {
+    this.clearSelection();
+  }
+
   public initBuffersListeners(): void {
     this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
     this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
