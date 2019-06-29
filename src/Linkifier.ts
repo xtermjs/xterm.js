@@ -10,6 +10,13 @@ import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 /**
+ * Limit of the unwrapping line expansion (overscan) at the top and bottom
+ * of the actual viewport in ASCII characters.
+ * A limit of 2000 should match most sane urls.
+ */
+const OVERSCAN_CHAR_LIMIT = 2000;
+
+/**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier implements ILinkifier {
@@ -18,14 +25,7 @@ export class Linkifier implements ILinkifier {
    * the costly operation of searching every row multiple times, potentially a
    * huge amount of times.
    */
-  protected static readonly TIME_BEFORE_LINKIFY = 200;
-
-  /**
-   * Limit of the unwrapping line expansion (overscan) at the top and bottom
-   * of the actual viewport in ASCII characters.
-   * A limit of 2000 should match most sane urls.
-   */
-  protected static readonly OVERSCAN_CHAR_LIMIT = 2000;
+  protected static _timeBeforeLatency = 200;
 
   protected _linkMatchers: ILinkMatcher[] = [];
 
@@ -85,7 +85,7 @@ export class Linkifier implements ILinkifier {
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
     }
-    this._rowsTimeoutId = <number><any>setTimeout(() => this._linkifyRows(), Linkifier.TIME_BEFORE_LINKIFY);
+    this._rowsTimeoutId = <number><any>setTimeout(() => this._linkifyRows(), Linkifier._timeBeforeLatency);
   }
 
   /**
@@ -114,7 +114,7 @@ export class Linkifier implements ILinkifier {
     // the viewport to +OVERSCAN_CHAR_LIMIT chars (overscan) at top and bottom.
     // This comes with the tradeoff that matches longer than OVERSCAN_CHAR_LIMIT
     // chars will not match anymore at the viewport borders.
-    const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
+    const overscanLineLimit = Math.ceil(OVERSCAN_CHAR_LIMIT / this._terminal.cols);
     const iterator = this._terminal.buffer.iterator(
       false, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {

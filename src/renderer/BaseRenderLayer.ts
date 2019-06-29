@@ -66,7 +66,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
-      this.clearAll();
+      this._clearAll();
     }
   }
 
@@ -81,7 +81,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
-  protected setTransparency(terminal: ITerminal, alpha: boolean): void {
+  protected _setTransparency(terminal: ITerminal, alpha: boolean): void {
     // Do nothing when alpha doesn't change
     if (alpha === this._alpha) {
       return;
@@ -127,7 +127,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
-      this.clearAll();
+      this._clearAll();
     }
 
     this._refreshCharAtlas(terminal, this._colors);
@@ -142,7 +142,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param width The number of columns to fill.
    * @param height The number of rows to fill.
    */
-  protected fillCells(x: number, y: number, width: number, height: number): void {
+  protected _fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,
@@ -156,7 +156,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
+  protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
         x * this._scaledCellWidth,
         (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
@@ -170,7 +170,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected fillLeftLineAtCell(x: number, y: number): void {
+  protected _fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,
@@ -184,7 +184,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected strokeRectAtCell(x: number, y: number, width: number, height: number): void {
+  protected _strokeRectAtCell(x: number, y: number, width: number, height: number): void {
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
         x * this._scaledCellWidth + window.devicePixelRatio / 2,
@@ -196,7 +196,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   /**
    * Clears the entire canvas.
    */
-  protected clearAll(): void {
+  protected _clearAll(): void {
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
@@ -212,7 +212,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param width The number of columns to clear.
    * @param height The number of rows to clear.
    */
-  protected clearCells(x: number, y: number, width: number, height: number): void {
+  protected _clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
           x * this._scaledCellWidth,
@@ -239,7 +239,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to draw at.
    * @param color The color of the character.
    */
-  protected fillCharTrueColor(terminal: ITerminal, cell: CellData, x: number, y: number): void {
+  protected _fillCharTrueColor(terminal: ITerminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
@@ -263,7 +263,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
+  protected _drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped

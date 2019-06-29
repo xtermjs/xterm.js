@@ -44,6 +44,7 @@ export class Terminal implements ITerminalApi {
     this._core.focus();
   }
   public resize(columns: number, rows: number): void {
+    this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
   public writeln(data: string): void {
@@ -74,12 +75,14 @@ export class Terminal implements ITerminalApi {
     this._core.deregisterCharacterJoiner(joinerId);
   }
   public addMarker(cursorYOffset: number): IMarker {
+    this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
   }
   public select(column: number, row: number, length: number): void {
+    this._verifyIntegers(column, row, length);
     this._core.select(column, row, length);
   }
   public getSelection(): string {
@@ -95,6 +98,7 @@ export class Terminal implements ITerminalApi {
     this._core.selectAll();
   }
   public selectLines(start: number, end: number): void {
+    this._verifyIntegers(start, end);
     this._core.selectLines(start, end);
   }
   public dispose(): void {
@@ -102,9 +106,11 @@ export class Terminal implements ITerminalApi {
     this._core.dispose();
   }
   public scrollLines(amount: number): void {
+    this._verifyIntegers(amount);
     this._core.scrollLines(amount);
   }
   public scrollPages(pageCount: number): void {
+    this._verifyIntegers(pageCount);
     this._core.scrollPages(pageCount);
   }
   public scrollToTop(): void {
@@ -114,6 +120,7 @@ export class Terminal implements ITerminalApi {
     this._core.scrollToBottom();
   }
   public scrollToLine(line: number): void {
+    this._verifyIntegers(line);
     this._core.scrollToLine(line);
   }
   public clear(): void {
@@ -149,6 +156,7 @@ export class Terminal implements ITerminalApi {
     this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
+    this._verifyIntegers(start, end);
     this._core.refresh(start, end);
   }
   public reset(): void {
@@ -162,6 +170,14 @@ export class Terminal implements ITerminalApi {
   }
   public static get strings(): ILocalizableStrings {
     return Strings;
+  }
+
+  private _verifyIntegers(...values: number[]): void {
+    values.forEach(value => {
+      if (value % 1 !== 0) {
+        throw new Error('This API does not accept floating point numbers');
+      }
+    });
   }
 }
 
