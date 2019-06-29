@@ -22,9 +22,7 @@ export function applyWindowsMode(terminal: ITerminal): IDisposable {
     const line = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y - 1);
     const lastChar = line.get(terminal.cols - 1);
 
-    if (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE && lastChar[CHAR_DATA_CODE_INDEX] !== WHITESPACE_CELL_CODE) {
-      const nextLine = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y);
-      nextLine.isWrapped = true;
-    }
+    const nextLine = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y);
+    nextLine.isWrapped = (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE && lastChar[CHAR_DATA_CODE_INDEX] !== WHITESPACE_CELL_CODE);
   });
 }
