@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ISelectionManager } from 'browser/selection/Types';
+import { ISelectionService } from 'browser/services/Services';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
@@ -28,8 +28,8 @@ export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): 
  * Binds copy functionality to the given terminal.
  * @param ev The original copy event to be handled
  */
-export function copyHandler(ev: ClipboardEvent, selectionManager: ISelectionManager): void {
-  ev.clipboardData.setData('text/plain', selectionManager.selectionText);
+export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionService): void {
+  ev.clipboardData.setData('text/plain', selectionService.selectionText);
   // Prevent or the original text will be copied.
   ev.preventDefault();
 }
@@ -95,17 +95,17 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
  * Bind to right-click event and allow right-click copy and paste.
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
- * @param selectionManager The terminal's selection manager.
+ * @param selectionService The terminal's selection manager.
  * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement, selectionService: ISelectionService, shouldSelectWord: boolean): void {
   moveTextAreaUnderMouseCursor(ev, textarea, screenElement);
 
-  if (shouldSelectWord && !selectionManager.isClickInSelection(ev)) {
-    selectionManager.selectWordAtCursor(ev);
+  if (shouldSelectWord && !selectionService.isClickInSelection(ev)) {
+    selectionService.selectWordAtCursor(ev);
   }
 
   // Get textarea ready to copy from the context menu
-  textarea.value = selectionManager.selectionText;
+  textarea.value = selectionService.selectionText;
   textarea.select();
 }

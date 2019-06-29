@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ISelectionManager, ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService, ISelectionService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -60,13 +60,13 @@ export const enum SelectionMode {
 
 /**
  * A class that manages the selection of the terminal. With help from
- * SelectionModel, SelectionManager handles with all logic associated with
+ * SelectionModel, SelectionService handles with all logic associated with
  * dealing with the selection, including handling mouse interaction, wide
  * characters and fetching the actual text within the selection. Rendering is
- * not handled by the SelectionManager but the onRedrawRequest event is fired
+ * not handled by the SelectionService but the onRedrawRequest event is fired
  * when the selection is ready to be redrawn (on an animation frame).
  */
-export class SelectionManager implements ISelectionManager {
+export class SelectionService implements ISelectionService {
   protected _model: SelectionModel;
 
   /**

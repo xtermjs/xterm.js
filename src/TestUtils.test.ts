@@ -15,7 +15,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
-import { ISelectionManager } from 'browser/selection/Types';
+import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -131,7 +131,7 @@ export class MockTerminal implements ITerminal {
   screenElement: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
-  selectionManager: ISelectionManager;
+  selectionService: ISelectionService;
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
@@ -216,7 +216,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   buffers: IBufferSet;
   buffer: IBuffer = new MockBuffer();
   viewport: IViewport;
-  selectionManager: ISelectionManager;
+  selectionService: ISelectionService;
   focus(): void {
     throw new Error('Method not implemented.');
   }
