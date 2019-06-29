@@ -30,7 +30,7 @@ export class CoreService implements ICoreService {
   }
 
   public reset(): void {
-
+    this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
