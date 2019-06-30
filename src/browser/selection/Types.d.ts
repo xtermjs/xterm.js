@@ -4,7 +4,7 @@
  */
 
 export interface ISelectionRedrawRequestEvent {
-  start: [number, number];
-  end: [number, number];
+  start: [number, number] | undefined;
+  end: [number, number] | undefined;
   columnSelectMode: boolean;
 }

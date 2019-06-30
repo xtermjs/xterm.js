@@ -13,13 +13,14 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
+import { isMSWindows } from '../../../out/common/Platform';
 
 class TestSelectionService extends SelectionService {
   constructor(
     bufferService: IBufferService,
     optionsService: IOptionsService
   ) {
-    super(() => {}, null, null, new MockCharSizeService(10, 10), bufferService, new MockCoreService(), new MockMouseService(), optionsService);
+    super(() => {}, null!, null!, new MockCharSizeService(10, 10), bufferService, new MockCoreService(), new MockMouseService(), optionsService);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -97,21 +98,21 @@ describe('SelectionService', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       const data: [number, string, number, number][] = [
-        [null, '中', 2, '中'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, '文', 2, '文'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, ' ', 1, ' '.charCodeAt(0)],
-        [null, 'a', 1, 'a'.charCodeAt(0)],
-        [null, '中', 2, '中'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, '文', 2, '文'.charCodeAt(0)],
-        [null, '', 0, ''.charCodeAt(0)],
-        [null, 'b', 1, 'b'.charCodeAt(0)],
-        [null, ' ', 1, ' '.charCodeAt(0)],
-        [null, 'f', 1, 'f'.charCodeAt(0)],
-        [null, 'o', 1, 'o'.charCodeAt(0)],
-        [null, 'o', 1, 'o'.charCodeAt(0)]
+        [0, '中', 2, '中'.charCodeAt(0)],
+        [0, '', 0, 0],
+        [0, '文', 2, '文'.charCodeAt(0)],
+        [0, '', 0, 0],
+        [0, ' ', 1, ' '.charCodeAt(0)],
+        [0, 'a', 1, 'a'.charCodeAt(0)],
+        [0, '中', 2, '中'.charCodeAt(0)],
+        [0, '', 0, 0],
+        [0, '文', 2, '文'.charCodeAt(0)],
+        [0, '', 0, ''.charCodeAt(0)],
+        [0, 'b', 1, 'b'.charCodeAt(0)],
+        [0, ' ', 1, ' '.charCodeAt(0)],
+        [0, 'f', 1, 'f'.charCodeAt(0)],
+        [0, 'o', 1, 'o'.charCodeAt(0)],
+        [0, 'o', 1, 'o'.charCodeAt(0)]
       ];
       const line = new BufferLine(data.length);
       for (let i = 0; i < data.length; ++i) line.setCell(i, CellData.fromCharData(data[i]));
@@ -188,7 +189,7 @@ describe('SelectionService', () => {
     it('should expand upwards or downards for wrapped lines', () => {
       buffer.lines.set(0, stringToRow('                 foo'));
       buffer.lines.set(1, stringToRow('bar                 '));
-      buffer.lines.get(1).isWrapped = true;
+      buffer.lines.get(1)!.isWrapped = true;
       selectionService.selectWordAt([1, 1]);
       assert.equal(selectionService.selectionText, 'foobar');
       selectionService.model.clearSelection();
@@ -202,10 +203,10 @@ describe('SelectionService', () => {
       buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbb'));
       buffer.lines.set(3, stringToRow('cccccccccccccccccccc'));
       buffer.lines.set(4, stringToRow('bar                 '));
-      buffer.lines.get(1).isWrapped = true;
-      buffer.lines.get(2).isWrapped = true;
-      buffer.lines.get(3).isWrapped = true;
-      buffer.lines.get(4).isWrapped = true;
+      buffer.lines.get(1)!.isWrapped = true;
+      buffer.lines.get(2)!.isWrapped = true;
+      buffer.lines.get(3)!.isWrapped = true;
+      buffer.lines.get(4)!.isWrapped = true;
       selectionService.selectWordAt([18, 0]);
       assert.equal(selectionService.selectionText, expectedText);
       selectionService.model.clearSelection();
@@ -359,6 +360,8 @@ describe('SelectionService', () => {
       buffer.lines.set(3, stringToRow('4'));
       buffer.lines.set(4, stringToRow('5'));
       selectionService.selectAll();
+      console.log(selectionService.selectionText.length);
+      console.log(isMSWindows);
       assert.equal(selectionService.selectionText, '1\n2\n3\n4\n5');
     });
   });

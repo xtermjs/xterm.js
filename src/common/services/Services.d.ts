@@ -104,6 +104,7 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  wordSeparator: string;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -112,7 +113,6 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
-  wordSeparator?: string;
 }
 
 export interface ITheme {

@@ -51,11 +51,11 @@ export interface IRenderService {
 export interface ISelectionService {
   readonly selectionText: string;
   readonly hasSelection: boolean;
-  readonly selectionStart: [number, number];
-  readonly selectionEnd: [number, number];
+  readonly selectionStart: [number, number] | undefined;
+  readonly selectionEnd: [number, number] | undefined;
 
   readonly onLinuxMouseSelection: IEvent<string>;
-  readonly onRedrawRequest: IEvent<ISelectionRedrawRequestEvent>
+  readonly onRedrawRequest: IEvent<ISelectionRedrawRequestEvent>;
   readonly onSelectionChange: IEvent<void>;
 
   disable(): void;
