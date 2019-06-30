@@ -634,10 +634,10 @@ describe('Terminal', () => {
     describe('On MS Windows', () => {
       let originalIsWindows: boolean;
       beforeEach(() => {
-        originalIsWindows = term.browser.isMSWindows;
-        term.browser.isMSWindows = true;
+        originalIsWindows = term.browser.isWindows;
+        term.browser.isWindows = true;
       });
-      afterEach(() => term.browser.isMSWindows = originalIsWindows);
+      afterEach(() => term.browser.isWindows = originalIsWindows);
 
       it('should not interfere with the alt + ctrl key on keyDown', () => {
         evKeyPress.altKey = true;

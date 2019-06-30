@@ -231,7 +231,7 @@ export class SelectionService implements ISelectionService {
     // and joining the array into a multi-line string.
     const formattedResult = result.map(line => {
       return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
-    }).join(Browser.isMSWindows ? '\r\n' : '\n');
+    }).join(Browser.isWindows ? '\r\n' : '\n');
 
     return formattedResult;
   }

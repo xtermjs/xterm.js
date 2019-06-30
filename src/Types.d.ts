@@ -343,7 +343,7 @@ export interface IBrowser {
   isMac: boolean;
   isIpad: boolean;
   isIphone: boolean;
-  isMSWindows: boolean;
+  isWindows: boolean;
 }
 
 export interface ISoundManager {

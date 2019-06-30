@@ -13,7 +13,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
-import { isMSWindows } from '../../../out/common/Platform';
+import { isWindows } from '../../../out/common/Platform';
 
 class TestSelectionService extends SelectionService {
   constructor(
@@ -361,7 +361,7 @@ describe('SelectionService', () => {
       buffer.lines.set(4, stringToRow('5'));
       selectionService.selectAll();
       console.log(selectionService.selectionText.length);
-      console.log(isMSWindows);
+      console.log(isWindows);
       assert.equal(selectionService.selectionText, '1\n2\n3\n4\n5');
     });
   });

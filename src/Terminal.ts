@@ -1595,7 +1595,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
         (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+        (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
