@@ -9,7 +9,6 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { ISelectionService } from 'browser/services/Services';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -52,7 +51,6 @@ export interface IInputHandlingTerminal {
   buffers: IBufferSet;
   buffer: IBuffer;
   viewport: IViewport;
-  selectionService: ISelectionService;
 
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
@@ -195,7 +193,6 @@ export interface ILinkifierEvent {
 
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
-  selectionService: ISelectionService;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
