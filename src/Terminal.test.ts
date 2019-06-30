@@ -548,10 +548,12 @@ describe('Terminal', () => {
     });
 
     describe('with macOptionIsMeta', () => {
+      let originalIsMac: boolean;
       beforeEach(() => {
-        term.browser.isMac = true;
+        originalIsMac = term.browser.isMac;
         term.options.macOptionIsMeta = true;
       });
+      afterEach(() => term.browser.isMac = originalIsMac);
 
       it('should interfere with the alt key on keyDown', () => {
         evKeyDown.altKey = true;
@@ -564,9 +566,12 @@ describe('Terminal', () => {
     });
 
     describe('On Mac OS', () => {
+      let originalIsMac: boolean;
       beforeEach(() => {
+        originalIsMac = term.browser.isMac;
         term.browser.isMac = true;
       });
+      afterEach(() => term.browser.isMac = originalIsMac);
 
       it('should not interfere with the alt key on keyDown', () => {
         evKeyDown.altKey = true;
@@ -627,9 +632,12 @@ describe('Terminal', () => {
     });
 
     describe('On MS Windows', () => {
+      let originalIsWindows: boolean;
       beforeEach(() => {
-        term.browser.isMSWindows = true;
+        originalIsWindows = term.browser.isWindows;
+        term.browser.isWindows = true;
       });
+      afterEach(() => term.browser.isWindows = originalIsWindows);
 
       it('should not interfere with the alt + ctrl key on keyDown', () => {
         evKeyPress.altKey = true;

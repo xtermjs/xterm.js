@@ -5,6 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IDecPrivateModes } from 'common/Types';
 
 export interface IBufferService {
   readonly cols: number;
@@ -19,8 +20,12 @@ export interface IBufferService {
 }
 
 export interface ICoreService {
+  readonly decPrivateModes: IDecPrivateModes;
+
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
+
+  reset(): void;
 
   /**
    * Triggers the onData event in the public API.
@@ -99,6 +104,7 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  wordSeparator: string;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -107,7 +113,6 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
-  wordSeparator?: string;
 }
 
 export interface ITheme {

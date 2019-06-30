@@ -30,7 +30,7 @@ import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
-import { SelectionManager } from './SelectionManager';
+import { SelectionService } from './browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './browser/LocalizableStrings';
@@ -49,7 +49,7 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
@@ -113,12 +113,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // browser services
   private _charSizeService: ICharSizeService;
-  private _renderService: IRenderService;
   private _mouseService: IMouseService;
+  private _renderService: IRenderService;
+  private _selectionService: ISelectionService;
 
   // modes
   public applicationKeypad: boolean;
-  public applicationCursor: boolean;
   public originMode: boolean;
   public insertMode: boolean;
   public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
@@ -175,7 +175,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
@@ -269,7 +268,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // modes
     this.applicationKeypad = false;
-    this.applicationCursor = false;
     this.originMode = false;
     this.insertMode = false;
     this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
@@ -303,15 +301,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
 
-    this.selectionManager = this.selectionManager || null;
+    this._selectionService = this._selectionService || null;
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
     this.soundManager = this.soundManager || new SoundManager(this);
-
-    if (this.selectionManager) {
-      this.selectionManager.clearSelection();
-      this.selectionManager.initBuffersListeners();
-    }
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -481,7 +474,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       if (!this.hasSelection()) {
         return;
       }
-      copyHandler(event, this.selectionManager);
+      copyHandler(event, this._selectionService);
     }));
     const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this._coreService.triggerDataEvent(e, true));
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
@@ -492,12 +485,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this.textarea, this.screenElement, this._selectionService, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this.textarea, this.screenElement, this._selectionService, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -643,11 +636,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this.screenElement, this._charSizeService, this._bufferService, this._coreService, this._mouseService, this.optionsService);
-    this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
-    this.register(this.selectionManager.onLinuxMouseSelection(text => {
+    this._selectionService = new SelectionService(
+      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
+      this.element, this.screenElement, this._charSizeService, this._bufferService, this._coreService,
+      this._mouseService, this.optionsService
+    );
+    this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
+    this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.
@@ -657,16 +654,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }));
     this.register(this.onScroll(() => {
       this.viewport.syncScrollArea();
-      this.selectionManager.refresh();
+      this._selectionService.refresh();
     }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService.refresh()));
 
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
-      this.selectionManager.disable();
+      this._selectionService.disable();
     } else {
-      this.selectionManager.enable();
+      this._selectionService.enable();
     }
 
     if (this.options.screenReaderMode) {
@@ -944,7 +941,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // Don't send the mouse button to the pty if mouse events are disabled or
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
-      if (!this.mouseEvents || this.selectionManager.shouldForceSelection(ev)) {
+      if (!this.mouseEvents || this._selectionService.shouldForceSelection(ev)) {
         return;
       }
 
@@ -1013,7 +1010,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           }
 
           // Construct and send sequences
-          const sequence = C0.ESC + (this.applicationCursor ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
+          const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
           let data = '';
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
@@ -1075,7 +1072,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Change the cursor style for different selection modes
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
-    if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
+    if (this._selectionService && this._selectionService.shouldColumnSelect(ev)) {
       this.element.classList.add('column-select');
     } else {
       this.element.classList.remove('column-select');
@@ -1479,7 +1476,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Gets whether the terminal has an active selection.
    */
   public hasSelection(): boolean {
-    return this.selectionManager ? this.selectionManager.hasSelection : false;
+    return this._selectionService ? this._selectionService.hasSelection : false;
   }
 
   /**
@@ -1489,7 +1486,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param length The length of the selection.
    */
   public select(column: number, row: number, length: number): void {
-    this.selectionManager.setSelection(column, row, length);
+    this._selectionService.setSelection(column, row, length);
   }
 
   /**
@@ -1497,19 +1494,19 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * behavior outside of xterm.js.
    */
   public getSelection(): string {
-    return this.selectionManager ? this.selectionManager.selectionText : '';
+    return this._selectionService ? this._selectionService.selectionText : '';
   }
 
   public getSelectionPosition(): ISelectionPosition | undefined {
-    if (!this.selectionManager.hasSelection) {
+    if (!this._selectionService.hasSelection) {
       return undefined;
     }
 
     return {
-      startColumn: this.selectionManager.selectionStart[0],
-      startRow: this.selectionManager.selectionStart[1],
-      endColumn: this.selectionManager.selectionEnd[0],
-      endRow: this.selectionManager.selectionEnd[1]
+      startColumn: this._selectionService.selectionStart[0],
+      startRow: this._selectionService.selectionStart[1],
+      endColumn: this._selectionService.selectionEnd[0],
+      endRow: this._selectionService.selectionEnd[1]
     };
   }
 
@@ -1517,8 +1514,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Clears the current terminal selection.
    */
   public clearSelection(): void {
-    if (this.selectionManager) {
-      this.selectionManager.clearSelection();
+    if (this._selectionService) {
+      this._selectionService.clearSelection();
     }
   }
 
@@ -1526,14 +1523,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Selects all text within the terminal.
    */
   public selectAll(): void {
-    if (this.selectionManager) {
-      this.selectionManager.selectAll();
+    if (this._selectionService) {
+      this._selectionService.selectAll();
     }
   }
 
   public selectLines(start: number, end: number): void {
-    if (this.selectionManager) {
-      this.selectionManager.selectLines(start, end);
+    if (this._selectionService) {
+      this._selectionService.selectLines(start, end);
     }
   }
 
@@ -1555,7 +1552,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return false;
     }
 
-    const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
 
@@ -1598,7 +1595,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
         (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+        (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
@@ -1806,8 +1803,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   //   }
 
   //   // Clear the selection if the selection manager is available and has an active selection
-  //   if (this.selectionManager && this.selectionManager.hasSelection) {
-  //     this.selectionManager.clearSelection();
+  //   if (this.selectionService && this.selectionService.hasSelection) {
+  //     this.selectionService.clearSelection();
   //   }
 
   //   // Input is being sent to the terminal, the terminal should focus the prompt.
@@ -1885,6 +1882,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setup();
     this._bufferService.reset();
+    this._coreService.reset();
+    if (this._selectionService) {
+      this._selectionService.reset();
+    }
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
