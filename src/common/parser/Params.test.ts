@@ -192,4 +192,28 @@ describe('Params', () => {
       assert.deepEqual(params.toArray(), [0, 4, 38, [2, -1, 50, 100, 150], 48, [5, 22]]);
     });
   });
+  describe('should not overflow to negative', () => {
+    it('reject params lesser -1', () => {
+      const params = new Params();
+      params.addParam(-1);
+      assert.throws(() => params.addParam(-2), 'values lesser than -1 are not allowed');
+    });
+    it('reject subparams lesser -1', () => {
+      const params = new Params();
+      params.addParam(-1);
+      params.addSubParam(-1);
+      assert.throws(() => params.addSubParam(-2), 'values lesser than -1 are not allowed');
+      assert.deepEqual(params.toArray(), [-1, [-1]]);
+    });
+    it('clamp parsed params', () => {
+      const params = new Params();
+      parse(params, '2147483648');
+      assert.deepEqual(params.toArray(), [0x7FFFFFFF]);
+    });
+    it('clamp parsed subparams', () => {
+      const params = new Params();
+      parse(params, ':2147483648');
+      assert.deepEqual(params.toArray(), [0, [0x7FFFFFFF]]);
+    });
+  });
 });

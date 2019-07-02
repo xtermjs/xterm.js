@@ -4,6 +4,11 @@
  */
 import { IParams } from 'common/parser/Types';
 
+// max value supported for a single param/subparam - clamp to positive int32 range
+const MAX_VALUE = 0x7FFFFFFF;
+// max allowed subparams for a single sequence (hardcoded limitation)
+const MAX_SUBPARAMS = 256;
+
 /**
  * Params storage class.
  * This type is used by the parser to acuumulate sequence parameters and sub parameters
@@ -31,7 +36,7 @@ import { IParams } from 'common/parser/Types';
  *  - never read beyond `params.length - 1` (likely to contain arbitrary data)
  *  - `.getSubParams` returns a borrowed typed array, use `.getSubParamsAll` for cloned sub params
  *  - hardcoded limitations:
- *    - max. value for a single (sub) param is 2^15 (caveat: will overflow to negative values)
+ *    - max. value for a single (sub) param is 2^31 - 1
  *    - max. 256 sub params possible
  */
 export class Params implements IParams {
@@ -76,7 +81,7 @@ export class Params implements IParams {
    */
   constructor(public maxLength: number = 32, public maxSubParamsLength: number = 32) {
     // precondition: subparams cannot be more than 256
-    if (maxSubParamsLength > 256) {
+    if (maxSubParamsLength > MAX_SUBPARAMS) {
       throw new Error('maxSubParamsLength must not be greater than 256');
     }
     this.params = new Int32Array(maxLength);
@@ -142,8 +147,11 @@ export class Params implements IParams {
       this._rejectDigits = true;
       return;
     }
+    if (value < -1) {
+      throw new Error('values lesser than -1 are not allowed');
+    }
     this._subParamsIdx[this.length] = this._subParamsLength << 8 | this._subParamsLength;
-    this.params[this.length++] = value;
+    this.params[this.length++] = value > MAX_VALUE ? MAX_VALUE : value;
   }
 
   /**
@@ -154,11 +162,17 @@ export class Params implements IParams {
    * sub parameter will be ignored.
    */
   public addSubParam(value: number): void {
-    if (!this.length || this._subParamsLength >= this.maxSubParamsLength) {
+    if (!this.length) {
+      return;
+    }
+    if (this._subParamsLength >= this.maxSubParamsLength) {
       this._rejectSubDigits = true;
       return;
     }
-    this._subParams[this._subParamsLength++] = value;
+    if (value < -1) {
+      throw new Error('values lesser than -1 are not allowed');
+    }
+    this._subParams[this._subParamsLength++] = value > MAX_VALUE ? MAX_VALUE : value;
     this._subParamsIdx[this.length - 1]++;
   }
 
@@ -209,7 +223,8 @@ export class Params implements IParams {
     if (this._rejectDigits) {
       return;
     }
-    this.params[this.length - 1] = this.params[this.length - 1] * 10 + value;
+    const v = this.params[this.length - 1] * 10 + value;
+    this.params[this.length - 1] = v > MAX_VALUE ? MAX_VALUE : v;
   }
 
   /**
@@ -224,7 +239,8 @@ export class Params implements IParams {
     if (this._subParams[this._subParamsLength - 1] === -1) {
       this._subParams[this._subParamsLength - 1] = value;
     } else {
-      this._subParams[this._subParamsLength - 1] = this._subParams[this._subParamsLength - 1] * 10 + value;
+      const v = this._subParams[this._subParamsLength - 1] * 10 + value;
+      this._subParams[this._subParamsLength - 1] = v > MAX_VALUE ? MAX_VALUE : v;
     }
   }
 }
