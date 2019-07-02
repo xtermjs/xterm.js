@@ -938,14 +938,14 @@ declare module 'xterm' {
     readonly maxSubParamsLength: number;
   
     /** param values and its length */
-    readonly params: Int16Array;
+    readonly params: Int32Array;
     readonly length: number;
   
     /** exported methods */
     clone(): IParams;
     toArray(): (number | number[])[];
     hasSubParams(idx: number): boolean;
-    getSubParams(idx: number): Int16Array | null;
-    getSubParamsAll(): {[idx: number]: Int16Array};
+    getSubParams(idx: number): Int32Array | null;
+    getSubParamsAll(): {[idx: number]: Int32Array};
   }
 }

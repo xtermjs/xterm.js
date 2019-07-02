@@ -22,7 +22,7 @@ export interface IParams {
   maxSubParamsLength: number;
 
   /** param values and its length */
-  params: Int16Array;
+  params: Int32Array;
   length: number;
 
   /** methods */
@@ -32,8 +32,8 @@ export interface IParams {
   addParam(value: number): void;
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;
-  getSubParams(idx: number): Int16Array | null;
-  getSubParamsAll(): {[idx: number]: Int16Array};
+  getSubParams(idx: number): Int32Array | null;
+  getSubParamsAll(): {[idx: number]: Int32Array};
 }
 
 /**

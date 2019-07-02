@@ -34,13 +34,13 @@ import { IParams } from 'common/parser/Types';
  *    - max. value for a single (sub) param is 2^15 (caveat: will overflow to negative values)
  *    - max. 256 sub params possible
  */
-export class Params {
+export class Params implements IParams {
   // params store and length
-  public params: Int16Array;
+  public params: Int32Array;
   public length: number;
 
   // sub params store and length
-  protected _subParams: Int16Array;
+  protected _subParams: Int32Array;
   protected _subParamsLength: number;
 
   // sub params offsets from param: param idx --> [start, end] offset
@@ -79,9 +79,9 @@ export class Params {
     if (maxSubParamsLength > 256) {
       throw new Error('maxSubParamsLength must not be greater than 256');
     }
-    this.params = new Int16Array(maxLength);
+    this.params = new Int32Array(maxLength);
     this.length = 0;
-    this._subParams = new Int16Array(maxSubParamsLength);
+    this._subParams = new Int32Array(maxSubParamsLength);
     this._subParamsLength = 0;
     this._subParamsIdx = new Uint16Array(maxLength);
     this._rejectDigits = false;
@@ -174,7 +174,7 @@ export class Params {
    * Note: The values are borrowed, thus you need to copy
    * the values if you need to hold them in nonlocal scope.
    */
-  public getSubParams(idx: number): Int16Array | null {
+  public getSubParams(idx: number): Int32Array | null {
     const start = this._subParamsIdx[idx] >> 8;
     const end = this._subParamsIdx[idx] & 0xFF;
     if (end - start > 0) {
@@ -188,8 +188,8 @@ export class Params {
    * Note: The values are not borrowed, thus it is safe to hold
    * them without copying.
    */
-  public getSubParamsAll(): {[idx: number]: Int16Array} {
-    const result: {[idx: number]: Int16Array} = {};
+  public getSubParamsAll(): {[idx: number]: Int32Array} {
+    const result: {[idx: number]: Int32Array} = {};
     for (let i = 0; i < this.length; ++i) {
       const start = this._subParamsIdx[i] >> 8;
       const end = this._subParamsIdx[i] & 0xFF;

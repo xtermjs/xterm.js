@@ -6,7 +6,7 @@ import { assert } from 'chai';
 import { Params } from 'common/parser/Params';
 
 class TestParams extends Params {
-  public get subParams(): Int16Array {
+  public get subParams(): Int32Array {
     return this._subParams;
   }
   public get subParamsLength(): number {
@@ -129,7 +129,7 @@ describe('Params', () => {
   it('hasSubParams / getSubParams', () => {
     const params = Params.fromArray([38, [2, 50, 100, 150], 5, [], 6]);
     assert.equal(params.hasSubParams(0), true);
-    assert.deepEqual(params.getSubParams(0), new Int16Array([2, 50, 100, 150]));
+    assert.deepEqual(params.getSubParams(0), new Int32Array([2, 50, 100, 150]));
     assert.equal(params.hasSubParams(1), false);
     assert.deepEqual(params.getSubParams(1), null);
     assert.equal(params.hasSubParams(2), false);
@@ -137,7 +137,7 @@ describe('Params', () => {
   });
   it('getSubParamsAll', () => {
     const params = Params.fromArray([1, [2, 3], 7, 12345, [-1]]);
-    assert.deepEqual(params.getSubParamsAll(), {0: new Int16Array([2, 3]), 2: new Int16Array([-1])});
+    assert.deepEqual(params.getSubParamsAll(), {0: new Int32Array([2, 3]), 2: new Int32Array([-1])});
   });
   describe('parse tests', () => {
     it('param defaults to 0 (ZDM - zero default mode)', () => {
