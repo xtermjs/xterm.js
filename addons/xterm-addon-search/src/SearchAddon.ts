@@ -4,7 +4,6 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
-import { floor } from 'mathjs';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -375,7 +374,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     terminal.select(result.col, result.row, result.term.length);
     let scroll = result.row - terminal.buffer.viewportY;
-    scroll = scroll - floor(terminal.rows / 2);
+    scroll = scroll - Math.floor(terminal.rows / 2);
     terminal.scrollLines(scroll);
     return true;
   }
