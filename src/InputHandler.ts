@@ -1237,13 +1237,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setMode(params: IParams, collect?: string): void {
     for (let i = 0; i < params.length; i++) {
-      this._setMode([params.params[i]], collect);
+      this._setMode(params.params[i], collect);
     }
   }
 
-  private _setMode(params: number[], collect?: string): void {
+  private _setMode(param: number, collect?: string): void {
     if (!collect) {
-      switch (params[0]) {
+      switch (param) {
         case 4:
           this._terminal.insertMode = true;
           break;
@@ -1252,7 +1252,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     } else if (collect === '?') {
-      switch (params[0]) {
+      switch (param) {
         case 1:
           this._terminal.applicationCursor = true;
           break;
@@ -1295,9 +1295,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
           // TODO: Why are params[0] compares nested within a switch for params[0]?
 
-          this._terminal.x10Mouse = params[0] === 9;
-          this._terminal.vt200Mouse = params[0] === 1000;
-          this._terminal.normalMouse = params[0] > 1000;
+          this._terminal.x10Mouse = param === 9;
+          this._terminal.vt200Mouse = param === 1000;
+          this._terminal.normalMouse = param > 1000;
           this._terminal.mouseEvents = true;
           if (this._terminal.element) {
             this._terminal.element.classList.add('enable-mouse-events');
@@ -1440,13 +1440,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public resetMode(params: IParams, collect?: string): void {
     for (let i = 0; i < params.length; i++) {
-      this._resetMode([params.params[i]], collect);
+      this._resetMode(params.params[i], collect);
     }
   }
 
-  private _resetMode(params: number[], collect?: string): void {
+  private _resetMode(param: number, collect?: string): void {
     if (!collect) {
-      switch (params[0]) {
+      switch (param) {
         case 4:
           this._terminal.insertMode = false;
           break;
@@ -1455,7 +1455,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     } else if (collect === '?') {
-      switch (params[0]) {
+      switch (param) {
         case 1:
           this._terminal.applicationCursor = false;
           break;
@@ -1520,7 +1520,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
-          if (params[0] === 1049) {
+          if (param === 1049) {
             this.restoreCursor();
           }
           this._terminal.refresh(0, this._terminal.rows - 1);
@@ -1900,6 +1900,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Set Scrolling Region [top;bottom] (default = full size of win-
    *   dow) (DECSTBM).
    * CSI ? Pm r
+   *   currently skipped
    */
   public setScrollRegion(params: IParams, collect?: string): void {
     if (collect) {
