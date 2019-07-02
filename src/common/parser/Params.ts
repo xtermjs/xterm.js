@@ -4,14 +4,14 @@
  */
 import { IParams } from 'common/parser/Types';
 
-// max value supported for a single param/subparam - clamp to positive int32 range
+// max value supported for a single param/subparam (clamped to positive int32 range)
 const MAX_VALUE = 0x7FFFFFFF;
 // max allowed subparams for a single sequence (hardcoded limitation)
 const MAX_SUBPARAMS = 256;
 
 /**
  * Params storage class.
- * This type is used by the parser to acuumulate sequence parameters and sub parameters
+ * This type is used by the parser to accumulate sequence parameters and sub parameters
  * and transmit them to the input handler actions.
  *
  * Usage in action handler:
@@ -36,8 +36,9 @@ const MAX_SUBPARAMS = 256;
  *  - never read beyond `params.length - 1` (likely to contain arbitrary data)
  *  - `.getSubParams` returns a borrowed typed array, use `.getSubParamsAll` for cloned sub params
  *  - hardcoded limitations:
- *    - max. value for a single (sub) param is 2^31 - 1
+ *    - max. value for a single (sub) param is 2^31 - 1 (greater values are clamped to that)
  *    - max. 256 sub params possible
+ *    - negative values are not allowed beside -1 (placeholder for default value)
  */
 export class Params implements IParams {
   // params store and length
@@ -80,7 +81,6 @@ export class Params implements IParams {
    * @param maxSubParamsLength max length of storable sub parameters
    */
   constructor(public maxLength: number = 32, public maxSubParamsLength: number = 32) {
-    // precondition: subparams cannot be more than 256
     if (maxSubParamsLength > MAX_SUBPARAMS) {
       throw new Error('maxSubParamsLength must not be greater than 256');
     }
@@ -94,7 +94,7 @@ export class Params implements IParams {
   }
 
   /**
-   * Clone object to its own copy.
+   * Clone object.
    */
   public clone(): Params {
     const newParams = new Params(this.maxLength, this.maxSubParamsLength);
@@ -157,7 +157,7 @@ export class Params implements IParams {
   /**
    * Add a sub parameter value.
    * The sub parameter is automatically associated with the last parameter value.
-   * If there is no parameter yet the sub parameter is ingored.
+   * Thus it is not possible to add a subparameter without any parameter added yet.
    * `Params` only stores up to `subParamsLength` sub parameters, any later
    * sub parameter will be ignored.
    */
@@ -198,9 +198,8 @@ export class Params implements IParams {
   }
 
   /**
-   * Return all kown sub parameters as {idx: subparams} mapping.
-   * Note: The values are not borrowed, thus it is safe to hold
-   * them without copying.
+   * Return all sub parameters as {idx: subparams} mapping.
+   * Note: The values are not borrowed.
    */
   public getSubParamsAll(): {[idx: number]: Int32Array} {
     const result: {[idx: number]: Int32Array} = {};
