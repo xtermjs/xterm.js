@@ -5,8 +5,16 @@
 
 import { ICoreService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { IDecPrivateModes } from 'common/Types';
+import { clone } from 'common/Clone';
+
+const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
+  applicationCursorKeys: false
+});
 
 export class CoreService implements ICoreService {
+  public decPrivateModes: IDecPrivateModes;
+
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
   private _onUserInput = new EventEmitter<void>();
@@ -18,6 +26,11 @@ export class CoreService implements ICoreService {
     private readonly _bufferService: IBufferService,
     private readonly _optionsService: IOptionsService
   ) {
+    this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+  }
+
+  public reset(): void {
+    this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {

@@ -3,16 +3,14 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
-import { ISelectionManager, ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
-import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService, ISelectionService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -62,20 +60,20 @@ export const enum SelectionMode {
 
 /**
  * A class that manages the selection of the terminal. With help from
- * SelectionModel, SelectionManager handles with all logic associated with
+ * SelectionModel, SelectionService handles with all logic associated with
  * dealing with the selection, including handling mouse interaction, wide
  * characters and fetching the actual text within the selection. Rendering is
- * not handled by the SelectionManager but the onRedrawRequest event is fired
+ * not handled by the SelectionService but the onRedrawRequest event is fired
  * when the selection is ready to be redrawn (on an animation frame).
  */
-export class SelectionManager implements ISelectionManager {
+export class SelectionService implements ISelectionService {
   protected _model: SelectionModel;
 
   /**
    * The amount to scroll every drag scroll update (depends on how far the mouse
    * drag is above or below the terminal).
    */
-  private _dragScrollAmount: number;
+  private _dragScrollAmount: number = 0;
 
   /**
    * The current selection mode.
@@ -86,12 +84,12 @@ export class SelectionManager implements ISelectionManager {
    * A setInterval timer that is active while the mouse is down whose callback
    * scrolls the viewport when necessary.
    */
-  private _dragScrollIntervalTimer: NodeJS.Timer;
+  private _dragScrollIntervalTimer: number | undefined;
 
   /**
    * The animation frame ID used for refreshing the selection.
    */
-  private _refreshAnimationFrame: number;
+  private _refreshAnimationFrame: number | undefined;
 
   /**
    * Whether selection is enabled.
@@ -103,7 +101,7 @@ export class SelectionManager implements ISelectionManager {
   private _trimListener: IDisposable;
   private _workCell: CellData = new CellData();
 
-  private _mouseDownTimeStamp: number;
+  private _mouseDownTimeStamp: number = 0;
 
   private _onLinuxMouseSelection = new EventEmitter<string>();
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
@@ -113,7 +111,8 @@ export class SelectionManager implements ISelectionManager {
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(
-    private readonly _terminal: ITerminal,
+    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
+    private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _charSizeService: ICharSizeService,
     private readonly _bufferService: IBufferService,
@@ -121,7 +120,17 @@ export class SelectionManager implements ISelectionManager {
     private readonly _mouseService: IMouseService,
     private readonly _optionsService: IOptionsService
   ) {
-    this._initListeners();
+    // Init listeners
+    this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
+    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._coreService.onUserInput(() => {
+      if (this.hasSelection) {
+        this.clearSelection();
+      }
+    });
+    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
+    this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
+
     this.enable();
 
     this._model = new SelectionModel(this._bufferService);
@@ -132,23 +141,8 @@ export class SelectionManager implements ISelectionManager {
     this._removeMouseDownListeners();
   }
 
-  /**
-   * Initializes listener variables.
-   */
-  private _initListeners(): void {
-    this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
-    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-    this._coreService.onUserInput(() => {
-      if (this.hasSelection) {
-        this.clearSelection();
-      }
-    });
-    this.initBuffersListeners();
-  }
-
-  public initBuffersListeners(): void {
-    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
+  public reset(): void {
+    this.clearSelection();
   }
 
   /**
@@ -167,8 +161,8 @@ export class SelectionManager implements ISelectionManager {
     this._enabled = true;
   }
 
-  public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }
-  public get selectionEnd(): [number, number] { return this._model.finalSelectionEnd; }
+  public get selectionStart(): [number, number] | undefined { return this._model.finalSelectionStart; }
+  public get selectionEnd(): [number, number] | undefined { return this._model.finalSelectionEnd; }
 
   /**
    * Gets whether there is an active text selection.
@@ -214,7 +208,7 @@ export class SelectionManager implements ISelectionManager {
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
         const bufferLine = buffer.lines.get(i);
         const lineText = buffer.translateBufferLineToString(i, true);
-        if (bufferLine.isWrapped) {
+        if (bufferLine!.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -225,7 +219,7 @@ export class SelectionManager implements ISelectionManager {
       if (start[1] !== end[1]) {
         const bufferLine = buffer.lines.get(end[1]);
         const lineText = buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-        if (bufferLine.isWrapped) {
+        if (bufferLine!.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -237,7 +231,7 @@ export class SelectionManager implements ISelectionManager {
     // and joining the array into a multi-line string.
     const formattedResult = result.map(line => {
       return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
-    }).join(Browser.isMSWindows ? '\r\n' : '\n');
+    }).join(Browser.isWindows ? '\r\n' : '\n');
 
     return formattedResult;
   }
@@ -278,7 +272,7 @@ export class SelectionManager implements ISelectionManager {
    * selection state.
    */
   private _refresh(): void {
-    this._refreshAnimationFrame = null;
+    this._refreshAnimationFrame = undefined;
     this._onRedrawRequest.fire({
       start: this._model.finalSelectionStart,
       end: this._model.finalSelectionEnd,
@@ -295,7 +289,7 @@ export class SelectionManager implements ISelectionManager {
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
 
-    if (!start || !end) {
+    if (!start || !end || !coords) {
       return false;
     }
 
@@ -317,7 +311,7 @@ export class SelectionManager implements ISelectionManager {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords, false);
-      this._model.selectionEnd = null;
+      this._model.selectionEnd = undefined;
       this.refresh(true);
     }
   }
@@ -356,10 +350,10 @@ export class SelectionManager implements ISelectionManager {
    * Gets the 0-based [x, y] buffer coordinates of the current mouse event.
    * @param event The mouse event.
    */
-  private _getMouseBufferCoords(event: MouseEvent): [number, number] {
+  private _getMouseBufferCoords(event: MouseEvent): [number, number] | undefined {
     const coords = this._mouseService.getCoords(event, this._screenElement, this._bufferService.cols, this._bufferService.rows, true);
     if (!coords) {
-      return null;
+      return undefined;
     }
 
     // Convert to 0-based
@@ -458,9 +452,11 @@ export class SelectionManager implements ISelectionManager {
    */
   private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
-    this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-    this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
-    this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
+    if (this._screenElement.ownerDocument) {
+      this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+      this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    }
+    this._dragScrollIntervalTimer = window.setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
   /**
@@ -472,7 +468,7 @@ export class SelectionManager implements ISelectionManager {
       this._screenElement.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     }
     clearInterval(this._dragScrollIntervalTimer);
-    this._dragScrollIntervalTimer = null;
+    this._dragScrollIntervalTimer = undefined;
   }
 
   /**
@@ -501,7 +497,7 @@ export class SelectionManager implements ISelectionManager {
     if (!this._model.selectionStart) {
       return;
     }
-    this._model.selectionEnd = null;
+    this._model.selectionEnd = undefined;
 
     // Ensure the line exists
     const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
@@ -565,6 +561,11 @@ export class SelectionManager implements ISelectionManager {
     // to be sent to the pty.
     event.stopImmediatePropagation();
 
+    // Something went wrong
+    if (!this._model.selectionStart) {
+      throw new Error('Selection start position was not set before mousemove event');
+    }
+
     // Record the previous position so we know whether to redraw the selection
     // at the end.
     const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
@@ -606,7 +607,8 @@ export class SelectionManager implements ISelectionManager {
     // have a character.
     const buffer = this._bufferService.buffer;
     if (this._model.selectionEnd[1] < buffer.lines.length) {
-      if (buffer.lines.get(this._model.selectionEnd[1]).hasWidth(this._model.selectionEnd[0]) === 0) {
+      const line = buffer.lines.get(this._model.selectionEnd[1]);
+      if (line && line.hasWidth(this._model.selectionEnd[0]) === 0) {
         this._model.selectionEnd[0]++;
       }
     }
@@ -624,8 +626,11 @@ export class SelectionManager implements ISelectionManager {
    * scrolling of the viewport.
    */
   private _dragScroll(): void {
+    if (!this._model.selectionEnd || !this._model.selectionStart) {
+      return;
+    }
     if (this._dragScrollAmount) {
-      this._terminal.scrollLines(this._dragScrollAmount, false);
+      this._scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
@@ -659,13 +664,13 @@ export class SelectionManager implements ISelectionManager {
       if (event.altKey) {
         const coordinates = this._mouseService.getCoords(
           event,
-          this._terminal.element,
+          this._element,
           this._bufferService.cols,
           this._bufferService.rows,
           false
         );
         if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
-          const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor);
+          const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._coreService.decPrivateModes.applicationCursorKeys);
           this._coreService.triggerDataEvent(sequence, true);
         }
       }
@@ -721,16 +726,16 @@ export class SelectionManager implements ISelectionManager {
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean, followWrappedLinesAbove: boolean = true, followWrappedLinesBelow: boolean = true): IWordPosition {
+  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean, followWrappedLinesAbove: boolean = true, followWrappedLinesBelow: boolean = true): IWordPosition | undefined {
     // Ensure coords are within viewport (eg. not within scroll bar)
     if (coords[0] >= this._bufferService.cols) {
-      return null;
+      return undefined;
     }
 
     const buffer = this._bufferService.buffer;
     const bufferLine = buffer.lines.get(coords[1]);
     if (!bufferLine) {
-      return null;
+      return undefined;
     }
 
     const line = buffer.translateBufferLineToString(coords[1], false);
@@ -837,7 +842,7 @@ export class SelectionManager implements ISelectionManager {
         - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
-      return null;
+      return undefined;
     }
 
     // Recurse upwards if the line is wrapped and the word wraps to the above line

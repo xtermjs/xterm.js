@@ -9,7 +9,6 @@ import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { wcwidth } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { IDisposable } from 'xterm';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
@@ -19,8 +18,9 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'comm
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IAttributeData } from 'common/Types';
+import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService } from 'common/services/Services';
+import { ISelectionService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -112,6 +112,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
+
+  private _selectionService: ISelectionService | undefined;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -296,6 +298,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   public dispose(): void {
     super.dispose();
     this._terminal = null;
+  }
+
+  // TODO: When InputHandler moves into common, browser dependencies need to move out
+  public setBrowserServices(selectionService: ISelectionService): void {
+    this._selectionService = selectionService;
   }
 
   public parse(data: string): void {
@@ -1254,7 +1261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (collect === '?') {
       switch (param) {
         case 1:
-          this._terminal.applicationCursor = true;
+          this._coreService.decPrivateModes.applicationCursorKeys = true;
           break;
         case 2:
           this._terminal.setgCharset(0, DEFAULT_CHARSET);
@@ -1302,8 +1309,8 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.add('enable-mouse-events');
           }
-          if (this._terminal.selectionManager) {
-            this._terminal.selectionManager.disable();
+          if (this._selectionService) {
+            this._selectionService.disable();
           }
           this._terminal.log('Binding to mouse events.');
           break;
@@ -1457,7 +1464,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (collect === '?') {
       switch (param) {
         case 1:
-          this._terminal.applicationCursor = false;
+          this._coreService.decPrivateModes.applicationCursorKeys = false;
           break;
         case 3:
           if (this._terminal.cols === 132 && this._terminal.savedCols) {
@@ -1492,8 +1499,8 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.remove('enable-mouse-events');
           }
-          if (this._terminal.selectionManager) {
-            this._terminal.selectionManager.enable();
+          if (this._selectionService) {
+            this._selectionService.enable();
           }
           break;
         case 1004: // send focusin/focusout events
@@ -1852,7 +1859,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (this._terminal.viewport) {
         this._terminal.viewport.syncScrollArea();
       }
-      this._terminal.applicationCursor = false;
+      this._coreService.decPrivateModes.applicationCursorKeys = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
       this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();

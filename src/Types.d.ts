@@ -10,7 +10,6 @@ import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
-import { ISelectionManager } from 'browser/selection/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -34,7 +33,6 @@ export interface IInputHandlingTerminal {
   glevel: number;
   charsets: ICharset[];
   applicationKeypad: boolean;
-  applicationCursor: boolean;
   originMode: boolean;
   insertMode: boolean;
   wraparoundMode: boolean;
@@ -54,7 +52,6 @@ export interface IInputHandlingTerminal {
   buffers: IBufferSet;
   buffer: IBuffer;
   viewport: IViewport;
-  selectionManager: ISelectionManager;
 
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
@@ -197,7 +194,6 @@ export interface ILinkifierEvent {
 
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
-  selectionManager: ISelectionManager;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
@@ -207,7 +203,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   isFocused: boolean;
   viewport: IViewport;
   bracketedPasteMode: boolean;
-  applicationCursor: boolean;
   optionsService: IOptionsService;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
@@ -349,7 +344,7 @@ export interface IBrowser {
   isMac: boolean;
   isIpad: boolean;
   isIphone: boolean;
-  isMSWindows: boolean;
+  isWindows: boolean;
 }
 
 export interface ISoundManager {
