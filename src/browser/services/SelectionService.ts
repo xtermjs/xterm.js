@@ -506,7 +506,7 @@ export class SelectionService implements ISelectionService {
     }
 
     // Return early if the click event is not in the buffer (eg. in scroll bar)
-    if (line.length >= this._model.selectionStart[0]) {
+    if (line.length === this._model.selectionStart[0]) {
       return;
     }
 
