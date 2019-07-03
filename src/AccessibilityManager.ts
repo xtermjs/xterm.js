@@ -258,7 +258,11 @@ export class AccessibilityManager extends Disposable {
       const posInSet = (buffer.ydisp + i + 1).toString();
       const element = this._rowElements[i];
       if (element) {
-        element.textContent = lineData.length === 0 ? Strings.blankLine : lineData;
+        if (lineData.length === 0) {
+          element.innerHTML = '&nbsp;';
+        } else {
+          element.textContent = lineData;
+        }
         element.setAttribute('aria-posinset', posInSet);
         element.setAttribute('aria-setsize', setSize);
       }
