@@ -38,7 +38,7 @@ export class SearchAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  public dispose(): void {}
+  public dispose(): void { }
 
   /**
    * Find the next instance of the term, then scroll to and select it. If it
@@ -234,7 +234,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
     return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
-        (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
+      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
   }
 
   /**
@@ -373,7 +373,9 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.term.length);
-    terminal.scrollLines(result.row - terminal.buffer.viewportY);
+    let scroll = result.row - terminal.buffer.viewportY;
+    scroll = scroll - Math.floor(terminal.rows / 2);
+    terminal.scrollLines(scroll);
     return true;
   }
 }
