@@ -221,7 +221,8 @@ class DcsDummy implements IDcsHandler {
  * For non ANSI compliant sequences change the transition table with
  * the optional `transitions` contructor argument and
  * reimplement the `parse` method.
- * NOTE: The parameter element notation is currently not supported.
+ * NOTE: Other than the original parser from vt100.net this parser supports
+ * sub parameters in digital parameters separated by colons.
  * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
@@ -399,10 +400,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   /**
    * Parse UTF32 codepoints in `data` up to `length`.
+   *
    * Note: For several actions with high data load the parsing is optimized
    * by using local read ahead loops with hardcoded conditions to
    * avoid costly table lookups. Make sure that any change of table values
-   * will be reflected in the loop conditions as well. Affected states/actions:
+   * will be reflected in the loop conditions as well and vice versa.
+   * Affected states/actions:
    * - GROUND:PRINT
    * - CSI_PARAM:PARAM
    * - DCS_PARAM:PARAM
