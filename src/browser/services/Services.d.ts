@@ -72,3 +72,7 @@ export interface ISelectionService {
   refresh(isLinuxMouseSelection?: boolean): void;
   onMouseDown(event: MouseEvent): void;
 }
+
+export interface ISoundService {
+  playBellSound(): void;
+}
