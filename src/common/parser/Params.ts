@@ -14,23 +14,6 @@ const MAX_SUBPARAMS = 256;
  * This type is used by the parser to accumulate sequence parameters and sub parameters
  * and transmit them to the input handler actions.
  *
- * Usage in action handler:
- *   ```typescript
- *   function handler(params: IParams): void {
- *     for (let i = 0; i < params.length; ++i) {
- *       // get single param
- *       const param = params.params[i];
- *       ...
- *       // check for sub params
- *       if (Params.hasSubParams(i)) {
- *          // get sub params
- *          const subparams = params.getSubParams(i);
- *          ...
- *       }
- *     }
- *   }
- *   ```
- *
  * NOTES:
  *  - params object for action handlers is borrowed, use `.toArray` or `.clone` to get a copy
  *  - never read beyond `params.length - 1` (likely to contain arbitrary data)
