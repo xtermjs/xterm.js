@@ -57,18 +57,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
       new CursorRenderLayer(this._core.screenElement, 3, this._colors)
     ];
     this.dimensions = {
-      scaledCharWidth: null,
-      scaledCharHeight: null,
-      scaledCellWidth: null,
-      scaledCellHeight: null,
-      scaledCharLeft: null,
-      scaledCharTop: null,
-      scaledCanvasWidth: null,
-      scaledCanvasHeight: null,
-      canvasWidth: null,
-      canvasHeight: null,
-      actualCellWidth: null,
-      actualCellHeight: null
+      scaledCharWidth: 0,
+      scaledCharHeight: 0,
+      scaledCellWidth: 0,
+      scaledCellHeight: 0,
+      scaledCharLeft: 0,
+      scaledCharTop: 0,
+      scaledCanvasWidth: 0,
+      scaledCanvasHeight: 0,
+      canvasWidth: 0,
+      canvasHeight: 0,
+      actualCellWidth: 0,
+      actualCellHeight: 0
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
@@ -252,7 +252,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
-      const line = terminal.buffer.lines.get(row);
+      const line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line.get(x);

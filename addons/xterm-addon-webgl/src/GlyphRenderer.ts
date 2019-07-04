@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
+import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
@@ -104,12 +104,16 @@ export class GlyphRenderer {
   ) {
     const gl = this._gl;
 
-    this._program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+    const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    if (program === undefined) {
+      throw new Error('Could not create WebGL program');
+    }
+    this._program = program;
 
     // Uniform locations
-    this._projectionLocation = gl.getUniformLocation(this._program, 'u_projection');
-    this._resolutionLocation = gl.getUniformLocation(this._program, 'u_resolution');
-    this._textureLocation = gl.getUniformLocation(this._program, 'u_texture');
+    this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
+    this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
+    this._textureLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_texture'));
 
     // Create and set the vertex array object
     this._vertexArrayObject = gl.createVertexArray();
@@ -131,7 +135,7 @@ export class GlyphRenderer {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
-    this._attributesBuffer = gl.createBuffer();
+    this._attributesBuffer = throwIfFalsy(gl.createBuffer());
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.OFFSET);
     gl.vertexAttribPointer(VertexAttribLocations.OFFSET, 2, gl.FLOAT, false, BYTES_PER_CELL, 0);
@@ -150,7 +154,7 @@ export class GlyphRenderer {
     gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
     // Setup empty texture atlas
-    this._atlasTexture = gl.createTexture();
+    this._atlasTexture = throwIfFalsy(gl.createTexture());
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -264,7 +268,7 @@ export class GlyphRenderer {
         if (!line) {
           line = terminal.buffer.getLine(row);
         }
-        const chars = line.getCell(x).char;
+        const chars = line!.getCell(x)!.char;
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg, chars);
       } else {
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg);
