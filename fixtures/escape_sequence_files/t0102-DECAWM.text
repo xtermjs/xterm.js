@@ -2,7 +2,7 @@
 efgh
 --------     set: wraparound  ----------------------------------------------abcd
 efgh
---------   unset: no wraparound  -------------------------------------------abcd
+--------   unset: no wraparound  -------------------------------------------abch
    this should be immediately below "no wraparound"
 
 

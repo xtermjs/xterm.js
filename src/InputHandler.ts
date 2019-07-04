@@ -431,12 +431,12 @@ export class InputHandler extends Disposable implements IInputHandler {
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
         } else {
+          buffer.x = cols - 1;
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
             // What to do here? We got a wide char that does not fit into last cell
             continue;
           }
-          // FIXME: Do we have to set buffer.x to cols - 1, if not wrapping?
         }
       }
 
@@ -2119,7 +2119,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this.cursorPosition([1, 1]);
     for (let yOffset = 0; yOffset < this._terminal.rows; ++yOffset) {
-      let row = buffer.y + buffer.ybase + yOffset;
+      const row = buffer.y + buffer.ybase + yOffset;
       buffer.lines.get(row).fill(cell);
       buffer.lines.get(row).isWrapped = false;
     }
