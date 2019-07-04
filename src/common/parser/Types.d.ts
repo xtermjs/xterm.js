@@ -6,18 +6,18 @@
 import { IDisposable } from 'common/Types';
 import { ParserState } from 'common/parser/Constants';
 
-/**
- * Params types.
- */
+/** sequence params serialized to js arrays */
+export type ParamsArray = (number | number[])[];
+
+/** Params constructor type. */
 export interface IParamsConstructor {
   new(maxLength: number, maxSubParamsLength: number): IParams;
 
-  /** create params object from array like [1, [2, 3]] */
-  fromArray(values: (number | number[])[]): IParams;
+  /** create params from ParamsArray */
+  fromArray(values: ParamsArray): IParams;
 }
 
-export type ParamsArray = (number | number[])[];
-
+/** Interface of Params storage class. */
 export interface IParams {
   /** from ctor */
   maxLength: number;
@@ -100,13 +100,14 @@ export interface IEscapeSequenceParser extends IDisposable {
    * It gets reset by the parser for any valid sequence beside REP itself.
    */
   precedingCodepoint: number;
+
   /**
    * Reset the parser to its initial state (handlers are kept).
    */
   reset(): void;
 
   /**
-   * Parse string `data`.
+   * Parse UTF32 codepoints in `data` up to `length`.
    * @param data The data to parse.
    */
   parse(data: Uint32Array, length: number): void;

@@ -216,13 +216,22 @@ class DcsDummy implements IDcsHandler {
  * EscapeSequenceParser.
  * This class implements the ANSI/DEC compatible parser described by
  * Paul Williams (https://vt100.net/emu/dec_ansi_parser).
+ *
  * To implement custom ANSI compliant escape sequences it is not needed to
  * alter this parser, instead consider registering a custom handler.
  * For non ANSI compliant sequences change the transition table with
  * the optional `transitions` contructor argument and
  * reimplement the `parse` method.
- * NOTE: Other than the original parser from vt100.net this parser supports
- * sub parameters in digital parameters separated by colons.
+ *
+ * This parser is currently hardcoded to operate in ZDM (Zero Default Mode)
+ * as suggested by the original parser, thus empty parameters are set to 0.
+ * This this is not in line with the latest ECMA specification
+ * (ZDM was part of the early specs and got completely removed later on).
+ *
+ * Other than the original parser from vt100.net this parser supports
+ * sub parameters in digital parameters separated by colons. Empty sub parameters
+ * are set to -1.
+ *
  * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
@@ -261,7 +270,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.currentState = this.initialState;
     this._osc = '';
     this._params = new Params(); // defaults to 32 storable params/subparams
-    this._params.addParam(0);
+    this._params.addParam(0);    // ZDM
     this._collect = '';
     this.precedingCodepoint = 0;
 
@@ -392,7 +401,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.currentState = this.initialState;
     this._osc = '';
     this._params.reset();
-    this._params.addParam(0);
+    this._params.addParam(0); // ZDM
     this._collect = '';
     this._activeDcsHandler = null;
     this.precedingCodepoint = 0;
@@ -502,7 +511,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           do {
             switch (code) {
               case 0x3b:
-                params.addParam(0);
+                params.addParam(0);  // ZDM
                 isSub = false;
                 break;
               case 0x3a:
@@ -528,7 +537,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.CLEAR:
           osc = '';
           params.reset();
-          params.addParam(0);
+          params.addParam(0); // ZDM
           collect = '';
           break;
         case ParserAction.DCS_HOOK:
@@ -558,7 +567,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           osc = '';
           params.reset();
-          params.addParam(0);
+          params.addParam(0); // ZDM
           collect = '';
           break;
         case ParserAction.OSC_START:
@@ -605,7 +614,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           osc = '';
           params.reset();
-          params.addParam(0);
+          params.addParam(0); // ZDM
           collect = '';
           break;
       }

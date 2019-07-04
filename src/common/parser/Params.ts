@@ -22,6 +22,11 @@ const MAX_SUBPARAMS = 256;
  *    - max. value for a single (sub) param is 2^31 - 1 (greater values are clamped to that)
  *    - max. 256 sub params possible
  *    - negative values are not allowed beside -1 (placeholder for default value)
+ *
+ * About ZDM (Zero Default Mode):
+ * ZDM is not orchestrated by this class. If the parser is in ZDM,
+ * it should add 0 for empty params, otherwise -1. This does not apply
+ * to subparams, empty subparams should always be added with -1.
  */
 export class Params implements IParams {
   // params store and length
