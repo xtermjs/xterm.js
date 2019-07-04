@@ -346,10 +346,6 @@ export interface IBrowser {
   isWindows: boolean;
 }
 
-export interface ISoundManager {
-  playBellSound(): void;
-}
-
 export interface IMouseZoneManager extends IDisposable {
   add(zone: IMouseZone): void;
   clearAll(start?: number, end?: number): void;

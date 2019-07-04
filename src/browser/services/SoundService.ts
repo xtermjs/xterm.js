@@ -3,35 +3,36 @@
  * @license MIT
  */
 
-import { ITerminal, ISoundManager } from './Types';
+import { IOptionsService } from 'common/services/Services';
+import { ISoundService } from 'browser/services/Services';
 
-export class SoundManager implements ISoundManager {
+export class SoundService implements ISoundService {
   private static _audioContext: AudioContext;
 
   static get audioContext(): AudioContext | null {
-    if (!SoundManager._audioContext) {
+    if (!SoundService._audioContext) {
       const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
       if (!audioContextCtor) {
         console.warn('Web Audio API is not supported by this browser. Consider upgrading to the latest version');
         return null;
       }
-      SoundManager._audioContext = new audioContextCtor();
+      SoundService._audioContext = new audioContextCtor();
     }
-    return SoundManager._audioContext;
+    return SoundService._audioContext;
   }
 
   constructor(
-    private _terminal: ITerminal
+    private _optionsService: IOptionsService
   ) {
   }
 
   public playBellSound(): void {
-    const ctx = SoundManager.audioContext;
+    const ctx = SoundService.audioContext;
     if (!ctx) {
       return;
     }
     const bellAudioSource = ctx.createBufferSource();
-    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
+    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._optionsService.options.bellSound)), (buffer) => {
       bellAudioSource.buffer = buffer;
       bellAudioSource.connect(ctx.destination);
       bellAudioSource.start(0);
