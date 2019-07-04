@@ -66,8 +66,8 @@ export class RectangleRenderer {
   private _resolutionLocation: WebGLUniformLocation;
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
-  private _bgFloat: Float32Array;
-  private _selectionFloat: Float32Array;
+  private _bgFloat!: Float32Array;
+  private _selectionFloat!: Float32Array;
 
   private _vertices: IVertices = {
     count: 0,

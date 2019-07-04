@@ -27,7 +27,7 @@ export const INDICIES_PER_CELL = 4;
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _charAtlas: WebglCharAtlas;
+  private _charAtlas: WebglCharAtlas | undefined;
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();

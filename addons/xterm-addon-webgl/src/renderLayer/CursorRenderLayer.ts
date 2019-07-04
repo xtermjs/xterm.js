@@ -26,7 +26,7 @@ const BLINK_INTERVAL = 600;
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (terminal: Terminal, x: number, y: number, cell: ICellData) => void};
-  private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
   private _cell: ICellData = new CellData();
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {

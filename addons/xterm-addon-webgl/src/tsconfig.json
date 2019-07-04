@@ -15,7 +15,7 @@
       "common/*": [ "../../../src/common/*" ],
       "browser/*": [ "../../../src/browser/*" ]
     },
-    "strictNullChecks": true
+    "strict": true
   },
   "include": [
     "./**/*",

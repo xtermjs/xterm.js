@@ -75,7 +75,7 @@ const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
 export class GlyphRenderer {
-  private _atlas: WebglCharAtlas;
+  private _atlas: WebglCharAtlas | undefined;
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -188,6 +188,9 @@ export class GlyphRenderer {
     }
 
     let rasterizedGlyph: IRasterizedGlyph;
+    if (!this._atlas) {
+      throw new Error('atlas must be set before updating cell');
+    }
     if (chars && chars.length > 1) {
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg);
     } else {

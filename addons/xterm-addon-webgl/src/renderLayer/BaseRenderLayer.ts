@@ -19,7 +19,7 @@ import { throwIfFalsy } from '../WebglUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
-  protected _ctx: CanvasRenderingContext2D;
+  protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
   private _scaledCharHeight: number = 0;
   private _scaledCellWidth: number = 0;
@@ -27,7 +27,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: WebglCharAtlas;
+  protected _charAtlas: WebglCharAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
