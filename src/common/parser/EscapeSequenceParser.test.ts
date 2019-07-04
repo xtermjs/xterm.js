@@ -574,7 +574,6 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(parser.currentState).equal(ParserState.CSI_PARAM);
       parser.reset();
     });
-    /*
     it('trans CSI_PARAM --> CSI_IGNORE', function (): void {
       parser.reset();
       const chars = ['\x3c', '\x3d', '\x3e', '\x3f'];
@@ -586,7 +585,6 @@ describe('EscapeSequenceParser', function (): void {
         parser.reset();
       }
     });
-    */
     it('trans CSI_PARAM --> CSI_IGNORE', function (): void {
       parser.reset();
       const chars = ['\x3c', '\x3d', '\x3e', '\x3f'];
@@ -595,7 +593,7 @@ describe('EscapeSequenceParser', function (): void {
         parser.currentState = ParserState.CSI_PARAM;
         parse(parser, '\x3b' + chars[i]);
         chai.expect(parser.currentState).equal(ParserState.CSI_IGNORE);
-        // chai.expect(parser.params).eql([0, 0]);
+        chai.expect(parser.params).eql([0, 0]);
         parser.reset();
       }
     });
