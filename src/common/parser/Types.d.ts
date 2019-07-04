@@ -16,6 +16,8 @@ export interface IParamsConstructor {
   fromArray(values: (number | number[])[]): IParams;
 }
 
+export type ParamsArray = (number | number[])[];
+
 export interface IParams {
   /** from ctor */
   maxLength: number;
@@ -27,7 +29,7 @@ export interface IParams {
 
   /** methods */
   clone(): IParams;
-  toArray(): (number | number[])[];
+  toArray(): ParamsArray;
   reset(): void;
   addParam(value: number): void;
   addSubParam(value: number): void;

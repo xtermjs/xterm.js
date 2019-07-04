@@ -3,14 +3,13 @@
  * @license MIT
  */
 
-import { IDcsHandler, IParsingState, IParams } from 'common/parser/Types';
+import { IDcsHandler, IParsingState, IParams, ParamsArray } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
 
-type ParamsArray = (number | number[])[];
 
 function r(a: number, b: number): string[] {
   let c = b - a;
@@ -30,7 +29,7 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
     this._osc = value;
   }
   public get params(): ParamsArray {
-    return this._params.toArray() as ParamsArray;
+    return this._params.toArray();
   }
   public set params(value: ParamsArray) {
     this._params = Params.fromArray(value);

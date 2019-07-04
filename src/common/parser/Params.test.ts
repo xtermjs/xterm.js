@@ -4,6 +4,7 @@
  */
 import { assert } from 'chai';
 import { Params } from 'common/parser/Params';
+import { ParamsArray } from 'common/parser/Types';
 
 class TestParams extends Params {
   public get subParams(): Int32Array {
@@ -108,7 +109,7 @@ describe('Params', () => {
     assert.deepEqual(params.toArray(), [1, [2, 3], 12345, [-1]]);
   });
   it('Params.fromArray --> toArray', () => {
-    let data: (number | number[])[] = [];
+    let data: ParamsArray = [];
     assert.deepEqual(Params.fromArray(data).toArray(), data);
     data = [1, [2, 3], 12345, [-1]];
     assert.deepEqual(Params.fromArray(data).toArray(), data);

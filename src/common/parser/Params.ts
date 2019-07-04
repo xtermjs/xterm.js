@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IParams } from 'common/parser/Types';
+import { IParams, ParamsArray } from 'common/parser/Types';
 
 // max value supported for a single param/subparam (clamped to positive int32 range)
 const MAX_VALUE = 0x7FFFFFFF;
@@ -57,7 +57,7 @@ export class Params implements IParams {
   /**
    * Create a `Params` type from JS array representation.
    */
-  public static fromArray(values: (number | number[])[]): Params {
+  public static fromArray(values: ParamsArray): Params {
     const params = new Params();
     if (!values.length) {
       return params;
@@ -112,8 +112,8 @@ export class Params implements IParams {
    *    sequence: "1;2:3:4;5::6"
    *    array   : [1, 2, [3, 4], 5, [-1, 6]]
    */
-  public toArray(): (number | number[])[] {
-    const res: (number | number[])[] = [];
+  public toArray(): ParamsArray {
+    const res: ParamsArray = [];
     for (let i = 0; i < this.length; ++i) {
       res.push(this.params[i]);
       const start = this._subParamsIdx[i] >> 8;
