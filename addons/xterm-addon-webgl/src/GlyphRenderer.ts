@@ -165,7 +165,7 @@ export class GlyphRenderer {
   }
 
   public beginFrame(): boolean {
-    return this._atlas.beginFrame();
+    return this._atlas ? this._atlas.beginFrame() : true;
   }
 
   public updateCell(x: number, y: number, code: number, attr: number, bg: number, fg: number, chars: string): void {
