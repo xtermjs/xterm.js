@@ -15,7 +15,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from '
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService } from 'common/services/Services';
@@ -280,6 +280,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._parser.setEscHandler('.' + flag, () => this.selectCharset('.' + flag));
       this._parser.setEscHandler('/' + flag, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
+    this._parser.setEscHandler('#8', () => this.screenAlignmentPattern());
 
     /**
      * error handler
@@ -2099,5 +2100,31 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setgLevel(level: number): void {
     this._terminal.setgLevel(level);  // TODO: save to move from terminal?
+  }
+
+  /**
+   * ESC # 8
+   *   DEC mnemonic: DECALN (https://vt100.net/docs/vt510-rm/DECALN.html)
+   *   This control function fills the complete screen area with
+   *   a test pattern (E) used for adjusting screen alignment.
+   */
+  public screenAlignmentPattern(): void {
+    // prepare cell data
+    const cell = new CellData();
+    cell.content = 1 << Content.WIDTH_SHIFT | 'E'.charCodeAt(0);
+    cell.fg = this._terminal.curAttrData.fg;
+    cell.bg = this._terminal.curAttrData.bg;
+
+    const buffer = this._terminal.buffer;
+
+    this.cursorPosition([1, 1]);
+    for (let yOffset = 0; yOffset < this._terminal.rows; ++yOffset) {
+      let row = buffer.y + buffer.ybase + yOffset;
+      buffer.lines.get(row).fill(cell);
+      buffer.lines.get(row).isWrapped = false;
+    }
+    this._terminal.updateRange(0);
+    this._terminal.updateRange(this._terminal.rows);
+    this.cursorPosition([1, 1]);
   }
 }

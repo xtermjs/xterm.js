@@ -168,6 +168,7 @@ export interface IInputHandler {
       ESC |
       ESC }
       ESC ~ */ setgLevel(level: number): void;
+  /** ESC # 8 */ screenAlignmentPattern(): void;
 }
 
 export interface ILinkMatcher {
