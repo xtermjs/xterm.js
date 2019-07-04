@@ -105,20 +105,53 @@ if (os.platform() !== 'win32') {
     // omit stack trace for escape sequence files
     Error.stackTraceLimit = 0;
     const files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
-    // for (let i = 0; i < files.length; ++i) console.debug(i, files[i]);
     // only successful tests for now
-    const skip = [
-      10, 16, 17, 19, 32, 34, 35, 36, 39,
-      40, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-      51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
-      63, 68
+    const skipFilename = [
+      // 't0008-BS.in',
+      // 't0014-CAN.in',
+      // 't0015-SUB.in',
+      // 't0017-SD.in',
+      // 't0035-HVP.in',
+      // 't0050-ICH.in',
+      // 't0051-IL.in',
+      // 't0052-DL.in',
+      // 't0055-EL.in',
+      't0056-ED.in',
+      't0060-DECSC.in',
+      't0061-CSI_s.in',
+      't0070-DECSTBM_LF.in',
+      't0071-DECSTBM_IND.in',
+      't0072-DECSTBM_NEL.in',
+      't0074-DECSTBM_SU_SD.in',
+      't0075-DECSTBM_CUU_CUD.in',
+      't0076-DECSTBM_IL_DL.in',
+      't0077-DECSTBM_quirks.in',
+      't0080-HT.in',
+      't0082-HTS.in',
+      't0083-CHT.in',
+      't0084-CBT.in',
+      // 't0090-alt_screen.in',
+      't0091-alt_screen_ED3.in',
+      // 't0092-alt_screen_DECSC.in',
+      // 't0100-IRM.in',
+      't0101-NLM.in',
+      't0103-reverse_wrap.in',
+      't0504-vim.in'
     ];
-    // These are failing on macOS only
     if (os.platform() === 'darwin') {
-      skip.push(3, 7, 11, 67);
+      // These are failing on macOS only
+      skipFilename.push(
+        't0003-line_wrap.in',
+        't0005-CR.in',
+        't0009-NEL.in',
+        't0503-zsh_ls_color.in'
+      );
     }
     for (let i = 0; i < files.length; i++) {
-      if (skip.indexOf(i) >= 0) {
+      // if (skip.indexOf(i) >= 0) {
+      //   continue;
+      // }
+      if (skipFilename.indexOf(files[i].split('/').slice(-1)[0]) >= 0) {
         continue;
       }
       ((filename: string) => {

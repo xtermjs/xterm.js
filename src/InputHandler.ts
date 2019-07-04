@@ -540,6 +540,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    */
   public backspace(): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
+    }
     if (this._terminal.buffer.x > 0) {
       this._terminal.buffer.x--;
     }
@@ -580,6 +583,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
+    }
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
@@ -845,6 +851,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    */
   public eraseInLine(params: number[]): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
+    }
     switch (params[0]) {
       case 0:
         this._eraseInBufferLine(this._terminal.buffer.y, this._terminal.buffer.x, this._terminal.cols);
@@ -886,6 +895,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
   }
 
   /**
@@ -916,6 +926,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
   }
 
   /**
@@ -1169,6 +1180,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [1,1]) (HVP).
    */
   public hVPosition(params: number[]): void {
+    if (params.length < 2) {
+      params.push(1);
+    }
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
