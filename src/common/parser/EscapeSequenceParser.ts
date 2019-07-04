@@ -469,7 +469,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               currentState,
               osc,
               collect,
-              params: params,
+              params,
               abort: false
             });
           if (inject.abort) return;
