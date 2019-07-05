@@ -554,6 +554,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
@@ -746,6 +749,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
   public cursorForwardTab(params: number[]): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
     let param = params[0] || 1;
     while (param--) {
       this._terminal.buffer.x = this._terminal.buffer.nextStop();
