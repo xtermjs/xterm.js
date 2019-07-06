@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
+import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
@@ -66,8 +66,8 @@ export class RectangleRenderer {
   private _resolutionLocation: WebGLUniformLocation;
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
-  private _bgFloat: Float32Array;
-  private _selectionFloat: Float32Array;
+  private _bgFloat!: Float32Array;
+  private _selectionFloat!: Float32Array;
 
   private _vertices: IVertices = {
     count: 0,
@@ -83,11 +83,11 @@ export class RectangleRenderer {
   ) {
     const gl = this._gl;
 
-    this._program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
 
     // Uniform locations
-    this._resolutionLocation = gl.getUniformLocation(this._program, 'u_resolution');
-    this._projectionLocation = gl.getUniformLocation(this._program, 'u_projection');
+    this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
+    this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
 
     // Create and set the vertex array object
     this._vertexArrayObject = gl.createVertexArray();
@@ -109,7 +109,7 @@ export class RectangleRenderer {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
-    this._attributesBuffer = gl.createBuffer();
+    this._attributesBuffer = throwIfFalsy(gl.createBuffer());
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.POSITION);
     gl.vertexAttribPointer(VertexAttribLocations.POSITION, 2, gl.FLOAT, false, BYTES_PER_RECTANGLE, 0);

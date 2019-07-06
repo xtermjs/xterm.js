@@ -12,7 +12,7 @@ import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
-  private _state: ILinkifierEvent = null;
+  private _state: ILinkifierEvent | undefined;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
     super(container, 'link', zIndex, true, colors);
@@ -23,7 +23,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
-    this._state = null;
+    this._state = undefined;
   }
 
   public reset(terminal: Terminal): void {
@@ -38,7 +38,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
         this._clearCells(0, this._state.y1 + 1, this._state.cols, middleRowCount);
       }
       this._clearCells(0, this._state.y2, this._state.x2, 1);
-      this._state = null;
+      this._state = undefined;
     }
   }
 
