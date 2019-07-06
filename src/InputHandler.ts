@@ -598,6 +598,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(this._terminal.buffer.y);
   }
 
+  // restrict cursor changes to addressible cols/rows
+  private _restrictCursor(): void {
+    // cols
+    if (this._terminal.buffer.x < 0) {
+      this._terminal.buffer.x = 0;
+    } else if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
+    }
+    // rows
+    if (this._terminal.buffer.y < 0) {
+      this._terminal.buffer.y = 0;
+    } else if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
+    }
+  }
+
   /**
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
@@ -607,10 +623,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y -= param;
-    if (this._terminal.buffer.y < 0) {
-      this._terminal.buffer.y = 0;
-    }
+    this._restrictCursor();
   }
 
   /**
@@ -622,14 +637,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
+    this._restrictCursor();
   }
 
   /**
@@ -641,10 +651,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.x += param;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
   }
 
   /**
@@ -656,49 +665,42 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
+    this._restrictCursor();
     this._terminal.buffer.x -= param;
-    if (this._terminal.buffer.x < 0) {
-      this._terminal.buffer.x = 0;
-    }
+    this._restrictCursor();
   }
 
   /**
    * CSI Ps E
    * Cursor Next Line Ps Times (default = 1) (CNL).
-   * same as CSI Ps B ?
+   * Other than cursorDown (CUD) also set the cursor to first column.
    */
   public cursorNextLine(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
     this._terminal.buffer.x = 0;
+    this._restrictCursor();
   }
 
 
   /**
    * CSI Ps F
-   * Cursor Preceding Line Ps Times (default = 1) (CNL).
-   * reuse CSI Ps A ?
+   * Cursor Previous Line Ps Times (default = 1) (CPL).
+   * Other than cursorUp (CUU) also set the cursor to first column.
    */
   public cursorPrecedingLine(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y -= param;
-    if (this._terminal.buffer.y < 0) {
-      this._terminal.buffer.y = 0;
-    }
     this._terminal.buffer.x = 0;
+    this._restrictCursor();
   }
 
 
@@ -711,7 +713,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.x = param - 1;
+    this._restrictCursor();
   }
 
   /**
@@ -720,7 +724,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorPosition(params: number[]): void {
     let col: number;
-    let row: number = params[0] - 1;
+    const row: number = params[0] - 1;
 
     if (params.length >= 2) {
       col = params[1] - 1;
@@ -728,20 +732,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       col = 0;
     }
 
-    if (row < 0) {
-      row = 0;
-    } else if (row >= this._terminal.rows) {
-      row = this._terminal.rows - 1;
-    }
-
-    if (col < 0) {
-      col = 0;
-    } else if (col >= this._terminal.cols) {
-      col = this._terminal.cols - 1;
-    }
-
+    this._restrictCursor();
     this._terminal.buffer.x = col;
     this._terminal.buffer.y = row;
+    this._restrictCursor();
   }
 
   /**
@@ -1017,32 +1011,31 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm `  Character Position Absolute
    *   [column] (default = [row,1]) (HPA).
+   * Currently same functionality as CHA.
    */
   public charPosAbsolute(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.x = param - 1;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
   }
 
   /**
    * CSI Pm a  Character Position Relative
    *   [columns] (default = [row,col+1]) (HPR)
-   * reuse CSI Ps C ?
+   * Currently same functionality as CUF.
    */
   public hPositionRelative(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.x += param;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
   }
 
   /**
@@ -1155,10 +1148,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y = param - 1;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
+    this._restrictCursor();
   }
 
   /**
@@ -1171,37 +1163,19 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    this._restrictCursor();
     this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
+    this._restrictCursor();
   }
 
   /**
    * CSI Ps ; Ps f
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
+   *   Same as CUP.
    */
   public hVPosition(params: number[]): void {
-    if (params.length < 2) {
-      params.push(1);
-    }
-    if (params[0] < 1) params[0] = 1;
-    if (params[1] < 1) params[1] = 1;
-
-    this._terminal.buffer.y = params[0] - 1;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-
-    this._terminal.buffer.x = params[1] - 1;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this.cursorPosition(params);
   }
 
   /**

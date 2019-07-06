@@ -546,4 +546,343 @@ describe('InputHandler', () => {
       assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [5, 0, 0]);
     });
   });
+  describe('cursor positioning', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 10});
+    });
+    function getCursor(term: TestTerminal): number[] {
+      return [
+        term.buffer.x,
+        term.buffer.y
+      ];
+    }
+    it('cursor forward (CUF)', () => {
+      term.writeSync('\x1b[C');
+      assert.deepEqual(getCursor(term), [1, 0]);
+      term.writeSync('\x1b[1C');
+      assert.deepEqual(getCursor(term), [2, 0]);
+      term.writeSync('\x1b[4C');
+      assert.deepEqual(getCursor(term), [6, 0]);
+      term.writeSync('\x1b[100C');
+      assert.deepEqual(getCursor(term), [9, 0]);
+      // should not change y
+      term.buffer.x = 8;
+      term.buffer.y = 4;
+      term.writeSync('\x1b[C');
+      assert.deepEqual(getCursor(term), [9, 4]);
+    });
+    it('cursor backward (CUB)', () => {
+      term.writeSync('\x1b[D');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1D');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // place cursor at end of first line
+      term.writeSync('\x1b[100C');
+      term.writeSync('\x1b[D');
+      assert.deepEqual(getCursor(term), [8, 0]);
+      term.writeSync('\x1b[1D');
+      assert.deepEqual(getCursor(term), [7, 0]);
+      term.writeSync('\x1b[4D');
+      assert.deepEqual(getCursor(term), [3, 0]);
+      term.writeSync('\x1b[100D');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // should not change y
+      term.buffer.x = 4;
+      term.buffer.y = 4;
+      term.writeSync('\x1b[D');
+      assert.deepEqual(getCursor(term), [3, 4]);
+    });
+    it('cursor down (CUD)', () => {
+      term.writeSync('\x1b[B');
+      assert.deepEqual(getCursor(term), [0, 1]);
+      term.writeSync('\x1b[1B');
+      assert.deepEqual(getCursor(term), [0, 2]);
+      term.writeSync('\x1b[4B');
+      assert.deepEqual(getCursor(term), [0, 6]);
+      term.writeSync('\x1b[100B');
+      assert.deepEqual(getCursor(term), [0, 9]);
+      // should not change x
+      term.buffer.x = 8;
+      term.buffer.y = 0;
+      term.writeSync('\x1b[B');
+      assert.deepEqual(getCursor(term), [8, 1]);
+    });
+    it('cursor up (CUU)', () => {
+      term.writeSync('\x1b[A');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1A');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // place cursor at beginning of last row
+      term.writeSync('\x1b[100B');
+      term.writeSync('\x1b[A');
+      assert.deepEqual(getCursor(term), [0, 8]);
+      term.writeSync('\x1b[1A');
+      assert.deepEqual(getCursor(term), [0, 7]);
+      term.writeSync('\x1b[4A');
+      assert.deepEqual(getCursor(term), [0, 3]);
+      term.writeSync('\x1b[100A');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // should not change x
+      term.buffer.x = 8;
+      term.buffer.y = 9;
+      term.writeSync('\x1b[A');
+      assert.deepEqual(getCursor(term), [8, 8]);
+    });
+    it('cursor next line (CNL)', () => {
+      term.writeSync('\x1b[E');
+      assert.deepEqual(getCursor(term), [0, 1]);
+      term.writeSync('\x1b[1E');
+      assert.deepEqual(getCursor(term), [0, 2]);
+      term.writeSync('\x1b[4E');
+      assert.deepEqual(getCursor(term), [0, 6]);
+      term.writeSync('\x1b[100E');
+      assert.deepEqual(getCursor(term), [0, 9]);
+      // should reset x to zero
+      term.buffer.x = 8;
+      term.buffer.y = 0;
+      term.writeSync('\x1b[E');
+      assert.deepEqual(getCursor(term), [0, 1]);
+    });
+    it('cursor previous line (CPL)', () => {
+      term.writeSync('\x1b[F');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1F');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // place cursor at beginning of last row
+      term.writeSync('\x1b[100E');
+      term.writeSync('\x1b[F');
+      assert.deepEqual(getCursor(term), [0, 8]);
+      term.writeSync('\x1b[1F');
+      assert.deepEqual(getCursor(term), [0, 7]);
+      term.writeSync('\x1b[4F');
+      assert.deepEqual(getCursor(term), [0, 3]);
+      term.writeSync('\x1b[100F');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      // should reset x to zero
+      term.buffer.x = 8;
+      term.buffer.y = 9;
+      term.writeSync('\x1b[F');
+      assert.deepEqual(getCursor(term), [0, 8]);
+    });
+    it('cursor character absolute (CHA)', () => {
+      term.writeSync('\x1b[G');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1G');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[2G');
+      assert.deepEqual(getCursor(term), [1, 0]);
+      term.writeSync('\x1b[5G');
+      assert.deepEqual(getCursor(term), [4, 0]);
+      term.writeSync('\x1b[100G');
+      assert.deepEqual(getCursor(term), [9, 0]);
+    });
+    it('cursor position (CUP)', () => {
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[H');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[1H');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[1;1H');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[8H');
+      assert.deepEqual(getCursor(term), [0, 7]);
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[;8H');
+      assert.deepEqual(getCursor(term), [7, 0]);
+      term.buffer.x = 5;
+      term.buffer.y = 5;
+      term.writeSync('\x1b[100;100H');
+      assert.deepEqual(getCursor(term), [9, 9]);
+    });
+    it('horizontal position absolute (HPA)', () => {
+      term.writeSync('\x1b[`');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1`');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[2`');
+      assert.deepEqual(getCursor(term), [1, 0]);
+      term.writeSync('\x1b[5`');
+      assert.deepEqual(getCursor(term), [4, 0]);
+      term.writeSync('\x1b[100`');
+      assert.deepEqual(getCursor(term), [9, 0]);
+    });
+    it('horizontal position relative (HPR)', () => {
+      term.writeSync('\x1b[a');
+      assert.deepEqual(getCursor(term), [1, 0]);
+      term.writeSync('\x1b[1a');
+      assert.deepEqual(getCursor(term), [2, 0]);
+      term.writeSync('\x1b[4a');
+      assert.deepEqual(getCursor(term), [6, 0]);
+      term.writeSync('\x1b[100a');
+      assert.deepEqual(getCursor(term), [9, 0]);
+      // should not change y
+      term.buffer.x = 8;
+      term.buffer.y = 4;
+      term.writeSync('\x1b[a');
+      assert.deepEqual(getCursor(term), [9, 4]);
+    });
+    it('vertical position absolute (VPA)', () => {
+      term.writeSync('\x1b[d');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[1d');
+      assert.deepEqual(getCursor(term), [0, 0]);
+      term.writeSync('\x1b[2d');
+      assert.deepEqual(getCursor(term), [0, 1]);
+      term.writeSync('\x1b[5d');
+      assert.deepEqual(getCursor(term), [0, 4]);
+      term.writeSync('\x1b[100d');
+      assert.deepEqual(getCursor(term), [0, 9]);
+      // should not change x
+      term.buffer.x = 8;
+      term.buffer.y = 4;
+      term.writeSync('\x1b[d');
+      assert.deepEqual(getCursor(term), [8, 0]);
+    });
+    it('vertical position relative (VPR)', () => {
+      term.writeSync('\x1b[e');
+      assert.deepEqual(getCursor(term), [0, 1]);
+      term.writeSync('\x1b[1e');
+      assert.deepEqual(getCursor(term), [0, 2]);
+      term.writeSync('\x1b[4e');
+      assert.deepEqual(getCursor(term), [0, 6]);
+      term.writeSync('\x1b[100e');
+      assert.deepEqual(getCursor(term), [0, 9]);
+      // should not change x
+      term.buffer.x = 8;
+      term.buffer.y = 4;
+      term.writeSync('\x1b[e');
+      assert.deepEqual(getCursor(term), [8, 5]);
+    });
+    describe('should clamp cursor into addressible range', () => {
+      it('CUF', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[C');
+        assert.deepEqual(getCursor(term), [9, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[C');
+        assert.deepEqual(getCursor(term), [1, 0]);
+      });
+      it('CUB', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[D');
+        assert.deepEqual(getCursor(term), [8, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[D');
+        assert.deepEqual(getCursor(term), [0, 0]);
+      });
+      it('CUD', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[B');
+        assert.deepEqual(getCursor(term), [9, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[B');
+        assert.deepEqual(getCursor(term), [0, 1]);
+      });
+      it('CUU', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[A');
+        assert.deepEqual(getCursor(term), [9, 8]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[A');
+        assert.deepEqual(getCursor(term), [0, 0]);
+      });
+      it('CNL', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[E');
+        assert.deepEqual(getCursor(term), [0, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[E');
+        assert.deepEqual(getCursor(term), [0, 1]);
+      });
+      it('CPL', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[F');
+        assert.deepEqual(getCursor(term), [0, 8]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[F');
+        assert.deepEqual(getCursor(term), [0, 0]);
+      });
+      it('CHA', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[5G');
+        assert.deepEqual(getCursor(term), [4, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[5G');
+        assert.deepEqual(getCursor(term), [4, 0]);
+      });
+      it('CUP', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[5;5H');
+        assert.deepEqual(getCursor(term), [4, 4]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[5;5H');
+        assert.deepEqual(getCursor(term), [4, 4]);
+      });
+      it('HPA', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[5`');
+        assert.deepEqual(getCursor(term), [4, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[5`');
+        assert.deepEqual(getCursor(term), [4, 0]);
+      });
+      it('HPR', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[a');
+        assert.deepEqual(getCursor(term), [9, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[a');
+        assert.deepEqual(getCursor(term), [1, 0]);
+      });
+      it('VPA', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[5d');
+        assert.deepEqual(getCursor(term), [9, 4]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[5d');
+        assert.deepEqual(getCursor(term), [0, 4]);
+      });
+      it('VPR', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[e');
+        assert.deepEqual(getCursor(term), [9, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[e');
+        assert.deepEqual(getCursor(term), [0, 1]);
+      });
+    });
+  });
 });
