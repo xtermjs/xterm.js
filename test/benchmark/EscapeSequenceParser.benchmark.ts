@@ -6,7 +6,7 @@ import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-be
 
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { C0, C1 } from 'common/data/EscapeSequences';
-import { IDcsHandler } from 'common/parser/Types';
+import { IDcsHandler, IParams } from 'common/parser/Types';
 
 
 function toUtf32(s: string): Uint32Array {
@@ -18,7 +18,7 @@ function toUtf32(s: string): Uint32Array {
 }
 
 class DcsHandler implements IDcsHandler {
-  hook(collect: string, params: number[], flag: number) : void {}
+  hook(collect: string, params: IParams, flag: number) : void {}
   put(data: Uint32Array, start: number, end: number) : void {}
   unhook() :void {}
 }

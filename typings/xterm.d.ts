@@ -489,12 +489,14 @@ declare module 'xterm' {
      * final character (e.g "m" for SGR) of the CSI sequence.
      * @param callback The function to handle the escape sequence. The callback
      * is called with the numerical params, as well as the special characters
-     * (e.g. "$" for DECSCPP). Return true if the sequence was handled; false if
+     * (e.g. "$" for DECSCPP). If the sequence has subparams the array will
+     * contain subarrays with their numercial values.
+     * Return true if the sequence was handled; false if
      * we should try a previous handler (set by addCsiHandler or setCsiHandler).
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+    addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable;
 
     /**
      * (EXPERIMENTAL) Adds a handler for OSC escape sequences.
