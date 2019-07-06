@@ -457,10 +457,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.EXECUTE:
-          this.precedingCodepoint = 0;
           callback = this._executeHandlers[code];
           if (callback) callback();
           else this._executeHandlerFb(code);
+          this.precedingCodepoint = 0;
           break;
         case ParserAction.IGNORE:
           break;
@@ -479,10 +479,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // inject values: currently not implemented
           break;
         case ParserAction.CSI_DISPATCH:
-          // dont reset preceding codepoint for REP itself
-          if (code !== 98) { // 'b'
-            this.precedingCodepoint = 0;
-          }
           // Trigger CSI Handler
           const handlers = this._csiHandlers[code];
           let j = handlers ? handlers.length - 1 : -1;
@@ -495,6 +491,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (j < 0) {
             this._csiHandlerFb(collect, params, code);
           }
+          this.precedingCodepoint = 0;
           break;
         case ParserAction.PARAM:
           // inner loop: digits (0x30 - 0x39) and ; (0x3b)
@@ -508,10 +505,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           collect += String.fromCharCode(code);
           break;
         case ParserAction.ESC_DISPATCH:
-          this.precedingCodepoint = 0;
           callback = this._escHandlers[collect + String.fromCharCode(code)];
           if (callback) callback(collect, code);
           else this._escHandlerFb(collect, code);
+          this.precedingCodepoint = 0;
           break;
         case ParserAction.CLEAR:
           osc = '';
@@ -519,7 +516,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           collect = '';
           break;
         case ParserAction.DCS_HOOK:
-          this.precedingCodepoint = 0;
           dcsHandler = this._dcsHandlers[collect + String.fromCharCode(code)];
           if (!dcsHandler) dcsHandler = this._dcsHandlerFb;
           dcsHandler.hook(collect, params, code);
@@ -546,6 +542,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc = '';
           params = [0];
           collect = '';
+          this.precedingCodepoint = 0;
           break;
         case ParserAction.OSC_START:
           osc = '';
@@ -561,7 +558,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.OSC_END:
-          this.precedingCodepoint = 0;
           if (osc && code !== 0x18 && code !== 0x1a) {
             // NOTE: OSC subparsing is not part of the original parser
             // we do basic identifier parsing here to offer a jump table for OSC as well
@@ -592,6 +588,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc = '';
           params = [0];
           collect = '';
+          this.precedingCodepoint = 0;
           break;
       }
       currentState = transition & TableAccess.TRANSITION_STATE_MASK;
