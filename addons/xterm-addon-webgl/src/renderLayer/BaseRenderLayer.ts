@@ -8,17 +8,18 @@ import { ICellData } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from '../atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { BaseCharAtlas } from '../atlas/BaseCharAtlas';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
+import { throwIfFalsy } from '../WebglUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
-  protected _ctx: CanvasRenderingContext2D;
+  protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
   private _scaledCharHeight: number = 0;
   private _scaledCellWidth: number = 0;
@@ -26,7 +27,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: BaseCharAtlas;
+  protected _charAtlas: WebglCharAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
@@ -63,7 +64,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();
@@ -247,115 +248,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
         y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
-  }
-
-  /**
-   * Draws one or more characters at a cell. If possible this will draw using
-   * the character atlas to reduce draw time.
-   * @param terminal The terminal.
-   * @param chars The character or characters.
-   * @param code The character code.
-   * @param width The width of the characters.
-   * @param x The column to draw at.
-   * @param y The row to draw at.
-   * @param fg The foreground color, in the format stored within the attributes.
-   * @param bg The background color, in the format stored within the attributes.
-   * This is used to validate whether a cached image can be used.
-   * @param bold Whether the text is bold.
-   */
-  protected _drawChars(terminal: Terminal, cell: ICellData, x: number, y: number): void {
-
-    // skip cache right away if we draw in RGB
-    // Note: to avoid bad runtime JoinedCellData will be skipped
-    //       in the cache handler itself (atlasDidDraw == false) and
-    //       fall through to uncached later down below
-    if (cell.isFgRGB() || cell.isBgRGB()) {
-      this._drawUncachedChars(terminal, cell, x, y);
-      return;
-    }
-
-    let fg;
-    let bg;
-    if (cell.isInverse()) {
-      fg = (cell.isBgDefault()) ? INVERTED_DEFAULT_COLOR : cell.getBgColor();
-      bg = (cell.isFgDefault()) ? INVERTED_DEFAULT_COLOR : cell.getFgColor();
-    } else {
-      bg = (cell.isBgDefault()) ? DEFAULT_COLOR : cell.getBgColor();
-      fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
-    }
-
-    const drawInBrightColor = terminal.getOption('drawBoldTextInBrightColors') && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
-
-    fg += drawInBrightColor ? 8 : 0;
-    this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
-    this._currentGlyphIdentifier.code = cell.getCode() || WHITESPACE_CELL_CODE;
-    this._currentGlyphIdentifier.bg = bg;
-    this._currentGlyphIdentifier.fg = fg;
-    this._currentGlyphIdentifier.bold = !!cell.isBold();
-    this._currentGlyphIdentifier.dim = !!cell.isDim();
-    this._currentGlyphIdentifier.italic = !!cell.isItalic();
-    const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
-      this._ctx,
-      this._currentGlyphIdentifier,
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop
-    );
-
-    if (!atlasDidDraw) {
-      this._drawUncachedChars(terminal, cell, x, y);
-    }
-  }
-
-  /**
-   * Draws one or more characters at one or more cells. The character(s) will be
-   * clipped to ensure that they fit with the cell(s), including the cell to the
-   * right if the last character is a wide character.
-   * @param terminal The terminal.
-   * @param chars The character.
-   * @param width The width of the character.
-   * @param fg The foreground color, in the format stored within the attributes.
-   * @param x The column to draw at.
-   * @param y The row to draw at.
-   */
-  private _drawUncachedChars(terminal: Terminal, cell: ICellData, x: number, y: number): void {
-    this._ctx.save();
-    this._ctx.font = this._getFont(terminal, !!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = 'middle';
-
-    if (cell.isInverse()) {
-      if (cell.isBgDefault()) {
-        this._ctx.fillStyle = this._colors.background.css;
-      } else if (cell.isBgRGB()) {
-        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
-      } else {
-        this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
-      }
-    } else {
-      if (cell.isFgDefault()) {
-        this._ctx.fillStyle = this._colors.foreground.css;
-      } else if (cell.isFgRGB()) {
-        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-      } else {
-        let fg = cell.getFgColor();
-        if (terminal.getOption('drawBoldTextInBrightColors') && cell.isBold() && fg < 8) {
-          fg += 8;
-        }
-        this._ctx.fillStyle = this._colors.ansi[fg].css;
-      }
-    }
-
-    this._clipRow(terminal, y);
-
-    // Apply alpha to dim the character
-    if (cell.isDim()) {
-      this._ctx.globalAlpha = DIM_OPACITY;
-    }
-    // Draw the character
-    this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
-    this._ctx.restore();
   }
 
   /**
