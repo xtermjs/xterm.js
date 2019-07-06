@@ -598,7 +598,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(this._terminal.buffer.y);
   }
 
-  // restrict cursor changes to addressable cols/rows
+  /**
+   * FIXME:
+   * - create Cursor class living on Buffer
+   * - move these private cursor methods to Cursor class as API
+   */
   private _restrictCursor(): void {
     // cols
     if (this._terminal.buffer.x < 0) {
@@ -614,6 +618,19 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  private _setCursor(x: number, y: number): void {
+    this._terminal.buffer.x = x;
+    this._terminal.buffer.y = y;
+    this._restrictCursor();
+  }
+
+  private _moveCursor(x: number, y: number): void {
+    // for relative changes we have to make sure we are within 0 .. cols/rows - 1
+    // before calculating the new position
+    this._restrictCursor();
+    this._setCursor(this._terminal.buffer.x + x, this._terminal.buffer.y + y);
+  }
+
   /**
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
@@ -623,9 +640,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y -= param;
-    this._restrictCursor();
+    this._moveCursor(0, -param);
   }
 
   /**
@@ -637,9 +652,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y += param;
-    this._restrictCursor();
+    this._moveCursor(0, param);
   }
 
   /**
@@ -651,9 +664,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.x += param;
-    this._restrictCursor();
+    this._moveCursor(param, 0);
   }
 
   /**
@@ -665,9 +676,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.x -= param;
-    this._restrictCursor();
+    this._moveCursor(-param, 0);
   }
 
   /**
@@ -680,10 +689,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y += param;
+    this._moveCursor(0, param);
     this._terminal.buffer.x = 0;
-    this._restrictCursor();
   }
 
 
@@ -697,10 +704,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y -= param;
+    this._moveCursor(0, -param);
     this._terminal.buffer.x = 0;
-    this._restrictCursor();
   }
 
 
@@ -713,9 +718,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.x = param - 1;
-    this._restrictCursor();
+    this._setCursor(param - 1, this._terminal.buffer.y);
   }
 
   /**
@@ -731,11 +734,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       col = 0;
     }
-
-    this._restrictCursor();
-    this._terminal.buffer.x = col;
-    this._terminal.buffer.y = row;
-    this._restrictCursor();
+    this._setCursor(col, row);
   }
 
   /**
@@ -1018,9 +1017,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.x = param - 1;
-    this._restrictCursor();
+    this._setCursor(param - 1, this._terminal.buffer.y);
   }
 
   /**
@@ -1033,9 +1030,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.x += param;
-    this._restrictCursor();
+    this._moveCursor(param, 0);
   }
 
   /**
@@ -1148,9 +1143,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y = param - 1;
-    this._restrictCursor();
+    this._setCursor(this._terminal.buffer.x, param - 1);
   }
 
   /**
@@ -1163,9 +1156,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._restrictCursor();
-    this._terminal.buffer.y += param;
-    this._restrictCursor();
+    this._moveCursor(0, param);
   }
 
   /**
