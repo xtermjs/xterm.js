@@ -34,7 +34,7 @@ import { SelectionService } from './browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './browser/LocalizableStrings';
-import { SoundManager } from './SoundManager';
+import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
@@ -49,13 +49,14 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
+import { IParams } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -116,6 +117,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _mouseService: IMouseService;
   private _renderService: IRenderService;
   private _selectionService: ISelectionService;
+  private _soundService: ISoundService;
 
   // modes
   public applicationKeypad: boolean;
@@ -174,7 +176,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _userScrolling: boolean;
 
   private _inputHandler: InputHandler;
-  public soundManager: SoundManager;
   public linkifier: ILinkifier;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
@@ -304,7 +305,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._selectionService = this._selectionService || null;
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
-    this.soundManager = this.soundManager || new SoundManager(this);
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -619,6 +619,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._renderService.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
+    this._soundService = new SoundService(this.optionsService);
     this._mouseService = new MouseService(this._renderService, this._charSizeService);
 
     this._mouseZoneManager = new MouseZoneManager(this, this._mouseService);
@@ -1413,7 +1414,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+  public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
     return this._inputHandler.addCsiHandler(flag, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
@@ -1676,7 +1677,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   public bell(): void {
     if (this._soundBell()) {
-      this.soundManager.playBellSound();
+      this._soundService.playBellSound();
     }
 
     if (this._visualBell()) {

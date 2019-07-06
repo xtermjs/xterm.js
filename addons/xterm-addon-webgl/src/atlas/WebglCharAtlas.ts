@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
+import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { BaseCharAtlas } from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
+import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { FLAGS } from '../Constants';
+import { IDisposable } from 'xterm';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -42,7 +43,9 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
 
-export class WebglCharAtlas extends BaseCharAtlas {
+export class WebglCharAtlas implements IDisposable {
+  private _didWarmUp: boolean = false;
+
   private _cacheMap: { [code: number]: IRasterizedGlyphSet } = {};
   private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
 
@@ -67,20 +70,18 @@ export class WebglCharAtlas extends BaseCharAtlas {
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
-    super();
-
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
     this.cacheCanvas.height = TEXTURE_HEIGHT;
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
-    this._cacheCtx = this.cacheCanvas.getContext('2d', {alpha: true});
+    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', {alpha: true}));
 
     this._tmpCanvas = document.createElement('canvas');
     this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCtx = this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency});
+    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
 
     // This is useful for debugging
     document.body.appendChild(this.cacheCanvas);
@@ -89,6 +90,13 @@ export class WebglCharAtlas extends BaseCharAtlas {
   public dispose(): void {
     if (this.cacheCanvas.parentElement) {
       this.cacheCanvas.parentElement.removeChild(this.cacheCanvas);
+    }
+  }
+
+  public warmUp(): void {
+    if (!this._didWarmUp) {
+      this._doWarmUp();
+      this._didWarmUp = true;
     }
   }
 
@@ -144,15 +152,6 @@ export class WebglCharAtlas extends BaseCharAtlas {
       rasterizedGlyphSet[attr] = rasterizedGlyph;
     }
     return rasterizedGlyph;
-  }
-
-  public draw(
-    ctx: CanvasRenderingContext2D,
-    glyph: IGlyphIdentifier,
-    x: number,
-    y: number
-  ): boolean {
-    throw new Error('WebglCharAtlas is only compatible with the webgl renderer');
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {

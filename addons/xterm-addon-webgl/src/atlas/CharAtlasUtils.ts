@@ -6,16 +6,21 @@
 import { ICharAtlasConfig } from './Types';
 import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { Terminal, FontWeight } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IColor } from 'browser/Types';
+
+const NULL_COLOR: IColor = {
+  css: '',
+  rgba: 0
+};
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
     background: colors.background,
-    cursor: null,
-    cursorAccent: null,
-    selection: null,
+    cursor: NULL_COLOR,
+    cursorAccent: NULL_COLOR,
+    selection: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice()

@@ -11,6 +11,7 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
+import { IParams } from 'common/parser/Types';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -56,8 +57,8 @@ export class Terminal implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
-  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
-    return this._core.addCsiHandler(flag, callback);
+  public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
+    return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._core.addOscHandler(ident, callback);

@@ -15,6 +15,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
+import { IParams } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
@@ -71,7 +72,7 @@ export class MockTerminal implements ITerminal {
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
       throw new Error('Method not implemented.');
   }
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {

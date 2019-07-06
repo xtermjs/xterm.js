@@ -3,18 +3,19 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 import { fill } from 'common/TypedArrayUtils';
+import { Params } from 'common/parser/Params';
 
 interface IHandlerCollection<T> {
   [key: string]: T[];
 }
 
-type CsiHandler = (params: number[], collect: string) => boolean | void;
+type CsiHandler = (params: IParams, collect: string) => boolean | void;
 type OscHandler = (data: string) => boolean | void;
 
 /**
@@ -143,17 +144,14 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   // csi entries
   table.add(0x5b, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.CSI_ENTRY);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_ENTRY, ParserAction.CSI_DISPATCH, ParserState.GROUND);
-  table.addMany(r(0x30, 0x3a), ParserState.CSI_ENTRY, ParserAction.PARAM, ParserState.CSI_PARAM);
-  table.add(0x3b, ParserState.CSI_ENTRY, ParserAction.PARAM, ParserState.CSI_PARAM);
+  table.addMany(r(0x30, 0x3c), ParserState.CSI_ENTRY, ParserAction.PARAM, ParserState.CSI_PARAM);
   table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.CSI_ENTRY, ParserAction.COLLECT, ParserState.CSI_PARAM);
-  table.addMany(r(0x30, 0x3a), ParserState.CSI_PARAM, ParserAction.PARAM, ParserState.CSI_PARAM);
-  table.add(0x3b, ParserState.CSI_PARAM, ParserAction.PARAM, ParserState.CSI_PARAM);
+  table.addMany(r(0x30, 0x3c), ParserState.CSI_PARAM, ParserAction.PARAM, ParserState.CSI_PARAM);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_PARAM, ParserAction.CSI_DISPATCH, ParserState.GROUND);
-  table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], ParserState.CSI_PARAM, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+  table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.CSI_PARAM, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.addMany(r(0x20, 0x40), ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.add(0x7f, ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.GROUND);
-  table.add(0x3a, ParserState.CSI_ENTRY, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.addMany(r(0x20, 0x30), ParserState.CSI_ENTRY, ParserAction.COLLECT, ParserState.CSI_INTERMEDIATE);
   table.addMany(r(0x20, 0x30), ParserState.CSI_INTERMEDIATE, ParserAction.COLLECT, ParserState.CSI_INTERMEDIATE);
   table.addMany(r(0x30, 0x40), ParserState.CSI_INTERMEDIATE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
@@ -173,9 +171,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.add(0x7f, ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_ENTRY);
   table.addMany(r(0x1c, 0x20), ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_ENTRY);
   table.addMany(r(0x20, 0x30), ParserState.DCS_ENTRY, ParserAction.COLLECT, ParserState.DCS_INTERMEDIATE);
-  table.add(0x3a, ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_IGNORE);
-  table.addMany(r(0x30, 0x3a), ParserState.DCS_ENTRY, ParserAction.PARAM, ParserState.DCS_PARAM);
-  table.add(0x3b, ParserState.DCS_ENTRY, ParserAction.PARAM, ParserState.DCS_PARAM);
+  table.addMany(r(0x30, 0x3c), ParserState.DCS_ENTRY, ParserAction.PARAM, ParserState.DCS_PARAM);
   table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.DCS_ENTRY, ParserAction.COLLECT, ParserState.DCS_PARAM);
   table.addMany(EXECUTABLES, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
   table.addMany(r(0x20, 0x80), ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
@@ -183,9 +179,8 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.addMany(EXECUTABLES, ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
   table.add(0x7f, ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
   table.addMany(r(0x1c, 0x20), ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
-  table.addMany(r(0x30, 0x3a), ParserState.DCS_PARAM, ParserAction.PARAM, ParserState.DCS_PARAM);
-  table.add(0x3b, ParserState.DCS_PARAM, ParserAction.PARAM, ParserState.DCS_PARAM);
-  table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+  table.addMany(r(0x30, 0x3c), ParserState.DCS_PARAM, ParserAction.PARAM, ParserState.DCS_PARAM);
+  table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_IGNORE);
   table.addMany(r(0x20, 0x30), ParserState.DCS_PARAM, ParserAction.COLLECT, ParserState.DCS_INTERMEDIATE);
   table.addMany(EXECUTABLES, ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_INTERMEDIATE);
   table.add(0x7f, ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_INTERMEDIATE);
@@ -212,7 +207,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  * Dummy DCS handler as default fallback.
  */
 class DcsDummy implements IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void { }
+  hook(collect: string, params: IParams, flag: number): void { }
   put(data: Uint32Array, start: number, end: number): void { }
   unhook(): void { }
 }
@@ -221,12 +216,22 @@ class DcsDummy implements IDcsHandler {
  * EscapeSequenceParser.
  * This class implements the ANSI/DEC compatible parser described by
  * Paul Williams (https://vt100.net/emu/dec_ansi_parser).
+ *
  * To implement custom ANSI compliant escape sequences it is not needed to
  * alter this parser, instead consider registering a custom handler.
  * For non ANSI compliant sequences change the transition table with
  * the optional `transitions` contructor argument and
  * reimplement the `parse` method.
- * NOTE: The parameter element notation is currently not supported.
+ *
+ * This parser is currently hardcoded to operate in ZDM (Zero Default Mode)
+ * as suggested by the original parser, thus empty parameters are set to 0.
+ * This this is not in line with the latest ECMA specification
+ * (ZDM was part of the early specs and got completely removed later on).
+ *
+ * Other than the original parser from vt100.net this parser supports
+ * sub parameters in digital parameters separated by colons. Empty sub parameters
+ * are set to -1.
+ *
  * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
@@ -236,7 +241,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   // buffers over several parse calls
   protected _osc: string;
-  protected _params: number[];
+  protected _params: Params;
   protected _collect: string;
 
   // handler lookup containers
@@ -252,7 +257,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // fallback handlers
   protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
-  protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
+  protected _csiHandlerFb: (collect: string, params: IParams, flag: number) => void;
   protected _escHandlerFb: (collect: string, flag: number) => void;
   protected _oscHandlerFb: (identifier: number, data: string) => void;
   protected _dcsHandlerFb: IDcsHandler;
@@ -264,14 +269,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
     this._osc = '';
-    this._params = [0];
+    this._params = new Params(); // defaults to 32 storable params/subparams
+    this._params.addParam(0);    // ZDM
     this._collect = '';
     this.precedingCodepoint = 0;
 
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
     this._executeHandlerFb = (code: number): void => { };
-    this._csiHandlerFb = (collect: string, params: number[], flag: number): void => { };
+    this._csiHandlerFb = (collect: string, params: IParams, flag: number): void => { };
     this._escHandlerFb = (collect: string, flag: number): void => { };
     this._oscHandlerFb = (identifier: number, data: string): void => { };
     this._dcsHandlerFb = new DcsDummy();
@@ -329,13 +335,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
+  setCsiHandler(flag: string, callback: (params: IParams, collect: string) => void): void {
     this._csiHandlers[flag.charCodeAt(0)] = [callback];
   }
   clearCsiHandler(flag: string): void {
     if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
   }
-  setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void {
+  setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void {
     this._csiHandlerFb = callback;
   }
 
@@ -394,7 +400,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   reset(): void {
     this.currentState = this.initialState;
     this._osc = '';
-    this._params = [0];
+    this._params.reset();
+    this._params.addParam(0); // ZDM
     this._collect = '';
     this._activeDcsHandler = null;
     this.precedingCodepoint = 0;
@@ -402,10 +409,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   /**
    * Parse UTF32 codepoints in `data` up to `length`.
+   *
    * Note: For several actions with high data load the parsing is optimized
    * by using local read ahead loops with hardcoded conditions to
    * avoid costly table lookups. Make sure that any change of table values
-   * will be reflected in the loop conditions as well. Affected states/actions:
+   * will be reflected in the loop conditions as well and vice versa.
+   * Affected states/actions:
    * - GROUND:PRINT
    * - CSI_PARAM:PARAM
    * - DCS_PARAM:PARAM
@@ -418,7 +427,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let currentState = this.currentState;
     let osc = this._osc;
     let collect = this._collect;
-    let params = this._params;
+    const params = this._params;
     const table: Uint8Array = this.TRANSITIONS.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let callback: Function | null = null;
@@ -494,11 +503,23 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this.precedingCodepoint = 0;
           break;
         case ParserAction.PARAM:
-          // inner loop: digits (0x30 - 0x39) and ; (0x3b)
+          // inner loop: digits (0x30 - 0x39) and ; (0x3b) and : (0x3a)
+          let isSub = false;
           do {
-            if (code === 0x3b) params.push(0);
-            else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
-          } while (++i < length && (code = data[i]) > 0x2f && (code < 0x3a || code === 0x3b));
+            switch (code) {
+              case 0x3b:
+                params.addParam(0);  // ZDM
+                isSub = false;
+                break;
+              case 0x3a:
+                params.addSubParam(-1);
+                isSub = true;
+                break;
+              default:  // 0x30 - 0x39
+                if (isSub) params.addSubParamDigit(code - 48);
+                else params.addParamDigit(code - 48);
+            }
+          } while (++i < length && (code = data[i]) > 0x2f && code < 0x3c);
           i--;
           break;
         case ParserAction.COLLECT:
@@ -512,7 +533,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.CLEAR:
           osc = '';
-          params = [0];
+          params.reset();
+          params.addParam(0); // ZDM
           collect = '';
           break;
         case ParserAction.DCS_HOOK:
@@ -540,7 +562,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           osc = '';
-          params = [0];
+          params.reset();
+          params.addParam(0); // ZDM
           collect = '';
           this.precedingCodepoint = 0;
           break;
@@ -586,7 +609,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           osc = '';
-          params = [0];
+          params.reset();
+          params.addParam(0); // ZDM
           collect = '';
           this.precedingCodepoint = 0;
           break;

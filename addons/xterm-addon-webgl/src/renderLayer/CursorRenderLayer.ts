@@ -26,17 +26,17 @@ const BLINK_INTERVAL = 600;
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (terminal: Terminal, x: number, y: number, cell: ICellData) => void};
-  private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
   private _cell: ICellData = new CellData();
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {
-      x: null,
-      y: null,
-      isFocused: null,
-      style: null,
-      width: null
+      x: 0,
+      y: 0,
+      isFocused: false,
+      style: '',
+      width: 0
     };
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
@@ -50,11 +50,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
-      x: null,
-      y: null,
-      isFocused: null,
-      style: null,
-      width: null
+      x: 0,
+      y: 0,
+      isFocused: false,
+      style: '',
+      width: 0
     };
   }
 
@@ -62,7 +62,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._clearCursor();
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.dispose();
-      this._cursorBlinkStateManager = null;
       this.onOptionsChanged(terminal);
     }
   }
@@ -92,7 +91,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
     } else {
       if (this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager.dispose();
-        this._cursorBlinkStateManager = null;
       }
       // Request a refresh from the terminal as management of rendering is being
       // moved back to the terminal
@@ -184,11 +182,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._state) {
       this._clearCells(this._state.x, this._state.y, this._state.width, 1);
       this._state = {
-        x: null,
-        y: null,
-        isFocused: null,
-        style: null,
-        width: null
+        x: 0,
+        y: 0,
+        isFocused: false,
+        style: '',
+        width: 0
       };
     }
   }
@@ -227,16 +225,16 @@ export class CursorRenderLayer extends BaseRenderLayer {
 class CursorBlinkStateManager {
   public isCursorVisible: boolean;
 
-  private _animationFrame: number;
-  private _blinkStartTimeout: number;
-  private _blinkInterval: number;
+  private _animationFrame: number | undefined;
+  private _blinkStartTimeout: number | undefined;
+  private _blinkInterval: number | undefined;
 
   /**
    * The time at which the animation frame was restarted, this is used on the
    * next render to restart the timers so they don't need to restart the timers
    * multiple times over a short period.
    */
-  private _animationTimeRestarted: number;
+  private _animationTimeRestarted: number | undefined;
 
   constructor(
     terminal: Terminal,
@@ -253,15 +251,15 @@ class CursorBlinkStateManager {
   public dispose(): void {
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
-      this._blinkInterval = null;
+      this._blinkInterval = undefined;
     }
     if (this._blinkStartTimeout) {
       window.clearTimeout(this._blinkStartTimeout);
-      this._blinkStartTimeout = null;
+      this._blinkStartTimeout = undefined;
     }
     if (this._animationFrame) {
       window.cancelAnimationFrame(this._animationFrame);
-      this._animationFrame = null;
+      this._animationFrame = undefined;
     }
   }
 
@@ -276,7 +274,7 @@ class CursorBlinkStateManager {
     if (!this._animationFrame) {
       this._animationFrame = window.requestAnimationFrame(() => {
         this._renderCallback();
-        this._animationFrame = null;
+        this._animationFrame = undefined;
       });
     }
   }
@@ -296,7 +294,7 @@ class CursorBlinkStateManager {
       // started
       if (this._animationTimeRestarted) {
         const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
-        this._animationTimeRestarted = null;
+        this._animationTimeRestarted = undefined;
         if (time > 0) {
           this._restartInterval(time);
           return;
@@ -307,7 +305,7 @@ class CursorBlinkStateManager {
       this.isCursorVisible = false;
       this._animationFrame = window.requestAnimationFrame(() => {
         this._renderCallback();
-        this._animationFrame = null;
+        this._animationFrame = undefined;
       });
 
       // Setup the blink interval
@@ -317,7 +315,7 @@ class CursorBlinkStateManager {
           // calc time diff
           // Make restart interval do a setTimeout initially?
           const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
-          this._animationTimeRestarted = null;
+          this._animationTimeRestarted = undefined;
           this._restartInterval(time);
           return;
         }
@@ -326,7 +324,7 @@ class CursorBlinkStateManager {
         this.isCursorVisible = !this.isCursorVisible;
         this._animationFrame = window.requestAnimationFrame(() => {
           this._renderCallback();
-          this._animationFrame = null;
+          this._animationFrame = undefined;
         });
       }, BLINK_INTERVAL);
     }, timeToStart);
@@ -336,20 +334,20 @@ class CursorBlinkStateManager {
     this.isCursorVisible = true;
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
-      this._blinkInterval = null;
+      this._blinkInterval = undefined;
     }
     if (this._blinkStartTimeout) {
       window.clearTimeout(this._blinkStartTimeout);
-      this._blinkStartTimeout = null;
+      this._blinkStartTimeout = undefined;
     }
     if (this._animationFrame) {
       window.cancelAnimationFrame(this._animationFrame);
-      this._animationFrame = null;
+      this._animationFrame = undefined;
     }
   }
 
   public resume(terminal: Terminal): void {
-    this._animationTimeRestarted = null;
+    this._animationTimeRestarted = undefined;
     this._restartInterval();
     this.restartBlinkAnimation(terminal);
   }
