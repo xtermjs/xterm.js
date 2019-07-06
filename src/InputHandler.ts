@@ -598,7 +598,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(this._terminal.buffer.y);
   }
 
-  // restrict cursor changes to addressible cols/rows
+  // restrict cursor changes to addressable cols/rows
   private _restrictCursor(): void {
     // cols
     if (this._terminal.buffer.x < 0) {
