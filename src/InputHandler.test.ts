@@ -1062,6 +1062,20 @@ describe('InputHandler', () => {
         term.writeSync('0123456789\x1b[X');
         assert.equal(term.buffer.lines.get(0).translateToString(false), '012345678 ');
       });
+      it('ICH', () => {
+        term.buffer.x = 10000;
+        term.buffer.y = 10000;
+        term.writeSync('\x1b[@');
+        assert.deepEqual(getCursor(term), [9, 9]);
+        term.buffer.x = -10000;
+        term.buffer.y = -10000;
+        term.writeSync('\x1b[@');
+        assert.deepEqual(getCursor(term), [0, 0]);
+      });
+      it('ICH - should delete last cell', () => {
+        term.writeSync('0123456789\x1b[@');
+        assert.equal(term.buffer.lines.get(0).translateToString(false), '012345678 ');
+      });
     });
   });
 });

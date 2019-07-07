@@ -586,12 +586,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public insertChars(params: IParams): void {
     this._restrictCursor();
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
-      this._terminal.buffer.x,
-      params.params[0] || 1,
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.insertCells(
+        this._terminal.buffer.x,
+        params.params[0] || 1,
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
   }
 
   /**
