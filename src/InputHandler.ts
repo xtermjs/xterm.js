@@ -740,7 +740,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    this._eraseInBufferLine(y, 0, this._terminal.cols, true);
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.fill(this._terminal.buffer.getNullCell(this._terminal.eraseAttrData()));
+    line.isWrapped = false;
   }
 
   /**
@@ -756,6 +758,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    */
   public eraseInDisplay(params: IParams): void {
+    this._restrictCursor();
     let j;
     switch (params.params[0]) {
       case 0:
@@ -815,9 +818,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    */
   public eraseInLine(params: IParams): void {
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
     switch (params.params[0]) {
       case 0:
         this._eraseInBufferLine(this._terminal.buffer.y, this._terminal.buffer.x, this._terminal.cols);
