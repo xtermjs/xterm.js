@@ -895,12 +895,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    */
   public deleteChars(params: IParams): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
-      this._terminal.buffer.x,
-      params.params[0] || 1,
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.deleteCells(
+        this._terminal.buffer.x,
+        params.params[0] || 1,
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
   }
 
   /**
