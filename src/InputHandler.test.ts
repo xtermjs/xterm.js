@@ -1078,4 +1078,31 @@ describe('InputHandler', () => {
       });
     });
   });
+  describe('DECSTBM - scroll margins', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 10});
+    });
+    it('should default to whole viewport', () => {
+      term.writeSync('\x1b[r');
+      assert.equal(term.buffer.scrollTop, 0);
+      assert.equal(term.buffer.scrollBottom, 9);
+      term.writeSync('\x1b[3;7r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 6);
+      term.writeSync('\x1b[0;0r');
+      assert.equal(term.buffer.scrollTop, 0);
+      assert.equal(term.buffer.scrollBottom, 9);
+    });
+    it('should clamp bottom', () => {
+      term.writeSync('\x1b[3;1000r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 9);
+    });
+    it('should only apply for top < bottom', () => {
+      term.writeSync('\x1b[7;2r');
+      assert.equal(term.buffer.scrollTop, 0);
+      assert.equal(term.buffer.scrollBottom, 9);
+    });
+  });
 });

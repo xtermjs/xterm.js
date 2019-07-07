@@ -1904,10 +1904,19 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collect) {
       return;
     }
-    this._terminal.buffer.scrollTop = (params.params[0] || 1) - 1;
-    this._terminal.buffer.scrollBottom = (params.length > 1 && params.params[1] && params.params[1] <= this._terminal.rows ? params.params[1] : this._terminal.rows) - 1;
-    this._terminal.buffer.x = 0;
-    this._terminal.buffer.y = 0;
+
+    const top = params.params[0] || 1;
+    let bottom: number;
+
+    if (params.length < 2 || (bottom = params.params[1]) >  this._terminal.rows || bottom === 0) {
+      bottom = this._terminal.rows;
+    }
+
+    if (bottom > top) {
+      this._terminal.buffer.scrollTop = top - 1;
+      this._terminal.buffer.scrollBottom = bottom - 1;
+      this._setCursor(0, 0);
+    }
   }
 
 
