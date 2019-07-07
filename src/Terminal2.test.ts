@@ -131,7 +131,7 @@ if (os.platform() !== 'win32') {
       // 't0083-CHT.in',
       't0084-CBT.in',
       // 't0090-alt_screen.in',
-      't0091-alt_screen_ED3.in',
+      // 't0091-alt_screen_ED3.in',
       // 't0092-alt_screen_DECSC.in',
       // 't0100-IRM.in',
       't0101-NLM.in',
