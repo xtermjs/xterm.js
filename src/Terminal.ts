@@ -1846,6 +1846,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * ESC M Reverse Index (RI is 0x8d).
    *
    * Move the cursor up one row, inserting a new blank line if necessary.
+   * FIXME: This method is seriously broken.
    */
   public reverseIndex(): void {
     if (this.buffer.y === this.buffer.scrollTop) {
@@ -1859,6 +1860,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.updateRange(this.buffer.scrollBottom);
     } else {
       this.buffer.y--;
+      (this._inputHandler as any)._restrictCursor(); // quickfix to not run out of bounds
     }
   }
 
