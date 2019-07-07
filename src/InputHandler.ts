@@ -950,12 +950,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Erase Ps Character(s) (default = 1) (ECH).
    */
   public eraseChars(params: IParams): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
-      this._terminal.buffer.x,
-      this._terminal.buffer.x + (params.params[0] || 1),
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.replaceCells(
+        this._terminal.buffer.x,
+        this._terminal.buffer.x + (params.params[0] || 1),
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
   }
 
   /**
