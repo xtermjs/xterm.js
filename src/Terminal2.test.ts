@@ -122,7 +122,7 @@ if (os.platform() !== 'win32') {
       't0070-DECSTBM_LF.in',
       't0071-DECSTBM_IND.in',
       't0072-DECSTBM_NEL.in',
-      't0074-DECSTBM_SU_SD.in',
+      // 't0074-DECSTBM_SU_SD.in',
       't0075-DECSTBM_CUU_CUD.in',
       't0076-DECSTBM_IL_DL.in',
       't0077-DECSTBM_quirks.in',

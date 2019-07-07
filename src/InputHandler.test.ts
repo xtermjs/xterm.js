@@ -1105,4 +1105,25 @@ describe('InputHandler', () => {
       assert.equal(term.buffer.scrollBottom, 9);
     });
   });
+  describe('scrolling', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 10});
+    });
+    function getLines(term: TestTerminal, limit: number = term.rows): string[] {
+      const res: string[] = [];
+      for (let i = 0; i < limit; ++i) {
+        res.push(term.buffer.lines.get(i).translateToString(true));
+      }
+      return res;
+    }
+    it('scrollUp with margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
+      assert.deepEqual(getLines(term), ['m', '3', '', '', '4', '5', '6', '7', '8', '9']);
+    });
+    it('scrollDown with margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
+      assert.deepEqual(getLines(term), ['m', '', '', '1', '4', '5', '6', '7', '8', '9']);
+    });
+  });
 });
