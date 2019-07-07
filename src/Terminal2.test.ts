@@ -116,7 +116,7 @@ if (os.platform() !== 'win32') {
       // 't0051-IL.in',
       // 't0052-DL.in',
       // 't0055-EL.in',
-      't0056-ED.in',
+      // 't0056-ED.in',
       // 't0060-DECSC.in',
       // 't0061-CSI_s.in',
       't0070-DECSTBM_LF.in',

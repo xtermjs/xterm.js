@@ -541,9 +541,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    */
   public backspace(): void {
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
     if (this._terminal.buffer.x > 0) {
       this._terminal.buffer.x--;
     }
@@ -587,9 +585,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: IParams): void {
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._restrictCursor();
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params.params[0] || 1,
@@ -841,6 +837,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Line(s) (default = 1) (IL).
    */
   public insertLines(params: IParams): void {
+    this._restrictCursor();
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
@@ -868,6 +865,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Line(s) (default = 1) (DL).
    */
   public deleteLines(params: IParams): void {
+    this._restrictCursor();
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
@@ -959,6 +957,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
    */
   public cursorBackwardTab(params: IParams): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
@@ -2017,6 +2018,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    */
   public index(): void {
+    this._restrictCursor();
     this._terminal.index();  // TODO: save to move from terminal?
   }
 
@@ -2039,6 +2041,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the page scrolls down.
    */
   public reverseIndex(): void {
+    this._restrictCursor();
     this._terminal.reverseIndex();  // TODO: save to move from terminal?
   }
 
