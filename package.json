@@ -15,6 +15,7 @@
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "test-api": "mocha \"**/*.api.js\"",
+    "test-addons": "mocha \"**/*.test.js\"",
     "test-unit": "node ./bin/test.js",
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run build",

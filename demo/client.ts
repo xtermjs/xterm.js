@@ -14,6 +14,7 @@ import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -35,6 +36,7 @@ export interface IWindowWithTerminal extends Window {
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  SerializeAddon?: typeof SerializeAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -89,6 +91,7 @@ if (document.location.pathname === '/test') {
   window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
+  window.SerializeAddon = SerializeAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
