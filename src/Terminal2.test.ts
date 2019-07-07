@@ -137,7 +137,8 @@ if (os.platform() !== 'win32') {
       't0101-NLM.in',
       't0103-reverse_wrap.in',
       't0504-vim.in',
-      't0600-vttest1.in' // FIXME: fix height and create .text
+      // vttest related files
+      't0300-vttest1.in'
     ];
     if (os.platform() === 'darwin') {
       // These are failing on macOS only
