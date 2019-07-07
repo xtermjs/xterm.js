@@ -295,19 +295,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
-  tabSet(): void {
-    throw new Error('Method not implemented.');
-  }
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
   handleTitle(title: string): void {
-    throw new Error('Method not implemented.');
-  }
-  index(): void {
-    throw new Error('Method not implemented.');
-  }
-  reverseIndex(): void {
     throw new Error('Method not implemented.');
   }
 }

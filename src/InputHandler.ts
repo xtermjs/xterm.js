@@ -2040,7 +2040,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public index(): void {
     this._restrictCursor();
-    this._terminal.index();  // TODO: save to move from terminal?
+    this._terminal.buffer.y++;
+    if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+      this._terminal.buffer.y--;
+      this._terminal.scroll();
+    }
+    this._restrictCursor();
   }
 
   /**
@@ -2051,7 +2056,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    */
   public tabSet(): void {
-    this._terminal.tabSet();  // TODO: save to move from terminal?
+    this._terminal.buffer.tabs[this._terminal.buffer.x] = true;
   }
 
   /**
@@ -2063,7 +2068,20 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public reverseIndex(): void {
     this._restrictCursor();
-    this._terminal.reverseIndex();  // TODO: save to move from terminal?
+    const buffer = this._terminal.buffer;
+    if (buffer.y === buffer.scrollTop) {
+      // possibly move the code below to term.reverseScroll();
+      // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
+      // blankLine(true) is xterm/linux behavior
+      const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
+      buffer.lines.shiftElements(buffer.y + buffer.ybase, scrollRegionHeight, 1);
+      buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      this._terminal.updateRange(buffer.scrollTop);
+      this._terminal.updateRange(buffer.scrollBottom);
+    } else {
+      buffer.y--;
+      this._restrictCursor(); // quickfix to not run out of bounds
+    }
   }
 
   /**

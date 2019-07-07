@@ -70,10 +70,7 @@ export interface IInputHandlingTerminal {
   showCursor(): void;
   refresh(start: number, end: number): void;
   error(text: string, data?: any): void;
-  tabSet(): void;
   handleTitle(title: string): void;
-  index(): void;
-  reverseIndex(): void;
 }
 
 export interface IViewport extends IDisposable {
