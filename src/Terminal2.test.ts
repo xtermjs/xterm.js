@@ -117,8 +117,8 @@ if (os.platform() !== 'win32') {
       // 't0052-DL.in',
       // 't0055-EL.in',
       't0056-ED.in',
-      't0060-DECSC.in',
-      't0061-CSI_s.in',
+      // 't0060-DECSC.in',
+      // 't0061-CSI_s.in',
       't0070-DECSTBM_LF.in',
       't0071-DECSTBM_IND.in',
       't0072-DECSTBM_NEL.in',
@@ -136,7 +136,8 @@ if (os.platform() !== 'win32') {
       // 't0100-IRM.in',
       't0101-NLM.in',
       't0103-reverse_wrap.in',
-      't0504-vim.in'
+      't0504-vim.in',
+      't0600-vttest1.in' // FIXME: fix height and create .text
     ];
     if (os.platform() === 'darwin') {
       // These are failing on macOS only

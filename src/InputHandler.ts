@@ -1249,6 +1249,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 3: // 132 col mode
           this._terminal.savedCols = this._terminal.cols;
           this._terminal.resize(132, this._terminal.rows);
+          this._terminal.reset();
           break;
         case 6:
           this._terminal.originMode = true;
@@ -1447,6 +1448,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             this._terminal.resize(this._terminal.savedCols, this._terminal.rows);
           }
           delete this._terminal.savedCols;
+          this._terminal.reset();
           break;
         case 6:
           this._terminal.originMode = false;
@@ -1919,6 +1921,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.y = Math.max(this._terminal.buffer.savedY - this._terminal.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._terminal.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._terminal.buffer.savedCurAttrData.bg;
+    this._restrictCursor();
   }
 
 
