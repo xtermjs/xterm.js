@@ -1824,7 +1824,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /**
-   * Full reset of the terminal.
+   * Reset terminal.
+   * Note: Calling this directly from JS is synchronous but does not clear
+   * input buffers and does not reset the parser, thus the terminal will
+   * continue to apply pending input data.
+   * If you need in band reset (synchronous with input data) consider
+   * using DECSTR (soft reset, CSI ! p) or RIS instead (hard reset, ESC c).
    */
   public reset(): void {
     /**
