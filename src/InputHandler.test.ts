@@ -15,6 +15,13 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService } from 'common/TestUtils.test';
 
+function getCursor(term: TestTerminal): number[] {
+  return [
+    term.buffer.x,
+    term.buffer.y
+  ];
+}
+
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
@@ -702,12 +709,6 @@ describe('InputHandler', () => {
     beforeEach(() => {
       term = new TestTerminal({cols: 10, rows: 10});
     });
-    function getCursor(term: TestTerminal): number[] {
-      return [
-        term.buffer.x,
-        term.buffer.y
-      ];
-    }
     it('cursor forward (CUF)', () => {
       term.writeSync('\x1b[C');
       assert.deepEqual(getCursor(term), [1, 0]);
@@ -1104,8 +1105,14 @@ describe('InputHandler', () => {
       assert.equal(term.buffer.scrollTop, 0);
       assert.equal(term.buffer.scrollBottom, 9);
     });
+    it('should home cursor', () => {
+      term.buffer.x = 10000;
+      term.buffer.y = 10000;
+      term.writeSync('\x1b[2;7r');
+      assert.deepEqual(getCursor(term), [0, 0]);
+    });
   });
-  describe('scrolling', () => {
+  describe('scroll margins', () => {
     let term: TestTerminal;
     beforeEach(() => {
       term = new TestTerminal({cols: 10, rows: 10});
@@ -1117,13 +1124,63 @@ describe('InputHandler', () => {
       }
       return res;
     }
-    it('scrollUp with margins', () => {
+    it('scrollUp', () => {
       term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
       assert.deepEqual(getLines(term), ['m', '3', '', '', '4', '5', '6', '7', '8', '9']);
     });
-    it('scrollDown with margins', () => {
+    it('scrollDown', () => {
       term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
       assert.deepEqual(getLines(term), ['m', '', '', '1', '4', '5', '6', '7', '8', '9']);
+    });
+    it('insertLines - out of margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 5);
+      term.writeSync('\x1b[2Lm');
+      assert.deepEqual(getLines(term), ['m', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+      term.writeSync('\x1b[2H\x1b[2Ln');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', '6', '7', '8', '9']);
+      // skip below scrollbottom
+      term.writeSync('\x1b[7H\x1b[2Lo');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', '7', '8', '9']);
+      term.writeSync('\x1b[8H\x1b[2Lp');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', '9']);
+      term.writeSync('\x1b[100H\x1b[2Lq');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', 'q']);
+    });
+    it('insertLines - within margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 5);
+      term.writeSync('\x1b[3H\x1b[2Lm');
+      assert.deepEqual(getLines(term), ['0', '1', 'm', '', '2', '3', '6', '7', '8', '9']);
+      term.writeSync('\x1b[6H\x1b[2Ln');
+      assert.deepEqual(getLines(term), ['0', '1', 'm', '', '2', 'n', '6', '7', '8', '9']);
+    });
+    it('deleteLines - out of margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 5);
+      term.writeSync('\x1b[2Mm');
+      assert.deepEqual(getLines(term), ['m', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+      term.writeSync('\x1b[2H\x1b[2Mn');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', '6', '7', '8', '9']);
+      // skip below scrollbottom
+      term.writeSync('\x1b[7H\x1b[2Mo');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', '7', '8', '9']);
+      term.writeSync('\x1b[8H\x1b[2Mp');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', '9']);
+      term.writeSync('\x1b[100H\x1b[2Mq');
+      assert.deepEqual(getLines(term), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', 'q']);
+    });
+    it('deleteLines - within margins', () => {
+      term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+      assert.equal(term.buffer.scrollTop, 2);
+      assert.equal(term.buffer.scrollBottom, 5);
+      term.writeSync('\x1b[6H\x1b[2Mm');
+      assert.deepEqual(getLines(term), ['0', '1', '2', '3', '4', 'm', '6', '7', '8', '9']);
+      term.writeSync('\x1b[3H\x1b[2Mn');
+      assert.deepEqual(getLines(term), ['0', '1', 'n', 'm',  '',  '', '6', '7', '8', '9']);
     });
   });
 });

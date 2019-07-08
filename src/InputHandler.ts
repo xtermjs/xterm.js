@@ -847,6 +847,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
 
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
+
     const row: number = buffer.y + buffer.ybase;
 
     const scrollBottomRowsOffset = this._terminal.rows - 1 - buffer.scrollBottom;
@@ -874,6 +878,10 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
+
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
 
     const row: number = buffer.y + buffer.ybase;
 

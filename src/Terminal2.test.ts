@@ -119,12 +119,12 @@ if (os.platform() !== 'win32') {
       // 't0056-ED.in',
       // 't0060-DECSC.in',
       // 't0061-CSI_s.in',
-      't0070-DECSTBM_LF.in',
+      't0070-DECSTBM_LF.in',      // lineFeed not working correctly
       't0071-DECSTBM_IND.in',
       't0072-DECSTBM_NEL.in',
       // 't0074-DECSTBM_SU_SD.in',
       't0075-DECSTBM_CUU_CUD.in',
-      't0076-DECSTBM_IL_DL.in',
+      't0076-DECSTBM_IL_DL.in',   // not working due to lineFeed
       't0077-DECSTBM_quirks.in',
       // 't0080-HT.in',
       // 't0082-HTS.in',
