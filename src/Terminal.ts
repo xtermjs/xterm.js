@@ -1613,7 +1613,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (!wasModifierKeyOnlyEvent(ev)) {
       this.focus();
     }
-    
+
     this.updateCursorStyle(ev);
   }
 
