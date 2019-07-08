@@ -1286,6 +1286,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 6:
           this._terminal.originMode = true;
+          this._setCursor(0, 0);
           break;
         case 7:
           this._terminal.wraparoundMode = true;
@@ -1485,6 +1486,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 6:
           this._terminal.originMode = false;
+          this._setCursor(0, 0);
           break;
         case 7:
           this._terminal.wraparoundMode = false;
