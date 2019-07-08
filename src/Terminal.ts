@@ -512,29 +512,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Apply key handling to the terminal
    */
   private _bindKeys(): void {
-    const self = this;
-    this.register(addDisposableDomListener(this.element, 'keydown', function (ev: KeyboardEvent): void {
-      if (document.activeElement !== this) {
-        return;
-      }
-      self._keyDown(ev);
-    }, true));
-
-    this.register(addDisposableDomListener(this.element, 'keypress', function (ev: KeyboardEvent): void {
-      if (document.activeElement !== this) {
-        return;
-      }
-      self._keyPress(ev);
-    }, true));
-
-    this.register(addDisposableDomListener(this.element, 'keyup', (ev: KeyboardEvent) => {
-      if (!wasModifierKeyOnlyEvent(ev)) {
-        this.focus();
-      }
-
-      self._keyUp(ev);
-    }, true));
-
+    this.register(addDisposableDomListener(this.textarea, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
@@ -1628,6 +1606,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   protected _keyUp(ev: KeyboardEvent): void {
+    if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
+      return;
+    }
+
+    if (!wasModifierKeyOnlyEvent(ev)) {
+      this.focus();
+    }
+
     this.updateCursorStyle(ev);
   }
 
