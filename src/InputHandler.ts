@@ -581,26 +581,15 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * CSI Ps @
-   * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   * Cursor movements.
+   *
+   * TODO:
+   * - create Cursor class living on Buffer
+   * - move private cursor methods to Cursor class as API
    */
-  public insertChars(params: IParams): void {
-    this._restrictCursor();
-    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
-    if (line) {
-      line.insertCells(
-        this._terminal.buffer.x,
-        params.params[0] || 1,
-        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-      );
-      this._terminal.updateRange(this._terminal.buffer.y);
-    }
-  }
 
   /**
-   * FIXME:
-   * - create Cursor class living on Buffer
-   * - move these private cursor methods to Cursor class as API
+   * Restrict cursor to viewport size / scroll margin (origin mode).
    */
   private _restrictCursor(): void {
     // cols
@@ -624,6 +613,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  /**
+   * Set absolute cursor position.
+   */
   private _setCursor(x: number, y: number): void {
     if (this._terminal.originMode) {
       this._terminal.buffer.x = x;
@@ -635,6 +627,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
   }
 
+  /**
+   * Set relative cursor position.
+   */
   private _moveCursor(x: number, y: number): void {
     // for relative changes we have to make sure we are within 0 .. cols/rows - 1
     // before calculating the new position
@@ -684,7 +679,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.x = 0;
   }
 
-
   /**
    * CSI Ps F
    * Cursor Previous Line Ps Times (default = 1) (CPL).
@@ -694,7 +688,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._moveCursor(0, -(params.params[0] || 1));
     this._terminal.buffer.x = 0;
   }
-
 
   /**
    * CSI Ps G
@@ -717,6 +710,68 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * CSI Pm `  Character Position Absolute
+   *   [column] (default = [row,1]) (HPA).
+   * Currently same functionality as CHA.
+   */
+  public charPosAbsolute(params: IParams): void {
+    this._setCursor((params.params[0] || 1) - 1, this._terminal.buffer.y);
+  }
+
+  /**
+   * CSI Pm a  Character Position Relative
+   *   [columns] (default = [row,col+1]) (HPR)
+   * Currently same functionality as CUF.
+   */
+  public hPositionRelative(params: IParams): void {
+    this._moveCursor(params.params[0] || 1, 0);
+  }
+
+  /**
+   * CSI Pm d  Vertical Position Absolute (VPA)
+   *   [row] (default = [1,column])
+   */
+  public linePosAbsolute(params: IParams): void {
+    this._setCursor(this._terminal.buffer.x, (params.params[0] || 1) - 1);
+  }
+
+  /**
+   * CSI Pm e  Vertical Position Relative (VPR)
+   *   [rows] (default = [row+1,column])
+   * reuse CSI Ps B ?
+   */
+  public vPositionRelative(params: IParams): void {
+    this._moveCursor(0, params.params[0] || 1);
+  }
+
+  /**
+   * CSI Ps ; Ps f
+   *   Horizontal and Vertical Position [row;column] (default =
+   *   [1,1]) (HVP).
+   *   Same as CUP.
+   */
+  public hVPosition(params: IParams): void {
+    this.cursorPosition(params);
+  }
+
+  /**
+   * CSI Ps g  Tab Clear (TBC).
+   *     Ps = 0  -> Clear Current Column (default).
+   *     Ps = 3  -> Clear All.
+   * Potentially:
+   *   Ps = 2  -> Clear Stops on Line.
+   *   http://vt100.net/annarbor/aaa-ug/section6.html
+   */
+  public tabClear(params: IParams): void {
+    const param = params.params[0];
+    if (param === 0) {
+      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
+    } else if (param === 3) {
+      this._terminal.buffer.tabs = {};
+    }
+  }
+
+  /**
    * CSI Ps I
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
@@ -729,6 +784,24 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.buffer.x = this._terminal.buffer.nextStop();
     }
   }
+
+  /**
+   * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+   */
+  public cursorBackwardTab(params: IParams): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
+    let param = params.params[0] || 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    while (param--) {
+      buffer.x = buffer.prevStop();
+    }
+  }
+
 
   /**
    * Helper method to erase cells in a terminal row.
@@ -914,6 +987,23 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * CSI Ps @
+   * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   */
+  public insertChars(params: IParams): void {
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.insertCells(
+        this._terminal.buffer.x,
+        params.params[0] || 1,
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
+  }
+
+  /**
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
    */
@@ -983,41 +1073,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       );
       this._terminal.updateRange(this._terminal.buffer.y);
     }
-  }
-
-  /**
-   * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
-   */
-  public cursorBackwardTab(params: IParams): void {
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      return;
-    }
-    let param = params.params[0] || 1;
-
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-
-    while (param--) {
-      buffer.x = buffer.prevStop();
-    }
-  }
-
-  /**
-   * CSI Pm `  Character Position Absolute
-   *   [column] (default = [row,1]) (HPA).
-   * Currently same functionality as CHA.
-   */
-  public charPosAbsolute(params: IParams): void {
-    this._setCursor((params.params[0] || 1) - 1, this._terminal.buffer.y);
-  }
-
-  /**
-   * CSI Pm a  Character Position Relative
-   *   [columns] (default = [row,col+1]) (HPR)
-   * Currently same functionality as CUF.
-   */
-  public hPositionRelative(params: IParams): void {
-    this._moveCursor(params.params[0] || 1, 0);
   }
 
   /**
@@ -1118,50 +1173,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (this._terminal.is('screen')) {
         this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
       }
-    }
-  }
-
-  /**
-   * CSI Pm d  Vertical Position Absolute (VPA)
-   *   [row] (default = [1,column])
-   */
-  public linePosAbsolute(params: IParams): void {
-    this._setCursor(this._terminal.buffer.x, (params.params[0] || 1) - 1);
-  }
-
-  /**
-   * CSI Pm e  Vertical Position Relative (VPR)
-   *   [rows] (default = [row+1,column])
-   * reuse CSI Ps B ?
-   */
-  public vPositionRelative(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
-  }
-
-  /**
-   * CSI Ps ; Ps f
-   *   Horizontal and Vertical Position [row;column] (default =
-   *   [1,1]) (HVP).
-   *   Same as CUP.
-   */
-  public hVPosition(params: IParams): void {
-    this.cursorPosition(params);
-  }
-
-  /**
-   * CSI Ps g  Tab Clear (TBC).
-   *     Ps = 0  -> Clear Current Column (default).
-   *     Ps = 3  -> Clear All.
-   * Potentially:
-   *   Ps = 2  -> Clear Stops on Line.
-   *   http://vt100.net/annarbor/aaa-ug/section6.html
-   */
-  public tabClear(params: IParams): void {
-    const param = params.params[0];
-    if (param === 0) {
-      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
-    } else if (param === 3) {
-      this._terminal.buffer.tabs = {};
     }
   }
 
@@ -1280,6 +1291,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // set VT100 mode here
           break;
         case 3: // 132 col mode
+          // TODO: move DECCOLM into compat addon
           this._terminal.savedCols = this._terminal.cols;
           this._terminal.resize(132, this._terminal.rows);
           this._terminal.reset();
@@ -1478,6 +1490,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.applicationCursorKeys = false;
           break;
         case 3:
+          // TODO: move DECCOLM into compat addon
+          // Note: This impl currently does not enforce col 80, instead reverts
+          // to previous terminal width before entering DECCOLM 132
           if (this._terminal.cols === 132 && this._terminal.savedCols) {
             this._terminal.resize(this._terminal.savedCols, this._terminal.rows);
           }
@@ -2140,6 +2155,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECALN (https://vt100.net/docs/vt510-rm/DECALN.html)
    *   This control function fills the complete screen area with
    *   a test pattern (E) used for adjusting screen alignment.
+   *
+   * TODO: move DECALN into compat addon
    */
   public screenAlignmentPattern(): void {
     // prepare cell data

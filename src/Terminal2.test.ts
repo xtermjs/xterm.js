@@ -151,9 +151,6 @@ if (os.platform() !== 'win32') {
       );
     }
     for (let i = 0; i < files.length; i++) {
-      // if (skip.indexOf(i) >= 0) {
-      //   continue;
-      // }
       if (skipFilename.indexOf(files[i].split('/').slice(-1)[0]) >= 0) {
         continue;
       }
