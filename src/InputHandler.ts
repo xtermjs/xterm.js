@@ -615,11 +615,23 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (this._terminal.buffer.y >= this._terminal.rows) {
       this._terminal.buffer.y = this._terminal.rows - 1;
     }
+    if (this._terminal.originMode) {
+      if (this._terminal.buffer.y < this._terminal.buffer.scrollTop) {
+        this._terminal.buffer.y = this._terminal.buffer.scrollTop;
+      } else if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+        this._terminal.buffer.y = this._terminal.buffer.scrollBottom;
+      }
+    }
   }
 
   private _setCursor(x: number, y: number): void {
-    this._terminal.buffer.x = x;
-    this._terminal.buffer.y = y;
+    if (this._terminal.originMode) {
+      this._terminal.buffer.x = x;
+      this._terminal.buffer.y = this._terminal.buffer.scrollTop + y;
+    } else {
+      this._terminal.buffer.x = x;
+      this._terminal.buffer.y = y;
+    }
     this._restrictCursor();
   }
 
