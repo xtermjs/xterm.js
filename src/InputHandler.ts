@@ -1938,6 +1938,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.savedY = this._terminal.buffer.ybase + this._terminal.buffer.y;
     this._terminal.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
     this._terminal.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
+    this._terminal.buffer.savedCharset = this._terminal.charset;
   }
 
 
@@ -1951,6 +1952,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.y = Math.max(this._terminal.buffer.savedY - this._terminal.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._terminal.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._terminal.buffer.savedCurAttrData.bg;
+    this._terminal.charset = (this as any)._savedCharset;
+    if (this._terminal.buffer.savedCharset) {
+      this._terminal.charset = this._terminal.buffer.savedCharset;
+    }
     this._restrictCursor();
   }
 
