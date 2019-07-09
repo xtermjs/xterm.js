@@ -47,7 +47,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   debug: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\'"'
+  wordSeparator: ' ()[]{}\'"',
+  answerbackString: '\x06\x06\x06\x06'
 });
 
 /**

@@ -63,11 +63,15 @@ import { CoreService } from 'common/services/CoreService';
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 /**
- * The amount of write requests to queue before sending an XOFF signal to the
- * pty process. This number must be small in order for ^C and similar sequences
- * to be responsive.
+ * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
+ * Once hit the terminal will stop working. Enable flow control to avoid this limit
+ * and make sure that your backend correctly propagates this to the underlying pty.
+ * (see docs for further instructions)
+ * Since this limit is meant as a safety parachute to prevent browser crashs,
+ * it is set to a very high number. Typically xterm.js gets unresponsive with
+ * a much lower number (>500 kB).
  */
-const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+const DISCARD_WATERMARK = 50000000; // ~50 MB
 
 /**
  * The max number of ms to spend on writes before allowing the renderer to
@@ -160,14 +164,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public writeBuffer: string[];
   public writeBufferUtf8: Uint8Array[];
   private _writeInProgress: boolean;
-
   /**
-   * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
-   * This is a distinct state from writeStopped so that if the user requested
-   * XOFF via ^S that it will not automatically resume when the writeBuffer goes
-   * below threshold.
+   * Sum of length of pending chunks in all write buffers.
+   * Note: For the string chunks the actual memory usage is
+   * doubled (JSString char takes 2 bytes).
    */
-  private _xoffSentToCatchUp: boolean;
+  private _writeBuffersPendingSize: number = 0;
 
   /** Whether writing has been stopped as a result of XOFF */
   // private _writeStopped: boolean;
@@ -292,8 +294,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.writeBufferUtf8 = [];
     this._writeInProgress = false;
 
-    this._xoffSentToCatchUp = false;
-    // this._writeStopped = false;
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
@@ -421,6 +421,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             }
           }
           break;
+        case 'useFlowControl':
+          if (this.optionsService.options.useFlowControl) {
+            (this._inputHandler as any)._parser.setExecuteHandler(C0.ENQ, () => (this._inputHandler as any).enquiry());
+          } else {
+            (this._inputHandler as any)._parser.clearExecuteHandler(C0.ENQ);
+          }
       }
     });
   }
@@ -1211,17 +1217,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
 
-    this.writeBufferUtf8.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
+    // safety measure: dont allow the backend to crash
+    // the terminal by writing to much data to fast.
+    // If we hit this, the terminal cant keep up with data written
+    // and will start to degenerate.
+    if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
+      throw new Error('write data discarded, use flow control to avoid losing data');
     }
+    this._writeBuffersPendingSize += data.length;
+
+    this.writeBufferUtf8.push(data);
 
     if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1244,23 +1249,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       const data = this.writeBufferUtf8[bufferOffset];
       bufferOffset++;
 
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
       this._refreshStart = this.buffer.y;
       this._refreshEnd = this.buffer.y;
 
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parseUtf8(data);
+      this._writeBuffersPendingSize -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1298,17 +1291,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
 
-    this.writeBuffer.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
+    // safety measure: dont allow the backend to crash
+    // the terminal by writing to much data to fast.
+    // If we hit this, the terminal cant keep up with data written
+    // and will start to degenerate.
+    if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
+      throw new Error('write data discarded, use flow control to avoid losing data');
     }
+    this._writeBuffersPendingSize += data.length;
+
+    this.writeBuffer.push(data);
 
     if (!this._writeInProgress && this.writeBuffer.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1331,23 +1323,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       const data = this.writeBuffer[bufferOffset];
       bufferOffset++;
 
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
       this._refreshStart = this.buffer.y;
       this._refreshEnd = this.buffer.y;
 
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parse(data);
+      this._writeBuffersPendingSize -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1864,7 +1844,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const writeBuffer = this.writeBuffer;
     const writeBufferUtf8 = this.writeBufferUtf8;
     const writeInProgress = this._writeInProgress;
-    const xoffSentToCatchUp = this._xoffSentToCatchUp;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1881,7 +1860,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.writeBuffer = writeBuffer;
     this.writeBufferUtf8 = writeBufferUtf8;
     this._writeInProgress = writeInProgress;
-    this._xoffSentToCatchUp = xoffSentToCatchUp;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh

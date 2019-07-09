@@ -224,7 +224,7 @@ function initOptions(term: TerminalType): void {
     'handler',
     'screenKeys',
     'termName',
-    'useFlowControl',
+    // 'useFlowControl',
     // Complex option
     'theme'
   ];
@@ -236,7 +236,8 @@ function initOptions(term: TerminalType): void {
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     rendererType: ['dom', 'canvas'],
-    wordSeparator: null
+    wordSeparator: null,
+    answerbackString: null
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];

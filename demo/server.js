@@ -9,13 +9,31 @@ var pty = require('node-pty');
  */
 const USE_BINARY_UTF8 = false;
 
+/**
+ * Whether to use flow control.
+ * This must be in sync with frontend option useFlowControl!
+ */
+const USE_FLOW_CONTROL = true;
+
+// send ENQ as ACK request (hardcoded in xterm.js)
+const FLOW_CONTROL_ACK_REQUEST = '\x05';
+// ACK response (answerbackString in xterm.js)
+const FLOW_CONTROL_ACK_RESPONSE = '\x06\x06\x06\x06';
+// send ACK request every n-th bytes
+const ACK_WATERMARK = 131072;
+// max allowed pending ACK requests before pausing pty
+const MAX_PENDING_ACK = 7;
+
+// settings for prebuffering
+const MAX_SEND_INTERVAL = 5;
+const MAX_CHUNK_SIZE = 16384;
+
 
 function startServer() {
   var app = express();
   expressWs(app);
 
-  var terminals = {},
-      logs = {};
+  var terminals = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
@@ -52,10 +70,6 @@ function startServer() {
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
-    logs[term.pid] = '';
-    term.on('data', function(data) {
-      logs[term.pid] += data;
-    });
     res.send(term.pid.toString());
     res.end();
   });
@@ -74,34 +88,55 @@ function startServer() {
   app.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
-    ws.send(logs[term.pid]);
 
-    // string message buffering
-    function buffer(socket, timeout) {
+    const _send = data => {
+      // handle only 'open' websocket state
+      if (ws.readyState === 1) {
+        // setTimeout(() => ws.send(data), 200);
+        ws.send(data);
+      }
+    }
+
+    /**
+     * message buffering - limits are MAX_SEND_INTERVAL and MAX_CHUNK_SIZE
+     */
+    // string message
+    function buffer(timeout, limit) {
       let s = '';
       let sender = null;
       return (data) => {
         s += data;
-        if (!sender) {
+        if (s.length > limit) {
+          clearTimeout(sender);
+          _send(s);
+          s = '';
+          sender = null;
+        } else if (!sender) {
           sender = setTimeout(() => {
-            socket.send(s);
+            _send(s);
             s = '';
             sender = null;
           }, timeout);
         }
       };
     }
-    // binary message buffering
-    function bufferUtf8(socket, timeout) {
+    // binary message
+    function bufferUtf8(timeout, limit) {
       let buffer = [];
       let sender = null;
       let length = 0;
       return (data) => {
         buffer.push(data);
         length += data.length;
-        if (!sender) {
+        if (length > limit) {
+          clearTimeout(sender);
+          _send(Buffer.concat(buffer, length));
+          buffer = [];
+          sender = null;
+          length = 0;
+        } else if (!sender) {
           sender = setTimeout(() => {
-            socket.send(Buffer.concat(buffer, length));
+            _send(Buffer.concat(buffer, length));
             buffer = [];
             sender = null;
             length = 0;
@@ -109,16 +144,33 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
+
+    let ackPending = 0;
+    let bytesSent = 0;
 
     term.on('data', function(data) {
-      try {
-        send(data);
-      } catch (ex) {
-        // The WebSocket is not open, ignore
+      send(data);
+      if (USE_FLOW_CONTROL) {
+        bytesSent += data.length;
+        if (bytesSent > ACK_WATERMARK) {
+          send(FLOW_CONTROL_ACK_REQUEST);
+          ackPending++;
+          bytesSent = 0;
+          if (ackPending > MAX_PENDING_ACK) {
+            term.pause();
+          }
+        }
       }
     });
     ws.on('message', function(msg) {
+      if (USE_FLOW_CONTROL && msg === FLOW_CONTROL_ACK_RESPONSE) {
+        ackPending--;
+        if (ackPending <= MAX_PENDING_ACK) {
+          term.resume();
+        }
+        return;
+      }
       term.write(msg);
     });
     ws.on('close', function () {
@@ -126,7 +178,6 @@ function startServer() {
       console.log('Closed terminal ' + term.pid);
       // Clean things up
       delete terminals[term.pid];
-      delete logs[term.pid];
     });
   });
 
