@@ -581,14 +581,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Cursor movements.
-   *
-   * TODO:
-   * - create Cursor class living on Buffer
-   * - move private cursor methods to Cursor class as API
-   */
-
-  /**
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
   private _restrictCursor(): void {
