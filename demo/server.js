@@ -13,7 +13,7 @@ const USE_BINARY_UTF8 = false;
  * Whether to use flow control.
  * This must be in sync with frontend option useFlowControl!
  */
-const USE_FLOW_CONTROL = true;
+const USE_FLOW_CONTROL = false;
 
 // send ENQ as ACK request (hardcoded in xterm.js)
 const FLOW_CONTROL_ACK_REQUEST = '\x05';
