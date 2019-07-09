@@ -25,6 +25,8 @@ function getCursor(term: TestTerminal): number[] {
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
+    terminal.cols = 80;
+    terminal.rows = 30;
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
     terminal.buffer.ybase = 0;

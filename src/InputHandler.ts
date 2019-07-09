@@ -584,25 +584,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
   private _restrictCursor(): void {
-    // cols
-    if (this._terminal.buffer.x < 0) {
-      this._terminal.buffer.x = 0;
-    } else if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
-    // rows
-    if (this._terminal.buffer.y < 0) {
-      this._terminal.buffer.y = 0;
-    } else if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-    if (this._terminal.originMode) {
-      if (this._terminal.buffer.y < this._terminal.buffer.scrollTop) {
-        this._terminal.buffer.y = this._terminal.buffer.scrollTop;
-      } else if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
-        this._terminal.buffer.y = this._terminal.buffer.scrollBottom;
-      }
-    }
+    this._terminal.buffer.x = Math.min(this._terminal.cols - 1, Math.max(0, this._terminal.buffer.x));
+    this._terminal.buffer.y = this._terminal.originMode
+      ? Math.min(this._terminal.buffer.scrollBottom, Math.max(this._terminal.buffer.scrollTop, this._terminal.buffer.y))
+      : Math.min(this._terminal.rows - 1, Math.max(0, this._terminal.buffer.y));
   }
 
   /**
