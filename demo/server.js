@@ -22,11 +22,11 @@ const FLOW_CONTROL_ACK_RESPONSE = '\x06\x06\x06\x06';
 // send ACK request every n-th bytes
 const ACK_WATERMARK = 131072;
 // max allowed pending ACK requests before pausing pty
-const MAX_PENDING_ACK = 7;
+const MAX_PENDING_ACK = 4;
 
 // settings for prebuffering
 const MAX_SEND_INTERVAL = 5;
-const MAX_CHUNK_SIZE = 16384;
+const MAX_CHUNK_SIZE = 65536;
 
 
 function startServer() {
@@ -92,7 +92,8 @@ function startServer() {
     const _send = data => {
       // handle only 'open' websocket state
       if (ws.readyState === 1) {
-        // setTimeout(() => ws.send(data), 200);
+        // test high latency
+        // setTimeout(() => ws.send(data), 250);
         ws.send(data);
       }
     }
