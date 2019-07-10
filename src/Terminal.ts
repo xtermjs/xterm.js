@@ -832,7 +832,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    this._colorManager.setTheme(theme);
+    if (this._colorManager) {
+      this._colorManager.setTheme(theme);
+    }
     if (this._renderCoordinator) {
       this._renderCoordinator.setColors(this._colorManager.colors);
     }
