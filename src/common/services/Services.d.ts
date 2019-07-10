@@ -112,7 +112,7 @@ export interface ITerminalOptions {
   debug: boolean;
   screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
+  answerbackString: string;
 }
 
 export interface ITheme {

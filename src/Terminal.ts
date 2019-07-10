@@ -409,6 +409,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
               this.refresh(0, this.rows - 1);
             }
           }
+          break;
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
             if (!this._windowsMode) {
@@ -421,12 +422,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             }
           }
           break;
-        case 'useFlowControl':
-          if (this.optionsService.options.useFlowControl) {
-            (this._inputHandler as any)._parser.setExecuteHandler(C0.ENQ, () => (this._inputHandler as any).enquiry());
-          } else {
-            (this._inputHandler as any)._parser.clearExecuteHandler(C0.ENQ);
-          }
       }
     });
   }

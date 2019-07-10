@@ -11,14 +11,14 @@ const USE_BINARY_UTF8 = false;
 
 /**
  * Whether to use flow control.
- * This must be in sync with frontend option useFlowControl!
+ * This must be in sync with answerbackString in xterm.js.
  */
 const USE_FLOW_CONTROL = false;
 
 // send ENQ as ACK request (hardcoded in xterm.js)
 const FLOW_CONTROL_ACK_REQUEST = '\x05';
-// ACK response (answerbackString in xterm.js)
-const FLOW_CONTROL_ACK_RESPONSE = '\x06\x06\x06\x06';
+// ACK response
+const FLOW_CONTROL_ACK_RESPONSE = '\x06\x06\x06\x06';  // must be in line with answerbackString in xterm.js
 // send ACK request every n-th bytes
 const ACK_WATERMARK = 131072;
 // max allowed pending ACK requests before pausing pty
@@ -166,7 +166,7 @@ function startServer() {
     });
     ws.on('message', function(msg) {
       if (USE_FLOW_CONTROL && msg === FLOW_CONTROL_ACK_RESPONSE) {
-        ackPending--;
+        ackPending = Math.max(--ackPending, 0);
         if (ackPending <= MAX_PENDING_ACK) {
           term.resume();
         }

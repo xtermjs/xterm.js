@@ -211,8 +211,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setExecuteHandler(C1.NEL, () => this.nextLine());
     this._parser.setExecuteHandler(C1.HTS, () => this.tabSet());
 
-    // install ENQ handler - disabled by default, set useFlowControl to enable
-    // this._parser.setExecuteHandler(C0.ENQ, () => this.enquiry());
+    // install ENQ handler
+    this._parser.setExecuteHandler(C0.ENQ, () => this.enquiry());
 
     /**
      * OSC handler
@@ -503,7 +503,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Enquiry (Ctrl-E).
    */
   public enquiry(): void {
-    this._coreService.triggerDataEvent(this._terminal.options.answerbackString);
+    if (this._terminal.options.answerbackString) {
+      this._coreService.triggerDataEvent(this._terminal.options.answerbackString);
+    }
   }
 
   /**
