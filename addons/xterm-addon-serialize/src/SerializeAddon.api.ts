@@ -47,7 +47,7 @@ describe('SerializeAddon', () => {
     await page.evaluate(`
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
-    `)
+    `);
 
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
@@ -64,7 +64,7 @@ describe('SerializeAddon', () => {
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
       window.term.write(${util.inspect(lines.join('\r\n'))});
-    `)
+    `);
 
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
@@ -81,7 +81,7 @@ describe('SerializeAddon', () => {
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
       window.term.write(${util.inspect(lines.join('\r\n'))});
-    `)
+    `);
 
     assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(0, halfRows).join('\r\n'));
   });
@@ -97,7 +97,7 @@ describe('SerializeAddon', () => {
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
       window.term.write(${util.inspect(lines.join('\r\n'))});
-    `)
+    `);
 
     assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), '');
   });
@@ -125,7 +125,7 @@ function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
   return array;
 }
 
-function digitsString(length: number, from: number = 0) {
+function digitsString(length: number, from: number = 0): string {
   let s = '';
   for (let i = 0; i < length; i++) {
     s += (from++) % 10;
