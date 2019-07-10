@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.14.4",
+  "version": "3.14.5",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
