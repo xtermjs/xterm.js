@@ -79,7 +79,8 @@ describe('Escape Sequence Files', function(): void {
   });
 
   after(() => {
-    ptyTerm.end();
+    ptyTerm._master.end();
+    ptyTerm._master.destroy();
   });
 
   FILES.forEach(filename => {
