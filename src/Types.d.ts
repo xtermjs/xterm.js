@@ -288,7 +288,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   handler?: (data: string) => void;
   screenKeys?: boolean;
   termName?: string;
-  useFlowControl?: boolean;
 }
 
 export interface ILinkifier {

@@ -224,7 +224,6 @@ function initOptions(term: TerminalType): void {
     'handler',
     'screenKeys',
     'termName',
-    // 'useFlowControl',
     // Complex option
     'theme'
   ];
