@@ -644,6 +644,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     } else {
       this._selectionService.enable();
     }
+    this._inputHandler.setBrowserServices(this._selectionService);
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
