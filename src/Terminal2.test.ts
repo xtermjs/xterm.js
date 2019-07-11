@@ -9,6 +9,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
 import { Terminal } from './Terminal';
+import { IDisposable } from 'xterm';
 
 // all test files expect terminal in 80x25
 const COLS = 80;
@@ -16,39 +17,16 @@ const ROWS = 25;
 
 const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
 const SKIP_FILES = [
-  // 't0008-BS.in',
-  // 't0014-CAN.in',
-  // 't0015-SUB.in',
-  // 't0017-SD.in',
-  // 't0035-HVP.in',
-  // 't0050-ICH.in',
-  // 't0051-IL.in',
-  // 't0052-DL.in',
-  // 't0055-EL.in',
-  // 't0056-ED.in',
-  // 't0060-DECSC.in',
-  // 't0061-CSI_s.in',
   't0070-DECSTBM_LF.in',      // lineFeed not working correctly
   't0071-DECSTBM_IND.in',
   't0072-DECSTBM_NEL.in',
-  // 't0074-DECSTBM_SU_SD.in',
   't0075-DECSTBM_CUU_CUD.in',
   't0076-DECSTBM_IL_DL.in',   // not working due to lineFeed
   't0077-DECSTBM_quirks.in',
-  // 't0080-HT.in',
-  // 't0082-HTS.in',
-  // 't0083-CHT.in',
   't0084-CBT.in',
-  // 't0090-alt_screen.in',
-  // 't0091-alt_screen_ED3.in',
-  // 't0092-alt_screen_DECSC.in',
-  // 't0100-IRM.in',
   't0101-NLM.in',
   't0103-reverse_wrap.in',
   't0504-vim.in'
-
-  // vttest related files
-  // 't0300-vttest1.in'
 ];
 if (os.platform() === 'darwin') {
   // These are failing on macOS only (termios related?)
@@ -66,10 +44,10 @@ const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slic
 describe('Escape Sequence Files', function(): void {
   this.timeout(20000);
 
-  let ptyTerm: any = null;
-  let slaveEnd: any = null;
+  let ptyTerm: any;
+  let slaveEnd: any;
   let term: Terminal;
-  let customHandler: any = null;
+  let customHandler: IDisposable | undefined;
 
   before(() => {
     ptyTerm = (pty as any).open({cols: COLS, rows: ROWS});
@@ -95,8 +73,9 @@ describe('Escape Sequence Files', function(): void {
 
       // register handler to trigger viewport scraping, wait for it to finish
       let content = '';
+      const OSC_CODE = 12345;
       await new Promise(resolve => {
-        customHandler = term.addOscHandler(12345, () => {
+        customHandler = term.addOscHandler(OSC_CODE, () => {
           // grab terminal viewport content
           content = terminalToString(term);
           resolve();
@@ -105,7 +84,7 @@ describe('Escape Sequence Files', function(): void {
         // write file to slave
         slaveEnd.write(fs.readFileSync(filename, 'utf8'));
         // trigger custom sequence
-        slaveEnd.write('\x1b]12345;\x07');
+        slaveEnd.write(`\x1b]${OSC_CODE};\x07`);
       });
 
       // compare with expected output (right trimmed)
