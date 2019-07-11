@@ -27,6 +27,20 @@ import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 // little weird here as we're importing "this" module
 import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
+
+/**
+ * Whether to use flow control in the demo.
+ * This must be in sync with the settings in server.js.
+ */
+const USE_FLOW_CONTROL = false;
+
+/**
+ * Whether to use UTF8 binary transport in the demo.
+ * (Must also be switched in server.js)
+ */
+const USE_BINARY_UTF8 = false;
+
+
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
@@ -102,6 +116,7 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
+    answerbackString: USE_FLOW_CONTROL ? '\x06\x06\x06\x06' : '',
     windowsMode: isWindows
   } as ITerminalOptions);
 
@@ -170,14 +185,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  /**
-   * The demo defaults to string transport by default.
-   * To run it with UTF8 binary transport, swap comment on
-   * the lines below. (Must also be switched in server.js)
-   */
-  term.loadAddon(new AttachAddon(socket));
-  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
-
+  term.loadAddon(new AttachAddon(socket, {inputUtf8: USE_BINARY_UTF8}));
   term._initialized = true;
 }
 
