@@ -14,6 +14,7 @@ import { Attributes } from 'common/buffer/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService } from 'common/TestUtils.test';
+import { ParserState } from 'common/parser/Constants';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -694,6 +695,100 @@ describe('InputHandler', () => {
         assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
         assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 0);
         assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+    });
+  });
+  describe('ENQ - answerbackString', () => {
+    function getParserState(term: Terminal): ParserState {
+      return (term as any)._inputHandler._parser.currentState;
+    }
+    let term: TestTerminal;
+    let response: string[];
+    const answer = 'xterm. js is still alive!';
+    beforeEach(() => {
+      term = new TestTerminal();
+      term.optionsService.options.answerbackString = answer;
+      response = [];
+      term.onData(e => response.push(e));
+    });
+    it('should respond with answer string', () => {
+      term.writeSync('some data with \x05in it');
+      assert.deepEqual(response, [answer]);
+    });
+    it('should not respond with empty string', () => {
+      term.optionsService.options.answerbackString = '';
+      assert.deepEqual(response, []);
+    });
+    describe('in-depth state testing', () => {
+      it('GROUND', () => {
+        term.writeSync('ab\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.GROUND);
+      });
+      it('ESCAPE', () => {
+        term.writeSync('ab\x1b\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.ESCAPE);
+      });
+      it('ESCAPE_INTERMEDIATE', () => {
+        term.writeSync('ab\x1b%\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.ESCAPE_INTERMEDIATE);
+      });
+      it('CSI_ENTRY', () => {
+        term.writeSync('ab\x1b[\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.CSI_ENTRY);
+      });
+      it('CSI_PARAM', () => {
+        term.writeSync('ab\x1b[;\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.CSI_PARAM);
+      });
+      it('CSI_INTERMEDIATE', () => {
+        term.writeSync('ab\x1b[;%\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.CSI_INTERMEDIATE);
+      });
+      it('CSI_IGNORE', () => {
+        term.writeSync('ab\x1b[;%1\x05');
+        assert.deepEqual(response, [answer]);
+        assert.equal(getParserState(term), ParserState.CSI_IGNORE);
+      });
+      it('SOS_PM_APC_STRING', () => {
+        term.writeSync('ab\x1bX\x05');
+        assert.deepEqual(response, []); // C0 ignored here!
+        assert.equal(getParserState(term), ParserState.SOS_PM_APC_STRING);
+      });
+      it('OSC_STRING', () => {
+        term.writeSync('ab\x1b]\x05');
+        assert.deepEqual(response, []); // C0 ignored here!
+        assert.equal(getParserState(term), ParserState.OSC_STRING);
+      });
+      it('DCS_ENTRY', () => {
+        term.writeSync('ab\x1bP\x05');
+        assert.deepEqual(response, []); // C0 ignored here!
+        assert.equal(getParserState(term), ParserState.DCS_ENTRY);
+      });
+      it('DCS_PARAM', () => {
+        term.writeSync('ab\x1bP;\x05');
+        assert.deepEqual(response, []); // C0 ignored here!
+        assert.equal(getParserState(term), ParserState.DCS_PARAM);
+      });
+      it('DCS_IGNORE', () => {
+        term.writeSync('ab\x1bP%;\x05');
+        assert.deepEqual(response, []); // C0 is ignored here!
+        assert.equal(getParserState(term), ParserState.DCS_IGNORE);
+      });
+      it('DCS_INTERMEDIATE', () => {
+        term.writeSync('ab\x1bP%\x05');
+        assert.deepEqual(response, []); // C0 is ignored here!
+        assert.equal(getParserState(term), ParserState.DCS_INTERMEDIATE);
+      });
+      it('DCS_PASSTHROUGH', () => {
+        term.writeSync('ab\x1bP;p\x05');
+        assert.deepEqual(response, []); // C0 is valid payload data here!
+        assert.equal(getParserState(term), ParserState.DCS_PASSTHROUGH);
       });
     });
   });
