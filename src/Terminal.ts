@@ -1309,10 +1309,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  private _stringExecutor = (data: string) => (resolve: () => void) => this.write(data, resolve);
-
   public writePromise(data: string): Promise<void> {
-    return new Promise(this._stringExecutor(data));
+    return new Promise(resolve => this.write(data, resolve));
   }
 
   protected _innerWrite(bufferOffset: number = 0): void {
