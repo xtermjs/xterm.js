@@ -162,6 +162,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // user input states
   public writeBuffer: string[];
+  public writeBufferCallback: (() => void)[] = [];
   public writeBufferUtf8: Uint8Array[];
   private _writeInProgress: boolean;
   /**
@@ -1275,7 +1276,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Writes text to the terminal.
    * @param data The text to write to the terminal.
    */
-  public write(data: string): void {
+  public write(data: string, cb?: () => void): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;
@@ -1296,6 +1297,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._writeBuffersPendingSize += data.length;
 
     this.writeBuffer.push(data);
+    this.writeBufferCallback.push(cb);
 
     if (!this._writeInProgress && this.writeBuffer.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1307,6 +1309,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
+  private _stringExecutor = (data: string) => (resolve: () => void) => this.write(data, resolve);
+
+  public writePromise(data: string): Promise<void> {
+    return new Promise(this._stringExecutor(data));
+  }
+
   protected _innerWrite(bufferOffset: number = 0): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
@@ -1316,6 +1324,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const startTime = Date.now();
     while (this.writeBuffer.length > bufferOffset) {
       const data = this.writeBuffer[bufferOffset];
+      const cb = this.writeBufferCallback[bufferOffset];
       bufferOffset++;
 
       this._refreshStart = this.buffer.y;
@@ -1323,6 +1332,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
       this._inputHandler.parse(data);
       this._writeBuffersPendingSize -= data.length;
+      if (cb) {
+        cb();
+      }
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1336,12 +1348,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // trim already processed chunks if we are above threshold
       if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
         this.writeBuffer = this.writeBuffer.slice(bufferOffset);
+        this.writeBufferCallback = this.writeBufferCallback.slice(bufferOffset);
         bufferOffset = 0;
       }
       setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
       this.writeBuffer = [];
+      this.writeBufferCallback = [];
     }
   }
 
