@@ -1811,46 +1811,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /**
-   * ESC
-   */
-
-  /**
-   * ESC D Index (IND is 0x84).
-   */
-  public index(): void {
-    this.buffer.y++;
-    if (this.buffer.y > this.buffer.scrollBottom) {
-      this.buffer.y--;
-      this.scroll();
-    }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this.buffer.x >= this.cols) {
-      this.buffer.x--;
-    }
-  }
-
-  /**
-   * ESC M Reverse Index (RI is 0x8d).
-   *
-   * Move the cursor up one row, inserting a new blank line if necessary.
-   */
-  public reverseIndex(): void {
-    if (this.buffer.y === this.buffer.scrollTop) {
-      // possibly move the code below to term.reverseScroll();
-      // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
-      // blankLine(true) is xterm/linux behavior
-      const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
-      this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttrData()));
-      this.updateRange(this.buffer.scrollTop);
-      this.updateRange(this.buffer.scrollBottom);
-    } else {
-      this.buffer.y--;
-    }
-  }
-
-  /**
-   * ESC c Full Reset (RIS).
+   * Reset terminal.
+   * Note: Calling this directly from JS is synchronous but does not clear
+   * input buffers and does not reset the parser, thus the terminal will
+   * continue to apply pending input data.
+   * If you need in band reset (synchronous with input data) consider
+   * using DECSTR (soft reset, CSI ! p) or RIS instead (hard reset, ESC c).
    */
   public reset(): void {
     /**
@@ -1890,14 +1856,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.viewport) {
       this.viewport.syncScrollArea();
     }
-  }
-
-
-  /**
-   * ESC H Tab Set (HTS is 0x88).
-   */
-  public tabSet(): void {
-    this.buffer.tabs[this.buffer.x] = true;
   }
 
   // TODO: Remove cancel function and cancelEvents option

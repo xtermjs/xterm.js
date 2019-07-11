@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker } from 'common/Types';
+import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
@@ -31,6 +31,7 @@ export interface IBuffer {
   hasScrollback: boolean;
   savedY: number;
   savedX: number;
+  savedCharset: ICharset | null;
   savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   markers: IMarker[];

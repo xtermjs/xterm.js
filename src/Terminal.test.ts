@@ -8,6 +8,7 @@ import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
+import { wcwidth } from 'common/CharWidth';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -750,10 +751,14 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = false;
+        const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
+        if (width !== 1) {
+          continue;
+        }
         term.write('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars().length).eql(1);
+        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars().length).eql(2);
         expect(term.buffer.lines.get(1).loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
