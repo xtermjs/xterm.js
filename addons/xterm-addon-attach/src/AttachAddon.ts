@@ -6,6 +6,7 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { ThinProtocol, MessageType } from './ThinProtocol';
 
 interface IAttachOptions {
   bidirectional?: boolean;
@@ -17,6 +18,7 @@ export class AttachAddon implements ITerminalAddon {
   private _bidirectional: boolean;
   private _utf8: boolean;
   private _disposables: IDisposable[] = [];
+  private _tp: ThinProtocol = new ThinProtocol();
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
     this._socket = socket;
@@ -41,10 +43,15 @@ export class AttachAddon implements ITerminalAddon {
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
+
+    // test the ACK (heartbeat like)
+    setInterval(() => this._socket.send(this._tp.ack()), 1000);
   }
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
+    this._tp.clearIncomingHandler(MessageType.DATA);
+    this._tp.clearIncomingHandler(MessageType.ACK);
   }
 
   private _sendData(data: string): void {
@@ -53,7 +60,7 @@ export class AttachAddon implements ITerminalAddon {
     if (this._socket.readyState !== 1) {
       return;
     }
-    this._socket.send(data);
+    this._socket.send(this._tp.data(data));
   }
 }
 

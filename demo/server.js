@@ -2,6 +2,8 @@ var express = require('express');
 var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
+var ThinProtocol = require('../addons/xterm-addon-attach/out/ThinProtocol').ThinProtocol;
+var MessageType = require('../addons/xterm-addon-attach/out/ThinProtocol').MessageType;
 
 /**
  * Whether to use UTF8 binary transport.
@@ -15,10 +17,6 @@ const USE_BINARY_UTF8 = false;
  */
 const USE_FLOW_CONTROL = false;
 
-// send ENQ as ACK request (hardcoded in xterm.js)
-const FLOW_CONTROL_ACK_REQUEST = '\x05';
-// ACK response
-const FLOW_CONTROL_ACK_RESPONSE = '\x06\x06\x06\x06';  // must be in line with answerbackString in xterm.js
 // send ACK request every n-th bytes
 const ACK_WATERMARK = 131072;
 // max allowed pending ACK requests before pausing pty
@@ -147,33 +145,15 @@ function startServer() {
     }
     const send = (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
-    let ackPending = 0;
-    let bytesSent = 0;
+    // set up the thin protocol to receive ACKs
+    const tp = new ThinProtocol();
+    // we do a one sided protocol usage and only read in server part
+    tp.setIncomingHandler(MessageType.DATA, msg => term.write(msg));
+    tp.setIncomingHandler(MessageType.ACK, msg => console.log('ACK', msg));
 
-    term.on('data', function(data) {
-      send(data);
-      if (USE_FLOW_CONTROL) {
-        bytesSent += data.length;
-        if (bytesSent > ACK_WATERMARK) {
-          send(FLOW_CONTROL_ACK_REQUEST);
-          ackPending++;
-          bytesSent = 0;
-          if (ackPending > MAX_PENDING_ACK) {
-            term.pause();
-          }
-        }
-      }
-    });
-    ws.on('message', function(msg) {
-      if (USE_FLOW_CONTROL && msg === FLOW_CONTROL_ACK_RESPONSE) {
-        ackPending = Math.max(--ackPending, 0);
-        if (ackPending <= MAX_PENDING_ACK) {
-          term.resume();
-        }
-        return;
-      }
-      term.write(msg);
-    });
+    term.on('data', data => send(data));
+    ws.on('message', msg => tp.unwrap(msg));
+
     ws.on('close', function () {
       term.kill();
       console.log('Closed terminal ' + term.pid);
