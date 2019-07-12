@@ -20,6 +20,14 @@ declare module 'xterm-addon-serialize' {
      */
     public activate(terminal: Terminal): void;
 
+    /**
+     * Serializes terminal rows into a string that can be written back to the terminal
+     * to restore the state. The cursor will also be positioned to the correct cell.
+     * When restoring a terminal it is best to do before `Terminal.open` is called
+     * to avoid wasting CPU cycles rendering incomplete frames.
+     * @param rows The number of rows to serialize, starting from the top of the
+     * terminal. This defaults to the number of rows in the viewport.
+     */
     public serialize(rows?: number): string;
 
     /**

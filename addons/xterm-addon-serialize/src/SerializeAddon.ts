@@ -15,28 +15,21 @@ export class SerializeAddon implements ITerminalAddon {
   }
 
   public serialize(rows?: number): string {
+    // TODO: Add frontground/background color support later
     if (!this._terminal) {
-      return '';
+      throw new Error('No terminal found!');
     }
     const buffer = this._terminal.buffer;
     const length = Math.max(0, Math.min((rows === undefined ? buffer.length : rows), buffer.length));
-    let data = '';
+    const lines: string[] = new Array<string>(length);
 
     for (let i = 0; i < length; i++) {
       const line = buffer.getLine(i);
-      const last = i === length - 1;
-      if (line) {
-        data += line.translateToString();
-      }
-      if (!last) {
-        data += '\r\n';
-      }
+      lines[i] = line ? line.translateToString() : '';
     }
 
-    return data;
+    return lines.join('\r\n');
   }
 
-  public dispose(): void {
-    if (this._terminal !== undefined) { }
-  }
+  public dispose(): void { }
 }
