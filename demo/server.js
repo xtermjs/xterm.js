@@ -13,14 +13,15 @@ const USE_BINARY_UTF8 = false;
 
 /**
  * Whether to use flow control.
- * This must be in sync with answerbackString in xterm.js.
  */
-const USE_FLOW_CONTROL = false;
+const USE_FLOW_CONTROL = true;
 
-// send ACK request every n-th bytes
-const ACK_WATERMARK = 131072;
+// expect ACK every n-th bytes
+const ACK_WATERMARK = 131072; // must be in line with attach addon setting!
 // max allowed pending ACK requests before pausing pty
-const MAX_PENDING_ACK = 4;
+const MAX_PENDING_ACK = 5;
+// min pending ACK before resming pty
+const MIN_PENDING_ACK = 3;
 
 // settings for prebuffering
 const MAX_SEND_INTERVAL = 5;
@@ -87,12 +88,42 @@ function startServer() {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
 
+    // set up the thin protocol to receive ACKs
+    const tp = new ThinProtocol();
+    // we do a one sided protocol usage and only read in server part
+    tp.setIncomingHandler(MessageType.DATA, msg => term.write(msg));
+    tp.setIncomingHandler(MessageType.ACK, () => {
+      if (USE_FLOW_CONTROL) {
+        if (pending_acks === MIN_PENDING_ACK + 1) {
+          term.resume();
+        }
+        pending_acks = Math.max(--pending_acks, 0);
+      }
+    });
+
+    // incomming chunks are routed through thin protocol to separate DATA from ACK
+    ws.on('message', msg => tp.unwrap(msg));
+
+    let pending_acks = 0;
+    let bytes_sent = 0;
+
+    // final ws send call, also does the flow control
     const _send = data => {
       // handle only 'open' websocket state
       if (ws.readyState === 1) {
         // test high latency
         // setTimeout(() => ws.send(data), 250);
         ws.send(data);
+        if (USE_FLOW_CONTROL) {
+          bytes_sent += data .length;
+          if (bytes_sent > ACK_WATERMARK) {
+            pending_acks++;
+            bytes_sent = 0;
+            if (pending_acks > MAX_PENDING_ACK) {
+              term.pause();
+            }
+          }
+        }
       }
     }
 
@@ -145,14 +176,7 @@ function startServer() {
     }
     const send = (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
-    // set up the thin protocol to receive ACKs
-    const tp = new ThinProtocol();
-    // we do a one sided protocol usage and only read in server part
-    tp.setIncomingHandler(MessageType.DATA, msg => term.write(msg));
-    tp.setIncomingHandler(MessageType.ACK, msg => console.log('ACK', msg));
-
     term.on('data', data => send(data));
-    ws.on('message', msg => tp.unwrap(msg));
 
     ws.on('close', function () {
       term.kill();

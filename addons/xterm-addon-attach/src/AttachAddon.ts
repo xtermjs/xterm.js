@@ -19,6 +19,8 @@ export class AttachAddon implements ITerminalAddon {
   private _utf8: boolean;
   private _disposables: IDisposable[] = [];
   private _tp: ThinProtocol = new ThinProtocol();
+  private _ack_watermark = 131072;
+  private _bytes_seen = 0;
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
     this._socket = socket;
@@ -30,11 +32,27 @@ export class AttachAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     if (this._utf8) {
-      this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => terminal.writeUtf8(new Uint8Array((ev as any).data as ArrayBuffer))));
+      this._disposables.push(
+        addSocketListener(this._socket, 'message',
+          (ev: MessageEvent | Event | CloseEvent) => {
+            terminal.writeUtf8(new Uint8Array((ev as MessageEvent).data as ArrayBuffer));
+          }
+        )
+      );
     } else {
-      this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => terminal.write((ev as any).data as string)));
+      this._disposables.push(
+        addSocketListener(this._socket, 'message',
+          (ev: MessageEvent | Event | CloseEvent) => {
+            this._bytes_seen += (ev as MessageEvent).data.length;
+            if (this._bytes_seen > this._ack_watermark) {
+              (terminal as any)._core.write((ev as MessageEvent).data as string, () => this._socket.send(this._tp.ack()));
+              this._bytes_seen = 0;
+            } else {
+              terminal.write((ev as MessageEvent).data as string);
+            }
+          }
+        )
+      );
     }
 
     if (this._bidirectional) {
@@ -45,7 +63,7 @@ export class AttachAddon implements ITerminalAddon {
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
 
     // test the ACK (heartbeat like)
-    setInterval(() => this._socket.send(this._tp.ack()), 1000);
+    // setInterval(() => this._socket.send(this._tp.ack()), 1000);
   }
 
   public dispose(): void {
