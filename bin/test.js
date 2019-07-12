@@ -12,7 +12,8 @@ env.NODE_PATH = path.resolve(__dirname, '../out');
 
 let testFiles = [
   './out/*test.js',
-  './out/**/*test.js'
+  './out/**/*test.js',
+  './addons/**/out/*test.js',
 ];
 
 // ability to inject particular test files via
