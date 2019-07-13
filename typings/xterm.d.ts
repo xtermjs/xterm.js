@@ -16,6 +16,11 @@ declare module 'xterm' {
   export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
   /**
+   * A string representing log level.
+   */
+  export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+
+  /**
    * A string representing a renderer type.
    */
   export type RendererType = 'dom' | 'canvas';
@@ -106,6 +111,18 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * What log level to use, this will log for all levels below and including
+     * what is set:
+     *
+     * 1. debug
+     * 2. info (default)
+     * 3. warn
+     * 4. error
+     * 5. off
+     */
+    logLevel?: LogLevel;
 
     /**
      * Whether to treat option as the meta key.

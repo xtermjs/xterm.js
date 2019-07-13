@@ -38,6 +38,13 @@ export interface ICoreService {
     triggerDataEvent(data: string, wasUserInput?: boolean): void;
 }
 
+export interface ILogService {
+  debug(message: any, ...optionalParams: any[]): void;
+  info(message: any, ...optionalParams: any[]): void;
+  warn(message: any, ...optionalParams: any[]): void;
+  error(message: any, ...optionalParams: any[]): void;
+}
+
 export interface IOptionsService {
   readonly options: ITerminalOptions;
 
@@ -48,7 +55,7 @@ export interface IOptionsService {
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
-
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 export type RendererType = 'dom' | 'canvas';
 
 export interface IPartialTerminalOptions {
@@ -66,6 +73,7 @@ export interface IPartialTerminalOptions {
   fontWeightBold?: FontWeight;
   letterSpacing?: number;
   lineHeight?: number;
+  logLevel?: LogLevel;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   rendererType?: RendererType;
@@ -86,6 +94,7 @@ export interface ITerminalOptions {
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
+  debug: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fontSize: number;
@@ -94,6 +103,7 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
+  logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
   rendererType: RendererType;
@@ -109,7 +119,6 @@ export interface ITerminalOptions {
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
-  debug: boolean;
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;

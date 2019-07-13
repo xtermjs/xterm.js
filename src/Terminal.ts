@@ -47,7 +47,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService, ILogService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -58,6 +58,7 @@ import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
+import { LogService } from 'common/services/LogService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -110,6 +111,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _logService: ILogService;
   public optionsService: IOptionsService;
 
   // browser services
@@ -241,6 +243,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._bufferService = new BufferService(this.optionsService);
     this._coreService = new CoreService(() => this.scrollToBottom(), this._bufferService, this.optionsService);
     this._coreService.onData(e => this._onData.fire(e));
+    this._logService = new LogService(this.optionsService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -297,7 +300,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this.optionsService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._logService, this.optionsService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
