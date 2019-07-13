@@ -30,9 +30,13 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 /**
  * Whether to use flow control in the demo.
- * This must be in sync with the settings in server.js.
+ * Setting this to a positive number will send an ACK reply
+ * to the backend for every n-th processed byte. The backend
+ * keeps tracks of this to decide whether xterm.js is to far behind
+ * and will pause/resume the pty accordingly.
+ * Caveat: This number must be in line with the setting in server.js!
  */
-const USE_FLOW_CONTROL = false;
+const FLOW_CONTROL = 131072;
 
 /**
  * Whether to use UTF8 binary transport in the demo.
@@ -116,7 +120,6 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
-    answerbackString: USE_FLOW_CONTROL ? '\x06\x06\x06\x06' : '',
     windowsMode: isWindows
   } as ITerminalOptions);
 
@@ -185,7 +188,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  term.loadAddon(new AttachAddon(socket, {inputUtf8: USE_BINARY_UTF8}));
+  term.loadAddon(new AttachAddon(socket, {inputUtf8: USE_BINARY_UTF8, flowControl: FLOW_CONTROL}));
   term._initialized = true;
 }
 

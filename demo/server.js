@@ -13,11 +13,15 @@ const USE_BINARY_UTF8 = false;
 
 /**
  * Whether to use flow control.
+ * Setting this to a positive number will install some bookkeeping
+ * about sent bytes and wait for ACK responses from the frontend.
+ * If the pending ACK counter hits MAX_PENDING_ACK the pty will be paused
+ * (indicating that the frontend is to far behind) and resumed once
+ * the pending ACKs drop below MIN_PENDING_ACK.
+ * Caveat: This number must be in line with the setting in client.ts!
  */
-const USE_FLOW_CONTROL = true;
+const FLOW_CONTROL = 131072;
 
-// expect ACK every n-th bytes
-const ACK_WATERMARK = 131072; // must be in line with attach addon setting!
 // max allowed pending ACK requests before pausing pty
 const MAX_PENDING_ACK = 5;
 // min pending ACK before resming pty
@@ -88,13 +92,20 @@ function startServer() {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
 
-    // set up the thin protocol to receive ACKs
+    /**
+     * ThinProtocol
+     * The procotol allows to send different message types in-band.
+     * We use it here to separate incoming normal DATA messages from ACK replies.
+     * In the demo the protocol is only used for incoming data
+     * (one sided, outgoing data is kept as plain data stream).
+     */
     const tp = new ThinProtocol();
-    // we do a one sided protocol usage and only read in server part
+    // route DATA messages to pty
     tp.setIncomingHandler(MessageType.DATA, msg => term.write(msg));
+    // do flow control with ACK replies
     tp.setIncomingHandler(MessageType.ACK, () => {
-      if (USE_FLOW_CONTROL) {
-        if (pending_acks === MIN_PENDING_ACK + 1) {
+      if (FLOW_CONTROL) {
+        if (pending_acks === MIN_PENDING_ACK) {
           term.resume();
         }
         pending_acks = Math.max(--pending_acks, 0);
@@ -111,12 +122,12 @@ function startServer() {
     const _send = data => {
       // handle only 'open' websocket state
       if (ws.readyState === 1) {
-        // test high latency
+        // swap comments to test high latency
         // setTimeout(() => ws.send(data), 250);
         ws.send(data);
-        if (USE_FLOW_CONTROL) {
+        if (FLOW_CONTROL) {
           bytes_sent += data .length;
-          if (bytes_sent > ACK_WATERMARK) {
+          if (bytes_sent > FLOW_CONTROL) {
             pending_acks++;
             bytes_sent = 0;
             if (pending_acks > MAX_PENDING_ACK) {
@@ -128,7 +139,9 @@ function startServer() {
     }
 
     /**
-     * message buffering - limits are MAX_SEND_INTERVAL and MAX_CHUNK_SIZE
+     * message prebuffering - limits are MAX_SEND_INTERVAL and MAX_CHUNK_SIZE
+     * This is needed to reduce pressure on the websocket by chaining very small
+     * chunks into bigger ones.
      */
     // string message
     function buffer(timeout, limit) {

@@ -11,6 +11,7 @@ import { ThinProtocol, MessageType } from './ThinProtocol';
 interface IAttachOptions {
   bidirectional?: boolean;
   inputUtf8?: boolean;
+  flowControl?: number;
 }
 
 export class AttachAddon implements ITerminalAddon {
@@ -19,7 +20,7 @@ export class AttachAddon implements ITerminalAddon {
   private _utf8: boolean;
   private _disposables: IDisposable[] = [];
   private _tp: ThinProtocol = new ThinProtocol();
-  private _ack_watermark = 131072;
+  private _flowControl = 0;
   private _bytes_seen = 0;
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
@@ -28,6 +29,7 @@ export class AttachAddon implements ITerminalAddon {
     this._socket.binaryType = 'arraybuffer';
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
     this._utf8 = !!(options && options.inputUtf8);
+    this._flowControl = (options && options.flowControl) ? Math.max(options.flowControl, 0) : 0;
   }
 
   public activate(terminal: Terminal): void {
@@ -40,11 +42,11 @@ export class AttachAddon implements ITerminalAddon {
         )
       );
     } else {
-      this._disposables.push(
-        addSocketListener(this._socket, 'message',
+      this._disposables.push(this._flowControl
+        ? addSocketListener(this._socket, 'message',
           (ev: MessageEvent | Event | CloseEvent) => {
             this._bytes_seen += (ev as MessageEvent).data.length;
-            if (this._bytes_seen > this._ack_watermark) {
+            if (this._bytes_seen > this._flowControl) {
               (terminal as any)._core.write((ev as MessageEvent).data as string, () => this._socket.send(this._tp.ack()));
               this._bytes_seen = 0;
             } else {
@@ -52,6 +54,11 @@ export class AttachAddon implements ITerminalAddon {
             }
           }
         )
+        : addSocketListener(this._socket, 'message',
+        (ev: MessageEvent | Event | CloseEvent) => {
+          terminal.write((ev as MessageEvent).data as string);
+        }
+      )
       );
     }
 
@@ -61,9 +68,6 @@ export class AttachAddon implements ITerminalAddon {
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
-
-    // test the ACK (heartbeat like)
-    // setInterval(() => this._socket.send(this._tp.ack()), 1000);
   }
 
   public dispose(): void {

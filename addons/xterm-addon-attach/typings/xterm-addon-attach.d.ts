@@ -19,6 +19,13 @@ declare module 'xterm-addon-attach' {
      *       otherwise always binary UTF8 data.
      */
     inputUtf8?: boolean;
+
+    /**
+     * Whether to use flow control.
+     * Set this to a positive number to send an ACK reply every n-th processed byte.
+     * Default is 0 (flow control disabled).
+     */
+    flowControl?: number;
   }
 
   export class AttachAddon implements ITerminalAddon {
