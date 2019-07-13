@@ -34,6 +34,8 @@ const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
   off: LogLevel.OFF
 };
 
+const LOG_PREFIX = 'xterm.js: ';
+
 export class LogService implements ILogService {
   private _logLevel!: LogLevel;
 
@@ -52,27 +54,27 @@ export class LogService implements ILogService {
     this._logLevel = optionsKeyToLogLevel[this._optionsService.options.logLevel];
   }
 
-  debug(message: any, ...optionalParams: any[]): void {
+  debug(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.DEBUG) {
-      console.log.call(console, message, ...optionalParams);
+      console.log.call(console, LOG_PREFIX + message, ...optionalParams);
     }
   }
 
-  info(message: any, ...optionalParams: any[]): void {
+  info(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.INFO) {
-      console.info.call(console, message, ...optionalParams);
+      console.info.call(console, LOG_PREFIX + message, ...optionalParams);
     }
   }
 
-  warn(message: any, ...optionalParams: any[]): void {
+  warn(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.WARN) {
-      console.warn.call(console, message, ...optionalParams);
+      console.warn.call(console, LOG_PREFIX + message, ...optionalParams);
     }
   }
 
-  error(message: any, ...optionalParams: any[]): void {
+  error(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.ERROR) {
-      console.error.call(console, message, ...optionalParams);
+      console.error.call(console, LOG_PREFIX + message, ...optionalParams);
     }
   }
 }
