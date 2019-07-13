@@ -19,7 +19,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
 
 /**
@@ -42,8 +42,9 @@ class DECRQSS implements IDcsHandler {
   private _data: Uint32Array = new Uint32Array(0);
 
   constructor(
-    private _terminal: any,
-    private _bufferService: IBufferService
+    private _bufferService: IBufferService,
+    private _coreService: ICoreService,
+    private _optionsService: IOptionsService
   ) { }
 
   hook(collect: string, params: IParams, flag: number): void {
@@ -60,25 +61,26 @@ class DECRQSS implements IDcsHandler {
     switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
-        return this._terminal.handler(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
       case '"p': // DECSCL
-        return this._terminal.handler(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
       case 'r': // DECSTBM
         const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
                 ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
-        return this._terminal.handler(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
       case 'm': // SGR
         // TODO: report real settings instead of 0m
-        return this._terminal.handler(`${C0.ESC}P1$r0m${C0.ESC}\\`);
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
       case ' q': // DECSCUSR
         const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
-        let style = STYLES[this._terminal.getOption('cursorStyle')];
-        style -= this._terminal.getOption('cursorBlink');
-        return this._terminal.handler(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
+        let style = STYLES[this._optionsService.options.cursorStyle];
+        style -= this._optionsService.options.cursorBlink ? 1 : 0;
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
-        this._terminal.error('Unknown DCS $q %s', data);
-        this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
+        // TODO: Move this into a log service
+        console.error('Unknown DCS $q %s', data);
+        this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
 }
@@ -129,6 +131,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       protected _terminal: IInputHandlingTerminal,
       private _bufferService: IBufferService,
       private _coreService: ICoreService,
+      private _optionsService: IOptionsService,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -297,7 +300,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.setDcsHandler('$q', new DECRQSS(this._terminal, this._bufferService));
+    this._parser.setDcsHandler('$q', new DECRQSS(this._bufferService, this._coreService, this._optionsService));
   }
 
   public dispose(): void {
