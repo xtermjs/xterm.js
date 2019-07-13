@@ -297,7 +297,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._coreService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
