@@ -19,19 +19,19 @@ declare const console: IConsole;
 
 
 export enum LogLevel {
-  Debug = 0,
-  Info = 1,
-  Warn = 2,
-  Error = 3,
-  Off = 4
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  OFF = 4
 }
 
 const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
-  debug: LogLevel.Debug,
-  info: LogLevel.Info,
-  warn: LogLevel.Warn,
-  error: LogLevel.Error,
-  off: LogLevel.Off
+  debug: LogLevel.DEBUG,
+  info: LogLevel.INFO,
+  warn: LogLevel.WARN,
+  error: LogLevel.ERROR,
+  off: LogLevel.OFF
 };
 
 export class LogService implements ILogService {
@@ -45,7 +45,7 @@ export class LogService implements ILogService {
       if (key === 'logLevel') {
         this._updateLogLevel();
       }
-    })
+    });
   }
 
   private _updateLogLevel(): void {
@@ -53,25 +53,25 @@ export class LogService implements ILogService {
   }
 
   debug(message: any, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.Debug) {
+    if (this._logLevel <= LogLevel.DEBUG) {
       console.log.call(console, message, ...optionalParams);
     }
   }
 
   info(message: any, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.Info) {
+    if (this._logLevel <= LogLevel.INFO) {
       console.info.call(console, message, ...optionalParams);
     }
   }
 
   warn(message: any, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.Warn) {
+    if (this._logLevel <= LogLevel.WARN) {
       console.warn.call(console, message, ...optionalParams);
     }
   }
 
   error(message: any, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.Error) {
+    if (this._logLevel <= LogLevel.ERROR) {
       console.error.call(console, message, ...optionalParams);
     }
   }
