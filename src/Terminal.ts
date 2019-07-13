@@ -25,11 +25,11 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './browser/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
-import { Linkifier } from './Linkifier';
+import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from './browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';

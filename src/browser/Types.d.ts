@@ -39,13 +39,17 @@ export interface ILinkMatcher {
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
+export interface IRegisteredLinkMatcher extends ILinkMatcher {
+  priority: number;
+}
+
 export interface ILinkifierEvent {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   cols: number;
-  fg: number;
+  fg: number | undefined;
 }
 
 export interface ILinkifier {

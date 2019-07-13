@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone } from 'browser/Types';
+import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
 import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -27,14 +27,14 @@ export class Linkifier implements ILinkifier {
    */
   protected static _timeBeforeLatency = 200;
 
-  protected _linkMatchers: ILinkMatcher[] = [];
+  protected _linkMatchers: IRegisteredLinkMatcher[] = [];
 
   private _mouseZoneManager: IMouseZoneManager | undefined;
   private _element: HTMLElement | undefined;
 
-  private _rowsTimeoutId: number;
+  private _rowsTimeoutId: number | undefined;
   private _nextLinkMatcherId = 0;
-  private _rowsToLinkify: { start: number, end: number };
+  private _rowsToLinkify: { start: number | undefined, end: number | undefined };
 
   private _onLinkHover = new EventEmitter<ILinkifierEvent>();
   public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
@@ -48,8 +48,8 @@ export class Linkifier implements ILinkifier {
     private readonly _logService: ILogService
   ) {
     this._rowsToLinkify = {
-      start: null,
-      end: null
+      start: undefined,
+      end: undefined
     };
   }
 
@@ -74,7 +74,7 @@ export class Linkifier implements ILinkifier {
     }
 
     // Increase range to linkify
-    if (this._rowsToLinkify.start === null) {
+    if (this._rowsToLinkify.start === undefined || this._rowsToLinkify.end === undefined) {
       this._rowsToLinkify.start = start;
       this._rowsToLinkify.end = end;
     } else {
@@ -96,8 +96,13 @@ export class Linkifier implements ILinkifier {
    * Linkifies the rows requested.
    */
   private _linkifyRows(): void {
-    this._rowsTimeoutId = null;
+    this._rowsTimeoutId = undefined;
     const buffer = this._bufferService.buffer;
+
+    if (this._rowsToLinkify.start === undefined || this._rowsToLinkify.end === undefined) {
+      this._logService.debug('_rowToLinkify was unset before _linkifyRows was called');
+      return;
+    }
 
     // Ensure the start row exists
     const absoluteRowIndexStart = buffer.ydisp + this._rowsToLinkify.start;
@@ -128,8 +133,8 @@ export class Linkifier implements ILinkifier {
       }
     }
 
-    this._rowsToLinkify.start = null;
-    this._rowsToLinkify.end = null;
+    this._rowsToLinkify.start = undefined;
+    this._rowsToLinkify.end = undefined;
   }
 
   /**
@@ -146,7 +151,7 @@ export class Linkifier implements ILinkifier {
     if (!handler) {
       throw new Error('handler must be defined');
     }
-    const matcher: ILinkMatcher = {
+    const matcher: IRegisteredLinkMatcher = {
       id: this._nextLinkMatcherId++,
       regex,
       handler,
@@ -167,7 +172,7 @@ export class Linkifier implements ILinkifier {
    * considered after older link matchers.
    * @param matcher The link matcher to be added.
    */
-  private _addLinkMatcherToList(matcher: ILinkMatcher): void {
+  private _addLinkMatcherToList(matcher: IRegisteredLinkMatcher): void {
     if (this._linkMatchers.length === 0) {
       this._linkMatchers.push(matcher);
       return;
@@ -237,11 +242,12 @@ export class Linkifier implements ILinkifier {
       }
 
       const line = this._bufferService.buffer.lines.get(bufferIndex[0]);
-      const attr = line.getFg(bufferIndex[1]);
-      let fg: number | undefined;
-      if (attr) {
-        fg = (attr >> 9) & 0x1ff;
+      if (!line) {
+        break;
       }
+
+      const attr = line.getFg(bufferIndex[1]);
+      const fg = attr ? (attr >> 9) & 0x1ff : undefined;
 
       if (matcher.validationCallback) {
         matcher.validationCallback(uri, isValid => {
@@ -267,7 +273,11 @@ export class Linkifier implements ILinkifier {
    * @param matcher The link matcher for the link.
    * @param fg The link color for hover event.
    */
-  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
+  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number | undefined): void {
+    if (!this._mouseZoneManager || !this._element) {
+      return;
+    }
+
     const width = getStringCellWidth(uri);
     const x1 = x % this._bufferService.cols;
     const y1 = y + Math.floor(x / this._bufferService.cols);
@@ -291,7 +301,7 @@ export class Linkifier implements ILinkifier {
       },
       () => {
         this._onLinkHover.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
-        this._element.classList.add('xterm-cursor-pointer');
+        this._element!.classList.add('xterm-cursor-pointer');
       },
       e => {
         this._onLinkTooltip.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
@@ -301,7 +311,7 @@ export class Linkifier implements ILinkifier {
       },
       () => {
         this._onLinkLeave.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
-        this._element.classList.remove('xterm-cursor-pointer');
+        this._element!.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }
@@ -315,7 +325,7 @@ export class Linkifier implements ILinkifier {
     ));
   }
 
-  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number): ILinkifierEvent {
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number | undefined): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._bufferService.cols, fg };
   }
 }
