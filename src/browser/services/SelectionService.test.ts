@@ -13,7 +13,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
-import { isWindows } from '../../../out/common/Platform';
+import { isWindows } from 'common/Platform';
 
 class TestSelectionService extends SelectionService {
   constructor(

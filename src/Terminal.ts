@@ -23,7 +23,7 @@
 
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, IMouseZoneManager } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { CompositionHelper } from './CompositionHelper';
+import { CompositionHelper } from './browser/input/CompositionHelper';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
@@ -581,7 +581,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this, this._charSizeService, this._coreService);
+    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this._bufferService, this.optionsService, this._charSizeService, this._coreService);
     this._helperContainer.appendChild(this._compositionView);
 
     // Performance: Add viewport and helper elements from the fragment
