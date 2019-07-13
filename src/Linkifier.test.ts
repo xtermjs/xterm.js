@@ -11,10 +11,11 @@ import { MockBuffer, MockTerminal, TestTerminal } from './TestUtils.test';
 import { CircularList } from 'common/CircularList';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
+import { MockLogService } from 'common/TestUtils.test';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
-    super(terminal);
+    super(terminal, new MockLogService());
     Linkifier._timeBeforeLatency = 0;
   }
 

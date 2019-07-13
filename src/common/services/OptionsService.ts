@@ -29,6 +29,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
+  logLevel: 'info',
   scrollback: 1000,
   screenReaderMode: false,
   macOptionIsMeta: false,
@@ -44,7 +45,6 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   convertEol: false,
   termName: 'xterm',
   screenKeys: false,
-  debug: false,
   cancelEvents: false,
   useFlowControl: false,
   wordSeparator: ' ()[]{}\'"'

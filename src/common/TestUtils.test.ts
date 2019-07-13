@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -34,6 +34,13 @@ export class MockCoreService implements ICoreService {
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
   reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+}
+
+export class MockLogService implements ILogService {
+  debug(message: any, ...optionalParams: any[]): void {}
+  info(message: any, ...optionalParams: any[]): void {}
+  warn(message: any, ...optionalParams: any[]): void {}
+  error(message: any, ...optionalParams: any[]): void {}
 }
 
 export class MockOptionsService implements IOptionsService {

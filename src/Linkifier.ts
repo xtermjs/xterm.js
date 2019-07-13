@@ -8,6 +8,7 @@ import { IBufferStringIteratorResult } from 'common/buffer/Types';
 import { MouseZone } from './MouseZoneManager';
 import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { ILogService } from 'common/services/Services';
 
 /**
  * Limit of the unwrapping line expansion (overscan) at the top and bottom
@@ -42,7 +43,8 @@ export class Linkifier implements ILinkifier {
   public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(
-    protected _terminal: ITerminal
+    protected _terminal: ITerminal,
+    private _logService: ILogService
   ) {
     this._rowsToLinkify = {
       start: null,
@@ -210,11 +212,7 @@ export class Linkifier implements ILinkifier {
       if (!uri) {
         // something matched but does not comply with the given matchIndex
         // since this is most likely a bug the regex itself we simply do nothing here
-        // DEBUG: print match and throw
-        if ((<any>this._terminal).debug) {
-          console.log({match, matcher});
-          throw new Error('match found without corresponding matchIndex');
-        }
+        this._logService.debug('match found without corresponding matchIndex', match, matcher);
         break;
       }
 
