@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { IMouseZoneManager, IMouseZone, ILinkMatcher } from './Types';
+import { IMouseZoneManager, IMouseZone, ILinkMatcher } from 'browser/Types';
 import { IBufferLine } from 'common/Types';
 import { Linkifier } from './Linkifier';
 import { TestTerminal } from './TestUtils.test';

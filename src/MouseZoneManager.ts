@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal, IMouseZoneManager, IMouseZone } from './Types';
+import { ITerminal } from './Types';
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IMouseService } from 'browser/services/Services';
+import { IMouseZoneManager, IMouseZone } from 'browser/Types';
 
 const HOVER_DURATION = 500;
 
@@ -228,20 +229,5 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
       }
     }
     return null;
-  }
-}
-
-export class MouseZone implements IMouseZone {
-  constructor(
-    public x1: number,
-    public y1: number,
-    public x2: number,
-    public y2: number,
-    public clickCallback: (e: MouseEvent) => any,
-    public hoverCallback: (e: MouseEvent) => any,
-    public tooltipCallback: (e: MouseEvent) => any,
-    public leaveCallback: () => void,
-    public willLinkActivate: (e: MouseEvent) => boolean
-  ) {
   }
 }

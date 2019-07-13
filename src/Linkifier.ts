@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager } from './Types';
+import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
-import { MouseZone } from './MouseZoneManager';
 import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ILogService, IBufferService } from 'common/services/Services';
@@ -318,5 +317,20 @@ export class Linkifier implements ILinkifier {
 
   private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._bufferService.cols, fg };
+  }
+}
+
+export class MouseZone implements IMouseZone {
+  constructor(
+    public x1: number,
+    public y1: number,
+    public x2: number,
+    public y2: number,
+    public clickCallback: (e: MouseEvent) => any,
+    public hoverCallback: (e: MouseEvent) => any,
+    public tooltipCallback: (e: MouseEvent) => any,
+    public leaveCallback: () => void,
+    public willLinkActivate: (e: MouseEvent) => boolean
+  ) {
   }
 }
