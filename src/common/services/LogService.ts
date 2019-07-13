@@ -54,25 +54,25 @@ export class LogService implements ILogService {
 
   debug(message: any, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.Debug) {
-      console.log.call(console, message, optionalParams);
+      console.log.call(console, message, ...optionalParams);
     }
   }
 
   info(message: any, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.Info) {
-      console.info.call(console, message, optionalParams);
+      console.info.call(console, message, ...optionalParams);
     }
   }
 
   warn(message: any, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.Warn) {
-      console.warn.call(console, message, optionalParams);
+      console.warn.call(console, message, ...optionalParams);
     }
   }
 
   error(message: any, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.Error) {
-      console.error.call(console, message, optionalParams);
+      console.error.call(console, message, ...optionalParams);
     }
   }
 }

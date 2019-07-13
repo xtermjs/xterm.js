@@ -88,7 +88,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
   private _parent: HTMLElement;
-  private _context: Window;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
@@ -306,7 +305,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._inputHandler);
 
     this._selectionService = this._selectionService || null;
-    this.linkifier = this.linkifier || new Linkifier(this);
+    this.linkifier = this.linkifier || new Linkifier(this, this._logService);
     this._mouseZoneManager = this._mouseZoneManager || null;
 
     if (this.options.windowsMode) {
@@ -537,8 +536,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       throw new Error('Terminal requires a parent element.');
     }
 
-    // Grab global elements
-    this._context = this._parent.ownerDocument.defaultView;
     this._document = this._parent.ownerDocument;
 
     // Create main element container
@@ -1677,24 +1674,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this.element.classList.remove('visual-bell-active');
       }, 200);
     }
-  }
-
-  /**
-   * Log the current state to the console.
-   */
-  public log(text: string, data?: any): void {
-    if (!this.options.debug) return;
-    if (!this._context.console || !this._context.console.log) return;
-    this._context.console.log(text, data);
-  }
-
-  /**
-   * Log the current state as error to the console.
-   */
-  public error(text: string, data?: any): void {
-    if (!this.options.debug) return;
-    if (!this._context.console || !this._context.console.error) return;
-    this._context.console.error(text, data);
   }
 
   /**

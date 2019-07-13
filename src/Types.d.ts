@@ -65,11 +65,9 @@ export interface IInputHandlingTerminal {
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
-  log(text: string, data?: any): void;
   reset(): void;
   showCursor(): void;
   refresh(start: number, end: number): void;
-  error(text: string, data?: any): void;
   handleTitle(title: string): void;
 }
 
@@ -212,7 +210,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
-  log(text: string): void;
   showCursor(): void;
 }
 
