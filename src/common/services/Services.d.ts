@@ -94,7 +94,6 @@ export interface ITerminalOptions {
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
-  debug: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fontSize: number;

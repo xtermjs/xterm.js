@@ -279,7 +279,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
   cancelEvents?: boolean;
   convertEol?: boolean;
-  debug?: boolean;
   handler?: (data: string) => void;
   screenKeys?: boolean;
   termName?: string;

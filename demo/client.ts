@@ -220,7 +220,6 @@ function initOptions(term: TerminalType): void {
     // Internal only options
     'cancelEvents',
     'convertEol',
-    'debug',
     'handler',
     'screenKeys',
     'termName',

@@ -347,7 +347,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
 
-    // TODO: Consolidate debug/logging #1560
     this._logService.debug('parsing data', data);
 
     if (this._parseBuffer.length < data.length) {
