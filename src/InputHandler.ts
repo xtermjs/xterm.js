@@ -15,7 +15,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from '
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
@@ -283,6 +283,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._parser.setEscHandler('.' + flag, () => this.selectCharset('.' + flag));
       this._parser.setEscHandler('/' + flag, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
+    this._parser.setEscHandler('#8', () => this.screenAlignmentPattern());
 
     /**
      * error handler
@@ -433,12 +434,12 @@ export class InputHandler extends Disposable implements IInputHandler {
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
         } else {
+          buffer.x = cols - 1;
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
             // What to do here? We got a wide char that does not fit into last cell
             continue;
           }
-          // FIXME: Do we have to set buffer.x to cols - 1, if not wrapping?
         }
       }
 
@@ -553,6 +554,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    */
   public backspace(): void {
+    this._restrictCursor();
     if (this._terminal.buffer.x > 0) {
       this._terminal.buffer.x--;
     }
@@ -563,6 +565,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
@@ -589,16 +594,37 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * CSI Ps @
-   * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   * Restrict cursor to viewport size / scroll margin (origin mode).
    */
-  public insertChars(params: IParams): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
-      this._terminal.buffer.x,
-      params.params[0] || 1,
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
+  private _restrictCursor(): void {
+    this._terminal.buffer.x = Math.min(this._terminal.cols - 1, Math.max(0, this._terminal.buffer.x));
+    this._terminal.buffer.y = this._terminal.originMode
+      ? Math.min(this._terminal.buffer.scrollBottom, Math.max(this._terminal.buffer.scrollTop, this._terminal.buffer.y))
+      : Math.min(this._terminal.rows - 1, Math.max(0, this._terminal.buffer.y));
+  }
+
+  /**
+   * Set absolute cursor position.
+   */
+  private _setCursor(x: number, y: number): void {
+    if (this._terminal.originMode) {
+      this._terminal.buffer.x = x;
+      this._terminal.buffer.y = this._terminal.buffer.scrollTop + y;
+    } else {
+      this._terminal.buffer.x = x;
+      this._terminal.buffer.y = y;
+    }
+    this._restrictCursor();
+  }
+
+  /**
+   * Set relative cursor position.
+   */
+  private _moveCursor(x: number, y: number): void {
+    // for relative changes we have to make sure we are within 0 .. cols/rows - 1
+    // before calculating the new position
+    this._restrictCursor();
+    this._setCursor(this._terminal.buffer.x + x, this._terminal.buffer.y + y);
   }
 
   /**
@@ -606,11 +632,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Up Ps Times (default = 1) (CUU).
    */
   public cursorUp(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y -= param;
-    if (this._terminal.buffer.y < 0) {
-      this._terminal.buffer.y = 0;
-    }
+    this._moveCursor(0, -(params.params[0] || 1));
   }
 
   /**
@@ -618,15 +640,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Down Ps Times (default = 1) (CUD).
    */
   public cursorDown(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
+    this._moveCursor(0, params.params[0] || 1);
   }
 
   /**
@@ -634,11 +648,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Forward Ps Times (default = 1) (CUF).
    */
   public cursorForward(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.x += param;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
+    this._moveCursor(params.params[0] || 1, 0);
   }
 
   /**
@@ -646,55 +656,35 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Backward Ps Times (default = 1) (CUB).
    */
   public cursorBackward(params: IParams): void {
-    const param = params.params[0] || 1;
-
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
-    this._terminal.buffer.x -= param;
-    if (this._terminal.buffer.x < 0) {
-      this._terminal.buffer.x = 0;
-    }
+    this._moveCursor(-(params.params[0] || 1), 0);
   }
 
   /**
    * CSI Ps E
    * Cursor Next Line Ps Times (default = 1) (CNL).
-   * same as CSI Ps B ?
+   * Other than cursorDown (CUD) also set the cursor to first column.
    */
   public cursorNextLine(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
+    this._moveCursor(0, params.params[0] || 1);
     this._terminal.buffer.x = 0;
   }
-
 
   /**
    * CSI Ps F
-   * Cursor Preceding Line Ps Times (default = 1) (CNL).
-   * reuse CSI Ps A ?
+   * Cursor Previous Line Ps Times (default = 1) (CPL).
+   * Other than cursorUp (CUU) also set the cursor to first column.
    */
   public cursorPrecedingLine(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y -= param;
-    if (this._terminal.buffer.y < 0) {
-      this._terminal.buffer.y = 0;
-    }
+    this._moveCursor(0, -(params.params[0] || 1));
     this._terminal.buffer.x = 0;
   }
-
 
   /**
    * CSI Ps G
    * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
    */
   public cursorCharAbsolute(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.x = param - 1;
+    this._setCursor((params.params[0] || 1) - 1, this._terminal.buffer.y);
   }
 
   /**
@@ -702,23 +692,73 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
   public cursorPosition(params: IParams): void {
-    let row: number = params.params[0] - 1;
-    let col: number = (params.length >= 2) ? params.params[1] - 1 : 0;
+    this._setCursor(
+      // col
+      (params.length >= 2) ? (params.params[1] || 1) - 1 : 0,
+      // row
+      (params.params[0] || 1) - 1);
+  }
 
-    if (row < 0) {
-      row = 0;
-    } else if (row >= this._terminal.rows) {
-      row = this._terminal.rows - 1;
+  /**
+   * CSI Pm `  Character Position Absolute
+   *   [column] (default = [row,1]) (HPA).
+   * Currently same functionality as CHA.
+   */
+  public charPosAbsolute(params: IParams): void {
+    this._setCursor((params.params[0] || 1) - 1, this._terminal.buffer.y);
+  }
+
+  /**
+   * CSI Pm a  Character Position Relative
+   *   [columns] (default = [row,col+1]) (HPR)
+   * Currently same functionality as CUF.
+   */
+  public hPositionRelative(params: IParams): void {
+    this._moveCursor(params.params[0] || 1, 0);
+  }
+
+  /**
+   * CSI Pm d  Vertical Position Absolute (VPA)
+   *   [row] (default = [1,column])
+   */
+  public linePosAbsolute(params: IParams): void {
+    this._setCursor(this._terminal.buffer.x, (params.params[0] || 1) - 1);
+  }
+
+  /**
+   * CSI Pm e  Vertical Position Relative (VPR)
+   *   [rows] (default = [row+1,column])
+   * reuse CSI Ps B ?
+   */
+  public vPositionRelative(params: IParams): void {
+    this._moveCursor(0, params.params[0] || 1);
+  }
+
+  /**
+   * CSI Ps ; Ps f
+   *   Horizontal and Vertical Position [row;column] (default =
+   *   [1,1]) (HVP).
+   *   Same as CUP.
+   */
+  public hVPosition(params: IParams): void {
+    this.cursorPosition(params);
+  }
+
+  /**
+   * CSI Ps g  Tab Clear (TBC).
+   *     Ps = 0  -> Clear Current Column (default).
+   *     Ps = 3  -> Clear All.
+   * Potentially:
+   *   Ps = 2  -> Clear Stops on Line.
+   *   http://vt100.net/annarbor/aaa-ug/section6.html
+   */
+  public tabClear(params: IParams): void {
+    const param = params.params[0];
+    if (param === 0) {
+      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
+    } else if (param === 3) {
+      this._terminal.buffer.tabs = {};
     }
-
-    if (col < 0) {
-      col = 0;
-    } else if (col >= this._terminal.cols) {
-      col = this._terminal.cols - 1;
-    }
-
-    this._terminal.buffer.x = col;
-    this._terminal.buffer.y = row;
   }
 
   /**
@@ -726,11 +766,32 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
   public cursorForwardTab(params: IParams): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
     let param = params.params[0] || 1;
     while (param--) {
       this._terminal.buffer.x = this._terminal.buffer.nextStop();
     }
   }
+
+  /**
+   * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+   */
+  public cursorBackwardTab(params: IParams): void {
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      return;
+    }
+    let param = params.params[0] || 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    while (param--) {
+      buffer.x = buffer.prevStop();
+    }
+  }
+
 
   /**
    * Helper method to erase cells in a terminal row.
@@ -757,7 +818,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    this._eraseInBufferLine(y, 0, this._terminal.cols, true);
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.fill(this._terminal.buffer.getNullCell(this._terminal.eraseAttrData()));
+    line.isWrapped = false;
   }
 
   /**
@@ -773,6 +836,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    */
   public eraseInDisplay(params: IParams): void {
+    this._restrictCursor();
     let j;
     switch (params.params[0]) {
       case 0:
@@ -832,6 +896,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    */
   public eraseInLine(params: IParams): void {
+    this._restrictCursor();
     switch (params.params[0]) {
       case 0:
         this._eraseInBufferLine(this._terminal.buffer.y, this._terminal.buffer.x, this._terminal.cols);
@@ -851,10 +916,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Line(s) (default = 1) (IL).
    */
   public insertLines(params: IParams): void {
+    this._restrictCursor();
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
+
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
 
     const row: number = buffer.y + buffer.ybase;
 
@@ -870,6 +940,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
   }
 
   /**
@@ -877,10 +948,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Line(s) (default = 1) (DL).
    */
   public deleteLines(params: IParams): void {
+    this._restrictCursor();
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
+
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
 
     const row: number = buffer.y + buffer.ybase;
 
@@ -897,6 +973,24 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
+  }
+
+  /**
+   * CSI Ps @
+   * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   */
+  public insertChars(params: IParams): void {
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.insertCells(
+        this._terminal.buffer.x,
+        params.params[0] || 1,
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
   }
 
   /**
@@ -904,12 +998,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    */
   public deleteChars(params: IParams): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
-      this._terminal.buffer.x,
-      params.params[0] || 1,
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.deleteCells(
+        this._terminal.buffer.x,
+        params.params[0] || 1,
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
+    }
   }
 
   /**
@@ -955,50 +1053,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Erase Ps Character(s) (default = 1) (ECH).
    */
   public eraseChars(params: IParams): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
-      this._terminal.buffer.x,
-      this._terminal.buffer.x + (params.params[0] || 1),
-      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
-    );
-    this._terminal.updateRange(this._terminal.buffer.y);
-  }
-
-  /**
-   * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
-   */
-  public cursorBackwardTab(params: IParams): void {
-    let param = params.params[0] || 1;
-
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-
-    while (param--) {
-      buffer.x = buffer.prevStop();
-    }
-  }
-
-  /**
-   * CSI Pm `  Character Position Absolute
-   *   [column] (default = [row,1]) (HPA).
-   */
-  public charPosAbsolute(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.x = param - 1;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
-  }
-
-  /**
-   * CSI Pm a  Character Position Relative
-   *   [columns] (default = [row,col+1]) (HPR)
-   * reuse CSI Ps C ?
-   */
-  public hPositionRelative(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.x += param;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
+    this._restrictCursor();
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase);
+    if (line) {
+      line.replaceCells(
+        this._terminal.buffer.x,
+        this._terminal.buffer.x + (params.params[0] || 1),
+        this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
+      );
+      this._terminal.updateRange(this._terminal.buffer.y);
     }
   }
 
@@ -1100,72 +1163,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (this._terminal.is('screen')) {
         this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
       }
-    }
-  }
-
-  /**
-   * CSI Pm d  Vertical Position Absolute (VPA)
-   *   [row] (default = [1,column])
-   */
-  public linePosAbsolute(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y = param - 1;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-  }
-
-  /**
-   * CSI Pm e  Vertical Position Relative (VPR)
-   *   [rows] (default = [row+1,column])
-   * reuse CSI Ps B ?
-   */
-  public vPositionRelative(params: IParams): void {
-    const param = params.params[0] || 1;
-    this._terminal.buffer.y += param;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-    // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
-    }
-  }
-
-  /**
-   * CSI Ps ; Ps f
-   *   Horizontal and Vertical Position [row;column] (default =
-   *   [1,1]) (HVP).
-   */
-  public hVPosition(params: IParams): void {
-    const row = params.params[0] || 1;
-    const col = (params.length > 1) ? params.params[1] || 1 : 1;
-
-    this._terminal.buffer.y = row - 1;
-    if (this._terminal.buffer.y >= this._terminal.rows) {
-      this._terminal.buffer.y = this._terminal.rows - 1;
-    }
-
-    this._terminal.buffer.x = col - 1;
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x = this._terminal.cols - 1;
-    }
-  }
-
-  /**
-   * CSI Ps g  Tab Clear (TBC).
-   *     Ps = 0  -> Clear Current Column (default).
-   *     Ps = 3  -> Clear All.
-   * Potentially:
-   *   Ps = 2  -> Clear Stops on Line.
-   *   http://vt100.net/annarbor/aaa-ug/section6.html
-   */
-  public tabClear(params: IParams): void {
-    const param = params.params[0];
-    if (param === 0) {
-      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
-    } else if (param === 3) {
-      this._terminal.buffer.tabs = {};
     }
   }
 
@@ -1284,11 +1281,14 @@ export class InputHandler extends Disposable implements IInputHandler {
           // set VT100 mode here
           break;
         case 3: // 132 col mode
+          // TODO: move DECCOLM into compat addon
           this._terminal.savedCols = this._terminal.cols;
           this._terminal.resize(132, this._terminal.rows);
+          this._terminal.reset();
           break;
         case 6:
           this._terminal.originMode = true;
+          this._setCursor(0, 0);
           break;
         case 7:
           this._terminal.wraparoundMode = true;
@@ -1480,13 +1480,18 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.applicationCursorKeys = false;
           break;
         case 3:
+          // TODO: move DECCOLM into compat addon
+          // Note: This impl currently does not enforce col 80, instead reverts
+          // to previous terminal width before entering DECCOLM 132
           if (this._terminal.cols === 132 && this._terminal.savedCols) {
             this._terminal.resize(this._terminal.savedCols, this._terminal.rows);
           }
           delete this._terminal.savedCols;
+          this._terminal.reset();
           break;
         case 6:
           this._terminal.originMode = false;
+          this._setCursor(0, 0);
           break;
         case 7:
           this._terminal.wraparoundMode = false;
@@ -1926,10 +1931,19 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collect) {
       return;
     }
-    this._terminal.buffer.scrollTop = (params.params[0] || 1) - 1;
-    this._terminal.buffer.scrollBottom = (params.length > 1 && params.params[1] && params.params[1] <= this._terminal.rows ? params.params[1] : this._terminal.rows) - 1;
-    this._terminal.buffer.x = 0;
-    this._terminal.buffer.y = 0;
+
+    const top = params.params[0] || 1;
+    let bottom: number;
+
+    if (params.length < 2 || (bottom = params.params[1]) >  this._terminal.rows || bottom === 0) {
+      bottom = this._terminal.rows;
+    }
+
+    if (bottom > top) {
+      this._terminal.buffer.scrollTop = top - 1;
+      this._terminal.buffer.scrollBottom = bottom - 1;
+      this._setCursor(0, 0);
+    }
   }
 
 
@@ -1943,6 +1957,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.savedY = this._terminal.buffer.ybase + this._terminal.buffer.y;
     this._terminal.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
     this._terminal.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
+    this._terminal.buffer.savedCharset = this._terminal.charset;
   }
 
 
@@ -1956,6 +1971,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.y = Math.max(this._terminal.buffer.savedY - this._terminal.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._terminal.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._terminal.buffer.savedCurAttrData.bg;
+    this._terminal.charset = (this as any)._savedCharset;
+    if (this._terminal.buffer.savedCharset) {
+      this._terminal.charset = this._terminal.buffer.savedCharset;
+    }
+    this._restrictCursor();
   }
 
 
@@ -2051,7 +2071,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    */
   public index(): void {
-    this._terminal.index();  // TODO: save to move from terminal?
+    this._restrictCursor();
+    this._terminal.buffer.y++;
+    if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+      this._terminal.buffer.y--;
+      this._terminal.scroll();
+    }
+    this._restrictCursor();
   }
 
   /**
@@ -2062,7 +2088,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    */
   public tabSet(): void {
-    this._terminal.tabSet();  // TODO: save to move from terminal?
+    this._terminal.buffer.tabs[this._terminal.buffer.x] = true;
   }
 
   /**
@@ -2073,7 +2099,21 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the page scrolls down.
    */
   public reverseIndex(): void {
-    this._terminal.reverseIndex();  // TODO: save to move from terminal?
+    this._restrictCursor();
+    const buffer = this._terminal.buffer;
+    if (buffer.y === buffer.scrollTop) {
+      // possibly move the code below to term.reverseScroll();
+      // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
+      // blankLine(true) is xterm/linux behavior
+      const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
+      buffer.lines.shiftElements(buffer.y + buffer.ybase, scrollRegionHeight, 1);
+      buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      this._terminal.updateRange(buffer.scrollTop);
+      this._terminal.updateRange(buffer.scrollBottom);
+    } else {
+      buffer.y--;
+      this._restrictCursor(); // quickfix to not run out of bounds
+    }
   }
 
   /**
@@ -2098,5 +2138,33 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setgLevel(level: number): void {
     this._terminal.setgLevel(level);  // TODO: save to move from terminal?
+  }
+
+  /**
+   * ESC # 8
+   *   DEC mnemonic: DECALN (https://vt100.net/docs/vt510-rm/DECALN.html)
+   *   This control function fills the complete screen area with
+   *   a test pattern (E) used for adjusting screen alignment.
+   *
+   * TODO: move DECALN into compat addon
+   */
+  public screenAlignmentPattern(): void {
+    // prepare cell data
+    const cell = new CellData();
+    cell.content = 1 << Content.WIDTH_SHIFT | 'E'.charCodeAt(0);
+    cell.fg = this._terminal.curAttrData.fg;
+    cell.bg = this._terminal.curAttrData.bg;
+
+    const buffer = this._terminal.buffer;
+
+    this._setCursor(0, 0);
+    for (let yOffset = 0; yOffset < this._terminal.rows; ++yOffset) {
+      const row = buffer.y + buffer.ybase + yOffset;
+      buffer.lines.get(row).fill(cell);
+      buffer.lines.get(row).isWrapped = false;
+    }
+    this._terminal.updateRange(0);
+    this._terminal.updateRange(this._terminal.rows);
+    this._setCursor(0, 0);
   }
 }

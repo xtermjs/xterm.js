@@ -4,13 +4,11 @@
  */
 
 import { assert } from 'chai';
-import { CompositionHelper } from './CompositionHelper';
-import { ITerminal } from './Types';
+import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { MockCharSizeService } from 'browser/TestUtils.test';
-import { MockCoreService } from '../out/common/TestUtils.test';
+import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
 
 describe('CompositionHelper', () => {
-  let terminal: ITerminal;
   let compositionHelper: CompositionHelper;
   let compositionView: HTMLElement;
   let textarea: HTMLTextAreaElement;
@@ -38,25 +36,13 @@ describe('CompositionHelper', () => {
         top: 0
       }
     } as any;
-    terminal = {
-      element: {
-        querySelector: () => {
-          return { offsetLeft: 0, offsetTop: 0 };
-        }
-      },
-      buffer: {
-        isCursorInViewport: true
-      },
-      options: {
-        lineHeight: 1
-      }
-    } as any;
     const coreService = new MockCoreService();
     coreService.triggerDataEvent = (text: string) => {
       handledText += text;
     };
     handledText = '';
-    compositionHelper = new CompositionHelper(textarea, compositionView, terminal, new MockCharSizeService(10, 10), coreService);
+    const bufferService = new MockBufferService(10, 5);
+    compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), new MockCharSizeService(10, 10), coreService);
   });
 
   describe('Input', () => {

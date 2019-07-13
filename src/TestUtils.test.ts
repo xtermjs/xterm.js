@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
@@ -295,19 +295,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
-  tabSet(): void {
-    throw new Error('Method not implemented.');
-  }
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
   handleTitle(title: string): void {
-    throw new Error('Method not implemented.');
-  }
-  index(): void {
-    throw new Error('Method not implemented.');
-  }
-  reverseIndex(): void {
     throw new Error('Method not implemented.');
   }
 }
@@ -329,6 +320,7 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  savedCharset: ICharset | null;
   savedCurAttrData = new AttributeData();
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
