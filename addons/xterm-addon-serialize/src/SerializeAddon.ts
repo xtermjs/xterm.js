@@ -17,7 +17,7 @@ export class SerializeAddon implements ITerminalAddon {
   public serialize(rows?: number): string {
     // TODO: Add frontground/background color support later
     if (!this._terminal) {
-      throw new Error('No terminal found!');
+      throw new Error('Cannot use addon until it has been loaded');
     }
     const buffer = this._terminal.buffer;
     const length = Math.max(0, Math.min((rows === undefined ? buffer.length : rows), buffer.length));
