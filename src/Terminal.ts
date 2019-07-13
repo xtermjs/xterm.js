@@ -599,11 +599,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._soundService = new SoundService(this.optionsService);
     this._mouseService = new MouseService(this._renderService, this._charSizeService);
 
-    this._mouseZoneManager = new MouseZoneManager(this, this._mouseService);
-    this.register(this._mouseZoneManager);
-    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
-    this.linkifier.attachToDom(this.element, this._mouseZoneManager);
-
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderService.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
@@ -635,6 +630,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._selectionService.refresh();
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService.refresh()));
+
+    this._mouseZoneManager = new MouseZoneManager(this.element, this.screenElement, this._bufferService, this._mouseService, this._selectionService);
+    this.register(this._mouseZoneManager);
+    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
+    this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);

@@ -105,7 +105,7 @@ describe('Linkifier', () => {
 
   describe('after attachToDom', () => {
     beforeEach(() => {
-      linkifier.attachToDom(undefined as any, mouseZoneManager);
+      linkifier.attachToDom({} as any, mouseZoneManager);
     });
 
     describe('link matcher', () => {

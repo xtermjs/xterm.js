@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IMouseService } from 'browser/services/Services';
+import { IMouseService, ISelectionService } from 'browser/services/Services';
 import { IMouseZoneManager, IMouseZone } from 'browser/Types';
+import { IBufferService } from 'common/services/Services';
 
 const HOVER_DURATION = 500;
 
@@ -33,12 +33,15 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _initialSelectionLength: number;
 
   constructor(
-    private _terminal: ITerminal,
-    private _mouseService: IMouseService
+    private readonly _element: HTMLElement,
+    private readonly _screenElement: HTMLElement,
+    private readonly _bufferService: IBufferService,
+    private readonly _mouseService: IMouseService,
+    private readonly _selectionService: ISelectionService
   ) {
     super();
 
-    this.register(addDisposableDomListener(this._terminal.element, 'mousedown', e => this._onMouseDown(e)));
+    this.register(addDisposableDomListener(this._element, 'mousedown', e => this._onMouseDown(e)));
 
     // These events are expensive, only listen to it when mouse zones are active
     this._mouseMoveListener = e => this._onMouseMove(e);
@@ -67,7 +70,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     // Clear all if start/end weren't set
     if (!end) {
       start = 0;
-      end = this._terminal.rows - 1;
+      end = this._bufferService.rows - 1;
     }
 
     // Iterate through zones and clear them out if they're within the range
@@ -93,18 +96,18 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _activate(): void {
     if (!this._areZonesActive) {
       this._areZonesActive = true;
-      this._terminal.element.addEventListener('mousemove', this._mouseMoveListener);
-      this._terminal.element.addEventListener('mouseleave', this._mouseLeaveListener);
-      this._terminal.element.addEventListener('click', this._clickListener);
+      this._element.addEventListener('mousemove', this._mouseMoveListener);
+      this._element.addEventListener('mouseleave', this._mouseLeaveListener);
+      this._element.addEventListener('click', this._clickListener);
     }
   }
 
   private _deactivate(): void {
     if (this._areZonesActive) {
       this._areZonesActive = false;
-      this._terminal.element.removeEventListener('mousemove', this._mouseMoveListener);
-      this._terminal.element.removeEventListener('mouseleave', this._mouseLeaveListener);
-      this._terminal.element.removeEventListener('click', this._clickListener);
+      this._element.removeEventListener('mousemove', this._mouseMoveListener);
+      this._element.removeEventListener('mouseleave', this._mouseLeaveListener);
+      this._element.removeEventListener('click', this._clickListener);
     }
   }
 
@@ -162,7 +165,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _onMouseDown(e: MouseEvent): void {
     // Store current terminal selection length, to check if we're performing
     // a selection operation
-    this._initialSelectionLength = this._terminal.getSelection().length;
+    this._initialSelectionLength = this._getSelectionLength();
 
     // Ignore the event if there are no zones active
     if (!this._areZonesActive) {
@@ -196,7 +199,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     // Find the active zone and click it if found and no selection was
     // being performed
     const zone = this._findZoneEventAt(e);
-    const currentSelectionLength = this._terminal.getSelection().length;
+    const currentSelectionLength = this._getSelectionLength();
 
     if (zone && currentSelectionLength === this._initialSelectionLength) {
       zone.clickCallback(e);
@@ -205,8 +208,13 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     }
   }
 
+  private _getSelectionLength(): number {
+    const selectionText = this._selectionService.selectionText;
+    return selectionText ? selectionText.length : 0;
+  }
+
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = this._mouseService.getCoords(e, this._terminal.screenElement, this._terminal.cols, this._terminal.rows);
+    const coords = this._mouseService.getCoords(e, this._screenElement, this._bufferService.cols, this._bufferService.rows);
     if (!coords) {
       return null;
     }
