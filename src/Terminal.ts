@@ -23,7 +23,7 @@
 
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, IMouseZoneManager } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { CompositionHelper } from './browser/input/CompositionHelper';
+import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
