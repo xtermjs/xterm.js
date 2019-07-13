@@ -261,8 +261,8 @@ export interface IPublicTerminal extends IDisposable {
   scrollToBottom(): void;
   scrollToLine(line: number): void;
   clear(): void;
-  write(data: string): void;
-  writeUtf8(data: Uint8Array): void;
+  write(data: string, cb?: () => void): void;
+  writeUtf8(data: Uint8Array, cb?: () => void): void;
   refresh(start: number, end: number): void;
   reset(): void;
 }

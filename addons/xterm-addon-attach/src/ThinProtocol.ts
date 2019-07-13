@@ -18,7 +18,7 @@ export enum MessageType {
 
 /**
  * ThinProtocol
- * 
+ *
  * Usage:
  * ```typescript
  *  const tp = new ThinProtocol();
@@ -41,10 +41,10 @@ export enum MessageType {
  * ```
  */
 export class ThinProtocol {
-  private _handlers: (((data:string) => void) | null)[] = new Array(Object.keys(MessageType).length);
+  private _handlers: (((data: string) => void) | null)[] = new Array(Object.keys(MessageType).length);
 
   /** Register a handler for `type`. */
-  public setIncomingHandler(type: MessageType, cb: (data:string) => void): void {
+  public setIncomingHandler(type: MessageType, cb: (data: string) => void): void {
     this._handlers[type] = cb;
   }
   /** Remove handler for `type`. */
@@ -54,7 +54,7 @@ export class ThinProtocol {
 
   /** Process incoming message and call associated handler. */
   public unwrap(msg: string): void {
-    let handler: ((data:string) => void) | null;
+    let handler: ((data: string) => void) | null;
     if (msg && (handler = this._handlers[msg.charCodeAt(0)])) {
       handler(msg.slice(1));
     }

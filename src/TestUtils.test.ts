@@ -117,10 +117,10 @@ export class MockTerminal implements ITerminal {
   clear(): void {
     throw new Error('Method not implemented.');
   }
-  write(data: string): void {
+  write(data: string, cb?: () => void): void {
     throw new Error('Method not implemented.');
   }
-  writeUtf8(data: Uint8Array): void {
+  writeUtf8(data: Uint8Array, cb?: () => void): void {
     throw new Error('Method not implemented.');
   }
   bracketedPasteMode: boolean;

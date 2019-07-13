@@ -662,8 +662,9 @@ declare module 'xterm' {
     /**
      * Writes text to the terminal.
      * @param data The text to write to the terminal.
+     * @param cb Optional callback, called once the input was parsed.
      */
-    write(data: string): void;
+    write(data: string, cb?: () => void): void;
 
     /**
      * Writes text to the terminal, followed by a break line character (\n).
@@ -676,8 +677,9 @@ declare module 'xterm' {
      * over the string based write method due to lesser data conversions needed
      * on the way from the pty to xterm.js.
      * @param data The data to write to the terminal.
+     * @param cb Optional callback, called once the input was parsed.
      */
-    writeUtf8(data: Uint8Array): void;
+    writeUtf8(data: Uint8Array, cb?: () => void): void;
 
     /**
      * Retrieves an option's value from the terminal.

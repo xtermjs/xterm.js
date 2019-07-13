@@ -50,20 +50,20 @@ declare module 'xterm-addon-attach' {
    */
   export class ThinProtocol {
     /** Register a handler for `type`. */
-    public setIncomingHandler(type: MessageType, cb: (data:string) => void): void;
+    public setIncomingHandler(type: MessageType, cb: (data: string) => void): void;
 
     /** Remove handler for `type`. */
     public clearIncomingHandler(type: MessageType): void;
-  
+
     /** Process incoming message and call associated handler. */
     public unwrap(msg: string): void;
-  
+
     /** Create new message of `type`. */
     public wrap(type: MessageType, payload?: string): string;
-  
+
     /** Convenient method to create a plain ACK message (no payload). */
     public ack(): string;
-  
+
     /** Convenient method to create a DATA message. */
     public data(data: string): string;
   }

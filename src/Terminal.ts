@@ -164,6 +164,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public writeBuffer: string[];
   public writeBufferCallback: (() => void)[] = [];
   public writeBufferUtf8: Uint8Array[];
+  public writeBufferUtf8Callback: (() => void)[] = [];
   private _writeInProgress: boolean;
   /**
    * Sum of length of pending chunks in all write buffers.
@@ -1202,7 +1203,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Writes raw utf8 bytes to the terminal.
    * @param data UintArray with UTF8 bytes to write to the terminal.
    */
-  public writeUtf8(data: Uint8Array): void {
+  public writeUtf8(data: Uint8Array, cb?: () => void): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;
@@ -1223,6 +1224,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._writeBuffersPendingSize += data.length;
 
     this.writeBufferUtf8.push(data);
+    this.writeBufferUtf8Callback.push(cb);
 
     if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1243,6 +1245,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const startTime = Date.now();
     while (this.writeBufferUtf8.length > bufferOffset) {
       const data = this.writeBufferUtf8[bufferOffset];
+      const cb = this.writeBufferUtf8Callback[bufferOffset];
       bufferOffset++;
 
       this._refreshStart = this.buffer.y;
@@ -1250,6 +1253,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
       this._inputHandler.parseUtf8(data);
       this._writeBuffersPendingSize -= data.length;
+      if (cb) {
+        cb();
+      }
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1263,12 +1269,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // trim already processed chunks if we are above threshold
       if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
         this.writeBufferUtf8 = this.writeBufferUtf8.slice(bufferOffset);
+        this.writeBufferUtf8Callback = this.writeBufferUtf8Callback.slice(bufferOffset);
         bufferOffset = 0;
       }
       setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
       this.writeBufferUtf8 = [];
+      this.writeBufferUtf8Callback = [];
     }
   }
 
@@ -1307,10 +1315,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this._innerWrite();
       });
     }
-  }
-
-  public writePromise(data: string): Promise<void> {
-    return new Promise(resolve => this.write(data, resolve));
   }
 
   protected _innerWrite(bufferOffset: number = 0): void {

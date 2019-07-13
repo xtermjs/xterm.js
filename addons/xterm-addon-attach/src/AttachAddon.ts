@@ -21,7 +21,7 @@ export class AttachAddon implements ITerminalAddon {
   private _disposables: IDisposable[] = [];
   private _tp: ThinProtocol = new ThinProtocol();
   private _flowControl = 0;
-  private _bytes_seen = 0;
+  private _bytesSeen = 0;
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
     this._socket = socket;
@@ -34,31 +34,37 @@ export class AttachAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     if (this._utf8) {
-      this._disposables.push(
-        addSocketListener(this._socket, 'message',
+      this._disposables.push(this._flowControl
+        ? addSocketListener(this._socket, 'message',
           (ev: MessageEvent | Event | CloseEvent) => {
-            terminal.writeUtf8(new Uint8Array((ev as MessageEvent).data as ArrayBuffer));
+            const bytes = new Uint8Array((ev as MessageEvent).data as ArrayBuffer);
+            this._bytesSeen += bytes.length;
+            if (this._bytesSeen > this._flowControl) {
+              terminal.writeUtf8(bytes, () => this._socket.send(this._tp.ack()));
+              this._bytesSeen = 0;
+            } else {
+              terminal.writeUtf8(bytes);
+            }
           }
         )
+        : addSocketListener(this._socket, 'message',
+          (ev: MessageEvent | Event | CloseEvent) => terminal.writeUtf8(new Uint8Array((ev as MessageEvent).data as ArrayBuffer)))
       );
     } else {
       this._disposables.push(this._flowControl
         ? addSocketListener(this._socket, 'message',
           (ev: MessageEvent | Event | CloseEvent) => {
-            this._bytes_seen += (ev as MessageEvent).data.length;
-            if (this._bytes_seen > this._flowControl) {
-              (terminal as any)._core.write((ev as MessageEvent).data as string, () => this._socket.send(this._tp.ack()));
-              this._bytes_seen = 0;
+            this._bytesSeen += (ev as MessageEvent).data.length;
+            if (this._bytesSeen > this._flowControl) {
+              terminal.write((ev as MessageEvent).data as string, () => this._socket.send(this._tp.ack()));
+              this._bytesSeen = 0;
             } else {
               terminal.write((ev as MessageEvent).data as string);
             }
           }
         )
         : addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => {
-          terminal.write((ev as MessageEvent).data as string);
-        }
-      )
+          (ev: MessageEvent | Event | CloseEvent) => terminal.write((ev as MessageEvent).data as string))
       );
     }
 

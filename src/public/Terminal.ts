@@ -127,11 +127,11 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
+  public write(data: string, cb?: () => void): void {
+    this._core.write(data, cb);
   }
-  public writeUtf8(data: Uint8Array): void {
-    this._core.writeUtf8(data);
+  public writeUtf8(data: Uint8Array, cb?: () => void): void {
+    this._core.writeUtf8(data, cb);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'rendererType' | 'termName' | 'wordSeparator' | 'answerbackString'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'visualBell'): boolean;
