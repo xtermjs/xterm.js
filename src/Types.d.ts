@@ -290,7 +290,7 @@ export interface ILinkifier {
   onLinkLeave: IEvent<ILinkifierEvent>;
   onLinkTooltip: IEvent<ILinkifierEvent>;
 
-  attachToDom(mouseZoneManager: IMouseZoneManager): void;
+  attachToDom(element: HTMLElement, mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;

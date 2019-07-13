@@ -4,23 +4,23 @@
  */
 
 import { assert } from 'chai';
-import { IMouseZoneManager, IMouseZone, ILinkMatcher, ITerminal } from './Types';
+import { IMouseZoneManager, IMouseZone, ILinkMatcher } from './Types';
 import { IBufferLine } from 'common/Types';
 import { Linkifier } from './Linkifier';
-import { MockBuffer, MockTerminal, TestTerminal } from './TestUtils.test';
-import { CircularList } from 'common/CircularList';
+import { TestTerminal } from './TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockLogService } from 'common/TestUtils.test';
+import { MockLogService, MockBufferService } from 'common/TestUtils.test';
+import { IBufferService } from 'common/services/Services';
 
 class TestLinkifier extends Linkifier {
-  constructor(terminal: ITerminal) {
-    super(terminal, new MockLogService());
+  constructor(bufferService: IBufferService) {
+    super(bufferService, new MockLogService());
     Linkifier._timeBeforeLatency = 0;
   }
 
   public get linkMatchers(): ILinkMatcher[] { return this._linkMatchers; }
-  public linkifyRows(): void { super.linkifyRows(0, this._terminal.buffer.lines.length - 1); }
+  public linkifyRows(): void { super.linkifyRows(0, this._bufferService.buffer.lines.length - 1); }
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
@@ -37,18 +37,13 @@ class TestMouseZoneManager implements IMouseZoneManager {
 }
 
 describe('Linkifier', () => {
-  let terminal: ITerminal;
+  let bufferService: IBufferService;
   let linkifier: TestLinkifier;
   let mouseZoneManager: TestMouseZoneManager;
 
   beforeEach(() => {
-    terminal = new MockTerminal();
-    (terminal as any).cols = 100;
-    (terminal as any).rows = 10;
-    terminal.buffer = new MockBuffer();
-    (<MockBuffer>terminal.buffer).setLines(new CircularList<IBufferLine>(20));
-    terminal.buffer.ydisp = 0;
-    linkifier = new TestLinkifier(terminal);
+    bufferService = new MockBufferService(100, 10);
+    linkifier = new TestLinkifier(bufferService);
     mouseZoneManager = new TestMouseZoneManager();
   });
 
@@ -61,13 +56,12 @@ describe('Linkifier', () => {
   }
 
   function addRow(text: string): void {
-    terminal.buffer.lines.push(stringToRow(text));
+    bufferService.buffer.lines.push(stringToRow(text));
   }
 
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-    (terminal as any).rows = terminal.buffer.lines.length - 1;
     linkifier.linkifyRows();
     // Allow linkify to happen
     setTimeout(() => {
@@ -75,8 +69,8 @@ describe('Linkifier', () => {
       links.forEach((l, i) => {
         assert.equal(mouseZoneManager.zones[i].x1, l.x + 1);
         assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
-        assert.equal(mouseZoneManager.zones[i].y1, terminal.buffer.lines.length);
-        assert.equal(mouseZoneManager.zones[i].y2, terminal.buffer.lines.length);
+        assert.equal(mouseZoneManager.zones[i].y1, bufferService.buffer.lines.length);
+        assert.equal(mouseZoneManager.zones[i].y2, bufferService.buffer.lines.length);
       });
       done();
     }, 0);
@@ -111,7 +105,7 @@ describe('Linkifier', () => {
 
   describe('after attachToDom', () => {
     beforeEach(() => {
-      linkifier.attachToDom(mouseZoneManager);
+      linkifier.attachToDom(null, mouseZoneManager);
     });
 
     describe('link matcher', () => {
@@ -144,19 +138,23 @@ describe('Linkifier', () => {
       });
       describe('multi-line links', () => {
         it('should match links that start on line 1/2 of a wrapped line and end on the last character of line 1/2', done => {
-          (terminal as any).cols = 4;
+          bufferService.resize(4, bufferService.rows);
+          bufferService.buffer.lines.length = 0;
           assertLinkifiesMultiLineLink('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
         });
         it('should match links that start on line 1/2 of a wrapped line and wrap to line 2/2', done => {
-          (terminal as any).cols = 4;
+          bufferService.resize(4, bufferService.rows);
+          bufferService.buffer.lines.length = 0;
           assertLinkifiesMultiLineLink('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
         });
         it('should match links that start and end on line 2/2 of a wrapped line', done => {
-          (terminal as any).cols = 4;
+          bufferService.resize(4, bufferService.rows);
+          bufferService.buffer.lines.length = 0;
           assertLinkifiesMultiLineLink('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
         });
         it('should match links that start on line 2/3 of a wrapped line and wrap to line 3/3', done => {
-          (terminal as any).cols = 4;
+          bufferService.resize(4, bufferService.rows);
+          bufferService.buffer.lines.length = 0;
           assertLinkifiesMultiLineLink('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
         });
       });
@@ -164,6 +162,7 @@ describe('Linkifier', () => {
 
     describe('validationCallback', () => {
       it('should enable link if true', done => {
+        bufferService.buffer.lines.length = 0;
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => done(), {
           validationCallback: (url, cb) => {
@@ -251,7 +250,7 @@ describe('Linkifier', () => {
       terminal = new TestTerminal({cols: 10, rows: 5});
       linkifier = new TestLinkifier(terminal);
       mouseZoneManager = new TestMouseZoneManager();
-      linkifier.attachToDom(mouseZoneManager);
+      linkifier.attachToDom(null, mouseZoneManager);
     });
 
     function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {

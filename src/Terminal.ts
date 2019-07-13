@@ -304,9 +304,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
 
-    this._selectionService = this._selectionService || null;
-    this.linkifier = this.linkifier || new Linkifier(this, this._logService);
-    this._mouseZoneManager = this._mouseZoneManager || null;
+    this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -603,7 +601,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._mouseZoneManager = new MouseZoneManager(this, this._mouseService);
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
-    this.linkifier.attachToDom(this._mouseZoneManager);
+    this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderService.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
