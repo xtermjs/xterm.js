@@ -26,8 +26,6 @@ function getCursor(term: TestTerminal): number[] {
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
-    terminal.cols = 80;
-    terminal.rows = 30;
     terminal.curAttrData.fg = 3;
     const bufferService = new MockBufferService(80, 30);
     bufferService.buffer.x = 1;
@@ -117,37 +115,37 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService());
 
       // insert some data in first and second line
-      inputHandler.parse(Array(term.cols - 9).join('a'));
+      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      inputHandler.parse(Array(term.cols - 9).join('a'));
+      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0);
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '1234567890');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // insert one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + ' 123456789');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + ' 123456789');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '  12345678');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '  12345678');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '    123456');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '    123456');
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
+      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
     });
     it('deleteChars', function(): void {
       const term = new Terminal();
@@ -155,40 +153,40 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService());
 
       // insert some data in first and second line
-      inputHandler.parse(Array(term.cols - 9).join('a'));
+      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      inputHandler.parse(Array(term.cols - 9).join('a'));
+      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0);
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '1234567890');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // delete one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '234567890 ');
-      expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '234567890');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '234567890 ');
+      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '234567890');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '34567890  ');
-      expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '34567890');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '34567890  ');
+      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '34567890');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '567890    ');
-      expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '567890');
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '567890    ');
+      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '567890');
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
+      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
+      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
     });
     it('eraseInLine', function(): void {
       const term = new Terminal();
@@ -196,9 +194,9 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService());
 
       // fill 6 lines to test 3 different states
-      inputHandler.parse(Array(term.cols + 1).join('a'));
-      inputHandler.parse(Array(term.cols + 1).join('a'));
-      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
 
       // params[0] - right erase
       bufferService.buffer.y = 0;
@@ -216,7 +214,7 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([2]));
-      expect(bufferService.buffer.lines.get(2).translateToString(false)).equals(Array(term.cols + 1).join(' '));
+      expect(bufferService.buffer.lines.get(2).translateToString(false)).equals(Array(bufferService.cols + 1).join(' '));
 
     });
     it('eraseInDisplay', function(): void {
@@ -225,7 +223,7 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService());
 
       // fill display with a's
-      for (let i = 0; i < term.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;

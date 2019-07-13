@@ -368,7 +368,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._bufferService.buffer;
     const charset = this._terminal.charset;
     const screenReaderMode = this._terminal.options.screenReaderMode;
-    const cols = this._terminal.cols;
+    const cols = this._bufferService.cols;
     const wraparoundMode = this._terminal.wraparoundMode;
     const insertMode = this._terminal.insertMode;
     const curAttr = this._terminal.curAttrData;
@@ -525,7 +525,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.scroll();
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (buffer.x >= this._terminal.cols) {
+    if (buffer.x >= this._bufferService.cols) {
       buffer.x--;
     }
 
@@ -556,7 +556,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    if (this._bufferService.buffer.x >= this._terminal.cols) {
+    if (this._bufferService.buffer.x >= this._bufferService.cols) {
       return;
     }
     const originalX = this._bufferService.buffer.x;
@@ -588,10 +588,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
   private _restrictCursor(): void {
-    this._bufferService.buffer.x = Math.min(this._terminal.cols - 1, Math.max(0, this._bufferService.buffer.x));
+    this._bufferService.buffer.x = Math.min(this._bufferService.cols - 1, Math.max(0, this._bufferService.buffer.x));
     this._bufferService.buffer.y = this._terminal.originMode
       ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
-      : Math.min(this._terminal.rows - 1, Math.max(0, this._bufferService.buffer.y));
+      : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
   }
 
   /**
@@ -757,7 +757,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
   public cursorForwardTab(params: IParams): void {
-    if (this._bufferService.buffer.x >= this._terminal.cols) {
+    if (this._bufferService.buffer.x >= this._bufferService.cols) {
       return;
     }
     let param = params.params[0] || 1;
@@ -770,7 +770,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
    */
   public cursorBackwardTab(params: IParams): void {
-    if (this._bufferService.buffer.x >= this._terminal.cols) {
+    if (this._bufferService.buffer.x >= this._bufferService.cols) {
       return;
     }
     let param = params.params[0] || 1;
@@ -833,8 +833,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._bufferService.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j++, this._bufferService.buffer.x, this._terminal.cols, this._bufferService.buffer.x === 0);
-        for (; j < this._terminal.rows; j++) {
+        this._eraseInBufferLine(j++, this._bufferService.buffer.x, this._bufferService.cols, this._bufferService.buffer.x === 0);
+        for (; j < this._bufferService.rows; j++) {
           this._resetBufferLine(j);
         }
         this._terminal.updateRange(j);
@@ -844,7 +844,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._terminal.updateRange(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
         this._eraseInBufferLine(j, 0, this._bufferService.buffer.x + 1, true);
-        if (this._bufferService.buffer.x + 1 >= this._terminal.cols) {
+        if (this._bufferService.buffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
           this._bufferService.buffer.lines.get(j + 1).isWrapped = false;
         }
@@ -854,7 +854,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._terminal.updateRange(0);
         break;
       case 2:
-        j = this._terminal.rows;
+        j = this._bufferService.rows;
         this._terminal.updateRange(j - 1);
         while (j--) {
           this._resetBufferLine(j);
@@ -863,7 +863,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
-        const scrollBackSize = this._bufferService.buffer.lines.length - this._terminal.rows;
+        const scrollBackSize = this._bufferService.buffer.lines.length - this._bufferService.rows;
         if (scrollBackSize > 0) {
           this._bufferService.buffer.lines.trimStart(scrollBackSize);
           this._bufferService.buffer.ybase = Math.max(this._bufferService.buffer.ybase - scrollBackSize, 0);
@@ -890,13 +890,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._bufferService.buffer.y, this._bufferService.buffer.x, this._terminal.cols);
+        this._eraseInBufferLine(this._bufferService.buffer.y, this._bufferService.buffer.x, this._bufferService.cols);
         break;
       case 1:
         this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._bufferService.buffer.x + 1);
         break;
       case 2:
-        this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._terminal.cols);
+        this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._bufferService.cols);
         break;
     }
     this._terminal.updateRange(this._bufferService.buffer.y);
@@ -919,8 +919,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row: number = buffer.y + buffer.ybase;
 
-    const scrollBottomRowsOffset = this._terminal.rows - 1 - buffer.scrollBottom;
-    const scrollBottomAbsolute = this._terminal.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
+    const scrollBottomRowsOffset = this._bufferService.rows - 1 - buffer.scrollBottom;
+    const scrollBottomAbsolute = this._bufferService.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
@@ -952,8 +952,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     const row: number = buffer.y + buffer.ybase;
 
     let j: number;
-    j = this._terminal.rows - 1 - buffer.scrollBottom;
-    j = this._terminal.rows - 1 + buffer.ybase - j;
+    j = this._bufferService.rows - 1 - buffer.scrollBottom;
+    j = this._bufferService.rows - 1 + buffer.ybase - j;
     while (param--) {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
@@ -1273,8 +1273,8 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 3: // 132 col mode
           // TODO: move DECCOLM into compat addon
-          this._terminal.savedCols = this._terminal.cols;
-          this._terminal.resize(132, this._terminal.rows);
+          this._terminal.savedCols = this._bufferService.cols;
+          this._terminal.resize(132, this._bufferService.rows);
           this._terminal.reset();
           break;
         case 6:
@@ -1354,7 +1354,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._terminal.eraseAttrData());
-          this._terminal.refresh(0, this._terminal.rows - 1);
+          this._terminal.refresh(0, this._bufferService.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
@@ -1474,8 +1474,8 @@ export class InputHandler extends Disposable implements IInputHandler {
           // TODO: move DECCOLM into compat addon
           // Note: This impl currently does not enforce col 80, instead reverts
           // to previous terminal width before entering DECCOLM 132
-          if (this._terminal.cols === 132 && this._terminal.savedCols) {
-            this._terminal.resize(this._terminal.savedCols, this._terminal.rows);
+          if (this._bufferService.cols === 132 && this._terminal.savedCols) {
+            this._terminal.resize(this._terminal.savedCols, this._bufferService.rows);
           }
           delete this._terminal.savedCols;
           this._terminal.reset();
@@ -1539,7 +1539,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (param === 1049) {
             this.restoreCursor();
           }
-          this._terminal.refresh(0, this._terminal.rows - 1);
+          this._terminal.refresh(0, this._bufferService.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
@@ -1870,7 +1870,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       this._coreService.decPrivateModes.applicationCursorKeys = false;
       this._bufferService.buffer.scrollTop = 0;
-      this._bufferService.buffer.scrollBottom = this._terminal.rows - 1;
+      this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
       this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
       this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
       this._terminal.charset = null;
@@ -1926,8 +1926,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     const top = params.params[0] || 1;
     let bottom: number;
 
-    if (params.length < 2 || (bottom = params.params[1]) >  this._terminal.rows || bottom === 0) {
-      bottom = this._terminal.rows;
+    if (params.length < 2 || (bottom = params.params[1]) >  this._bufferService.rows || bottom === 0) {
+      bottom = this._bufferService.rows;
     }
 
     if (bottom > top) {
@@ -2149,13 +2149,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._bufferService.buffer;
 
     this._setCursor(0, 0);
-    for (let yOffset = 0; yOffset < this._terminal.rows; ++yOffset) {
+    for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
       const row = buffer.y + buffer.ybase + yOffset;
       buffer.lines.get(row).fill(cell);
       buffer.lines.get(row).isWrapped = false;
     }
     this._terminal.updateRange(0);
-    this._terminal.updateRange(this._terminal.rows);
+    this._terminal.updateRange(this._bufferService.rows);
     this._setCursor(0, 0);
   }
 }
