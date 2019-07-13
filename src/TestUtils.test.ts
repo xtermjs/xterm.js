@@ -63,7 +63,7 @@ export class MockTerminal implements ITerminal {
   resize(columns: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  writeln(data: string): void {
+  writeln(data: string, cb?: () => void): void {
     throw new Error('Method not implemented.');
   }
   open(parent: HTMLElement): void {

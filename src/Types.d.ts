@@ -237,7 +237,7 @@ export interface IPublicTerminal extends IDisposable {
   blur(): void;
   focus(): void;
   resize(columns: number, rows: number): void;
-  writeln(data: string): void;
+  writeln(data: string, cb?: () => void): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;

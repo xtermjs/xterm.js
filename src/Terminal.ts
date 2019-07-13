@@ -1365,8 +1365,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Writes text to the terminal, followed by a break line character (\n).
    * @param data The text to write to the terminal.
    */
-  public writeln(data: string): void {
-    this.write(data + '\r\n');
+  public writeln(data: string, cb?: () => void): void {
+    this.write(data + '\r\n', cb);
   }
 
   /**

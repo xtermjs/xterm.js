@@ -667,10 +667,12 @@ declare module 'xterm' {
     write(data: string, cb?: () => void): void;
 
     /**
-     * Writes text to the terminal, followed by a break line character (\n).
+     * Writes data to the terminal appending a carriage return and line feed (\r\n),
+     * thus marking the end of data as as line break.
      * @param data The text to write to the terminal.
+     * @param cb Optional callback, called once the input was parsed.
      */
-    writeln(data: string): void;
+    writeln(data: string, cb?: () => void): void;
 
     /**
      * Writes UTF8 data to the terminal. This has a slight performance advantage

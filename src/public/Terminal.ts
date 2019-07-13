@@ -48,8 +48,8 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public writeln(data: string): void {
-    this._core.writeln(data);
+  public writeln(data: string, cb?: () => void): void {
+    this._core.writeln(data, cb);
   }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
