@@ -5,7 +5,7 @@
 
 import { ITerminal } from '../../Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
-import { BaseCharAtlas } from './BaseCharAtlas';
+import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { DynamicCharAtlas } from './DynamicCharAtlas';
 import { ICharAtlasConfig } from './Types';
 import { IColorSet } from 'browser/Types';
