@@ -7,6 +7,7 @@ import { ITerminal } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
+import { IBufferService } from 'common/services/Services';
 
 interface ISelectionState {
   start: [number, number];
@@ -18,7 +19,13 @@ interface ISelectionState {
 export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: ISelectionState;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    terminal: ITerminal,
+    private readonly _bufferService: IBufferService
+  ) {
     super(container, 'selection', zIndex, true, colors, terminal);
     this._clearState();
   }
@@ -47,7 +54,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (!this._didStateChange(start, end, columnSelectMode, this._terminal.buffer.ydisp)) {
+    if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;
     }
 
@@ -61,8 +68,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
+    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
+    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
 
@@ -100,7 +107,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
-    this._state.ydisp = this._terminal.buffer.ydisp;
+    this._state.ydisp = this._bufferService.buffer.ydisp;
   }
 
   private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {

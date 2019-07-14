@@ -8,15 +8,15 @@ import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from 'browser/renderer/atlas/CharAtlasUtils';
-import { IColorSet, ILinkifierEvent } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent = null;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal, linkifier: ILinkifier) {
     super(container, 'link', zIndex, true, colors, terminal);
-    terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
-    terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    linkifier.onLinkHover(e => this._onLinkHover(e));
+    linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public resize(dim: IRenderDimensions): void {

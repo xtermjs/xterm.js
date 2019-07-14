@@ -14,7 +14,7 @@ import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistr
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -27,7 +27,8 @@ export class Renderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _terminal: ITerminal,
     readonly bufferService: IBufferService,
-    private readonly _charSizeService: ICharSizeService
+    private readonly _charSizeService: ICharSizeService,
+    readonly optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
@@ -35,9 +36,9 @@ export class Renderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._terminal),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal)
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal, bufferService),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal, this._terminal.linkifier),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, bufferService, optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: null,

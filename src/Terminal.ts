@@ -685,7 +685,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService);
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
       case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
