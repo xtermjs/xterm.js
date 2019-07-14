@@ -14,6 +14,8 @@ import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 export class RenderService extends Disposable implements IRenderService {
+  _serviceBrand: any;
+
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
@@ -34,9 +36,9 @@ export class RenderService extends Disposable implements IRenderService {
   constructor(
     private _renderer: IRenderer,
     private _rowCount: number,
-    screenElement: HTMLElement,
-    optionsService: IOptionsService,
-    charSizeService: ICharSizeService
+    readonly screenElement: HTMLElement,
+    @IOptionsService readonly optionsService: IOptionsService,
+    @ICharSizeService readonly charSizeService: ICharSizeService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));

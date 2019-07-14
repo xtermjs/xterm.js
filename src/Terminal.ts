@@ -251,7 +251,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._coreService.onData(e => this._onData.fire(e));
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this._logService = new LogService(this.optionsService);
+    this._logService = this._instantiationService.createInstance(LogService);
     this._instantiationService.setService(ILogService, this._logService);
 
     this._setupOptionsListeners();
@@ -585,7 +585,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    this._charSizeService = new CharSizeService(this._document, this._helperContainer, this.optionsService);
+    this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
+    this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
@@ -601,12 +602,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderService = new RenderService(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
+    this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
+    this._instantiationService.setService(IRenderService, this._renderService);
     this._renderService.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
-    this._soundService = new SoundService(this.optionsService);
-    this._mouseService = new MouseService(this._renderService, this._charSizeService);
+    this._soundService = this._instantiationService.createInstance(SoundService);
+    this._instantiationService.setService(ISoundService, this._soundService);
+    this._mouseService = this._instantiationService.createInstance(MouseService);
+    this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = new Viewport(
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
@@ -625,11 +629,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this._selectionService = new SelectionService(
+    this._selectionService = this._instantiationService.createInstance(SelectionService,
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
-      this.element, this.screenElement, this._charSizeService, this._bufferService, this._coreService,
-      this._mouseService, this.optionsService
-    );
+      this.element,
+      this.screenElement);
+    this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
