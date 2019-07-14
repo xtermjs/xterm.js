@@ -38,7 +38,7 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
+import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';

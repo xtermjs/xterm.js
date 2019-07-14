@@ -11,7 +11,7 @@ import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'commo
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
-import { acquireCharAtlas } from './atlas/CharAtlasCache';
+import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
