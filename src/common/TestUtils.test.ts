@@ -12,6 +12,7 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
+  _serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   constructor(
@@ -29,6 +30,7 @@ export class MockBufferService implements IBufferService {
 }
 
 export class MockCoreService implements ICoreService {
+  _serviceBrand: any;
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
@@ -37,6 +39,7 @@ export class MockCoreService implements ICoreService {
 }
 
 export class MockDirtyRowService implements IDirtyRowService {
+  _serviceBrand: any;
   start: number = 0;
   end: number = 0;
   clearRange(): void {}
@@ -46,6 +49,7 @@ export class MockDirtyRowService implements IDirtyRowService {
 }
 
 export class MockLogService implements ILogService {
+  _serviceBrand: any;
   debug(message: any, ...optionalParams: any[]): void {}
   info(message: any, ...optionalParams: any[]): void {}
   warn(message: any, ...optionalParams: any[]): void {}
@@ -53,6 +57,7 @@ export class MockLogService implements ILogService {
 }
 
 export class MockOptionsService implements IOptionsService {
+  _serviceBrand: any;
   options: ITerminalOptions = clone(DEFAULT_OPTIONS);
   onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: IPartialTerminalOptions) {

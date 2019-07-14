@@ -12,8 +12,6 @@
 import { IInstantiationService, IServiceIdentifier } from 'common/services/Services';
 import { getServiceDependencies } from 'common/services/ServiceRegistry';
 
-declare const console: any;
-
 export class ServiceCollection {
 
   private _entries = new Map<IServiceIdentifier<any>, any>();
@@ -70,17 +68,9 @@ export class InstantiationService implements IInstantiationService {
 
 		// check for argument mismatches, adjust static args if needed
 		if (args.length !== firstServiceArgPos) {
-			console.warn(`[createInstance] First service dependency of ${ctor.name} at position ${
-				firstServiceArgPos + 1} conflicts with ${args.length} static arguments`);
+			throw new Error(`[createInstance] First service dependency of ${ctor.name} at position ${firstServiceArgPos + 1} conflicts with ${args.length} static arguments`);
+    }
 
-			let delta = firstServiceArgPos - args.length;
-			if (delta > 0) {
-				args = args.concat(new Array(delta));
-			} else {
-				args = args.slice(0, firstServiceArgPos);
-			}
-		}
-    console.log('args', args, 'serviceArgs', serviceArgs);
 		// now create the instance
 		return <T>new ctor(...[...args, ...serviceArgs]);
   }

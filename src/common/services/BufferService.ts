@@ -11,6 +11,8 @@ export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
 
 export class BufferService implements IBufferService {
+  _serviceBrand: any;
+
   public cols: number;
   public rows: number;
   public buffers: IBufferSet;

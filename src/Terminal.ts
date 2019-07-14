@@ -250,8 +250,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
-    // this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
     this._logService = new LogService(this.optionsService);
+    this._instantiationService.setService(ILogService, this._logService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -684,8 +685,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this, this._colorManager.colors, this._charSizeService); break;
-      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService); break;
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService);
+      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }

@@ -6,6 +6,8 @@
 import { IBufferService, IDirtyRowService } from 'common/services/Services';
 
 export class DirtyRowService implements IDirtyRowService {
+  _serviceBrand: any;
+
   private _start!: number;
   private _end!: number;
 
