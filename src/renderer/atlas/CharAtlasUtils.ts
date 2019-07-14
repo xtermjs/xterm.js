@@ -4,7 +4,7 @@
  */
 
 import { ITerminal } from '../../Types';
-import { ICharAtlasConfig } from './Types';
+import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
 import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 

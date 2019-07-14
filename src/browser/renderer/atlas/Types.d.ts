@@ -3,6 +3,9 @@
  * @license MIT
  */
 
+import { FontWeight } from 'common/services/Services';
+import { IColorSet } from 'browser/Types';
+
 export interface IGlyphIdentifier {
   chars: string;
   code: number;
@@ -11,4 +14,16 @@ export interface IGlyphIdentifier {
   bold: boolean;
   dim: boolean;
   italic: boolean;
+}
+
+export interface ICharAtlasConfig {
+  devicePixelRatio: number;
+  fontSize: number;
+  fontFamily: string;
+  fontWeight: FontWeight;
+  fontWeightBold: FontWeight;
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  allowTransparency: boolean;
+  colors: IColorSet;
 }
