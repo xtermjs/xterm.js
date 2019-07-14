@@ -94,8 +94,6 @@
       {"type": "member", "modifiers": ["private"], "format": "camelCase", "leadingUnderscore": "require"},
       {"type": "variable", "modifiers": ["const"], "format": ["camelCase", "UPPER_CASE"]},
       {"type": "variable", "modifiers": ["const", "export"], "filter": "^I.+Service$", "format": "PascalCase", "prefix": "I"},
-      {"type": "member", "filter": "^_serviceBrand$", "leadingUnderscore": "require"},
-      {"type": "property", "filter": "^_serviceBrand$", "leadingUnderscore": "require"},
       {"type": "interface", "prefix": "I"}
     ],
     "no-else-after-return": {

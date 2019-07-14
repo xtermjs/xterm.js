@@ -13,7 +13,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 });
 
 export class CoreService implements ICoreService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   public decPrivateModes: IDecPrivateModes;
 

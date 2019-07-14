@@ -7,7 +7,7 @@ import { IOptionsService } from 'common/services/Services';
 import { ISoundService } from 'browser/services/Services';
 
 export class SoundService implements ISoundService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   private static _audioContext: AudioContext;
 

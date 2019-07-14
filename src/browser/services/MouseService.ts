@@ -7,7 +7,7 @@ import { ICharSizeService, IRenderService, IMouseService } from './Services';
 import { getCoords, getRawByteCoords } from 'browser/input/Mouse';
 
 export class MouseService implements IMouseService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,

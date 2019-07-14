@@ -11,7 +11,7 @@ import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   readonly width: number;
   readonly height: number;
@@ -24,7 +24,7 @@ export interface ICharSizeService {
 
 export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
@@ -32,7 +32,7 @@ export interface IMouseService {
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
 export interface IRenderService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   onDimensionsChange: IEvent<IRenderDimensions>;
   onRender: IEvent<{ start: number, end: number }>;
@@ -60,7 +60,7 @@ export interface IRenderService {
 
 export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
 export interface ISelectionService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   readonly selectionText: string;
   readonly hasSelection: boolean;
@@ -88,7 +88,7 @@ export interface ISelectionService {
 
 export const ISoundService = createDecorator<ISoundService>('SoundService');
 export interface ISoundService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   playBellSound(): void;
 }

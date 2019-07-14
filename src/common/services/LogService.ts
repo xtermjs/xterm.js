@@ -37,7 +37,7 @@ const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
 const LOG_PREFIX = 'xterm.js: ';
 
 export class LogService implements ILogService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   private _logLevel!: LogLevel;
 

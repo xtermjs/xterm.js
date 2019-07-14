@@ -8,7 +8,7 @@ import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class CharSizeService implements ICharSizeService {
-  _serviceBrand: any;
+  serviceBrand: any;
 
   public width: number = 0;
   public height: number = 0;
