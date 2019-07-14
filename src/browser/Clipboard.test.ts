@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import * as Clipboard from './Clipboard';
+import * as Clipboard from 'browser/Clipboard';
 
 describe('evaluatePastedTextProcessing', () => {
   it('should replace carriage return and/or line feed with carriage return', () => {

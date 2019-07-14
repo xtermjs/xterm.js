@@ -29,7 +29,9 @@ export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): 
  * @param ev The original copy event to be handled
  */
 export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionService): void {
-  ev.clipboardData.setData('text/plain', selectionService.selectionText);
+  if (ev.clipboardData) {
+    ev.clipboardData.setData('text/plain', selectionService.selectionText);
+  }
   // Prevent or the original text will be copied.
   ev.preventDefault();
 }
