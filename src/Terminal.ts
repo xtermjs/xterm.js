@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
+import { IInputHandlingTerminal, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from './Viewport';
@@ -59,7 +59,7 @@ import { MouseService } from 'browser/services/MouseService';
 import { IParams } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
-import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions } from 'browser/Types';
+import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -599,7 +599,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._soundService = new SoundService(this.optionsService);
     this._mouseService = new MouseService(this._renderService, this._charSizeService);
 
-    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderService.dimensions, this._charSizeService);
+    this.viewport = new Viewport(
+      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
+      this._viewportElement,
+      this._viewportScrollArea,
+      this._bufferService,
+      this._charSizeService,
+      this._renderService
+    );
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 

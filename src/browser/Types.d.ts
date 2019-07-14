@@ -24,6 +24,16 @@ export interface IColorSet {
   ansi: IColor[];
 }
 
+export interface IViewport extends IDisposable {
+  scrollBarWidth: number;
+  syncScrollArea(): void;
+  getLinesScrolled(ev: WheelEvent): number;
+  onWheel(ev: WheelEvent): void;
+  onTouchStart(ev: TouchEvent): void;
+  onTouchMove(ev: TouchEvent): void;
+  onThemeChange(colors: IColorSet): void;
+}
+
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 

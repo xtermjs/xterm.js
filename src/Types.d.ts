@@ -6,7 +6,7 @@
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, CharData } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
-import { IColorSet, ILinkifier, ILinkMatcherOptions } from 'browser/Types';
+import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
@@ -66,16 +66,6 @@ export interface IInputHandlingTerminal {
   showCursor(): void;
   refresh(start: number, end: number): void;
   handleTitle(title: string): void;
-}
-
-export interface IViewport extends IDisposable {
-  scrollBarWidth: number;
-  syncScrollArea(): void;
-  getLinesScrolled(ev: WheelEvent): number;
-  onWheel(ev: WheelEvent): void;
-  onTouchStart(ev: TouchEvent): void;
-  onTouchMove(ev: TouchEvent): void;
-  onThemeChange(colors: IColorSet): void;
 }
 
 export interface ICompositionHelper {
