@@ -35,9 +35,9 @@ export class Renderer extends Disposable implements IRenderer {
     this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._terminal),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal, bufferService),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal, this._terminal.linkifier),
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._terminal, bufferService, optionsService),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal, bufferService, optionsService),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal, this._terminal.linkifier, bufferService, optionsService),
       new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, bufferService, optionsService)
     ];
     this.dimensions = {

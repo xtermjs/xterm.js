@@ -7,7 +7,7 @@ import { ITerminal } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 interface ISelectionState {
   start: [number, number];
@@ -24,9 +24,10 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     terminal: ITerminal,
-    private readonly _bufferService: IBufferService
+    readonly bufferService: IBufferService,
+    readonly optionsService: IOptionsService
   ) {
-    super(container, 'selection', zIndex, true, colors, terminal);
+    super(container, 'selection', zIndex, true, colors, terminal, bufferService, optionsService);
     this._clearState();
   }
 

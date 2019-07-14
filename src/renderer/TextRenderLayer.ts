@@ -13,6 +13,7 @@ import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { JoinedCellData } from 'browser/renderer/CharacterJoinerRegistry';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -29,8 +30,17 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
   private _workCell = new CellData();
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean, terminal: ITerminal) {
-    super(container, 'text', zIndex, alpha, colors, terminal);
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    characterJoinerRegistry: ICharacterJoinerRegistry,
+    alpha: boolean,
+    terminal: ITerminal,
+    readonly bufferService: IBufferService,
+    readonly optionsService: IOptionsService
+  ) {
+    super(container, 'text', zIndex, alpha, colors, terminal, bufferService, optionsService);
     this._state = new GridCache<CharData>();
     this._characterJoinerRegistry = characterJoinerRegistry;
   }

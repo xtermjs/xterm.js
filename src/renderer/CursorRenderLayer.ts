@@ -35,10 +35,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     terminal: ITerminal,
-    private readonly _bufferService: IBufferService,
-    private readonly _optionsService: IOptionsService
+    readonly bufferService: IBufferService,
+    readonly optionsService: IOptionsService
   ) {
-    super(container, 'cursor', zIndex, true, colors, terminal);
+    super(container, 'cursor', zIndex, true, colors, terminal, bufferService, optionsService);
     this._state = {
       x: null,
       y: null,

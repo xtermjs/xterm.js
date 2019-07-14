@@ -15,6 +15,7 @@ import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -47,7 +48,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     zIndex: number,
     private _alpha: boolean,
     protected _colors: IColorSet,
-    protected _terminal: ITerminal
+    protected _terminal: ITerminal,
+    protected readonly _bufferService: IBufferService,
+    protected readonly _optionsService: IOptionsService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -98,7 +101,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Regenerate char atlas and force a full redraw
     this._refreshCharAtlas(this._colors);
-    this.onGridChanged(0, this._terminal.rows - 1);
+    this.onGridChanged(0, this._bufferService.rows - 1);
   }
 
   /**
@@ -282,7 +285,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -334,7 +337,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
       } else {
         let fg = cell.getFgColor();
-        if (this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
           fg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -364,7 +367,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.rect(
         0,
         y * this._scaledCellHeight,
-        this._terminal.cols * this._scaledCellWidth,
+        this._bufferService.cols * this._scaledCellWidth,
         this._scaledCellHeight);
     this._ctx.clip();
   }
@@ -374,10 +377,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param isBold If we should use the bold fontWeight.
    */
   protected _getFont(isBold: boolean, isItalic: boolean): string {
-    const fontWeight = isBold ? this._terminal.options.fontWeightBold : this._terminal.options.fontWeight;
+    const fontWeight = isBold ? this._optionsService.options.fontWeightBold : this._optionsService.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${this._terminal.options.fontSize * window.devicePixelRatio}px ${this._terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${this._optionsService.options.fontSize * window.devicePixelRatio}px ${this._optionsService.options.fontFamily}`;
   }
 }
 
