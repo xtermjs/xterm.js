@@ -15,8 +15,8 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsService, MockLogService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
-import { DEFAULT_OPTIONS } from '../out/common/services/OptionsService';
-import { clone } from '../out/common/Clone';
+import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { clone } from 'common/Clone';
 
 function getCursor(term: TestTerminal): number[] {
   return [

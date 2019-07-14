@@ -14,7 +14,7 @@ import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistr
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IBufferService } from '../../out/common/services/Services';
+import { IBufferService } from 'common/services/Services';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
