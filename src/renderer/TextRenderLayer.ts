@@ -4,7 +4,6 @@
  */
 
 import { ICharacterJoinerRegistry, IRenderDimensions } from 'browser/renderer/Types';
-import { ITerminal } from '../Types';
 import { CharData, ICellData } from 'common/Types';
 import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
@@ -36,11 +35,11 @@ export class TextRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     characterJoinerRegistry: ICharacterJoinerRegistry,
     alpha: boolean,
-    terminal: ITerminal,
+    rendererId: number,
     readonly bufferService: IBufferService,
     readonly optionsService: IOptionsService
   ) {
-    super(container, 'text', zIndex, alpha, colors, terminal, bufferService, optionsService);
+    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
     this._state = new GridCache<CharData>();
     this._characterJoinerRegistry = characterJoinerRegistry;
   }
@@ -57,7 +56,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state.clear();
-    this._state.resize(this._terminal.cols, this._terminal.rows);
+    this._state.resize(this._bufferService.cols, this._bufferService.rows);
   }
 
   public reset(): void {
@@ -76,10 +75,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     ) => void
   ): void {
     for (let y = firstRow; y <= lastRow; y++) {
-      const row = y + this._terminal.buffer.ydisp;
-      const line = this._terminal.buffer.lines.get(row);
+      const row = y + this._bufferService.buffer.ydisp;
+      const line = this._bufferService.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
-      for (let x = 0; x < this._terminal.cols; x++) {
+      for (let x = 0; x < this._bufferService.cols; x++) {
         line.loadCell(x, this._workCell);
         let cell = this._workCell;
 
@@ -154,7 +153,7 @@ export class TextRenderLayer extends BaseRenderLayer {
    */
   private _drawBackground(firstRow: number, lastRow: number): void {
     const ctx = this._ctx;
-    const cols = this._terminal.cols;
+    const cols = this._bufferService.cols;
     let startX: number = 0;
     let startY: number = 0;
     let prevFillStyle: string | null = null;
@@ -235,7 +234,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
           } else {
             let fg = cell.getFgColor();
-            if (this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -258,13 +257,13 @@ export class TextRenderLayer extends BaseRenderLayer {
       this._charAtlas.beginFrame();
     }
 
-    this._clearCells(0, firstRow, this._terminal.cols, lastRow - firstRow + 1);
+    this._clearCells(0, firstRow, this._bufferService.cols, lastRow - firstRow + 1);
     this._drawBackground(firstRow, lastRow);
     this._drawForeground(firstRow, lastRow);
   }
 
   public onOptionsChanged(): void {
-    this._setTransparency(this._terminal.options.allowTransparency);
+    this._setTransparency(this._optionsService.options.allowTransparency);
   }
 
   /**

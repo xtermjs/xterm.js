@@ -8,13 +8,14 @@ import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { DynamicCharAtlas } from 'browser/renderer/atlas/DynamicCharAtlas';
 import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
 import { IColorSet } from 'browser/Types';
+import { ITerminalOptions } from 'common/services/Services';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
-  ownedBy: any[];
+  ownedBy: number[];
 }
 
 const charAtlasCache: ICharAtlasCacheEntry[] = [];
@@ -22,26 +23,25 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
 /**
  * Acquires a char atlas, either generating a new one or returning an existing
  * one that is in use by another terminal.
- * @param terminal The terminal.
- * @param colors The colors to use.
  */
 export function acquireCharAtlas(
-  terminal: any,
+  options: ITerminalOptions,
+  rendererId: number,
   colors: IColorSet,
   scaledCharWidth: number,
   scaledCharHeight: number
 ): BaseCharAtlas {
-  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal.optionsService.options, colors);
+  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, options, colors);
 
-  // Check to see if the terminal already owns this config
+  // Check to see if the renderer already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
-    const ownedByIndex = entry.ownedBy.indexOf(terminal);
+    const ownedByIndex = entry.ownedBy.indexOf(rendererId);
     if (ownedByIndex >= 0) {
       if (configEquals(entry.config, newConfig)) {
         return entry.atlas;
       }
-      // The configs differ, release the terminal from the entry
+      // The configs differ, release the renderer from the entry
       if (entry.ownedBy.length === 1) {
         entry.atlas.dispose();
         charAtlasCache.splice(i, 1);
@@ -56,8 +56,8 @@ export function acquireCharAtlas(
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
     if (configEquals(entry.config, newConfig)) {
-      // Add the terminal to the cache entry and return
-      entry.ownedBy.push(terminal);
+      // Add the renderer to the cache entry and return
+      entry.ownedBy.push(rendererId);
       return entry.atlas;
     }
   }
@@ -68,7 +68,7 @@ export function acquireCharAtlas(
       newConfig
     ),
     config: newConfig,
-    ownedBy: [terminal]
+    ownedBy: [rendererId]
   };
   charAtlasCache.push(newEntry);
   return newEntry.atlas;
@@ -76,14 +76,13 @@ export function acquireCharAtlas(
 
 /**
  * Removes a terminal reference from the cache, allowing its memory to be freed.
- * @param terminal The terminal to remove.
  */
-export function removeTerminalFromCache(terminal: any): void {
+export function removeTerminalFromCache(rendererId: number): void {
   for (let i = 0; i < charAtlasCache.length; i++) {
-    const index = charAtlasCache[i].ownedBy.indexOf(terminal);
+    const index = charAtlasCache[i].ownedBy.indexOf(rendererId);
     if (index !== -1) {
       if (charAtlasCache[i].ownedBy.length === 1) {
-        // Remove the cache entry if it's the only terminal
+        // Remove the cache entry if it's the only renderer
         charAtlasCache[i].atlas.dispose();
         charAtlasCache.splice(i, 1);
       } else {

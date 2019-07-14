@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
@@ -18,12 +17,12 @@ export class LinkRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    terminal: ITerminal,
+    rendererId: number,
     linkifier: ILinkifier,
     readonly bufferService: IBufferService,
     readonly optionsService: IOptionsService
   ) {
-    super(container, 'link', zIndex, true, colors, terminal, bufferService, optionsService);
+    super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService);
     linkifier.onLinkHover(e => this._onLinkHover(e));
     linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }

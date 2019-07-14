@@ -15,8 +15,13 @@ import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
+import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
+
+let nextRendererId = 1;
 
 export class Renderer extends Disposable implements IRenderer {
+  private _id = nextRendererId++;
+
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
@@ -35,10 +40,10 @@ export class Renderer extends Disposable implements IRenderer {
     this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._terminal, bufferService, optionsService),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal, bufferService, optionsService),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal, this._terminal.linkifier, bufferService, optionsService),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, bufferService, optionsService)
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, bufferService, optionsService),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, bufferService, optionsService),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, bufferService, optionsService),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, bufferService, optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -62,6 +67,7 @@ export class Renderer extends Disposable implements IRenderer {
   public dispose(): void {
     super.dispose();
     this._renderLayers.forEach(l => l.dispose());
+    removeTerminalFromCache(this._id);
   }
 
   public onDevicePixelRatioChange(): void {

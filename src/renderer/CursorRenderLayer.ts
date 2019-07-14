@@ -34,11 +34,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    terminal: ITerminal,
+    private _terminal: ITerminal,
+    rendererId: number,
     readonly bufferService: IBufferService,
     readonly optionsService: IOptionsService
   ) {
-    super(container, 'cursor', zIndex, true, colors, terminal, bufferService, optionsService);
+    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._state = {
       x: null,
       y: null,

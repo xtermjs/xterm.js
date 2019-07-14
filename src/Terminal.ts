@@ -38,7 +38,6 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -264,8 +263,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._windowsMode.dispose();
       this._windowsMode = undefined;
     }
+    this._renderService.dispose();
     this._customKeyEventHandler = null;
-    removeTerminalFromCache(this);
     this.write = () => {};
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);

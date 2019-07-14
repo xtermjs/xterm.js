@@ -5,7 +5,6 @@
 
 import { IRenderLayer } from './Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
@@ -48,7 +47,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     zIndex: number,
     private _alpha: boolean,
     protected _colors: IColorSet,
-    protected _terminal: ITerminal,
+    private _rendererId: number,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService
   ) {
@@ -112,7 +111,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(this._optionsService.options, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     this._charAtlas.warmUp();
   }
 
