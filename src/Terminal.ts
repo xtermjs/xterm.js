@@ -612,13 +612,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.viewport = new Viewport(
+    this.viewport = this._instantiationService.createInstance(Viewport,
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
       this._viewportElement,
-      this._viewportScrollArea,
-      this._bufferService,
-      this._charSizeService,
-      this._renderService
+      this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
@@ -651,7 +648,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService.refresh()));
 
-    this._mouseZoneManager = new MouseZoneManager(this.element, this.screenElement, this._bufferService, this._mouseService, this._selectionService);
+    this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
