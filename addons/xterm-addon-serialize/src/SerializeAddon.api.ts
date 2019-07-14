@@ -83,7 +83,7 @@ describe('SerializeAddon', () => {
       window.term.write(${util.inspect(lines.join('\r\n'))});
     `);
 
-    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(0, halfRows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(halfRows, 2 * halfRows).join('\r\n'));
   });
 
   it('serialize 0 rows of content', async function (): Promise<any> {

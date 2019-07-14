@@ -5,6 +5,10 @@
 
 import { Terminal, ITerminalAddon } from 'xterm';
 
+function crop(value: number, from: number, to: number) {
+  return Math.max(from, Math.min(value, to))
+}
+
 export class SerializeAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
 
@@ -19,13 +23,18 @@ export class SerializeAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    const buffer = this._terminal.buffer;
-    const length = Math.max(0, Math.min((rows === undefined ? buffer.length : rows), buffer.length));
-    const lines: string[] = new Array<string>(length);
+    const terminalRows = this._terminal.rows;
+    if (rows === undefined) {
+      rows = terminalRows;
+    }
+    rows = crop(rows, 0, terminalRows);
 
-    for (let i = 0; i < length; i++) {
+    const buffer = this._terminal.buffer;
+    const lines: string[] = new Array<string>(rows);
+
+    for (let i = terminalRows - rows; i < terminalRows; i++) {
       const line = buffer.getLine(i);
-      lines[i] = line ? line.translateToString() : '';
+      lines[i - terminalRows + rows] = line ? line.translateToString() : '';
     }
 
     return lines.join('\r\n');
