@@ -20,6 +20,10 @@
       true,
       "spaces"
     ],
+    "import-blacklist": [
+      true,
+      [".*\\/out\\/.*"]
+    ],
     "interface-name": [
       true,
       "always-prefix"
