@@ -55,23 +55,23 @@ export class InstantiationService implements IInstantiationService {
   public createInstance<T>(ctor: any, ...args: any[]): any {
     const serviceDependencies = getServiceDependencies(ctor).sort((a, b) => a.index - b.index);
 
-		let serviceArgs: any[] = [];
-		for (const dependency of serviceDependencies) {
-			let service = this._services.get(dependency.id);
-			if (!service) {
-				throw new Error(`[createInstance] ${ctor.name} depends on UNKNOWN service ${dependency.id}.`);
-			}
-			serviceArgs.push(service);
-		}
-
-		let firstServiceArgPos = serviceDependencies.length > 0 ? serviceDependencies[0].index : args.length;
-
-		// check for argument mismatches, adjust static args if needed
-		if (args.length !== firstServiceArgPos) {
-			throw new Error(`[createInstance] First service dependency of ${ctor.name} at position ${firstServiceArgPos + 1} conflicts with ${args.length} static arguments`);
+    const serviceArgs: any[] = [];
+    for (const dependency of serviceDependencies) {
+      const service = this._services.get(dependency.id);
+      if (!service) {
+        throw new Error(`[createInstance] ${ctor.name} depends on UNKNOWN service ${dependency.id}.`);
+      }
+      serviceArgs.push(service);
     }
 
-		// now create the instance
-		return <T>new ctor(...[...args, ...serviceArgs]);
+    const firstServiceArgPos = serviceDependencies.length > 0 ? serviceDependencies[0].index : args.length;
+
+    // check for argument mismatches, adjust static args if needed
+    if (args.length !== firstServiceArgPos) {
+      throw new Error(`[createInstance] First service dependency of ${ctor.name} at position ${firstServiceArgPos + 1} conflicts with ${args.length} static arguments`);
+    }
+
+    // now create the instance
+    return <T>new ctor(...[...args, ...serviceArgs]);
   }
 }

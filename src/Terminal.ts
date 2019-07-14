@@ -590,7 +590,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this._bufferService, this.optionsService, this._charSizeService, this._coreService);
+    this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
 
     // Performance: Add viewport and helper elements from the fragment
