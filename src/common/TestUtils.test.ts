@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -34,6 +34,15 @@ export class MockCoreService implements ICoreService {
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
   reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+}
+
+export class MockDirtyRowService implements IDirtyRowService {
+  start: number = 0;
+  end: number = 0;
+  clearRange(): void {}
+  markDirty(y: number): void {}
+  markRangeDirty(y1: number, y2: number): void {}
+  markAllDirty(): void {}
 }
 
 export class MockLogService implements ILogService {

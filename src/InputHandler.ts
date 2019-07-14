@@ -19,7 +19,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
 
 /**
@@ -128,12 +128,13 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
-      protected _terminal: IInputHandlingTerminal,
-      private _bufferService: IBufferService,
-      private _coreService: ICoreService,
-      private _logService: ILogService,
-      private _optionsService: IOptionsService,
-      private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
+    protected _terminal: IInputHandlingTerminal,
+    private readonly _bufferService: IBufferService,
+    private readonly _coreService: ICoreService,
+    private readonly _dirtyRowService: IDirtyRowService,
+    private readonly _logService: ILogService,
+    private readonly _optionsService: IOptionsService,
+    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
 
@@ -306,7 +307,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public dispose(): void {
     super.dispose();
-    this._terminal = null;
   }
 
   // TODO: When InputHandler moves into common, browser dependencies need to move out
@@ -315,11 +315,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public parse(data: string): void {
-    // Ensure the terminal is not disposed
-    if (!this._terminal) {
-      return;
-    }
-
     let buffer = this._bufferService.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
@@ -338,11 +333,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public parseUtf8(data: Uint8Array): void {
-    // Ensure the terminal is not disposed
-    if (!this._terminal) {
-      return;
-    }
-
     let buffer = this._bufferService.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
@@ -365,14 +355,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     let chWidth: number;
     const buffer = this._bufferService.buffer;
     const charset = this._terminal.charset;
-    const screenReaderMode = this._terminal.options.screenReaderMode;
+    const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._terminal.wraparoundMode;
     const insertMode = this._terminal.insertMode;
     const curAttr = this._terminal.curAttrData;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
-    this._terminal.updateRange(buffer.y);
+    this._dirtyRowService.markDirty(buffer.y);
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -481,7 +471,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._parser.precedingCodepoint = this._workCell.content;
       }
     }
-    this._terminal.updateRange(buffer.y);
+    this._dirtyRowService.markDirty(buffer.y);
   }
 
   /**
@@ -514,7 +504,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._bufferService.buffer;
 
-    if (this._terminal.options.convertEol) {
+    if (this._optionsService.options.convertEol) {
       buffer.x = 0;
     }
     buffer.y++;
@@ -559,7 +549,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const originalX = this._bufferService.buffer.x;
     this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
-    if (this._terminal.options.screenReaderMode) {
+    if (this._optionsService.options.screenReaderMode) {
       this._terminal.onA11yTabEmitter.fire(this._bufferService.buffer.x - originalX);
     }
   }
@@ -830,16 +820,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 0:
         j = this._bufferService.buffer.y;
-        this._terminal.updateRange(j);
+        this._dirtyRowService.markDirty(j);
         this._eraseInBufferLine(j++, this._bufferService.buffer.x, this._bufferService.cols, this._bufferService.buffer.x === 0);
         for (; j < this._bufferService.rows; j++) {
           this._resetBufferLine(j);
         }
-        this._terminal.updateRange(j);
+        this._dirtyRowService.markDirty(j);
         break;
       case 1:
         j = this._bufferService.buffer.y;
-        this._terminal.updateRange(j);
+        this._dirtyRowService.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
         this._eraseInBufferLine(j, 0, this._bufferService.buffer.x + 1, true);
         if (this._bufferService.buffer.x + 1 >= this._bufferService.cols) {
@@ -849,15 +839,15 @@ export class InputHandler extends Disposable implements IInputHandler {
         while (j--) {
           this._resetBufferLine(j);
         }
-        this._terminal.updateRange(0);
+        this._dirtyRowService.markDirty(0);
         break;
       case 2:
         j = this._bufferService.rows;
-        this._terminal.updateRange(j - 1);
+        this._dirtyRowService.markDirty(j - 1);
         while (j--) {
           this._resetBufferLine(j);
         }
-        this._terminal.updateRange(0);
+        this._dirtyRowService.markDirty(0);
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
@@ -897,7 +887,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._bufferService.cols);
         break;
     }
-    this._terminal.updateRange(this._bufferService.buffer.y);
+    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
   }
 
   /**
@@ -926,9 +916,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.splice(row, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
 
-    // this.maxRange();
-    this._terminal.updateRange(buffer.y);
-    this._terminal.updateRange(buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
     buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
   }
 
@@ -959,9 +947,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.splice(j, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
 
-    // this.maxRange();
-    this._terminal.updateRange(buffer.y);
-    this._terminal.updateRange(buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
     buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
   }
 
@@ -978,7 +964,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         params.params[0] || 1,
         this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
       );
-      this._terminal.updateRange(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
   }
 
@@ -995,7 +981,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         params.params[0] || 1,
         this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
       );
-      this._terminal.updateRange(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
   }
 
@@ -1012,9 +998,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
       buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    // this.maxRange();
-    this._terminal.updateRange(buffer.scrollTop);
-    this._terminal.updateRange(buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
@@ -1031,9 +1015,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
         buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
-      // this.maxRange();
-      this._terminal.updateRange(buffer.scrollTop);
-      this._terminal.updateRange(buffer.scrollBottom);
+      this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
     }
   }
 
@@ -1050,7 +1032,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._bufferService.buffer.x + (params.params[0] || 1),
         this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
       );
-      this._terminal.updateRange(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
   }
 
@@ -1893,19 +1875,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (param) {
         case 1:
         case 2:
-          this._terminal.options.cursorStyle = 'block';
+          this._optionsService.options.cursorStyle = 'block';
           break;
         case 3:
         case 4:
-          this._terminal.options.cursorStyle = 'underline';
+          this._optionsService.options.cursorStyle = 'underline';
           break;
         case 5:
         case 6:
-          this._terminal.options.cursorStyle = 'bar';
+          this._optionsService.options.cursorStyle = 'bar';
           break;
       }
       const isBlinking = param % 2 === 1;
-      this._terminal.options.cursorBlink = isBlinking;
+      this._optionsService.options.cursorBlink = isBlinking;
     }
   }
 
@@ -2097,8 +2079,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
       buffer.lines.shiftElements(buffer.y + buffer.ybase, scrollRegionHeight, 1);
       buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._terminal.eraseAttrData()));
-      this._terminal.updateRange(buffer.scrollTop);
-      this._terminal.updateRange(buffer.scrollBottom);
+      this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
     } else {
       buffer.y--;
       this._restrictCursor(); // quickfix to not run out of bounds
@@ -2152,8 +2133,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.get(row).fill(cell);
       buffer.lines.get(row).isWrapped = false;
     }
-    this._terminal.updateRange(0);
-    this._terminal.updateRange(this._bufferService.rows);
+    this._dirtyRowService.markAllDirty();
     this._setCursor(0, 0);
   }
 }

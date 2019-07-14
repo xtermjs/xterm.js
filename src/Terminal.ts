@@ -47,7 +47,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreService, ILogService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService, ILogService, IDirtyRowService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -60,6 +60,7 @@ import { IParams } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
+import { DirtyRowService } from 'common/services/DirtyRowService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -111,6 +112,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _dirtyRowService: IDirtyRowService;
   private _logService: ILogService;
   public optionsService: IOptionsService;
 
@@ -148,8 +150,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public urxvtMouse: boolean;
 
   // misc
-  private _refreshStart: number;
-  private _refreshEnd: number;
   public savedCols: number;
 
   public curAttrData: IAttributeData;
@@ -243,6 +243,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._bufferService = new BufferService(this.optionsService);
     this._coreService = new CoreService(() => this.scrollToBottom(), this._bufferService, this.optionsService);
     this._coreService.onData(e => this._onData.fire(e));
+    this._dirtyRowService = new DirtyRowService(this._bufferService);
     this._logService = new LogService(this.optionsService);
 
     this._setupOptionsListeners();
@@ -300,7 +301,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._logService, this.optionsService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
@@ -1136,8 +1137,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     // Flag rows that need updating
-    this.updateRange(this.buffer.scrollTop);
-    this.updateRange(this.buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this.buffer.scrollTop, this.buffer.scrollBottom);
 
     this._onScroll.fire(this.buffer.ydisp);
   }
@@ -1258,19 +1258,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this._xoffSentToCatchUp = false;
       }
 
-      this._refreshStart = this.buffer.y;
-      this._refreshEnd = this.buffer.y;
-
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parseUtf8(data);
 
-      this.updateRange(this.buffer.y);
-      this.refresh(this._refreshStart, this._refreshEnd);
+      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
 
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
@@ -1345,19 +1335,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this._xoffSentToCatchUp = false;
       }
 
-      this._refreshStart = this.buffer.y;
-      this._refreshEnd = this.buffer.y;
-
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parse(data);
 
-      this.updateRange(this.buffer.y);
-      this.refresh(this._refreshStart, this._refreshEnd);
+      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
 
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
@@ -1715,29 +1695,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });
-  }
-
-  /**
-   * Updates the range of rows to refresh
-   * @param y The number of rows to refresh next.
-   */
-  public updateRange(y: number): void {
-    if (y < this._refreshStart) this._refreshStart = y;
-    if (y > this._refreshEnd) this._refreshEnd = y;
-    // if (y > this.refreshEnd) {
-    //   this.refreshEnd = y;
-    //   if (y > this.rows - 1) {
-    //     this.refreshEnd = this.rows - 1;
-    //   }
-    // }
-  }
-
-  /**
-   * Set the range of refreshing to the maximum value
-   */
-  public maxRange(): void {
-    this._refreshStart = 0;
-    this._refreshEnd = this.rows - 1;
   }
 
   /**

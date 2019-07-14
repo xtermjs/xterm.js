@@ -38,6 +38,16 @@ export interface ICoreService {
     triggerDataEvent(data: string, wasUserInput?: boolean): void;
 }
 
+export interface IDirtyRowService {
+  readonly start: number;
+  readonly end: number;
+
+  clearRange(): void;
+  markDirty(y: number): void;
+  markRangeDirty(y1: number, y2: number): void;
+  markAllDirty(): void;
+}
+
 export interface ILogService {
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
