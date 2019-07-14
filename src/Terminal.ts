@@ -30,7 +30,7 @@ import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
-import { SelectionService } from './browser/services/SelectionService';
+import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
@@ -394,7 +394,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'screenReaderMode':
           if (this.optionsService.options.screenReaderMode) {
             if (!this._accessibilityManager && this._renderService) {
-              this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
+              this._accessibilityManager = new AccessibilityManager(this, this._renderService);
             }
           } else {
             if (this._accessibilityManager) {
@@ -665,8 +665,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
-      this._accessibilityManager.register(this._renderService.onDimensionsChange(e => this._accessibilityManager.setDimensions(e)));
+      this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
 
     // Measure the character size
