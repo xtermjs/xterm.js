@@ -35,7 +35,7 @@ import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './browser/LocalizableStrings';
 import { SoundService } from 'browser/services/SoundService';
-import { MouseZoneManager } from './MouseZoneManager';
+import { MouseZoneManager } from './browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';

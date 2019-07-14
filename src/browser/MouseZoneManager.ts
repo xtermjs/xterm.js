@@ -27,10 +27,10 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _mouseLeaveListener: (e: MouseEvent) => any;
   private _clickListener: (e: MouseEvent) => any;
 
-  private _tooltipTimeout: number = null;
-  private _currentZone: IMouseZone = null;
-  private _lastHoverCoords: [number, number] = [null, null];
-  private _initialSelectionLength: number;
+  private _tooltipTimeout: number | undefined;
+  private _currentZone: IMouseZone | undefined;
+  private _lastHoverCoords: [number | undefined, number | undefined] = [undefined, undefined];
+  private _initialSelectionLength: number = 0;
 
   constructor(
     private readonly _element: HTMLElement,
@@ -68,7 +68,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     }
 
     // Clear all if start/end weren't set
-    if (!end) {
+    if (!start || !end) {
       start = 0;
       end = this._bufferService.rows - 1;
     }
@@ -81,7 +81,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
           (zone.y1 < start && zone.y2 > end + 1)) {
         if (this._currentZone && this._currentZone === zone) {
           this._currentZone.leaveCallback();
-          this._currentZone = null;
+          this._currentZone = undefined;
         }
         this._zones.splice(i--, 1);
       }
@@ -133,7 +133,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     // is being hovered
     if (this._currentZone) {
       this._currentZone.leaveCallback();
-      this._currentZone = null;
+      this._currentZone = undefined;
       if (this._tooltipTimeout) {
         clearTimeout(this._tooltipTimeout);
       }
@@ -155,7 +155,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   }
 
   private _onTooltip(e: MouseEvent): void {
-    this._tooltipTimeout = null;
+    this._tooltipTimeout = undefined;
     const zone = this._findZoneEventAt(e);
     if (zone && zone.tooltipCallback) {
       zone.tooltipCallback(e);
@@ -188,7 +188,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     // leaves the terminal element
     if (this._currentZone) {
       this._currentZone.leaveCallback();
-      this._currentZone = null;
+      this._currentZone = undefined;
       if (this._tooltipTimeout) {
         clearTimeout(this._tooltipTimeout);
       }
@@ -213,10 +213,10 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     return selectionText ? selectionText.length : 0;
   }
 
-  private _findZoneEventAt(e: MouseEvent): IMouseZone {
+  private _findZoneEventAt(e: MouseEvent): IMouseZone | undefined {
     const coords = this._mouseService.getCoords(e, this._screenElement, this._bufferService.cols, this._bufferService.rows);
     if (!coords) {
-      return null;
+      return undefined;
     }
     const x = coords[0];
     const y = coords[1];
@@ -236,6 +236,6 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
         }
       }
     }
-    return null;
+    return undefined;
   }
 }
