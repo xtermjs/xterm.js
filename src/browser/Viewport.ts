@@ -21,7 +21,7 @@ export class Viewport extends Disposable implements IViewport {
   private _lastRecordedBufferLength: number = 0;
   private _lastRecordedViewportHeight: number = 0;
   private _lastRecordedBufferHeight: number = 0;
-  private _lastTouchY: number;
+  private _lastTouchY: number = 0;
   private _lastScrollTop: number = 0;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
