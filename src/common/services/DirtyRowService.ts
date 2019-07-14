@@ -13,7 +13,7 @@ export class DirtyRowService implements IDirtyRowService {
   public get end(): number { return this._end; }
 
   constructor(
-    private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     this.clearRange();
   }

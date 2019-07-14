@@ -6,7 +6,9 @@
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes } from 'common/Types';
+import { createDecorator } from 'common/services/ServiceRegistry';
 
+export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
   readonly cols: number;
   readonly rows: number;
@@ -19,6 +21,7 @@ export interface IBufferService {
   reset(): void;
 }
 
+export const ICoreService = createDecorator<ICoreService>('CoreService');
 export interface ICoreService {
   readonly decPrivateModes: IDecPrivateModes;
 
@@ -48,6 +51,17 @@ export interface IDirtyRowService {
   markAllDirty(): void;
 }
 
+export interface IServiceIdentifier<T> {
+  (...args: any[]): void;
+  type: T;
+}
+
+export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
+export interface IInstantiationService {
+  setService<T>(id: IServiceIdentifier<T>, instance: T): void;
+  createInstance(ctor: any, ...rest: any[]): any;
+}
+
 export interface ILogService {
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -55,6 +69,7 @@ export interface ILogService {
   error(message: any, ...optionalParams: any[]): void;
 }
 
+export const IOptionsService = createDecorator<IOptionsService>('OptionsService');
 export interface IOptionsService {
   readonly options: ITerminalOptions;
 

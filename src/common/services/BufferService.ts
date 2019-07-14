@@ -18,7 +18,7 @@ export class BufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
 
   constructor(
-    private _optionsService: IOptionsService
+    @IOptionsService private _optionsService: IOptionsService
   ) {
     this.cols = Math.max(_optionsService.options.cols, MINIMUM_COLS);
     this.rows = Math.max(_optionsService.options.rows, MINIMUM_ROWS);
