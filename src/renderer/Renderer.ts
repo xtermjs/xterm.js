@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from './TextRenderLayer';
-import { SelectionRenderLayer } from './SelectionRenderLayer';
+import { TextRenderLayer } from '../browser/renderer/TextRenderLayer';
+import { SelectionRenderLayer } from '../browser/renderer/SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
-import { LinkRenderLayer } from './LinkRenderLayer';
+import { LinkRenderLayer } from '../browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';

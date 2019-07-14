@@ -4,14 +4,14 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from '../browser/renderer/BaseRenderLayer';
+import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from 'browser/renderer/atlas/CharAtlasUtils';
 import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export class LinkRenderLayer extends BaseRenderLayer {
-  private _state: ILinkifierEvent = null;
+  private _state: ILinkifierEvent | undefined;
 
   constructor(
     container: HTMLElement,
@@ -30,7 +30,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   public resize(dim: IRenderDimensions): void {
     super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
-    this._state = null;
+    this._state = undefined;
   }
 
   public reset(): void {
@@ -45,14 +45,14 @@ export class LinkRenderLayer extends BaseRenderLayer {
         this._clearCells(0, this._state.y1 + 1, this._state.cols, middleRowCount);
       }
       this._clearCells(0, this._state.y2, this._state.x2, 1);
-      this._state = null;
+      this._state = undefined;
     }
   }
 
   private _onLinkHover(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
-    } else if (is256Color(e.fg)) {
+    } else if (e.fg && is256Color(e.fg)) {
       // 256 color support
       this._ctx.fillStyle = this._colors.ansi[e.fg].css;
     } else {

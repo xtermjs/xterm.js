@@ -9,14 +9,14 @@ import { IColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 
 interface ISelectionState {
-  start: [number, number];
-  end: [number, number];
-  columnSelectMode: boolean;
-  ydisp: number;
+  start?: [number, number];
+  end?: [number, number];
+  columnSelectMode?: boolean;
+  ydisp?: number;
 }
 
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: ISelectionState;
+  private _state!: ISelectionState;
 
   constructor(
     container: HTMLElement,
@@ -32,10 +32,10 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   private _clearState(): void {
     this._state = {
-      start: null,
-      end: null,
-      columnSelectMode: null,
-      ydisp: null
+      start: undefined,
+      end: undefined,
+      columnSelectMode: undefined,
+      ydisp: undefined
     };
   }
 
@@ -117,7 +117,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       ydisp !== this._state.ydisp;
   }
 
-  private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {
+  private _areCoordinatesEqual(coord1: [number, number] | undefined, coord2: [number, number] | undefined): boolean {
     if (!coord1 || !coord2) {
       return false;
     }

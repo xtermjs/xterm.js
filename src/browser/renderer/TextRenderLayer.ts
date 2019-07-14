@@ -23,8 +23,8 @@ import { IOptionsService, IBufferService } from 'common/services/Services';
 
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
-  private _characterWidth: number;
-  private _characterFont: string;
+  private _characterWidth: number = 0;
+  private _characterFont: string = '';
   private _characterOverlapCache: { [key: string]: boolean } = {};
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
   private _workCell = new CellData();
@@ -79,7 +79,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = this._bufferService.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < this._bufferService.cols; x++) {
-        line.loadCell(x, this._workCell);
+        line!.loadCell(x, this._workCell);
         let cell = this._workCell;
 
         // If true, indicates that the current character(s) to draw were joined.
@@ -97,14 +97,14 @@ export class TextRenderLayer extends BaseRenderLayer {
         // and attributes of our input.
         if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
           isJoined = true;
-          const range = joinedRanges.shift();
+          const range = joinedRanges.shift()!;
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly
 
           cell = new JoinedCellData(
             this._workCell,
-            line.translateToString(true, range[0], range[1]),
+            line!.translateToString(true, range[0], range[1]),
             range[1] - range[0]
           );
 
@@ -124,7 +124,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (lastCharX < line.length - 1 && line.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
+          if (lastCharX < line!.length - 1 && line!.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
             // patch width to 2
             cell.content &= ~Content.WIDTH_MASK;
             cell.content |= 2 << Content.WIDTH_SHIFT;
@@ -184,15 +184,17 @@ export class TextRenderLayer extends BaseRenderLayer {
         // don't need to draw anything.
         startX = x;
         startY = y;
-      } if (y !== startY) {
+      }
+
+      if (y !== startY) {
         // our row changed, draw the previous row
-        ctx.fillStyle = prevFillStyle;
+        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
         this._fillCells(startX, startY, cols - startX, 1);
         startX = x;
         startY = y;
       } else if (prevFillStyle !== nextFillStyle) {
         // our color changed, draw the previous characters in this row
-        ctx.fillStyle = prevFillStyle;
+        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
         this._fillCells(startX, startY, x - startX, 1);
         startX = x;
         startY = y;
