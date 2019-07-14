@@ -10,6 +10,7 @@ import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'browser/Types';
+import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -365,11 +366,4 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
     }
   }
   return isEmpty;
-}
-
-export function throwIfFalsy<T>(value: T | undefined | null): T {
-  if (!value) {
-    throw new Error('value must not be falsy');
-  }
-  return value;
 }

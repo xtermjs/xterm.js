@@ -4,7 +4,7 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer } from '../browser/renderer/BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from 'browser/renderer/atlas/CharAtlasUtils';
 import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';

@@ -4,7 +4,7 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer } from '../browser/renderer/BaseRenderLayer';
 import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';

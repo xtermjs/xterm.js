@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IRenderLayer } from './Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
 import { ICellData } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
@@ -15,10 +14,11 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
+import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
-  protected _ctx: CanvasRenderingContext2D;
+  protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
   private _scaledCharHeight: number = 0;
   private _scaledCellWidth: number = 0;
@@ -26,7 +26,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: BaseCharAtlas;
+  protected _charAtlas: BaseCharAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
@@ -66,7 +66,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();
