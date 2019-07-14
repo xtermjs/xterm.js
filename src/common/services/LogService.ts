@@ -37,10 +37,12 @@ const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
 const LOG_PREFIX = 'xterm.js: ';
 
 export class LogService implements ILogService {
+  serviceBrand: any;
+
   private _logLevel!: LogLevel;
 
   constructor(
-    private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     this._updateLogLevel();
     this._optionsService.onOptionChange(key => {

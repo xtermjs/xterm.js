@@ -13,6 +13,8 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 });
 
 export class CoreService implements ICoreService {
+  serviceBrand: any;
+
   public decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();
@@ -23,8 +25,8 @@ export class CoreService implements ICoreService {
   constructor(
     // TODO: Move this into a service
     private readonly _scrollToBottom: () => void,
-    private readonly _bufferService: IBufferService,
-    private readonly _optionsService: IOptionsService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }

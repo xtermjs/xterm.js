@@ -36,9 +36,9 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
-    private readonly _bufferService: IBufferService,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _renderService: IRenderService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
 

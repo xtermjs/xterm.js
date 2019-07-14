@@ -30,7 +30,7 @@ import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
-import { SelectionService } from './browser/services/SelectionService';
+import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
@@ -47,7 +47,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreService, ILogService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -60,6 +60,8 @@ import { IParams } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
+import { DirtyRowService } from 'common/services/DirtyRowService';
+import { InstantiationService } from 'common/services/InstantiationService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -111,6 +113,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _dirtyRowService: IDirtyRowService;
+  private _instantiationService: IInstantiationService;
   private _logService: ILogService;
   public optionsService: IOptionsService;
 
@@ -148,8 +152,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public urxvtMouse: boolean;
 
   // misc
-  private _refreshStart: number;
-  private _refreshEnd: number;
   public savedCols: number;
 
   public curAttrData: IAttributeData;
@@ -239,11 +241,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     super();
 
     // Setup and initialize common services
+    this._instantiationService = new InstantiationService();
     this.optionsService = new OptionsService(options);
-    this._bufferService = new BufferService(this.optionsService);
-    this._coreService = new CoreService(() => this.scrollToBottom(), this._bufferService, this.optionsService);
+    this._instantiationService.setService(IOptionsService, this.optionsService);
+    this._bufferService = this._instantiationService.createInstance(BufferService);
+    this._instantiationService.setService(IBufferService, this._bufferService);
+    this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
+    this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
-    this._logService = new LogService(this.optionsService);
+    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
+    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._logService = this._instantiationService.createInstance(LogService);
+    this._instantiationService.setService(ILogService, this._logService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -300,7 +309,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._logService, this.optionsService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
@@ -385,7 +394,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'screenReaderMode':
           if (this.optionsService.options.screenReaderMode) {
             if (!this._accessibilityManager && this._renderService) {
-              this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
+              this._accessibilityManager = new AccessibilityManager(this, this._renderService);
             }
           } else {
             if (this._accessibilityManager) {
@@ -576,11 +585,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    this._charSizeService = new CharSizeService(this._document, this._helperContainer, this.optionsService);
+    this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
+    this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this._bufferService, this.optionsService, this._charSizeService, this._coreService);
+    this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
 
     // Performance: Add viewport and helper elements from the fragment
@@ -592,20 +602,20 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderService = new RenderService(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
+    this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
+    this._instantiationService.setService(IRenderService, this._renderService);
     this._renderService.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
-    this._soundService = new SoundService(this.optionsService);
-    this._mouseService = new MouseService(this._renderService, this._charSizeService);
+    this._soundService = this._instantiationService.createInstance(SoundService);
+    this._instantiationService.setService(ISoundService, this._soundService);
+    this._mouseService = this._instantiationService.createInstance(MouseService);
+    this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.viewport = new Viewport(
+    this.viewport = this._instantiationService.createInstance(Viewport,
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
       this._viewportElement,
-      this._viewportScrollArea,
-      this._bufferService,
-      this._charSizeService,
-      this._renderService
+      this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
@@ -616,11 +626,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this._selectionService = new SelectionService(
+    this._selectionService = this._instantiationService.createInstance(SelectionService,
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
-      this.element, this.screenElement, this._charSizeService, this._bufferService, this._coreService,
-      this._mouseService, this.optionsService
-    );
+      this.element,
+      this.screenElement);
+    this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
@@ -638,7 +648,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService.refresh()));
 
-    this._mouseZoneManager = new MouseZoneManager(this.element, this.screenElement, this._bufferService, this._mouseService, this._selectionService);
+    this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
@@ -655,8 +665,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
-      this._accessibilityManager.register(this._renderService.onDimensionsChange(e => this._accessibilityManager.setDimensions(e)));
+      this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
 
     // Measure the character size
@@ -676,8 +685,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this, this._colorManager.colors, this._charSizeService); break;
-      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService); break;
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService);
+      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -1136,8 +1145,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     // Flag rows that need updating
-    this.updateRange(this.buffer.scrollTop);
-    this.updateRange(this.buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this.buffer.scrollTop, this.buffer.scrollBottom);
 
     this._onScroll.fire(this.buffer.ydisp);
   }
@@ -1258,19 +1266,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this._xoffSentToCatchUp = false;
       }
 
-      this._refreshStart = this.buffer.y;
-      this._refreshEnd = this.buffer.y;
-
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parseUtf8(data);
 
-      this.updateRange(this.buffer.y);
-      this.refresh(this._refreshStart, this._refreshEnd);
+      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
 
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
@@ -1345,19 +1343,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         this._xoffSentToCatchUp = false;
       }
 
-      this._refreshStart = this.buffer.y;
-      this._refreshEnd = this.buffer.y;
-
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parse(data);
 
-      this.updateRange(this.buffer.y);
-      this.refresh(this._refreshStart, this._refreshEnd);
+      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
 
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
@@ -1715,29 +1703,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });
-  }
-
-  /**
-   * Updates the range of rows to refresh
-   * @param y The number of rows to refresh next.
-   */
-  public updateRange(y: number): void {
-    if (y < this._refreshStart) this._refreshStart = y;
-    if (y > this._refreshEnd) this._refreshEnd = y;
-    // if (y > this.refreshEnd) {
-    //   this.refreshEnd = y;
-    //   if (y > this.rows - 1) {
-    //     this.refreshEnd = this.rows - 1;
-    //   }
-    // }
-  }
-
-  /**
-   * Set the range of refreshing to the maximum value
-   */
-  public maxRange(): void {
-    this._refreshStart = 0;
-    this._refreshEnd = this.rows - 1;
   }
 
   /**
