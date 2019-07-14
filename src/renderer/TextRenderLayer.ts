@@ -29,17 +29,17 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
   private _workCell = new CellData();
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean) {
-    super(container, 'text', zIndex, alpha, colors);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean, terminal: ITerminal) {
+    super(container, 'text', zIndex, alpha, colors, terminal);
     this._state = new GridCache<CharData>();
     this._characterJoinerRegistry = characterJoinerRegistry;
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
-    super.resize(terminal, dim);
+  public resize(dim: IRenderDimensions): void {
+    super.resize(dim);
 
     // Clear the character width cache if the font or width has changed
-    const terminalFont = this._getFont(terminal, false, false);
+    const terminalFont = this._getFont(false, false);
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
       this._characterWidth = dim.scaledCharWidth;
       this._characterFont = terminalFont;
@@ -47,16 +47,15 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state.clear();
-    this._state.resize(terminal.cols, terminal.rows);
+    this._state.resize(this._terminal.cols, this._terminal.rows);
   }
 
-  public reset(terminal: ITerminal): void {
+  public reset(): void {
     this._state.clear();
     this._clearAll();
   }
 
   private _forEachCell(
-    terminal: ITerminal,
     firstRow: number,
     lastRow: number,
     joinerRegistry: ICharacterJoinerRegistry | null,
@@ -67,10 +66,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     ) => void
   ): void {
     for (let y = firstRow; y <= lastRow; y++) {
-      const row = y + terminal.buffer.ydisp;
-      const line = terminal.buffer.lines.get(row);
+      const row = y + this._terminal.buffer.ydisp;
+      const line = this._terminal.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
-      for (let x = 0; x < terminal.cols; x++) {
+      for (let x = 0; x < this._terminal.cols; x++) {
         line.loadCell(x, this._workCell);
         let cell = this._workCell;
 
@@ -143,16 +142,16 @@ export class TextRenderLayer extends BaseRenderLayer {
    * Draws the background for a specified range of columns. Tries to batch adjacent cells of the
    * same color together to reduce draw calls.
    */
-  private _drawBackground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+  private _drawBackground(firstRow: number, lastRow: number): void {
     const ctx = this._ctx;
-    const cols = terminal.cols;
+    const cols = this._terminal.cols;
     let startX: number = 0;
     let startY: number = 0;
     let prevFillStyle: string | null = null;
 
     ctx.save();
 
-    this._forEachCell(terminal, firstRow, lastRow, null, (cell, x, y) => {
+    this._forEachCell(firstRow, lastRow, null, (cell, x, y) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       let nextFillStyle = null; // null represents default background color
@@ -202,12 +201,12 @@ export class TextRenderLayer extends BaseRenderLayer {
     ctx.restore();
   }
 
-  private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
-    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (cell, x, y) => {
+  private _drawForeground(firstRow: number, lastRow: number): void {
+    this._forEachCell(firstRow, lastRow, this._characterJoinerRegistry, (cell, x, y) => {
       if (cell.isInvisible()) {
         return;
       }
-      this._drawChars(terminal, cell, x, y);
+      this._drawChars(cell, x, y);
       if (cell.isUnderline()) {
         this._ctx.save();
 
@@ -226,7 +225,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
           } else {
             let fg = cell.getFgColor();
-            if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+            if (this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -239,7 +238,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     });
   }
 
-  public onGridChanged(terminal: ITerminal, firstRow: number, lastRow: number): void {
+  public onGridChanged(firstRow: number, lastRow: number): void {
     // Resize has not been called yet
     if (this._state.cache.length === 0) {
       return;
@@ -249,13 +248,13 @@ export class TextRenderLayer extends BaseRenderLayer {
       this._charAtlas.beginFrame();
     }
 
-    this._clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
-    this._drawBackground(terminal, firstRow, lastRow);
-    this._drawForeground(terminal, firstRow, lastRow);
+    this._clearCells(0, firstRow, this._terminal.cols, lastRow - firstRow + 1);
+    this._drawBackground(firstRow, lastRow);
+    this._drawForeground(firstRow, lastRow);
   }
 
-  public onOptionsChanged(terminal: ITerminal): void {
-    this._setTransparency(terminal, terminal.options.allowTransparency);
+  public onOptionsChanged(): void {
+    this._setTransparency(this._terminal.options.allowTransparency);
   }
 
   /**

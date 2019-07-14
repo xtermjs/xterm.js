@@ -46,7 +46,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet
+    protected _colors: IColorSet,
+    protected _terminal: ITerminal
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -70,18 +71,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(terminal: ITerminal): void {}
-  public onBlur(terminal: ITerminal): void {}
-  public onFocus(terminal: ITerminal): void {}
-  public onCursorMove(terminal: ITerminal): void {}
-  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  public onOptionsChanged(): void {}
+  public onBlur(): void {}
+  public onFocus(): void {}
+  public onCursorMove(): void {}
+  public onGridChanged(startRow: number, endRow: number): void {}
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
 
-  public setColors(terminal: ITerminal, colorSet: IColorSet): void {
-    this._refreshCharAtlas(terminal, colorSet);
+  public setColors(colorSet: IColorSet): void {
+    this._refreshCharAtlas(colorSet);
   }
 
-  protected _setTransparency(terminal: ITerminal, alpha: boolean): void {
+  protected _setTransparency(alpha: boolean): void {
     // Do nothing when alpha doesn't change
     if (alpha === this._alpha) {
       return;
@@ -96,24 +97,23 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._container.replaceChild(this._canvas, oldCanvas);
 
     // Regenerate char atlas and force a full redraw
-    this._refreshCharAtlas(terminal, this._colors);
-    this.onGridChanged(terminal, 0, terminal.rows - 1);
+    this._refreshCharAtlas(this._colors);
+    this.onGridChanged(0, this._terminal.rows - 1);
   }
 
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
-   * @param terminal The terminal.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
+  private _refreshCharAtlas(colorSet: IColorSet): void {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     this._charAtlas.warmUp();
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+  public resize(dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;
@@ -130,10 +130,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._clearAll();
     }
 
-    this._refreshCharAtlas(terminal, this._colors);
+    this._refreshCharAtlas(this._colors);
   }
 
-  public abstract reset(terminal: ITerminal): void;
+  public abstract reset(): void;
 
   /**
    * Fills 1+ cells completely. This uses the existing fillStyle on the context.
@@ -233,16 +233,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * Draws a truecolor character at the cell. The character will be clipped to
    * ensure that it fits with the cell, including the cell to the right if it's
    * a wide character. This uses the existing fillStyle on the context.
-   * @param terminal The terminal.
    * @param cell The cell data for the character to draw.
    * @param x The column to draw at.
    * @param y The row to draw at.
    * @param color The color of the character.
    */
-  protected _fillCharTrueColor(terminal: ITerminal, cell: CellData, x: number, y: number): void {
-    this._ctx.font = this._getFont(terminal, false, false);
+  protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
+    this._ctx.font = this._getFont(false, false);
     this._ctx.textBaseline = 'middle';
-    this._clipRow(terminal, y);
+    this._clipRow(y);
     this._ctx.fillText(
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
@@ -252,7 +251,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   /**
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
-   * @param terminal The terminal.
    * @param chars The character or characters.
    * @param code The character code.
    * @param width The width of the characters.
@@ -263,14 +261,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected _drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
+  protected _drawChars(cell: ICellData, x: number, y: number): void {
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
     //       in the cache handler itself (atlasDidDraw == false) and
     //       fall through to uncached later down below
     if (cell.isFgRGB() || cell.isBgRGB()) {
-      this._drawUncachedChars(terminal, cell, x, y);
+      this._drawUncachedChars(cell, x, y);
       return;
     }
 
@@ -284,7 +282,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+    const drawInBrightColor = this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -302,7 +300,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     );
 
     if (!atlasDidDraw) {
-      this._drawUncachedChars(terminal, cell, x, y);
+      this._drawUncachedChars(cell, x, y);
     }
   }
 
@@ -310,16 +308,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * Draws one or more characters at one or more cells. The character(s) will be
    * clipped to ensure that they fit with the cell(s), including the cell to the
    * right if the last character is a wide character.
-   * @param terminal The terminal.
    * @param chars The character.
    * @param width The width of the character.
    * @param fg The foreground color, in the format stored within the attributes.
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
+  private _drawUncachedChars(cell: ICellData, x: number, y: number): void {
     this._ctx.save();
-    this._ctx.font = this._getFont(terminal, !!cell.isBold(), !!cell.isItalic());
+    this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
     this._ctx.textBaseline = 'middle';
 
     if (cell.isInverse()) {
@@ -337,14 +334,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
       } else {
         let fg = cell.getFgColor();
-        if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+        if (this._terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
           fg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[fg].css;
       }
     }
 
-    this._clipRow(terminal, y);
+    this._clipRow(y);
 
     // Apply alpha to dim the character
     if (cell.isDim()) {
@@ -360,29 +357,27 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   /**
    * Clips a row to ensure no pixels will be drawn outside the cells in the row.
-   * @param terminal The terminal.
    * @param y The row to clip.
    */
-  private _clipRow(terminal: ITerminal, y: number): void {
+  private _clipRow(y: number): void {
     this._ctx.beginPath();
     this._ctx.rect(
         0,
         y * this._scaledCellHeight,
-        terminal.cols * this._scaledCellWidth,
+        this._terminal.cols * this._scaledCellWidth,
         this._scaledCellHeight);
     this._ctx.clip();
   }
 
   /**
    * Gets the current font.
-   * @param terminal The terminal.
    * @param isBold If we should use the bold fontWeight.
    */
-  protected _getFont(terminal: ITerminal, isBold: boolean, isItalic: boolean): string {
-    const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+  protected _getFont(isBold: boolean, isItalic: boolean): string {
+    const fontWeight = isBold ? this._terminal.options.fontWeightBold : this._terminal.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${this._terminal.options.fontSize * window.devicePixelRatio}px ${this._terminal.options.fontFamily}`;
   }
 }
 

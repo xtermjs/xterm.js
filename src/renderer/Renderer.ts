@@ -34,10 +34,10 @@ export class Renderer extends Disposable implements IRenderer {
     this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors),
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._terminal),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._terminal),
       new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -77,8 +77,8 @@ export class Renderer extends Disposable implements IRenderer {
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.setColors(this._terminal, this._colors);
-      l.reset(this._terminal);
+      l.setColors(this._colors);
+      l.reset();
     });
   }
 
@@ -87,7 +87,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
+    this._renderLayers.forEach(l => l.resize(this.dimensions));
 
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
@@ -99,27 +99,27 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._runOperation(l => l.onBlur(this._terminal));
+    this._runOperation(l => l.onBlur());
   }
 
   public onFocus(): void {
-    this._runOperation(l => l.onFocus(this._terminal));
+    this._runOperation(l => l.onFocus());
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
-    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
+    this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
   }
 
   public onCursorMove(): void {
-    this._runOperation(l => l.onCursorMove(this._terminal));
+    this._runOperation(l => l.onCursorMove());
   }
 
   public onOptionsChanged(): void {
-    this._runOperation(l => l.onOptionsChanged(this._terminal));
+    this._runOperation(l => l.onOptionsChanged());
   }
 
   public clear(): void {
-    this._runOperation(l => l.reset(this._terminal));
+    this._runOperation(l => l.reset());
   }
 
   private _runOperation(operation: (layer: IRenderLayer) => void): void {
@@ -131,7 +131,7 @@ export class Renderer extends Disposable implements IRenderer {
    * necessary before queueing up the next one.
    */
   public renderRows(start: number, end: number): void {
-    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    this._renderLayers.forEach(l => l.onGridChanged(start, end));
   }
 
   /**

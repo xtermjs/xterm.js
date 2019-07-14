@@ -18,8 +18,8 @@ interface ISelectionState {
 export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: ISelectionState;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'selection', zIndex, true, colors);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
+    super(container, 'selection', zIndex, true, colors, terminal);
     this._clearState();
   }
 
@@ -32,22 +32,22 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     };
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
-    super.resize(terminal, dim);
+  public resize(dim: IRenderDimensions): void {
+    super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._clearState();
   }
 
-  public reset(terminal: ITerminal): void {
+  public reset(): void {
     if (this._state.start && this._state.end) {
       this._clearState();
       this._clearAll();
     }
   }
 
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (!this._didStateChange(start, end, columnSelectMode, terminal.buffer.ydisp)) {
+    if (!this._didStateChange(start, end, columnSelectMode, this._terminal.buffer.ydisp)) {
       return;
     }
 
@@ -61,13 +61,13 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - terminal.buffer.ydisp;
+    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
+    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
+    const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
 
     // No need to draw the selection
-    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
+    if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
       return;
     }
 
@@ -81,17 +81,17 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
       this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
       // Draw middle rows
       const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-      this._fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+      this._fillCells(0, viewportCappedStartRow + 1, this._terminal.cols, middleRowsCount);
 
       // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
         this._fillCells(0, viewportCappedEndRow, endCol, 1);
       }
     }
@@ -100,7 +100,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
-    this._state.ydisp = terminal.buffer.ydisp;
+    this._state.ydisp = this._terminal.buffer.ydisp;
   }
 
   private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ILinkifierAccessor } from '../Types';
+import { ITerminal } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
@@ -13,19 +13,19 @@ import { IColorSet, ILinkifierEvent } from 'browser/Types';
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent = null;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
-    super(container, 'link', zIndex, true, colors);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
+    super(container, 'link', zIndex, true, colors, terminal);
     terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
     terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
-    super.resize(terminal, dim);
+  public resize(dim: IRenderDimensions): void {
+    super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = null;
   }
 
-  public reset(terminal: ITerminal): void {
+  public reset(): void {
     this._clearCurrentLink();
   }
 

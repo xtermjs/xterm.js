@@ -12,38 +12,38 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the terminal loses focus.
    */
-  onBlur(terminal: ITerminal): void;
+  onBlur(): void;
 
   /**
    * * Called when the terminal gets focus.
    */
-  onFocus(terminal: ITerminal): void;
+  onFocus(): void;
 
   /**
    * Called when the cursor is moved.
    */
-  onCursorMove(terminal: ITerminal): void;
+  onCursorMove(): void;
 
   /**
    * Called when options change.
    */
-  onOptionsChanged(terminal: ITerminal): void;
+  onOptionsChanged(): void;
 
   /**
    * Called when the theme changes.
    */
-  setColors(terminal: ITerminal, colorSet: IColorSet): void;
+  setColors(colorSet: IColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */
-  onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void;
+  onGridChanged(startRow: number, endRow: number): void;
 
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void;
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
 
   /**
    * Registers a handler to join characters to render as a group
@@ -58,10 +58,10 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Resize the render layer.
    */
-  resize(terminal: ITerminal, dim: IRenderDimensions): void;
+  resize(dim: IRenderDimensions): void;
 
   /**
    * Clear the state of the render layer.
    */
-  reset(terminal: ITerminal): void;
+  reset(): void;
 }
