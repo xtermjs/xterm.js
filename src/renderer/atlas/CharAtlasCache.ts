@@ -4,9 +4,9 @@
  */
 
 import { ITerminal } from '../../Types';
-import { generateConfig, configEquals } from './CharAtlasUtils';
+import { generateConfig, configEquals } from 'browser/renderer/atlas/CharAtlasUtils';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
-import { DynamicCharAtlas } from '../../browser/renderer/atlas/DynamicCharAtlas';
+import { DynamicCharAtlas } from 'browser/renderer/atlas/DynamicCharAtlas';
 import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
 import { IColorSet } from 'browser/Types';
 
@@ -32,7 +32,7 @@ export function acquireCharAtlas(
   scaledCharWidth: number,
   scaledCharHeight: number
 ): BaseCharAtlas {
-  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
+  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal.optionsService.options, colors);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

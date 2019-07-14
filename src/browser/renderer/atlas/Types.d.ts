@@ -4,7 +4,7 @@
  */
 
 import { FontWeight } from 'common/services/Services';
-import { IColorSet } from 'browser/Types';
+import { IPartialColorSet } from 'browser/Types';
 
 export interface IGlyphIdentifier {
   chars: string;
@@ -25,5 +25,5 @@ export interface ICharAtlasConfig {
   scaledCharWidth: number;
   scaledCharHeight: number;
   allowTransparency: boolean;
-  colors: IColorSet;
+  colors: IPartialColorSet;
 }
