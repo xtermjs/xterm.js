@@ -4,19 +4,17 @@
  */
 
 import { assert, expect } from 'chai';
-import { Terminal } from './Terminal';
-import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
+import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { wcwidth } from 'common/CharWidth';
+import { IBufferService } from 'common/services/Services';
+import { Linkifier } from 'browser/Linkifier';
+import { MockLogService } from 'common/TestUtils.test';
+import { IRegisteredLinkMatcher, IMouseZoneManager, IMouseZone } from 'browser/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
-
-class TestTerminal extends Terminal {
-  public keyDown(ev: any): boolean { return this._keyDown(ev); }
-  public keyPress(ev: any): boolean { return this._keyPress(ev); }
-}
 
 describe('Terminal', () => {
   let term: TestTerminal;
@@ -1024,4 +1022,124 @@ describe('Terminal', () => {
       expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // empty cell after fullwidth
     });
   });
+
+  describe('Linkifier unicode handling', () => {
+    let terminal: TestTerminal;
+    let linkifier: TestLinkifier;
+    let mouseZoneManager: TestMouseZoneManager;
+
+    // other than the tests above unicode testing needs the full terminal instance
+    // to get the special handling of fullwidth, surrogate and combining chars in the input handler
+    beforeEach(() => {
+      terminal = new TestTerminal({ cols: 10, rows: 5 });
+      linkifier = new TestLinkifier((terminal as any)._bufferService);
+      mouseZoneManager = new TestMouseZoneManager();
+      linkifier.attachToDom({} as any, mouseZoneManager);
+    });
+
+    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+      terminal.writeSync(rowText);
+      linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+      linkifier.linkifyRows();
+      // Allow linkify to happen
+      setTimeout(() => {
+        assert.equal(mouseZoneManager.zones.length, links.length);
+        links.forEach((l, i) => {
+          assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
+          assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
+          assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
+          assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
+        });
+        done();
+      }, 0);
+    }
+
+    describe('unicode before the match', () => {
+      it('combining - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('combining - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('combining surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('combining surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('combining fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('combining fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+    });
+    describe('unicode within the match', () => {
+      it('combining - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('combining - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
+      it('surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      });
+      it('combining surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('combining surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      });
+      it('fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
+      it('combining fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('combining fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
+    });
+  });
 });
+
+class TestLinkifier extends Linkifier {
+  constructor(bufferService: IBufferService) {
+    super(bufferService, new MockLogService());
+    Linkifier._timeBeforeLatency = 0;
+  }
+
+  public get linkMatchers(): IRegisteredLinkMatcher[] { return this._linkMatchers; }
+  public linkifyRows(): void { super.linkifyRows(0, this._bufferService.buffer.lines.length - 1); }
+}
+
+class TestMouseZoneManager implements IMouseZoneManager {
+  dispose(): void {
+  }
+  public clears: number = 0;
+  public zones: IMouseZone[] = [];
+  add(zone: IMouseZone): void {
+    this.zones.push(zone);
+  }
+  clearAll(): void {
+    this.clears++;
+  }
+}

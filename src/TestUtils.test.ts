@@ -23,6 +23,8 @@ export class TestTerminal extends Terminal {
     this.writeBuffer.push(data);
     this._innerWrite();
   }
+  keyDown(ev: any): boolean { return this._keyDown(ev); }
+  keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
 
 export class MockTerminal implements ITerminal {
