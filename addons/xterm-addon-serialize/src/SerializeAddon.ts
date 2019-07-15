@@ -5,8 +5,8 @@
 
 import { Terminal, ITerminalAddon } from 'xterm';
 
-function crop(value: number, from: number, to: number) {
-  return Math.max(from, Math.min(value, to))
+function crop(value: number, from: number, to: number): number {
+  return Math.max(from, Math.min(value, to));
 }
 
 export class SerializeAddon implements ITerminalAddon {
