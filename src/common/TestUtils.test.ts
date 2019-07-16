@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -12,6 +12,7 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
+  serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   constructor(
@@ -29,6 +30,7 @@ export class MockBufferService implements IBufferService {
 }
 
 export class MockCoreService implements ICoreService {
+  serviceBrand: any;
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
@@ -36,7 +38,18 @@ export class MockCoreService implements ICoreService {
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
 }
 
+export class MockDirtyRowService implements IDirtyRowService {
+  serviceBrand: any;
+  start: number = 0;
+  end: number = 0;
+  clearRange(): void {}
+  markDirty(y: number): void {}
+  markRangeDirty(y1: number, y2: number): void {}
+  markAllDirty(): void {}
+}
+
 export class MockLogService implements ILogService {
+  serviceBrand: any;
   debug(message: any, ...optionalParams: any[]): void {}
   info(message: any, ...optionalParams: any[]): void {}
   warn(message: any, ...optionalParams: any[]): void {}
@@ -44,6 +57,7 @@ export class MockLogService implements ILogService {
 }
 
 export class MockOptionsService implements IOptionsService {
+  serviceBrand: any;
   options: ITerminalOptions = clone(DEFAULT_OPTIONS);
   onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: IPartialTerminalOptions) {

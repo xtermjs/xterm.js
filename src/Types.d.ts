@@ -55,7 +55,6 @@ export interface IInputHandlingTerminal {
 
   bell(): void;
   focus(): void;
-  updateRange(y: number): void;
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
   eraseAttrData(): IAttributeData;

@@ -35,9 +35,9 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   constructor(
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
-    private readonly _bufferService: IBufferService,
-    private readonly _mouseService: IMouseService,
-    private readonly _selectionService: ISelectionService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IMouseService private readonly _mouseService: IMouseService,
+    @ISelectionService private readonly _selectionService: ISelectionService
   ) {
     super();
 

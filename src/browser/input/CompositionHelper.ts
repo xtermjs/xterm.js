@@ -37,10 +37,10 @@ export class CompositionHelper {
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
-    private readonly _bufferService: IBufferService,
-    private readonly _optionsService: IOptionsService,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _coreService: ICoreService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @ICoreService private readonly _coreService: ICoreService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;

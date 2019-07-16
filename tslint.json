@@ -20,6 +20,10 @@
       true,
       "spaces"
     ],
+    "import-blacklist": [
+      true,
+      [".*\\/out\\/.*"]
+    ],
     "interface-name": [
       true,
       "always-prefix"
@@ -71,12 +75,6 @@
         "variable-declaration": "nospace"
       }
     ],
-    "variable-name": [
-      true,
-      "ban-keywords",
-      "check-format",
-      "allow-leading-underscore"
-    ],
     "whitespace": [
       true,
       "check-branch",
@@ -99,6 +97,7 @@
       {"type": "member", "modifiers": ["protected"], "format": "camelCase", "leadingUnderscore": "require"},
       {"type": "member", "modifiers": ["private"], "format": "camelCase", "leadingUnderscore": "require"},
       {"type": "variable", "modifiers": ["const"], "format": ["camelCase", "UPPER_CASE"]},
+      {"type": "variable", "modifiers": ["const", "export"], "filter": "^I.+Service$", "format": "PascalCase", "prefix": "I"},
       {"type": "interface", "prefix": "I"}
     ],
     "no-else-after-return": {

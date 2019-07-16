@@ -21,9 +21,6 @@ const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
 
-// TODO: Pull into an addon when TS composite projects allow easier sharing of code (not just
-// interfaces) between core and addons
-
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
  * particularly fast or feature complete, more just stable and usable for when
