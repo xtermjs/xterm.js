@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ * 
+ * Script to test different mouse modes in terminal emulators.
+ * Tests for protocols DECSET 9, 1000, 1002, 1003 with different
+ * report encodings (default, UTF8, SGR, URXVT).
+ * 
+ * VT200 Highlight mode (DECSET 1001) is not implemented.
+ * 
+ * The test basically applies the report data to the cursor, thus
+ * a mouse report should move the cursor to the cell under the mouse.
+ * Furthermore the reports are printed in the left lower corner as
+ * raw data and their meaning.
+ * 
+ * A failing test might show:
+ *  - wrong coords: the cursor will jump to some other place
+ *  - wrong buttons: see meaning output and check whether it makes sense
+ *  - faulty reports: inspect the raw data and compare with other emulators
+ *  - missing events: compare with spec / other emulators
+ */
+
 let activeProtocol = 0;
 let activeEnc = 0;
 
