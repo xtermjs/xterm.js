@@ -232,6 +232,31 @@ describe('InputHandler Integration Tests', function(): void {
 
     describe('SM: Set Mode', () => {
       describe('CSI ? Pm h', () => {
+        it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async() => {
+          const coords = await page.evaluate(`
+          (function() {
+            const rect = window.term.element.getBoundingClientRect();
+            return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right};
+          })();
+          `);
+          // Click and drag and ensure there is a selection
+          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+          await page.mouse.down();
+          await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
+          assert.ok(await page.evaluate(`window.term.getSelection().length`) > 0, 'mouse events are off so there should be a selection');
+          await page.mouse.up();
+          // Clear selection
+          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+          assert.equal(await page.evaluate(`window.term.getSelection().length`), 0);
+          // Enable mouse events
+          await page.evaluate(`window.term.write('\x1b[?1003h')`);
+          // Click and drag and ensure there is no selection
+          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+          await page.mouse.down();
+          await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
+          assert.equal(await page.evaluate(`window.term.getSelection().length`), 0, 'mouse events are on so there should be no selection');
+          await page.mouse.up();
+        });
         it('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           assert.equal(await simulatePaste('foo'), 'foo');
           await page.evaluate(`window.term.write('\x1b[?2004h')`);

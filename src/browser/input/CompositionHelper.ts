@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { ICoreService } from 'common/services/Services';
+import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 
 interface IPosition {
   start: number;
@@ -35,22 +34,17 @@ export class CompositionHelper {
    */
   private _isSendingComposition: boolean;
 
-  /**
-   * Creates a new CompositionHelper.
-   * @param _textarea The textarea that xterm uses for input.
-   * @param _compositionView The element to display the in-progress composition in.
-   * @param _terminal The Terminal to forward the finished composition to.
-   */
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
-    private readonly _terminal: ITerminal,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _coreService: ICoreService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @ICoreService private readonly _coreService: ICoreService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
-    this._compositionPosition = { start: null, end: null };
+    this._compositionPosition = { start: 0, end: 0 };
   }
 
   /**
@@ -198,17 +192,17 @@ export class CompositionHelper {
       return;
     }
 
-    if (this._terminal.buffer.isCursorInViewport) {
-      const cellHeight = Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
-      const cursorTop = this._terminal.buffer.y * cellHeight;
-      const cursorLeft = this._terminal.buffer.x * this._charSizeService.width;
+    if (this._bufferService.buffer.isCursorInViewport) {
+      const cellHeight = Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
+      const cursorTop = this._bufferService.buffer.y * cellHeight;
+      const cursorLeft = this._bufferService.buffer.x * this._charSizeService.width;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
       this._compositionView.style.height = cellHeight + 'px';
       this._compositionView.style.lineHeight = cellHeight + 'px';
-      this._compositionView.style.fontFamily = this._terminal.options.fontFamily;
-      this._compositionView.style.fontSize = this._terminal.options.fontSize + 'px';
+      this._compositionView.style.fontFamily = this._optionsService.options.fontFamily;
+      this._compositionView.style.fontSize = this._optionsService.options.fontSize + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();

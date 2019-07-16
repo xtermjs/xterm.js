@@ -11,7 +11,7 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderService } from 'browser/services/Services';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -47,8 +47,8 @@ export class AccessibilityManager extends Disposable {
   private _charsToAnnounce: string = '';
 
   constructor(
-    private _terminal: ITerminal,
-    private _dimensions: IRenderDimensions
+    private readonly _terminal: ITerminal,
+    private readonly _renderService: IRenderService
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
@@ -90,6 +90,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onA11yTab(spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
+    this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this.register(this._screenDprMonitor);
@@ -271,7 +272,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRowsDimensions(): void {
-    if (!this._dimensions.actualCellHeight) {
+    if (!this._renderService.dimensions.actualCellHeight) {
       return;
     }
     if (this._rowElements.length !== this._terminal.rows) {
@@ -282,13 +283,8 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
-  public setDimensions(dimensions: IRenderDimensions): void {
-    this._dimensions = dimensions;
-    this._refreshRowsDimensions();
-  }
-
   private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._dimensions.actualCellHeight}px`;
+    element.style.height = `${this._renderService.dimensions.actualCellHeight}px`;
   }
 
   private _announceCharacters(): void {

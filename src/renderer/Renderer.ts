@@ -14,6 +14,7 @@ import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistr
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
+import { IBufferService } from 'common/services/Services';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -23,13 +24,14 @@ export class Renderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   constructor(
-    private _terminal: ITerminal,
     private _colors: IColorSet,
-    private _charSizeService: ICharSizeService
+    private readonly _terminal: ITerminal,
+    readonly bufferService: IBufferService,
+    private readonly _charSizeService: ICharSizeService
   ) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
-    this._characterJoinerRegistry = new CharacterJoinerRegistry(_terminal);
+    this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
 
     this._renderLayers = [
       new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency),

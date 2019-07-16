@@ -223,7 +223,6 @@ function initOptions(term: TerminalType): void {
     // Internal only options
     'cancelEvents',
     'convertEol',
-    'debug',
     'handler',
     'screenKeys',
     'termName',
@@ -238,6 +237,7 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
+    logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
     wordSeparator: null
   };

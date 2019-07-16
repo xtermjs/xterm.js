@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkifierAccessor } from '../../../../src/Types';
+import { ILinkifierAccessor } from '../../../../src/Types';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
@@ -45,9 +45,9 @@ export class LinkRenderLayer extends BaseRenderLayer {
   private _onLinkHover(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
-    } else if (is256Color(e.fg)) {
+    } else if (e.fg !== undefined && is256Color(e.fg)) {
       // 256 color support
-      this._ctx.fillStyle = this._colors.ansi[e.fg].css;
+      this._ctx.fillStyle = this._colors.ansi[e.fg!].css;
     } else {
       this._ctx.fillStyle = this._colors.foreground.css;
     }

@@ -11,6 +11,8 @@ export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
 
 export class BufferService implements IBufferService {
+  serviceBrand: any;
+
   public cols: number;
   public rows: number;
   public buffers: IBufferSet;
@@ -18,7 +20,7 @@ export class BufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
 
   constructor(
-    private _optionsService: IOptionsService
+    @IOptionsService private _optionsService: IOptionsService
   ) {
     this.cols = Math.max(_optionsService.options.cols, MINIMUM_COLS);
     this.rows = Math.max(_optionsService.options.rows, MINIMUM_ROWS);

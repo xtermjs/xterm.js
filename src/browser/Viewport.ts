@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal, IViewport } from './Types';
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
-import { ICharSizeService } from 'browser/services/Services';
+import { IColorSet, IViewport } from 'browser/Types';
+import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { IBufferService } from 'common/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -22,7 +21,7 @@ export class Viewport extends Disposable implements IViewport {
   private _lastRecordedBufferLength: number = 0;
   private _lastRecordedViewportHeight: number = 0;
   private _lastRecordedBufferHeight: number = 0;
-  private _lastTouchY: number;
+  private _lastTouchY: number = 0;
   private _lastScrollTop: number = 0;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
@@ -34,11 +33,12 @@ export class Viewport extends Disposable implements IViewport {
   private _ignoreNextScrollEvent: boolean = false;
 
   constructor(
-    private _terminal: ITerminal,
-    private _viewportElement: HTMLElement,
-    private _scrollArea: HTMLElement,
-    private _dimensions: IRenderDimensions,
-    private _charSizeService: ICharSizeService
+    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
+    private readonly _viewportElement: HTMLElement,
+    private readonly _scrollArea: HTMLElement,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
 
@@ -50,10 +50,6 @@ export class Viewport extends Disposable implements IViewport {
 
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
-  }
-
-  public onDimensionsChance(dimensions: IRenderDimensions): void {
-    this._dimensions = dimensions;
   }
 
   public onThemeChange(colors: IColorSet): void {
@@ -72,9 +68,9 @@ export class Viewport extends Disposable implements IViewport {
 
   private _innerRefresh(): void {
     if (this._charSizeService.height > 0) {
-      this._currentRowHeight = this._dimensions.scaledCellHeight / window.devicePixelRatio;
+      this._currentRowHeight = this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
-      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._dimensions.canvasHeight);
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.canvasHeight);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
@@ -82,7 +78,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Sync scrollTop
-    const scrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    const scrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
     if (this._viewportElement.scrollTop !== scrollTop) {
       // Ignore the next scroll event which will be triggered by setting the scrollTop as we do not
       // want this event to scroll the terminal
@@ -98,20 +94,20 @@ export class Viewport extends Disposable implements IViewport {
    */
   public syncScrollArea(): void {
     // If buffer height changed
-    if (this._lastRecordedBufferLength !== this._terminal.buffer.lines.length) {
-      this._lastRecordedBufferLength = this._terminal.buffer.lines.length;
+    if (this._lastRecordedBufferLength !== this._bufferService.buffer.lines.length) {
+      this._lastRecordedBufferLength = this._bufferService.buffer.lines.length;
       this._refresh();
       return;
     }
 
     // If viewport height changed
-    if (this._lastRecordedViewportHeight !== this._dimensions.canvasHeight) {
+    if (this._lastRecordedViewportHeight !== this._renderService.dimensions.canvasHeight) {
       this._refresh();
       return;
     }
 
     // If the buffer position doesn't match last scroll top
-    const newScrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    const newScrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
     if (this._lastScrollTop !== newScrollTop) {
       this._refresh();
       return;
@@ -124,7 +120,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If row height changed
-    if (this._dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
+    if (this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
       this._refresh();
       return;
     }
@@ -152,8 +148,8 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
-    const diff = newRow - this._terminal.buffer.ydisp;
-    this._terminal.scrollLines(diff, true);
+    const diff = newRow - this._bufferService.buffer.ydisp;
+    this._scrollLines(diff, true);
   }
 
   /**
@@ -183,7 +179,7 @@ export class Viewport extends Disposable implements IViewport {
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this._currentRowHeight * this._terminal.rows;
+      amount *= this._currentRowHeight * this._bufferService.rows;
     }
     return amount;
   }
@@ -207,7 +203,7 @@ export class Viewport extends Disposable implements IViewport {
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
       this._wheelPartialScroll %= 1;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this._terminal.rows;
+      amount *= this._bufferService.rows;
     }
     return amount;
   }
