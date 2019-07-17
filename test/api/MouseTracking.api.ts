@@ -67,18 +67,18 @@ async function cellPos(col: number, row: number): Promise<number[]> {
  *  - allow modifiers to be set
  *  - fake wheel events
  */
-async function mouseMove(col: number, row: number, modifier?: number): Promise<void> {
+async function mouseMove(col: number, row: number): Promise<void> {
   const [xPixels, yPixels] = await cellPos(col, row);
   return await page.mouse.move(xPixels, yPixels);
 }
-async function mouseClick(col: number, row: number, modifier?: number): Promise<void> {
+async function mouseClick(col: number, row: number): Promise<void> {
   const [xPixels, yPixels] = await cellPos(col, row);
   return await page.mouse.click(xPixels, yPixels);
 }
-async function mouseDown(button: "left" | "right" | "middle" | undefined, modifier?: number): Promise<void> {
+async function mouseDown(button: "left" | "right" | "middle" | undefined): Promise<void> {
   return await page.mouse.down({button});
 }
-async function mouseUp(button: "left" | "right" | "middle" | undefined, modifier?: number): Promise<void> {
+async function mouseUp(button: "left" | "right" | "middle" | undefined): Promise<void> {
   return await page.mouse.up({button});
 }
 async function wheelUp(): Promise<void> {
@@ -88,7 +88,8 @@ async function wheelUp(): Promise<void> {
     x: self._x,
     y: self._y,
     deltaX: 0,
-    deltaY: -10
+    deltaY: -10,
+    modifiers: self._keyboard._modifiers
   });
 }
 async function wheelDown(): Promise<void> {
@@ -98,7 +99,8 @@ async function wheelDown(): Promise<void> {
     x: self._x,
     y: self._y,
     deltaX: 0,
-    deltaY: 10
+    deltaY: 10,
+    modifiers: self._keyboard._modifiers
   });
 }
 
@@ -556,8 +558,38 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
-      // modifiers
-      // TODO
+      // modifiers (commented out - none working)
+      // ctrl
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await page.keyboard.up('Control');
+      // bug: not working - reports wheel instead
+      // assert.deepEqual(await getReports(encoding), [
+      //   {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+      //   {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+      // ]);
+      // await getReports(encoding); // clear reports
+      // alt
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await page.keyboard.down('Alt');
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await page.keyboard.up('Alt');
+      // bug: not working - reports wheel instead
+      // assert.deepEqual(await getReports(encoding), [
+      //   {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+      //   {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+      // ]);
+      // await getReports(encoding); // clear reports
+      // shift
+      // seems shift pressed alone would supress any mouse event - limitation of chrome?
+
     });
     it('UTF8 encoding', async () => {
       const encoding = 'UTF8';
