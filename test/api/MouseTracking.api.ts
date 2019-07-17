@@ -823,14 +823,12 @@ describe('Mouse Tracking Tests', function(): void {
       await page.evaluate(`window.term.write('\x1b[?1002h');`);
 
       // test at 0,0
-      // bug: release is fired immediately
       await mouseDown('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
       
       // mouseup should report, encoding cannot report released button
-      // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
@@ -859,7 +857,6 @@ describe('Mouse Tracking Tests', function(): void {
 
       // button press/move/release tests
       // left button
-      // bug: release is fired immediately thus with wrong coords - expected: col in release event should be 45
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -943,7 +940,6 @@ describe('Mouse Tracking Tests', function(): void {
 
       // button press/move/release tests
       // left button
-      // bug: release is fired immediately thus with wrong coords - expected: col in release event should be 45
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -1000,7 +996,6 @@ describe('Mouse Tracking Tests', function(): void {
       ]);
       
       // mouseup should report, encoding cannot report released button
-      // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
@@ -1027,7 +1022,6 @@ describe('Mouse Tracking Tests', function(): void {
 
       // button press/move/release tests
       // left button
-      // bug: release is fired immediately thus with wrong coords - expected: col in release event should be 45
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -1085,7 +1079,6 @@ describe('Mouse Tracking Tests', function(): void {
       ]);
       
       // mouseup should report, encoding cannot report released button
-      // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
@@ -1112,7 +1105,6 @@ describe('Mouse Tracking Tests', function(): void {
 
       // button press/move/release tests
       // left button
-      // bug: release is fired immediately thus with wrong coords - expected: col in release event should be 45
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
