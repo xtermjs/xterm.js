@@ -96,8 +96,8 @@ const ENC = {
     // format: CSI M <button + 32> <row + 32> <col + 32>
     report => ({
       state: evalButtonCode(report[3] - 32),
-      row: report[4] - 32,
-      col: report[5] - 32
+      col: report[4] - 32,
+      row: report[5] - 32
     })
   ],
   'UTF8' : [
@@ -108,8 +108,8 @@ const ENC = {
       const sReport = report.toString(); // decode with utf8
       return {
         state: evalButtonCode(sReport.charCodeAt(3) - 32),
-        row: sReport.charCodeAt(4) - 32,
-        col: sReport.charCodeAt(5) - 32
+        col: sReport.charCodeAt(4) - 32,
+        row: sReport.charCodeAt(5) - 32
       };
     }
   ],
@@ -119,7 +119,7 @@ const ENC = {
     report => {
       // strip off introducer + M
       const sReport = report.toString().slice(3, -1);
-      const [buttonCode, row, col] = sReport.split(';');
+      const [buttonCode, col, row] = sReport.split(';');
       const state = evalButtonCode(buttonCode);
       if (report[report.length - 1] === 'm'.charCodeAt(0)) {
         state.action = 'release';
@@ -133,7 +133,7 @@ const ENC = {
     report => {
       // strip off introducer + M
       const sReport = report.toString().slice(2, -1);
-      const [button, row, col] = sReport.split(';');
+      const [button, col, row] = sReport.split(';');
       return {state: evalButtonCode(button - 32), row, col};
     }
   ]
@@ -182,7 +182,7 @@ function applyReportData(data) {
   let {state, row, col} = ENC[Object.keys(ENC)[activeEnc]][1](data);
   console.log('\x1b[2KButton:', state.button, 'Action:', state.action, 'Modifier:', state.modifier, 'row:', row, 'col:', col);
   // apply to cursor position
-  process.stdout.write(`\x1b[${col};${row}H`);
+  process.stdout.write(`\x1b[${row};${col}H`);
 }
 
 printMenu();
