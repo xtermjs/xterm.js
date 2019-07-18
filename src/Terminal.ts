@@ -40,14 +40,14 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, ICoreMouseEvent } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -62,6 +62,7 @@ import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
+import { CoreMouseService } from 'common/services/CoreMouseService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -113,6 +114,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _coreMouseService: ICoreMouseService;
   private _dirtyRowService: IDirtyRowService;
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
@@ -249,6 +251,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
+    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
+    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
     this._logService = this._instantiationService.createInstance(LogService);
@@ -309,7 +313,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
@@ -709,222 +713,84 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /**
-   * XTerm mouse events
-   * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
-   * To better understand these
-   * the xterm code is very helpful:
-   * Relevant files:
-   *   button.c, charproc.c, misc.c
-   * Relevant functions in xterm/button.c:
-   *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
+   * mouse events
+   * FIXME: move event handler registration into browser MouseService
    */
   public bindMouse(): void {
     const el = this.element;
     const self = this;
-    let pressed = 32;
 
-    // mouseup, mousedown, wheel
-    // left click: ^[[M 3<^[[M#3<
-    // wheel up: ^[[M`3>
     function sendButton(ev: MouseEvent | WheelEvent): void {
-      let button;
       let pos;
-
-      // get the xterm-style button
-      button = getButton(ev);
 
       // get mouse coordinates
       pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
-      sendEvent(button, pos);
-
+      let but: ICoreMouseEvent['button'];
+      let action: ICoreMouseEvent['action'];
+      let code: number;
       switch ((<any>ev).overrideType || ev.type) {
-        case 'mousedown':
-          pressed = button;
-          break;
         case 'mouseup':
-          // keep it at the left
-          // button, just in case.
-          pressed = 32;
-          break;
-        case 'wheel':
-          // nothing. don't
-          // interfere with
-          // `pressed`.
-          break;
-      }
-    }
-
-    // motion example of a left click:
-    // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
-    function sendMove(ev: MouseEvent): void {
-      let button = pressed;
-      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
-      if (!pos) return;
-
-      // buttons marked as motions
-      // are incremented by 32
-      button += 32;
-
-      sendEvent(button, pos);
-    }
-
-    // encode button and
-    // position to characters
-    function encode(data: number[], ch: number): void {
-      if (!self.utfMouse) {
-        if (ch === 255) {
-          data.push(0);
-          return;
-        }
-        if (ch > 127) ch = 127;
-        data.push(ch);
-      } else {
-        if (ch > 2047) {
-          data.push(2047);
-          return;
-        }
-        data.push(ch);
-      }
-    }
-
-    // send a mouse event:
-    // regular/utf8: ^[[M Cb Cx Cy
-    // urxvt: ^[[ Cb ; Cx ; Cy M
-    // sgr: ^[[ Cb ; Cx ; Cy M/m
-    // vt300: ^[[ 24(1/3/5)~ [ Cx , Cy ] \r
-    // locator: CSI P e ; P b ; P r ; P c ; P p & w
-    function sendEvent(button: number, pos: {x: number, y: number}): void {
-      if (self._vt300Mouse) {
-        // NOTE: Unstable.
-        // http://www.vt100.net/docs/vt3xx-gp/chapter15.html
-        button &= 3;
-        pos.x -= 32;
-        pos.y -= 32;
-        let data = C0.ESC + '[24';
-        if (button === 0) data += '1';
-        else if (button === 1) data += '3';
-        else if (button === 2) data += '5';
-        else if (button === 3) return;
-        else data += '0';
-        data += '~[' + pos.x + ',' + pos.y + ']\r';
-        self._coreService.triggerDataEvent(data, true);
-        return;
-      }
-
-      if (self._decLocator) {
-        // NOTE: Unstable.
-        button &= 3;
-        pos.x -= 32;
-        pos.y -= 32;
-        if (button === 0) button = 2;
-        else if (button === 1) button = 4;
-        else if (button === 2) button = 6;
-        else if (button === 3) button = 3;
-        self._coreService.triggerDataEvent(C0.ESC + '['
-                  + button
-                  + ';'
-                  + (button === 3 ? 4 : 0)
-                  + ';'
-                  + pos.y
-                  + ';'
-                  + pos.x
-                  + ';'
-                  // Not sure what page is meant to be
-                  + (<any>pos).page || 0
-                  + '&w', true);
-        return;
-      }
-
-      if (self.urxvtMouse) {
-        pos.x -= 32;
-        pos.y -= 32;
-        pos.x++;
-        pos.y++;
-        self._coreService.triggerDataEvent(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M', true);
-        return;
-      }
-
-      if (self.sgrMouse) {
-        pos.x -= 32;
-        pos.y -= 32;
-        self._coreService.triggerDataEvent(C0.ESC + '[<'
-                  + (((button & 3) === 3 ? button & ~3 : button) - 32)
-                  + ';'
-                  + pos.x
-                  + ';'
-                  + pos.y
-                  + ((button & 3) === 3 ? 'm' : 'M'), true);
-        return;
-      }
-
-      const data: number[] = [];
-
-      encode(data, button);
-      encode(data, pos.x);
-      encode(data, pos.y);
-
-      self._coreService.triggerDataEvent(C0.ESC + '[M' + String.fromCharCode.apply(String, data), true);
-    }
-
-    function getButton(ev: MouseEvent): number {
-      let button;
-      let shift;
-      let meta;
-      let ctrl;
-      let mod;
-
-      // two low bits:
-      // 0 = left
-      // 1 = middle
-      // 2 = right
-      // 3 = release
-      // wheel up/down:
-      // 1, and 2 - with 64 added
-      switch ((<any>ev).overrideType || ev.type) {
-        case 'mousedown':
-          button = ev.button !== null && ev.button !== undefined
+          action = 'up';
+          code = ev.button !== null && ev.button !== undefined
             ? +ev.button
           : ev.which !== null && ev.which !== undefined
             ? ev.which - 1
           : null;
+          but = code === 0 ? 'left' : code === 1 ? 'middle' : 'right';
           break;
-        case 'mouseup':
-          button = 3;
+        case 'mousedown':
+          action = 'down';
+          code = ev.button !== null && ev.button !== undefined
+            ? +ev.button
+          : ev.which !== null && ev.which !== undefined
+            ? ev.which - 1
+          : null;
+          but = code === 0 ? 'left' : code === 1 ? 'middle' : 'right';
           break;
         case 'DOMMouseScroll':
-          button = ev.detail < 0
-            ? 64
-          : 65;
+          but = 'wheel';
+          action = ev.detail < 0 ? 'up' : 'down';
           break;
         case 'wheel':
-          button = (<WheelEvent>ev).deltaY < 0
-            ? 64
-          : 65;
+          but = 'wheel';
+          action = (<WheelEvent>ev).deltaY < 0 ? 'up' : 'down';
           break;
       }
+      self._coreMouseService.triggerMouseEvent({
+        col: pos.x - 33, // FIXME: why -33 here?
+        row: pos.y - 33,
+        button: but,
+        action,
+        ctrl: ev.ctrlKey,
+        alt: ev.altKey,
+        shift: ev.shiftKey
+      });
+      return;
+    }
 
-      // next three bits are the modifiers:
-      // 4 = shift, 8 = meta, 16 = control
-      shift = ev.shiftKey ? 4 : 0;
-      meta = ev.metaKey ? 8 : 0;
-      ctrl = ev.ctrlKey ? 16 : 0;
-      mod = shift | meta | ctrl;
+    function sendMove(ev: MouseEvent): void {
+      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      if (!pos) return;
 
-      // no mods
-      if (self.vt200Mouse) {
-        // ctrl only
-        mod &= ctrl;
-      } else if (!self.normalMouse) {
-        mod = 0;
+      let but: ICoreMouseEvent['button'] = 'none';
+      if (ev.buttons !== undefined) {
+        but = ev.buttons & 1 ? 'left' : ev.buttons & 2 ? 'right' : ev.buttons & 4 ? 'middle' : 'none';
       }
 
-      // increment to SP
-      button = (32 + (mod << 2)) + button;
-
-      return button;
+      self._coreMouseService.triggerMouseEvent({
+        col: pos.x - 33,
+        row: pos.y - 33,
+        button: but,
+        action: 'move',
+        ctrl: ev.ctrlKey,
+        alt: ev.altKey,
+        shift: ev.shiftKey
+      });
+      return;
     }
+
 
     this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
 
@@ -987,10 +853,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
       return this.cancel(ev);
     }));
-
-    // if (this.normalMouse) {
-    //  on(this.document, 'mousemove', sendMove);
-    // }
 
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
       if (!this.mouseEvents) {
@@ -1790,6 +1652,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setup();
     this._bufferService.reset();
     this._coreService.reset();
+    this._coreMouseService.reset();
     if (this._selectionService) {
       this._selectionService.reset();
     }

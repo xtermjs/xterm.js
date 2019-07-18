@@ -19,7 +19,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
 
 /**
@@ -134,6 +134,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _coreMouseService: ICoreMouseService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -1285,6 +1286,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // even if there is no button held down.
 
           // TODO: Why are params[0] compares nested within a switch for params[0]?
+          this._coreMouseService.activeProtocol = param === 9 ? 'X10' : param === 1000 ? 'VT200' : param === 1002 ? 'DRAG' : 'ANY';
 
           this._terminal.x10Mouse = param === 9;
           this._terminal.vt200Mouse = param === 1000;
@@ -1305,11 +1307,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1005: // utf8 ext mode mouse
           this._terminal.utfMouse = true;
+          this._coreMouseService.activeEncoding = 'UTF8';
           // for wide terminals
           // simply encodes large values as utf8 characters
           break;
         case 1006: // sgr ext mode mouse
           this._terminal.sgrMouse = true;
+          this._coreMouseService.activeEncoding = 'SGR';
           // for wide terminals
           // does not add 32 to fields
           // press: ^[[<b;x;yM
@@ -1317,6 +1321,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1015: // urxvt ext mode mouse
           this._terminal.urxvtMouse = true;
+          this._coreMouseService.activeEncoding = 'URXVT';
           // for wide terminals
           // numbers for fields
           // press: ^[[b;x;yM
@@ -1481,6 +1486,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1000: // vt200 mouse
         case 1002: // button event mouse
         case 1003: // any event mouse
+          this._coreMouseService.activeProtocol = 'NONE';
           this._terminal.x10Mouse = false;
           this._terminal.vt200Mouse = false;
           this._terminal.normalMouse = false;
@@ -1496,12 +1502,15 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.sendFocus = false;
           break;
         case 1005: // utf8 ext mode mouse
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           this._terminal.utfMouse = false;
           break;
         case 1006: // sgr ext mode mouse
+        this._coreMouseService.activeEncoding = 'DEFAULT';
           this._terminal.sgrMouse = false;
           break;
         case 1015: // urxvt ext mode mouse
+        this._coreMouseService.activeEncoding = 'DEFAULT';
           this._terminal.urxvtMouse = false;
           break;
         case 25: // hide cursor
