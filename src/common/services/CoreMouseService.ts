@@ -196,6 +196,7 @@ export class CoreMouseService implements ICoreMouseService {
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _onProtocolChange = new EventEmitter<CoreMouseEventType[]>();
+  private _lastEvent: ICoreMouseEvent | null = null;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
@@ -242,6 +243,7 @@ export class CoreMouseService implements ICoreMouseService {
   public reset(): void {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
+    this._lastEvent = null;
   }
 
   /**
@@ -280,6 +282,11 @@ export class CoreMouseService implements ICoreMouseService {
     event.col++;
     event.row++;
 
+    // debounce at grid level
+    if (this._lastEvent && this._compareEvents(this._lastEvent, event)) {
+      return false;
+    }
+
     // apply protocol restrictions
     if (!this._protocols[this._activeProtocol].restrict(event)) {
       return false;
@@ -289,6 +296,19 @@ export class CoreMouseService implements ICoreMouseService {
     const report = this._encodings[this._activeEncoding](event);
     this._coreService.triggerDataEvent(report, true);
 
+    this._lastEvent = event;
+
+    return true;
+  }
+
+  private _compareEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent): boolean {
+    if (e1.col !== e2.col) return false;
+    if (e1.row !== e2.row) return false;
+    if (e1.button !== e2.button) return false;
+    if (e1.action !== e2.action) return false;
+    if (e1.ctrl !== e2.ctrl) return false;
+    if (e1.alt !== e2.alt) return false;
+    if (e1.shift !== e2.shift) return false;
     return true;
   }
 }
