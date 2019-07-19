@@ -153,6 +153,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Bastillion**](https://www.bastillion.io): Bastillion is an open-source web-based SSH console that centrally manages administrative access to systems.
 - [**PHP App Server**](https://github.com/cubiclesoft/php-app-server/): Create lightweight, installable almost-native applications for desktop OSes.  ExecTerminal (nicely wraps the xterm.js Terminal), TerminalManager, and RunProcessSDK are self-contained, reusable ES5+ compliant Javascript components.
 - [**NgTerminal**](https://github.com/qwefgh90/ng-terminal): NgTerminal is a web terminal that leverages xterm.js on Angular 7+. You can easily add it into your application by adding `<ng-terminal></ng-terminal>` into your component.
+- [**tty-share**](https://tty-share.com): Extremely simple terminal sharing over the Internet.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
