@@ -83,25 +83,15 @@ async function mouseUp(button: "left" | "right" | "middle" | undefined): Promise
 }
 async function wheelUp(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
-    type: 'mouseWheel',
-    x: self._x,
-    y: self._y,
-    deltaX: 0,
-    deltaY: -10,
-    modifiers: self._keyboard._modifiers
-  });
+  return await page.evaluate(`
+    window.term.element.dispatchEvent(new WheelEvent('wheel', {clientX: ${self._x}, clientY: ${self._y}, deltaX: 0, deltaY: -10, modifiers: ${self._keyboard._modifiers}}));
+  `);
 }
 async function wheelDown(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
-    type: 'mouseWheel',
-    x: self._x,
-    y: self._y,
-    deltaX: 0,
-    deltaY: 10,
-    modifiers: self._keyboard._modifiers
-  });
+  return await page.evaluate(`
+    window.term.element.dispatchEvent(new WheelEvent('wheel', {clientX: ${self._x}, clientY: ${self._y}, deltaX: 0, deltaY: 10, modifiers: ${self._keyboard._modifiers}}));
+  `);
 }
 
 // extract button data from buttonCode
