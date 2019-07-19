@@ -282,8 +282,8 @@ export class CoreMouseService implements ICoreMouseService {
     event.col++;
     event.row++;
 
-    // debounce at grid level
-    if (this._lastEvent && this._compareEvents(this._lastEvent, event)) {
+    // debounce move at grid level
+    if (event.action === 'move' && this._lastEvent && this._compareEvents(this._lastEvent, event)) {
       return false;
     }
 
