@@ -4,19 +4,19 @@
  */
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType } from 'common/Types';
+import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 
 /**
  * Supported default protocols.
  */
-const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
+const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
   /**
    * NONE
    * Events: none
    * Modifiers: none
    */
   NONE: {
-    events: [],
+    events: CoreMouseEventType.NONE,
     restrict: () => false
   },
   /**
@@ -25,10 +25,10 @@ const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
    * Modifiers: none (TBD)
    */
   X10: {
-    events: ['mousedown'],
+    events: CoreMouseEventType.DOWN,
     restrict: (e: ICoreMouseEvent) => {
       // no wheel (TBD), no move, no up
-      if (e.button === 'wheel' || e.action !== 'down') {
+      if (e.button === CoreMouseButton.WHEEL || e.action !== CoreMouseAction.DOWN) {
         return false;
       }
       // no modifiers (TDB)
@@ -44,10 +44,10 @@ const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
    * Modifiers: CTRL (TBD)
    */
   VT200: {
-    events: ['mousedown', 'mouseup', 'wheel'],
+    events: CoreMouseEventType.DOWN | CoreMouseEventType.UP | CoreMouseEventType.WHEEL,
     restrict: (e: ICoreMouseEvent) => {
       // no move
-      if (e.action === 'move') {
+      if (e.action === CoreMouseAction.MOVE) {
         return false;
       }
       // modifiers - only ctrl?
@@ -62,10 +62,10 @@ const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
    * Modifiers: CTRL | ALT | SHIFT
    */
   DRAG: {
-    events: ['mousedown', 'mouseup', 'wheel', 'mousedrag'],
+    events: CoreMouseEventType.DOWN | CoreMouseEventType.UP | CoreMouseEventType.WHEEL | CoreMouseEventType.DRAG,
     restrict: (e: ICoreMouseEvent) => {
       // no move without button
-      if (e.action === 'move' && e.button === 'none') {
+      if (e.action === CoreMouseAction.MOVE && e.button === CoreMouseButton.NONE) {
         return false;
       }
       // modifiers unclear - let all pass for now
@@ -78,47 +78,32 @@ const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
    * Modifiers: CTRL | ALT | SHIFT
    */
   ANY: {
-    events: ['mousedown', 'mouseup', 'wheel', 'mousedrag', 'mousemove'],
+    events:
+      CoreMouseEventType.DOWN | CoreMouseEventType.UP | CoreMouseEventType.WHEEL
+      | CoreMouseEventType.DRAG | CoreMouseEventType.MOVE,
     restrict: (e: ICoreMouseEvent) => true
   }
 };
 
-/**
- * Mapping of buttons and actions to event codes. (taken from xterm spec)
- * More than 3 buttons are not supported.
- */
-enum CODEMAP {
-  // buttons
-  left = 0,
-  middle = 1,
-  right = 2,
-  none = 3,
-  wheel = 64,
-  // actions
-  up = 0,
-  down = 1,
-  move = 32,
-  // modifiers
-  shift = 4,
-  alt = 8,
-  ctrl = 16
+const enum Modifiers {
+  SHIFT = 4,
+  ALT = 8,
+  CTRL = 16
 }
 
 // helper for default encoders to generate the event code.
 function eventCode(e: ICoreMouseEvent, isSGR: boolean): number {
-  const button = CODEMAP[e.button];
-  const action = CODEMAP[e.action];
-  const modifier = (e.ctrl ? CODEMAP.ctrl : 0) | (e.shift ? CODEMAP.shift : 0) | (e.alt ? CODEMAP.alt : 0);
-  let code = button | modifier;
-  if (e.button === 'wheel') {
-    code |= action;
+  const modifier = (e.ctrl ? Modifiers.CTRL : 0) | (e.shift ? Modifiers.SHIFT : 0) | (e.alt ? Modifiers.ALT : 0);
+  let code = e.button | modifier;
+  if (e.button === CoreMouseButton.WHEEL) {
+    code |= e.action;
   } else {
-    if (e.action === 'move') {
-      code |= CODEMAP.move;
-    } else if (e.action === 'up' && !isSGR) {
+    if (e.action === CoreMouseAction.MOVE) {
+      code |= CoreMouseAction.MOVE;
+    } else if (e.action === CoreMouseAction.UP && !isSGR) {
       // special case - only SGR can report button on release
       // all others have to go with NONE
-      code |= CODEMAP.none;
+      code |= CoreMouseButton.NONE;
     }
   }
   return code;
@@ -161,7 +146,7 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
    * Can report button on release and works with a well formed sequence.
    */
   SGR: (e: ICoreMouseEvent) => {
-    const final = (e.action === 'up' && e.button !== 'wheel') ? 'm' : 'M';
+    const final = (e.action === CoreMouseAction.UP && e.button !== CoreMouseButton.WHEEL) ? 'm' : 'M';
     return `\x1b[<${eventCode(e, true)};${e.col};${e.row}${final}`;
   },
   /**
@@ -195,7 +180,7 @@ export class CoreMouseService implements ICoreMouseService {
   private _encodings: {[name: string]: CoreMouseEncoding} = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
-  private _onProtocolChange = new EventEmitter<CoreMouseEventType[]>();
+  private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
   private _lastEvent: ICoreMouseEvent | null = null;
 
   constructor(
@@ -203,7 +188,7 @@ export class CoreMouseService implements ICoreMouseService {
     @ICoreService private readonly _coreService: ICoreService
   ) {
     // register default protocols and encodings
-    Object.keys(DEFAULT_PROCOTOLS).forEach(name => this.addProtocol(name, DEFAULT_PROCOTOLS[name]));
+    Object.keys(DEFAULT_PROTOCOLS).forEach(name => this.addProtocol(name, DEFAULT_PROTOCOLS[name]));
     Object.keys(DEFAULT_ENCODINGS).forEach(name => this.addEncoding(name, DEFAULT_ENCODINGS[name]));
     // call reset to set defaults
     this.reset();
@@ -249,7 +234,7 @@ export class CoreMouseService implements ICoreMouseService {
   /**
    * Event to announce changes in mouse tracking.
    */
-  public get onProtocolChange(): IEvent<CoreMouseEventType[]> {
+  public get onProtocolChange(): IEvent<CoreMouseEventType> {
     return this._onProtocolChange.event;
   }
 
@@ -271,10 +256,10 @@ export class CoreMouseService implements ICoreMouseService {
     }
 
     // filter nonsense combinations of button + action
-    if (event.button === 'wheel' && event.action === 'move') {
+    if (event.button === CoreMouseButton.WHEEL && event.action === CoreMouseAction.MOVE) {
       return false;
     }
-    if (event.button === 'none' && event.action !== 'move') {
+    if (event.button === CoreMouseButton.NONE && event.action !== CoreMouseAction.MOVE) {
       return false;
     }
 
@@ -283,7 +268,7 @@ export class CoreMouseService implements ICoreMouseService {
     event.row++;
 
     // debounce move at grid level
-    if (event.action === 'move' && this._lastEvent && this._compareEvents(this._lastEvent, event)) {
+    if (event.action === CoreMouseAction.MOVE && this._lastEvent && this._compareEvents(this._lastEvent, event)) {
       return false;
     }
 

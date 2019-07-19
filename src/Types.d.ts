@@ -36,7 +36,7 @@ export interface IInputHandlingTerminal {
   bracketedPasteMode: boolean;
   curAttrData: IAttributeData;
   savedCols: number;
-  mouseEvents: CoreMouseEventType[];
+  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
   cursorHidden: boolean;
 

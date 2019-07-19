@@ -162,6 +162,20 @@ export interface IRowRange {
 /**
  * Interface for mouse events in the core.
  */
+export const enum CoreMouseButton {
+  LEFT = 0,
+  MIDDLE = 1,
+  RIGHT = 2,
+  NONE = 3,
+  WHEEL = 64
+}
+
+export const enum CoreMouseAction {
+  UP = 0,
+  DOWN = 1,
+  MOVE = 32
+}
+
 export interface ICoreMouseEvent {
   /** column (zero based). */
   col: number;
@@ -174,8 +188,8 @@ export interface ICoreMouseEvent {
    * There are invalid combinations of buttons and actions possible
    * (like move + wheel), those are silently ignored by the CoreMouseService.
    */
-  button: 'left' | 'middle' | 'right' | 'wheel' | 'none';
-  action: 'up' | 'down' | 'move';
+  button: CoreMouseButton;
+  action: CoreMouseAction;
   /**
    * Modifier states.
    * Protocols will add/ignore those based on specific restrictions.
@@ -190,14 +204,20 @@ export interface ICoreMouseEvent {
  * To be reported to the browser component which events a mouse
  * protocol wants to be catched and forwarded as an ICoreMouseEvent
  * to CoreMouseService.
- * Known types:
- *  - mousedown: any mousedown event
- *  - mouseup: any mouseup event
- *  - wheel: any wheel event
- *  - mousedrag: any mousemove event while a button is pressed
- *  - mousemove: any mousemove event
  */
-export type CoreMouseEventType = 'mousedown' | 'mouseup' | 'wheel' | 'mousemove' | 'mousedrag';
+export const enum CoreMouseEventType {
+  NONE = 0,
+  /** any mousedown event */
+  DOWN = 1,
+  /** any mouseup event */
+  UP = 2,
+  /** any mousemove event while a button is held */
+  DRAG = 4,
+  /** any mousemove event without a button */
+  MOVE = 8,
+  /** any wheel event */
+  WHEEL = 16
+}
 
 /**
  * Mouse protocol interface.
@@ -208,7 +228,7 @@ export type CoreMouseEventType = 'mousedown' | 'mouseup' | 'wheel' | 'mousemove'
  * modifiers or filtering invalid event types.
  */
 export interface ICoreMouseProtocol {
-  events: CoreMouseEventType[];
+  events: CoreMouseEventType;
   restrict: (e: ICoreMouseEvent) => boolean;
 }
 

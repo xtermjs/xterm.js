@@ -46,7 +46,7 @@ export interface ICoreMouseService {
   /**
    * Event to announce changes in mouse tracking.
    */
-  onProtocolChange: IEvent<CoreMouseEventType[]>;
+  onProtocolChange: IEvent<CoreMouseEventType>;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
