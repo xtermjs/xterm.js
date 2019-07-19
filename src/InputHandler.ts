@@ -20,7 +20,6 @@ import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
-import { ISelectionService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -117,8 +116,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
-
-  private _selectionService: ISelectionService | undefined;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -308,11 +305,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public dispose(): void {
     super.dispose();
-  }
-
-  // TODO: When InputHandler moves into common, browser dependencies need to move out
-  public setBrowserServices(selectionService: ISelectionService): void {
-    this._selectionService = selectionService;
   }
 
   public parse(data: string): void {
@@ -1277,28 +1269,20 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
+          this._coreMouseService.activeProtocol = 'X10';
+          break;
         case 1000: // vt200 mouse
           // no motion.
           // no modifiers, except control on the wheel.
+          this._coreMouseService.activeProtocol = 'VT200';
+          break;
         case 1002: // button event mouse
+          this._coreMouseService.activeProtocol = 'DRAG';
+          break;
         case 1003: // any event mouse
           // any event - sends motion events,
           // even if there is no button held down.
-
-          // TODO: Why are params[0] compares nested within a switch for params[0]?
-          this._coreMouseService.activeProtocol = param === 9 ? 'X10' : param === 1000 ? 'VT200' : param === 1002 ? 'DRAG' : 'ANY';
-
-          this._terminal.x10Mouse = param === 9;
-          this._terminal.vt200Mouse = param === 1000;
-          this._terminal.normalMouse = param > 1000;
-          this._terminal.mouseEvents = true;
-          if (this._terminal.element) {
-            this._terminal.element.classList.add('enable-mouse-events');
-          }
-          if (this._selectionService) {
-            this._selectionService.disable();
-          }
-          this._logService.info('Binding to mouse events.');
+          this._coreMouseService.activeProtocol = 'ANY';
           break;
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
@@ -1306,13 +1290,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.sendFocus = true;
           break;
         case 1005: // utf8 ext mode mouse
-          this._terminal.utfMouse = true;
           this._coreMouseService.activeEncoding = 'UTF8';
           // for wide terminals
           // simply encodes large values as utf8 characters
           break;
         case 1006: // sgr ext mode mouse
-          this._terminal.sgrMouse = true;
           this._coreMouseService.activeEncoding = 'SGR';
           // for wide terminals
           // does not add 32 to fields
@@ -1320,7 +1302,6 @@ export class InputHandler extends Disposable implements IInputHandler {
           // release: ^[[<b;x;ym
           break;
         case 1015: // urxvt ext mode mouse
-          this._terminal.urxvtMouse = true;
           this._coreMouseService.activeEncoding = 'URXVT';
           // for wide terminals
           // numbers for fields
@@ -1487,31 +1468,18 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1002: // button event mouse
         case 1003: // any event mouse
           this._coreMouseService.activeProtocol = 'NONE';
-          this._terminal.x10Mouse = false;
-          this._terminal.vt200Mouse = false;
-          this._terminal.normalMouse = false;
-          this._terminal.mouseEvents = false;
-          if (this._terminal.element) {
-            this._terminal.element.classList.remove('enable-mouse-events');
-          }
-          if (this._selectionService) {
-            this._selectionService.enable();
-          }
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
           break;
         case 1005: // utf8 ext mode mouse
           this._coreMouseService.activeEncoding = 'DEFAULT';
-          this._terminal.utfMouse = false;
           break;
         case 1006: // sgr ext mode mouse
-        this._coreMouseService.activeEncoding = 'DEFAULT';
-          this._terminal.sgrMouse = false;
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 1015: // urxvt ext mode mouse
         this._coreMouseService.activeEncoding = 'DEFAULT';
-          this._terminal.urxvtMouse = false;
           break;
         case 25: // hide cursor
           this._terminal.cursorHidden = true;

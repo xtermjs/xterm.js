@@ -40,7 +40,7 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, ICoreMouseEvent } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, ICoreMouseEvent, CoreMouseEventType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -142,16 +142,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public charsets: ICharset[];
 
   // mouse properties
-  private _decLocator: boolean; // This is unstable and never set
-  public x10Mouse: boolean;
-  public vt200Mouse: boolean;
-  private _vt300Mouse: boolean; // This is unstable and never set
-  public normalMouse: boolean;
-  public mouseEvents: boolean;
+  public mouseEvents: CoreMouseEventType[] = [];
   public sendFocus: boolean;
-  public utfMouse: boolean;
-  public sgrMouse: boolean;
-  public urxvtMouse: boolean;
 
   // misc
   public savedCols: number;
@@ -658,13 +650,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
     // apply mouse event classes set by escape codes before terminal was attached
-    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
-    if (this.mouseEvents) {
+    this.element.classList.toggle('enable-mouse-events', !!this.mouseEvents.length);
+    if (this.mouseEvents.length) {
       this._selectionService.disable();
     } else {
       this._selectionService.enable();
     }
-    this._inputHandler.setBrowserServices(this._selectionService);
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
@@ -683,8 +674,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
+    // this.bindMouse();
     this.bindMouse();
-
   }
 
   private _createRenderer(): IRenderer {
@@ -712,15 +703,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  /**
-   * mouse events
-   * FIXME: move event handler registration into browser MouseService
-   */
-  public bindMouse(): void {
-    const el = this.element;
-    const self = this;
 
-    function sendButton(ev: MouseEvent | WheelEvent): void {
+  public bindMouse(): void {
+    const self = this;
+    const el = this.element;
+
+    function sendEvent(ev: MouseEvent | WheelEvent): boolean {
       let pos;
 
       // get mouse coordinates
@@ -730,7 +718,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       let but: ICoreMouseEvent['button'];
       let action: ICoreMouseEvent['action'];
       let code: number;
+      // FIXME: cleanup the switch mess
       switch ((<any>ev).overrideType || ev.type) {
+        case 'mousemove':
+          action = 'move';
+          if (ev.buttons !== undefined) {
+            but = ev.buttons & 1 ? 'left' : ev.buttons & 2 ? 'right' : ev.buttons & 4 ? 'middle' : 'none';
+          } else {
+            but = 'none';
+          }
+          break;
         case 'mouseup':
           action = 'up';
           code = ev.button !== null && ev.button !== undefined
@@ -758,7 +755,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           action = (<WheelEvent>ev).deltaY < 0 ? 'up' : 'down';
           break;
       }
-      self._coreMouseService.triggerMouseEvent({
+      return self._coreMouseService.triggerMouseEvent({
         col: pos.x - 33, // FIXME: why -33 here?
         row: pos.y - 33,
         button: but,
@@ -767,95 +764,147 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         alt: ev.altKey,
         shift: ev.shiftKey
       });
-      return;
     }
 
-    function sendMove(ev: MouseEvent): void {
-      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
-      if (!pos) return;
-
-      let but: ICoreMouseEvent['button'] = 'none';
-      if (ev.buttons !== undefined) {
-        but = ev.buttons & 1 ? 'left' : ev.buttons & 2 ? 'right' : ev.buttons & 4 ? 'middle' : 'none';
+    /**
+     * Event handler state handling.
+     * We listen to the onProtocolChange event of CoreMouseService and put
+     * requested handlers in `requestedEvents`. With this the handlers have
+     * all bits to do the event handler juggling.
+     * Note: 'mousedown' currently is an "always on" handler and not managed
+     * by onProtocolChange.
+     */
+    const requestedEvents: {[key: string]: any} = {
+      mouseup: null,
+      wheel: null,
+      mousedrag: null,
+      mousemove: null
+    };
+    const eventHandlers: {[key: string]: any} = {
+      mouseup: (ev: MouseEvent) => {
+        sendEvent(ev);
+        if (!ev.buttons) {
+          // if no other button is held remove global handlers
+          this._document.removeEventListener('mouseup', requestedEvents.mouseup);
+          if (requestedEvents.mousedrag) {
+            this._document.removeEventListener('mousemove', requestedEvents.mousedrag);
+          }
+        }
+        return this.cancel(ev);
+      },
+      wheel: (ev: WheelEvent) => {
+        sendEvent(ev);
+        ev.preventDefault();
+        return this.cancel(ev);
+      },
+      mousedrag: (ev: MouseEvent) => {
+        // deal only with move while a button is held
+        if (ev.buttons) {
+          sendEvent(ev);
+        }
+      },
+      mousemove: (ev: MouseEvent) => {
+        // deal only with move eithout any button
+        if (!ev.buttons) {
+          sendEvent(ev);
+        }
+      }
+    };
+    this._coreMouseService.onProtocolChange(events => {
+      // apply global changes on events
+      if (events.length) {
+        this._logService.info('Binding to mouse events:', events);
+        this.mouseEvents = events;
+        if (this.element) {
+          this.element.classList.add('enable-mouse-events');
+        }
+        if (this._selectionService) {
+          this._selectionService.disable();
+        }
+      } else {
+        this._logService.info('Unbinding from mouse events.');
+        this.mouseEvents = events;
+        if (this.element) {
+          this.element.classList.remove('enable-mouse-events');
+        }
+        if (this._selectionService) {
+          this._selectionService.enable();
+        }
       }
 
-      self._coreMouseService.triggerMouseEvent({
-        col: pos.x - 33,
-        row: pos.y - 33,
-        button: but,
-        action: 'move',
-        ctrl: ev.ctrlKey,
-        alt: ev.altKey,
-        shift: ev.shiftKey
-      });
-      return;
-    }
+      if (events.indexOf('mousemove') === -1) {
+        el.removeEventListener('mousemove', requestedEvents.mousemove);
+        requestedEvents.mousemove = null;
+      } else if (!requestedEvents.mousemove) {
+        el.addEventListener('mousemove', eventHandlers.mousemove);
+        requestedEvents.mousemove = eventHandlers.mousemove;
+      }
 
+      if (events.indexOf('wheel') === -1) {
+        el.removeEventListener('wheel', requestedEvents.wheel);
+        requestedEvents.wheel = null;
+      } else if (!requestedEvents.wheel) {
+        el.addEventListener('wheel', eventHandlers.wheel);
+        requestedEvents.wheel = eventHandlers.wheel;
+      }
 
+      if (events.indexOf('mouseup') === -1) {
+        // always remove possible leftover handler
+        this._document.removeEventListener('mouseup', requestedEvents.mouseup);
+        requestedEvents.mouseup = null;
+      } else if (!requestedEvents.mouseup) {
+        requestedEvents.mouseup = eventHandlers.mouseup;
+      }
+
+      if (events.indexOf('mousedrag') === -1) {
+        // always remove possible leftover handler
+        this._document.removeEventListener('mousemove', requestedEvents.mousedrag);
+        requestedEvents.mousedrag = null;
+      } else if (!requestedEvents.mousedrag) {
+        requestedEvents.mousedrag = eventHandlers.mousedrag;
+      }
+    });
+    // force initial onProtocolChange so we dont miss early mouse requests
+    this._coreMouseService.activeProtocol = this._coreMouseService.activeProtocol;
+
+    // DEBUG: get rid of annoying popup during testing
+    this.register(addDisposableDomListener(el, 'contextmenu', (e: any) => {
+      e.preventDefault();
+      return false;
+    }));
+
+    /**
+     * "Always on" event handlers.
+     */
     this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
-
-      // Prevent the focus on the textarea from getting lost
-      // and make sure we get focused on mousedown
       ev.preventDefault();
       this.focus();
 
       // Don't send the mouse button to the pty if mouse events are disabled or
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
-      if (!this.mouseEvents || this._selectionService.shouldForceSelection(ev)) {
+      if (!this.mouseEvents.length || this._selectionService.shouldForceSelection(ev)) {
         return;
       }
 
-      // send the button
-      sendButton(ev);
+      sendEvent(ev);
 
-      // fix for odd bug
-      // if (this.vt200Mouse && !this.normalMouse) {
-      if (this.vt200Mouse) {
-        (<any>ev).overrideType = 'mouseup';
-        sendButton(ev);
-        return this.cancel(ev);
+      // Register additional global handlers which should keep reporting outside
+      // of the terminal element.
+      // Note: Other emulators also do this for 'mousedown' while a button
+      // is held, we currently limit 'mousedown' to the terminal only.
+      if (requestedEvents.mouseup) {
+        this._document.addEventListener('mouseup', requestedEvents.mouseup);
       }
-
-      // TODO: All mouse handling should be pulled into its own file.
-
-      // bind events
-      let moveHandler: (event: MouseEvent) => void;
-      if (this.normalMouse) {
-        moveHandler = (event: MouseEvent) => {
-          // Do nothing if normal mouse mode is on. This can happen if the mouse is held down when the
-          // terminal exits normalMouse mode.
-          if (!this.normalMouse) {
-            return;
-          }
-          sendMove(event);
-        };
-        // TODO: these event listeners should be managed by the disposable, the Terminal reference may
-        // be kept aroud if Terminal.dispose is fired when the mouse is down
-        this._document.addEventListener('mousemove', moveHandler);
+      if (requestedEvents.mousedrag) {
+        this._document.addEventListener('mousemove', requestedEvents.mousedrag);
       }
-
-      // x10 compatibility mode can't send button releases
-      const handler = (ev: MouseEvent) => {
-        if (this.normalMouse && !this.x10Mouse) {
-          sendButton(ev);
-        }
-        if (moveHandler) {
-          // Even though this should only be attached when this.normalMouse is true, holding the
-          // mouse button down when normalMouse changes can happen. Just always try to remove it.
-          this._document.removeEventListener('mousemove', moveHandler);
-          moveHandler = null;
-        }
-        this._document.removeEventListener('mouseup', handler);
-        return this.cancel(ev);
-      };
-      this._document.addEventListener('mouseup', handler);
 
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
-      if (!this.mouseEvents) {
+      if (!requestedEvents.wheel) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
         if (!this.buffer.hasScrollback) {
@@ -876,31 +925,29 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         }
         return;
       }
-      if (this.x10Mouse || this._vt300Mouse || this._decLocator) return;
-      sendButton(ev);
-      ev.preventDefault();
     }));
 
     // allow wheel scrolling in
     // the shell for example
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
-      if (this.mouseEvents) return;
+      if (requestedEvents.wheel) return;
       this.viewport.onWheel(ev);
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this.mouseEvents.length) return;
       this.viewport.onTouchStart(ev);
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this.mouseEvents.length) return;
       this.viewport.onTouchMove(ev);
       return this.cancel(ev);
     }));
   }
+
 
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next

@@ -67,7 +67,7 @@ describe('CoreMouseService', () => {
     cms.activeProtocol = 'NONE';
     assert.deepEqual(wantedEvents, [[]]);
     cms.activeProtocol = 'ANY';
-    assert.deepEqual(wantedEvents, [[], ['mousedown', 'mouseup', 'wheel', 'mousemove']]);
+    assert.deepEqual(wantedEvents, [[], ['mousedown', 'mouseup', 'wheel', 'mousedrag', 'mousemove']]);
   });
   describe('triggerMouseEvent', () => {
     let cms: CoreMouseService;

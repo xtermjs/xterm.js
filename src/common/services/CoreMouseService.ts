@@ -78,7 +78,7 @@ const DEFAULT_PROCOTOLS: {[key: string]: ICoreMouseProtocol} = {
    * Modifiers: CTRL | ALT | SHIFT
    */
   ANY: {
-    events: ['mousedown', 'mouseup', 'wheel', 'mousemove'],
+    events: ['mousedown', 'mouseup', 'wheel', 'mousedrag', 'mousemove'],
     restrict: (e: ICoreMouseEvent) => true
   }
 };
