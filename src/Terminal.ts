@@ -713,46 +713,41 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
       // get mouse coordinates
       pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
-      if (!pos) return;
+      if (!pos) {
+        return false;
+      }
 
       let but: ICoreMouseEvent['button'];
       let action: ICoreMouseEvent['action'];
-      let code: number;
-      // FIXME: cleanup the switch mess
       switch ((<any>ev).overrideType || ev.type) {
         case 'mousemove':
           action = 'move';
-          if (ev.buttons !== undefined) {
-            but = ev.buttons & 1 ? 'left' : ev.buttons & 2 ? 'right' : ev.buttons & 4 ? 'middle' : 'none';
-          } else {
+          but = 'none';
+          if (!ev.buttons) {
             but = 'none';
+            // buttons is not supported on macOS, try to get a value from button instead
+            if (ev.button !== undefined) {
+              but = ev.button === 0 ? 'left' : ev.button === 1 ? 'middle' : ev.button === 2 ? 'right' : 'none';
+            }
+          } else {
+            but = ev.buttons & 1 ? 'left' : ev.buttons & 4 ? 'middle' : ev.buttons & 2 ? 'right' : 'none';
           }
           break;
         case 'mouseup':
           action = 'up';
-          code = ev.button !== null && ev.button !== undefined
-            ? +ev.button
-          : ev.which !== null && ev.which !== undefined
-            ? ev.which - 1
-          : null;
-          but = code === 0 ? 'left' : code === 1 ? 'middle' : 'right';
+          but = ev.button === 0 ? 'left' : ev.button === 1 ? 'middle' : ev.button === 2 ? 'right' : 'none';
           break;
         case 'mousedown':
           action = 'down';
-          code = ev.button !== null && ev.button !== undefined
-            ? +ev.button
-          : ev.which !== null && ev.which !== undefined
-            ? ev.which - 1
-          : null;
-          but = code === 0 ? 'left' : code === 1 ? 'middle' : 'right';
+          but = ev.button === 0 ? 'left' : ev.button === 1 ? 'middle' : ev.button === 2 ? 'right' : 'none';
           break;
         case 'DOMMouseScroll':
-          but = 'wheel';
           action = ev.detail < 0 ? 'up' : 'down';
+          but = 'wheel';
           break;
         case 'wheel':
-          but = 'wheel';
           action = (<WheelEvent>ev).deltaY < 0 ? 'up' : 'down';
+          but = 'wheel';
           break;
       }
       return self._coreMouseService.triggerMouseEvent({
@@ -804,7 +799,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         }
       },
       mousemove: (ev: MouseEvent) => {
-        // deal only with move eithout any button
+        // deal only with move without any button
         if (!ev.buttons) {
           sendEvent(ev);
         }
@@ -812,25 +807,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     };
     this._coreMouseService.onProtocolChange(events => {
       // apply global changes on events
+      this.mouseEvents = events;
       if (events.length) {
         this._logService.info('Binding to mouse events:', events);
-        this.mouseEvents = events;
-        if (this.element) {
-          this.element.classList.add('enable-mouse-events');
-        }
-        if (this._selectionService) {
-          this._selectionService.disable();
-        }
+        this.element.classList.add('enable-mouse-events');
+        this._selectionService.disable();
       } else {
         this._logService.info('Unbinding from mouse events.');
-        this.mouseEvents = events;
-        if (this.element) {
-          this.element.classList.remove('enable-mouse-events');
-        }
-        if (this._selectionService) {
-          this._selectionService.enable();
-        }
+        this.element.classList.remove('enable-mouse-events');
+        this._selectionService.enable();
       }
+
+      // add/remove handlers from requestedEvents
 
       if (events.indexOf('mousemove') === -1) {
         el.removeEventListener('mousemove', requestedEvents.mousemove);
