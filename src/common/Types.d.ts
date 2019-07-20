@@ -153,3 +153,8 @@ export interface IMarker extends IDisposable {
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
 }
+
+export interface IRowRange {
+  start: number;
+  end: number;
+}

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es5",
+      "es2015",
     ],
     "outDir": "../../out",
     "types": [

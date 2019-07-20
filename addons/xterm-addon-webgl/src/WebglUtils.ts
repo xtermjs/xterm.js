@@ -24,7 +24,7 @@ export function createProgram(gl: WebGLRenderingContext, vertexSource: string, f
     return program;
   }
 
-  console.log(gl.getProgramInfoLog(program));
+  console.error(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
 }
 
@@ -37,7 +37,7 @@ export function createShader(gl: WebGLRenderingContext, type: number, source: st
     return shader;
   }
 
-  console.log(gl.getShaderInfoLog(shader));
+  console.error(gl.getShaderInfoLog(shader));
   gl.deleteShader(shader);
 }
 

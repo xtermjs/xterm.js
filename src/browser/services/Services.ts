@@ -7,8 +7,12 @@ import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { createDecorator } from 'common/services/ServiceRegistry';
 
+export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
+  serviceBrand: any;
+
   readonly width: number;
   readonly height: number;
   readonly hasValidSize: boolean;
@@ -18,12 +22,18 @@ export interface ICharSizeService {
   measure(): void;
 }
 
+export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
+  serviceBrand: any;
+
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
 }
 
+export const IRenderService = createDecorator<IRenderService>('RenderService');
 export interface IRenderService {
+  serviceBrand: any;
+
   onDimensionsChange: IEvent<IRenderDimensions>;
   onRender: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
@@ -48,7 +58,10 @@ export interface IRenderService {
   deregisterCharacterJoiner(joinerId: number): boolean;
 }
 
+export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
 export interface ISelectionService {
+  serviceBrand: any;
+
   readonly selectionText: string;
   readonly hasSelection: boolean;
   readonly selectionStart: [number, number] | undefined;
@@ -73,6 +86,9 @@ export interface ISelectionService {
   onMouseDown(event: MouseEvent): void;
 }
 
+export const ISoundService = createDecorator<ISoundService>('SoundService');
 export interface ISoundService {
+  serviceBrand: any;
+
   playBellSound(): void;
 }

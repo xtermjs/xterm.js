@@ -67,6 +67,8 @@ export const enum SelectionMode {
  * when the selection is ready to be redrawn (on an animation frame).
  */
 export class SelectionService implements ISelectionService {
+  serviceBrand: any;
+
   protected _model: SelectionModel;
 
   /**
@@ -114,11 +116,11 @@ export class SelectionService implements ISelectionService {
     private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _bufferService: IBufferService,
-    private readonly _coreService: ICoreService,
-    private readonly _mouseService: IMouseService,
-    private readonly _optionsService: IOptionsService
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreService private readonly _coreService: ICoreService,
+    @IMouseService private readonly _mouseService: IMouseService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     // Init listeners
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
