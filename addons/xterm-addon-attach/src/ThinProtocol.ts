@@ -28,14 +28,14 @@ export enum MessageType {
 /**
  * Get base64 encoder / decoder for binary messages.
  */
-const _global = Function('return this')();
+const globalObject = Function('return this')();
 
-const base64Encode = (_global.btoa !== undefined)
-  ? btoa : (_global.Buffer !== undefined)
+const base64Encode = (globalObject.btoa !== undefined)
+  ? btoa : (globalObject.Buffer !== undefined)
     ? (data: string) => Buffer.from(data, 'binary').toString('base64') : null;
 
-const base64Decode = (_global.atob !== undefined)
-  ? atob : (_global.Buffer !== undefined)
+const base64Decode = (globalObject.atob !== undefined)
+  ? atob : (globalObject.Buffer !== undefined)
     ? (data: string) => Buffer.from(data, 'base64').toString('binary') : null;
 
 
@@ -78,7 +78,7 @@ export class ThinProtocol {
   /** Process incoming message and call associated handler. */
   public unwrap(msg: string): void {
     let handler: ((data: string) => void) | null;
-    let type: MessageType = msg.charCodeAt(0);
+    const type: MessageType = msg.charCodeAt(0);
     if (msg && (handler = this._handlers[type])) {
       if (type === MessageType.BINARY) {
         if (!base64Encode || !base64Decode) {
