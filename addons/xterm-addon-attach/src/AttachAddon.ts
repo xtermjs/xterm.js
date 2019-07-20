@@ -74,6 +74,13 @@ export class AttachAddon implements ITerminalAddon {
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
+
+    // test binary
+    let counter = 0;
+    setInterval(() => {
+      counter = (counter + 1) & 255;
+      this._socket.send(this._tp.binary(String.fromCharCode(counter)));
+    }, 100);
   }
 
   public dispose(): void {

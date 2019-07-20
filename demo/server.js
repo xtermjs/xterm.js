@@ -111,6 +111,11 @@ function startServer() {
         pending_acks = Math.max(--pending_acks, 0);
       }
     });
+    // digest binary data
+    tp.setIncomingHandler(MessageType.BINARY, msg => {
+      // term.write(Buffer.from(msg, 'binary'));
+      console.log(Buffer.from(msg, 'binary'));
+    });
 
     // incomming chunks are routed through thin protocol to separate DATA from ACK
     ws.on('message', msg => tp.unwrap(msg));

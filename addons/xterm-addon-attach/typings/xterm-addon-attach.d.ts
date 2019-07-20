@@ -41,7 +41,9 @@ declare module 'xterm-addon-attach' {
     /** Plain data, no further handling. */
     DATA = 0,
     /** ACK, sent for every n-th byte finally processed. */
-    ACK
+    ACK,
+    /** Raw binary data (uses base64 for transmission) */
+    BINARY
   }
 
   /**
