@@ -196,13 +196,13 @@ export interface ITerminalOptions {
   theme: ITheme;
   windowsMode: boolean;
   wordSeparator: string;
+  answerbackString: string;
 
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
   screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
 }
 
 export interface ITheme {
