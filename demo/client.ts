@@ -39,11 +39,17 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 const FLOW_CONTROL = 131072;
 
 /**
- * Whether to use UTF8 binary transport in the demo.
- * (Must also be switched in server.js)
+ * Whether to use UTF8 binary transport for incoming data.
+ * (Must be in line with USE_OUTGOING_BINARY in server.js)
  */
-const USE_BINARY_UTF8 = false;
+const USE_INCOMING_BINARY = false;
 
+/**
+ * Whether to use binary websocket transport for outgoing messages.
+ * This is recommended to avoid additional encoding cost for raw binary data.
+ * (Must be in line with USE_INCOMING_BINARY in server.js)
+ */
+const USE_OUTGOING_BINARY = true;
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
@@ -188,7 +194,11 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  term.loadAddon(new AttachAddon(socket, {inputUtf8: USE_BINARY_UTF8, flowControl: FLOW_CONTROL}));
+  term.loadAddon(new AttachAddon(socket, {
+    inputUtf8: USE_INCOMING_BINARY,
+    flowControl: FLOW_CONTROL,
+    outputBinary: USE_OUTGOING_BINARY
+  }));
   term._initialized = true;
 }
 

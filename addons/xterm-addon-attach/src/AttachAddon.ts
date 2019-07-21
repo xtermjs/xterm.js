@@ -6,12 +6,13 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
-import { ThinProtocol, MessageType } from './ThinProtocol';
+import { ThinProtocolString, MessageType, ThinProtocolBinary } from './ThinProtocol';
 
 interface IAttachOptions {
   bidirectional?: boolean;
   inputUtf8?: boolean;
   flowControl?: number;
+  outputBinary?: boolean;
 }
 
 export class AttachAddon implements ITerminalAddon {
@@ -19,9 +20,11 @@ export class AttachAddon implements ITerminalAddon {
   private _bidirectional: boolean;
   private _utf8: boolean;
   private _disposables: IDisposable[] = [];
-  private _tp: ThinProtocol = new ThinProtocol();
+  private _tp: ThinProtocolBinary | ThinProtocolString;
   private _flowControl = 0;
   private _bytesSeen = 0;
+  private _outputBinary: boolean;
+  private _textencoder: TextEncoder = new TextEncoder();
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
     this._socket = socket;
@@ -30,6 +33,8 @@ export class AttachAddon implements ITerminalAddon {
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
     this._utf8 = !!(options && options.inputUtf8);
     this._flowControl = (options && options.flowControl) ? Math.max(options.flowControl, 0) : 0;
+    this._outputBinary = !!(options && options.outputBinary);
+    this._tp = (this._outputBinary) ? new ThinProtocolBinary() : new ThinProtocolString();
   }
 
   public activate(terminal: Terminal): void {
@@ -74,13 +79,6 @@ export class AttachAddon implements ITerminalAddon {
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
-
-    // test binary
-    let counter = 0;
-    setInterval(() => {
-      counter = (counter + 1) & 255;
-      this._socket.send(this._tp.binary(String.fromCharCode(counter)));
-    }, 100);
   }
 
   public dispose(): void {
@@ -95,7 +93,11 @@ export class AttachAddon implements ITerminalAddon {
     if (this._socket.readyState !== 1) {
       return;
     }
-    this._socket.send(this._tp.data(data));
+    if (this._outputBinary) {
+      this._socket.send((this._tp as ThinProtocolBinary).data(this._textencoder.encode(data)));
+    } else {
+      this._socket.send((this._tp as ThinProtocolString).data(data));
+    }
   }
 }
 

@@ -5,9 +5,6 @@
 
 /**
  * Message types for ThinProtocol.
- * Currently we only support 2 messages types.
- * Future versions might extend this by other types
- * that dont fit into DATA (like resize or mouse reports).
  */
 export enum MessageType {
   /** Plain data, no further handling. */
@@ -15,11 +12,12 @@ export enum MessageType {
   /** ACK, sent for every n-th byte finally processed. */
   ACK,
   /**
+   * Binary message type.
    * By default, DATA will be treated as UTF8 data, To be able to send
-   * raw non UTF-8 conform byte data, use the BINARY type.
-   * Currently only the string version of the protocol is implemented
-   * which uses BASE64 transport encoding for binary data.
-   * A later binary version of the protocol might skip the base64 step.
+   * raw non UTF-8 conform data, use the BINARY type.
+   * With the string protocol the data gets base64 encoded,
+   * with the binary protocol this message type gets no special
+   * treatment.
    */
   BINARY
 }
@@ -63,7 +61,7 @@ const base64Decode = (globalObject.atob !== undefined)
  *  chunk = tp.ack();           // create an ACK chunk
  * ```
  */
-export class ThinProtocol {
+export class ThinProtocolString {
   private _handlers: (((data: string) => void) | null)[] = new Array(Object.keys(MessageType).length);
 
   /** Register a handler for `type`. */
@@ -106,8 +104,8 @@ export class ThinProtocol {
   }
 
   /** Create a plain ACK message (no payload). */
-  public ack(): string {
-    return this.wrap(MessageType.ACK);
+  public ack(data?: string): string {
+    return this.wrap(MessageType.ACK, data);
   }
 
   /** Create a DATA message. */
@@ -117,6 +115,53 @@ export class ThinProtocol {
 
   /** Create a BINARY message. */
   public binary(data: string): string {
+    return this.wrap(MessageType.BINARY, data);
+  }
+}
+
+export class ThinProtocolBinary {
+  private _handlers: (((data: Uint8Array) => void) | null)[] = new Array(Object.keys(MessageType).length);
+
+  /** Register a handler for `type`. */
+  public setIncomingHandler(type: MessageType, cb: (data: Uint8Array) => void): void {
+    this._handlers[type] = cb;
+  }
+  /** Remove handler for `type`. */
+  public clearIncomingHandler(type: MessageType): void {
+    this._handlers[type] = null;
+  }
+
+  /** Process incoming message and call associated handler. */
+  public unwrap(msg: Uint8Array): void {
+    let handler: ((data: Uint8Array) => void) | null;
+    const type: MessageType = msg[0];
+    if (msg && (handler = this._handlers[type])) {
+      handler(msg.subarray(1));
+    }
+  }
+
+  /** Create new message of `type`. */
+  public wrap(type: MessageType, payload?: Uint8Array): Uint8Array {
+    const msg = new Uint8Array(payload ? payload.length + 1 : 1);
+    msg[0] = type;
+    if (payload) {
+      msg.set(payload, 1);
+    }
+    return msg;
+  }
+
+  /** Create a plain ACK message (no payload). */
+  public ack(data?: Uint8Array): Uint8Array {
+    return this.wrap(MessageType.ACK, data);
+  }
+
+  /** Create a DATA message. */
+  public data(data: Uint8Array): Uint8Array {
+    return this.wrap(MessageType.DATA, data);
+  }
+
+  /** Create a BINARY message. */
+  public binary(data: Uint8Array): Uint8Array {
     return this.wrap(MessageType.BINARY, data);
   }
 }

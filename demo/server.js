@@ -2,14 +2,20 @@ var express = require('express');
 var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
-var ThinProtocol = require('../addons/xterm-addon-attach/out/ThinProtocol').ThinProtocol;
+var ThinProtocolString = require('../addons/xterm-addon-attach/out/ThinProtocol').ThinProtocolString;
+var ThinProtocolBinary = require('../addons/xterm-addon-attach/out/ThinProtocol').ThinProtocolBinary;
 var MessageType = require('../addons/xterm-addon-attach/out/ThinProtocol').MessageType;
 
 /**
- * Whether to use UTF8 binary transport.
+ * Whether to use outgoing UTF8 binary transport.
  * (Must also be switched in client.ts)
  */
-const USE_BINARY_UTF8 = false;
+const USE_OUTGOING_BINARY = false;
+
+/**
+ * Whether to use binary for incoming data.
+ */
+const USE_INCOMING_BINARY = true;
 
 /**
  * Whether to use flow control.
@@ -68,7 +74,7 @@ function startServer() {
           rows: rows || 24,
           cwd: env.PWD,
           env: env,
-          encoding: USE_BINARY_UTF8 ? null : 'utf8'
+          encoding: USE_OUTGOING_BINARY ? null : 'utf8'
         });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -99,7 +105,7 @@ function startServer() {
      * In the demo the protocol is only used for incoming data
      * (one sided, outgoing data is kept as plain data stream).
      */
-    const tp = new ThinProtocol();
+    const tp = USE_INCOMING_BINARY ? new ThinProtocolBinary() : new ThinProtocolString();
     // route DATA messages to pty
     tp.setIncomingHandler(MessageType.DATA, msg => term.write(msg));
     // do flow control with ACK replies
@@ -113,8 +119,9 @@ function startServer() {
     });
     // digest binary data
     tp.setIncomingHandler(MessageType.BINARY, msg => {
-      // term.write(Buffer.from(msg, 'binary'));
-      console.log(Buffer.from(msg, 'binary'));
+      // if we receive data as string we have to decode
+      // it first to bytes to avoid node-pty applying UTF8 to it
+      term.write(USE_INCOMING_BINARY ? msg : Buffer.from(msg, 'binary'));
     });
 
     // incomming chunks are routed through thin protocol to separate DATA from ACK
@@ -192,7 +199,7 @@ function startServer() {
         }
       };
     }
-    const send = (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
+    const send = (USE_OUTGOING_BINARY ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
     term.on('data', data => send(data));
 

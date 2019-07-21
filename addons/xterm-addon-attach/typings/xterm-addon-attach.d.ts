@@ -26,6 +26,11 @@ declare module 'xterm-addon-attach' {
      * Default is 0 (flow control disabled).
      */
     flowControl?: number;
+
+    /**
+     * Whether to use binary transport for outgoing messages (recommended).
+     */
+    outputBinary?: boolean;
   }
 
   export class AttachAddon implements ITerminalAddon {
@@ -50,7 +55,7 @@ declare module 'xterm-addon-attach' {
    * ThinProtocol
    * Thin protocol to send different message types in-band.
    */
-  export class ThinProtocol {
+  export class ThinProtocolString {
     /** Register a handler for `type`. */
     public setIncomingHandler(type: MessageType, cb: (data: string) => void): void;
 
@@ -68,5 +73,30 @@ declare module 'xterm-addon-attach' {
 
     /** Convenient method to create a DATA message. */
     public data(data: string): string;
+
+    /** Create a BINARY message. */
+    public binary(data: string): string;
   }
+}
+
+export class ThinProtocolBinary {
+  /** Register a handler for `type`. */
+  public setIncomingHandler(type: MessageType, cb: (data: Uint8Array) => void): void;
+  /** Remove handler for `type`. */
+  public clearIncomingHandler(type: MessageType): void;
+
+  /** Process incoming message and call associated handler. */
+  public unwrap(msg: Uint8Array): void;
+
+  /** Create new message of `type`. */
+  public wrap(type: MessageType, payload?: Uint8Array): Uint8Array;
+
+  /** Create a plain ACK message (no payload). */
+  public ack(data?: Uint8Array): Uint8Array;
+
+  /** Create a DATA message. */
+  public data(data: Uint8Array): Uint8Array;
+
+  /** Create a BINARY message. */
+  public binary(data: Uint8Array): Uint8Array;
 }
