@@ -1562,6 +1562,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return true;
     }
 
+    // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
+    // will announce deleted characters. This will not work 100% of the time but it should cover
+    // most scenarios.
+    if (result.key === C0.ETX || result.key === C0.CR) {
+      this.textarea.value = '';
+    }
+
     this._keyDownHandled = true;
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
