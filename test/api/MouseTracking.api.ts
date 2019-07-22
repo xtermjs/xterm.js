@@ -75,10 +75,10 @@ async function mouseClick(col: number, row: number): Promise<void> {
   const [xPixels, yPixels] = await cellPos(col, row);
   return await page.mouse.click(xPixels, yPixels);
 }
-async function mouseDown(button: "left" | "right" | "middle" | undefined): Promise<void> {
+async function mouseDown(button: 'left' | 'right' | 'middle' | undefined): Promise<void> {
   return await page.mouse.down({button});
 }
-async function mouseUp(button: "left" | "right" | "middle" | undefined): Promise<void> {
+async function mouseUp(button: 'left' | 'right' | 'middle' | undefined): Promise<void> {
   return await page.mouse.up({button});
 }
 async function wheelUp(): Promise<void> {
@@ -112,15 +112,15 @@ const buttons: {[key: string]: number} = {
   aux12:      12,
   aux13:      13,
   aux14:      14,
-  aux15:      15,
-}
+  aux15:      15
+};
 const reverseButtons: any = {};
-for (let el in buttons) {
+for (const el in buttons) {
   reverseButtons[buttons[el]] = el;
 }
 
 // extract button data from buttonCode
-function evalButtonCode(code: number) : any {
+function evalButtonCode(code: number): any {
   const modifier = {shift: !!(code & 4), meta: !!(code & 8), control: !!(code & 16)};
   const move = code & 32;
   let button = 0;
@@ -153,7 +153,7 @@ function evalButtonCode(code: number) : any {
 }
 
 // parse a single mouse report
-function parseReport(encoding: string, msg: number[]): {state: any; row: number; col: number;} | string {
+function parseReport(encoding: string, msg: number[]): {state: any; row: number; col: number; } | string {
   let sReport: string;
   let buttonCode: number;
   let row: number;
@@ -253,7 +253,7 @@ describe('Mouse Tracking Tests', function(): void {
       // test at 0,0
       await mouseDown('left');
       assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // mouseup should not report
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), []);
@@ -264,7 +264,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // test at max rows/cols
       // bug: we are capped at col 95 currently
       // fix: allow values up to 223, any bigger should drop to 0
@@ -297,7 +297,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(44, 24);
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -317,8 +317,8 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Control');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
-      
+
+
       // ALT
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -329,7 +329,7 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Alt');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // SHIFT
       // note: caught by selection manager
       await mouseMove(43, 24);
@@ -368,7 +368,7 @@ describe('Mouse Tracking Tests', function(): void {
       // test at 0,0
       await mouseDown('left');
       assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // mouseup should not report
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), []);
@@ -379,7 +379,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
@@ -410,7 +410,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(44, 24);
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -418,7 +418,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), []);
       await wheelDown();
       assert.deepEqual(await getReports(encoding), []);
-      
+
       // modifiers
       // CTRL
       await mouseMove(43, 24);
@@ -430,8 +430,8 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Control');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
-      
+
+
       // ALT
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -442,7 +442,7 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Alt');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // SHIFT
       // note: caught by selection manager
       await mouseMove(43, 24);
@@ -481,7 +481,7 @@ describe('Mouse Tracking Tests', function(): void {
       // test at 0,0
       await mouseDown('left');
       assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // mouseup should not report
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), []);
@@ -492,7 +492,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
@@ -523,7 +523,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(44, 24);
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -543,8 +543,8 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Control');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
-      
+
+
       // ALT
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -555,7 +555,7 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Alt');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // SHIFT
       // note: caught by selection manager
       await mouseMove(43, 24);
@@ -595,7 +595,7 @@ describe('Mouse Tracking Tests', function(): void {
       // test at 0,0
       await mouseDown('left');
       assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // mouseup should not report
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), []);
@@ -606,7 +606,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
@@ -637,7 +637,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(44, 24);
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -657,8 +657,8 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Control');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
-      
+
+
       // ALT
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -669,7 +669,7 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Alt');
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
-      
+
       // SHIFT
       // note: caught by selection manager
       await mouseMove(43, 24);
@@ -721,7 +721,7 @@ describe('Mouse Tracking Tests', function(): void {
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
@@ -734,9 +734,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       // bug: we are capped at col 95 currently
       // fix: allow values up to 223, any bigger should drop to 0
@@ -745,7 +745,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -758,7 +758,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -778,9 +778,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -810,7 +810,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported, release with wrong coords
       await mouseMove(43, 24);
@@ -830,7 +830,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release caught by selection manager
       // bug: modifier not reported for passed events
@@ -881,7 +881,7 @@ describe('Mouse Tracking Tests', function(): void {
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
@@ -894,16 +894,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -916,7 +916,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -936,9 +936,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -968,7 +968,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported, release with wrong coords
       await mouseMove(43, 24);
@@ -988,7 +988,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release caught by selection manager
       // bug: modifier not reported for passed events
@@ -1039,7 +1039,7 @@ describe('Mouse Tracking Tests', function(): void {
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 1, row: 1, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report
       // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
@@ -1052,16 +1052,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1074,7 +1074,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1095,9 +1095,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1127,7 +1127,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported, release with wrong coords
       await mouseMove(43, 24);
@@ -1147,7 +1147,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release caught by selection manager
       // bug: modifier not reported for passed events
@@ -1198,7 +1198,7 @@ describe('Mouse Tracking Tests', function(): void {
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
@@ -1211,16 +1211,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1233,7 +1233,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1253,9 +1253,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('right');
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1285,7 +1285,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported, release with wrong coords
       await mouseMove(43, 24);
@@ -1305,7 +1305,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release caught by selection manager
       // bug: modifier not reported for passed events
@@ -1364,7 +1364,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
@@ -1378,9 +1378,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       // bug: we are capped at col 95 currently
       // fix: allow values up to 223, any bigger should drop to 0
@@ -1389,7 +1389,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1402,7 +1402,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1422,9 +1422,9 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1456,7 +1456,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported
       await mouseMove(43, 24);
@@ -1478,7 +1478,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release/drag caught by selection manager
       // bug: modifier not reported for passed events
@@ -1529,7 +1529,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       // bug: release already fired thus no event here - expected: release event
       await mouseUp('left');
@@ -1544,16 +1544,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1566,7 +1566,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1586,9 +1586,9 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1620,7 +1620,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported
       await mouseMove(43, 24);
@@ -1642,7 +1642,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release/drag caught by selection manager
       // bug: modifier not reported for passed events
@@ -1693,7 +1693,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
@@ -1707,16 +1707,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1729,7 +1729,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1750,9 +1750,9 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1784,7 +1784,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported
       await mouseMove(43, 24);
@@ -1806,7 +1806,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release/drag caught by selection manager
       // bug: modifier not reported for passed events
@@ -1857,7 +1857,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
@@ -1871,16 +1871,16 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       assert.deepEqual(await getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: cols, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1893,7 +1893,7 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
@@ -1913,9 +1913,9 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
-        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
-      
+
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
@@ -1947,7 +1947,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
       ]);
-      
+
       // ALT
       // bug: no modifier reported
       await mouseMove(43, 24);
@@ -1969,7 +1969,7 @@ describe('Mouse Tracking Tests', function(): void {
         // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
       ]);
-      
+
       // SHIFT
       // note: press/release/drag caught by selection manager
       // bug: modifier not reported for passed events
