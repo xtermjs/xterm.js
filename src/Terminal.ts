@@ -253,13 +253,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(IOptionsService, this.optionsService);
     this._bufferService = this._instantiationService.createInstance(BufferService);
     this._instantiationService.setService(IBufferService, this._bufferService);
+    this._logService = this._instantiationService.createInstance(LogService);
+    this._instantiationService.setService(ILogService, this._logService);
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this._logService = this._instantiationService.createInstance(LogService);
-    this._instantiationService.setService(ILogService, this._logService);
 
     this._setupOptionsListeners();
     this._setup();
