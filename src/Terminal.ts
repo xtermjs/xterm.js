@@ -179,6 +179,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
 
+  /**
+   * Records whether the keydown event has already been handled and triggered a data event, if so
+   * the keypress event should not trigger a data event but should still print to the textarea so
+   * screen readers will announce it.
+   */
+  private _keyDownHandled: boolean = false;
+
   private _inputHandler: InputHandler;
   public linkifier: ILinkifier;
   public viewport: IViewport;
@@ -1515,6 +1522,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param ev The keydown event to be handled.
    */
   protected _keyDown(event: KeyboardEvent): boolean {
+    this._keyDownHandled = false;
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
@@ -1529,12 +1538,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
-
-    // if (result.key === C0.DC3) { // XOFF
-    //   this._writeStopped = true;
-    // } else if (result.key === C0.DC1) { // XON
-    //   this._writeStopped = false;
-    // }
 
     if (result.type === KeyboardResultType.PAGE_DOWN || result.type === KeyboardResultType.PAGE_UP) {
       const scrollCount = this.rows - 1;
@@ -1559,11 +1562,17 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return true;
     }
 
+    // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
+    // will announce deleted characters. This will not work 100% of the time but it should cover
+    // most scenarios.
+    if (result.key === C0.ETX || result.key === C0.CR) {
+      this.textarea.value = '';
+    }
+
+    this._keyDownHandled = true;
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this._coreService.triggerDataEvent(result.key, true);
-
-    return this.cancel(event, true);
   }
 
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
@@ -1620,6 +1629,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
+
+    if (this._keyDownHandled) {
+      return false;
+    }
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return false;
