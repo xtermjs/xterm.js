@@ -22,16 +22,16 @@ const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
   /**
    * X10
    * Events: mousedown
-   * Modifiers: none (TBD)
+   * Modifiers: none
    */
   X10: {
     events: CoreMouseEventType.DOWN,
     restrict: (e: ICoreMouseEvent) => {
-      // no wheel (TBD), no move, no up
+      // no wheel, no move, no up
       if (e.button === CoreMouseButton.WHEEL || e.action !== CoreMouseAction.DOWN) {
         return false;
       }
-      // no modifiers (TDB)
+      // no modifiers
       e.ctrl = false;
       e.alt = false;
       e.shift = false;
@@ -41,7 +41,7 @@ const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
   /**
    * VT200
    * Events: mousedown / mouseup / wheel
-   * Modifiers: CTRL (TBD)
+   * Modifiers: all
    */
   VT200: {
     events: CoreMouseEventType.DOWN | CoreMouseEventType.UP | CoreMouseEventType.WHEEL,
@@ -50,16 +50,13 @@ const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
       if (e.action === CoreMouseAction.MOVE) {
         return false;
       }
-      // modifiers - only ctrl?
-      e.alt = false;
-      e.shift = false;
       return true;
     }
   },
   /**
    * DRAG
    * Events: mousedown / mouseup / wheel / mousedrag
-   * Modifiers: CTRL | ALT | SHIFT
+   * Modifiers: all
    */
   DRAG: {
     events: CoreMouseEventType.DOWN | CoreMouseEventType.UP | CoreMouseEventType.WHEEL | CoreMouseEventType.DRAG,
@@ -68,14 +65,13 @@ const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
       if (e.action === CoreMouseAction.MOVE && e.button === CoreMouseButton.NONE) {
         return false;
       }
-      // modifiers unclear - let all pass for now
       return true;
     }
   },
   /**
    * ANY
    * Events: all mouse related events
-   * Modifiers: CTRL | ALT | SHIFT
+   * Modifiers: all
    */
   ANY: {
     events:
