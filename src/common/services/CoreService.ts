@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICoreService, IOptionsService, IBufferService } from 'common/services/Services';
+import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IDecPrivateModes } from 'common/Types';
 import { clone } from 'common/Clone';
@@ -26,6 +26,7 @@ export class CoreService implements ICoreService {
     // TODO: Move this into a service
     private readonly _scrollToBottom: () => void,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ILogService private readonly _logService: ILogService,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
@@ -53,6 +54,7 @@ export class CoreService implements ICoreService {
     }
 
     // Fire onData API
+    this._logService.debug('sending data', data);
     this._onData.fire(data);
   }
 }
