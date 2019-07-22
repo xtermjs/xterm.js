@@ -94,23 +94,62 @@ async function wheelDown(): Promise<void> {
   `);
 }
 
+// button definitions
+const buttons: {[key: string]: number} = {
+  '<none>':  -1,
+  left:       0,
+  middle:     1,
+  right:      2,
+  released:   3,
+  wheelUp:    4,
+  wheelDown:  5,
+  wheelLeft:  6,
+  wheelRight: 7,
+  aux8:       8,
+  aux9:       9,
+  aux10:      10,
+  aux11:      11,
+  aux12:      12,
+  aux13:      13,
+  aux14:      14,
+  aux15:      15,
+}
+const reverseButtons: any = {};
+for (let el in buttons) {
+  reverseButtons[buttons[el]] = el;
+}
+
 // extract button data from buttonCode
-function evalButtonCode(code: number) {
-  // 2 bits: 0 - left, 1 - middle, 2 - right, 3 - release
-  // higher bits: 4 - shift, 8 - meta, 16 - control
+function evalButtonCode(code: number) : any {
   const modifier = {shift: !!(code & 4), meta: !!(code & 8), control: !!(code & 16)};
-  const wheel = code & 64;
-  let action;
-  let button;
-  if (wheel) {
-    action = (code & 1) ? 'down' : 'up';
-    button = 'wheel';
+  const move = code & 32;
+  let button = 0;
+  if (code  === 3) {
+    button = 3;
+    code -= 3;
   } else {
-    action = code & 32 ? 'move' : code === 3 ? 'release' : 'press';
-    code &= 3; // TODO: more than 3 buttons + wheel
-    button = code === 0 ? 'left' : code === 1 ? 'middle' : code === 2 ? 'right' : '<none>';
+    if (code >= 128) {
+      button |= 8;
+      code -= 128;
+    }
+    if (code >= 64) {
+      button |= 4;
+      code -= 64;
+    }
+    button += code & 3;
   }
-  return {button, action, modifier};
+  let actionS = 'press';
+  let buttonS = reverseButtons[button];
+  if (move) {
+    actionS = 'move';
+  } else if (button === 3) {
+    buttonS = '<none>';
+    actionS = 'release';
+  } else if ((button & 4) && !(button & 8)) {
+    buttonS = 'wheel';
+    actionS = (button & 3) === 0 ? 'up' : (button & 3) === 1 ? 'down' : (button & 3) === 2 ? 'left' : 'right';
+  }
+  return {button: buttonS, action: actionS, modifier};
 }
 
 // parse a single mouse report
