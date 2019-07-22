@@ -134,6 +134,8 @@ function parseReport(encoding: string, msg: number[]): {state: any; row: number;
         row: report.charCodeAt(5) - 32
       };
     case 'UTF8':
+      // TODO: once the binary patch is in place,
+      // use UTF8 byte check here
       return {
         state: evalButtonCode(report.charCodeAt(3) - 32),
         col: report.charCodeAt(4) - 32,
@@ -199,9 +201,9 @@ describe('Mouse Tracking Tests', function(): void {
     /**
      * X10 protocol:
      *  - only press events
-     *  - no wheel? (TBD)
+     *  - no wheel
      *  - no move
-     *  - no modifiers? (TDB)
+     *  - no modifiers
      */
     it('default encoding', async () => {
       const encoding = 'DEFAULT';
@@ -266,7 +268,57 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), []);
 
       // modifiers
-      // TODO
+      // CTRL
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      
+      // ALT
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      // SHIFT
+      // note: caught by selection manager
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), []);
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      */
     });
     it('UTF8 encoding', async () => {
       const encoding = 'UTF8';
@@ -329,7 +381,57 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), []);
       
       // modifiers
-      // TODO
+      // CTRL
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      
+      // ALT
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      // SHIFT
+      // note: caught by selection manager
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), []);
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      */
     });
     it('SGR encoding', async () => {
       const encoding = 'SGR';
@@ -392,7 +494,57 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), []);
 
       // modifiers
-      // TODO
+      // CTRL
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      
+      // ALT
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      // SHIFT
+      // note: caught by selection manager
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), []);
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      */
     });
     it('URXVT encoding', async () => {
       // bug: always reports +1 for row/col (temp. fixed in parseReport to pass tests)
@@ -456,7 +608,57 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), []);
 
       // modifiers
-      // TODO
+      // CTRL
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      
+      // ALT
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      
+      // SHIFT
+      // note: caught by selection manager
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), []);
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      */
     });
   });
   describe('DECSET 1000 (VT200 mouse)', () => {
@@ -465,7 +667,7 @@ describe('Mouse Tracking Tests', function(): void {
      *  - press and release events
      *  - wheel up/down
      *  - no move
-     *  - modifiers? (TBD)
+     *  - all modifiers
      */
     it('default encoding', async () => {
       const encoding = 'DEFAULT';
@@ -548,38 +750,84 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
-      // modifiers (commented out - none working)
-      // ctrl
-      // await mouseMove(43, 24);
-      // await getReports(encoding); // clear reports
+      // modifiers
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action, reports wrong coords for release
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
       // await page.keyboard.down('Control');
-      // await mouseDown('left');
-      // await mouseMove(44, 24);
-      // await mouseUp('left');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
       // await page.keyboard.up('Control');
-      // bug: not working - reports wheel instead
-      // assert.deepEqual(await getReports(encoding), [
-      //   {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
-      //   {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
-      // ]);
-      // await getReports(encoding); // clear reports
-      // alt
-      // await mouseMove(43, 24);
-      // await getReports(encoding); // clear reports
-      // await page.keyboard.down('Alt');
-      // await mouseDown('left');
-      // await mouseMove(44, 24);
-      // await mouseUp('left');
-      // await page.keyboard.up('Alt');
-      // bug: not working - reports wheel instead
-      // assert.deepEqual(await getReports(encoding), [
-      //   {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
-      //   {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
-      // ]);
-      // await getReports(encoding); // clear reports
-      // shift
-      // seems shift pressed alone would supress any mouse event - limitation of chrome?
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported, release with wrong coords
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
 
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('UTF8 encoding', async () => {
       const encoding = 'UTF8';
@@ -661,7 +909,83 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action, reports wrong coords for release
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported, release with wrong coords
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('SGR encoding', async () => {
       const encoding = 'SGR';
@@ -744,7 +1068,83 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action, reports wrong coords for release
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported, release with wrong coords
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('URXVT encoding', async () => {
       const encoding = 'URXVT';
@@ -826,7 +1226,83 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action, reports wrong coords for release
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported, release with wrong coords
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 44, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
   });
   describe('DECSET 1002 (xterm with drag)', () => {
@@ -919,7 +1395,88 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('UTF8 encoding', async () => {
       const encoding = 'UTF8';
@@ -1002,7 +1559,88 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('SGR encoding', async () => {
       const encoding = 'SGR';
@@ -1085,7 +1723,88 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
     it('URXVT encoding', async () => {
       const encoding = 'URXVT';
@@ -1167,7 +1886,88 @@ describe('Mouse Tracking Tests', function(): void {
       assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
-      // TODO
+      // CTRL
+      // bug: totally broken - reports no modifier, reports wrong button and action
+      // after fix: removed faulty reports below and uncomment lines
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      // await page.keyboard.down('Control');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      // await page.keyboard.up('Control');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
+      ]);
+      
+      // ALT
+      // bug: no modifier reported
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Alt');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Alt');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        // expected
+        // {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
+        // {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
+      ]);
+      
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // bug: modifier not reported for passed events
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Shift');  // defaults to ShiftLeft
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+      ]);
+
+      /*
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
+      await mouseMove(43, 24);
+      await getReports(encoding); // clear reports
+      await page.keyboard.down('Control');
+      await page.keyboard.down('Alt');
+      await page.keyboard.down('Shift');
+      await mouseDown('left');
+      await mouseMove(44, 24);
+      await mouseUp('left');
+      await wheelDown();
+      await page.keyboard.up('Control');
+      await page.keyboard.up('Alt');
+      await page.keyboard.up('Shift');
+      assert.deepEqual(await getReports(encoding), [
+        {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: true}}},
+        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: true, meta: true}}}
+      ]);
+      */
     });
   });
   describe('DECSET 1003 (xterm any event)', () => {
@@ -1178,4 +1978,5 @@ describe('Mouse Tracking Tests', function(): void {
      */
     // bug: currently same reports as 1002, FIXME: implement tests once fixed
   });
+  // TODO: move tests with several buttons pressed
 });
