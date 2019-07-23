@@ -559,7 +559,7 @@ describe('Terminal', () => {
         (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 81;
-        term.keyDown(evKeyDown);;
+        term.keyDown(evKeyDown);
         assert.equal((<any>term)._keyDownHandled, true);
         (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
