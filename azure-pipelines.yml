@@ -62,7 +62,7 @@ jobs:
       yarn lint
     displayName: 'Lint'
 
-- job: IntegrationTests
+- job: Linux_IntegrationTests
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -81,7 +81,24 @@ jobs:
       yarn start &
       sleep 10
       yarn test-api --headless
-    displayName: 'Integration tests'
+    displayName: 'Linux Integration tests'
+
+- job: macOS_IntegrationTests
+  pool:
+    vmImage: 'xcode9-macos10.13'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn start &
+      sleep 10
+      yarn test-api --headless
+    displayName: 'MacOS Integration tests'
 
 - job: Release
   dependsOn:
