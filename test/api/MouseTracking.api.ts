@@ -1551,9 +1551,18 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
-      ]);
+      if (noShift) {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      } else {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      }
 
       /*
       // all modifiers
@@ -1715,9 +1724,18 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
-      ]);
+      if (noShift) {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      } else {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      }
 
       /*
       // all modifiers
@@ -1879,9 +1897,18 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
-      ]);
+      if (noShift) {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      } else {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      }
 
       /*
       // all modifiers
@@ -2042,9 +2069,18 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
-      ]);
+      if (noShift) {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      } else {
+        assert.deepEqual(await getReports(encoding), [
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+          {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}
+        ]);
+      }
 
       /*
       // all modifiers
