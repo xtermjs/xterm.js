@@ -94,6 +94,7 @@ describe('Terminal', () => {
         expect(e.domEvent).to.be.an.instanceof(Object);
         done();
       });
+      (<any>term).textarea = { value: '' };
       const evKeyDown = <KeyboardEvent>{
         preventDefault: () => { },
         stopPropagation: () => { },
@@ -555,12 +556,16 @@ describe('Terminal', () => {
       afterEach(() => term.browser.isMac = originalIsMac);
 
       it('should interfere with the alt key on keyDown', () => {
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 81;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);;
+        assert.equal((<any>term)._keyDownHandled, true);
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 192;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, true);
       });
     });
 
@@ -573,21 +578,29 @@ describe('Terminal', () => {
       afterEach(() => term.browser.isMac = originalIsMac);
 
       it('should not interfere with the alt key on keyDown', () => {
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 81;
-        assert.equal(term.keyDown(evKeyDown), true);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, false);
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 192;
-        assert.equal(term.keyDown(evKeyDown), true);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, false);
       });
 
-      it('should interefere with the alt + arrow keys', () => {
+      it('should interfere with the alt + arrow keys', () => {
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 37;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, true);
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 39;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, true);
       });
 
       it('should emit key with alt + key on keyPress', (done) => {
@@ -639,24 +652,32 @@ describe('Terminal', () => {
       afterEach(() => term.browser.isWindows = originalIsWindows);
 
       it('should not interfere with the alt + ctrl key on keyDown', () => {
+        (<any>term)._keyDownHandled = false;
         evKeyPress.altKey = true;
         evKeyPress.ctrlKey = true;
         evKeyPress.keyCode = 81;
-        assert.equal(term.keyDown(evKeyPress), true);
+        term.keyDown(evKeyPress);
+        assert.equal((<any>term)._keyDownHandled, false);
+        (<any>term)._keyDownHandled = false;
         evKeyDown.altKey = true;
         evKeyDown.ctrlKey = true;
         evKeyDown.keyCode = 81;
-        assert.equal(term.keyDown(evKeyDown), true);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, false);
       });
 
       it('should interefere with the alt + ctrl + arrow keys', () => {
         evKeyDown.altKey = true;
         evKeyDown.ctrlKey = true;
 
+        (<any>term)._keyDownHandled = false;
         evKeyDown.keyCode = 37;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, true);
+        (<any>term)._keyDownHandled = false;
         evKeyDown.keyCode = 39;
-        assert.equal(term.keyDown(evKeyDown), false);
+        term.keyDown(evKeyDown);
+        assert.equal((<any>term)._keyDownHandled, true);
       });
 
       it('should emit key with alt + ctrl + key on keyPress', (done) => {
