@@ -203,7 +203,7 @@ function parseReport(encoding: string, msg: number[]): {state: any; row: number;
  * Mouse tracking tests.
  */
 describe('Mouse Tracking Tests', function(): void {
-  this.timeout(20000);
+  this.timeout(30000);
 
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
