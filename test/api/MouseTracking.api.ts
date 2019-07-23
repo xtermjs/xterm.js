@@ -124,22 +124,17 @@ for (const el in buttons) {
 
 // extract button data from buttonCode
 function evalButtonCode(code: number): any {
+  if (code > 255) {
+    return {button: 'invalid', action: 'invalid', modifier: {}};
+  }
   const modifier = {shift: !!(code & 4), meta: !!(code & 8), control: !!(code & 16)};
   const move = code & 32;
-  let button = 0;
-  if (code  === 3) {
-    button = 3;
-    code -= 3;
-  } else {
-    if (code >= 128) {
-      button |= 8;
-      code -= 128;
-    }
-    if (code >= 64) {
-      button |= 4;
-      code -= 64;
-    }
-    button += code & 3;
+  let button = code & 3;
+  if (code & 128) {
+    button |= 8;
+  }
+  if (code & 64) {
+    button |= 4
   }
   let actionS = 'press';
   let buttonS = reverseButtons[button];
@@ -148,9 +143,9 @@ function evalButtonCode(code: number): any {
   } else if (button === 3) {
     buttonS = '<none>';
     actionS = 'release';
-  } else if ((button & 4) && !(button & 8)) {
+  } else if (4 <= button && button <= 7) {
     buttonS = 'wheel';
-    actionS = (button & 3) === 0 ? 'up' : (button & 3) === 1 ? 'down' : (button & 3) === 2 ? 'left' : 'right';
+    actionS = button === 4 ? 'up' : button === 5 ? 'down' : button === 6 ? 'left' : 'right';
   }
   return {button: buttonS, action: actionS, modifier};
 }
