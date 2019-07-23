@@ -734,35 +734,44 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             // buttons is not supported on macOS, try to get a value from button instead
             but = CoreMouseButton.NONE;
             if (ev.button !== undefined) {
-              but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
+              but = ev.button < 3 ? ev.button : undefined;
             }
           } else {
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
                   ev.buttons & 4 ? CoreMouseButton.MIDDLE :
                   ev.buttons & 2 ? CoreMouseButton.RIGHT :
-                  CoreMouseButton.NONE;
+                  CoreMouseButton.NONE; // fallback to NONE
           }
           break;
         case 'mouseup':
           action = CoreMouseAction.UP;
-          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
+          // AUX buttons are currently not supported
+          but = ev.button < 3 ? ev.button : undefined;
           break;
         case 'mousedown':
           action = CoreMouseAction.DOWN;
-          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
-          break;
-        case 'DOMMouseScroll':
-          action = ev.detail < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
-          but = CoreMouseButton.WHEEL;
+          but = ev.button < 3 ? ev.button : undefined;
           break;
         case 'wheel':
-          action = (<WheelEvent>ev).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+          // precedence: up/down over left/right
+          // FIXME: Can we have both in one event? Need to send another wheel event?
+          if ((ev as WheelEvent).deltaY !== 0) {
+            action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+          } else if ((ev as WheelEvent).deltaX !== 0) {
+            action = (ev as WheelEvent).deltaX < 0 ? CoreMouseAction.LEFT : CoreMouseAction.RIGHT;
+          }
           but = CoreMouseButton.WHEEL;
           break;
         default:
           // dont handle other event types by accident
           return false;
       }
+
+      // exit if we cannot determine button/action values
+      if (action === undefined || but === undefined) {
+        return false;
+      }
+
       return self._coreMouseService.triggerMouseEvent({
         col: pos.x - 33, // FIXME: why -33 here?
         row: pos.y - 33,

@@ -177,6 +177,7 @@ describe('CoreMouseService', () => {
       });
     });
     it('eventCodes with modifiers (DEFAULT encoding)', () => {
+      // TODO: implement AUX button tests
       cms.activeProtocol = 'ANY';
       cms.activeEncoding = 'DEFAULT';
       // all buttons + down + no modifer

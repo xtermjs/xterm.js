@@ -89,11 +89,18 @@ const enum Modifiers {
 
 // helper for default encoders to generate the event code.
 function eventCode(e: ICoreMouseEvent, isSGR: boolean): number {
-  const modifier = (e.ctrl ? Modifiers.CTRL : 0) | (e.shift ? Modifiers.SHIFT : 0) | (e.alt ? Modifiers.ALT : 0);
-  let code = e.button | modifier;
+  let code = (e.ctrl ? Modifiers.CTRL : 0) | (e.shift ? Modifiers.SHIFT : 0) | (e.alt ? Modifiers.ALT : 0);
   if (e.button === CoreMouseButton.WHEEL) {
+    code |= 64;
     code |= e.action;
   } else {
+    code |= e.button & 3;
+    if (e.button & 4) {
+      code |= 64;
+    }
+    if (e.button & 8) {
+      code |= 128;
+    }
     if (e.action === CoreMouseAction.MOVE) {
       code |= CoreMouseAction.MOVE;
     } else if (e.action === CoreMouseAction.UP && !isSGR) {
@@ -244,40 +251,43 @@ export class CoreMouseService implements ICoreMouseService {
    * Note: The method will change values of the given event object
    * to fullfill protocol and encoding restrictions.
    */
-  public triggerMouseEvent(event: ICoreMouseEvent): boolean {
+  public triggerMouseEvent(e: ICoreMouseEvent): boolean {
     // range check for col/row
-    if (event.col < 0 || event.col >= this._bufferService.cols
-        || event.row < 0 || event.row >= this._bufferService.rows) {
+    if (e.col < 0 || e.col >= this._bufferService.cols
+        || e.row < 0 || e.row >= this._bufferService.rows) {
       return false;
     }
 
     // filter nonsense combinations of button + action
-    if (event.button === CoreMouseButton.WHEEL && event.action === CoreMouseAction.MOVE) {
+    if (e.button === CoreMouseButton.WHEEL && e.action === CoreMouseAction.MOVE) {
       return false;
     }
-    if (event.button === CoreMouseButton.NONE && event.action !== CoreMouseAction.MOVE) {
+    if (e.button === CoreMouseButton.NONE && e.action !== CoreMouseAction.MOVE) {
+      return false;
+    }
+    if (e.button !== CoreMouseButton.WHEEL && (e.action === CoreMouseAction.LEFT || e.action === CoreMouseAction.RIGHT)) {
       return false;
     }
 
     // report 1-based coords
-    event.col++;
-    event.row++;
+    e.col++;
+    e.row++;
 
     // debounce move at grid level
-    if (event.action === CoreMouseAction.MOVE && this._lastEvent && this._compareEvents(this._lastEvent, event)) {
+    if (e.action === CoreMouseAction.MOVE && this._lastEvent && this._compareEvents(this._lastEvent, e)) {
       return false;
     }
 
     // apply protocol restrictions
-    if (!this._protocols[this._activeProtocol].restrict(event)) {
+    if (!this._protocols[this._activeProtocol].restrict(e)) {
       return false;
     }
 
     // encode report and send
-    const report = this._encodings[this._activeEncoding](event);
+    const report = this._encodings[this._activeEncoding](e);
     this._coreService.triggerDataEvent(report, true);
 
-    this._lastEvent = event;
+    this._lastEvent = e;
 
     return true;
   }

@@ -167,13 +167,25 @@ export const enum CoreMouseButton {
   MIDDLE = 1,
   RIGHT = 2,
   NONE = 3,
-  WHEEL = 64
+  WHEEL = 4,
+  // additional buttons 1..8
+  // untested!
+  AUX1 = 8,
+  AUX2 = 9,
+  AUX3 = 10,
+  AUX4 = 11,
+  AUX5 = 12,
+  AUX6 = 13,
+  AUX7 = 14,
+  AUX8 = 15
 }
 
 export const enum CoreMouseAction {
-  UP = 0,
-  DOWN = 1,
-  MOVE = 32
+  UP = 0,     // buttons, wheel
+  DOWN = 1,   // buttons, wheel
+  LEFT = 2,   // wheel only
+  RIGHT = 3,  // wheel only
+  MOVE = 32   // buttons only
 }
 
 export interface ICoreMouseEvent {
