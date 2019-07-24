@@ -58,11 +58,12 @@ function setPadding(): void {
   term.fit();
 }
 
-function getSearchOptions(): ISearchOptions {
+function getSearchOptions(e: KeyboardEvent): ISearchOptions {
   return {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
-    caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
+    caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
+    incremental: e.key !== `Enter`
   };
 }
 
@@ -134,15 +135,11 @@ function createTerminal(): void {
   addDomListener(paddingElement, 'change', setPadding);
 
   addDomListener(actionElements.findNext, 'keyup', (e) => {
-    const searchOptions = getSearchOptions();
-    searchOptions.incremental = e.key !== `Enter`;
-    searchAddon.findNext(actionElements.findNext.value, searchOptions);
+    searchAddon.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
-    const searchOptions = getSearchOptions();
-    searchOptions.incremental = e.key !== `Enter`;
-    searchAddon.findPrevious(actionElements.findPrevious.value, searchOptions);
+    searchAddon.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
   });
 
   // fit is called within a setTimeout, cols and rows need this.
