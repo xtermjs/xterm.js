@@ -251,7 +251,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _escHandlers: any;
   protected _oscHandlers: IHandlerCollection<OscHandler>;
   protected _dcsHandlers: any;
-  protected _activeDcsHandler: IDcsHandler | null;
+  protected _activeDcsHandler: IDcsHandler;
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
@@ -288,7 +288,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._escHandlers = Object.create(null);
     this._oscHandlers = Object.create(null);
     this._dcsHandlers = Object.create(null);
-    this._activeDcsHandler = null;
+    this._activeDcsHandler = this._dcsHandlerFb;
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
@@ -299,7 +299,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlers = null;
     this._escHandlers = null;
     this._dcsHandlers = null;
-    this._activeDcsHandler = null;
+    this._activeDcsHandler = new DcsDummy();
   }
 
   setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void {
@@ -387,7 +387,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     if (this._dcsHandlers[collectAndFlag]) delete this._dcsHandlers[collectAndFlag];
   }
   setDcsHandlerFallback(handler: IDcsHandler): void {
-    this._dcsHandlerFb = handler;
+    if (this._activeDcsHandler === this._dcsHandlerFb) {
+      this._dcsHandlerFb = handler;
+      this._activeDcsHandler = handler;
+    } else {
+      this._dcsHandlerFb = handler;
+    }
   }
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
@@ -403,7 +408,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params.reset();
     this._params.addParam(0); // ZDM
     this._collect = '';
-    this._activeDcsHandler = null;
+    this._activeDcsHandler = this._dcsHandlerFb;
     this.precedingCodepoint = 0;
   }
 
@@ -429,7 +434,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let collect = this._collect;
     const params = this._params;
     const table: Uint8Array = this.TRANSITIONS.table;
-    let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
+    let dcsHandler: IDcsHandler = this._activeDcsHandler;
     let callback: Function | null = null;
 
     // process input string
@@ -547,19 +552,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // unhook triggered by: 0x1b, 0x9c
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              if (dcsHandler) {
-                dcsHandler.put(data, i, j);
-              }
+              dcsHandler.put(data, i, j);
               i = j - 1;
               break;
             }
           }
           break;
         case ParserAction.DCS_UNHOOK:
-          if (dcsHandler) {
-            dcsHandler.unhook();
-            dcsHandler = null;
-          }
+          dcsHandler.unhook();
+          dcsHandler = this._dcsHandlerFb;
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           osc = '';
           params.reset();
