@@ -3,20 +3,24 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from './TextRenderLayer';
-import { SelectionRenderLayer } from './SelectionRenderLayer';
+import { TextRenderLayer } from '../browser/renderer/TextRenderLayer';
+import { SelectionRenderLayer } from '../browser/renderer/SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderLayer } from './Types';
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry } from 'browser/renderer/Types';
+import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
-import { LinkRenderLayer } from './LinkRenderLayer';
+import { LinkRenderLayer } from '../browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
+import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
+
+let nextRendererId = 1;
 
 export class Renderer extends Disposable implements IRenderer {
+  private _id = nextRendererId++;
+
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
@@ -27,17 +31,18 @@ export class Renderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _terminal: ITerminal,
     readonly bufferService: IBufferService,
-    private readonly _charSizeService: ICharSizeService
+    private readonly _charSizeService: ICharSizeService,
+    readonly optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
     this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, bufferService, optionsService),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, bufferService, optionsService),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, bufferService, optionsService),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, bufferService, optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -61,6 +66,7 @@ export class Renderer extends Disposable implements IRenderer {
   public dispose(): void {
     super.dispose();
     this._renderLayers.forEach(l => l.dispose());
+    removeTerminalFromCache(this._id);
   }
 
   public onDevicePixelRatioChange(): void {
@@ -77,8 +83,8 @@ export class Renderer extends Disposable implements IRenderer {
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.setColors(this._terminal, this._colors);
-      l.reset(this._terminal);
+      l.setColors(this._colors);
+      l.reset();
     });
   }
 
@@ -87,7 +93,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
+    this._renderLayers.forEach(l => l.resize(this.dimensions));
 
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
@@ -99,27 +105,27 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._runOperation(l => l.onBlur(this._terminal));
+    this._runOperation(l => l.onBlur());
   }
 
   public onFocus(): void {
-    this._runOperation(l => l.onFocus(this._terminal));
+    this._runOperation(l => l.onFocus());
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
-    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
+    this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
   }
 
   public onCursorMove(): void {
-    this._runOperation(l => l.onCursorMove(this._terminal));
+    this._runOperation(l => l.onCursorMove());
   }
 
   public onOptionsChanged(): void {
-    this._runOperation(l => l.onOptionsChanged(this._terminal));
+    this._runOperation(l => l.onOptionsChanged());
   }
 
   public clear(): void {
-    this._runOperation(l => l.reset(this._terminal));
+    this._runOperation(l => l.reset());
   }
 
   private _runOperation(operation: (layer: IRenderLayer) => void): void {
@@ -131,7 +137,7 @@ export class Renderer extends Disposable implements IRenderer {
    * necessary before queueing up the next one.
    */
   public renderRows(start: number, end: number): void {
-    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    this._renderLayers.forEach(l => l.onGridChanged(start, end));
   }
 
   /**
