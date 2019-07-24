@@ -3,51 +3,58 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 interface ISelectionState {
-  start: [number, number];
-  end: [number, number];
-  columnSelectMode: boolean;
-  ydisp: number;
+  start?: [number, number];
+  end?: [number, number];
+  columnSelectMode?: boolean;
+  ydisp?: number;
 }
 
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: ISelectionState;
+  private _state!: ISelectionState;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'selection', zIndex, true, colors);
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    rendererId: number,
+    readonly bufferService: IBufferService,
+    readonly optionsService: IOptionsService
+  ) {
+    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._clearState();
   }
 
   private _clearState(): void {
     this._state = {
-      start: null,
-      end: null,
-      columnSelectMode: null,
-      ydisp: null
+      start: undefined,
+      end: undefined,
+      columnSelectMode: undefined,
+      ydisp: undefined
     };
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
-    super.resize(terminal, dim);
+  public resize(dim: IRenderDimensions): void {
+    super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._clearState();
   }
 
-  public reset(terminal: ITerminal): void {
+  public reset(): void {
     if (this._state.start && this._state.end) {
       this._clearState();
       this._clearAll();
     }
   }
 
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (!this._didStateChange(start, end, columnSelectMode, terminal.buffer.ydisp)) {
+    if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;
     }
 
@@ -61,13 +68,13 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - terminal.buffer.ydisp;
+    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
+    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
+    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
 
     // No need to draw the selection
-    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
+    if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
       return;
     }
 
@@ -81,17 +88,17 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
       this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
       // Draw middle rows
       const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-      this._fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+      this._fillCells(0, viewportCappedStartRow + 1, this._bufferService.cols, middleRowsCount);
 
       // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
         this._fillCells(0, viewportCappedEndRow, endCol, 1);
       }
     }
@@ -100,7 +107,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
-    this._state.ydisp = terminal.buffer.ydisp;
+    this._state.ydisp = this._bufferService.buffer.ydisp;
   }
 
   private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {
@@ -110,7 +117,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       ydisp !== this._state.ydisp;
   }
 
-  private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {
+  private _areCoordinatesEqual(coord1: [number, number] | undefined, coord2: [number, number] | undefined): boolean {
     if (!coord1 || !coord2) {
       return false;
     }
