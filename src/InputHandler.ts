@@ -78,7 +78,7 @@ class DECRQSS implements IDcsHandler {
         return this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
-        this._logService.error('Unknown DCS $q %s', data);
+        this._logService.debug('Unknown DCS $q %s', data);
         this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
@@ -142,16 +142,16 @@ export class InputHandler extends Disposable implements IInputHandler {
      * custom fallback handlers
      */
     this._parser.setCsiHandlerFallback((collect: string, params: IParams, flag: number) => {
-      this._logService.error('Unknown CSI code: ', { collect, params: params.toArray(), flag: String.fromCharCode(flag) });
+      this._logService.debug('Unknown CSI code: ', { collect, params: params.toArray(), flag: String.fromCharCode(flag) });
     });
     this._parser.setEscHandlerFallback((collect: string, flag: number) => {
-      this._logService.error('Unknown ESC code: ', { collect, flag: String.fromCharCode(flag) });
+      this._logService.debug('Unknown ESC code: ', { collect, flag: String.fromCharCode(flag) });
     });
     this._parser.setExecuteHandlerFallback((code: number) => {
-      this._logService.error('Unknown EXECUTE code: ', { code });
+      this._logService.debug('Unknown EXECUTE code: ', { code });
     });
     this._parser.setOscHandlerFallback((identifier: number, data: string) => {
-      this._logService.error('Unknown OSC code: ', { identifier, data });
+      this._logService.debug('Unknown OSC code: ', { identifier, data });
     });
 
     /**
@@ -1261,7 +1261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // this.cursorBlink = true;
           break;
         case 66:
-          this._logService.info('Serial port requested application keypad.');
+          this._logService.debug('Serial port requested application keypad.');
           this._terminal.applicationKeypad = true;
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
@@ -1457,7 +1457,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // this.cursorBlink = false;
           break;
         case 66:
-          this._logService.info('Switching back to normal keypad.');
+          this._logService.debug('Switching back to normal keypad.');
           this._terminal.applicationKeypad = false;
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
@@ -1739,7 +1739,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else {
-        this._logService.error('Unknown SGR attribute: %d.', p);
+        this._logService.debug('Unknown SGR attribute: %d.', p);
       }
     }
   }
@@ -1953,7 +1953,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Enables the numeric keypad to send application sequences to the host.
    */
   public keypadApplicationMode(): void {
-    this._logService.info('Serial port requested application keypad.');
+    this._logService.debug('Serial port requested application keypad.');
     this._terminal.applicationKeypad = true;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
@@ -1966,7 +1966,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Enables the keypad to send numeric characters to the host.
    */
   public keypadNumericMode(): void {
-    this._logService.info('Switching back to normal keypad.');
+    this._logService.debug('Switching back to normal keypad.');
     this._terminal.applicationKeypad = false;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();

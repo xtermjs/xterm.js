@@ -24,6 +24,15 @@ export interface IColorSet {
   ansi: IColor[];
 }
 
+export interface IPartialColorSet {
+  foreground: IColor;
+  background: IColor;
+  cursor?: IColor;
+  cursorAccent?: IColor;
+  selection?: IColor;
+  ansi: IColor[];
+}
+
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(): void;

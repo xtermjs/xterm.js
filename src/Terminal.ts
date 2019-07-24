@@ -38,7 +38,6 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -267,8 +266,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._windowsMode.dispose();
       this._windowsMode = undefined;
     }
+    this._renderService.dispose();
     this._customKeyEventHandler = null;
-    removeTerminalFromCache(this);
     this.write = () => {};
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
@@ -687,7 +686,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService);
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
       case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
