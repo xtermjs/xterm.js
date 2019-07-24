@@ -126,10 +126,11 @@ export class SearchAddon implements ITerminalAddon {
     const isReverseSearch = true;
     let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-
+    let result: ISearchResult | undefined = undefined;
+    const incremental = searchOptions ? searchOptions.incremental : false;
     if (this._terminal.hasSelection()) {
-      // Start from the selection start if there is a selection
       const currentSelection = this._terminal.getSelectionPosition()!;
+      // Start from selection start if there is a selection
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
     }
@@ -137,7 +138,7 @@ export class SearchAddon implements ITerminalAddon {
     this._initLinesCache();
 
     // Search startRow
-    let result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    result = incremental ? this._findInLine(term, startRow, startCol, searchOptions, false) : this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
 
     // Search from startRow - 1 to top
     if (!result) {
