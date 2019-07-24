@@ -4,11 +4,12 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer } from '../browser/renderer/BaseRenderLayer';
 import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 interface ICursorState {
   x: number;
@@ -25,12 +26,20 @@ const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
-  private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, cell: ICellData) => void};
+  private _cursorRenderers: {[key: string]: (x: number, y: number, cell: ICellData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _cell: ICellData = new CellData();
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'cursor', zIndex, true, colors);
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    private _terminal: ITerminal,
+    rendererId: number,
+    readonly bufferService: IBufferService,
+    readonly optionsService: IOptionsService
+  ) {
+    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._state = {
       x: null,
       y: null,
@@ -46,8 +55,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
-    super.resize(terminal, dim);
+  public resize(dim: IRenderDimensions): void {
+    super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       x: null,
@@ -58,35 +67,35 @@ export class CursorRenderLayer extends BaseRenderLayer {
     };
   }
 
-  public reset(terminal: ITerminal): void {
+  public reset(): void {
     this._clearCursor();
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.dispose();
       this._cursorBlinkStateManager = null;
-      this.onOptionsChanged(terminal);
+      this.onOptionsChanged();
     }
   }
 
-  public onBlur(terminal: ITerminal): void {
+  public onBlur(): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+    this._terminal.refresh(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
 
-  public onFocus(terminal: ITerminal): void {
+  public onFocus(): void {
     if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume(terminal);
+      this._cursorBlinkStateManager.resume();
     } else {
-      terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+      this._terminal.refresh(this._bufferService.buffer.y, this._bufferService.buffer.y);
     }
   }
 
-  public onOptionsChanged(terminal: ITerminal): void {
-    if (terminal.options.cursorBlink) {
+  public onOptionsChanged(): void {
+    if (this._optionsService.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
-          this._render(terminal, true);
+        this._cursorBlinkStateManager = new CursorBlinkStateManager(this._terminal.isFocused, () => {
+          this._render(true);
         });
       }
     } else {
@@ -96,55 +105,55 @@ export class CursorRenderLayer extends BaseRenderLayer {
       }
       // Request a refresh from the terminal as management of rendering is being
       // moved back to the terminal
-      terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+      this._terminal.refresh(this._bufferService.buffer.y, this._bufferService.buffer.y);
     }
   }
 
-  public onCursorMove(terminal: ITerminal): void {
+  public onCursorMove(): void {
     if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
+      this._cursorBlinkStateManager.restartBlinkAnimation();
     }
   }
 
-  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
+  public onGridChanged(startRow: number, endRow: number): void {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
-      this._render(terminal, false);
+      this._render(false);
     } else {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
+      this._cursorBlinkStateManager.restartBlinkAnimation();
     }
   }
 
-  private _render(terminal: ITerminal, triggeredByAnimationFrame: boolean): void {
+  private _render(triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
-    if (!terminal.cursorState || terminal.cursorHidden) {
+    if (!this._terminal.cursorState || this._terminal.cursorHidden) {
       this._clearCursor();
       return;
     }
 
-    const cursorY = terminal.buffer.ybase + terminal.buffer.y;
-    const viewportRelativeCursorY = cursorY - terminal.buffer.ydisp;
+    const cursorY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
+    const viewportRelativeCursorY = cursorY - this._bufferService.buffer.ydisp;
 
     // Don't draw the cursor if it's off-screen
-    if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= terminal.rows) {
+    if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= this._bufferService.rows) {
       this._clearCursor();
       return;
     }
 
-    terminal.buffer.lines.get(cursorY).loadCell(terminal.buffer.x, this._cell);
+    this._bufferService.buffer.lines.get(cursorY).loadCell(this._bufferService.buffer.x, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
 
-    if (!terminal.isFocused) {
+    if (!this._terminal.isFocused) {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, this._cell);
+      this._renderBlurCursor(this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
       this._ctx.restore();
-      this._state.x = terminal.buffer.x;
+      this._state.x = this._bufferService.buffer.x;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
-      this._state.style = terminal.options.cursorStyle;
+      this._state.style = this._optionsService.options.cursorStyle;
       this._state.width = this._cell.getWidth();
       return;
     }
@@ -157,10 +166,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state.x === terminal.buffer.x &&
+      if (this._state.x === this._bufferService.buffer.x &&
           this._state.y === viewportRelativeCursorY &&
-          this._state.isFocused === terminal.isFocused &&
-          this._state.style === terminal.options.cursorStyle &&
+          this._state.isFocused === this._terminal.isFocused &&
+          this._state.style === this._optionsService.options.cursorStyle &&
           this._state.width === this._cell.getWidth()) {
         return;
       }
@@ -168,13 +177,13 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
-    this._state.x = terminal.buffer.x;
+    this._state.x = this._bufferService.buffer.x;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
-    this._state.style = terminal.options.cursorStyle;
+    this._state.style = this._optionsService.options.cursorStyle;
     this._state.width = this._cell.getWidth();
   }
 
@@ -191,30 +200,30 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _renderBarCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
+  private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
     this._fillLeftLineAtCell(x, y);
     this._ctx.restore();
   }
 
-  private _renderBlockCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
+  private _renderBlockCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
     this._fillCells(x, y, cell.getWidth(), 1);
     this._ctx.fillStyle = this._colors.cursorAccent.css;
-    this._fillCharTrueColor(terminal, cell, x, y);
+    this._fillCharTrueColor(cell, x, y);
     this._ctx.restore();
   }
 
-  private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
+  private _renderUnderlineCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
     this._fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
-  private _renderBlurCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
+  private _renderBlurCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.strokeStyle = this._colors.cursor.css;
     this._strokeRectAtCell(x, y, cell.getWidth(), 1);
@@ -237,11 +246,11 @@ class CursorBlinkStateManager {
   private _animationTimeRestarted: number;
 
   constructor(
-    terminal: ITerminal,
+    isFocused: boolean,
     private _renderCallback: () => void
   ) {
     this.isCursorVisible = true;
-    if (terminal.isFocused) {
+    if (isFocused) {
       this._restartInterval();
     }
   }
@@ -263,7 +272,7 @@ class CursorBlinkStateManager {
     }
   }
 
-  public restartBlinkAnimation(terminal: ITerminal): void {
+  public restartBlinkAnimation(): void {
     if (this.isPaused) {
       return;
     }
@@ -346,9 +355,9 @@ class CursorBlinkStateManager {
     }
   }
 
-  public resume(terminal: ITerminal): void {
+  public resume(): void {
     this._animationTimeRestarted = null;
     this._restartInterval();
-    this.restartBlinkAnimation(terminal);
+    this.restartBlinkAnimation();
   }
 }

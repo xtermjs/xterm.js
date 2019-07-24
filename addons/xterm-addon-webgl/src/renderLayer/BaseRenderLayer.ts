@@ -4,16 +4,12 @@
  */
 
 import { IRenderLayer } from './Types';
-import { ICellData } from 'common/Types';
-import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from '../atlas/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
 import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
 import { throwIfFalsy } from '../WebglUtils';
 
