@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('Broken Tests', function (): void {
+describe.only('Search Tests', function (): void {
   this.timeout(200000);
 
   before(async function (): Promise<any> {
@@ -32,7 +32,7 @@ describe.only('Broken Tests', function (): void {
   });
 
   after(() => {
-    // browser.close();
+    browser.close();
   });
 
   beforeEach(async () => {
