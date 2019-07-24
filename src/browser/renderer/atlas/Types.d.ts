@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { FontWeight } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { FontWeight } from 'common/services/Services';
+import { IPartialColorSet } from 'browser/Types';
 
 export interface IGlyphIdentifier {
   chars: string;
@@ -25,5 +25,5 @@ export interface ICharAtlasConfig {
   scaledCharWidth: number;
   scaledCharHeight: number;
   allowTransparency: boolean;
-  colors: IColorSet;
+  colors: IPartialColorSet;
 }

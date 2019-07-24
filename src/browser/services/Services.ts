@@ -8,6 +8,7 @@ import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/re
 import { IColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import { IDisposable } from 'common/Types';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -31,7 +32,7 @@ export interface IMouseService {
 }
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
-export interface IRenderService {
+export interface IRenderService extends IDisposable {
   serviceBrand: any;
 
   onDimensionsChange: IEvent<IRenderDimensions>;

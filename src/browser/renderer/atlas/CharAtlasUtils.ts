@@ -3,19 +3,19 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../Types';
-import { ICharAtlasConfig } from './Types';
+import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
 import { DEFAULT_COLOR } from 'common/buffer/Constants';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IPartialColorSet } from 'browser/Types';
+import { ITerminalOptions } from 'common/services/Services';
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: ITerminalOptions, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
-  const clonedColors = <IColorSet>{
+  const clonedColors = <IPartialColorSet>{
     foreground: colors.foreground,
     background: colors.background,
-    cursor: null,
-    cursorAccent: null,
-    selection: null,
+    cursor: undefined,
+    cursorAccent: undefined,
+    selection: undefined,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice(0, 16)
@@ -24,11 +24,11 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     devicePixelRatio: window.devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
-    fontFamily: terminal.options.fontFamily,
-    fontSize: terminal.options.fontSize,
-    fontWeight: terminal.options.fontWeight,
-    fontWeightBold: terminal.options.fontWeightBold,
-    allowTransparency: terminal.options.allowTransparency,
+    fontFamily: options.fontFamily,
+    fontSize: options.fontSize,
+    fontWeight: options.fontWeight,
+    fontWeightBold: options.fontWeightBold,
+    allowTransparency: options.allowTransparency,
     colors: clonedColors
   };
 }
