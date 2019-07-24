@@ -138,11 +138,12 @@ function evalButtonCode(code: number): any {
   }
   let actionS = 'press';
   let buttonS = reverseButtons[button];
-  if (move) {
-    actionS = 'move';
-  } else if (button === 3) {
+  if (button === 3) {
     buttonS = '<none>';
     actionS = 'release';
+  }
+  if (move) {
+    actionS = 'move';
   } else if (4 <= button && button <= 7) {
     buttonS = 'wheel';
     actionS = button === 4 ? 'up' : button === 5 ? 'down' : button === 6 ? 'left' : 'right';
