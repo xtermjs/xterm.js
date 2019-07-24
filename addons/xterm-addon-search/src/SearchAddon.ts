@@ -58,7 +58,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     let startCol: number = 0;
-    let startRow = this._terminal.buffer.viewportY;
+    let startRow = 0;
 
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
@@ -72,16 +72,9 @@ export class SearchAddon implements ITerminalAddon {
     this._initLinesCache();
 
     // A row that has isWrapped = false
-    let findingRow = startRow;
+    const findingRow = startRow;
     // index of beginning column that _findInLine need to scan.
-    let cumulativeCols = startCol;
-    // If startRow is wrapped row, scan for unwrapped row above.
-    // So we can start matching on wrapped line from long unwrapped line.
-    let currentLine = this._terminal.buffer.getLine(findingRow);
-    while (currentLine && currentLine.isWrapped) {
-      cumulativeCols += this._terminal.cols;
-      currentLine = this._terminal.buffer.getLine(--findingRow);
-    }
+    const cumulativeCols = startCol;
 
     // Search startRow
     let result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
@@ -89,21 +82,10 @@ export class SearchAddon implements ITerminalAddon {
     // Search from startRow + 1 to end
     if (!result) {
 
-      for (let y = startRow + 1; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
+      for (let y = startRow; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
 
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
-        result = this._findInLine(term, y, 0, searchOptions);
-        if (result) {
-          break;
-        }
-      }
-    }
-
-    // Search from the top to the startRow (search the whole startRow again in
-    // case startCol > 0)
-    if (!result) {
-      for (let y = 0; y < findingRow; y++) {
         result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
@@ -133,7 +115,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal.buffer.viewportY + this._terminal.rows - 1;
+    let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
 
     if (this._terminal.hasSelection()) {
@@ -150,43 +132,10 @@ export class SearchAddon implements ITerminalAddon {
 
     // Search from startRow - 1 to top
     if (!result) {
-      // If the line is wrapped line, increase number of columns that is needed to be scanned
-      // Se we can scan on wrapped line from unwrapped line
-      let cumulativeCols = this._terminal.cols;
-      if (this._terminal.buffer.getLine(startRow)!.isWrapped) {
-        cumulativeCols += startCol;
-      }
-      for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
+      for (let y = startRow; y >= 0; y--) {
+        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
         if (result) {
           break;
-        }
-        // If the current line is wrapped line, increase scanning range,
-        // preparing for scanning on unwrapped line
-        const line = this._terminal.buffer.getLine(y);
-        if (line && line.isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = this._terminal.cols;
-        }
-      }
-    }
-
-    // Search from the bottom to startRow (search the whole startRow again in
-    // case startCol > 0)
-    if (!result) {
-      const searchFrom = this._terminal.buffer.baseY + this._terminal.rows - 1;
-      let cumulativeCols = this._terminal.cols;
-      for (let y = searchFrom; y >= startRow; y--) {
-        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
-        if (result) {
-          break;
-        }
-        const line = this._terminal.buffer.getLine(y);
-        if (line && line.isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = this._terminal.cols;
         }
       }
     }
