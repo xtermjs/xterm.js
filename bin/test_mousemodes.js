@@ -48,43 +48,66 @@ stdin.addListener('data', function(data) {
   }
 });
 
-// basic button codes (modifier keys are added on top)
-const BUTTONS = {
-  0: ['left', 'press'],
-  1: ['middle', 'press'],
-  2: ['right', 'press'],
-  3: ['', 'release'],
-  32: ['left', 'move'],
-  33: ['middle', 'move'],
-  34: ['right', 'move'],
-  35: ['', 'move'],
-  64: ['wheel', 'up'],
-  65: ['wheel', 'down']
+// button definitions
+const buttons = {
+  '<none>':  -1,
+  left:       0,
+  middle:     1,
+  right:      2,
+  released:   3,
+  wheelUp:    4,
+  wheelDown:  5,
+  wheelLeft:  6,
+  wheelRight: 7,
+  aux1:       8,
+  aux2:       9,
+  aux3:      10,
+  aux4:      11,
+  aux5:      12,
+  aux6:      13,
+  aux7:      14,
+  aux8:      15
 };
+const reverseButtons = {};
+for (const el in buttons) {
+  reverseButtons[buttons[el]] = el;
+}
 
+// extract button data from buttonCode
 function evalButtonCode(code) {
-  // 2 bits: 0 - left, 1 - middle, 2 - right, 3 - release
-  // higher bits: 4 - shift, 8 - meta, 16 - control
-  const modifier = {shift: !!(code & 4), meta: !!(code & 8), control: !!(code & 16)};
-  const wheel = code & 64;
-  let action;
-  let button;
-  if (wheel) {
-    action = (code & 1) ? 'down' : 'up';
-    button = 'wheel';
-  } else {
-    action = code & 32 ? 'move' : code === 3 ? 'release' : 'press';
-    code &= 3; // TODO: more than 3 buttons + wheel
-    button = code === 0 ? 'left' : code === 1 ? 'middle' : code === 2 ? 'right' : '<none>';
+  // more than 15 buttons are not supported
+  if (code > 255) {
+    return {button: 'invalid', action: 'invalid', modifier: {}};
   }
-  return {button, action, modifier};
+  const modifier = {shift: !!(code & 4), meta: !!(code & 8), control: !!(code & 16)};
+  const move = code & 32;
+  let button = code & 3;
+  if (code & 128) {
+    button |= 8;
+  }
+  if (code & 64) {
+    button |= 4
+  }
+  let actionS = 'press';
+  let buttonS = reverseButtons[button];
+  if (button === 3) {
+    buttonS = '<none>';
+    actionS = 'release';
+  }
+  if (move) {
+    actionS = 'move';
+  } else if (4 <= button && button <= 7) {
+    buttonS = 'wheel';
+    actionS = button === 4 ? 'up' : button === 5 ? 'down' : button === 6 ? 'left' : 'right';
+  }
+  return {button: buttonS, action: actionS, modifier};
 }
 
 // protocols
 const PROTOCOLS = {
   '9    (X10: press only)': '\x1b[?9h',
   '1000 (VT200: press, release, wheel)': '\x1b[?1000h',
-  // '1001 (VT200 highlight)': '\x1b[?1001h',  // handle of backreport not implemented
+  // '1001 (VT200 highlight)': '\x1b[?1001h',  // handle of backreport - not implemented
   '1002 (press, release, move on pressed, wheel)': '\x1b[?1002h',
   '1003 (press, relase, move, wheel)': '\x1b[?1003h'
 }
@@ -96,8 +119,8 @@ const ENC = {
     // format: CSI M <button + 32> <row + 32> <col + 32>
     report => ({
       state: evalButtonCode(report[3] - 32),
-      row: report[4] - 32,
-      col: report[5] - 32
+      col: report[4] - 32,
+      row: report[5] - 32
     })
   ],
   'UTF8' : [
@@ -108,8 +131,8 @@ const ENC = {
       const sReport = report.toString(); // decode with utf8
       return {
         state: evalButtonCode(sReport.charCodeAt(3) - 32),
-        row: sReport.charCodeAt(4) - 32,
-        col: sReport.charCodeAt(5) - 32
+        col: sReport.charCodeAt(4) - 32,
+        row: sReport.charCodeAt(5) - 32
       };
     }
   ],
@@ -119,7 +142,7 @@ const ENC = {
     report => {
       // strip off introducer + M
       const sReport = report.toString().slice(3, -1);
-      const [buttonCode, row, col] = sReport.split(';');
+      const [buttonCode, col, row] = sReport.split(';');
       const state = evalButtonCode(buttonCode);
       if (report[report.length - 1] === 'm'.charCodeAt(0)) {
         state.action = 'release';
@@ -133,7 +156,7 @@ const ENC = {
     report => {
       // strip off introducer + M
       const sReport = report.toString().slice(2, -1);
-      const [button, row, col] = sReport.split(';');
+      const [button, col, row] = sReport.split(';');
       return {state: evalButtonCode(button - 32), row, col};
     }
   ]
@@ -182,7 +205,7 @@ function applyReportData(data) {
   let {state, row, col} = ENC[Object.keys(ENC)[activeEnc]][1](data);
   console.log('\x1b[2KButton:', state.button, 'Action:', state.action, 'Modifier:', state.modifier, 'row:', row, 'col:', col);
   // apply to cursor position
-  process.stdout.write(`\x1b[${col};${row}H`);
+  process.stdout.write(`\x1b[${row};${col}H`);
 }
 
 printMenu();

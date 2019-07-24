@@ -710,7 +710,21 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  // TODO: Move mouse event code into its own file.
+  /**
+   * Bind certain mouse events to the terminal.
+   * By default only 3 button + wheel up/down is ativated. For higher buttons
+   * no mouse report will be created. Typically the standard actions will be active.
+   *
+   * There are several reasons not to enable support for higher buttons/wheel:
+   * - Button 4 and 5 are typically used for history back and forward navigation,
+   *   there is no straight forward way to supress/intercept those standard actions.
+   * - Support for higher buttons does not work in some platform/browser combinations.
+   * - Left/right wheel was not tested.
+   * - Emulators vary in mouse button support, typically only 3 buttons and
+   *   wheel up/down work reliable.
+   *
+   * TODO: Move mouse event code into its own file.
+   */
   public bindMouse(): void {
     const self = this;
     const el = this.element;
@@ -734,9 +748,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             // buttons is not supported on macOS, try to get a value from button instead
             but = CoreMouseButton.NONE;
             if (ev.button !== undefined) {
-              but = ev.button < 3 ? ev.button : undefined;
+              but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
             }
           } else {
+            // according to MDN buttons only reports up to button 5 (AUX2)
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
                   ev.buttons & 4 ? CoreMouseButton.MIDDLE :
                   ev.buttons & 2 ? CoreMouseButton.RIGHT :
@@ -745,20 +760,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'mouseup':
           action = CoreMouseAction.UP;
-          // AUX buttons are currently not supported
-          but = ev.button < 3 ? ev.button : undefined;
+          but = ev.button < 3 ? ev.button : ev.button + 5;
           break;
         case 'mousedown':
           action = CoreMouseAction.DOWN;
-          but = ev.button < 3 ? ev.button : undefined;
+          but = ev.button < 3 ? ev.button : ev.button + 5;
           break;
         case 'wheel':
-          // precedence: up/down over left/right
-          // FIXME: Can we have both in one event? Need to send another wheel event?
+          // only UP/DOWN wheel events are respected
           if ((ev as WheelEvent).deltaY !== 0) {
             action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
-          } else if ((ev as WheelEvent).deltaX !== 0) {
-            action = (ev as WheelEvent).deltaX < 0 ? CoreMouseAction.LEFT : CoreMouseAction.RIGHT;
           }
           but = CoreMouseButton.WHEEL;
           break;
@@ -767,8 +778,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           return false;
       }
 
-      // exit if we cannot determine button/action values
-      if (action === undefined || but === undefined) {
+      // exit if we cannot determine valid button/action values
+      // do nothing for higher buttons than wheel
+      if (action === undefined || but === undefined || but > CoreMouseButton.WHEEL) {
         return false;
       }
 
