@@ -82,10 +82,19 @@ export class SearchAddon implements ITerminalAddon {
     // Search from startRow + 1 to end
     if (!result) {
 
-      for (let y = startRow; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
+      for (let y = startRow + 1; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
 
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
+        result = this._findInLine(term, y, 0, searchOptions);
+        if (result) {
+          break;
+        }
+      }
+    }
+    // If we hit the bottom and didn't search from the very top wrap back up
+    if (!result && startRow !== 0) {
+      for (let y = 0; y < startRow; y++) {
         result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
@@ -132,7 +141,17 @@ export class SearchAddon implements ITerminalAddon {
 
     // Search from startRow - 1 to top
     if (!result) {
-      for (let y = startRow; y >= 0; y--) {
+      startCol = this._terminal.cols;
+      for (let y = startRow - 1; y >= 0; y--) {
+        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
+        if (result) {
+          break;
+        }
+      }
+    }
+    // If we hit the top and didn't search from the very bottom wrap back down
+    if (!result && startRow !== (this._terminal.buffer.baseY + this._terminal.rows)) {
+      for (let y = (this._terminal.buffer.baseY + this._terminal.rows); y > startRow; y--) {
         result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
         if (result) {
           break;
