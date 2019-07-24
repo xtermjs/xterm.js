@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { BaseCharAtlas } from './BaseCharAtlas';
+import { IGlyphIdentifier, ICharAtlasConfig } from 'browser/renderer/atlas/Types';
+import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'browser/Types';
+import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -89,12 +90,12 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
-    this._cacheCtx = this._cacheCanvas.getContext('2d', {alpha: true});
+    this._cacheCtx = throwIfFalsy(this._cacheCanvas.getContext('2d', {alpha: true}));
 
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = this._config.scaledCharWidth;
     tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency});
+    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
@@ -144,7 +145,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
         index = this._cacheMap.size;
       } else {
         // we're out of space, so our call to set will delete this item
-        index = this._cacheMap.peek().index;
+        index = this._cacheMap.peek()!.index;
       }
       const cacheValue = this._drawToCache(glyph, index);
       this._cacheMap.set(glyphKey, cacheValue);
@@ -186,7 +187,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     const cacheX = this._toCoordinateX(cacheValue.index);
     const cacheY = this._toCoordinateY(cacheValue.index);
     ctx.drawImage(
-      cacheValue.inBitmap ? this._bitmap : this._cacheCanvas,
+      cacheValue.inBitmap ? this._bitmap! : this._cacheCanvas,
       cacheX,
       cacheY,
       this._config.scaledCharWidth,
