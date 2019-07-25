@@ -351,6 +351,30 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => _customCsiHandlerParams)();`), [[38, 5, 123], [38, [2, -1, 50, 100, 150]]]);
     });
   });
+  describe('addOscHandler', () => {
+    it('should respects return value', async () => {
+      await page.evaluate(`
+        window.term.reset();
+        const _customOscHandlerCallStack = [];
+        const _customOscHandlerA = window.term.addOscHandler(1234, data => {
+          _customOscHandlerCallStack.push(['A', data]);
+          return false;
+        });
+        const _customOscHandlerB = window.term.addOscHandler(1234, data => {
+          _customOscHandlerCallStack.push(['B', data]);
+          return true;
+        });
+        const _customOscHandlerC = window.term.addOscHandler(1234, data => {
+          _customOscHandlerCallStack.push(['C', data]);
+          return false;
+        });
+      `);
+      await page.evaluate(`
+        window.term.write('\x1b]1234;some data\x07');
+      `);
+      assert.deepEqual(await page.evaluate(`(() => _customOscHandlerCallStack)();`), [['C', 'some data'], ['B', 'some data']]);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
