@@ -137,8 +137,14 @@ export class SearchAddon implements ITerminalAddon {
 
     this._initLinesCache();
 
-    // Search startRow
-    result = incremental ? this._findInLine(term, startRow, startCol, searchOptions, false) : this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    if (incremental) {
+      result = this._findInLine(term, startRow, startCol, searchOptions, false);
+      if (!(result && result.row === startRow && result.col === startCol)) {
+        result = this._findInLine(term, startRow, startCol, searchOptions, true);
+      }
+    } else {
+      result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    }
 
     // Search from startRow - 1 to top
     if (!result) {
