@@ -477,6 +477,13 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Forward addEscHandler from parser.
+   */
+  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
+    return this._parser.addEscHandler(collectAndFlag, handler);
+  }
+
+  /**
    * Forward addCsiHandler from parser.
    */
   public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {

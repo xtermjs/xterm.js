@@ -516,6 +516,19 @@ declare module 'xterm' {
     addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable;
 
     /**
+     * Adds a handler for ESC escape sequences.
+     * @param flag The flag should be a string, which specifies the
+     * collect and the final character (e.g "%G" for default charset selection)
+     * of the ESC sequence.
+     * @param callback The function to handle the escape sequence.
+     * Return true if the sequence was handled; false if
+     * we should try a previous handler (set by addEscHandler or setEscHandler).
+     * The most recently-added handler is tried first.
+     * @return An IDisposable you can call to remove this handler.
+     */
+    addEscHandler(collect: string, handler: () => boolean): IDisposable;
+
+    /**
      * Adds a handler for OSC escape sequences.
      * @param ident The number (first parameter) of the sequence.
      * @param callback The function to handle the escape sequence. The callback

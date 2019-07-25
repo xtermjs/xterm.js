@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
@@ -240,7 +240,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _printHandler: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: IHandlerCollection<CsiHandler>;
-  protected _escHandlers: any;
+  protected _escHandlers: IHandlerCollection<EscHandler>;
   protected _oscParser: IOscParser;
   protected _dcsHandlers: any;
   protected _activeDcsHandler: IDcsHandler;
@@ -286,7 +286,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public dispose(): void {
     this._executeHandlers = null;
-    this._escHandlers = null;
+    this._escHandlers = Object.create(null);
     this._dcsHandlers = null;
     this._activeDcsHandler = new DcsDummy();
     this._oscParser.dispose();
@@ -335,8 +335,23 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._csiHandlerFb = callback;
   }
 
+  addEscHandler(collectAndFlag: string, callback: EscHandler): IDisposable {
+    if (this._escHandlers[collectAndFlag] === undefined) {
+      this._escHandlers[collectAndFlag] = [];
+    }
+    const handlerList = this._escHandlers[collectAndFlag];
+    handlerList.push(callback);
+    return {
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(callback);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex, 1);
+        }
+      }
+    };
+  }
   setEscHandler(collectAndFlag: string, callback: () => void): void {
-    this._escHandlers[collectAndFlag] = callback;
+    this._escHandlers[collectAndFlag] = [callback];
   }
   clearEscHandler(collectAndFlag: string): void {
     if (this._escHandlers[collectAndFlag]) delete this._escHandlers[collectAndFlag];
@@ -509,9 +524,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           collect += String.fromCharCode(code);
           break;
         case ParserAction.ESC_DISPATCH:
-          callback = this._escHandlers[collect + String.fromCharCode(code)];
-          if (callback) callback(collect, code);
-          else this._escHandlerFb(collect, code);
+          const handlersEsc = this._escHandlers[collect + String.fromCharCode(code)];
+          let jj = handlersEsc ? handlersEsc.length - 1 : -1;
+          for (; jj >= 0; jj--) {
+            // undefined or true means success and to stop bubbling
+            if (handlersEsc[jj]() !== false) {
+              break;
+            }
+          }
+          if (jj < 0) {
+            this._escHandlerFb(collect, code);
+          }
+
           this.precedingCodepoint = 0;
           break;
         case ParserAction.CLEAR:

@@ -68,6 +68,7 @@ export interface IHandlerCollection<T> {
 }
 
 export type CsiHandler = (params: IParams, collect: string) => boolean | void;
+export type EscHandler = () => boolean | void;
 
 /**
 * DCS handler signature for EscapeSequenceParser.
@@ -152,15 +153,16 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void;
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;
   clearEscHandler(collectAndFlag: string): void;
   setEscHandlerFallback(callback: (collect: string, flag: number) => void): void;
+  addEscHandler(collectAndFlag: string, handler: EscHandler): IDisposable;
 
   setOscHandler(ident: number, handler: IOscHandler): void;
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandler): void;
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
   setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
   clearDcsHandler(collectAndFlag: string): void;

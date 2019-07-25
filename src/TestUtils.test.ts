@@ -75,10 +75,13 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
+  }
+  addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
+    throw new Error('Method not implemented.');
   }
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
     throw new Error('Method not implemented.');

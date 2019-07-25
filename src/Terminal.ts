@@ -1392,6 +1392,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
+  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
+  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
+    return this._inputHandler.addEscHandler(collectAndFlag, handler);
+  }
+
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
   public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
     return this._inputHandler.addCsiHandler(flag, callback);

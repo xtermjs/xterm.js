@@ -351,6 +351,30 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => _customCsiHandlerParams)();`), [[38, 5, 123], [38, [2, -1, 50, 100, 150]]]);
     });
   });
+  describe('addEscHandler', () => {
+    it('should respects return value', async () => {
+      await page.evaluate(`
+        window.term.reset();
+        const _customEscHandlerCallStack = [];
+        const _customEscHandlerA = window.term.addEscHandler('(B', () => {
+          _customEscHandlerCallStack.push('A');
+          return false;
+        });
+        const _customEscHandlerB = window.term.addEscHandler('(B', () => {
+          _customEscHandlerCallStack.push('B');
+          return true;
+        });
+        const _customEscHandlerC = window.term.addEscHandler('(B', () => {
+          _customEscHandlerCallStack.push('C');
+          return false;
+        });
+      `);
+      await page.evaluate(`
+        window.term.write('\x1b(B');
+      `);
+      assert.deepEqual(await page.evaluate(`(() => _customEscHandlerCallStack)();`), ['C', 'B']);
+    });
+  });
   describe('addOscHandler', () => {
     it('should respects return value', async () => {
       await page.evaluate(`

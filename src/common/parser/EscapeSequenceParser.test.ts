@@ -1199,6 +1199,57 @@ describe('EscapeSequenceParser', function (): void {
       parse(parser2, INPUT);
       chai.expect(esc).eql([]);
     });
+    describe('ESC custom handlers', () => {
+      it('prevent fallback', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return true; });
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['custom - %G']);
+      });
+      it('allow fallback', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return false; });
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['custom - %G', 'default - %G']);
+      });
+      it('Multiple custom handlers fallback once', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return true; });
+        parser2.addEscHandler('%G', () => { esc.push('custom2 - %G'); return false; });
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['custom2 - %G', 'custom - %G']);
+      });
+      it('Multiple custom handlers no fallback', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return true; });
+        parser2.addEscHandler('%G', () => { esc.push('custom2 - %G'); return true; });
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['custom2 - %G']);
+      });
+      it('Execution order should go from latest handler down to the original', () => {
+        const order: number[] = [];
+        parser2.setEscHandler('%G', () => order.push(1));
+        parser2.addEscHandler('%G', () => { order.push(2); return false; });
+        parser2.addEscHandler('%G', () => { order.push(3); return false; });
+        parse(parser2, '\x1b%G');
+        chai.expect(order).eql([3, 2, 1]);
+      });
+      it('Dispose should work', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        const dispo = parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return true; });
+        dispo.dispose();
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['default - %G']);
+      });
+      it('Should not corrupt the parser when dispose is called twice', () => {
+        parser2.setEscHandler('%G', () => esc.push('default - %G'));
+        const dispo = parser2.addEscHandler('%G', () => { esc.push('custom - %G'); return true; });
+        dispo.dispose();
+        dispo.dispose();
+        parse(parser2, INPUT);
+        chai.expect(esc).eql(['default - %G']);
+      });
+    });
     it('CSI handler', function (): void {
       parser2.setCsiHandler('m', function (params: IParams, collect: string): void {
         csi.push(['m', params.toArray(), collect]);
