@@ -270,7 +270,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._windowsMode.dispose();
       this._windowsMode = undefined;
     }
-    this._renderService.dispose();
+    if (this._renderService) {
+      this._renderService.dispose();
+    }
     this._customKeyEventHandler = null;
     this.write = () => {};
     if (this.element && this.element.parentNode) {
