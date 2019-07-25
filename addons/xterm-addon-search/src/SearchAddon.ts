@@ -57,8 +57,8 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    let startCol: number = 0;
-    let startRow = this._terminal.buffer.viewportY;
+    let startCol = 0;
+    let startRow = 0;
 
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
@@ -71,20 +71,8 @@ export class SearchAddon implements ITerminalAddon {
 
     this._initLinesCache();
 
-    // A row that has isWrapped = false
-    let findingRow = startRow;
-    // index of beginning column that _findInLine need to scan.
-    let cumulativeCols = startCol;
-    // If startRow is wrapped row, scan for unwrapped row above.
-    // So we can start matching on wrapped line from long unwrapped line.
-    let currentLine = this._terminal.buffer.getLine(findingRow);
-    while (currentLine && currentLine.isWrapped) {
-      cumulativeCols += this._terminal.cols;
-      currentLine = this._terminal.buffer.getLine(--findingRow);
-    }
-
     // Search startRow
-    let result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+    let result = this._findInLine(term, startRow, startCol, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
@@ -99,11 +87,9 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-
-    // Search from the top to the startRow (search the whole startRow again in
-    // case startCol > 0)
-    if (!result) {
-      for (let y = 0; y < findingRow; y++) {
+    // If we hit the bottom and didn't search from the very top wrap back up
+    if (!result && startRow !== 0) {
+      for (let y = 0; y < startRow; y++) {
         result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
@@ -133,60 +119,44 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal.buffer.viewportY + this._terminal.rows - 1;
+    let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-
+    let result: ISearchResult | undefined = undefined;
+    const incremental = searchOptions ? searchOptions.incremental : false;
     if (this._terminal.hasSelection()) {
-      // Start from the selection start if there is a selection
       const currentSelection = this._terminal.getSelectionPosition()!;
+      // Start from selection start if there is a selection
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
     }
 
     this._initLinesCache();
 
-    // Search startRow
-    let result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    if (incremental) {
+      result = this._findInLine(term, startRow, startCol, searchOptions, false);
+      if (!(result && result.row === startRow && result.col === startCol)) {
+        result = this._findInLine(term, startRow, startCol, searchOptions, true);
+      }
+    } else {
+      result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    }
 
     // Search from startRow - 1 to top
     if (!result) {
-      // If the line is wrapped line, increase number of columns that is needed to be scanned
-      // Se we can scan on wrapped line from unwrapped line
-      let cumulativeCols = this._terminal.cols;
-      if (this._terminal.buffer.getLine(startRow)!.isWrapped) {
-        cumulativeCols += startCol;
-      }
+      startCol = this._terminal.cols;
       for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
         if (result) {
           break;
-        }
-        // If the current line is wrapped line, increase scanning range,
-        // preparing for scanning on unwrapped line
-        const line = this._terminal.buffer.getLine(y);
-        if (line && line.isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = this._terminal.cols;
         }
       }
     }
-
-    // Search from the bottom to startRow (search the whole startRow again in
-    // case startCol > 0)
-    if (!result) {
-      const searchFrom = this._terminal.buffer.baseY + this._terminal.rows - 1;
-      let cumulativeCols = this._terminal.cols;
-      for (let y = searchFrom; y >= startRow; y--) {
-        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
+    // If we hit the top and didn't search from the very bottom wrap back down
+    if (!result && startRow !== (this._terminal.buffer.baseY + this._terminal.rows)) {
+      for (let y = (this._terminal.buffer.baseY + this._terminal.rows); y > startRow; y--) {
+        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
         if (result) {
           break;
-        }
-        const line = this._terminal.buffer.getLine(y);
-        if (line && line.isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = this._terminal.cols;
         }
       }
     }
