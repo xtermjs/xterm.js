@@ -92,9 +92,11 @@ describe.only('Search Tests', function (): void {
     assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
   });
   it ('Simple Regex', async () => {
-    await writeSync('abc123def');
+    await writeSync('abc123defABCD');
     await page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
+    await page.evaluate(`window.search.findNext('[A-Z]+', {regex: true})`);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'ABCD');
   });
 });
 
