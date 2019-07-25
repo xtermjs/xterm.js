@@ -7,6 +7,7 @@ import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-be
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { IDcsHandler, IParams } from 'common/parser/Types';
+import { OscHandlerFactory } from 'common/parser/OscParser';
 
 
 function toUtf32(s: string): Uint32Array {
@@ -79,8 +80,8 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.setExecuteHandler(C1.IND, () => {});
     parser.setExecuteHandler(C1.NEL, () => {});
     parser.setExecuteHandler(C1.HTS, () => {});
-    parser.setOscHandler(0, (data) => {});
-    parser.setOscHandler(2, (data) => {});
+    parser.setOscHandler(0, new OscHandlerFactory((data) => {}));
+    parser.setOscHandler(2, new OscHandlerFactory((data) => {}));
     parser.setEscHandler('7', () => {});
     parser.setEscHandler('8', () => {});
     parser.setEscHandler('D', () => {});

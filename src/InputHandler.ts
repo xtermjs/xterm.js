@@ -21,6 +21,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
+import { OscHandlerFactory } from 'common/parser/OscParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -152,9 +153,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setExecuteHandlerFallback((code: number) => {
       this._logService.debug('Unknown EXECUTE code: ', { code });
     });
-    this._parser.setOscHandlerFallback((identifier: number, data: string) => {
-      this._logService.debug('Unknown OSC code: ', { identifier, data });
-    });
+    this._parser.setOscHandlerFallback((identifier, action, data) => {
+      this._logService.debug('Unknown OSC code: ', { identifier, action, data });
+    }
+    );
 
     /**
      * print handler
@@ -224,10 +226,10 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    this._parser.setOscHandler(0, (data) => this.setTitle(data));
+    this._parser.setOscHandler(0, new OscHandlerFactory((data: string) => this.setTitle(data)));
     //   1 - icon name
     //   2 - title
-    this._parser.setOscHandler(2, (data) => this.setTitle(data));
+    this._parser.setOscHandler(2, new OscHandlerFactory((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
     //   5 - Change Special Color Number
@@ -485,7 +487,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Forward addOscHandler from parser.
    */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._parser.addOscHandler(ident, callback);
+    return this._parser.addOscHandler(ident, new OscHandlerFactory(callback));
   }
 
   /**

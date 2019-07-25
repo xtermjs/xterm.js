@@ -516,7 +516,7 @@ declare module 'xterm' {
     addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable;
 
     /**
-     * (EXPERIMENTAL) Adds a handler for OSC escape sequences.
+     * Adds a handler for OSC escape sequences.
      * @param ident The number (first parameter) of the sequence.
      * @param callback The function to handle the escape sequence. The callback
      * is called with OSC data string. Return true if the sequence was handled;

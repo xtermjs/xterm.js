@@ -63,6 +63,12 @@ export interface IParsingState {
   abort: boolean;
 }
 
+export interface IHandlerCollection<T> {
+  [key: string]: T[];
+}
+
+export type CsiHandler = (params: IParams, collect: string) => boolean | void;
+
 /**
 * DCS handler signature for EscapeSequenceParser.
 * EscapeSequenceParser handles DCS commands via separate
@@ -88,6 +94,29 @@ export interface IDcsHandler {
   hook(collect: string, params: IParams, flag: number): void;
   put(data: Uint32Array, start: number, end: number): void;
   unhook(): void;
+}
+
+export type OscFallbackHandler = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
+
+export interface IOscHandler {
+  /**
+   * Announces start of this OSC command.
+   * Prepare needed data structures here.
+   */
+  start(): void;
+
+  /**
+   * Incoming data chunk.
+   */
+  put(data: Uint32Array, start: number, end: number): void;
+
+  /**
+   * End of OSC command. `success` indicates whether the
+   * command finished normally or got aborted, thus execution
+   * of the command should depend on `success`.
+   * To save memory cleanup data structures in `.end`.
+   */
+  end(success: boolean): void | boolean;
 }
 
 /**
@@ -123,15 +152,15 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void;
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;
   clearEscHandler(collectAndFlag: string): void;
   setEscHandlerFallback(callback: (collect: string, flag: number) => void): void;
 
-  setOscHandler(ident: number, callback: (data: string) => void): void;
+  setOscHandler(ident: number, handler: IOscHandler): void;
   clearOscHandler(ident: number): void;
-  setOscHandlerFallback(callback: (identifier: number, data: string) => void): void;
+  setOscHandlerFallback(handler: OscFallbackHandler): void;
 
   setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
   clearDcsHandler(collectAndFlag: string): void;
@@ -139,4 +168,15 @@ export interface IEscapeSequenceParser extends IDisposable {
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
+}
+
+export interface IOscParser extends IDisposable {
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
+  setOscHandler(ident: number, handler: IOscHandler): void;
+  clearOscHandler(ident: number): void;
+  setOscHandlerFallback(handler: OscFallbackHandler): void;
+  reset(): void;
+  start(): void;
+  put(data: Uint32Array, start: number, end: number): void;
+  end(success: boolean): void;
 }

@@ -3,12 +3,14 @@
  * @license MIT
  */
 
-import { IDcsHandler, IParsingState, IParams, ParamsArray } from 'common/parser/Types';
+import { IDcsHandler, IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandler } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
-import { StringToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
+import { OscHandlerFactory } from 'common/parser/OscParser';
+import { IDisposable } from 'common/Types';
 
 
 function r(a: number, b: number): string[] {
@@ -20,13 +22,45 @@ function r(a: number, b: number): string[] {
   return arr;
 }
 
+class MockOscPutParser implements IOscParser {
+  private _fallback: OscFallbackHandler = () => {};
+  public data = '';
+  public reset(): void {
+    this.data = '';
+  }
+  public put(data: Uint32Array, start: number, end: number): void {
+    this.data += utf32ToString(data, start, end);
+  }
+  public dispose(): void { }
+  public start(): void { }
+  public end(): void {
+    const id = parseInt(this.data.slice(0, this.data.indexOf(';')));
+    if (!isNaN(id)) {
+      this._fallback(id, 'END', this.data.slice(this.data.indexOf(';') + 1));
+    }
+  }
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+    throw new Error('not implemented');
+  }
+  setOscHandler(ident: number, handler: IOscHandler): void {
+    throw new Error('not implemented');
+  }
+  clearOscHandler(ident: number): void {
+    throw new Error('not implemented');
+  }
+  setOscHandlerFallback(handler: OscFallbackHandler): void {
+    this._fallback = handler;
+  }
+}
+const oscPutParser = new MockOscPutParser();
+
 // derived parser with access to internal states
 class TestEscapeSequenceParser extends EscapeSequenceParser {
   public get osc(): string {
-    return this._osc;
+    return (this._oscParser as MockOscPutParser).data;
   }
   public set osc(value: string) {
-    this._osc = value;
+    (this._oscParser as MockOscPutParser).data = value;
   }
   public get params(): ParamsArray {
     return this._params.toArray();
@@ -45,6 +79,9 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
   }
   public mockActiveDcsHandler(): void {
     this._activeDcsHandler = this._dcsHandlerFb;
+  }
+  public mockOscParser(): void {
+    this._oscParser = oscPutParser;
   }
 }
 
@@ -124,6 +161,7 @@ let state: any;
 
 // parser with Uint8Array based transition table
 const testParser = new TestEscapeSequenceParser();
+testParser.mockOscParser();
 testParser.setPrintHandler(testTerminal.print.bind(testTerminal));
 testParser.setCsiHandlerFallback((collect: string, params: IParams, flag: number) => {
   testTerminal.actionCSI(collect, params, String.fromCharCode(flag));
@@ -134,9 +172,9 @@ testParser.setEscHandlerFallback((collect: string, flag: number) => {
 testParser.setExecuteHandlerFallback((code: number) => {
   testTerminal.actionExecute(String.fromCharCode(code));
 });
-testParser.setOscHandlerFallback((identifier: number, data: string) => {
+testParser.setOscHandlerFallback((identifier, action, data) => {
   if (identifier === -1) testTerminal.actionOSC(data);  // handle error condition silently
-  else testTerminal.actionOSC('' + identifier + ';' + data);
+  else if (action === 'END') testTerminal.actionOSC('' + identifier + ';' + data); // collect only data at END
 });
 testParser.setDcsHandlerFallback(new DcsTest());
 
@@ -1026,9 +1064,9 @@ describe('EscapeSequenceParser', function (): void {
       ], null);
     });
     it('print + OSC(C1) + print', function (): void {
-      test('abc\x9d123tzf\x9cdefg', [
+      test('abc\x9d123;tzf\x9cdefg', [
         ['print', 'abc'],
-        ['osc', '123tzf'],
+        ['osc', '123;tzf'],
         ['print', 'defg']
       ], null);
     });
@@ -1039,9 +1077,9 @@ describe('EscapeSequenceParser', function (): void {
       ], null);
     });
     it('7bit ST should be swallowed', function (): void {
-      test('abc\x9d123tzf\x1b\\defg', [
+      test('abc\x9d123;tzf\x1b\\defg', [
         ['print', 'abc'],
-        ['osc', '123tzf'],
+        ['osc', '123;tzf'],
         ['print', 'defg']
       ], null);
     });
@@ -1256,9 +1294,9 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(exe).eql(['\n']);
     });
     it('OSC handler', function (): void {
-      parser2.setOscHandler(1, function (data: string): void {
+      parser2.setOscHandler(1, new OscHandlerFactory(function (data: string): void {
         osc.push([1, data]);
-      });
+      }));
       parse(parser2, INPUT);
       chai.expect(osc).eql([[1, 'foo=bar']]);
       parser2.clearOscHandler(1);
@@ -1270,16 +1308,16 @@ describe('EscapeSequenceParser', function (): void {
     describe('OSC custom handlers', () => {
       it('Prevent fallback', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
       });
       it('Allow fallback', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return false; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return false; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']], 'Should fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
@@ -1287,9 +1325,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers fallback once', () => {
         const oscCustom: [number, string][] = [];
         const oscCustom2: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
-        parser2.addOscHandler(1, data => { oscCustom2.push([1, data]); return false; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom2.push([1, data]); return false; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
@@ -1298,9 +1336,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers no fallback', () => {
         const oscCustom: [number, string][] = [];
         const oscCustom2: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
-        parser2.addOscHandler(1, data => { oscCustom2.push([1, data]); return true; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
+        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom2.push([1, data]); return true; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([], 'Should not fallback once');
@@ -1308,16 +1346,16 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setOscHandler(1, () => order.push(1));
-        parser2.addOscHandler(1, () => { order.push(2); return false; });
-        parser2.addOscHandler(1, () => { order.push(3); return false; });
+        parser2.setOscHandler(1, new OscHandlerFactory(() => order.push(1)));
+        parser2.addOscHandler(1, new OscHandlerFactory(() => { order.push(2); return false; }));
+        parser2.addOscHandler(1, new OscHandlerFactory(() => { order.push(3); return false; }));
         parse(parser2, '\x1b]1;foo=bar\x1b\\');
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        const customHandler = parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        const customHandler = parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
         customHandler.dispose();
         parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']]);
@@ -1325,8 +1363,8 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, data => osc.push([1, data]));
-        const customHandler = parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
+        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
+        const customHandler = parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
         customHandler.dispose();
         customHandler.dispose();
         parse(parser2, INPUT);

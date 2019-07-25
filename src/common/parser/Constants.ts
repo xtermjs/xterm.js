@@ -43,3 +43,13 @@ export const enum ParserAction {
   DCS_PUT = 13,
   DCS_UNHOOK = 14
 }
+
+/**
+ * Internal states of OscParser.
+ */
+export const enum OscState {
+  START = 0,
+  ID = 1,
+  PAYLOAD = 2,
+  ABORT = 3
+}
