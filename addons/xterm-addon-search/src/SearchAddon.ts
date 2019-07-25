@@ -57,7 +57,7 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    let startCol: number = 0;
+    let startCol = 0;
     let startRow = 0;
 
     if (this._terminal.hasSelection()) {
@@ -71,13 +71,8 @@ export class SearchAddon implements ITerminalAddon {
 
     this._initLinesCache();
 
-    // A row that has isWrapped = false
-    const findingRow = startRow;
-    // index of beginning column that _findInLine need to scan.
-    const cumulativeCols = startCol;
-
     // Search startRow
-    let result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+    let result = this._findInLine(term, startRow, startCol, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
