@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('Search Tests', function (): void {
+describe('Search Tests', function (): void {
   this.timeout(200000);
 
   before(async function (): Promise<any> {
