@@ -95,7 +95,7 @@ describe.only('Search Tests', function (): void {
     await writeSync('abc123defABCD');
     await page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
-    await page.evaluate(`window.search.findNext('[A-Z]+', {regex: true})`);
+    await page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'ABCD');
   });
 });
