@@ -197,13 +197,13 @@ describe('Params', () => {
     it('reject params lesser -1', () => {
       const params = new Params();
       params.addParam(-1);
-      assert.throws(() => params.addParam(-2), 'values lesser than -1 are not allowed');
+      assert.throws(() => params.addParam(-2));
     });
     it('reject subparams lesser -1', () => {
       const params = new Params();
       params.addParam(-1);
       params.addSubParam(-1);
-      assert.throws(() => params.addSubParam(-2), 'values lesser than -1 are not allowed');
+      assert.throws(() => params.addSubParam(-2));
       assert.deepEqual(params.toArray(), [-1, [-1]]);
     });
     it('clamp parsed params', () => {

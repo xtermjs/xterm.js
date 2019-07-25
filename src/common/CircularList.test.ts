@@ -176,9 +176,9 @@ describe('CircularList', () => {
     it('should throw for invalid args', () => {
       const list = new CircularList<number>(5);
       list.push(1);
-      assert.throws(() => list.shiftElements(-1, 1, 1), 'start argument out of range');
-      assert.throws(() => list.shiftElements(1, 1, 1), 'start argument out of range');
-      assert.throws(() => list.shiftElements(0, 1, -1), 'Cannot shift elements in list beyond index 0');
+      assert.throws(() => list.shiftElements(-1, 1, 1));
+      assert.throws(() => list.shiftElements(1, 1, 1));
+      assert.throws(() => list.shiftElements(0, 1, -1));
     });
 
     it('should shift an element forward', () => {

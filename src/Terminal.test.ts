@@ -809,7 +809,7 @@ describe('Terminal', () => {
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         assert.strictEqual(cell.getChars(), 'e\u0301');
-        assert.strictEqual(cell.getChars(), 2);
+        assert.strictEqual(cell.getChars().length, 2);
         assert.strictEqual(cell.getWidth(), 1);
       }
       term.buffer.lines.get(1).loadCell(0, cell);
