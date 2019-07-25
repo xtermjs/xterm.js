@@ -57,7 +57,11 @@ class DECRQSS implements IDcsHandler {
     this._data = concat(this._data, data.subarray(start, end));
   }
 
-  unhook(): void {
+  unhook(success: boolean): void {
+    if (!success) {
+      this._data = new Uint32Array(0);
+      return;
+    }
     const data = utf32ToString(this._data);
     this._data = new Uint32Array(0);
     switch (data) {
@@ -155,8 +159,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     });
     this._parser.setOscHandlerFallback((identifier, action, data) => {
       this._logService.debug('Unknown OSC code: ', { identifier, action, data });
-    }
-    );
+    });
+    this._parser.setDcsHandlerFallback((identifier, action, payload) => {
+      if (payload.params) {
+        payload.params = payload.params.toArray();
+      }
+      this._logService.debug('Unknown DCS code: ', { identifier, action, payload });
+    });
 
     /**
      * print handler

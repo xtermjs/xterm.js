@@ -42,7 +42,8 @@ export class OscParser extends Disposable {
   }
 
   public dispose(): void {
-    this._handlers = {};
+    this._handlers = Object.create(null);
+    this._handlerFb = () => {};
   }
 
   public reset(): void {

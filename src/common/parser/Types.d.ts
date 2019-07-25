@@ -89,15 +89,16 @@ export type EscHandler = () => boolean | void;
 * in chunks you have to copy it, doing otherwise will lead to
 * data losses or corruption.
 *
-* `unhook` marks the end of the current DCS sequence.
+* `unhook` marks the end of the current DCS sequence. `success`
+* indicates whether the command was aborted.
 */
 export interface IDcsHandler {
   hook(collect: string, params: IParams, flag: number): void;
   put(data: Uint32Array, start: number, end: number): void;
-  unhook(): void;
+  unhook(success: boolean): void | boolean;
 }
 
-export type OscFallbackHandler = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
+export type DcsFallbackHandler = (collectAndFlag: string, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
 export interface IOscHandler {
   /**
@@ -119,6 +120,8 @@ export interface IOscHandler {
    */
   end(success: boolean): void | boolean;
 }
+
+export type OscFallbackHandler = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
 /**
 * EscapeSequenceParser interface.
@@ -166,7 +169,8 @@ export interface IEscapeSequenceParser extends IDisposable {
 
   setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
   clearDcsHandler(collectAndFlag: string): void;
-  setDcsHandlerFallback(handler: IDcsHandler): void;
+  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
+  addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable;
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
@@ -181,4 +185,15 @@ export interface IOscParser extends IDisposable {
   start(): void;
   put(data: Uint32Array, start: number, end: number): void;
   end(success: boolean): void;
+}
+
+export interface IDcsParser extends IDisposable {
+  addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable;
+  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
+  clearDcsHandler(collectAndFlag: string): void;
+  setOscHandlerFallback(handler: DcsFallbackHandler): void;
+  reset(): void;
+  hook(collect: string, params: IParams, flag: number): void;
+  put(data: Uint32Array, start: number, end: number): void;
+  unhook(success: boolean): void;
 }

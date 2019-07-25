@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDcsHandler, IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandler } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandler } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -77,9 +77,6 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
   public set collect(value: string) {
     this._collect = value;
   }
-  public mockActiveDcsHandler(): void {
-    this._activeDcsHandler = this._dcsHandlerFb;
-  }
   public mockOscParser(): void {
     this._oscParser = oscPutParser;
   }
@@ -116,30 +113,13 @@ const testTerminal: any = {
   actionDCSHook: function (collect: string, params: IParams, flag: string): void {
     this.calls.push(['dcs hook', collect, params.toArray(), flag]);
   },
-  actionDCSPrint: function (data: Uint32Array, start: number, end: number): void {
-    let s = '';
-    for (let i = start; i < end; ++i) {
-      s += stringFromCodePoint(data[i]);
-    }
+  actionDCSPrint: function (s: string): void {
     this.calls.push(['dcs put', s]);
   },
   actionDCSUnhook: function (): void {
     this.calls.push(['dcs unhook']);
   }
 };
-
-// dcs handler to map dcs actions into the test object `testTerminal`
-class DcsTest implements IDcsHandler {
-  hook(collect: string, params: IParams, flag: number): void {
-    testTerminal.actionDCSHook(collect, params, String.fromCharCode(flag));
-  }
-  put(data: Uint32Array, start: number, end: number): void {
-    testTerminal.actionDCSPrint(data, start, end);
-  }
-  unhook(): void {
-    testTerminal.actionDCSUnhook();
-  }
-}
 
 const states: number[] = [
   ParserState.GROUND,
@@ -176,7 +156,18 @@ testParser.setOscHandlerFallback((identifier, action, data) => {
   if (identifier === -1) testTerminal.actionOSC(data);  // handle error condition silently
   else if (action === 'END') testTerminal.actionOSC('' + identifier + ';' + data); // collect only data at END
 });
-testParser.setDcsHandlerFallback(new DcsTest());
+testParser.setDcsHandlerFallback((collectAndFlag, action, payload) => {
+  switch (action) {
+    case 'HOOK':
+      testTerminal.actionDCSHook(payload.collect, payload.params, String.fromCharCode(payload.flag));
+      break;
+    case 'PUT':
+      testTerminal.actionDCSPrint(payload);
+      break;
+    case 'UNHOOK':
+      testTerminal.actionDCSUnhook();
+  }
+});
 
 
 // translate string based parse calls into typed array based
@@ -987,7 +978,6 @@ describe('EscapeSequenceParser', function (): void {
       puts = puts.concat(r(0x20, 0x7f));
       for (let i = 0; i < puts.length; ++i) {
         parser.currentState = ParserState.DCS_PASSTHROUGH;
-        parser.mockActiveDcsHandler();
         parse(parser, puts[i]);
         chai.expect(parser.currentState).equal(ParserState.DCS_PASSTHROUGH);
         testTerminal.compare([['dcs put', puts[i]]]);
