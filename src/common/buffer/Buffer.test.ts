@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
@@ -27,7 +27,7 @@ describe('Buffer', () => {
 
   describe('constructor', () => {
     it('should create a CircularList with max length equal to rows + scrollback, for its lines', () => {
-      assert.instanceOf(buffer.lines, CircularList);
+      assert.strictEqual(buffer.lines instanceof CircularList, true);
       assert.equal(buffer.lines.maxLength, bufferService.rows + INIT_SCROLLBACK);
     });
     it('should set the Buffer\'s scrollBottom value equal to the terminal\'s rows -1', () => {

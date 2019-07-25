@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferLine } from 'common/Types';
 import { Linkifier } from 'browser/Linkifier';
@@ -96,7 +96,7 @@ describe('Linkifier', () => {
     it('should allow link matcher registration', done => {
       assert.doesNotThrow(() => {
         const linkMatcherId = linkifier.registerLinkMatcher(/foo/, () => {});
-        assert.isTrue(linkifier.deregisterLinkMatcher(linkMatcherId));
+        assert.strictEqual(linkifier.deregisterLinkMatcher(linkMatcherId), true);
         done();
       });
     });
@@ -192,7 +192,7 @@ describe('Linkifier', () => {
 
       it('should disable link if false', done => {
         addRow('test');
-        linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
+        linkifier.registerLinkMatcher(/test/, () => assert.fail('Register Link Matcher Succeed', 'Register Link Matcher Failed'), {
           validationCallback: (url, cb) => {
             assert.equal(mouseZoneManager.zones.length, 0);
             cb(false);
@@ -207,7 +207,7 @@ describe('Linkifier', () => {
       it('should trigger for multiple link matches on one row', done => {
         addRow('test test');
         let count = 0;
-        linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
+        linkifier.registerLinkMatcher(/test/, () => assert.fail('Register Link Matcher Succeed', 'Register Link Matcher Failed'), {
           validationCallback: (url, cb) => {
             count += 1;
             if (count === 2) {

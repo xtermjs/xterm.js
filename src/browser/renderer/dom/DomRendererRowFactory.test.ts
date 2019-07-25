@@ -4,7 +4,7 @@
  */
 
 import jsdom = require('jsdom');
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes } from 'common/buffer/Constants';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';

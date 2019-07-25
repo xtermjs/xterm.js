@@ -1,5 +1,5 @@
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { IKeyboardResult, IKeyboardEvent } from 'common/Types';
 

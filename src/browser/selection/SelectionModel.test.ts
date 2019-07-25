@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { SelectionModel } from './SelectionModel';
 import { MockBufferService } from 'common/TestUtils.test';
 

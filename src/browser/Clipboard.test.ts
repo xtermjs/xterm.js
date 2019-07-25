@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import * as Clipboard from 'browser/Clipboard';
 
 describe('evaluatePastedTextProcessing', () => {

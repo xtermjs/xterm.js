@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 
 describe('LRUMap', () => {
@@ -33,11 +33,11 @@ describe('LRUMap', () => {
     map.set(3, 'value');
     map.set(4, 'value');
     map.set(5, 'value');
-    assert.isNull(map.get(1));
-    assert.isNotNull(map.get(2));
-    assert.isNotNull(map.get(3));
-    assert.isNotNull(map.get(4));
-    assert.isNotNull(map.get(5));
+    assert.ok(!map.get(1));
+    assert.ok(map.get(2));
+    assert.ok(map.get(3));
+    assert.ok(map.get(4));
+    assert.ok(map.get(5));
     assert.strictEqual(map.size, 4);
   });
 
@@ -48,10 +48,10 @@ describe('LRUMap', () => {
     map.get(1);
     // a would normally get deleted here, except that we called get()
     map.set(3, 'value');
-    assert.isNotNull(map.get(1));
+    assert.ok(map.get(1));
     // b got deleted instead of a
-    assert.isNull(map.get(2));
-    assert.isNotNull(map.get(3));
+    assert.ok(!map.get(2));
+    assert.ok(map.get(3));
   });
 
   it('supports mutation', () => {

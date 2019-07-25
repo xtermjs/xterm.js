@@ -4,7 +4,7 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { ITerminalOptions } from 'xterm';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('Search Tests', function (): void {
+describe('Search Tests', function (): void {
   this.timeout(200000);
 
   before(async function (): Promise<any> {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { IBufferService } from 'common/services/Services';
 import { MockBufferService } from 'common/TestUtils.test';
 import { moveToCellSequence } from './MoveToCell';

@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { Params } from 'common/parser/Params';
 import { ParamsArray } from 'common/parser/Types';
 

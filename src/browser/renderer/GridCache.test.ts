@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { GridCache } from 'browser/renderer/GridCache';
 
 describe('GridCache', () => {

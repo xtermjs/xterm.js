@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { MockCharSizeService } from 'browser/TestUtils.test';
 import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';

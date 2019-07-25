@@ -2,7 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { sliceFallback } from './TypedArray';
 
 type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray

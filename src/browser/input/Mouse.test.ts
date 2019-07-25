@@ -4,7 +4,7 @@
  */
 
 import jsdom = require('jsdom');
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { getCoords } from 'browser/input/Mouse';
 
 const CHAR_WIDTH = 10;

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { EventEmitter } from 'common/EventEmitter';
 
 describe('EventEmitter', () => {

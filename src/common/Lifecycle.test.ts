@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { Disposable } from 'common/Lifecycle';
 
 class TestDisposable extends Disposable {
@@ -37,9 +37,9 @@ describe('Disposable', () => {
   describe('dispose', () => {
     it('should set is disposed flag', () => {
       const d = new TestDisposable();
-      assert.isFalse(d.isDisposed);
+      assert.strictEqual(d.isDisposed, false);
       d.dispose();
-      assert.isTrue(d.isDisposed);
+      assert.strictEqual(d.isDisposed, true);
     });
   });
 });

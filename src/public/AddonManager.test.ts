@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { AddonManager, ILoadedAddon } from './AddonManager';
 import { ITerminalAddon } from 'xterm';
 

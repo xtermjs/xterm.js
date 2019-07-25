@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
@@ -20,8 +20,8 @@ describe('BufferSet', () => {
 
   describe('constructor', () => {
     it('should create two different buffers: alt and normal', () => {
-      assert.instanceOf(bufferSet.normal, Buffer);
-      assert.instanceOf(bufferSet.alt, Buffer);
+      assert.strictEqual(bufferSet.normal instanceof Buffer, true);
+      assert.strictEqual(bufferSet.alt instanceof Buffer, true);
       assert.notEqual(bufferSet.normal, bufferSet.alt);
     });
   });

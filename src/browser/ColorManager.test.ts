@@ -4,7 +4,7 @@
  */
 
 import jsdom = require('jsdom');
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { ColorManager } from 'browser/ColorManager';
 
 describe('ColorManager', () => {

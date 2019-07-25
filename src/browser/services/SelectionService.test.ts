@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { SelectionService, SelectionMode } from './SelectionService';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferLine } from 'common/Types';
@@ -476,13 +476,13 @@ describe('SelectionService', () => {
 
   describe('_areCoordsInSelection', () => {
     it('should return whether coords are in the selection', () => {
-      assert.isFalse(selectionService.areCoordsInSelection([0, 0], [2, 0], [2, 1]));
-      assert.isFalse(selectionService.areCoordsInSelection([1, 0], [2, 0], [2, 1]));
-      assert.isTrue(selectionService.areCoordsInSelection([2, 0], [2, 0], [2, 1]));
-      assert.isTrue(selectionService.areCoordsInSelection([10, 0], [2, 0], [2, 1]));
-      assert.isTrue(selectionService.areCoordsInSelection([0, 1], [2, 0], [2, 1]));
-      assert.isTrue(selectionService.areCoordsInSelection([1, 1], [2, 0], [2, 1]));
-      assert.isFalse(selectionService.areCoordsInSelection([2, 1], [2, 0], [2, 1]));
+      assert.strictEqual(selectionService.areCoordsInSelection([0, 0], [2, 0], [2, 1]), false);
+      assert.strictEqual(selectionService.areCoordsInSelection([1, 0], [2, 0], [2, 1]), false);
+      assert.strictEqual(selectionService.areCoordsInSelection([2, 0], [2, 0], [2, 1]), true);
+      assert.strictEqual(selectionService.areCoordsInSelection([10, 0], [2, 0], [2, 1]), true);
+      assert.strictEqual(selectionService.areCoordsInSelection([0, 1], [2, 0], [2, 1]), true);
+      assert.strictEqual(selectionService.areCoordsInSelection([1, 1], [2, 0], [2, 1]), true);
+      assert.strictEqual(selectionService.areCoordsInSelection([2, 1], [2, 0], [2, 1]), false);
     });
   });
 });

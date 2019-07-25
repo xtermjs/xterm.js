@@ -4,7 +4,7 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 

@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';

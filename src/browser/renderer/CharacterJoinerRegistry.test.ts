@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { ICharacterJoinerRegistry } from 'browser/renderer/Types';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { BufferLine } from 'common/buffer/BufferLine';

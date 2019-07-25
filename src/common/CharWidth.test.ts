@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import * as assert from 'assert';
 import { wcwidth } from 'common/CharWidth';
 
 it('wcwidth should match all values from the old implementation', function(): void {
