@@ -501,7 +501,7 @@ declare module 'xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
-     * (EXPERIMENTAL) Adds a handler for CSI escape sequences.
+     * Adds a handler for CSI escape sequences.
      * @param flag The flag should be one-character string, which specifies the
      * final character (e.g "m" for SGR) of the CSI sequence.
      * @param callback The function to handle the escape sequence. The callback
