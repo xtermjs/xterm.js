@@ -57,7 +57,7 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    let startCol: number = 0;
+    let startCol = 0;
     let startRow = 0;
 
     if (this._terminal.hasSelection()) {
@@ -71,13 +71,8 @@ export class SearchAddon implements ITerminalAddon {
 
     this._initLinesCache();
 
-    // A row that has isWrapped = false
-    const findingRow = startRow;
-    // index of beginning column that _findInLine need to scan.
-    const cumulativeCols = startCol;
-
     // Search startRow
-    let result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+    let result = this._findInLine(term, startRow, startCol, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
@@ -126,18 +121,25 @@ export class SearchAddon implements ITerminalAddon {
     const isReverseSearch = true;
     let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-
+    let result: ISearchResult | undefined = undefined;
+    const incremental = searchOptions ? searchOptions.incremental : false;
     if (this._terminal.hasSelection()) {
-      // Start from the selection start if there is a selection
       const currentSelection = this._terminal.getSelectionPosition()!;
+      // Start from selection start if there is a selection
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
     }
 
     this._initLinesCache();
 
-    // Search startRow
-    let result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    if (incremental) {
+      result = this._findInLine(term, startRow, startCol, searchOptions, false);
+      if (!(result && result.row === startRow && result.col === startCol)) {
+        result = this._findInLine(term, startRow, startCol, searchOptions, true);
+      }
+    } else {
+      result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    }
 
     // Search from startRow - 1 to top
     if (!result) {
