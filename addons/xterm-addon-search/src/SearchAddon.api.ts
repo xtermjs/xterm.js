@@ -57,6 +57,45 @@ describe.only('Search Tests', function (): void {
     assert.deepEqual(await page.evaluate(`window.search.findNext('$^1_3{}test$#')`), true);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '$^1_3{}test$#');
   });
+  it ('Incremental Find Previous', async () => {
+    await page.evaluate(`window.term.writeln('package.jsonc\\n')`);
+    await writeSync('package.json pack package.lock');
+    await page.evaluate(`window.search.findPrevious('pack', {incremental: true})`);
+    let line: string = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    let selectionPosition: {startColumn: number, startRow: number, endColumn: number, endRow: number} = await page.evaluate(`window.term.getSelectionPosition()`);
+    // We look further ahead in the line to ensure that pack was selected from package.lock
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
+    await page.evaluate(`window.search.findPrevious('package.j', {incremental: true})`);
+    selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 3), 'package.json');
+    await page.evaluate(`window.search.findPrevious('package.jsonc', {incremental: true})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    line = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
+  });
+  it ('Incremental Find Next', async () => {
+    await page.evaluate(`window.term.writeln('package.lock pack package.json package.ups\\n')`);
+    await writeSync('package.jsonc');
+    await page.evaluate(`window.search.findNext('pack', {incremental: true})`);
+    let line: string = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    let selectionPosition: {startColumn: number, startRow: number, endColumn: number, endRow: number} = await page.evaluate(`window.term.getSelectionPosition()`);
+    // We look further ahead in the line to ensure that pack was selected from package.lock
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
+    await page.evaluate(`window.search.findNext('package.j', {incremental: true})`);
+    selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 3), 'package.json');
+    await page.evaluate(`window.search.findNext('package.jsonc', {incremental: true})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    line = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
+  });
+  it ('Simple Regex', async () => {
+    await writeSync('abc123def');
+    await page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
