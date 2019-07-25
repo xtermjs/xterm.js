@@ -42,11 +42,6 @@
   resolved "https://registry.yarnpkg.com/@types/app-root-path/-/app-root-path-1.2.4.tgz#a78b703282b32ac54de768f5512ecc3569919dc7"
   integrity sha1-p4twMoKzKsVN52j1US7MNWmRncc=
 
-"@types/assert@^1.4.2":
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/@types/assert/-/assert-1.4.2.tgz#e9116f5abf9cbd0c86ed22e38185b71e7f44071c"
-  integrity sha512-N5I8kX4ybqvqi4A+Y8b3coatbuRKWaa+sEPm3aCFdm9oCxsDvwY/ELNV4c/56W5MdRKJ6b8AOWRFyxhi437t7A==
-
 "@types/cli-table@^0.3.0":
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/@types/cli-table/-/cli-table-0.3.0.tgz#f1857156bf5fd115c6a2db260ba0be1f8fc5671c"
