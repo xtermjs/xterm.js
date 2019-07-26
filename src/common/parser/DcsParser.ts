@@ -6,7 +6,8 @@
 import { IDisposable } from 'common/Types';
 import { IDcsHandler, IParams, ParamsArray, IHandlerCollection, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
-import { Params } from './Params';
+import { Params } from 'common/parser/Params';
+import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
 
 export class DcsParser implements IDcsParser {
@@ -98,9 +99,6 @@ export class DcsParser implements IDcsParser {
     this._collectAndFlag = '';
   }
 }
-
-// limit allowed payload for DcsHandlerFactory
-const PAYLOAD_LIMIT = 50000000;
 
 /**
  * Convenient class to create a DCS handler from a single callback function.

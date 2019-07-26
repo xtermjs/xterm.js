@@ -53,3 +53,6 @@ export const enum OscState {
   PAYLOAD = 2,
   ABORT = 3
 }
+
+// payload limit for OSC and DCS
+export const PAYLOAD_LIMIT = 10000000;

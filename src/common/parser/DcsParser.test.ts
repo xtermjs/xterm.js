@@ -7,6 +7,7 @@ import { DcsParser, DcsHandlerFactory } from 'common/parser/DcsParser';
 import { IDcsHandler, IParams } from 'common/parser/Types';
 import { utf32ToString, StringToUtf32 } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
+import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);
@@ -175,6 +176,41 @@ describe('DcsParser', () => {
       parser.put(data, 0, data.length);
       parser.unhook(true);
       assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'some other data']]);
+    });
+    it('should respect return false', () => {
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push(['one', params.toArray(), data])));
+      parser.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { reports.push(['two', params.toArray(), data]); return false; }));
+      parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32(' the mouse!');
+      parser.put(data, 0, data.length);
+      parser.unhook(true);
+      assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'Here comes the mouse!']]);
+    });
+    it('should work up to payload limit', function(): void {
+      this.timeout(10000);
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params.toArray(), data])));
+      parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
+      const data = toUtf32('A'.repeat(1000));
+      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+        parser.put(data, 0, data.length);
+      }
+      parser.unhook(true);
+      assert.deepEqual(reports, [[[1, 2, 3], 'A'.repeat(PAYLOAD_LIMIT)]]);
+    });
+    it('should abort for payload limit +1', function(): void {
+      this.timeout(10000);
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params.toArray(), data])));
+      parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
+      let data = toUtf32('A'.repeat(1000));
+      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+        parser.put(data, 0, data.length);
+      }
+      data = toUtf32('A');
+      parser.put(data, 0, data.length);
+      parser.unhook(true);
+      assert.deepEqual(reports, []);
     });
   });
 });

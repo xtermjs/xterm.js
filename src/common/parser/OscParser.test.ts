@@ -6,6 +6,7 @@ import { assert } from 'chai';
 import { OscParser, OscHandlerFactory } from 'common/parser/OscParser';
 import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
 import { IOscHandler } from 'common/parser/Types';
+import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);
@@ -217,6 +218,34 @@ describe('OscParser', () => {
       parser.put(data, 0, data.length);
       parser.end(true);
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
+    });
+    it('should work up to payload limit', function(): void {
+      this.timeout(10000);
+      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.start();
+      let data = toUtf32('1234;');
+      parser.put(data, 0, data.length);
+      data = toUtf32('A'.repeat(1000));
+      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+        parser.put(data, 0, data.length);
+      }
+      parser.end(true);
+      assert.deepEqual(reports, [[1234, 'A'.repeat(PAYLOAD_LIMIT)]]);
+    });
+    it('should abort for payload limit +1', function(): void {
+      this.timeout(10000);
+      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.start();
+      let data = toUtf32('1234;');
+      parser.put(data, 0, data.length);
+      data = toUtf32('A'.repeat(1000));
+      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+        parser.put(data, 0, data.length);
+      }
+      data = toUtf32('A');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, []);
     });
   });
 });

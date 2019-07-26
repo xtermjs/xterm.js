@@ -4,7 +4,7 @@
  */
 
 import { IOscHandler, IHandlerCollection, OscFallbackHandler } from 'common/parser/Types';
-import { OscState } from 'common/parser/Constants';
+import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
@@ -161,10 +161,6 @@ export class OscParser extends Disposable {
     this._state = OscState.START;
   }
 }
-
-
-// limit allowed payload for OscHandlerFactory
-const PAYLOAD_LIMIT = 50000000;
 
 /**
  * Convenient class to allow attaching string based handler functions

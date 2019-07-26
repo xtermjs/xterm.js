@@ -524,7 +524,7 @@ declare module 'xterm' {
      * There is currently no way to intercept smaller data chunks, those will be stored up
      * until the sequence is finished. Since DCS sequences are not limited by the amount
      * of data this might impose a problem for big payloads. Currently xterm.js limits
-     * DCS payload to 50 MB which should give enough room for most use cases.
+     * DCS payload to 10 MB which should give enough room for most use cases.
      * The function gets numerical parameter and the data as arguments.
      * Return true if the sequence was handled; false if
      * we should try a previous handler (set by addDcsHandler or setDcsHandler).
@@ -554,7 +554,7 @@ declare module 'xterm' {
      * There is currently no way to intercept smaller data chunks, those will be stored up
      * until the sequence is finished. Since OSC sequences are not limited by the amount
      * of data this might impose a problem for big payloads. Currently xterm.js limits
-     * OSC payload to 50 MB which should give enough room for most use cases.
+     * OSC payload to 10 MB which should give enough room for most use cases.
      * The callback is called with OSC data string. Return true if the sequence was handled;
      * false if we should try a previous handler (set by addOscHandler or
      * setOscHandler). The most recently-added handler is tried first.
