@@ -77,6 +77,9 @@ export class MockTerminal implements ITerminal {
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
     throw new Error('Method not implemented.');
   }
+  addDcsHandler(collectAndFlag: string, callback: (param: IParams, data: string) => boolean): IDisposable {
+    throw new Error('Method not implemented.');
+  }
   addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
     throw new Error('Method not implemented.');
   }

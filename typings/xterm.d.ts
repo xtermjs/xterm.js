@@ -516,9 +516,27 @@ declare module 'xterm' {
     addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable;
 
     /**
+     * Adds a handler for DCS escape sequences.
+     * @param collect Should be a string, which specifies the collect and the
+     * final character (e.g "$q" for DECRQSS) of the DCS sequence.
+     * @param callback The function to handle the escape sequence. Note that the
+     * function will only be called once if the sequence finished sucessfully.
+     * There is currently no way to intercept smaller data chunks, those will be stored up
+     * until the sequence is finished. Since DCS sequences are not limited by the amount
+     * of data this might impose a problem for big payloads. Currently xterm.js limits
+     * DCS payload to 50 MB which should give enough room for most use cases.
+     * The function gets numerical parameter and the data as arguments.
+     * Return true if the sequence was handled; false if
+     * we should try a previous handler (set by addDcsHandler or setDcsHandler).
+     * The most recently-added handler is tried first.
+     * @return An IDisposable you can call to remove this handler.
+     */
+    addDcsHandler(collect: string, callback: (param: (number | number[])[], data: string) => boolean): IDisposable;
+
+    /**
      * Adds a handler for ESC escape sequences.
-     * @param flag The flag should be a string, which specifies the
-     * collect and the final character (e.g "%G" for default charset selection)
+     * @param collect Should be a string, which specifies the collect and the
+     * final character (e.g "%G" for default charset selection)
      * of the ESC sequence.
      * @param callback The function to handle the escape sequence.
      * Return true if the sequence was handled; false if
@@ -531,8 +549,13 @@ declare module 'xterm' {
     /**
      * Adds a handler for OSC escape sequences.
      * @param ident The number (first parameter) of the sequence.
-     * @param callback The function to handle the escape sequence. The callback
-     * is called with OSC data string. Return true if the sequence was handled;
+     * @param callback The function to handle the escape sequence. Note that the
+     * function will only be called once if the sequence finished sucessfully.
+     * There is currently no way to intercept smaller data chunks, those will be stored up
+     * until the sequence is finished. Since OSC sequences are not limited by the amount
+     * of data this might impose a problem for big payloads. Currently xterm.js limits
+     * OSC payload to 50 MB which should give enough room for most use cases.
+     * The callback is called with OSC data string. Return true if the sequence was handled;
      * false if we should try a previous handler (set by addOscHandler or
      * setOscHandler). The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.

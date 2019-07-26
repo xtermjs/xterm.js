@@ -163,25 +163,44 @@ export class OscParser extends Disposable {
 }
 
 
+// limit allowed payload for OscHandlerFactory
+const PAYLOAD_LIMIT = 50000000;
+
 /**
  * Convenient class to allow attaching string based handler functions
  * as OSC handlers.
  */
 export class OscHandlerFactory implements IOscHandler {
   private _data = '';
+  private _hitLimit: boolean = false;
+
   constructor(private _handler: (data: string) => any) {}
+
   public start(): void {
     this._data = '';
+    this._hitLimit = false;
   }
+
   public put(data: Uint32Array, start: number, end: number): void {
+    if (this._hitLimit) {
+      return;
+    }
     this._data += utf32ToString(data, start, end);
+    if (this._data.length > PAYLOAD_LIMIT) {
+      this._data = '';
+      this._hitLimit = true;
+    }
   }
+
   public end(success: boolean): any {
     let ret;
-    if (success) {
+    if (this._hitLimit) {
+      ret = false;
+    } else if (success) {
       ret = this._handler(this._data);
     }
     this._data = '';
+    this._hitLimit = false;
     return ret;
   }
 }

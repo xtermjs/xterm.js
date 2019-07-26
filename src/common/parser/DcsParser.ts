@@ -6,6 +6,7 @@
 import { IDisposable } from 'common/Types';
 import { IDcsHandler, IParams, ParamsArray, IHandlerCollection, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
+import { Params } from './Params';
 
 
 export class DcsParser implements IDcsParser {
@@ -98,24 +99,47 @@ export class DcsParser implements IDcsParser {
   }
 }
 
+// limit allowed payload for DcsHandlerFactory
+const PAYLOAD_LIMIT = 50000000;
+
+/**
+ * Convenient class to create a DCS handler from a single callback function.
+ * Note: The payload is currently limited to 50 MB (hardcoded).
+ */
 export class DcsHandlerFactory implements IDcsHandler {
   private _data = '';
   private _params: IParams | undefined;
-  constructor(private _handler: (params: ParamsArray, data: string) => any) {}
+  private _hitLimit: boolean = false;
+
+  constructor(private _handler: (params: IParams, data: string) => any) {}
+
   public hook(collect: string, params: IParams, flag: number): void {
     this._params = params.clone();
     this._data = '';
+    this._hitLimit = false;
   }
+
   public put(data: Uint32Array, start: number, end: number): void {
+    if (this._hitLimit) {
+      return;
+    }
     this._data += utf32ToString(data, start, end);
+    if (this._data.length > PAYLOAD_LIMIT) {
+      this._data = '';
+      this._hitLimit = true;
+    }
   }
+
   public unhook(success: boolean): any {
     let ret;
-    if (success) {
-      ret = this._handler(this._params ? this._params.toArray() : [], this._data);
+    if (this._hitLimit) {
+      ret = false;
+    } else if (success) {
+      ret = this._handler(this._params ? this._params : new Params(), this._data);
     }
     this._params = undefined;
     this._data = '';
+    this._hitLimit = false;
     return ret;
   }
 }

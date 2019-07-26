@@ -138,7 +138,7 @@ describe('DcsParser', () => {
   });
   describe('DcsHandlerFactory', () => {
     it('should be called once on end(true)', () => {
-      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params, data])));
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params.toArray(), data])));
       parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -148,7 +148,7 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, [[[1, 2, 3], 'Here comes the mouse!']]);
     });
     it('should not be called on end(false)', () => {
-      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params, data])));
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push([params.toArray(), data])));
       parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -158,8 +158,8 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push(['one', params, data])));
-      const dispo = parser.addDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push(['two', params, data])));
+      parser.setDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push(['one', params.toArray(), data])));
+      const dispo = parser.addDcsHandler('+p', new DcsHandlerFactory((params, data) => reports.push(['two', params.toArray(), data])));
       parser.hook('+', Params.fromArray([1, 2, 3]), 'p'.charCodeAt(0));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);

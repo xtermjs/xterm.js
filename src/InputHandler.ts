@@ -22,6 +22,7 @@ import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
 import { OscHandlerFactory } from 'common/parser/OscParser';
+import { DcsHandlerFactory } from 'common/parser/DcsParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -486,17 +487,24 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addEscHandler from parser.
-   */
-  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
-    return this._parser.addEscHandler(collectAndFlag, handler);
-  }
-
-  /**
    * Forward addCsiHandler from parser.
    */
   public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
     return this._parser.addCsiHandler(flag, callback);
+  }
+
+  /**
+   * Forward addDcsHandler from parser.
+   */
+  public addDcsHandler(collectAndFlag: string, callback: (param: IParams, data: string) => boolean): IDisposable {
+    return this._parser.addDcsHandler(collectAndFlag, new DcsHandlerFactory(callback));
+  }
+
+  /**
+   * Forward addEscHandler from parser.
+   */
+  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
+    return this._parser.addEscHandler(collectAndFlag, handler);
   }
 
   /**

@@ -201,6 +201,7 @@ export interface IPublicTerminal extends IDisposable {
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
+  addDcsHandler(collectAndFlag: string, callback: (param: IParams, data: string) => boolean): IDisposable;
   addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable;
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;

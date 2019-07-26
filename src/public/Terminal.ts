@@ -60,6 +60,9 @@ export class Terminal implements ITerminalApi {
   public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
     return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
   }
+  public addDcsHandler(collectAndFlag: string, callback: (param: (number | number[])[], data: string) => boolean): IDisposable {
+    return this._core.addDcsHandler(collectAndFlag, (params: IParams, data: string) => callback(params.toArray(), data));
+  }
   public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
     return this._core.addEscHandler(collectAndFlag, handler);
   }
