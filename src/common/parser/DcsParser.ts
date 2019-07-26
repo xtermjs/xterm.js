@@ -43,7 +43,7 @@ export class DcsParser implements IDcsParser {
     if (this._handlers[collectAndFlag]) delete this._handlers[collectAndFlag];
   }
 
-  public setOscHandlerFallback(handler: DcsFallbackHandler): void {
+  public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
     this._handlerFb = handler;
   }
 

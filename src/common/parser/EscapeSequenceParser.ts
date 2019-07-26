@@ -371,7 +371,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.clearDcsHandler(collectAndFlag);
   }
   setDcsHandlerFallback(handler: DcsFallbackHandler): void {
-    this._dcsParser.setOscHandlerFallback(handler);
+    this._dcsParser.setDcsHandlerFallback(handler);
   }
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void {

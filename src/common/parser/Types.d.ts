@@ -191,7 +191,7 @@ export interface IDcsParser extends IDisposable {
   addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable;
   setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
   clearDcsHandler(collectAndFlag: string): void;
-  setOscHandlerFallback(handler: DcsFallbackHandler): void;
+  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
   reset(): void;
   hook(collect: string, params: IParams, flag: number): void;
   put(data: Uint32Array, start: number, end: number): void;
