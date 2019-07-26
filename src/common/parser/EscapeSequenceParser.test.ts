@@ -11,6 +11,7 @@ import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
 import { OscHandlerFactory } from 'common/parser/OscParser';
 import { IDisposable } from 'common/Types';
+import { DcsHandlerFactory } from 'common/parser/DcsParser';
 
 
 function r(a: number, b: number): string[] {
@@ -1442,6 +1443,64 @@ describe('EscapeSequenceParser', function (): void {
       parse(parser2, '\x1bP1;2;3+pabc');
       parse(parser2, ';de\x9c');
       chai.expect(dcs).eql([]);
+    });
+    describe('DCS custom handlers', () => {
+      const DCS_INPUT = '\x1bP1;2;3+pabc\x1b\\';
+      it('Prevent fallback', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['B', [1, 2, 3], 'abc']]);
+      });
+      it('Allow fallback', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return false; }));
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['B', [1, 2, 3], 'abc'], ['A', [1, 2, 3], 'abc']]);
+      });
+      it('Multiple custom handlers fallback once', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['C', params.toArray(), data]); return false; }));
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['C', [1, 2, 3], 'abc'], ['B', [1, 2, 3], 'abc']]);
+      });
+      it('Multiple custom handlers no fallback', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['C', params.toArray(), data]); return true; }));
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['C', [1, 2, 3], 'abc']]);
+      });
+      it('Execution order should go from latest handler down to the original', () => {
+        const order: number[] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory(() => order.push(1)));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory(() => { order.push(2); return false; }));
+        parser2.addDcsHandler('+p', new DcsHandlerFactory(() => { order.push(3); return false; }));
+        parse(parser2, DCS_INPUT);
+        chai.expect(order).eql([3, 2, 1]);
+      });
+      it('Dispose should work', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        const dispo = parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        dispo.dispose();
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['A', [1, 2, 3], 'abc']]);
+      });
+      it('Should not corrupt the parser when dispose is called twice', () => {
+        const dcsCustom: [string, (number | number[])[], string][] = [];
+        parser2.setDcsHandler('+p', new DcsHandlerFactory((params, data) => dcsCustom.push(['A', params.toArray(), data])));
+        const dispo = parser2.addDcsHandler('+p', new DcsHandlerFactory((params, data) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        dispo.dispose();
+        dispo.dispose();
+        parse(parser2, DCS_INPUT);
+        chai.expect(dcsCustom).eql([['A', [1, 2, 3], 'abc']]);
+      });
     });
     it('ERROR handler', function (): void {
       let errorState: IParsingState | null = null;
