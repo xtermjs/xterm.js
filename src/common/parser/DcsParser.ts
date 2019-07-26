@@ -13,10 +13,12 @@ export class DcsParser implements IDcsParser {
   private _active: IDcsHandler[] = [];
   private _collectAndFlag: string = '';
   private _handlerFb: DcsFallbackHandler = () => {};
+
   public dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
   }
+
   public addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable {
     if (this._handlers[collectAndFlag] === undefined) {
       this._handlers[collectAndFlag] = [];
@@ -32,15 +34,19 @@ export class DcsParser implements IDcsParser {
       }
     };
   }
+
   public setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void {
     this._handlers[collectAndFlag] = [handler];
   }
+
   public clearDcsHandler(collectAndFlag: string): void {
     if (this._handlers[collectAndFlag]) delete this._handlers[collectAndFlag];
   }
+
   public setOscHandlerFallback(handler: DcsFallbackHandler): void {
     this._handlerFb = handler;
   }
+
   public reset(): void {
     if (this._active.length) {
       this.unhook(false);
@@ -48,6 +54,7 @@ export class DcsParser implements IDcsParser {
     this._active = [];
     this._collectAndFlag = '';
   }
+
   public hook(collect: string, params: IParams, flag: number): void {
     this._collectAndFlag = collect + String.fromCharCode(flag);
     this._active = this._handlers[this._collectAndFlag] || [];
@@ -59,6 +66,7 @@ export class DcsParser implements IDcsParser {
       }
     }
   }
+
   public put(data: Uint32Array, start: number, end: number): void {
     if (!this._active.length) {
       this._handlerFb(this._collectAndFlag, 'PUT', utf32ToString(data, start, end));
@@ -68,6 +76,7 @@ export class DcsParser implements IDcsParser {
       }
     }
   }
+
   public unhook(success: boolean): void {
     if (!this._active.length) {
       this._handlerFb(this._collectAndFlag, 'UNHOOK', success);
@@ -84,6 +93,8 @@ export class DcsParser implements IDcsParser {
         this._active[j].unhook(false);
       }
     }
+    this._active = [];
+    this._collectAndFlag = '';
   }
 }
 
