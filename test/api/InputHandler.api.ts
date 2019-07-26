@@ -351,6 +351,30 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => _customCsiHandlerParams)();`), [[38, 5, 123], [38, [2, -1, 50, 100, 150]]]);
     });
   });
+  describe('addDcsHandler', () => {
+    it('should respects return value', async () => {
+      await page.evaluate(`
+        window.term.reset();
+        const _customDcsHandlerCallStack = [];
+        const _customDcsHandlerA = window.term.addDcsHandler('+p', (params, data) => {
+          _customDcsHandlerCallStack.push(['A', params, data]);
+          return false;
+        });
+        const _customDcsHandlerB = window.term.addDcsHandler('+p', (params, data) => {
+          _customDcsHandlerCallStack.push(['B', params, data]);
+          return true;
+        });
+        const _customDcsHandlerC = window.term.addDcsHandler('+p', (params, data) => {
+          _customDcsHandlerCallStack.push(['C', params, data]);
+          return false;
+        });
+      `);
+      await page.evaluate(`
+        window.term.write('\x1bP1;2+psome data\x1b\\\\');
+      `);
+      assert.deepEqual(await page.evaluate(`(() => _customDcsHandlerCallStack)();`), [['C', [1, 2], 'some data'], ['B', [1, 2], 'some data']]);
+    });
+  });
   describe('addEscHandler', () => {
     it('should respects return value', async () => {
       await page.evaluate(`
