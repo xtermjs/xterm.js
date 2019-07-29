@@ -2,6 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+/// <reference path="../../../node_modules/@types/node/index.d.ts" />
 import * as assert from 'assert';
 import { Params } from 'common/parser/Params';
 import { ParamsArray } from 'common/parser/Types';

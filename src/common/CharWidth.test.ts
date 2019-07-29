@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+/// <reference path="../../node_modules/@types/node/index.d.ts" />
 import * as assert from 'assert';
 import { wcwidth } from 'common/CharWidth';
 

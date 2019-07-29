@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+/// <reference path="../../../node_modules/@types/node/index.d.ts" />
 import { IDcsHandler, IParsingState, IParams, ParamsArray } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as assert from 'assert';

@@ -2,6 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+/// <reference path="../../../node_modules/@types/node/index.d.ts" />
 import * as assert from 'assert';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content } from 'common/buffer/Constants';
 import { BufferLine } from 'common/buffer//BufferLine';
