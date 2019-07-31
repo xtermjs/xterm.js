@@ -53,10 +53,8 @@ export interface IParsingState {
   code: number;
   // current parser state
   currentState: ParserState;
-  // osc string buffer
-  osc: string;
   // collect buffer with intermediate characters
-  collect: string;
+  collect: number;
   // params buffer
   params: IParams;
   // should abort (default: false)
@@ -67,7 +65,7 @@ export interface IHandlerCollection<T> {
   [key: string]: T[];
 }
 
-export type CsiHandler = (params: IParams, collect: string) => boolean | void;
+export type CsiHandler = (params: IParams) => boolean | void;
 export type EscHandler = () => boolean | void;
 
 /**
@@ -93,12 +91,12 @@ export type EscHandler = () => boolean | void;
 * indicates whether the command was aborted.
 */
 export interface IDcsHandler {
-  hook(collect: string, params: IParams, flag: number): void;
+  hook(params: IParams): void;
   put(data: Uint32Array, start: number, end: number): void;
   unhook(success: boolean): void | boolean;
 }
 
-export type DcsFallbackHandler = (collectAndFlag: string, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
+export type DcsFallbackHandler = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
 export interface IOscHandler {
   /**
@@ -145,6 +143,11 @@ export interface IEscapeSequenceParser extends IDisposable {
    */
   parse(data: Uint32Array, length: number): void;
 
+  /**
+   * Get string from ident number.
+   */
+  identToString(ident: number): string;
+
   setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void;
   clearPrintHandler(): void;
 
@@ -152,25 +155,25 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearExecuteHandler(flag: string): void;
   setExecuteHandlerFallback(callback: (code: number) => void): void;
 
-  setCsiHandler(flag: string, callback: (params: IParams, collect: string) => void): void;
-  clearCsiHandler(flag: string): void;
-  setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void;
-  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
+  setCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => void): void;
+  clearCsiHandler(id: IFunctionIdentifier): void;
+  setCsiHandlerFallback(callback: (identifier: number, params: IParams) => void): void;
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
 
-  setEscHandler(collectAndFlag: string, callback: () => void): void;
-  clearEscHandler(collectAndFlag: string): void;
-  setEscHandlerFallback(callback: (collect: string, flag: number) => void): void;
-  addEscHandler(collectAndFlag: string, handler: EscHandler): IDisposable;
+  setEscHandler(id: IFunctionIdentifier, callback: () => void): void;
+  clearEscHandler(id: IFunctionIdentifier): void;
+  setEscHandlerFallback(callback: (identifier: number) => void): void;
+  addEscHandler(id: IFunctionIdentifier, handler: EscHandler): IDisposable;
 
   setOscHandler(ident: number, handler: IOscHandler): void;
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandler): void;
   addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
-  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
-  clearDcsHandler(collectAndFlag: string): void;
+  setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void;
+  clearDcsHandler(id: IFunctionIdentifier): void;
   setDcsHandlerFallback(handler: DcsFallbackHandler): void;
-  addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable;
+  addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
@@ -188,12 +191,18 @@ export interface IOscParser extends IDisposable {
 }
 
 export interface IDcsParser extends IDisposable {
-  addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable;
-  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
-  clearDcsHandler(collectAndFlag: string): void;
+  addDcsHandler(ident: number, handler: IDcsHandler): IDisposable;
+  setDcsHandler(ident: number, handler: IDcsHandler): void;
+  clearDcsHandler(ident: number): void;
   setDcsHandlerFallback(handler: DcsFallbackHandler): void;
   reset(): void;
-  hook(collect: string, params: IParams, flag: number): void;
+  hook(ident: number, params: IParams): void;
   put(data: Uint32Array, start: number, end: number): void;
   unhook(success: boolean): void;
+}
+
+export interface IFunctionIdentifier {
+  prefix?: string;
+  intermediates?: string;
+  final: string;
 }

@@ -340,7 +340,7 @@ describe('InputHandler Integration Tests', function(): void {
       await page.evaluate(`
         window.term.reset();
         const _customCsiHandlerParams = [];
-        const _customCsiHandler = window.term.addCsiHandler('m', (params, collect) => {
+        const _customCsiHandler = window.term.addCsiHandler({final: 'm'}, (params, collect) => {
           _customCsiHandlerParams.push(params);
           return false;
         }, '');
@@ -356,15 +356,15 @@ describe('InputHandler Integration Tests', function(): void {
       await page.evaluate(`
         window.term.reset();
         const _customDcsHandlerCallStack = [];
-        const _customDcsHandlerA = window.term.addDcsHandler('+p', (params, data) => {
+        const _customDcsHandlerA = window.term.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           _customDcsHandlerCallStack.push(['A', params, data]);
           return false;
         });
-        const _customDcsHandlerB = window.term.addDcsHandler('+p', (params, data) => {
+        const _customDcsHandlerB = window.term.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           _customDcsHandlerCallStack.push(['B', params, data]);
           return true;
         });
-        const _customDcsHandlerC = window.term.addDcsHandler('+p', (params, data) => {
+        const _customDcsHandlerC = window.term.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           _customDcsHandlerCallStack.push(['C', params, data]);
           return false;
         });
@@ -380,15 +380,15 @@ describe('InputHandler Integration Tests', function(): void {
       await page.evaluate(`
         window.term.reset();
         const _customEscHandlerCallStack = [];
-        const _customEscHandlerA = window.term.addEscHandler('(B', () => {
+        const _customEscHandlerA = window.term.addEscHandler({intermediates:'(', final: 'B'}, () => {
           _customEscHandlerCallStack.push('A');
           return false;
         });
-        const _customEscHandlerB = window.term.addEscHandler('(B', () => {
+        const _customEscHandlerB = window.term.addEscHandler({intermediates:'(', final: 'B'}, () => {
           _customEscHandlerCallStack.push('B');
           return true;
         });
-        const _customEscHandlerC = window.term.addEscHandler('(B', () => {
+        const _customEscHandlerC = window.term.addEscHandler({intermediates:'(', final: 'B'}, () => {
           _customEscHandlerCallStack.push('C');
           return false;
         });

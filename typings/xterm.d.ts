@@ -502,8 +502,8 @@ declare module 'xterm' {
 
     /**
      * Adds a handler for CSI escape sequences.
-     * @param flag The flag should be one-character string, which specifies the
-     * final character (e.g "m" for SGR) of the CSI sequence.
+     * @param id Specifies the function identifier under which the callback gets registered,
+     * e.g. {final: 'm'} for SGR.
      * @param callback The function to handle the escape sequence. The callback
      * is called with the numerical params, as well as the special characters
      * (e.g. "$" for DECSCPP). If the sequence has subparams the array will
@@ -513,12 +513,12 @@ declare module 'xterm' {
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable;
+    addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
-     * @param collect Should be a string, which specifies the collect and the
-     * final character (e.g "$q" for DECRQSS) of the DCS sequence.
+     * @param id Specifies the function identifier under which the callback gets registered,
+     * e.g. {intermediates: '$' final: 'q'} for DECRQSS.
      * @param callback The function to handle the escape sequence. Note that the
      * function will only be called once if the sequence finished sucessfully.
      * There is currently no way to intercept smaller data chunks, those will be stored up
@@ -531,20 +531,19 @@ declare module 'xterm' {
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addDcsHandler(collect: string, callback: (param: (number | number[])[], data: string) => boolean): IDisposable;
+    addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
-     * @param collect Should be a string, which specifies the collect and the
-     * final character (e.g "%G" for default charset selection)
-     * of the ESC sequence.
+     * @param id Specifies the function identifier under which the callback gets registered,
+     * e.g. {intermediates: '%' final: 'G'} for default charset selection.
      * @param callback The function to handle the escape sequence.
      * Return true if the sequence was handled; false if
      * we should try a previous handler (set by addEscHandler or setEscHandler).
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addEscHandler(collect: string, handler: () => boolean): IDisposable;
+    addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -986,5 +985,23 @@ declare module 'xterm' {
      * - This is `0` for cells immediately following cells with a width of `2`.
      */
     readonly width: number;
+  }
+
+  /**
+   * Data type to register a CSI, DCS or ESC callback in the parser.
+   */
+  export interface IFunctionIdentifier {
+    /**
+     * Optional prefix byte, must be in range \x3c .. \x3f.
+     */
+    prefix?: string;
+    /**
+     * Optional intermediate bytes, must be in range \x20 .. \x2f.
+     */
+    intermediates?: string;
+    /**
+     * Final byte, must be in range \x40 .. \x7e (\x30 .. \x7e for ESC).
+     */
+    final: string;
   }
 }

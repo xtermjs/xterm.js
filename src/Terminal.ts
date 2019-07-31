@@ -55,7 +55,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
@@ -1395,18 +1395,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
-    return this._inputHandler.addEscHandler(collectAndFlag, handler);
+  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+    return this._inputHandler.addEscHandler(id, callback);
   }
 
   /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(collectAndFlag: string, callback: (param: IParams, data: string) => boolean): IDisposable {
-    return this._inputHandler.addDcsHandler(collectAndFlag, callback);
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+    return this._inputHandler.addDcsHandler(id, callback);
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(flag, callback);
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(id, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {

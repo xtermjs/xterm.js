@@ -15,7 +15,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
@@ -74,13 +74,13 @@ export class MockTerminal implements ITerminal {
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
     throw new Error('Method not implemented.');
   }
-  addDcsHandler(collectAndFlag: string, callback: (param: IParams, data: string) => boolean): IDisposable {
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
     throw new Error('Method not implemented.');
   }
-  addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
+  addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
     throw new Error('Method not implemented.');
   }
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {

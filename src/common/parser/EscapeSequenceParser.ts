@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler, IDcsParser, DcsFallbackHandler, IFunctionIdentifier } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
@@ -206,17 +206,25 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  * To implement custom ANSI compliant escape sequences it is not needed to
  * alter this parser, instead consider registering a custom handler.
  * For non ANSI compliant sequences change the transition table with
- * the optional `transitions` contructor argument and
+ * the optional `transitions` constructor argument and
  * reimplement the `parse` method.
  *
  * This parser is currently hardcoded to operate in ZDM (Zero Default Mode)
  * as suggested by the original parser, thus empty parameters are set to 0.
- * This this is not in line with the latest ECMA specification
+ * This this is not in line with the latest ECMA-48 specification
  * (ZDM was part of the early specs and got completely removed later on).
  *
  * Other than the original parser from vt100.net this parser supports
  * sub parameters in digital parameters separated by colons. Empty sub parameters
- * are set to -1.
+ * are set to -1 (no ZDM for sub parameters).
+ *
+ * About prefix and intermediate bytes:
+ * This parser follows the assumptions of the vt100.net parser with these restrictions:
+ * - only one prefix byte is allowed as first parameter byte, byte range 0x3c .. 0x3f
+ * - max. two intermediates are respected, byte range 0x20 .. 0x2f
+ * Note that this is not in line with ECMA-48 which does not limit either of those.
+ * Furthermore ECMA-48 allows the prefix byte range at any param byte position. Currently
+ * there are no known sequences that follow the broader definition of the specification.
  *
  * TODO: implement error recovery hook via error handler return values
  */
@@ -227,7 +235,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   // buffers over several parse calls
   protected _params: Params;
-  protected _collect: string;
+  protected _collect: number;
 
   // handler lookup containers
   protected _printHandler: (data: Uint32Array, start: number, end: number) => void;
@@ -241,8 +249,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // fallback handlers
   protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
-  protected _csiHandlerFb: (collect: string, params: IParams, flag: number) => void;
-  protected _escHandlerFb: (collect: string, flag: number) => void;
+  protected _csiHandlerFb: (ident: number, params: IParams) => void;
+  protected _escHandlerFb: (ident: number) => void;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
   constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
@@ -252,14 +260,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.currentState = this.initialState;
     this._params = new Params(); // defaults to 32 storable params/subparams
     this._params.addParam(0);    // ZDM
-    this._collect = '';
+    this._collect = 0;
     this.precedingCodepoint = 0;
 
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
     this._executeHandlerFb = (code: number): void => { };
-    this._csiHandlerFb = (collect: string, params: IParams, flag: number): void => { };
-    this._escHandlerFb = (collect: string, flag: number): void => { };
+    this._csiHandlerFb = (ident: number, params: IParams): void => { };
+    this._escHandlerFb = (ident: number): void => { };
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
     this._executeHandlers = Object.create(null);
@@ -270,7 +278,53 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
-    this.setEscHandler('\\', () => {});
+    this.setEscHandler({final: '\\'}, () => {});
+  }
+
+  private _identifier(id: IFunctionIdentifier, finalRange: number[] = [0x40, 0x7e]): number {
+    let res = 0;
+    if (id.prefix) {
+      if (id.prefix.length > 1) {
+        throw new Error('only one byte as prefix supported');
+      }
+      res = id.prefix.charCodeAt(0);
+      if (res && 0x3c > res || res > 0x3f) {
+        throw new Error('prefix must be in range 0x3c .. 0x3f');
+      }
+    }
+    if (id.intermediates) {
+      if (id.intermediates.length > 2) {
+        throw new Error('only two bytes as intermediates are supported');
+      }
+      for (let i = 0; i < id.intermediates.length; ++i) {
+        const intermediate = id.intermediates.charCodeAt(i);
+        if (0x20 > intermediate || intermediate > 0x2f) {
+          throw new Error('intermediate must be in range 0x20 .. 0x2f');
+        }
+        res <<= 8;
+        res |= intermediate;
+      }
+    }
+    if (id.final.length !== 1) {
+      throw new Error('final must be a single byte');
+    }
+    const finalCode = id.final.charCodeAt(0);
+    if (finalRange[0] > finalCode || finalCode > finalRange[1]) {
+      throw new Error(`final must be in range ${finalRange[0]} .. ${finalRange[1]}`);
+    }
+    res <<= 8;
+    res |= finalCode;
+
+    return res;
+  }
+
+  public identToString(ident: number): string {
+    const res: string[] = [];
+    while (ident) {
+      res.push(String.fromCharCode(ident & 0xFF));
+      ident >>= 8;
+    }
+    return res.reverse().join('');
   }
 
   public dispose(): void {
@@ -297,12 +351,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = callback;
   }
 
-  addCsiHandler(flag: string, callback: CsiHandler): IDisposable {
-    const index = flag.charCodeAt(0);
-    if (this._csiHandlers[index] === undefined) {
-      this._csiHandlers[index] = [];
+  addCsiHandler(id: IFunctionIdentifier, callback: CsiHandler): IDisposable {
+    const ident = this._identifier(id);
+    if (this._csiHandlers[ident] === undefined) {
+      this._csiHandlers[ident] = [];
     }
-    const handlerList = this._csiHandlers[index];
+    const handlerList = this._csiHandlers[ident];
     handlerList.push(callback);
     return {
       dispose: () => {
@@ -313,21 +367,22 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  setCsiHandler(flag: string, callback: (params: IParams, collect: string) => void): void {
-    this._csiHandlers[flag.charCodeAt(0)] = [callback];
+  setCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => void): void {
+    this._csiHandlers[this._identifier(id)] = [callback];
   }
-  clearCsiHandler(flag: string): void {
-    if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
+  clearCsiHandler(id: IFunctionIdentifier): void {
+    if (this._csiHandlers[this._identifier(id)]) delete this._csiHandlers[this._identifier(id)];
   }
-  setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void {
+  setCsiHandlerFallback(callback: (ident: number, params: IParams) => void): void {
     this._csiHandlerFb = callback;
   }
 
-  addEscHandler(collectAndFlag: string, callback: EscHandler): IDisposable {
-    if (this._escHandlers[collectAndFlag] === undefined) {
-      this._escHandlers[collectAndFlag] = [];
+  addEscHandler(id: IFunctionIdentifier, callback: EscHandler): IDisposable {
+    const ident = this._identifier(id, [0x30, 0x7e]);
+    if (this._escHandlers[ident] === undefined) {
+      this._escHandlers[ident] = [];
     }
-    const handlerList = this._escHandlers[collectAndFlag];
+    const handlerList = this._escHandlers[ident];
     handlerList.push(callback);
     return {
       dispose: () => {
@@ -338,13 +393,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  setEscHandler(collectAndFlag: string, callback: () => void): void {
-    this._escHandlers[collectAndFlag] = [callback];
+  setEscHandler(id: IFunctionIdentifier, callback: () => void): void {
+    this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [callback];
   }
-  clearEscHandler(collectAndFlag: string): void {
-    if (this._escHandlers[collectAndFlag]) delete this._escHandlers[collectAndFlag];
+  clearEscHandler(id: IFunctionIdentifier): void {
+    if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
   }
-  setEscHandlerFallback(callback: (collect: string, flag: number) => void): void {
+  setEscHandlerFallback(callback: (ident: number) => void): void {
     this._escHandlerFb = callback;
   }
 
@@ -361,14 +416,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._oscParser.setOscHandlerFallback(handler);
   }
 
-  addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable {
-    return this._dcsParser.addDcsHandler(collectAndFlag, handler);
+  addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
+    return this._dcsParser.addDcsHandler(this._identifier(id), handler);
   }
-  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void {
-    this._dcsParser.setDcsHandler(collectAndFlag, handler);
+  setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void {
+    this._dcsParser.setDcsHandler(this._identifier(id), handler);
   }
-  clearDcsHandler(collectAndFlag: string): void {
-    this._dcsParser.clearDcsHandler(collectAndFlag);
+  clearDcsHandler(id: IFunctionIdentifier): void {
+    this._dcsParser.clearDcsHandler(this._identifier(id));
   }
   setDcsHandlerFallback(handler: DcsFallbackHandler): void {
     this._dcsParser.setDcsHandlerFallback(handler);
@@ -387,10 +442,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.reset();
     this._params.reset();
     this._params.addParam(0); // ZDM
-    this._collect = '';
+    this._collect = 0;
     // this._activeDcsHandler = this._dcsHandlerFb;
     this.precedingCodepoint = 0;
   }
+
+
 
   /**
    * Parse UTF32 codepoints in `data` up to `length`.
@@ -415,7 +472,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let collect = this._collect;
     const params = this._params;
     const table: Uint8Array = this.TRANSITIONS.table;
-    // let dcsHandler: IDcsHandler = this._activeDcsHandler;
     let callback: Function | null = null;
 
     // process input string
@@ -465,7 +521,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               position: i,
               code,
               currentState,
-              osc: '',  // FIXME: what to send here?
               collect,
               params,
               abort: false
@@ -475,16 +530,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.CSI_DISPATCH:
           // Trigger CSI Handler
-          const handlers = this._csiHandlers[code];
+          const handlers = this._csiHandlers[collect << 8 | code];
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
             // undefined or true means success and to stop bubbling
-            if (handlers[j](params, collect) !== false) {
+            if (handlers[j](params) !== false) {
               break;
             }
           }
           if (j < 0) {
-            this._csiHandlerFb(collect, params, code);
+            this._csiHandlerFb(collect << 8 | code, params);
           }
           this.precedingCodepoint = 0;
           break;
@@ -509,10 +564,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           i--;
           break;
         case ParserAction.COLLECT:
-          collect += String.fromCharCode(code);
+          collect |= code;
           break;
         case ParserAction.ESC_DISPATCH:
-          const handlersEsc = this._escHandlers[collect + String.fromCharCode(code)];
+          const handlersEsc = this._escHandlers[collect << 8 | code];
           let jj = handlersEsc ? handlersEsc.length - 1 : -1;
           for (; jj >= 0; jj--) {
             // undefined or true means success and to stop bubbling
@@ -521,7 +576,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             }
           }
           if (jj < 0) {
-            this._escHandlerFb(collect, code);
+            this._escHandlerFb(collect << 8 | code);
           }
           this.precedingCodepoint = 0;
           break;
@@ -529,10 +584,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc.reset();
           params.reset();
           params.addParam(0); // ZDM
-          collect = '';
+          collect = 0;
           break;
         case ParserAction.DCS_HOOK:
-          dcs.hook(collect, params, code);
+          dcs.hook(collect << 8 | code, params);
           break;
         case ParserAction.DCS_PUT:
           // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
@@ -551,7 +606,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc.reset();
           params.reset();
           params.addParam(0); // ZDM
-          collect = '';
+          collect = 0;
           this.precedingCodepoint = 0;
           break;
         case ParserAction.OSC_START:
@@ -573,7 +628,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc.reset();
           params.reset();
           params.addParam(0); // ZDM
-          collect = '';
+          collect = 0;
           this.precedingCodepoint = 0;
           break;
       }

@@ -19,7 +19,7 @@ function toUtf32(s: string): Uint32Array {
 }
 
 class DcsHandler implements IDcsHandler {
-  hook(collect: string, params: IParams, flag: number) : void {}
+  hook(params: IParams) : void {}
   put(data: Uint32Array, start: number, end: number) : void {}
   unhook() :void {}
 }
@@ -32,42 +32,42 @@ perfContext('Parser throughput - 50MB data', () => {
   beforeEach(() => {
     parser = new EscapeSequenceParser();
     parser.setPrintHandler((data, start, end) => {});
-    parser.setCsiHandler('@', (params, collect) => {});
-    parser.setCsiHandler('A', (params, collect) => {});
-    parser.setCsiHandler('B', (params, collect) => {});
-    parser.setCsiHandler('C', (params, collect) => {});
-    parser.setCsiHandler('D', (params, collect) => {});
-    parser.setCsiHandler('E', (params, collect) => {});
-    parser.setCsiHandler('F', (params, collect) => {});
-    parser.setCsiHandler('G', (params, collect) => {});
-    parser.setCsiHandler('H', (params, collect) => {});
-    parser.setCsiHandler('I', (params, collect) => {});
-    parser.setCsiHandler('J', (params, collect) => {});
-    parser.setCsiHandler('K', (params, collect) => {});
-    parser.setCsiHandler('L', (params, collect) => {});
-    parser.setCsiHandler('M', (params, collect) => {});
-    parser.setCsiHandler('P', (params, collect) => {});
-    parser.setCsiHandler('S', (params, collect) => {});
-    parser.setCsiHandler('T', (params, collect) => {});
-    parser.setCsiHandler('X', (params, collect) => {});
-    parser.setCsiHandler('Z', (params, collect) => {});
-    parser.setCsiHandler('`', (params, collect) => {});
-    parser.setCsiHandler('a', (params, collect) => {});
-    parser.setCsiHandler('b', (params, collect) => {});
-    parser.setCsiHandler('c', (params, collect) => {});
-    parser.setCsiHandler('d', (params, collect) => {});
-    parser.setCsiHandler('e', (params, collect) => {});
-    parser.setCsiHandler('f', (params, collect) => {});
-    parser.setCsiHandler('g', (params, collect) => {});
-    parser.setCsiHandler('h', (params, collect) => {});
-    parser.setCsiHandler('l', (params, collect) => {});
-    parser.setCsiHandler('m', (params, collect) => {});
-    parser.setCsiHandler('n', (params, collect) => {});
-    parser.setCsiHandler('p', (params, collect) => {});
-    parser.setCsiHandler('q', (params, collect) => {});
-    parser.setCsiHandler('r', (params, collect) => {});
-    parser.setCsiHandler('s', (params, collect) => {});
-    parser.setCsiHandler('u', (params, collect) => {});
+    parser.setCsiHandler({final: '@'}, params => {});
+    parser.setCsiHandler({final: 'A'}, params => {});
+    parser.setCsiHandler({final: 'B'}, params => {});
+    parser.setCsiHandler({final: 'C'}, params => {});
+    parser.setCsiHandler({final: 'D'}, params => {});
+    parser.setCsiHandler({final: 'E'}, params => {});
+    parser.setCsiHandler({final: 'F'}, params => {});
+    parser.setCsiHandler({final: 'G'}, params => {});
+    parser.setCsiHandler({final: 'H'}, params => {});
+    parser.setCsiHandler({final: 'I'}, params => {});
+    parser.setCsiHandler({final: 'J'}, params => {});
+    parser.setCsiHandler({final: 'K'}, params => {});
+    parser.setCsiHandler({final: 'L'}, params => {});
+    parser.setCsiHandler({final: 'M'}, params => {});
+    parser.setCsiHandler({final: 'P'}, params => {});
+    parser.setCsiHandler({final: 'S'}, params => {});
+    parser.setCsiHandler({final: 'T'}, params => {});
+    parser.setCsiHandler({final: 'X'}, params => {});
+    parser.setCsiHandler({final: 'Z'}, params => {});
+    parser.setCsiHandler({final: '`'}, params => {});
+    parser.setCsiHandler({final: 'a'}, params => {});
+    parser.setCsiHandler({final: 'b'}, params => {});
+    parser.setCsiHandler({final: 'c'}, params => {});
+    parser.setCsiHandler({final: 'd'}, params => {});
+    parser.setCsiHandler({final: 'e'}, params => {});
+    parser.setCsiHandler({final: 'f'}, params => {});
+    parser.setCsiHandler({final: 'g'}, params => {});
+    parser.setCsiHandler({final: 'h'}, params => {});
+    parser.setCsiHandler({final: 'l'}, params => {});
+    parser.setCsiHandler({final: 'm'}, params => {});
+    parser.setCsiHandler({final: 'n'}, params => {});
+    parser.setCsiHandler({final: 'p'}, params => {});
+    parser.setCsiHandler({final: 'q'}, params => {});
+    parser.setCsiHandler({final: 'r'}, params => {});
+    parser.setCsiHandler({final: 's'}, params => {});
+    parser.setCsiHandler({final: 'u'}, params => {});
     parser.setExecuteHandler(C0.BEL, () => {});
     parser.setExecuteHandler(C0.LF, () => {});
     parser.setExecuteHandler(C0.VT, () => {});
@@ -82,23 +82,23 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.setExecuteHandler(C1.HTS, () => {});
     parser.setOscHandler(0, new OscHandlerFactory((data) => {}));
     parser.setOscHandler(2, new OscHandlerFactory((data) => {}));
-    parser.setEscHandler('7', () => {});
-    parser.setEscHandler('8', () => {});
-    parser.setEscHandler('D', () => {});
-    parser.setEscHandler('E', () => {});
-    parser.setEscHandler('H', () => {});
-    parser.setEscHandler('M', () => {});
-    parser.setEscHandler('=', () => {});
-    parser.setEscHandler('>', () => {});
-    parser.setEscHandler('c', () => {});
-    parser.setEscHandler('n', () => {});
-    parser.setEscHandler('o', () => {});
-    parser.setEscHandler('|', () => {});
-    parser.setEscHandler('}', () => {});
-    parser.setEscHandler('~', () => {});
-    parser.setEscHandler('%@', () => {});
-    parser.setEscHandler('%G', () => {});
-    parser.setDcsHandler('q', new DcsHandler());
+    parser.setEscHandler({final: '7'}, () => {});
+    parser.setEscHandler({final: '8'}, () => {});
+    parser.setEscHandler({final: 'D'}, () => {});
+    parser.setEscHandler({final: 'E'}, () => {});
+    parser.setEscHandler({final: 'H'}, () => {});
+    parser.setEscHandler({final: 'M'}, () => {});
+    parser.setEscHandler({final: '='}, () => {});
+    parser.setEscHandler({final: '>'}, () => {});
+    parser.setEscHandler({final: 'c'}, () => {});
+    parser.setEscHandler({final: 'n'}, () => {});
+    parser.setEscHandler({final: 'o'}, () => {});
+    parser.setEscHandler({final: '|'}, () => {});
+    parser.setEscHandler({final: '}'}, () => {});
+    parser.setEscHandler({final: '~'}, () => {});
+    parser.setEscHandler({intermediates: '%', final: '@'}, () => {});
+    parser.setEscHandler({intermediates: '%', final: 'G'}, () => {});
+    parser.setDcsHandler({final: 'q'}, new DcsHandler());
   });
 
   perfContext('PRINT - a', () => {

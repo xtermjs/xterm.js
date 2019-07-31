@@ -11,7 +11,7 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -57,14 +57,14 @@ export class Terminal implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
-  public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
-    return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
   }
-  public addDcsHandler(collectAndFlag: string, callback: (param: (number | number[])[], data: string) => boolean): IDisposable {
-    return this._core.addDcsHandler(collectAndFlag, (params: IParams, data: string) => callback(params.toArray(), data));
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
   }
-  public addEscHandler(collectAndFlag: string, handler: () => boolean): IDisposable {
-    return this._core.addEscHandler(collectAndFlag, handler);
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this._core.addEscHandler(id, handler);
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._core.addOscHandler(ident, callback);

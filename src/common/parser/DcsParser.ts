@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, ParamsArray, IHandlerCollection, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
@@ -13,7 +13,7 @@ import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
   private _active: IDcsHandler[] = [];
-  private _collectAndFlag: string = '';
+  private _ident: number = 0;
   private _handlerFb: DcsFallbackHandler = () => {};
 
   public dispose(): void {
@@ -21,11 +21,11 @@ export class DcsParser implements IDcsParser {
     this._handlerFb = () => {};
   }
 
-  public addDcsHandler(collectAndFlag: string, handler: IDcsHandler): IDisposable {
-    if (this._handlers[collectAndFlag] === undefined) {
-      this._handlers[collectAndFlag] = [];
+  public addDcsHandler(ident: number, handler: IDcsHandler): IDisposable {
+    if (this._handlers[ident] === undefined) {
+      this._handlers[ident] = [];
     }
-    const handlerList = this._handlers[collectAndFlag];
+    const handlerList = this._handlers[ident];
     handlerList.push(handler);
     return {
       dispose: () => {
@@ -37,12 +37,12 @@ export class DcsParser implements IDcsParser {
     };
   }
 
-  public setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void {
-    this._handlers[collectAndFlag] = [handler];
+  public setDcsHandler(ident: number, handler: IDcsHandler): void {
+    this._handlers[ident] = [handler];
   }
 
-  public clearDcsHandler(collectAndFlag: string): void {
-    if (this._handlers[collectAndFlag]) delete this._handlers[collectAndFlag];
+  public clearDcsHandler(ident: number): void {
+    if (this._handlers[ident]) delete this._handlers[ident];
   }
 
   public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
@@ -54,24 +54,24 @@ export class DcsParser implements IDcsParser {
       this.unhook(false);
     }
     this._active = [];
-    this._collectAndFlag = '';
+    this._ident = 0;
   }
 
-  public hook(collect: string, params: IParams, flag: number): void {
-    this._collectAndFlag = collect + String.fromCharCode(flag);
-    this._active = this._handlers[this._collectAndFlag] || [];
+  public hook(ident: number, params: IParams): void {
+    this._ident = ident;
+    this._active = this._handlers[ident] || [];
     if (!this._active.length) {
-      this._handlerFb(this._collectAndFlag, 'HOOK', {collect, params, flag});
+      this._handlerFb(this._ident, 'HOOK', params);
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
-        this._active[j].hook(collect, params, flag);
+        this._active[j].hook(params);
       }
     }
   }
 
   public put(data: Uint32Array, start: number, end: number): void {
     if (!this._active.length) {
-      this._handlerFb(this._collectAndFlag, 'PUT', utf32ToString(data, start, end));
+      this._handlerFb(this._ident, 'PUT', utf32ToString(data, start, end));
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
         this._active[j].put(data, start, end);
@@ -81,7 +81,7 @@ export class DcsParser implements IDcsParser {
 
   public unhook(success: boolean): void {
     if (!this._active.length) {
-      this._handlerFb(this._collectAndFlag, 'UNHOOK', success);
+      this._handlerFb(this._ident, 'UNHOOK', success);
     } else {
       let j = this._active.length - 1;
       for (; j >= 0; j--) {
@@ -96,7 +96,7 @@ export class DcsParser implements IDcsParser {
       }
     }
     this._active = [];
-    this._collectAndFlag = '';
+    this._ident = 0;
   }
 }
 
@@ -109,9 +109,9 @@ export class DcsHandlerFactory implements IDcsHandler {
   private _params: IParams | undefined;
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (params: IParams, data: string) => any) {}
+  constructor(private _handler: (data: string, params: IParams) => any) {}
 
-  public hook(collect: string, params: IParams, flag: number): void {
+  public hook(params: IParams): void {
     this._params = params.clone();
     this._data = '';
     this._hitLimit = false;
@@ -133,7 +133,7 @@ export class DcsHandlerFactory implements IDcsHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._params ? this._params : new Params(), this._data);
+      ret = this._handler(this._data, this._params ? this._params : new Params());
     }
     this._params = undefined;
     this._data = '';
