@@ -261,12 +261,17 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   public dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
     super.dispose();
     if (this._windowsMode) {
       this._windowsMode.dispose();
       this._windowsMode = undefined;
     }
-    this._renderService.dispose();
+    if (this._renderService) {
+      this._renderService.dispose();
+    }
     this._customKeyEventHandler = null;
     this.write = () => {};
     if (this.element && this.element.parentNode) {
@@ -1486,10 +1491,19 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.textarea.value = '';
     }
 
-    this._keyDownHandled = true;
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this._coreService.triggerDataEvent(result.key, true);
+
+    // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
+    // other listeners. When screen reader mode is enabled, this could cause issues if the event
+    // is handled at a higher level, this is a compromise in order to echo keys to the screen
+    // reader.
+    if (!this.optionsService.options.screenReaderMode) {
+      return this.cancel(event, true);
+    }
+
+    this._keyDownHandled = true;
   }
 
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
