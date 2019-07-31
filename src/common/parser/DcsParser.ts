@@ -12,7 +12,8 @@ import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
 export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
-  private _active: IDcsHandler[] = [];
+  private _empty: IDcsHandler[] = [];
+  private _active: IDcsHandler[] = this._empty;
   private _ident: number = 0;
   private _handlerFb: DcsFallbackHandler = () => {};
 
@@ -53,13 +54,15 @@ export class DcsParser implements IDcsParser {
     if (this._active.length) {
       this.unhook(false);
     }
-    this._active = [];
+    this._active = this._empty;
     this._ident = 0;
   }
 
   public hook(ident: number, params: IParams): void {
+    // always reset leftover handlers
+    this.reset();
     this._ident = ident;
-    this._active = this._handlers[ident] || [];
+    this._active = this._handlers[ident] || this._empty;
     if (!this._active.length) {
       this._handlerFb(this._ident, 'HOOK', params);
     } else {
@@ -95,7 +98,7 @@ export class DcsParser implements IDcsParser {
         this._active[j].unhook(false);
       }
     }
-    this._active = [];
+    this._active = this._empty;
     this._ident = 0;
   }
 }

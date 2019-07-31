@@ -279,12 +279,10 @@ describe('EscapeSequenceParser', function (): void {
       parser.reset();
       for (state in states) {
         parser.currentState = state;
-        parser.osc = '#';
         parser.params = [23];
         parser.collect = '#';
         parse(parser, '\x1b');
         chai.expect(parser.currentState).equal(ParserState.ESCAPE);
-        chai.expect(parser.osc).equal('');
         chai.expect(parser.params).eql([0]);
         chai.expect(parser.collect).equal('');
         parser.reset();
@@ -396,24 +394,20 @@ describe('EscapeSequenceParser', function (): void {
       parser.reset();
       // C0
       parser.currentState = ParserState.ESCAPE;
-      parser.osc = '#';
       parser.params = [123];
       parser.collect = '#';
       parse(parser, '[');
       chai.expect(parser.currentState).equal(ParserState.CSI_ENTRY);
-      chai.expect(parser.osc).equal('');
       chai.expect(parser.params).eql([0]);
       chai.expect(parser.collect).equal('');
       parser.reset();
       // C1
       for (state in states) {
         parser.currentState = state;
-        parser.osc = '#';
         parser.params = [123];
         parser.collect = '#';
         parse(parser, '\x9b');
         chai.expect(parser.currentState).equal(ParserState.CSI_ENTRY);
-        chai.expect(parser.osc).equal('');
         chai.expect(parser.params).eql([0]);
         chai.expect(parser.collect).equal('');
         parser.reset();

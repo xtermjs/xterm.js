@@ -502,14 +502,13 @@ declare module 'xterm' {
 
     /**
      * Adds a handler for CSI escape sequences.
-     * @param id Specifies the function identifier under which the callback gets registered,
-     * e.g. {final: 'm'} for SGR.
-     * @param callback The function to handle the escape sequence. The callback
-     * is called with the numerical params, as well as the special characters
-     * (e.g. "$" for DECSCPP). If the sequence has subparams the array will
-     * contain subarrays with their numercial values.
-     * Return true if the sequence was handled; false if
-     * we should try a previous handler (set by addCsiHandler or setCsiHandler).
+     * @param id Specifies the function identifier under which the callback
+     * gets registered, e.g. {final: 'm'} for SGR.
+     * @param callback The function to handle the sequence. The callback is
+     * called with the numerical params. If the sequence has subparams the
+     * array will contain subarrays with their numercial values.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addCsiHandler or setCsiHandler).
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
@@ -517,17 +516,18 @@ declare module 'xterm' {
 
     /**
      * Adds a handler for DCS escape sequences.
-     * @param id Specifies the function identifier under which the callback gets registered,
-     * e.g. {intermediates: '$' final: 'q'} for DECRQSS.
-     * @param callback The function to handle the escape sequence. Note that the
+     * @param id Specifies the function identifier under which the callback
+     * gets registered, e.g. {intermediates: '$' final: 'q'} for DECRQSS.
+     * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished sucessfully.
-     * There is currently no way to intercept smaller data chunks, those will be stored up
-     * until the sequence is finished. Since DCS sequences are not limited by the amount
-     * of data this might impose a problem for big payloads. Currently xterm.js limits
-     * DCS payload to 10 MB which should give enough room for most use cases.
-     * The function gets numerical parameter and the data as arguments.
-     * Return true if the sequence was handled; false if
-     * we should try a previous handler (set by addDcsHandler or setDcsHandler).
+     * There is currently no way to intercept smaller data chunks, data chunks
+     * will be stored up until the sequence is finished. Since DCS sequences
+     * are not limited by the amount of data this might impose a problem for
+     * big payloads. Currently xterm.js limits DCS payload to 10 MB
+     * which should give enough room for most use cases.
+     * The function gets the payload and numerical parameters as arguments.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addDcsHandler or setDcsHandler).
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
@@ -535,11 +535,12 @@ declare module 'xterm' {
 
     /**
      * Adds a handler for ESC escape sequences.
-     * @param id Specifies the function identifier under which the callback gets registered,
-     * e.g. {intermediates: '%' final: 'G'} for default charset selection.
-     * @param callback The function to handle the escape sequence.
-     * Return true if the sequence was handled; false if
-     * we should try a previous handler (set by addEscHandler or setEscHandler).
+     * @param id Specifies the function identifier under which the callback
+     * gets registered, e.g. {intermediates: '%' final: 'G'} for
+     * default charset selection.
+     * @param callback The function to handle the sequence.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
@@ -548,15 +549,17 @@ declare module 'xterm' {
     /**
      * Adds a handler for OSC escape sequences.
      * @param ident The number (first parameter) of the sequence.
-     * @param callback The function to handle the escape sequence. Note that the
+     * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished sucessfully.
-     * There is currently no way to intercept smaller data chunks, those will be stored up
-     * until the sequence is finished. Since OSC sequences are not limited by the amount
-     * of data this might impose a problem for big payloads. Currently xterm.js limits
-     * OSC payload to 10 MB which should give enough room for most use cases.
-     * The callback is called with OSC data string. Return true if the sequence was handled;
-     * false if we should try a previous handler (set by addOscHandler or
-     * setOscHandler). The most recently-added handler is tried first.
+     * There is currently no way to intercept smaller data chunks, data chunks
+     * will be stored up until the sequence is finished. Since OSC sequences
+     * are not limited by the amount of data this might impose a problem for
+     * big payloads. Currently xterm.js limits OSC payload to 10 MB
+     * which should give enough room for most use cases.
+     * The callback is called with OSC data string.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addOscHandler or setOscHandler).
+     * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
@@ -988,19 +991,44 @@ declare module 'xterm' {
   }
 
   /**
-   * Data type to register a CSI, DCS or ESC callback in the parser.
+   * Data type to register a CSI, DCS or ESC callback in the parser in the form:
+   *    ESC I..I F
+   *    CSI Prefix P..P I..I F
+   *    DCS Prefix P..P I..I F data_bytes ST
+   * 
+   * with these rules/restrictions:
+   * - prefix can only be used with CSI and DCS
+   * - only one leading prefix byte is recognized by the parser
+   *   before any other parameter bytes (P..P)
+   * - intermediate bytes are recognized up to 2
+   * 
+   * For custom sequences make sure to read ECMA-48 and the resources at
+   * vt100.net to not clash with existing sequences or reserved address space.
+   * General recommendations:
+   * - use private address space (see ECMA-48)
+   * - use max one intermediate byte (technically not limited by the spec,
+   *   in practice there are no sequences with more than one intermediate byte,
+   *   thus parsers might get confused with more intermediates)
+   * - test against other common emulators to check whether they escape/ignore
+   *   the sequence correctly
+   * 
+   * Notes: OSC command registration is handled differently (see addOscHandler)
+   *        APC, PM or SOS is currently not supported
    */
   export interface IFunctionIdentifier {
     /**
      * Optional prefix byte, must be in range \x3c .. \x3f.
+     * Usable in CSI and DCS.
      */
     prefix?: string;
     /**
      * Optional intermediate bytes, must be in range \x20 .. \x2f.
+     * Usable in CSI, DCS and ESC.
      */
     intermediates?: string;
     /**
-     * Final byte, must be in range \x40 .. \x7e (\x30 .. \x7e for ESC).
+     * Final byte, must be in range \x40 .. \x7e for CSI and DCS,
+     * \x30 .. \x7e for ESC.
      */
     final: string;
   }

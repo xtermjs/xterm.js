@@ -16,7 +16,7 @@ export class OscParser extends Disposable {
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandler = () => { };
 
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -31,13 +31,13 @@ export class OscParser extends Disposable {
       }
     };
   }
-  setOscHandler(ident: number, handler: IOscHandler): void {
+  public setOscHandler(ident: number, handler: IOscHandler): void {
     this._handlers[ident] = [handler];
   }
-  clearOscHandler(ident: number): void {
+  public clearOscHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
-  setOscHandlerFallback(handler: OscFallbackHandler): void {
+  public setOscHandlerFallback(handler: OscFallbackHandler): void {
     this._handlerFb = handler;
   }
 
@@ -100,6 +100,8 @@ export class OscParser extends Disposable {
   }
 
   public start(): void {
+    // always reset leftover handlers
+    this.reset();
     this._id = -1;
     this._state = OscState.ID;
   }
