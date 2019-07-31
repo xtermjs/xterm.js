@@ -34,7 +34,8 @@ class MockOscPutParser implements IOscParser {
   }
   public dispose(): void { }
   public start(): void { }
-  public end(): void {
+  public end(success: boolean): void {
+    this.data += `, success: ${success}`;
     const id = parseInt(this.data.slice(0, this.data.indexOf(';')));
     if (!isNaN(id)) {
       this._fallback(id, 'END', this.data.slice(this.data.indexOf(';') + 1));
@@ -121,8 +122,8 @@ const testTerminal: any = {
   actionDCSPrint: function (s: string): void {
     this.calls.push(['dcs put', s]);
   },
-  actionDCSUnhook: function (): void {
-    this.calls.push(['dcs unhook']);
+  actionDCSUnhook: function (success: boolean): void {
+    this.calls.push(['dcs unhook', success]);
   }
 };
 
@@ -172,7 +173,7 @@ testParser.setDcsHandlerFallback((collectAndFlag, action, payload) => {
       testTerminal.actionDCSPrint(payload);
       break;
     case 'UNHOOK':
-      testTerminal.actionDCSUnhook();
+      testTerminal.actionDCSUnhook(payload);
   }
 });
 
@@ -253,7 +254,8 @@ describe('EscapeSequenceParser', function (): void {
         '\x91', '\x92', '\x93', '\x94', '\x95', '\x96', '\x97', '\x99', '\x9a'
       ];
       const exceptions: { [key: number]: { [key: string]: any[] } } = {
-        8: { '\x18': [], '\x1a': [] } // simply abort osc state
+        8: { '\x18': [], '\x1a': [] }, // abort OSC_STRING
+        13: { '\x18': [['dcs unhook', false]], '\x1a': [['dcs unhook', false]] } // abort DCS_PASSTHROUGH
       };
       parser.reset();
       testTerminal.clear();
@@ -1025,14 +1027,14 @@ describe('EscapeSequenceParser', function (): void {
     });
     it('OSC', function (): void {
       test('\x1b]0;abc123€öäü\x07', [
-        ['osc', '0;abc123€öäü']
+        ['osc', '0;abc123€öäü, success: true']
       ], null);
     });
     it('single DCS', function (): void {
       test('\x1bP1;2;3+$aäbc;däe\x9c', [
         ['dcs hook', [1, 2, 3]],
         ['dcs put', 'äbc;däe'],
-        ['dcs unhook']
+        ['dcs unhook', true]
       ], null);
     });
     it('multi DCS', function (): void {
@@ -1043,7 +1045,7 @@ describe('EscapeSequenceParser', function (): void {
       testTerminal.clear();
       test('abc\x9c', [
         ['dcs put', 'abc'],
-        ['dcs unhook']
+        ['dcs unhook', true]
       ], true);
     });
     it('print + DCS(C1)', function (): void {
@@ -1051,7 +1053,7 @@ describe('EscapeSequenceParser', function (): void {
         ['print', 'abc'],
         ['dcs hook', [1, 2, 3]],
         ['dcs put', 'bc;de'],
-        ['dcs unhook']
+        ['dcs unhook', true]
       ], null);
     });
     it('print + PM(C1) + print', function (): void {
@@ -1063,7 +1065,7 @@ describe('EscapeSequenceParser', function (): void {
     it('print + OSC(C1) + print', function (): void {
       test('abc\x9d123;tzf\x9cdefg', [
         ['print', 'abc'],
-        ['osc', '123;tzf'],
+        ['osc', '123;tzf, success: true'],
         ['print', 'defg']
       ], null);
     });
@@ -1076,7 +1078,7 @@ describe('EscapeSequenceParser', function (): void {
     it('7bit ST should be swallowed', function (): void {
       test('abc\x9d123;tzf\x1b\\defg', [
         ['print', 'abc'],
-        ['osc', '123;tzf'],
+        ['osc', '123;tzf, success: true'],
         ['print', 'defg']
       ], null);
     });
@@ -1094,7 +1096,33 @@ describe('EscapeSequenceParser', function (): void {
         ['print', 'abc'],
         ['dcs hook', [1, 2, [-1, 55], 3]],
         ['dcs put', 'bc;de'],
-        ['dcs unhook']
+        ['dcs unhook', true]
+      ], null);
+    });
+    it('CAN should abort DCS', () => {
+      test('abc\x901;2::55;3+$abc;de\x18', [
+        ['print', 'abc'],
+        ['dcs hook', [1, 2, [-1, 55], 3]],
+        ['dcs put', 'bc;de'],
+        ['dcs unhook', false] // false for abort
+      ], null);
+    });
+    it('SUB should abort DCS', () => {
+      test('abc\x901;2::55;3+$abc;de\x1a', [
+        ['print', 'abc'],
+        ['dcs hook', [1, 2, [-1, 55], 3]],
+        ['dcs put', 'bc;de'],
+        ['dcs unhook', false] // false for abort
+      ], null);
+    });
+    it('CAN should abort OSC', () => {
+      test('\x1b]0;abc123€öäü\x18', [
+        ['osc', '0;abc123€öäü, success: false']
+      ], null);
+    });
+    it('SUB should abort OSC', () => {
+      test('\x1b]0;abc123€öäü\x1a', [
+        ['osc', '0;abc123€öäü, success: false']
       ], null);
     });
   });
