@@ -265,6 +265,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   public dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
     super.dispose();
     if (this._windowsMode) {
       this._windowsMode.dispose();
