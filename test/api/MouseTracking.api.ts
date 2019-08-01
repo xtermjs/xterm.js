@@ -74,10 +74,6 @@ async function mouseMove(col: number, row: number): Promise<void> {
   const [xPixels, yPixels] = await cellPos(col, row);
   return await page.mouse.move(xPixels, yPixels);
 }
-async function mouseClick(col: number, row: number): Promise<void> {
-  const [xPixels, yPixels] = await cellPos(col, row);
-  return await page.mouse.click(xPixels, yPixels);
-}
 async function mouseDown(button: 'left' | 'right' | 'middle' | undefined): Promise<void> {
   return await page.mouse.down({button});
 }
@@ -2625,5 +2621,9 @@ describe('Mouse Tracking Tests', function(): void {
       ]);
     });
   });
-  // TODO: tests with multiple buttons pressed
+  /**
+   * move tests with multiple buttons pressed:
+   * currently not possible due to a limitation of the puppeteer mouse interface
+   * (saves only the last one pressed)
+   */
 });
