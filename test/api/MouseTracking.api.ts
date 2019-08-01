@@ -1477,9 +1477,9 @@ describe('Mouse Tracking Tests', function(): void {
         ]);
       } else {
         assert.deepEqual(await getReports(encoding), [
-          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: false}}},
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       }
@@ -1635,9 +1635,9 @@ describe('Mouse Tracking Tests', function(): void {
       } else {
         // bug: completely messed up - wrong modifier, only partially reported
         assert.deepEqual(await getReports(encoding), [
-          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: false}}},
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       }
@@ -1791,9 +1791,9 @@ describe('Mouse Tracking Tests', function(): void {
         ]);
       } else {
         assert.deepEqual(await getReports(encoding), [
-          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: true, meta: false}}},
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       }
@@ -1947,9 +1947,9 @@ describe('Mouse Tracking Tests', function(): void {
         ]);
       } else {
         assert.deepEqual(await getReports(encoding), [
-          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: true, meta: false}}},
-          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: true, meta: false}}},
+          {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
+          {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       }
