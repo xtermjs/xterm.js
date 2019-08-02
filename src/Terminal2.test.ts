@@ -42,7 +42,7 @@ const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slic
 
 
 describe('Escape Sequence Files', function(): void {
-  this.timeout(100);
+  this.timeout(1000);
 
   let ptyTerm: any;
   let slaveEnd: any;
