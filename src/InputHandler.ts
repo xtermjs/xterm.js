@@ -412,10 +412,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           buffer.x = 0;
           buffer.y++;
-          if (buffer.y > buffer.scrollBottom) {
+          if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
             this._terminal.scroll(true);
           } else {
+            if (buffer.y >= this._bufferService.rows) {
+              buffer.y = this._bufferService.rows - 1;
+            }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
             buffer.lines.get(buffer.y).isWrapped = true;
@@ -508,9 +511,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.x = 0;
     }
     buffer.y++;
-    if (buffer.y > buffer.scrollBottom) {
+    if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (buffer.x >= this._bufferService.cols) {
