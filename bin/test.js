@@ -22,7 +22,7 @@ if (process.argv.length > 2) {
   testFiles = process.argv.slice(2);
 }
 
-cp.spawnSync(
+const run = cp.spawnSync(
   path.resolve(__dirname, '../node_modules/.bin/mocha'),
   testFiles,
   {
@@ -31,3 +31,5 @@ cp.spawnSync(
     stdio: 'inherit'
   }
 );
+
+process.exit(run.status);

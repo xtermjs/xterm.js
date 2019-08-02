@@ -94,6 +94,7 @@ describe('Terminal', () => {
         expect(e.domEvent).to.be.an.instanceof(Object);
         done();
       });
+      (<any>term).textarea = { value: '' };
       const evKeyDown = <KeyboardEvent>{
         preventDefault: () => { },
         stopPropagation: () => { },
@@ -578,10 +579,11 @@ describe('Terminal', () => {
         assert.equal(term.keyDown(evKeyDown), true);
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 192;
+        term.keyDown(evKeyDown);
         assert.equal(term.keyDown(evKeyDown), true);
       });
 
-      it('should interefere with the alt + arrow keys', () => {
+      it('should interfere with the alt + arrow keys', () => {
         evKeyDown.altKey = true;
         evKeyDown.keyCode = 37;
         assert.equal(term.keyDown(evKeyDown), false);
@@ -646,16 +648,18 @@ describe('Terminal', () => {
         evKeyDown.altKey = true;
         evKeyDown.ctrlKey = true;
         evKeyDown.keyCode = 81;
-        assert.equal(term.keyDown(evKeyDown), true);
+        term.keyDown(evKeyDown);
+        assert.equal(term.keyDown(evKeyPress), true);
       });
 
-      it('should interefere with the alt + ctrl + arrow keys', () => {
+      it('should interfere with the alt + ctrl + arrow keys', () => {
         evKeyDown.altKey = true;
         evKeyDown.ctrlKey = true;
 
         evKeyDown.keyCode = 37;
         assert.equal(term.keyDown(evKeyDown), false);
         evKeyDown.keyCode = 39;
+        term.keyDown(evKeyDown);
         assert.equal(term.keyDown(evKeyDown), false);
       });
 

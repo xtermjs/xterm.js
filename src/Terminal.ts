@@ -38,7 +38,6 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -179,6 +178,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
 
+  /**
+   * Records whether the keydown event has already been handled and triggered a data event, if so
+   * the keypress event should not trigger a data event but should still print to the textarea so
+   * screen readers will announce it.
+   */
+  private _keyDownHandled: boolean = false;
+
   private _inputHandler: InputHandler;
   public linkifier: ILinkifier;
   public viewport: IViewport;
@@ -246,26 +252,31 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(IOptionsService, this.optionsService);
     this._bufferService = this._instantiationService.createInstance(BufferService);
     this._instantiationService.setService(IBufferService, this._bufferService);
+    this._logService = this._instantiationService.createInstance(LogService);
+    this._instantiationService.setService(ILogService, this._logService);
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this._logService = this._instantiationService.createInstance(LogService);
-    this._instantiationService.setService(ILogService, this._logService);
 
     this._setupOptionsListeners();
     this._setup();
   }
 
   public dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
     super.dispose();
     if (this._windowsMode) {
       this._windowsMode.dispose();
       this._windowsMode = undefined;
     }
+    if (this._renderService) {
+      this._renderService.dispose();
+    }
     this._customKeyEventHandler = null;
-    removeTerminalFromCache(this);
     this.write = () => {};
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
@@ -685,7 +696,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService);
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
       case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
@@ -1515,6 +1526,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param ev The keydown event to be handled.
    */
   protected _keyDown(event: KeyboardEvent): boolean {
+    this._keyDownHandled = false;
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
@@ -1529,12 +1542,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
-
-    // if (result.key === C0.DC3) { // XOFF
-    //   this._writeStopped = true;
-    // } else if (result.key === C0.DC1) { // XON
-    //   this._writeStopped = false;
-    // }
 
     if (result.type === KeyboardResultType.PAGE_DOWN || result.type === KeyboardResultType.PAGE_UP) {
       const scrollCount = this.rows - 1;
@@ -1559,11 +1566,26 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return true;
     }
 
+    // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
+    // will announce deleted characters. This will not work 100% of the time but it should cover
+    // most scenarios.
+    if (result.key === C0.ETX || result.key === C0.CR) {
+      this.textarea.value = '';
+    }
+
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this._coreService.triggerDataEvent(result.key, true);
 
-    return this.cancel(event, true);
+    // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
+    // other listeners. When screen reader mode is enabled, this could cause issues if the event
+    // is handled at a higher level, this is a compromise in order to echo keys to the screen
+    // reader.
+    if (!this.optionsService.options.screenReaderMode) {
+      return this.cancel(event, true);
+    }
+
+    this._keyDownHandled = true;
   }
 
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
@@ -1620,6 +1642,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
+
+    if (this._keyDownHandled) {
+      return false;
+    }
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return false;
