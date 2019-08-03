@@ -2048,10 +2048,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public index(): void {
     this._restrictCursor();
+    const buffer = this._bufferService.buffer;
     this._bufferService.buffer.y++;
-    if (this._bufferService.buffer.y > this._bufferService.buffer.scrollBottom) {
-      this._bufferService.buffer.y--;
+    if (buffer.y === buffer.scrollBottom + 1) {
+      buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     this._restrictCursor();
   }
