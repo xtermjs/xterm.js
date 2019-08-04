@@ -220,6 +220,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
+    this._parser.setCsiHandler({intermediates: "'", final: '}'}, params => this.insertColumns(params));
+    this._parser.setCsiHandler({intermediates: "'", final: '~'}, params => this.deleteColumns(params));
 
     /**
      * execute handler
@@ -1092,6 +1094,32 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let y = 0; y < this._bufferService.rows; ++y) {
       const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
       line.insertCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+  }
+
+  /**
+   * CSI Pm ' }
+   * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
+   */
+  public insertColumns(params: IParams): void {
+    const param = params.params[0] || 1;
+    for (let y = 0; y < this._bufferService.rows; ++y) {
+      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+      line.insertCells(this._bufferService.buffer.x, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+  }
+
+  /**
+   * CSI Pm ' ~
+   * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
+   */
+  public deleteColumns(params: IParams): void {
+    const param = params.params[0] || 1;
+    for (let y = 0; y < this._bufferService.rows; ++y) {
+      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+      line.deleteCells(this._bufferService.buffer.x, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
   }
