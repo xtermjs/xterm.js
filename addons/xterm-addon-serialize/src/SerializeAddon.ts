@@ -4,9 +4,14 @@
  */
 
 import { Terminal, ITerminalAddon } from 'xterm';
+// import { IBufferLine } from 'common/Types';
 
-function crop(value: number, from: number, to: number): number {
-  return Math.max(from, Math.min(value, to));
+function crop(value: number | undefined, low: number, high: number, initial: number): number {
+  if (value === undefined) {
+    return initial;
+  } else {
+    return Math.max(low, Math.min(value, high));
+  }
 }
 
 export class SerializeAddon implements ITerminalAddon {
@@ -23,18 +28,16 @@ export class SerializeAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    const terminalRows = this._terminal.rows;
-    if (rows === undefined) {
-      rows = terminalRows;
-    }
-    rows = crop(rows, 0, terminalRows);
+
+    const maxRows = this._terminal.rows;
+    rows = crop(rows, 0, maxRows, maxRows);
 
     const buffer = this._terminal.buffer;
     const lines: string[] = new Array<string>(rows);
 
-    for (let i = terminalRows - rows; i < terminalRows; i++) {
+    for (let i = maxRows - rows; i < maxRows; i++) {
       const line = buffer.getLine(i);
-      lines[i - terminalRows + rows] = line ? line.translateToString() : '';
+      lines[i - maxRows + rows] = line ? line.translateToString() : '';
     }
 
     return lines.join('\r\n');
