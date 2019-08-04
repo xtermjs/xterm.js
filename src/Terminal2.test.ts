@@ -17,7 +17,6 @@ const ROWS = 25;
 
 const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
 const SKIP_FILES = [
-  't0075-DECSTBM_CUU_CUD.in',
   't0076-DECSTBM_IL_DL.in',   // not working due to lineFeed
   't0077-DECSTBM_quirks.in',
   't0084-CBT.in',

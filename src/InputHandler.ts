@@ -616,7 +616,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Up Ps Times (default = 1) (CUU).
    */
   public cursorUp(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    // stop at scrollTop
+    const diffToTop = this._bufferService.buffer.y - this._bufferService.buffer.scrollTop;
+    if (diffToTop >= 0) {
+      this._moveCursor(0, -Math.min(diffToTop, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, -(params.params[0] || 1));
+    }
   }
 
   /**
@@ -624,7 +630,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Down Ps Times (default = 1) (CUD).
    */
   public cursorDown(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    // stop at scrollBottom
+    const diffToBottom = this._bufferService.buffer.scrollBottom - this._bufferService.buffer.y;
+    if (diffToBottom >= 0) {
+      this._moveCursor(0, Math.min(diffToBottom, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, params.params[0] || 1);
+    }
   }
 
   /**
@@ -649,7 +661,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorDown (CUD) also set the cursor to first column.
    */
   public cursorNextLine(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    this.cursorDown(params);
     this._bufferService.buffer.x = 0;
   }
 
@@ -659,7 +671,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorUp (CUU) also set the cursor to first column.
    */
   public cursorPrecedingLine(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    this.cursorUp(params);
     this._bufferService.buffer.x = 0;
   }
 
