@@ -220,8 +220,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
-    this._parser.setCsiHandler({intermediates: "'", final: '}'}, params => this.insertColumns(params));
-    this._parser.setCsiHandler({intermediates: "'", final: '~'}, params => this.deleteColumns(params));
+    this._parser.setCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
+    this._parser.setCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
 
     /**
      * execute handler
