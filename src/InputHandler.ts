@@ -189,6 +189,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
     this._parser.setCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
     this._parser.setCsiHandler({final: 'K'}, params => this.eraseInLine(params));
+    this._parser.setCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
     this._parser.setCsiHandler({final: 'L'}, params => this.insertLines(params));
     this._parser.setCsiHandler({final: 'M'}, params => this.deleteLines(params));
     this._parser.setCsiHandler({final: 'P'}, params => this.deleteChars(params));
