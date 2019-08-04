@@ -92,7 +92,9 @@ export interface IInputHandler {
   /** C0 SI */ shiftIn(): void;
 
   /** CSI @ */ insertChars(params: IParams): void;
+  /** CSI SP @ */ scrollLeft(params: IParams): void;
   /** CSI A */ cursorUp(params: IParams): void;
+  /** CSI SP A */ scrollRight(params: IParams): void;
   /** CSI B */ cursorDown(params: IParams): void;
   /** CSI C */ cursorForward(params: IParams): void;
   /** CSI D */ cursorBackward(params: IParams): void;

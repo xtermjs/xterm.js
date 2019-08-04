@@ -177,7 +177,9 @@ export class InputHandler extends Disposable implements IInputHandler {
      * CSI handler
      */
     this._parser.setCsiHandler({final: '@'}, params => this.insertChars(params));
+    this._parser.setCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
     this._parser.setCsiHandler({final: 'A'}, params => this.cursorUp(params));
+    this._parser.setCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
     this._parser.setCsiHandler({final: 'B'}, params => this.cursorDown(params));
     this._parser.setCsiHandler({final: 'C'}, params => this.cursorForward(params));
     this._parser.setCsiHandler({final: 'D'}, params => this.cursorBackward(params));
@@ -1036,17 +1038,59 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    */
   public scrollDown(params: IParams): void {
-    if (params.length < 2) {
-      let param = params.params[0] || 1;
+    let param = params.params[0] || 1;
 
-      // make buffer local for faster access
-      const buffer = this._bufferService.buffer;
+    // make buffer local for faster access
+    const buffer = this._bufferService.buffer;
 
-      while (param--) {
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
-      }
-      this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    while (param--) {
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
+      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+    }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+  }
+
+  /**
+   * CSI Ps SP @  Scroll left Ps columns (default = 1) (SL) ECMA-48
+   *
+   * Notation: (Pn)
+   * Representation: CSI Pn 02/00 04/00
+   * Parameter default value: Pn = 1
+   * SL causes the data in the presentation component to be moved by n character positions
+   * if the line orientation is horizontal, or by n line positions if the line orientation
+   * is vertical, such that the data appear to move to the left; where n equals the value of Pn.
+   * The active presentation position is not affected by this control function.
+   *
+   * Supported:
+   *   - always left shift (no line orientation setting respected)
+   */
+  public scrollLeft(params: IParams): void {
+    const param = params.params[0] || 1;
+    for (let y = 0; y < this._bufferService.rows; ++y) {
+      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+      line.deleteCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    }
+  }
+
+  /**
+   * CSI Ps SP A  Scroll right Ps columns (default = 1) (SL) ECMA-48
+   *
+   * Notation: (Pn)
+   * Representation: CSI Pn 02/00 04/01
+   * Parameter default value: Pn = 1
+   * SR causes the data in the presentation component to be moved by n character positions
+   * if the line orientation is horizontal, or by n line positions if the line orientation
+   * is vertical, such that the data appear to move to the right; where n equals the value of Pn.
+   * The active presentation position is not affected by this control function.
+   *
+   * Supported:
+   *   - always right shift (no line orientation setting respected)
+   */
+  public scrollRight(params: IParams): void {
+    const param = params.params[0] || 1;
+    for (let y = 0; y < this._bufferService.rows; ++y) {
+      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+      line.insertCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
     }
   }
 
