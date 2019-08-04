@@ -1069,6 +1069,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let y = 0; y < this._bufferService.rows; ++y) {
       const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
       line.deleteCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
     }
   }
 
@@ -1091,6 +1092,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let y = 0; y < this._bufferService.rows; ++y) {
       const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
       line.insertCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
     }
   }
 
