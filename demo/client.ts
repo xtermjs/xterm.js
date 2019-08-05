@@ -15,6 +15,8 @@ import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/Se
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 
+import { IoService } from '../out/common/services/IoService';
+
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
 // import { AttachAddon } from 'xterm-addon-attach';
@@ -45,6 +47,8 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
+
+(window as any).ios = new IoService();
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
