@@ -239,8 +239,8 @@ const ENCODING_MAP: {[key: string]: {alt: string[]; decoder: IUtf32DecoderCtor, 
     decoder: Utf8ToUtf32,
     encoder: Utf8Encoder
   }
-}
-const ENCODINGS: {[key: string]: {decoder: any, encoder: any}} = (function() {
+};
+const ENCODINGS: {[key: string]: {decoder: any, encoder: any}} = (() => {
   const encodings: {[key: string]: {decoder: any, encoder: any}} = {};
   for (const entry in ENCODING_MAP) {
     encodings[entry] = {decoder: ENCODING_MAP[entry].decoder, encoder: ENCODING_MAP[entry].encoder};
