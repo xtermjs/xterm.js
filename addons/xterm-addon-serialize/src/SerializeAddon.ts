@@ -5,12 +5,29 @@
 
 import { Terminal, ITerminalAddon } from 'xterm';
 // import { IBufferLine } from 'common/Types';
+import { IBuffer } from 'common/buffer/Types';
 
 function crop(value: number | undefined, low: number, high: number, initial: number): number {
   if (value === undefined) {
     return initial;
-  } else {
-    return Math.max(low, Math.min(value, high));
+  }
+  return Math.max(low, Math.min(value, high));
+}
+
+class SerializeHandler {
+  constructor(private _buffer: IBuffer) { }
+
+  serialize(start: number, end: number): string {
+    const rows = end - start;
+    const lines: string[] = new Array<string>(rows);
+
+    for (let i = start; i < end; i++) {
+      const line = this._buffer.lines.get(i);
+
+      lines[i - start] = line ? line.translateToString() : '';
+    }
+
+    return lines.join('\r\n');
   }
 }
 
@@ -30,17 +47,11 @@ export class SerializeAddon implements ITerminalAddon {
     }
 
     const maxRows = this._terminal.rows;
+    const handler = new SerializeHandler((<any>this._terminal)._core.buffer);
+
     rows = crop(rows, 0, maxRows, maxRows);
 
-    const buffer = this._terminal.buffer;
-    const lines: string[] = new Array<string>(rows);
-
-    for (let i = maxRows - rows; i < maxRows; i++) {
-      const line = buffer.getLine(i);
-      lines[i - maxRows + rows] = line ? line.translateToString() : '';
-    }
-
-    return lines.join('\r\n');
+    return handler.serialize(maxRows - rows, maxRows);
   }
 
   public dispose(): void { }
