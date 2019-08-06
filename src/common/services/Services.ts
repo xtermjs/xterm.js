@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, IEncoding } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -43,6 +43,64 @@ export interface ICoreService {
    * - Fire the `onUserInput` event (so selection can be cleared).
     */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
+}
+
+export const IIoService = createDecorator<IIoService>('IoService');
+export interface IIoService {
+  readonly onStringData: IEvent<string>;
+  readonly onRawData: IEvent<string>;
+  readonly onData: IEvent<Uint8Array>;
+
+  /**
+   * Write data to the terminal.
+   * `data` can either be raw bytes from the pty or a string.
+   * Raw bytes will be decoded with the set encoding (default UTF-8),
+   * string data will always be decoded as UTF-16.
+   * `callback` is an optional callback that gets called once the data
+   * chunk was processed by the parser. Use this to implement
+   * a flow control mechanism so the terminal can keep up with incoming
+   * data. If the terminal falls to much behind data will be lost (>50MB).
+   */
+  write(data: Uint8Array | string, callback?: () => void): void;
+
+  /**
+   * Set the input and output encoding of the terminal.
+   * This setting should be in line with the expected application encoding.
+   * Set to 'utf-8' by default, which covers most modern platform needs.
+   */
+  setEncoding(encoding: string): void;
+
+  /**
+   * Add a custom encoding.
+   */
+  addEncoding(encoding: IEncoding): void;
+
+  /**
+   * Send string data from within the terminal. Anything that resembles
+   * string content should be sent with this method.
+   * The data will be output encoded as given in `setEncoding`.
+   * Grab the data with the `onStringData` event.
+   */
+  triggerStringDataEvent(data: string): void;
+
+  /**
+   * Send raw byte data as string type from within the terminal.
+   * `data` should be a string of codepoints in byte range (0-255),
+   * higher bits will be stripped ('binary' encoding).
+   * Output encoding as given in `setEncoding` is not applied.
+   * Grab the data with the `onRawData` event.
+   */
+  triggerRawDataEvent(data: string): void;
+
+  /**
+   * Send raw bytes from within the terminal. No further encoding
+   * is applied.
+   * Grab the data with the `onData` event.
+   * Note: This is also called by `triggerStringDataEvent` and
+   * `triggerRawDataEvent`, thus the `onData` event will contain
+   * all data sent from the terminal in a byte fashion.
+   */
+  triggerDataEvent(data: Uint8Array): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');

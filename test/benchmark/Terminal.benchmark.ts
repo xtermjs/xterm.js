@@ -18,6 +18,10 @@ class TestTerminal extends Terminal {
     this.writeBufferUtf8.push(data);
     this._innerWriteUtf8();
   }
+  writeNewSync(data: Uint8Array | string): void {
+    (this as any)._ioService.write(data);
+    (this as any)._ioService._innerWrite();
+  }
 }
 
 perfContext('Terminal: ls -lR /usr/lib', () => {
@@ -73,6 +77,28 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     });
     new ThroughputRuntimeCase('', () => {
       terminal.writeSyncUtf8(contentUtf8);
+      return {payloadSize: contentUtf8.length};
+    }, {fork: false}).showAverageThroughput();
+  });
+
+  perfContext('writeNew string', () => {
+    let terminal: TestTerminal;
+    before(() => {
+      terminal = new TestTerminal({cols: 80, rows: 25, scrollback: 1000});
+    });
+    new ThroughputRuntimeCase('', () => {
+      terminal.writeNewSync(content);
+      return {payloadSize: contentUtf8.length};
+    }, {fork: false}).showAverageThroughput();
+  });
+
+  perfContext('writeNew Utf8', () => {
+    let terminal: TestTerminal;
+    before(() => {
+      terminal = new TestTerminal({cols: 80, rows: 25, scrollback: 1000});
+    });
+    new ThroughputRuntimeCase('', () => {
+      terminal.writeNewSync(contentUtf8);
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });

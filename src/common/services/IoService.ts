@@ -6,6 +6,7 @@
 import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
+import { IIoService } from './Services';
 
 // TODO: fix SetTimeout dep, remove console
 declare let setTimeout: (handler: () => void, timeout?: number) => number;
@@ -51,7 +52,7 @@ const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
  * iso-8859-15 and Windows-1252) further encodings can be added by `addEncoding`.
  * The encoding is set to utf-8 by default as most platforms use UTF-8 nowadays.
  */
-export class IoService {
+export class IoService implements IIoService {
   private _writeBuffer: (Uint8Array | string)[] = [];
   private _pendingSize: number = 0;
   private _callbacks: ((() => void) | undefined)[] = [];
@@ -70,7 +71,10 @@ export class IoService {
   private _onData = new EventEmitter<Uint8Array>();
   public get onData(): IEvent<Uint8Array> { return this._onData.event; }
 
-  constructor(encoding: string = 'utf-8') {
+  constructor(
+    private _inputHandler: any,
+    encoding: string = 'utf-8')
+  {
     for (const entry in DEFAULT_ENCODINGS) {
       for (const name of DEFAULT_ENCODINGS[entry].names) {
         this._encodings[name] = {
@@ -132,13 +136,10 @@ export class IoService {
       const len = (typeof data === 'string')
         ? this._stringDecoder.decode(data, this._inputBuffer)
         : this._decoder.decode(data, this._inputBuffer);
-      // TODO: call inputhandler here
-      // this._inputHandler.parseUtf32(this._parseBuffer, len);
-      console.log('terminal sees:', this._inputBuffer.subarray(0, len));
+      this._inputHandler.parseUtf32(this._inputBuffer, len);
 
       this._pendingSize -= data.length;
       if (cb) cb();
-      // this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
       }
@@ -227,46 +228,3 @@ export class IoService {
     this._onData.fire(data);
   }
 }
-
-
-/**
- * example usage
- */
-
-const ios = new IoService();
-
-// connect data handlers
-ios.onData(data => console.log('byte data:', data));
-ios.onStringData(data => console.log('string data:', data));
-ios.onRawData(data => console.log('raw data:', data));
-
-// test different encodings with €
-// string input is still possible
-ios.write('€');                                   // --> 8364
-
-// default: UTF8
-ios.write(new Uint8Array([0xe2, 0x82, 0xac]));    // --> 8364
-ios.triggerStringDataEvent('€');                      // --> 0xe2, 0x82, 0xac
-ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
-
-ios.setEncoding('iso-8859-15');
-ios.write(new Uint8Array([0xa4]));                // --> 8364
-ios.triggerStringDataEvent('€');                      // --> 164
-ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
-
-ios.setEncoding('windows-1252');
-ios.write(new Uint8Array([0x80]));                // --> 8364
-ios.triggerStringDataEvent('€');                      // --> 128
-ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
-
-// ascii: ignores high bit
-ios.setEncoding('ascii');
-ios.write(new Uint8Array([0x80, 0x81]));          // --> 0, 1
-ios.triggerStringDataEvent('€');                      // --> 63 (? replacement)
-ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
-
-// binary: direct 8bit --> unicode mapping
-ios.setEncoding('binary');
-ios.write(new Uint8Array([0x80, 0x81]));          // --> 128, 129
-ios.triggerStringDataEvent('€');                      // --> 63 (? replacement)
-ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)

@@ -61,6 +61,7 @@ import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
+import { IoService } from 'common/services/IoService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -112,6 +113,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _ioService: IoService;
   private _dirtyRowService: IDirtyRowService;
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
@@ -262,6 +264,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setupOptionsListeners();
     this._setup();
+
+    this._ioService = this._instantiationService.createInstance(IoService, this._inputHandler, 'utf-8');
   }
 
   public dispose(): void {
@@ -1220,6 +1224,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (scrollAmount !== 0) {
       this.scrollLines(scrollAmount);
     }
+  }
+
+  /**
+   * New write method using IoService.
+   */
+  public writeNew(data: Uint8Array | string, callback?: () => void): void {
+    this._ioService.write(data, callback);
   }
 
   /**

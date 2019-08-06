@@ -350,6 +350,21 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  public parseUtf32(data: Uint32Array, length: number): void {
+    let buffer = this._bufferService.buffer;
+    const cursorStartX = buffer.x;
+    const cursorStartY = buffer.y;
+
+    this._logService.debug('parsing data', data);
+    this._parser.parse(data, length);
+
+    buffer = this._bufferService.buffer;
+    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
+      this._onCursorMove.fire();
+    }
+    this._terminal.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
+  }
+
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
     let chWidth: number;
