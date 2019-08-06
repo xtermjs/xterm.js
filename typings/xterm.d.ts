@@ -673,21 +673,19 @@ declare module 'xterm' {
      * Writes text to the terminal.
      * @param data The text to write to the terminal.
      */
-    write(data: string): void;
+    write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Writes text to the terminal, followed by a break line character (\n).
-     * @param data The text to write to the terminal.
+     * Write data to the terminal.
+     * `data` can either be raw bytes from the pty or a string.
+     * Raw bytes will be decoded with the set encoding (default UTF-8),
+     * string data will always be decoded as UTF-16.
+     * `callback` is an optional callback that gets called once the data
+     * chunk was processed by the parser. Use this to implement
+     * a flow control mechanism so the terminal can keep up with incoming
+     * data. If the terminal falls to much behind data will be lost (>50MB).
      */
-    writeln(data: string): void;
-
-    /**
-     * Writes UTF8 data to the terminal. This has a slight performance advantage
-     * over the string based write method due to lesser data conversions needed
-     * on the way from the pty to xterm.js.
-     * @param data The data to write to the terminal.
-     */
-    writeUtf8(data: Uint8Array): void;
+    writeln(data: string, callback?: () => void): void;
 
     /**
      * Retrieves an option's value from the terminal.

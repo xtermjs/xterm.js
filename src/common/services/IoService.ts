@@ -140,6 +140,7 @@ export class IoService implements IIoService {
 
       this._pendingSize -= data.length;
       if (cb) cb();
+
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
       }

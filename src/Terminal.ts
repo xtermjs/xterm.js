@@ -66,21 +66,6 @@ import { IoService } from 'common/services/IoService';
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
-/**
- * The amount of write requests to queue before sending an XOFF signal to the
- * pty process. This number must be small in order for ^C and similar sequences
- * to be responsive.
- */
-const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
-
-/**
- * The max number of ms to spend on writes before allowing the renderer to
- * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
- * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
- * depends on the time it takes for the renderer to draw the frame.
- */
-const WRITE_TIMEOUT_MS = 12;
-const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
@@ -265,6 +250,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setupOptionsListeners();
     this._setup();
 
+    // attach after _setup to get a hold of inputHandler
     this._ioService = this._instantiationService.createInstance(IoService, this._inputHandler, 'utf-8');
   }
 
@@ -1229,170 +1215,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * New write method using IoService.
    */
-  public writeNew(data: Uint8Array | string, callback?: () => void): void {
+  public write(data: Uint8Array | string, callback?: () => void): void {
     this._ioService.write(data, callback);
-  }
-
-  /**
-   * Writes raw utf8 bytes to the terminal.
-   * @param data UintArray with UTF8 bytes to write to the terminal.
-   */
-  public writeUtf8(data: Uint8Array): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      return;
-    }
-
-    // Ignore falsy data values
-    if (!data) {
-      return;
-    }
-
-    this.writeBufferUtf8.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
-    }
-
-    if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
-      // Kick off a write which will write all data in sequence recursively
-      this._writeInProgress = true;
-      // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
-        this._innerWriteUtf8();
-      });
-    }
-  }
-
-  protected _innerWriteUtf8(bufferOffset: number = 0): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      this.writeBufferUtf8 = [];
-    }
-
-    const startTime = Date.now();
-    while (this.writeBufferUtf8.length > bufferOffset) {
-      const data = this.writeBufferUtf8[bufferOffset];
-      bufferOffset++;
-
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
-      this._inputHandler.parseUtf8(data);
-
-      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
-
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
-        break;
-      }
-    }
-    if (this.writeBufferUtf8.length > bufferOffset) {
-      // Allow renderer to catch up before processing the next batch
-      // trim already processed chunks if we are above threshold
-      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
-        this.writeBufferUtf8 = this.writeBufferUtf8.slice(bufferOffset);
-        bufferOffset = 0;
-      }
-      setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
-    } else {
-      this._writeInProgress = false;
-      this.writeBufferUtf8 = [];
-    }
-  }
-
-  /**
-   * Writes text to the terminal.
-   * @param data The text to write to the terminal.
-   */
-  public write(data: string): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      return;
-    }
-
-    // Ignore falsy data values (including the empty string)
-    if (!data) {
-      return;
-    }
-
-    this.writeBuffer.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
-    }
-
-    if (!this._writeInProgress && this.writeBuffer.length > 0) {
-      // Kick off a write which will write all data in sequence recursively
-      this._writeInProgress = true;
-      // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
-        this._innerWrite();
-      });
-    }
-  }
-
-  protected _innerWrite(bufferOffset: number = 0): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      this.writeBuffer = [];
-    }
-
-    const startTime = Date.now();
-    while (this.writeBuffer.length > bufferOffset) {
-      const data = this.writeBuffer[bufferOffset];
-      bufferOffset++;
-
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
-      this._inputHandler.parse(data);
-
-      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
-
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
-        break;
-      }
-    }
-    if (this.writeBuffer.length > bufferOffset) {
-      // Allow renderer to catch up before processing the next batch
-      // trim already processed chunks if we are above threshold
-      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
-        this.writeBuffer = this.writeBuffer.slice(bufferOffset);
-        bufferOffset = 0;
-      }
-      setTimeout(() => this._innerWrite(bufferOffset), 0);
-    } else {
-      this._writeInProgress = false;
-      this.writeBuffer = [];
-    }
   }
 
   /**
    * Writes text to the terminal, followed by a break line character (\n).
    * @param data The text to write to the terminal.
    */
-  public writeln(data: string): void {
-    this.write(data + '\r\n');
+  public writeln(data: string, callback?: () => void): void {
+    this.write(data + '\r\n', callback);
   }
 
   /**

@@ -48,8 +48,8 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public writeln(data: string): void {
-    this._core.writeln(data);
+  public writeln(data: string, callback?: () => void): void {
+    this._core.writeln(data, callback);
   }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
@@ -127,11 +127,8 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
-  }
-  public writeUtf8(data: Uint8Array): void {
-    this._core.writeUtf8(data);
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;

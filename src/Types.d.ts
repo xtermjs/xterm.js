@@ -197,7 +197,7 @@ export interface IPublicTerminal extends IDisposable {
   blur(): void;
   focus(): void;
   resize(columns: number, rows: number): void;
-  writeln(data: string): void;
+  writeln(data: string, callback?: () => void): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
   addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
@@ -221,8 +221,7 @@ export interface IPublicTerminal extends IDisposable {
   scrollToBottom(): void;
   scrollToLine(line: number): void;
   clear(): void;
-  write(data: string): void;
-  writeUtf8(data: Uint8Array): void;
+  write(data: string | Uint8Array, callback?: () => void): void;
   refresh(start: number, end: number): void;
   reset(): void;
 }
