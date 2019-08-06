@@ -103,7 +103,11 @@ export function evaluateKeyboardEvent(
       break;
     case 13:
       // return/enter
-      result.key = C0.CR;
+      if (ev.altKey) {
+        result.key = C0.ESC + C0.CR; // \e\r
+      } else {
+        result.key = C0.CR;
+      }
       result.cancel = true;
       break;
     case 27:
