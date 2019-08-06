@@ -86,8 +86,8 @@ describe('Keyboard', () => {
     it('should return \\x1b[3;3~ for alt+delete', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 46 }).key, '\x1b[3;3~');
     });
-    it('should return \\x1b\\n for alt+return', () => {
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 10 }).key, '\x1b\n');
+    it('should return \\x1b\\r for alt+enter', () => {
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 13 }).key, '\x1b\r');
     });
     it('should return \\x1b[5D for ctrl+left', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
