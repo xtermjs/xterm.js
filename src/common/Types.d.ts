@@ -158,3 +158,26 @@ export interface IRowRange {
   start: number;
   end: number;
 }
+
+/**
+ * Encoding interfaces.
+ */
+export interface IOutputEncoder {
+  encode(data: string): Uint8Array;
+}
+export interface IOutputEncoderCtor {
+  new(): IOutputEncoder;
+}
+
+export interface IInputDecoder {
+  decode(data: Uint8Array, target: Uint32Array): number;
+}
+export interface IInputDecoderCtor {
+  new(): IInputDecoder;
+}
+
+export interface IEncoding {
+  names: string[];
+  decoder: IInputDecoderCtor;
+  encoder: IOutputEncoderCtor;
+}

@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { IInputDecoder, IOutputEncoder, IEncoding } from 'common/Types';
+
 /**
  * Polyfill - Convert UTF32 codepoint into JS string.
  * Note: The built-in String.fromCodePoint happens to be much slower
@@ -41,6 +43,10 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
   }
   return result;
 }
+
+/**
+ * Input decoders.
+ */
 
 /**
  * StringToUtf32 - decodes UTF16 sequences into UTF32 codepoints.
@@ -114,7 +120,7 @@ export class StringToUtf32 {
 /**
  * Utf8Decoder - decodes UTF8 byte sequences into UTF32 codepoints.
  */
-export class Utf8ToUtf32 {
+export class Utf8ToUtf32 implements IInputDecoder {
   public interim: Uint8Array = new Uint8Array(3);
 
   /**
@@ -340,3 +346,257 @@ export class Utf8ToUtf32 {
     return size;
   }
 }
+
+/**
+ * ASCII decoder - decodes bytes into UTF32 codepoints stripping the high bit.
+ */
+export class AsciiToUtf32 implements IInputDecoder {
+  public decode(data: Uint8Array, target: Uint32Array): number {
+    for (let i = 0; i < data.length; ++i) {
+      target[i] = data[i] & 0x7F;
+    }
+    return data.length;
+  }
+}
+
+/**
+ * Binary decoder - decodes bytes into UTF32 codepoints.
+ * Also used for ISO-8859-1 / LATIN-1.
+ */
+export class BinaryToUtf32 implements IInputDecoder {
+  public decode(data: Uint8Array, target: Uint32Array): number {
+    for (let i = 0; i < data.length; ++i) {
+      target[i] = data[i];
+    }
+    return data.length;
+  }
+}
+
+/**
+ * ISO-8859-15 decoder.
+ */
+export class ISO15ToUtf32 implements IInputDecoder {
+  private _table: Uint32Array;
+  constructor() {
+    this._table = new Uint32Array(256);
+    for (let i = 0; i < 256; ++i) {
+      this._table[i] = i;
+    }
+    // apply deviations from latin1
+    this._table[0xA4] = 0x20AC;
+    this._table[0xA6] = 0x160;
+    this._table[0xA8] = 0x161;
+    this._table[0xB4] = 0x17D;
+    this._table[0xB8] = 0x17E;
+    this._table[0xBC] = 0x152;
+    this._table[0xBD] = 0x153;
+    this._table[0xBE] = 0x178;
+  }
+  public decode(data: Uint8Array, target: Uint32Array): number {
+    for (let i = 0; i < data.length; ++i) {
+      target[i] = this._table[data[i]];
+    }
+    return data.length;
+  }
+}
+
+/**
+ * Windows 1252 decoder.
+ * Note: This encoding is often seen as equivalent to ISO-8859-1 in
+ * text editors, which is not true in a terminal environment due to
+ * the overloaded C1 meanings.
+ */
+export class Windows1252ToUtf32 implements IInputDecoder {
+  private _table: Uint32Array;
+  constructor() {
+    this._table = new Uint32Array(256);
+    for (let i = 0; i < 256; ++i) {
+      this._table[i] = i;
+    }
+    // apply deviations from latin1
+    this._table[0x80] = 0x20AC;
+    this._table[0x8A] = 0x160;
+    this._table[0x9A] = 0x161;
+    this._table[0x8E] = 0x17D;
+    this._table[0x9E] = 0x17E;
+    this._table[0x8C] = 0x152;
+    this._table[0x9C] = 0x153;
+    this._table[0x9F] = 0x178;
+  }
+  public decode(data: Uint8Array, target: Uint32Array): number {
+    for (let i = 0; i < data.length; ++i) {
+      target[i] = this._table[data[i]];
+    }
+    return data.length;
+  }
+}
+
+
+/**
+ * Output encoders.
+ */
+
+/**
+ * Utf8 encoder.
+ * Note: Does not have its own implementation, instead relies
+ * on TextEncoder in the browser and Buffer in nodejs.
+ */
+export class Utf8Encoder implements IOutputEncoder {
+  private _encode: (data: string) => Uint8Array;
+  constructor() {
+    // use system encoders on nodejs and browser
+    const GLOBAL_OBJECT = Function('return this')();
+    if (GLOBAL_OBJECT.TextEncoder) {
+      const te = new GLOBAL_OBJECT.TextEncoder();
+      this._encode = te.encode.bind(te);
+    } else if (GLOBAL_OBJECT.Buffer) {
+      this._encode = GLOBAL_OBJECT.Buffer.from.bind(GLOBAL_OBJECT.Buffer);
+    } else {
+      throw new Error('missing string to UTF8 converter');
+    }
+  }
+  encode(data: string): Uint8Array {
+    return this._encode(data);
+  }
+}
+
+/**
+ * Ascii encoder.
+ * Note: Replaces any codepoint > 0x7F with a question mark.
+ */
+class AsciiEncoder implements IOutputEncoder {
+  encode(data: string): Uint8Array {
+    const result = new Uint8Array(data.length);
+    for (let i = 0; i < result.length; ++i) {
+      const code = data.charCodeAt(i);
+      result[i] = (code > 0x7F) ? 0x3F : code; // '?' replacement
+    }
+    return result;
+  }
+}
+
+/**
+ * Ascii encoder.
+ * Note: Replaces any codepoint > 0xFF with a question mark.
+ */
+class BinaryEncoder implements IOutputEncoder {
+  encode(data: string): Uint8Array {
+    const result = new Uint8Array(data.length);
+    for (let i = 0; i < result.length; ++i) {
+      const code = data.charCodeAt(i);
+      result[i] = (code > 0xFF) ? 0x3F : code; // '?' replacement
+    }
+    return result;
+  }
+}
+
+/**
+ * ISO-8859-15 encoder.
+ * Note: Replaces unkown / non encodable codepoints with a question mark.
+ */
+class ISO15Encoder implements IOutputEncoder {
+  private _table: {[key: number]: number};
+  constructor() {
+    this._table = Object.create(null);
+    for (let i = 0; i < 256; ++i) {
+      this._table[i] = i;
+    }
+    // apply deviations from latin1
+    this._table[0x20AC] = 0xA4;
+    this._table[0x160] = 0xA6;
+    this._table[0x161] = 0xA8;
+    this._table[0x17D] = 0xB4;
+    this._table[0x17E] = 0xB8;
+    this._table[0x152] = 0xBC;
+    this._table[0x153] = 0xBD;
+    this._table[0x178] = 0xBE;
+
+    // delete wrong entries
+    delete this._table[0xA4];
+    delete this._table[0xA6];
+    delete this._table[0xA8];
+    delete this._table[0xB4];
+    delete this._table[0xB8];
+    delete this._table[0xBC];
+    delete this._table[0xBD];
+    delete this._table[0xBE];
+  }
+  encode(data: string): Uint8Array {
+    const result = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; ++i) {
+      result[i] = this._table[data.charCodeAt(i)] || 0x3F; // '?' replacement
+    }
+    return result;
+  }
+}
+
+/**
+ * Windows-1252 encoder.
+ * Note: Replaces unkown / non encodable codepoints with a question mark.
+ */
+class Windows1252Encoder implements IOutputEncoder {
+  private _table: {[key: number]: number};
+  constructor() {
+    this._table = Object.create(null);
+    for (let i = 0; i < 256; ++i) {
+      this._table[i] = i;
+    }
+    // apply deviations from latin1
+    this._table[0x20AC] = 0x80;
+    this._table[0x160] = 0x8A;
+    this._table[0x161] = 0x9A;
+    this._table[0x17D] = 0x8E;
+    this._table[0x17E] = 0x9E;
+    this._table[0x152] = 0x8C;
+    this._table[0x153] = 0x9C;
+    this._table[0x178] = 0x9F;
+
+    // delete wrong entries
+    delete this._table[0x80];
+    delete this._table[0x8A];
+    delete this._table[0x9A];
+    delete this._table[0x8E];
+    delete this._table[0x9E];
+    delete this._table[0x8C];
+    delete this._table[0x9C];
+    delete this._table[0x9F];
+  }
+  encode(data: string): Uint8Array {
+    const result = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; ++i) {
+      result[i] = this._table[data.charCodeAt(i)] || 0x3F; // '?' replacement
+    }
+    return result;
+  }
+}
+
+/**
+ * Encodings supported by default.
+ */
+export const DEFAULT_ENCODINGS: IEncoding[] = [
+  {
+    names: ['ascii', '7bit', '7-bit'],
+    decoder: AsciiToUtf32,
+    encoder: AsciiEncoder
+  },
+  {
+    names: ['binary', '8bit', '8-bit', 'latin1', 'latin-1', 'iso-8859-1'],
+    decoder: BinaryToUtf32,
+    encoder: BinaryEncoder
+  },
+  {
+    names: ['iso-8859-15'],
+    decoder: ISO15ToUtf32,
+    encoder: ISO15Encoder
+  },
+  {
+    names: ['windows-1252', 'cp1252', 'cp-1252'],
+    decoder: Windows1252ToUtf32,
+    encoder: Windows1252Encoder
+  },
+  {
+    names: ['utf-8', 'utf8', 'UTF8', 'UTF-8'],
+    decoder: Utf8ToUtf32,
+    encoder: Utf8Encoder
+  }
+];

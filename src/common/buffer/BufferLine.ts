@@ -4,7 +4,7 @@
  */
 
 import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { stringFromCodePoint } from 'common/input/TextDecoder';
+import { stringFromCodePoint } from 'common/input/Encodings';
 import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';

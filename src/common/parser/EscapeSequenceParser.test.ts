@@ -6,7 +6,7 @@
 import { IDcsHandler, IParsingState, IParams, ParamsArray } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
-import { StringToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint } from 'common/input/Encodings';
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
 

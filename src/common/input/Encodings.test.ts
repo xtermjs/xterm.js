@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/Encodings';
 import { encode } from 'utf8';
 
 // convert UTF32 codepoints to string

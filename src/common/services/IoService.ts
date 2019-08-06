@@ -3,275 +3,100 @@
  * @license MIT
  */
 
-import { StringToUtf32, Utf8ToUtf32 } from 'common/input/TextDecoder';
+import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
 
-// hack to get around tsconfig limitations
-const GLOBAL_OBJECT = Function('return this')();
-
-
-/**
- * UTF32 decoders.
- */
-interface IUtf32Decoder {
-  decode(data: Uint8Array, target: Uint32Array): number;
-}
-interface IUtf32DecoderCtor {
-  new(): IUtf32Decoder;
-}
-
-class AsciiToUtf32 implements IUtf32Decoder {
-  public decode(data: Uint8Array, target: Uint32Array): number {
-    for (let i = 0; i < data.length; ++i) {
-      target[i] = data[i] & 0x7F;
-    }
-    return data.length;
-  }
-}
-
-class BinaryToUtf32 implements IUtf32Decoder {
-  public decode(data: Uint8Array, target: Uint32Array): number {
-    for (let i = 0; i < data.length; ++i) {
-      target[i] = data[i];
-    }
-    return data.length;
-  }
-}
-
-class ISO15ToUtf32 implements IUtf32Decoder {
-  private _table: Uint32Array;
-  constructor() {
-    this._table = new Uint32Array(256);
-    for (let i = 0; i < 256; ++i) {
-      this._table[i] = i;
-    }
-    // apply deviations from latin1
-    this._table[0xA4] = 0x20AC;
-    this._table[0xA6] = 0x160;
-    this._table[0xA8] = 0x161;
-    this._table[0xB4] = 0x17D;
-    this._table[0xB8] = 0x17E;
-    this._table[0xBC] = 0x152;
-    this._table[0xBD] = 0x153;
-    this._table[0xBE] = 0x178;
-  }
-  public decode(data: Uint8Array, target: Uint32Array): number {
-    for (let i = 0; i < data.length; ++i) {
-      target[i] = this._table[data[i]];
-    }
-    return data.length;
-  }
-}
-
-class Windows1252ToUtf32 implements IUtf32Decoder {
-  private _table: Uint32Array;
-  constructor() {
-    this._table = new Uint32Array(256);
-    for (let i = 0; i < 256; ++i) {
-      this._table[i] = i;
-    }
-    // apply deviations from latin1
-    this._table[0x80] = 0x20AC;
-    this._table[0x8A] = 0x160;
-    this._table[0x9A] = 0x161;
-    this._table[0x8E] = 0x17D;
-    this._table[0x9E] = 0x17E;
-    this._table[0x8C] = 0x152;
-    this._table[0x9C] = 0x153;
-    this._table[0x9F] = 0x178;
-  }
-  public decode(data: Uint8Array, target: Uint32Array): number {
-    for (let i = 0; i < data.length; ++i) {
-      target[i] = this._table[data[i]];
-    }
-    return data.length;
-  }
-}
-
+// TODO: fix SetTimeout dep, remove console
+declare let setTimeout: (handler: () => void, timeout?: number) => number;
+declare let console: any;
 
 /**
- * Encoders. Encodes intern format to target encoding.
- * TODO: unified ignore/replace rules and interface
+ * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
+ * Enable flow control to avoid this limit and make sure that your backend correctly
+ * propagates this to the underlying pty. (see docs for further instructions)
+ * Since this limit is meant as a safety parachute to prevent browser crashs,
+ * it is set to a very high number. Typically xterm.js gets unresponsive with
+ * a 100 times lower number (>500 kB).
  */
-interface IOutputEncoder {
-  encode(data: string): Uint8Array;
-}
-
-interface IOutputEncoderCtor {
-  new(): IOutputEncoder;
-}
-
-class Utf8Encoder implements IOutputEncoder {
-  private _encode: (data: string) => Uint8Array;
-  constructor() {
-    // use system encoders on nodejs and browser
-    if (GLOBAL_OBJECT.TextEncoder) {
-      const te = new GLOBAL_OBJECT.TextEncoder();
-      this._encode = te.encode.bind(te);
-    } else if (GLOBAL_OBJECT.Buffer) {
-      this._encode = GLOBAL_OBJECT.Buffer.from.bind(GLOBAL_OBJECT.Buffer);
-    } else {
-      throw new Error('missing string to UTF8 converter');
-    }
-  }
-  encode(data: string): Uint8Array {
-    return this._encode(data);
-  }
-}
-
-class AsciiEncoder implements IOutputEncoder {
-  encode(data: string): Uint8Array {
-    const result = new Uint8Array(data.length);
-    for (let i = 0; i < result.length; ++i) {
-      const code = data.charCodeAt(i);
-      result[i] = (code < 0x80) ? code : 0x3F; // '?' replacement
-    }
-    return result;
-  }
-}
-
-class BinaryEncoder implements IOutputEncoder {
-  encode(data: string): Uint8Array {
-    const result = new Uint8Array(data.length);
-    for (let i = 0; i < result.length; ++i) {
-      const code = data.charCodeAt(i);
-      result[i] = (code > 0xFF) ? 0x3F : code; // '?' replacement
-    }
-    return result;
-  }
-}
-
-class ISO15Encoder implements IOutputEncoder {
-  private _table: {[key: number]: number};
-  constructor() {
-    this._table = Object.create(null);
-    for (let i = 0; i < 256; ++i) {
-      this._table[i] = i;
-    }
-    // apply deviations from latin1
-    this._table[0x20AC] = 0xA4;
-    this._table[0x160] = 0xA6;
-    this._table[0x161] = 0xA8;
-    this._table[0x17D] = 0xB4;
-    this._table[0x17E] = 0xB8;
-    this._table[0x152] = 0xBC;
-    this._table[0x153] = 0xBD;
-    this._table[0x178] = 0xBE;
-
-    // delete wrong entries
-    delete this._table[0xA4];
-    delete this._table[0xA6];
-    delete this._table[0xA8];
-    delete this._table[0xB4];
-    delete this._table[0xB8];
-    delete this._table[0xBC];
-    delete this._table[0xBD];
-    delete this._table[0xBE];
-  }
-  encode(data: string): Uint8Array {
-    const result = new Uint8Array(data.length);
-    for (let i = 0; i < data.length; ++i) {
-      result[i] = this._table[data.charCodeAt(i)] || 0x3F; // '?' replacement
-    }
-    return result;
-  }
-}
-
-class Windows1252Encoder implements IOutputEncoder {
-  private _table: {[key: number]: number};
-  constructor() {
-    this._table = Object.create(null);
-    for (let i = 0; i < 256; ++i) {
-      this._table[i] = i;
-    }
-    // apply deviations from latin1
-    this._table[0x20AC] = 0x80;
-    this._table[0x160] = 0x8A;
-    this._table[0x161] = 0x9A;
-    this._table[0x17D] = 0x8E;
-    this._table[0x17E] = 0x9E;
-    this._table[0x152] = 0x8C;
-    this._table[0x153] = 0x9C;
-    this._table[0x178] = 0x9F;
-
-    // delete wrong entries
-    delete this._table[0x80];
-    delete this._table[0x8A];
-    delete this._table[0x9A];
-    delete this._table[0x8E];
-    delete this._table[0x9E];
-    delete this._table[0x8C];
-    delete this._table[0x9C];
-    delete this._table[0x9F];
-  }
-  encode(data: string): Uint8Array {
-    const result = new Uint8Array(data.length);
-    for (let i = 0; i < data.length; ++i) {
-      result[i] = this._table[data.charCodeAt(i)] || 0x3F; // '?' replacement
-    }
-    return result;
-  }
-}
-
-// encoding mapping
-const ENCODING_MAP: {[key: string]: {alt: string[]; decoder: IUtf32DecoderCtor, encoder: IOutputEncoderCtor}} = {
-  'ascii': {
-    alt: ['7bit', '7-bit'],
-    decoder: AsciiToUtf32,
-    encoder: AsciiEncoder
-  },
-  'binary': {
-    alt: ['8bit', '8-bit', 'latin1', 'latin-1', 'iso-8859-1'],
-    decoder: BinaryToUtf32,
-    encoder: BinaryEncoder
-  },
-  'iso-8859-15': {
-    alt: [],
-    decoder: ISO15ToUtf32,
-    encoder: ISO15Encoder
-  },
-  'windows-1252': {
-    alt: ['cp1252', 'cp-1252'],
-    decoder: Windows1252ToUtf32,
-    encoder: Windows1252Encoder
-  },
-  'utf-8': {
-    alt: ['utf8', 'UTF8', 'UTF-8'],
-    decoder: Utf8ToUtf32,
-    encoder: Utf8Encoder
-  }
-};
-const ENCODINGS: {[key: string]: {decoder: any, encoder: any}} = (() => {
-  const encodings: {[key: string]: {decoder: any, encoder: any}} = {};
-  for (const entry in ENCODING_MAP) {
-    encodings[entry] = {decoder: ENCODING_MAP[entry].decoder, encoder: ENCODING_MAP[entry].encoder};
-    for (const alt of ENCODING_MAP[entry].alt) {
-      encodings[alt] = {decoder: ENCODING_MAP[entry].decoder, encoder: ENCODING_MAP[entry].encoder};
-    }
-  }
-  return encodings;
-})();
-GLOBAL_OBJECT.console.log(ENCODINGS);
-
-
-/**
- * IoService
- */
-
-// some buffering constants
 const DISCARD_WATERMARK = 50000000; // ~50 MB
+
+/**
+ * The max number of ms to spend on writes before allowing the renderer to
+ * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+ * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
+ * depends on the time it takes for the renderer to draw the frame.
+ */
 const WRITE_TIMEOUT_MS = 12;
+
+/**
+ * Threshold of max held chunks in the write buffer, that were already processed.
+ * This is a tradeoff between extensive write buffer shifts (bad runtime) and high
+ * memory consumption by data thats not used anymore.
+ */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
+/**
+ * IoService of xterm.js.
+ * This service provides encoding handling and input buffering (async write).
+ * Data can be written to the terminal with `write` as raw bytes applying the
+ * given encoding or as strings.
+ * Outgoing data can be grabbed by listening to these events:
+ *  - onStringData: string data sent from the terminal as string
+ *  - onRawData: byte data sent from the terminal as bytestring
+ *  - onData: all data sent from the terminal as raw bytes (encoded)
+ *
+ * The encoding should reflect the pty application's expectations, change it with
+ * `setEncoding`. Beside the supported encodings (ascii, binary/iso-8859-15, utf-8,
+ * iso-8859-15 and Windows-1252) further encodings can be added by `addEncoding`.
+ * The encoding is set to utf-8 by default as most platforms use UTF-8 nowadays.
+ */
 export class IoService {
   private _writeBuffer: (Uint8Array | string)[] = [];
   private _pendingSize: number = 0;
   private _callbacks: ((() => void) | undefined)[] = [];
-  private _writeInProgress: boolean = false;
-  private _stringDecoder: StringToUtf32 = new StringToUtf32();
-  private _decoder: IUtf32Decoder = new Utf8ToUtf32();
-  private _encoder: IOutputEncoder = new Utf8Encoder();
-  private _inputBuffer: Uint32Array = new Uint32Array(4096);
+  private _writeInProgress = false;
+  private _stringDecoder = new StringToUtf32();
+  private _decoder: IInputDecoder;
+  private _encoder: IOutputEncoder;
+  private _inputBuffer = new Uint32Array(4096);
+  private _encodings: {[key: string]: IEncoding} = {};
 
+  // event emitters
+  private _onStringData = new EventEmitter<string>();
+  public get onStringData(): IEvent<string> { return this._onStringData.event; }
+  private _onRawData = new EventEmitter<string>();
+  public get onRawData(): IEvent<string> { return this._onRawData.event; }
+  private _onData = new EventEmitter<Uint8Array>();
+  public get onData(): IEvent<Uint8Array> { return this._onData.event; }
+
+  constructor(encoding: string = 'utf-8') {
+    for (const entry in DEFAULT_ENCODINGS) {
+      for (const name of DEFAULT_ENCODINGS[entry].names) {
+        this._encodings[name] = {
+          names: DEFAULT_ENCODINGS[entry].names,
+          decoder: DEFAULT_ENCODINGS[entry].decoder,
+          encoder: DEFAULT_ENCODINGS[entry].encoder
+        };
+      }
+    }
+    if (!this._encodings[encoding]) {
+      throw new Error(`unsupported encoding "${encoding}"`);
+    }
+    this._decoder = new this._encodings[encoding].decoder();
+    this._encoder = new this._encodings[encoding].encoder();
+  }
+
+  /**
+   * Write data to the terminal.
+   * `data` can either be raw bytes from the pty or a string.
+   * Raw bytes will be decoded with the set encoding (default UTF-8),
+   * string data will always be decoded as UTF-16.
+   * `callback` is an optional callback that gets called once the data
+   * chunk was processed by the parser. Use this to implement
+   * a flow control mechanism so the terminal can keep up with incoming
+   * data. If the terminal falls to much behind data will be lost (>50MB).
+   */
   public write(data: Uint8Array | string, callback?: () => void): void {
     if (!data.length) {
       return;
@@ -286,7 +111,7 @@ export class IoService {
 
     if (!this._writeInProgress) {
       this._writeInProgress = true;
-      GLOBAL_OBJECT.setTimeout(() => {
+      setTimeout(() => {
         this._innerWrite();
       });
     }
@@ -303,12 +128,13 @@ export class IoService {
         this._inputBuffer = new Uint32Array(data.length);
       }
       // TODO: reset multibyte streamline decoders on switch
+      // TODO: limit max. parseBuffer size (chunkify very big chunks)
       const len = (typeof data === 'string')
         ? this._stringDecoder.decode(data, this._inputBuffer)
         : this._decoder.decode(data, this._inputBuffer);
       // TODO: call inputhandler here
       // this._inputHandler.parseUtf32(this._parseBuffer, len);
-      GLOBAL_OBJECT.console.log('terminal sees:', this._inputBuffer.subarray(0, len));
+      console.log('terminal sees:', this._inputBuffer.subarray(0, len));
 
       this._pendingSize -= data.length;
       if (cb) cb();
@@ -325,7 +151,7 @@ export class IoService {
         this._callbacks = this._callbacks.slice(bufferOffset);
         bufferOffset = 0;
       }
-      GLOBAL_OBJECT.setTimeout(() => this._innerWrite(bufferOffset), 0);
+      setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
       this._writeBuffer = [];
@@ -333,24 +159,72 @@ export class IoService {
     }
   }
 
+  /**
+   * Set the input and output encoding of the terminal.
+   * This setting should be in line with the expected application encoding.
+   * Set to 'utf-8' by default, which covers most modern platform needs.
+   */
   public setEncoding(encoding: string): void {
-    if (!ENCODINGS[encoding]) {
+    if (!this._encodings[encoding]) {
       throw new Error(`unsupported encoding "${encoding}"`);
     }
-    this._encoder = new ENCODINGS[encoding].encoder();
+    this._encoder = new this._encodings[encoding].encoder();
     this._writeBuffer.push('');
-    this._callbacks.push(() => { this._decoder = new ENCODINGS[encoding].decoder(); });
+    this._callbacks.push(() => { this._decoder = new this._encodings[encoding].decoder(); });
   }
 
-  public triggerStringEvent(data: string): void {
-    GLOBAL_OBJECT.console.log('string data:', this._encoder.encode(data));
+  /**
+   * Add a custom encoding.
+   */
+  public addEncoding(encoding: IEncoding): void {
+    for (const name of encoding.names) {
+      this._encodings[name] = {
+        names: encoding.names,
+        decoder: encoding.decoder,
+        encoder: encoding.encoder
+      };
+    }
   }
-  public triggerByteEvent(data: string): void {
+
+  /**
+   * Send string data from within the terminal. Anything that resembles
+   * string content should be sent with this method.
+   * The data will be output encoded as given in `setEncoding`.
+   * Grab the data with the `onStringData` event.
+   */
+  public triggerStringDataEvent(data: string): void {
+    // allow string data to be caught separately
+    this._onStringData.fire(data);
+    this.triggerDataEvent(this._encoder.encode(data));
+  }
+
+  /**
+   * Send raw byte data as string type from within the terminal.
+   * `data` should be a string of codepoints in byte range (0-255),
+   * higher bits will be stripped ('binary' encoding).
+   * Output encoding as given in `setEncoding` is not applied.
+   * Grab the data with the `onRawData` event.
+   */
+  public triggerRawDataEvent(data: string): void {
+    // allow raw data to be caught separately (as byte string)
+    this._onRawData.fire(data);
     const result = new Uint8Array(data.length);
     for (let i = 0; i < result.length; ++i) {
       result[i] = data.charCodeAt(i) & 0xFF;
     }
-    GLOBAL_OBJECT.console.log('byte data:', result);
+    this.triggerDataEvent(result);
+  }
+
+  /**
+   * Send raw bytes from within the terminal. No further encoding
+   * is applied.
+   * Grab the data with the `onData` event.
+   * Note: This is also called by `triggerStringDataEvent` and
+   * `triggerRawDataEvent`, thus the `onData` event will contain
+   * all data sent from the terminal in a byte fashion.
+   */
+  public triggerDataEvent(data: Uint8Array): void {
+    this._onData.fire(data);
   }
 }
 
@@ -360,33 +234,39 @@ export class IoService {
  */
 
 const ios = new IoService();
+
+// connect data handlers
+ios.onData(data => console.log('byte data:', data));
+ios.onStringData(data => console.log('string data:', data));
+ios.onRawData(data => console.log('raw data:', data));
+
 // test different encodings with €
 // string input is still possible
 ios.write('€');                                   // --> 8364
 
 // default: UTF8
 ios.write(new Uint8Array([0xe2, 0x82, 0xac]));    // --> 8364
-ios.triggerStringEvent('€');                      // --> 0xe2, 0x82, 0xac
-ios.triggerByteEvent('€');                        // --> 172 (strips high bits)
+ios.triggerStringDataEvent('€');                      // --> 0xe2, 0x82, 0xac
+ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
 
 ios.setEncoding('iso-8859-15');
 ios.write(new Uint8Array([0xa4]));                // --> 8364
-ios.triggerStringEvent('€');                      // --> 164
-ios.triggerByteEvent('€');                        // --> 172 (strips high bits)
+ios.triggerStringDataEvent('€');                      // --> 164
+ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
 
 ios.setEncoding('windows-1252');
 ios.write(new Uint8Array([0x80]));                // --> 8364
-ios.triggerStringEvent('€');                      // --> 128
-ios.triggerByteEvent('€');                        // --> 172 (strips high bits)
+ios.triggerStringDataEvent('€');                      // --> 128
+ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
 
 // ascii: ignores high bit
 ios.setEncoding('ascii');
 ios.write(new Uint8Array([0x80, 0x81]));          // --> 0, 1
-ios.triggerStringEvent('€');                      // --> 63 (? replacement)
-ios.triggerByteEvent('€');                        // --> 172 (strips high bits)
+ios.triggerStringDataEvent('€');                      // --> 63 (? replacement)
+ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)
 
 // binary: direct 8bit --> unicode mapping
 ios.setEncoding('binary');
 ios.write(new Uint8Array([0x80, 0x81]));          // --> 128, 129
-ios.triggerStringEvent('€');                      // --> 63 (? replacement)
-ios.triggerByteEvent('€');                        // --> 172 (strips high bits)
+ios.triggerStringDataEvent('€');                      // --> 63 (? replacement)
+ios.triggerRawDataEvent('€');                        // --> 172 (strips high bits)

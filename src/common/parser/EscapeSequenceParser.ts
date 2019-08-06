@@ -6,7 +6,7 @@
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
-import { utf32ToString } from 'common/input/TextDecoder';
+import { utf32ToString } from 'common/input/Encodings';
 import { IDisposable } from 'common/Types';
 import { fill } from 'common/TypedArrayUtils';
 import { Params } from 'common/parser/Params';

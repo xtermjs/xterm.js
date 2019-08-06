@@ -6,7 +6,7 @@
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/Encodings';
 import { Terminal } from 'Terminal';
 
 class TestTerminal extends Terminal {
