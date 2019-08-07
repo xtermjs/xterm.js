@@ -1,4 +1,3 @@
- 6  C
  8  ^^^^
  9  vvvv  DL on line 11, expected:  ACD_
 10  A
@@ -13,13 +12,13 @@
 19  vvvv  IL on line 21, expected:  A_
 20  A
 
-
 22  ^^^^
-24  A
-25  B
-27  vvvv  DL on line 28, expected:  B_
 
+23  vvvv  IL on line 24, expected:  _A
+25  B
+26  ^^^^
 28  A
+
 29  B
 30  ^^^^
 31
