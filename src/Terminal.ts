@@ -1219,7 +1219,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /**
-   * New write method using IoService.
+   * Write data to the terminal.
+   * `data` can either be raw bytes from the pty or a string.
+   * Raw bytes will be decoded with the set encoding (default UTF-8),
+   * string data will always be decoded as UTF-16.
+   * `callback` is an optional callback that gets called once the data
+   * chunk was processed by the parser. Use this to implement
+   * a flow control mechanism so the terminal can keep up with incoming
+   * data. If the terminal falls to much behind data will be lost (>50MB).
    */
   public write(data: Uint8Array | string, callback?: () => void): void {
     this._ioService.write(data, callback);

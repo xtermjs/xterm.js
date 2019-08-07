@@ -4,8 +4,23 @@
  */
 
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/Encodings';
-import { encode } from 'utf8';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString, DEFAULT_ENCODINGS } from 'common/input/Encodings';
+import { encode, decode as utf8Decode } from 'utf8';
+import { IEncoding } from 'common/Types';
+
+function getEncoding(name: string): IEncoding {
+  for (const encoding of DEFAULT_ENCODINGS) {
+    if (encoding.name === name) {
+      return encoding;
+    }
+    for (const alias of encoding.aliases) {
+      if (alias === name) {
+        return encoding;
+      }
+    }
+  }
+  throw new Error('unknown encoding');
+}
 
 // convert UTF32 codepoints to string
 function toString(data: Uint32Array, length: number): string {
@@ -40,7 +55,7 @@ const TEST_STRINGS = [
   'Лорем ლორემ अधिकांश 覧六子 八メル 모든 בקרבת 💮 😂 äggg 123€ 𝄞.'
 ];
 
-describe('text encodings', () => {
+describe('Encodings', () => {
   it('stringFromCodePoint/utf32ToString', () => {
     const s = 'abcdefg';
     const data = new Uint32Array(s.length);
@@ -214,6 +229,145 @@ describe('text encodings', () => {
         }
         assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
+    });
+  });
+
+  describe('utf8 encoder', () => {
+    it('test strings', () => {
+      const encoder = new (getEncoding('utf-8').encoder)();
+      for (let i = 0; i < TEST_STRINGS.length; ++i) {
+        const byteData = encoder.encode(TEST_STRINGS[i]);
+        assert.equal(utf8Decode(toString(byteData as unknown as Uint32Array, byteData.length)), TEST_STRINGS[i]);
+      }
+    });
+  });
+
+  describe('ASCII', () => {
+    it('decode - should strip high bits', () => {
+      const decoder = new (getEncoding('ascii').decoder)();
+      const data = new Uint8Array(1);
+      const target = new Uint32Array(10);
+      for (let i = 0; i < 256; ++i) {
+        data[0] = i;
+        const length = decoder.decode(data, target);
+        assert.equal(length, 1);
+        assert.equal(target[0], i & 0x7F);
+      }
+    });
+    it('encode - should replace > 0x7F with ?', () => {
+      const encoder = new (getEncoding('ascii').encoder)();
+      for (let i = 0; i < 512; ++i) {
+        const byteData = encoder.encode(String.fromCharCode(i));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], (i > 0x7F) ? '?'.charCodeAt(0) : i);
+      }
+    });
+  });
+
+  describe('ISO-8859-1', () => {
+    it('decode - should map 1:1', () => {
+      const decoder = new (getEncoding('ISO-8859-1').decoder)();
+      const data = new Uint8Array(1);
+      const target = new Uint32Array(10);
+      for (let i = 0; i < 256; ++i) {
+        data[0] = i;
+        const length = decoder.decode(data, target);
+        assert.equal(length, 1);
+        assert.equal(target[0], i);
+      }
+    });
+    it('encode - should replace > 0xFF with ?', () => {
+      const encoder = new (getEncoding('ISO-8859-1').encoder)();
+      for (let i = 0; i < 512; ++i) {
+        const byteData = encoder.encode(String.fromCharCode(i));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], (i > 0xFF) ? '?'.charCodeAt(0) : i);
+      }
+    });
+  });
+
+  describe('ISO-8859-15', () => {
+    // codepoints for 0x80+
+    const CODEPOINTS = [
+      128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
+      146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163,
+      8364, 165, 352, 167, 353, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 381, 181,
+      182, 183, 382, 185, 186, 187, 338, 339, 376, 191, 192, 193, 194, 195, 196, 197, 198, 199,
+      200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217,
+      218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235,
+      236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+    ];
+    it('decode', () => {
+      const decoder = new (getEncoding('ISO-8859-15').decoder)();
+      const data = new Uint8Array(1);
+      const target = new Uint32Array(10);
+      for (let i = 0; i < 256; ++i) {
+        data[0] = i;
+        const length = decoder.decode(data, target);
+        assert.equal(length, 1);
+        assert.equal(target[0], (i < 0x80) ? i : CODEPOINTS[i & 0x7F]);
+      }
+    });
+    it('encode - should correctly encode known high codepoints', () => {
+      const highCodepoints = CODEPOINTS.filter(el => el > 0xFF);
+      const encoder = new (getEncoding('ISO-8859-15').encoder)();
+      for (const cp of highCodepoints) {
+        const byteData = encoder.encode(String.fromCharCode(cp));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], CODEPOINTS.indexOf(cp) + 128);
+      }
+    });
+    it('encode - should replace remapped positions with ?', () => {
+      const remapped = CODEPOINTS.map((el, idx) => (el > 0xFF) ? idx + 128 : 0).filter(Boolean);
+      const encoder = new (getEncoding('ISO-8859-15').encoder)();
+      for (let i = 0; i < 300; ++i) {
+        const byteData = encoder.encode(String.fromCharCode(i));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], (i > 0xFF) ? '?'.charCodeAt(0) : (remapped.indexOf(i) !== -1) ? '?'.charCodeAt(0) : i);
+      }
+    });
+  });
+
+  describe('Windows-1252', () => {
+    // codepoints for 0x80+
+    const CODEPOINTS = [
+      8364, 129, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 352, 8249, 338, 141, 381, 143,
+      144, 8216, 8217, 8220, 8221, 8226, 8211, 8212, 732, 8482, 353, 8250, 339, 157, 382, 376,
+      160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177,
+      178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195,
+      196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213,
+      214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
+      232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249,
+      250, 251, 252, 253, 254, 255
+    ];
+    it('decode', () => {
+      const decoder = new (getEncoding('windows-1252').decoder)();
+      const data = new Uint8Array(1);
+      const target = new Uint32Array(10);
+      for (let i = 0; i < 256; ++i) {
+        data[0] = i;
+        const length = decoder.decode(data, target);
+        assert.equal(length, 1);
+        assert.equal(target[0], (i < 0x80) ? i : CODEPOINTS[i & 0x7F]);
+      }
+    });
+    it('encode - should correctly encode known high codepoints', () => {
+      const highCodepoints = CODEPOINTS.filter(el => el > 0xFF);
+      const encoder = new (getEncoding('windows-1252').encoder)();
+      for (const cp of highCodepoints) {
+        const byteData = encoder.encode(String.fromCharCode(cp));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], CODEPOINTS.indexOf(cp) + 128);
+      }
+    });
+    it('encode - should replace remapped positions with ?', () => {
+      const remapped = CODEPOINTS.map((el, idx) => (el > 0xFF) ? idx + 128 : 0).filter(Boolean);
+      const encoder = new (getEncoding('windows-1252').encoder)();
+      for (let i = 0; i < 300; ++i) {
+        const byteData = encoder.encode(String.fromCharCode(i));
+        assert.equal(byteData.length, 1);
+        assert.equal(byteData[0], (i > 0xFF) ? '?'.charCodeAt(0) : (remapped.indexOf(i) !== -1) ? '?'.charCodeAt(0) : i);
+      }
     });
   });
 });

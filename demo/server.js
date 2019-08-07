@@ -6,7 +6,7 @@ var pty = require('node-pty');
 /**
  * Whether to use binary transport.
  */
-const USE_BINARY = false;
+const USE_BINARY = true;
 
 
 function startServer() {
