@@ -378,7 +378,7 @@ declare module 'xterm' {
      * to change the active encoding. With `Terminal.addEncoding` custom
      * encodings can be added to the terminal instance.
      */
-    readonly encodings: string[];
+    readonly encodings: {[key: string]: IEncoding};
 
     /**
      * (EXPERIMENTAL) The terminal's current buffer, this might be either the
@@ -994,12 +994,15 @@ declare module 'xterm' {
 
   /**
    * xterm.js encoding interface.
+   * See common/input/Encodings.ts for implementation examples.
    */
   export interface IEncoding {
     /**
-     * list of names the encoding should register under.
+     * Name and alias names of the encoding.
      */
-    names: string[];
+    name: string;
+    aliases: string[];
+
     /**
      * Decoder / Encoder classes.
      * 

@@ -49,8 +49,7 @@ const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
  *
  * The encoding should reflect the pty application's expectations, change it with
  * `setEncoding`. Beside the supported encodings (ascii, binary/iso-8859-15, utf-8,
- * iso-8859-15 and Windows-1252) further encodings can be added by `addEncoding`.
- * The encoding is set to utf-8 by default as most platforms use UTF-8 nowadays.
+ * iso-8859-15 and Windows-1252) further encodings can be added with `addEncoding`.
  */
 export class IoService implements IIoService {
   private _writeBuffer: (Uint8Array | string)[] = [];
@@ -61,7 +60,8 @@ export class IoService implements IIoService {
   private _decoder: IInputDecoder;
   private _encoder: IOutputEncoder;
   private _inputBuffer = new Uint32Array(4096);
-  private _encodings: {[key: string]: IEncoding} = {};
+  public readonly encodings: {[key: string]: IEncoding} = Object.create(null);
+  private _encodingNames: {[key: string]: string} = {};
 
   // event emitters
   private _onStringData = new EventEmitter<string>();
@@ -75,20 +75,18 @@ export class IoService implements IIoService {
     private _inputHandler: {parseUtf32(data: Uint32Array, length: number): void},
     encoding: string)
   {
-    for (const entry in DEFAULT_ENCODINGS) {
-      for (const name of DEFAULT_ENCODINGS[entry].names) {
-        this._encodings[name] = {
-          names: DEFAULT_ENCODINGS[entry].names,
-          decoder: DEFAULT_ENCODINGS[entry].decoder,
-          encoder: DEFAULT_ENCODINGS[entry].encoder
-        };
+    for (const entry of DEFAULT_ENCODINGS) {
+      this.encodings[entry.name] = Object.assign({}, entry);
+      this._encodingNames[entry.name] = entry.name;
+      for (const name of entry.aliases) {
+        this._encodingNames[name] = entry.name;
       }
     }
-    if (!this._encodings[encoding]) {
+    if (!this.encodings[this._encodingNames[encoding]]) {
       throw new Error(`unsupported encoding "${encoding}"`);
     }
-    this._decoder = new this._encodings[encoding].decoder();
-    this._encoder = new this._encodings[encoding].encoder();
+    this._decoder = new this.encodings[this._encodingNames[encoding]].decoder();
+    this._encoder = new this.encodings[this._encodingNames[encoding]].encoder();
   }
 
   /**
@@ -162,36 +160,27 @@ export class IoService implements IIoService {
   }
 
   /**
-   * Get a list of currently registered encodings.
-   */
-  public get encodings(): string[] {
-    return Object.keys(this._encodings);
-  }
-
-  /**
    * Set the input and output encoding of the terminal.
    * This setting should be in line with the expected application encoding.
    * Set to 'utf-8' by default, which covers most modern platform needs.
    */
   public setEncoding(encoding: string): void {
-    if (!this._encodings[encoding]) {
+    if (!this._encodingNames[encoding]) {
       throw new Error(`unsupported encoding "${encoding}"`);
     }
-    this._encoder = new this._encodings[encoding].encoder();
+    this._encoder = new this.encodings[this._encodingNames[encoding]].encoder();
     this._writeBuffer.push('');
-    this._callbacks.push(() => { this._decoder = new this._encodings[encoding].decoder(); });
+    this._callbacks.push(() => { this._decoder = new this.encodings[this._encodingNames[encoding]].decoder(); });
   }
 
   /**
    * Add a custom encoding.
    */
   public addEncoding(encoding: IEncoding): void {
-    for (const name of encoding.names) {
-      this._encodings[name] = {
-        names: encoding.names,
-        decoder: encoding.decoder,
-        encoder: encoding.encoder
-      };
+    this.encodings[encoding.name] = Object.assign({}, encoding);
+    this._encodingNames[encoding.name] = encoding.name;
+    for (const name of encoding.aliases) {
+      this._encodingNames[name] = encoding.name;
     }
   }
 

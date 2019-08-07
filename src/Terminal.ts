@@ -205,11 +205,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
 
   // encodings
-  public get encodings(): string[] {
+  public get encodings(): {[key: string]: IEncoding} {
     if (this._ioService) {
       return this._ioService.encodings;
     }
-    return [];
+    return {};
   }
 
   public addEncoding(encoding: IEncoding): void {

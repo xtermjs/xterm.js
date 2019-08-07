@@ -244,6 +244,28 @@ describe('API Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
+    it('onRawData', async function(): Promise<any> {
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onRawData(e => calls.push(e));
+      `);
+      await page.evaluate(`
+        window.term._core._ioService.triggerRawDataEvent('foo');
+      `);
+      assert.deepEqual(await page.evaluate(`window.calls`), ['foo']);
+    });
+
+    it('onData', async function(): Promise<any> {
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(Array.from(e)));
+      `);
+      await page.type('.xterm-helper-textarea', 'foo');
+      assert.deepEqual(await page.evaluate(`window.calls`), [[102], [111], [111]]);
+    });
+
     it('onKey', async function(): Promise<any> {
       await openTerminal();
       await page.evaluate(`

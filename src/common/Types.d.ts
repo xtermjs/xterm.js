@@ -177,7 +177,8 @@ export interface IInputDecoderCtor {
 }
 
 export interface IEncoding {
-  names: string[];
+  name: string;
+  aliases: string[];
   decoder: IInputDecoderCtor;
   encoder: IOutputEncoderCtor;
 }

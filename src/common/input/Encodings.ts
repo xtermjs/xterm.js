@@ -575,27 +575,32 @@ class Windows1252Encoder implements IOutputEncoder {
  */
 export const DEFAULT_ENCODINGS: IEncoding[] = [
   {
-    names: ['ascii', '7bit', '7-bit'],
+    name: 'ascii',
+    aliases: ['7bit', '7-bit'],
     decoder: AsciiToUtf32,
     encoder: AsciiEncoder
   },
   {
-    names: ['binary', '8bit', '8-bit', 'latin1', 'latin-1', 'iso-8859-1'],
+    name: 'iso-8859-1',
+    aliases: ['latin-1', 'latin1', 'binary', '8bit', '8-bit'],
     decoder: BinaryToUtf32,
     encoder: BinaryEncoder
   },
   {
-    names: ['iso-8859-15'],
+    name: 'iso-8859-15',
+    aliases: [],
     decoder: ISO15ToUtf32,
     encoder: ISO15Encoder
   },
   {
-    names: ['windows-1252', 'cp1252', 'cp-1252'],
+    name: 'windows-1252',
+    aliases: ['cp1252', 'cp-1252'],
     decoder: Windows1252ToUtf32,
     encoder: Windows1252Encoder
   },
   {
-    names: ['utf-8', 'utf8', 'UTF8', 'UTF-8'],
+    name: 'utf-8',
+    aliases: ['utf8', 'UTF8', 'UTF-8'],
     decoder: Utf8ToUtf32,
     encoder: Utf8Encoder
   }

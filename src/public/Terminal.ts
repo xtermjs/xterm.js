@@ -40,7 +40,7 @@ export class Terminal implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
   public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
-  public get encodings(): string[] { return this._core.encodings; }
+  public get encodings(): {[key: string]: IEncoding} { return this._core.encodings; }
   public blur(): void {
     this._core.blur();
   }

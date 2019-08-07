@@ -150,7 +150,7 @@ export class MockTerminal implements ITerminal {
   buffer: IBuffer;
   viewport: IViewport;
   applicationCursor: boolean;
-  encodings: string[];
+  encodings: {[key: string]: IEncoding};
   addEncoding(encoding: IEncoding): void {
     throw new Error('Method not implemented.');
   }

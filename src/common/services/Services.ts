@@ -66,7 +66,7 @@ export interface IIoService {
   /**
    * Get a list of currently registered encodings.
    */
-  encodings: string[];
+  encodings: {[key: string]: IEncoding};
 
   /**
    * Set the input and output encoding of the terminal.
