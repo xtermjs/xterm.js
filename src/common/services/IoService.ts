@@ -76,7 +76,7 @@ export class IoService implements IIoService {
     encoding: string)
   {
     for (const entry of DEFAULT_ENCODINGS) {
-      this.encodings[entry.name] = Object.assign({}, entry);
+      this.encodings[entry.name] = Object.assign(Object.create(null), entry);
       this._encodingNames[entry.name] = entry.name;
       for (const name of entry.aliases) {
         this._encodingNames[name] = entry.name;
