@@ -252,10 +252,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setup();
 
     // attach after _setup to get a hold of inputHandler
-    this._ioService = this._instantiationService.createInstance(
-      IoService,
-      this._inputHandler,
-      'utf-8');
+    this._ioService = this._instantiationService.createInstance(IoService, this._inputHandler, this.optionsService.options.encoding);
     // route coreService.triggerDataEvent as stringDataEvent for now
     this._coreService.onData(e => this._ioService.triggerStringDataEvent(e));
     this._ioService.onStringData(e => this._onStringData.fire(e));

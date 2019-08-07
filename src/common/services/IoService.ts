@@ -6,11 +6,10 @@
 import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
-import { IIoService, IOptionsService } from './Services';
+import { IIoService } from 'common/services/Services';
 
-// TODO: fix SetTimeout dep, remove console
+// TODO: fix setTimeout dep, remove console
 declare let setTimeout: (handler: () => void, timeout?: number) => number;
-declare let console: any;
 
 /**
  * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
