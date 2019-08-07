@@ -4,7 +4,7 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, CharData } from 'common/Types';
+import { ICharset, IAttributeData, CharData, IEncoding } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
@@ -156,7 +156,6 @@ export interface IInputHandler {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   browser: IBrowser;
-  writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
   buffer: IBuffer;
@@ -180,13 +179,16 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 
 // Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable {
+  encodings: string[];
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
   buffer: IBuffer;
   markers: IMarker[];
   onCursorMove: IEvent<void>;
-  onData: IEvent<string>;
+  onStringData: IEvent<string>;
+  onRawData: IEvent<string>;
+  onData: IEvent<Uint8Array>;
   onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   onLineFeed: IEvent<void>;
   onScroll: IEvent<number>;
@@ -194,6 +196,7 @@ export interface IPublicTerminal extends IDisposable {
   onRender: IEvent<{ start: number, end: number }>;
   onResize: IEvent<{ cols: number, rows: number }>;
   onTitleChange: IEvent<string>;
+  addEncoding(encoding: IEncoding): void;
   blur(): void;
   focus(): void;
   resize(columns: number, rows: number): void;

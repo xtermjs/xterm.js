@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, IEncoding } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
@@ -35,7 +35,9 @@ export class MockTerminal implements ITerminal {
   onCursorMove: IEvent<void>;
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;
-  onData: IEvent<string>;
+  onStringData: IEvent<string>;
+  onRawData: IEvent<string>;
+  onData: IEvent<Uint8Array>;
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
@@ -148,6 +150,10 @@ export class MockTerminal implements ITerminal {
   buffer: IBuffer;
   viewport: IViewport;
   applicationCursor: boolean;
+  encodings: string[];
+  addEncoding(encoding: IEncoding): void {
+    throw new Error('Method not implemented.');
+  }
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }

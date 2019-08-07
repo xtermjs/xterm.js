@@ -63,15 +63,15 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
   });
 
-  it('writeUtf8', async function(): Promise<any> {
+  it('write Utf8', async function(): Promise<any> {
     await openTerminal();
     await page.evaluate(`
       // foo
-      window.term.writeUtf8(new Uint8Array([102, 111, 111]));
+      window.term.write(new Uint8Array([102, 111, 111]));
       // bar
-      window.term.writeUtf8(new Uint8Array([98, 97, 114]));
+      window.term.write(new Uint8Array([98, 97, 114]));
       // 文
-      window.term.writeUtf8(new Uint8Array([230, 150, 135]));
+      window.term.write(new Uint8Array([230, 150, 135]));
     `);
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });

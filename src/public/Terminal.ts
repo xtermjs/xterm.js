@@ -5,7 +5,7 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, IEncoding } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
@@ -25,7 +25,9 @@ export class Terminal implements ITerminalApi {
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
-  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onStringData(): IEvent<string> { return this._core.onStringData; }
+  public get onRawData(): IEvent<string> { return this._core.onRawData; }
+  public get onData(): IEvent<Uint8Array> { return this._core.onData; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
@@ -38,6 +40,7 @@ export class Terminal implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
   public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
+  public get encodings(): string[] { return this._core.encodings; }
   public blur(): void {
     this._core.blur();
   }
@@ -56,6 +59,9 @@ export class Terminal implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
+  }
+  public addEncoding(encoding: IEncoding): void {
+    this._core.addEncoding(encoding);
   }
   public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
     return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
@@ -130,7 +136,7 @@ export class Terminal implements ITerminalApi {
   public write(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data, callback);
   }
-  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'encoding' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
   public getOption(key: 'colors'): string[];
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
@@ -139,6 +145,7 @@ export class Terminal implements ITerminalApi {
   public getOption(key: any): any {
     return this._core.optionsService.getOption(key);
   }
+  public setOption(key: 'encoding', value: string): void;
   public setOption(key: 'bellSound' | 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
   public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
   public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;

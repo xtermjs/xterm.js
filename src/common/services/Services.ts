@@ -64,6 +64,11 @@ export interface IIoService {
   write(data: Uint8Array | string, callback?: () => void): void;
 
   /**
+   * Get a list of currently registered encodings.
+   */
+  encodings: string[];
+
+  /**
    * Set the input and output encoding of the terminal.
    * This setting should be in line with the expected application encoding.
    * Set to 'utf-8' by default, which covers most modern platform needs.

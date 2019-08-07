@@ -6,7 +6,7 @@
 import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
-import { IIoService } from './Services';
+import { IIoService, IOptionsService } from './Services';
 
 // TODO: fix SetTimeout dep, remove console
 declare let setTimeout: (handler: () => void, timeout?: number) => number;
@@ -72,8 +72,8 @@ export class IoService implements IIoService {
   public get onData(): IEvent<Uint8Array> { return this._onData.event; }
 
   constructor(
-    private _inputHandler: any,
-    encoding: string = 'utf-8')
+    private _inputHandler: {parseUtf32(data: Uint32Array, length: number): void},
+    encoding: string)
   {
     for (const entry in DEFAULT_ENCODINGS) {
       for (const name of DEFAULT_ENCODINGS[entry].names) {
@@ -159,6 +159,13 @@ export class IoService implements IIoService {
       this._writeBuffer = [];
       this._callbacks = [];
     }
+  }
+
+  /**
+   * Get a list of currently registered encodings.
+   */
+  public get encodings(): string[] {
+    return Object.keys(this._encodings);
   }
 
   /**

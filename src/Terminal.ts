@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, IEncoding } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -146,22 +146,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public params: (string | number)[];
   public currentParam: string | number;
 
-  // user input states
-  public writeBuffer: string[];
-  public writeBufferUtf8: Uint8Array[];
-  private _writeInProgress: boolean;
-
-  /**
-   * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
-   * This is a distinct state from writeStopped so that if the user requested
-   * XOFF via ^S that it will not automatically resume when the writeBuffer goes
-   * below threshold.
-   */
-  private _xoffSentToCatchUp: boolean;
-
-  /** Whether writing has been stopped as a result of XOFF */
-  // private _writeStopped: boolean;
-
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
 
@@ -190,8 +174,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  private _onStringData = new EventEmitter<string>();
+  public get onStringData(): IEvent<string> { return this._onStringData.event; }
+  private _onRawData = new EventEmitter<string>();
+  public get onRawData(): IEvent<string> { return this._onRawData.event; }
+  private _onData = new EventEmitter<Uint8Array>();
+  public get onData(): IEvent<Uint8Array> { return this._onData.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -215,6 +203,20 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
   public onA11yTabEmitter = new EventEmitter<number>();
   public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
+
+  // encodings
+  public get encodings(): string[] {
+    if (this._ioService) {
+      return this._ioService.encodings;
+    }
+    return [];
+  }
+
+  public addEncoding(encoding: IEncoding): void {
+    if (this._ioService) {
+      this._ioService.addEncoding(encoding);
+    }
+  }
 
   /**
    * Creates a new `Terminal` object.
@@ -243,7 +245,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ILogService, this._logService);
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreService.onData(e => this._onData.fire(e));
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
 
@@ -251,7 +252,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setup();
 
     // attach after _setup to get a hold of inputHandler
-    this._ioService = this._instantiationService.createInstance(IoService, this._inputHandler, 'utf-8');
+    this._ioService = this._instantiationService.createInstance(
+      IoService,
+      this._inputHandler,
+      'utf-8');
+    // route coreService.triggerDataEvent as stringDataEvent for now
+    this._coreService.onData(e => this._ioService.triggerStringDataEvent(e));
+    this._ioService.onStringData(e => this._onStringData.fire(e));
+    this._ioService.onRawData(e => this._onRawData.fire(e));
+    this._ioService.onData(e => this._onData.fire(e));
   }
 
   public dispose(): void {
@@ -300,13 +309,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.params = [];
     this.currentParam = 0;
 
-    // user input states
-    this.writeBuffer = [];
-    this.writeBufferUtf8 = [];
-    this._writeInProgress = false;
-
-    this._xoffSentToCatchUp = false;
-    // this._writeStopped = false;
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
@@ -432,6 +434,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             }
           }
           break;
+        case 'encoding':
+          if (this._ioService) {
+            this._ioService.setEncoding(this.optionsService.options.encoding);
+          }
       }
     });
   }
@@ -1650,10 +1656,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
     const cursorState = this.cursorState;
-    const writeBuffer = this.writeBuffer;
-    const writeBufferUtf8 = this.writeBufferUtf8;
-    const writeInProgress = this._writeInProgress;
-    const xoffSentToCatchUp = this._xoffSentToCatchUp;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1667,10 +1669,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.cursorState = cursorState;
-    this.writeBuffer = writeBuffer;
-    this.writeBufferUtf8 = writeBufferUtf8;
-    this._writeInProgress = writeInProgress;
-    this._xoffSentToCatchUp = xoffSentToCatchUp;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh

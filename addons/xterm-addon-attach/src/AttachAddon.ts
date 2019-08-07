@@ -45,7 +45,7 @@ export class AttachAddon implements ITerminalAddon {
     this._disposables.forEach(d => d.dispose());
   }
 
-  private _sendData(data: string): void {
+  private _sendData(data: Uint8Array): void {
     // TODO: do something better than just swallowing
     // the data if the socket is not in a working condition
     if (this._socket.readyState !== 1) {

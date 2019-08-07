@@ -374,6 +374,13 @@ declare module 'xterm' {
     readonly cols: number;
 
     /**
+     * Installed encodings of the terminal. Use `ITerminalOptions.encoding`
+     * to change the active encoding. With `Terminal.addEncoding` custom
+     * encodings can be added to the terminal instance.
+     */
+    readonly encodings: string[];
+
+    /**
      * (EXPERIMENTAL) The terminal's current buffer, this might be either the
      * normal buffer or the alt buffer depending on what's running in the
      * terminal.
@@ -405,13 +412,31 @@ declare module 'xterm' {
     onCursorMove: IEvent<void>;
 
     /**
-     * Adds an event listener for when a data event fires. This happens for
-     * example when the user types or pastes into the terminal. The event value
-     * is whatever `string` results, in a typical setup, this should be passed
-     * on to the backing pty.
+     * Event listener for string data sent from the terminal.
+     * Convenient event to grab original string data as string type
+     * for further processing.
+     * Note: Do not send the data of this event to the pty as it might
+     * miss raw data or mess up encoding settings.
+     * Instead use `onData` (see below).
      * @returns an `IDisposable` to stop listening.
      */
-    onData: IEvent<string>;
+    onStringData: IEvent<string>;
+
+    /**
+     * Event listener for raw byte data sent from the terminal.
+     * The passed data is meant to be handled as bytestring,
+     * e.g. to be applied with 'binary' encoding.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRawData: IEvent<string>;
+
+    /**
+     * Event listener for data from the terminal.
+     * This event is a union of `onStringData` and `onRawData` as raw bytes with correctly
+     * applied encodings. Use this event to send data directly to the pty.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onData: IEvent<Uint8Array>;
 
     /**
      * Adds an event listener for a key is pressed. The event value contains the
@@ -499,6 +524,17 @@ declare module 'xterm' {
      * whether the event should be processed by xterm.js.
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
+
+    /**
+     * Add an IO encoding to xterm.js.
+     * IO encoding are applied to data input and output as follows:
+     * - raw input will be decoded with the active encoding
+     * - string input always decodes as UTF-16
+     * - outgoing data of `onData` will be encoded with the active encoding
+     * 
+     * To set the active encoding see `ITerminalOptions.encoding`. TODO
+     */
+    addEncoding(encoding: IEncoding): void;
 
     /**
      * (EXPERIMENTAL) Adds a handler for CSI escape sequences.
@@ -669,21 +705,21 @@ declare module 'xterm' {
      */
     clear(): void;
 
-    /**
-     * Writes text to the terminal.
-     * @param data The text to write to the terminal.
-     */
-    write(data: string | Uint8Array, callback?: () => void): void;
-
-    /**
+     /**
      * Write data to the terminal.
      * `data` can either be raw bytes from the pty or a string.
-     * Raw bytes will be decoded with the set encoding (default UTF-8),
+     * Raw bytes will be decoded with the active encoding (default UTF-8),
      * string data will always be decoded as UTF-16.
      * `callback` is an optional callback that gets called once the data
      * chunk was processed by the parser. Use this to implement
      * a flow control mechanism so the terminal can keep up with incoming
      * data. If the terminal falls to much behind data will be lost (>50MB).
+     */
+    write(data: string | Uint8Array, callback?: () => void): void;
+
+    /**
+     * Writes text to the terminal, followed by a break line character (\n).
+     * @param data The text to write to the terminal.
      */
     writeln(data: string, callback?: () => void): void;
 
@@ -691,7 +727,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'encoding' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -718,6 +754,12 @@ declare module 'xterm' {
      */
     getOption(key: string): any;
 
+    /**
+     * Set the active encoding of the terminal (default UTF-8).
+     * @param key The option key.
+     * @param value Registered encoding name.
+     */
+    setOption(key: 'encoding', value: string): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -948,5 +990,32 @@ declare module 'xterm' {
      * - This is `0` for cells immediately following cells with a width of `2`.
      */
     readonly width: number;
+  }
+
+  /**
+   * xterm.js encoding interface.
+   */
+  export interface IEncoding {
+    /**
+     * list of names the encoding should register under.
+     */
+    names: string[];
+    /**
+     * Decoder / Encoder classes.
+     * 
+     * The classes get instantiated once if one of `names` is selected as
+     * active encoding.
+     * 
+     * The decoder should decode incoming `data` to UTF32 codepoints and
+     * write them to `target`. `target` is guaranteed to be big enough to hold
+     * all decoded bytes. Return the number of codepoints written to target. 
+     * The decoder should work with streams thus correctly deal with
+     * chunks of `data` that might have split multibyte characters.
+     * 
+     * The encoder should encode the string `data` to  newly created Uint8Array
+     * of the exact size of written bytes.
+     */
+    decoder: {new(): { decode(data: Uint8Array, target: Uint32Array): number }};
+    encoder: {new(): { encode(data: string): Uint8Array }};
   }
 }
