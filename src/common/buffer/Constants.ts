@@ -116,7 +116,12 @@ export const enum FgFlags {
   BOLD = 0x8000000,
   UNDERLINE = 0x10000000,
   BLINK = 0x20000000,
-  INVISIBLE = 0x40000000
+  INVISIBLE = 0x40000000,
+
+  /**
+   * bit 27..31 (32th bit unused)
+   */
+  FM_MASK = 0x7C000000
 }
 
 export const enum BgFlags {
@@ -124,5 +129,10 @@ export const enum BgFlags {
    * bit 27..32 (upper 4 unused)
    */
   ITALIC = 0x4000000,
-  DIM = 0x8000000
+  DIM = 0x8000000,
+
+  /**
+   * bit 27..32 (upper 4 unused)
+   */
+  FM_MASK = 0xFC000000
 }
