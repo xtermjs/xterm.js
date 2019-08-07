@@ -199,7 +199,7 @@ describe('InputHandler Integration Tests', function(): void {
     describe('DSR: Device Status Report', () => {
       it('Status Report - CSI 5 n', async function(): Promise<any> {
         await page.evaluate(`
-          window.term.onData(e => window.result = e);
+          window.term.onStringData(e => window.result = e);
           window.term.write('\\x1b[5n');
         `);
         assert.equal(await page.evaluate(`window.result`), '\x1b[0n');
@@ -211,7 +211,7 @@ describe('InputHandler Integration Tests', function(): void {
           [window.term.buffer.cursorY, window.term.buffer.cursorX]
         `), [2, 3]);
         await page.evaluate(`
-          window.term.onData(e => window.result = e);
+          window.term.onStringData(e => window.result = e);
           window.term.write('\\x1b[6n');
         `);
         assert.equal(await page.evaluate(`window.result`), '\x1b[3;4R');
@@ -223,7 +223,7 @@ describe('InputHandler Integration Tests', function(): void {
           [window.term.buffer.cursorY, window.term.buffer.cursorX]
         `), [2, 3]);
         await page.evaluate(`
-          window.term.onData(e => window.result = e);
+          window.term.onStringData(e => window.result = e);
           window.term.write('\\x1b[?6n');
         `);
         assert.equal(await page.evaluate(`window.result`), '\x1b[?3;4R');
@@ -375,7 +375,7 @@ async function simulatePaste(text: string): Promise<string> {
   const id = Math.floor(Math.random() * 1000000);
   await page.evaluate(`
     (function () {
-      window.term.onData(e => window.result_${id} = e);
+      window.term.onStringData(e => window.result_${id} = e);
       const clipboardData = new DataTransfer();
       clipboardData.setData('text/plain', '${text}');
       window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));

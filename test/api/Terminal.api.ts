@@ -234,11 +234,11 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.callCount`), 2);
     });
 
-    it('onData', async function(): Promise<any> {
+    it('onStringData', async function(): Promise<any> {
       await openTerminal();
       await page.evaluate(`
         window.calls = [];
-        window.term.onData(e => calls.push(e));
+        window.term.onStringData(e => calls.push(e));
       `);
       await page.type('.xterm-helper-textarea', 'foo');
       assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
