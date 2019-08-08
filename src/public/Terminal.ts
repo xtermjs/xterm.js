@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, Parser } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -11,7 +11,9 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
-import { IParams, IFunctionIdentifier } from 'common/parser/Types';
+import { IParams, IEscapeSequenceParser } from 'common/parser/Types';
+import { OscHandlerFactory } from 'common/parser/OscParser';
+import { DcsHandlerFactory } from '../../out/common/parser/DcsParser';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -33,6 +35,7 @@ export class Terminal implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
   public get element(): HTMLElement { return this._core.element; }
+  public get parser(): Parser.IParser { return new ParserApi((this._core as any)._inputHandler._parser); }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
@@ -56,18 +59,6 @@ export class Terminal implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
-  }
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
-    return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
-  }
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
-    return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
-  }
-  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
-    return this._core.addEscHandler(id, handler);
-  }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._core.addOscHandler(ident, callback);
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
     return this._core.registerLinkMatcher(regex, handler, options);
@@ -225,4 +216,21 @@ class BufferCellApiView implements IBufferCellApi {
   constructor(private _line: IBufferLine, private _x: number) {}
   public get char(): string { return this._line.getString(this._x); }
   public get width(): number { return this._line.getWidth(this._x); }
+}
+
+class ParserApi implements Parser.IParser {
+  constructor(private _parser: IEscapeSequenceParser) {}
+
+  public addCsiHandler(id: Parser.IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this._parser.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
+  }
+  public addDcsHandler(id: Parser.IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this._parser.addDcsHandler(id, new DcsHandlerFactory((data: string, params: IParams) => callback(data, params.toArray())));
+  }
+  public addEscHandler(id: Parser.IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this._parser.addEscHandler(id, handler);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._parser.addOscHandler(ident, new OscHandlerFactory(callback));
+  }
 }
