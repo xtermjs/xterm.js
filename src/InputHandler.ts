@@ -11,7 +11,7 @@ import { wcwidth } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/Encodings';
+import { stringFromCodePoint, utf32ToString } from 'common/input/Encodings';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'common/parser/Types';
@@ -113,9 +113,6 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _parseBuffer: Uint32Array = new Uint32Array(4096);
-  private _stringDecoder: StringToUtf32 = new StringToUtf32();
-  private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
   private _selectionService: ISelectionService | undefined;
@@ -312,42 +309,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   // TODO: When InputHandler moves into common, browser dependencies need to move out
   public setBrowserServices(selectionService: ISelectionService): void {
     this._selectionService = selectionService;
-  }
-
-  public parse(data: string): void {
-    let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
-
-    this._logService.debug('parsing data', data);
-
-    if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint32Array(data.length);
-    }
-    this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
-
-    buffer = this._bufferService.buffer;
-    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._onCursorMove.fire();
-    }
-  }
-
-  public parseUtf8(data: Uint8Array): void {
-    let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
-
-    this._logService.debug('parsing data', data);
-
-    if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint32Array(data.length);
-    }
-    this._parser.parse(this._parseBuffer, this._utf8Decoder.decode(data, this._parseBuffer));
-
-    buffer = this._bufferService.buffer;
-    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._onCursorMove.fire();
-    }
   }
 
   public parseUtf32(data: Uint32Array, length: number): void {

@@ -17,12 +17,20 @@ import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsSer
 import { IBufferService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
+import { IInputHandler } from 'Types';
+import { StringToUtf32 } from 'common/input/Encodings';
 
 function getCursor(term: TestTerminal): number[] {
   return [
     term.buffer.x,
     term.buffer.y
   ];
+}
+
+function parse(ih: IInputHandler, s: string): void {
+  const buffer = new Uint32Array(s.length);
+  const decoder = new StringToUtf32();
+  ih.parseUtf32(buffer, decoder.decode(s, buffer));
 }
 
 describe('InputHandler', () => {
@@ -117,10 +125,10 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
 
       // insert some data in first and second line
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
+      parse(inputHandler, Array(bufferService.cols - 9).join('a'));
+      parse(inputHandler, '1234567890');
+      parse(inputHandler, Array(bufferService.cols - 9).join('a'));
+      parse(inputHandler, '1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0);
       expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
@@ -155,10 +163,10 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
 
       // insert some data in first and second line
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
+      parse(inputHandler, Array(bufferService.cols - 9).join('a'));
+      parse(inputHandler, '1234567890');
+      parse(inputHandler, Array(bufferService.cols - 9).join('a'));
+      parse(inputHandler, '1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0);
       expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
@@ -196,9 +204,9 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
 
       // fill 6 lines to test 3 different states
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      parse(inputHandler, Array(bufferService.cols + 1).join('a'));
+      parse(inputHandler, Array(bufferService.cols + 1).join('a'));
+      parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params[0] - right erase
       bufferService.buffer.y = 0;
@@ -225,7 +233,7 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
 
       // fill display with a's
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;
@@ -253,7 +261,7 @@ describe('InputHandler', () => {
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params [1] - left and above
       bufferService.buffer.y = 5;
@@ -281,7 +289,7 @@ describe('InputHandler', () => {
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params [2] - whole screen
       bufferService.buffer.y = 5;
@@ -309,9 +317,9 @@ describe('InputHandler', () => {
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      inputHandler.parse(Array(bufferService.cols + 1).join('a')); // line 0
-      inputHandler.parse(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      parse(inputHandler, Array(bufferService.cols + 1).join('a')); // line 0
+      parse(inputHandler, Array(bufferService.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
@@ -324,9 +332,9 @@ describe('InputHandler', () => {
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      inputHandler.parse(Array(bufferService.cols + 1).join('a')); // line 0
-      inputHandler.parse(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      parse(inputHandler, Array(bufferService.cols + 1).join('a')); // line 0
+      parse(inputHandler, Array(bufferService.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) parse(inputHandler, Array(bufferService.cols + 1).join('a'));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
@@ -340,7 +348,7 @@ describe('InputHandler', () => {
   it('convertEol setting', function(): void {
     // not converting
     const termNotConverting = new Terminal({cols: 15, rows: 10});
-    (termNotConverting as any)._inputHandler.parse('Hello\nWorld');
+    parse((termNotConverting as any)._inputHandler, 'Hello\nWorld');
     expect(termNotConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
     expect(termNotConverting.buffer.lines.get(1).translateToString(false)).equals('     World     ');
     expect(termNotConverting.buffer.lines.get(0).translateToString(true)).equals('Hello');
@@ -348,7 +356,7 @@ describe('InputHandler', () => {
 
     // converting
     const termConverting = new Terminal({cols: 15, rows: 10, convertEol: true});
-    (termConverting as any)._inputHandler.parse('Hello\nWorld');
+    parse((termConverting as any)._inputHandler, 'Hello\nWorld');
     expect(termConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
     expect(termConverting.buffer.lines.get(1).translateToString(false)).equals('World          ');
     expect(termConverting.buffer.lines.get(0).translateToString(true)).equals('Hello');
@@ -375,21 +383,21 @@ describe('InputHandler', () => {
       handler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
     });
     it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
-      handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
+      parse(handler, '\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
       expect((bufferService.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
-      handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
+      parse(handler, '\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
       expect((bufferService.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
-      handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
+      parse(handler, '\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
       // Text color of 'TEST' should be default
@@ -398,24 +406,24 @@ describe('InputHandler', () => {
       expect((bufferService.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
-      handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
+      parse(handler, '\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('');
       // Text color of 'TEST' should be default
       expect(bufferService.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
     });
     it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
-      handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
+      parse(handler, '\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       // Text color of 'TEST' should be default
       expect(bufferService.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
-      handler.parse('\x1b[?1049h\x1b[uTEST');
+      parse(handler, '\x1b[?1049h\x1b[uTEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
       // Text color of 'TEST' should be red
       expect((bufferService.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
-      handler.parse('\x1b[42m\x1b[?1049h');
+      parse(handler, '\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
       expect(bufferService.buffer.lines.get(20).loadCell(10, new CellData()).getBgColor()).to.equal(2);
     });
