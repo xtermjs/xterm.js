@@ -19,6 +19,8 @@ export class CoreService implements ICoreService {
 
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
+  private _onRawData = new EventEmitter<string>();
+  public get onRawData(): IEvent<string> { return this._onRawData.event; }
   private _onUserInput = new EventEmitter<void>();
   public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
 
@@ -36,7 +38,7 @@ export class CoreService implements ICoreService {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
-  public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
+  public triggerStringDataEvent(data: string, wasUserInput: boolean = false): void {
     // Prevents all events to pty process if stdin is disabled
     if (this._optionsService.options.disableStdin) {
       return;
@@ -56,5 +58,27 @@ export class CoreService implements ICoreService {
     // Fire onData API
     this._logService.debug('sending data', data);
     this._onData.fire(data);
+  }
+
+  public triggerRawDataEvent(data: string, wasUserInput: boolean = false): void {
+    // Prevents all events to pty process if stdin is disabled
+    if (this._optionsService.options.disableStdin) {
+      return;
+    }
+
+    // Input is being sent to the terminal, the terminal should focus the prompt.
+    const buffer = this._bufferService.buffer;
+    if (buffer.ybase !== buffer.ydisp) {
+      this._scrollToBottom();
+    }
+
+    // Fire onUserInput so listeners can react as well (eg. clear selection)
+    if (wasUserInput) {
+      this._onUserInput.fire();
+    }
+
+    // Fire onData API
+    this._logService.debug('sending raw data', data);
+    this._onRawData.fire(data);
   }
 }

@@ -673,7 +673,7 @@ export class SelectionService implements ISelectionService {
         );
         if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
           const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._coreService.decPrivateModes.applicationCursorKeys);
-          this._coreService.triggerDataEvent(sequence, true);
+          this._coreService.triggerStringDataEvent(sequence, true);
         }
       }
     } else if (this.hasSelection) {

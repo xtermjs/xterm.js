@@ -252,9 +252,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setup();
 
     // attach after _setup to get a hold of inputHandler
-    this._ioService = this._instantiationService.createInstance(IoService, this._inputHandler, this.optionsService.options.encoding);
+    this._ioService = this._instantiationService.createInstance(IoService, (data: Uint32Array, length: number) => this._inputHandler.parseUtf32(data, length));
     // route coreService.triggerDataEvent as stringDataEvent for now
     this._coreService.onData(e => this._ioService.triggerStringDataEvent(e));
+    this._coreService.onRawData(e => this._ioService.triggerRawDataEvent(e));
     this._ioService.onStringData(e => this._onStringData.fire(e));
     this._ioService.onRawData(e => this._onRawData.fire(e));
     this._ioService.onData(e => this._onData.fire(e));
@@ -431,10 +432,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             }
           }
           break;
-        case 'encoding':
-          if (this._ioService) {
-            this._ioService.setEncoding(this.optionsService.options.encoding);
-          }
       }
     });
   }
@@ -444,7 +441,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _onTextAreaFocus(ev: KeyboardEvent): void {
     if (this.sendFocus) {
-      this._coreService.triggerDataEvent(C0.ESC + '[I');
+      this._coreService.triggerStringDataEvent(C0.ESC + '[I');
     }
     this.updateCursorStyle(ev);
     this.element.classList.add('focus');
@@ -469,7 +466,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
-      this._coreService.triggerDataEvent(C0.ESC + '[O');
+      this._coreService.triggerStringDataEvent(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
     this._onBlur.fire();
@@ -490,7 +487,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this._coreService.triggerDataEvent(e, true));
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this._coreService.triggerStringDataEvent(e, true));
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -813,7 +810,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         else if (button === 3) return;
         else data += '0';
         data += '~[' + pos.x + ',' + pos.y + ']\r';
-        self._coreService.triggerDataEvent(data, true);
+        self._coreService.triggerStringDataEvent(data, true);
         return;
       }
 
@@ -826,7 +823,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         else if (button === 1) button = 4;
         else if (button === 2) button = 6;
         else if (button === 3) button = 3;
-        self._coreService.triggerDataEvent(C0.ESC + '['
+        self._coreService.triggerStringDataEvent(C0.ESC + '['
                   + button
                   + ';'
                   + (button === 3 ? 4 : 0)
@@ -846,14 +843,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         pos.y -= 32;
         pos.x++;
         pos.y++;
-        self._coreService.triggerDataEvent(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M', true);
+        self._coreService.triggerStringDataEvent(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M', true);
         return;
       }
 
       if (self.sgrMouse) {
         pos.x -= 32;
         pos.y -= 32;
-        self._coreService.triggerDataEvent(C0.ESC + '[<'
+        self._coreService.triggerStringDataEvent(C0.ESC + '[<'
                   + (((button & 3) === 3 ? button & ~3 : button) - 32)
                   + ';'
                   + pos.x
@@ -869,7 +866,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       encode(data, pos.x);
       encode(data, pos.y);
 
-      self._coreService.triggerDataEvent(C0.ESC + '[M' + String.fromCharCode.apply(String, data), true);
+      self._coreService.triggerStringDataEvent(C0.ESC + '[M' + String.fromCharCode.apply(String, data), true);
     }
 
     function getButton(ev: MouseEvent): number {
@@ -1014,7 +1011,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
           }
-          this._coreService.triggerDataEvent(data, true);
+          this._coreService.triggerStringDataEvent(data, true);
         }
         return;
       }
@@ -1428,7 +1425,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
-    this._coreService.triggerDataEvent(result.key, true);
+    this._coreService.triggerStringDataEvent(result.key, true);
 
     // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
     // other listeners. When screen reader mode is enabled, this could cause issues if the event
@@ -1526,7 +1523,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
-    this._coreService.triggerDataEvent(key, true);
+    this._coreService.triggerStringDataEvent(key, true);
 
     return true;
   }

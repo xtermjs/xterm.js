@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, IIoService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, IEncoding } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
@@ -33,9 +33,11 @@ export class MockCoreService implements ICoreService {
   serviceBrand: any;
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
+  onRawData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
   reset(): void {}
-  triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+  triggerStringDataEvent(data: string, wasUserInput?: boolean): void {}
+  triggerRawDataEvent(data: string, wasUserInput?: boolean): void {}
 }
 
 export class MockDirtyRowService implements IDirtyRowService {
@@ -46,6 +48,26 @@ export class MockDirtyRowService implements IDirtyRowService {
   markDirty(y: number): void {}
   markRangeDirty(y1: number, y2: number): void {}
   markAllDirty(): void {}
+}
+
+export class MockIoService implements IIoService {
+  serviceBrand: any;
+  onStringData: IEvent<string> = new EventEmitter<string>().event;
+  onRawData: IEvent<string> = new EventEmitter<string>().event;
+  onData: IEvent<Uint8Array> = new EventEmitter<Uint8Array>().event;
+  encodings: {[key: string]: IEncoding} = {};
+  setEncoding(encoding: string): void {}
+  addEncoding(encoding: IEncoding): void {}
+  write(data: string | Uint8Array, callback?: () => void): void {}
+  triggerStringDataEvent(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  triggerRawDataEvent(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  triggerDataEvent(data: Uint8Array): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockLogService implements ILogService {

@@ -30,6 +30,7 @@ export interface ICoreService {
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;
+  readonly onRawData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
 
   reset(): void;
@@ -39,17 +40,24 @@ export interface ICoreService {
    * @param data The data that is being emitted.
    * @param wasFromUser Whether the data originated from the user (as opposed to
    * resulting from parsing incoming data). When true this will also:
-   * - Scroll to the bottom of the buffer.s
+   * - Scroll to the bottom of the buffer.
    * - Fire the `onUserInput` event (so selection can be cleared).
     */
-  triggerDataEvent(data: string, wasUserInput?: boolean): void;
+  triggerStringDataEvent(data: string, wasUserInput?: boolean): void;
+  triggerRawDataEvent(data: string, wasUserInput?: boolean): void;
 }
 
 export const IIoService = createDecorator<IIoService>('IoService');
 export interface IIoService {
+  serviceBrand: any;
   readonly onStringData: IEvent<string>;
   readonly onRawData: IEvent<string>;
   readonly onData: IEvent<Uint8Array>;
+
+  /**
+   * Get registered encodings.
+   */
+  readonly encodings: {[key: string]: IEncoding};
 
   /**
    * Write data to the terminal.
@@ -62,11 +70,6 @@ export interface IIoService {
    * data. If the terminal falls to much behind data will be lost (>50MB).
    */
   write(data: Uint8Array | string, callback?: () => void): void;
-
-  /**
-   * Get a list of currently registered encodings.
-   */
-  encodings: {[key: string]: IEncoding};
 
   /**
    * Set the input and output encoding of the terminal.
@@ -266,6 +269,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
+  encoding: string;
 }
 
 export interface ITheme {

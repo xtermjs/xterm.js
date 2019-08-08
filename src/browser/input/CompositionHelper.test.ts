@@ -37,7 +37,7 @@ describe('CompositionHelper', () => {
       }
     } as any;
     const coreService = new MockCoreService();
-    coreService.triggerDataEvent = (text: string) => {
+    coreService.triggerStringDataEvent = (text: string) => {
       handledText += text;
     };
     handledText = '';

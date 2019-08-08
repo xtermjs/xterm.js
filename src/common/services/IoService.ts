@@ -6,9 +6,9 @@
 import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
-import { IIoService } from 'common/services/Services';
+import { IIoService, IOptionsService } from 'common/services/Services';
 
-// TODO: fix setTimeout dep, remove console
+// TODO: fix setTimeout dep
 declare let setTimeout: (handler: () => void, timeout?: number) => number;
 
 /**
@@ -51,6 +51,9 @@ const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
  * iso-8859-15 and Windows-1252) further encodings can be added with `addEncoding`.
  */
 export class IoService implements IIoService {
+  public serviceBrand: any;
+  public readonly encodings: {[key: string]: IEncoding} = Object.create(null);
+
   private _writeBuffer: (Uint8Array | string)[] = [];
   private _pendingSize: number = 0;
   private _callbacks: ((() => void) | undefined)[] = [];
@@ -59,10 +62,8 @@ export class IoService implements IIoService {
   private _decoder: IInputDecoder;
   private _encoder: IOutputEncoder;
   private _inputBuffer = new Uint32Array(4096);
-  public readonly encodings: {[key: string]: IEncoding} = Object.create(null);
   private _encodingNames: {[key: string]: string} = {};
 
-  // event emitters
   private _onStringData = new EventEmitter<string>();
   public get onStringData(): IEvent<string> { return this._onStringData.event; }
   private _onRawData = new EventEmitter<string>();
@@ -71,8 +72,8 @@ export class IoService implements IIoService {
   public get onData(): IEvent<Uint8Array> { return this._onData.event; }
 
   constructor(
-    private _inputHandler: {parseUtf32(data: Uint32Array, length: number): void},
-    encoding: string)
+    private _parse: (data: Uint32Array, length: number) => void,
+    @IOptionsService private readonly _optionsService: IOptionsService)
   {
     for (const entry of DEFAULT_ENCODINGS) {
       this.encodings[entry.name] = Object.assign(Object.create(null), entry);
@@ -81,11 +82,52 @@ export class IoService implements IIoService {
         this._encodingNames[name] = entry.name;
       }
     }
+    const encoding = this._optionsService.options.encoding;
     if (!this.encodings[this._encodingNames[encoding]]) {
       throw new Error(`unsupported encoding "${encoding}"`);
     }
     this._decoder = new this.encodings[this._encodingNames[encoding]].decoder();
     this._encoder = new this.encodings[this._encodingNames[encoding]].encoder();
+
+    // listen to changes on options.encoding
+    this._optionsService.onOptionChange(key => {
+      if (key === 'encoding') {
+        this.setEncoding(this._optionsService.options.encoding);
+      }
+    });
+  }
+
+  /**
+   * Set the input and output encoding of the terminal.
+   * This setting should be in line with the expected application encoding.
+   * Set to 'utf-8' by default, which covers most modern platform needs.
+   */
+  public setEncoding(encoding: string): void {
+    if (!this._encodingNames[encoding]) {
+      throw new Error(`unsupported encoding "${encoding}"`);
+    }
+    this._encoder = new this.encodings[this._encodingNames[encoding]].encoder();
+    if (this._writeBuffer.length) {
+      this._writeBuffer.push('');
+      this._callbacks.push(() => { this._decoder = new this.encodings[this._encodingNames[encoding]].decoder(); });
+    } else {
+      this._decoder = new this.encodings[this._encodingNames[encoding]].decoder();
+    }
+
+    if (this._optionsService.options.encoding !== encoding) {
+      this._optionsService.options.encoding = encoding;
+    }
+  }
+
+  /**
+   * Add a custom encoding.
+   */
+  public addEncoding(encoding: IEncoding): void {
+    this.encodings[encoding.name] = Object.assign(Object.create(null), encoding);
+    this._encodingNames[encoding.name] = encoding.name;
+    for (const name of encoding.aliases) {
+      this._encodingNames[name] = encoding.name;
+    }
   }
 
   /**
@@ -133,7 +175,7 @@ export class IoService implements IIoService {
       const len = (typeof data === 'string')
         ? this._stringDecoder.decode(data, this._inputBuffer)
         : this._decoder.decode(data, this._inputBuffer);
-      this._inputHandler.parseUtf32(this._inputBuffer, len);
+      this._parse(this._inputBuffer, len);
 
       this._pendingSize -= data.length;
       if (cb) cb();
@@ -159,31 +201,6 @@ export class IoService implements IIoService {
   }
 
   /**
-   * Set the input and output encoding of the terminal.
-   * This setting should be in line with the expected application encoding.
-   * Set to 'utf-8' by default, which covers most modern platform needs.
-   */
-  public setEncoding(encoding: string): void {
-    if (!this._encodingNames[encoding]) {
-      throw new Error(`unsupported encoding "${encoding}"`);
-    }
-    this._encoder = new this.encodings[this._encodingNames[encoding]].encoder();
-    this._writeBuffer.push('');
-    this._callbacks.push(() => { this._decoder = new this.encodings[this._encodingNames[encoding]].decoder(); });
-  }
-
-  /**
-   * Add a custom encoding.
-   */
-  public addEncoding(encoding: IEncoding): void {
-    this.encodings[encoding.name] = Object.assign({}, encoding);
-    this._encodingNames[encoding.name] = encoding.name;
-    for (const name of encoding.aliases) {
-      this._encodingNames[name] = encoding.name;
-    }
-  }
-
-  /**
    * Send string data from within the terminal. Anything that resembles
    * string content should be sent with this method.
    * The data will be output encoded as given in `setEncoding`.
@@ -192,6 +209,7 @@ export class IoService implements IIoService {
   public triggerStringDataEvent(data: string): void {
     // allow string data to be caught separately
     this._onStringData.fire(data);
+    // TODO: find a way to prevent encoding work if no listener is attached
     this.triggerDataEvent(this._encoder.encode(data));
   }
 

@@ -123,7 +123,7 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._coreService.triggerDataEvent(input, true);
+      this._coreService.triggerStringDataEvent(input, true);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -155,7 +155,7 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._coreService.triggerDataEvent(input, true);
+          this._coreService.triggerStringDataEvent(input, true);
         }
       }, 0);
     }
@@ -175,7 +175,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
-          this._coreService.triggerDataEvent(diff, true);
+          this._coreService.triggerStringDataEvent(diff, true);
         }
       }
     }, 0);
