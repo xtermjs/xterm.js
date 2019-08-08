@@ -30,7 +30,7 @@ function getCursor(term: TestTerminal): number[] {
 function parse(ih: IInputHandler, s: string): void {
   const buffer = new Uint32Array(s.length);
   const decoder = new StringToUtf32();
-  ih.parseUtf32(buffer, decoder.decode(s, buffer));
+  ih.parse(buffer, decoder.decode(s, buffer));
 }
 
 describe('InputHandler', () => {

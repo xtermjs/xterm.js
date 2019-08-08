@@ -311,7 +311,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._selectionService = selectionService;
   }
 
-  public parseUtf32(data: Uint32Array, length: number): void {
+  public parse(data: Uint32Array, length: number): void {
     let buffer = this._bufferService.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
