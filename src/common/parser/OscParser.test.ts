@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { OscParser, OscHandlerFactory } from 'common/parser/OscParser';
+import { OscParser, OscHandler } from 'common/parser/OscParser';
 import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
 import { IOscHandler } from 'common/parser/Types';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
@@ -170,7 +170,7 @@ describe('OscParser', () => {
   });
   describe('OscHandlerFactory', () => {
     it('should be called once on end(true)', () => {
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push([1234, data])));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -180,7 +180,7 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [[1234, 'Here comes the mouse!']]);
     });
     it('should not be called on end(false)', () => {
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push([1234, data])));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -190,8 +190,8 @@ describe('OscParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push(['one', data])));
-      const dispo = parser.addOscHandler(1234, new OscHandlerFactory(data => reports.push(['two', data])));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push(['one', data])));
+      const dispo = parser.addOscHandler(1234, new OscHandler(data => reports.push(['two', data])));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -209,8 +209,8 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
     });
     it('should respect return false', () => {
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push(['one', data])));
-      parser.addOscHandler(1234, new OscHandlerFactory(data => { reports.push(['two', data]); return false; }));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push(['one', data])));
+      parser.addOscHandler(1234, new OscHandler(data => { reports.push(['two', data]); return false; }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -221,7 +221,7 @@ describe('OscParser', () => {
     });
     it('should work up to payload limit', function(): void {
       this.timeout(10000);
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push([1234, data])));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);
@@ -234,7 +234,7 @@ describe('OscParser', () => {
     });
     it('should abort for payload limit +1', function(): void {
       this.timeout(10000);
-      parser.setOscHandler(1234, new OscHandlerFactory(data => reports.push([1234, data])));
+      parser.setOscHandler(1234, new OscHandler(data => reports.push([1234, data])));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);

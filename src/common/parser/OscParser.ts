@@ -168,7 +168,7 @@ export class OscParser extends Disposable {
  * Convenient class to allow attaching string based handler functions
  * as OSC handlers.
  */
-export class OscHandlerFactory implements IOscHandler {
+export class OscHandler implements IOscHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 

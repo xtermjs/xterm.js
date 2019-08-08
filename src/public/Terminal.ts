@@ -12,8 +12,8 @@ import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams, IEscapeSequenceParser } from 'common/parser/Types';
-import { OscHandlerFactory } from 'common/parser/OscParser';
-import { DcsHandlerFactory } from '../../out/common/parser/DcsParser';
+import { OscHandler } from 'common/parser/OscParser';
+import { DcsHandler } from 'common/parser/DcsParser';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -225,12 +225,12 @@ class ParserApi implements Parser.IParser {
     return this._parser.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
   }
   public addDcsHandler(id: Parser.IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
-    return this._parser.addDcsHandler(id, new DcsHandlerFactory((data: string, params: IParams) => callback(data, params.toArray())));
+    return this._parser.addDcsHandler(id, new DcsHandler((data: string, params: IParams) => callback(data, params.toArray())));
   }
   public addEscHandler(id: Parser.IFunctionIdentifier, handler: () => boolean): IDisposable {
     return this._parser.addEscHandler(id, handler);
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._parser.addOscHandler(ident, new OscHandlerFactory(callback));
+    return this._parser.addOscHandler(ident, new OscHandler(callback));
   }
 }

@@ -107,7 +107,7 @@ export class DcsParser implements IDcsParser {
  * Convenient class to create a DCS handler from a single callback function.
  * Note: The payload is currently limited to 50 MB (hardcoded).
  */
-export class DcsHandlerFactory implements IDcsHandler {
+export class DcsHandler implements IDcsHandler {
   private _data = '';
   private _params: IParams | undefined;
   private _hitLimit: boolean = false;
