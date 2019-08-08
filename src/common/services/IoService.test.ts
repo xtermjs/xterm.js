@@ -137,12 +137,33 @@ describe('IoService', () => {
           done();
         });
       });
-      it('write callbacks - sync call after parsing', () => {
+      it('write callbacks - sync call after parsing', done => {
         ios.write('a', () => assert.deepEqual(TERM_DATA, ['a']));
         ios.write('b', () => assert.deepEqual(TERM_DATA, ['a', 'b']));
         ios.write('c');
         ios.write('d', () => assert.deepEqual(TERM_DATA, ['a', 'b', 'c', 'd']));
-        ios.write(new Uint8Array([65, 66]), () => assert.deepEqual(TERM_DATA, ['a', 'b', 'c', 'd', 'AB']));
+        ios.write(new Uint8Array([65, 66]), () => {
+          assert.deepEqual(TERM_DATA, ['a', 'b', 'c', 'd', 'AB']);
+          done();
+        });
+      });
+      it('write - chunkify big data', done => {
+        // string
+        const stringData = 'A'.repeat(100000) + 'B'.repeat(100000) + 'C'.repeat(100000);
+        ios.write(stringData, () => {
+          assert.deepEqual(TERM_DATA.reduce((accu, el) => accu + el, ''), stringData);
+          while (TERM_DATA.length) TERM_DATA.pop();
+        });
+        // bytes
+        const byteData = new Uint8Array(300000);
+        byteData.fill(65);
+        for (let i = 100000; i < 200000; ++i) byteData[i] = 66;
+        for (let i = 200000; i < 300000; ++i) byteData[i] = 67;
+        ios.write(byteData, () => {
+          assert.deepEqual(TERM_DATA.reduce((accu, el) => accu + el, ''), stringData);
+          while (TERM_DATA.length) TERM_DATA.pop();
+          done();
+        });
       });
     });
     describe('output', () => {

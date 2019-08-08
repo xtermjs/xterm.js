@@ -37,6 +37,11 @@ const WRITE_TIMEOUT_MS = 12;
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 /**
+ * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
+ */
+const MAX_INPUTBUFFER_LENGTH = 131072;
+
+/**
  * IoService of xterm.js.
  * This service provides encoding handling and input buffering (async write).
  * Data can be written to the terminal with `write` as raw bytes applying the
@@ -167,15 +172,28 @@ export class IoService implements IIoService {
       const cb = this._callbacks[bufferOffset];
       bufferOffset++;
 
+      // resize input buffer if needed
       if (this._inputBuffer.length < data.length) {
-        this._inputBuffer = new Uint32Array(data.length);
+        if (this._inputBuffer.length < MAX_INPUTBUFFER_LENGTH) {
+          this._inputBuffer = new Uint32Array(Math.min(data.length, MAX_INPUTBUFFER_LENGTH));
+        }
       }
-      // TODO: reset multibyte streamline decoders on switch
-      // TODO: limit max. parseBuffer size (chunkify very big chunks)
-      const len = (typeof data === 'string')
-        ? this._stringDecoder.decode(data, this._inputBuffer)
-        : this._decoder.decode(data, this._inputBuffer);
-      this._parse(this._inputBuffer, len);
+
+      // process big data in smaller chunks
+      if (data.length > MAX_INPUTBUFFER_LENGTH) {
+        for (let i = 0; i < data.length; i += MAX_INPUTBUFFER_LENGTH) {
+          const end = i + MAX_INPUTBUFFER_LENGTH < data.length ? i + MAX_INPUTBUFFER_LENGTH : data.length;
+          const len = (typeof data === 'string')
+            ? this._stringDecoder.decode(data.substring(i, end), this._inputBuffer)
+            : this._decoder.decode(data.subarray(i, end), this._inputBuffer);
+          this._parse(this._inputBuffer, len);
+        }
+      } else {
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data, this._inputBuffer)
+          : this._decoder.decode(data, this._inputBuffer);
+        this._parse(this._inputBuffer, len);
+      }
 
       this._pendingSize -= data.length;
       if (cb) cb();
