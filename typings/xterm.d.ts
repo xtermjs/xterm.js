@@ -526,13 +526,14 @@ declare module 'xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
-     * Add an IO encoding to xterm.js.
-     * IO encoding are applied to data input and output as follows:
-     * - raw input will be decoded with the active encoding
+     * Add an IO encoding to the terminal instance.
+     * IO encodings are applied to data input and output as follows:
+     * - raw byte input will be decoded with the active encoding
      * - string input always decodes as UTF-16
      * - outgoing data of `onData` will be encoded with the active encoding
      * 
-     * To set the active encoding see `ITerminalOptions.encoding`. TODO
+     * See `Terminal.encodings` for installed encodings. Change
+     * `ITerminalOptions.encoding` to set the active encoding.
      */
     addEncoding(encoding: IEncoding): void;
 
@@ -998,27 +999,42 @@ declare module 'xterm' {
    */
   export interface IEncoding {
     /**
-     * Name and alias names of the encoding.
+     * Name of the encoding.
      */
     name: string;
+
+    /**
+     * Alias names of the encoding.
+     */
     aliases: string[];
 
     /**
-     * Decoder / Encoder classes.
+     * Decoder class.
      * 
-     * The classes get instantiated once if one of `names` is selected as
-     * active encoding.
+     * The class get instantiated once `name` or one of `aliases`
+     * gets selected as active encoding with the next chunk of written data.
      * 
      * The decoder should decode incoming `data` to UTF32 codepoints and
-     * write them to `target`. `target` is guaranteed to be big enough to hold
-     * all decoded bytes. Return the number of codepoints written to target. 
+     * write them to `target`. `target` has at least the size of incoming
+     * bytes, thus it is guaranteed to be big enough to hold all decoded
+     * codepoints for typical multibyte encodings. This may not be true for
+     * a custom encoding that can represent multiple codepoints in
+     * a single byte.
+     * Return the number of codepoints written to target.
      * The decoder should work with streams thus correctly deal with
-     * chunks of `data` that might have split multibyte characters.
-     * 
-     * The encoder should encode the string `data` to  newly created Uint8Array
-     * of the exact size of written bytes.
+     * chunks of `data` that might got split at arbitrary bytes.
      */
     decoder: {new(): { decode(data: Uint8Array, target: Uint32Array): number }};
+
+    /**
+     * Encoder class.
+     *
+     * The class get instantiated once `name` or one of `aliases`
+     * gets selected as active encoding.
+     *
+     * The encoder should encode the string `data` to a new Uint8Array
+     * of the size of written bytes.
+     */
     encoder: {new(): { encode(data: string): Uint8Array }};
   }
 }
