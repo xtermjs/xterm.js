@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, Parser } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -11,17 +11,17 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
-import { IParams, IEscapeSequenceParser } from 'common/parser/Types';
-import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from 'common/parser/DcsParser';
+import { IParams } from 'common/parser/Types';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
+  private _parser: IParser;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
+    this._parser = new ParserApi(this._core);
   }
 
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
@@ -35,7 +35,7 @@ export class Terminal implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
   public get element(): HTMLElement { return this._core.element; }
-  public get parser(): Parser.IParser { return new ParserApi((this._core as any)._inputHandler._parser); }
+  public get parser(): IParser { return this._parser; }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
@@ -218,19 +218,19 @@ class BufferCellApiView implements IBufferCellApi {
   public get width(): number { return this._line.getWidth(this._x); }
 }
 
-class ParserApi implements Parser.IParser {
-  constructor(private _parser: IEscapeSequenceParser) {}
+class ParserApi implements IParser {
+  constructor(private _core: ITerminal) {}
 
-  public addCsiHandler(id: Parser.IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
-    return this._parser.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
   }
-  public addDcsHandler(id: Parser.IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
-    return this._parser.addDcsHandler(id, new DcsHandler((data: string, params: IParams) => callback(data, params.toArray())));
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
   }
-  public addEscHandler(id: Parser.IFunctionIdentifier, handler: () => boolean): IDisposable {
-    return this._parser.addEscHandler(id, handler);
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this._core.addEscHandler(id, handler);
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._parser.addOscHandler(ident, new OscHandler(callback));
+    return this._core.addOscHandler(ident, callback);
   }
 }
