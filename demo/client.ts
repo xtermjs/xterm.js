@@ -43,6 +43,7 @@ declare let window: IWindowWithTerminal;
 let term;
 let fitAddon: FitAddon;
 let searchAddon: SearchAddon;
+let serializeAddon: SerializeAddon;
 let protocol;
 let socketURL;
 let socket;
@@ -96,6 +97,7 @@ if (document.location.pathname === '/test') {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('webgl').addEventListener('click', () => term.loadAddon(new WebglAddon()));
+  document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
 }
 
 function createTerminal(): void {
@@ -116,6 +118,8 @@ function createTerminal(): void {
   typedTerm.loadAddon(searchAddon);
   fitAddon = new FitAddon();
   typedTerm.loadAddon(fitAddon);
+  serializeAddon = new SerializeAddon();
+  typedTerm.loadAddon(serializeAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -322,4 +326,17 @@ function updateTerminalSize(): void {
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   fitAddon.fit();
+}
+
+function serializeButtonHandler(): void {
+  const output = serializeAddon.serialize();
+  const outputString = JSON.stringify(output);
+  console.log('serialize output', outputString);
+
+  document.getElementById('serialize-output').innerText = outputString;
+
+  if ((document.getElementById('write-to-terminal') as HTMLInputElement).checked) {
+    term.reset();
+    term.write(output);
+  }
 }

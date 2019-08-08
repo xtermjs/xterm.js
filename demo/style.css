@@ -30,3 +30,9 @@ p {
     padding-left: 20px;
     vertical-align: top;
 }
+
+code {
+    padding: 2px 4px;
+    color: #c7254e;
+    background-color: #f9f2f4;
+}
