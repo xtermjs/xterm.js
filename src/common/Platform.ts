@@ -81,6 +81,9 @@ interface IGlobals {
   readonly console: { log(message?: any, ...optionalParams: any[]): void; };
 }
 
+// global object
+const GLOBAL: any = Function('return this;')();
+
 // alltime globals
 declare const setTimeout: IGlobals['setTimeout'];
 declare const console: IGlobals['console'];
@@ -93,9 +96,9 @@ declare const btoa: IGlobals['btoa'];
 class GlobalsBrowser implements IGlobals {
   // tslint:disable-next-line
   public readonly TextEncoder = TextEncoder;
-  public readonly setTimeout = setTimeout;
-  public readonly atob = atob;
-  public readonly btoa = btoa;
+  public readonly setTimeout = setTimeout.bind(GLOBAL);
+  public readonly atob = atob.bind(GLOBAL);
+  public readonly btoa = btoa.bind(GLOBAL);
   public readonly console = (typeof console === 'undefined') ? {log: () => {}} : console;
 }
 
@@ -112,7 +115,7 @@ declare const require: (id: string) => any;
 class GlobalsNode implements IGlobals {
   // tslint:disable-next-line
   public readonly TextEncoder = require('util').TextEncoder;
-  public readonly setTimeout = setTimeout;
+  public readonly setTimeout = setTimeout.bind(GLOBAL);
   public readonly atob = (encodedString: string) => Buffer.from(encodedString, 'base64').toString('binary');
   public readonly btoa = (rawString: string) => Buffer.from(rawString, 'binary').toString('base64');
   public readonly console = (typeof console === 'undefined') ? {log: () => {}} : console;
