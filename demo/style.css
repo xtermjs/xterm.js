@@ -31,8 +31,14 @@ p {
     vertical-align: top;
 }
 
-code {
-    padding: 2px 4px;
+pre {
+    display: block;
+    padding: 9.5px;
+    font-size: 13px;
     color: #c7254e;
     background-color: #f9f2f4;
+    word-break: break-all;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
