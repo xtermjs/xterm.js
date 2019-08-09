@@ -131,12 +131,14 @@ describe('SerializeAddon', () => {
 
   it('serialize all rows of content with color16', async function (): Promise<any> {
     this.timeout(20000);
-    const rows = 16;
     const cols = 10;
     const color16 = [
       30, 31, 32, 33, 34, 35, 36, 37, // Set foreground color
-      40, 41, 42, 43, 44, 45, 46, 47  // Set background color
+      90, 91, 92, 93, 94, 95, 96, 97,
+      40, 41, 42, 43, 44, 45, 46, 47, // Set background color
+      100, 101, 103, 104, 105, 106, 107
     ];
+    const rows = color16.length;
     const lines = newArray<string>(
       (index: number) => digitsString(cols, index, `\x1b[${color16[index % color16.length]}m`),
       rows

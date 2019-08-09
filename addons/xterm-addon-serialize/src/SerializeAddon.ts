@@ -77,6 +77,24 @@ const FG_FM_MASK = FgFlags.FM_MASK;
 const BG_FM_MASK = BgFlags.FM_MASK;
 const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
 
+function fgColor256to16(c: number): number {
+  if (0 <= c && c <= 7) {
+    return 30 + c;
+  } else if (8 <= c && c <= 15) {
+    return 82 + c;
+  }
+  return -1;
+}
+
+function bgColor256to16(c: number): number {
+  if (0 <= c && c <= 7) {
+    return 40 + c;
+  } else if (8 <= c && c <= 15) {
+    return 92 + c;
+  }
+  return -1;
+}
+
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
@@ -130,7 +148,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         sgrSeq.push('39');
       } else if (cell.isFgPalette()) {
         switch (cell.getFgColorMode()) {
-          case Attributes.CM_P16: sgrSeq.push(`${30 + fgColor}`); break;
+          case Attributes.CM_P16: sgrSeq.push(fgColor256to16(fgColor).toString()); break;
           case Attributes.CM_P256: sgrSeq.push(`38;5;${fgColor}`); break;
         }
       } else if (cell.isFgRGB()) {
@@ -165,7 +183,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         sgrSeq.push('49');
       } else if (cell.isBgPalette()) {
         switch (cell.getBgColorMode()) {
-          case Attributes.CM_P16: sgrSeq.push(`${40 + bgColor}`); break;
+          case Attributes.CM_P16: sgrSeq.push(bgColor256to16(bgColor).toString()); break;
           case Attributes.CM_P256: sgrSeq.push(`48;5;${bgColor}`); break;
         }
       } else if (cell.isFgRGB()) {
