@@ -7,7 +7,7 @@ import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -37,6 +37,7 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -174,8 +175,31 @@ export class Viewport extends Disposable implements IViewport {
       return 0;
     }
 
+    const modifier = this._optionsService.options.fastScrollModifier;
+    const sensitivity = this._optionsService.options.fastScrollSensitivity;
+
+    // Multiply the scroll speed when the modifier is down
+    let multiplier = 1;
+    switch (modifier) {
+      case 'alt':
+        if (ev.altKey) {
+          multiplier = sensitivity;
+        }
+        break;
+      case 'ctrl':
+        if (ev.ctrlKey) {
+          multiplier = sensitivity;
+        }
+        break;
+      case 'shift':
+        if (ev.shiftKey) {
+          multiplier = sensitivity;
+        }
+        break;
+    }
+
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let amount = ev.deltaY;
+    let amount = ev.deltaY * multiplier;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
