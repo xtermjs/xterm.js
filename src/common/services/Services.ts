@@ -180,7 +180,7 @@ export interface ITerminalOptions {
   cursorStyle: 'block' | 'underline' | 'bar';
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: 'alt' | 'ctrl' | 'shift';
+  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
   fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;

@@ -85,7 +85,7 @@ declare module 'xterm' {
     /**
      * The modifier key hold to multiply scroll speed.
      */
-    fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
+    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
 
     /**
      * The scroll speed multiplier used for fast scrolling.
