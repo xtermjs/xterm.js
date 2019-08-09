@@ -41,7 +41,6 @@ describe('SerializeAddon', () => {
     this.timeout(20000);
     const rows = 10;
     const cols = 10;
-    const lines = newArray<string>('', rows);
 
     await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
     await page.evaluate(`
@@ -49,7 +48,35 @@ describe('SerializeAddon', () => {
       window.term.loadAddon(window.serializeAddon);
     `);
 
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
+  });
+
+  it('trim last empty lines', async function (): Promise<any> {
+    this.timeout(20000);
+    const cols = 10;
+    const lines = [
+      '',
+      '',
+      digitsString(cols),
+      digitsString(cols),
+      '',
+      '',
+      digitsString(cols),
+      digitsString(cols),
+      '',
+      '',
+      ''
+    ];
+    const rows = lines.length;
+
+    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
+    await page.evaluate(`
+      window.serializeAddon = new SerializeAddon();
+      window.term.loadAddon(window.serializeAddon);
+      window.term.write(${util.inspect(lines.join('\r\n'))});
+    `);
+
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.slice(0, 8).join('\r\n'));
   });
 
   it('digits content', async function (): Promise<any> {

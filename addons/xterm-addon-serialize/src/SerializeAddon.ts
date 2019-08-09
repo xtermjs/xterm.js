@@ -193,7 +193,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _serializeFinished(): string {
-    return this._allRows.join('\r\n');
+    let rowEnd = this._allRows.length;
+
+    for (; rowEnd > 0; rowEnd--) {
+      if (this._allRows[rowEnd - 1]) {
+        break;
+      }
+    }
+
+    return this._allRows.slice(0, rowEnd).join('\r\n');
   }
 }
 
