@@ -4,6 +4,7 @@
  */
 
 import { IInputDecoder, IEncoding } from 'common/Types';
+import { GLOBALS } from 'common/Platform';
 
 /**
  * Polyfill - Convert UTF32 codepoint into JS string.
@@ -366,20 +367,9 @@ const UTF8: IEncoding = {
   aliases: ['utf8', 'UTF8', 'UTF-8'],
   decoder: Utf8ToUtf32,
   encoder: class {
-    private _encode: (data: string) => Uint8Array;
-    constructor() {
-      const GLOBAL_OBJECT = Function('return this')();
-      if (GLOBAL_OBJECT.TextEncoder) {
-        const te = new GLOBAL_OBJECT.TextEncoder();
-        this._encode = te.encode.bind(te);
-      } else if (GLOBAL_OBJECT.Buffer) {
-        this._encode = GLOBAL_OBJECT.Buffer.from.bind(GLOBAL_OBJECT.Buffer);
-      } else {
-        throw new Error('missing string to UTF8 converter');
-      }
-    }
+    private _textEncoder = new (GLOBALS.TextEncoder)();
     public encode(data: string): Uint8Array {
-      return this._encode(data);
+      return this._textEncoder.encode(data);
     }
   }
 };

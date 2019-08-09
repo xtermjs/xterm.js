@@ -7,9 +7,8 @@ import { StringToUtf32, DEFAULT_ENCODINGS } from 'common/input/Encodings';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IEncoding, IInputDecoder, IOutputEncoder } from 'common/Types';
 import { IIoService, IOptionsService } from 'common/services/Services';
+import { GLOBALS } from 'common/Platform';
 
-// TODO: fix setTimeout dep
-declare let setTimeout: (handler: () => void, timeout?: number) => number;
 
 /**
  * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
@@ -159,7 +158,7 @@ export class IoService implements IIoService {
 
     if (!this._writeInProgress) {
       this._writeInProgress = true;
-      setTimeout(() => {
+      GLOBALS.setTimeout(() => {
         this._innerWrite();
       });
     }
@@ -210,7 +209,7 @@ export class IoService implements IIoService {
         this._callbacks = this._callbacks.slice(bufferOffset);
         bufferOffset = 0;
       }
-      setTimeout(() => this._innerWrite(bufferOffset), 0);
+      GLOBALS.setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
       this._writeBuffer = [];
