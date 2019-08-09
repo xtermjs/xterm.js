@@ -17,12 +17,6 @@ const ROWS = 25;
 
 const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
 const SKIP_FILES = [
-  't0070-DECSTBM_LF.in',      // lineFeed not working correctly
-  't0071-DECSTBM_IND.in',
-  't0072-DECSTBM_NEL.in',
-  't0075-DECSTBM_CUU_CUD.in',
-  't0076-DECSTBM_IL_DL.in',   // not working due to lineFeed
-  't0077-DECSTBM_quirks.in',
   't0084-CBT.in',
   't0101-NLM.in',
   't0103-reverse_wrap.in',
@@ -42,7 +36,7 @@ const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slic
 
 
 describe('Escape Sequence Files', function(): void {
-  this.timeout(20000);
+  this.timeout(1000);
 
   let ptyTerm: any;
   let slaveEnd: any;

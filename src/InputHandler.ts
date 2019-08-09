@@ -412,10 +412,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           buffer.x = 0;
           buffer.y++;
-          if (buffer.y > buffer.scrollBottom) {
+          if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
             this._terminal.scroll(true);
           } else {
+            if (buffer.y >= this._bufferService.rows) {
+              buffer.y = this._bufferService.rows - 1;
+            }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
             buffer.lines.get(buffer.y).isWrapped = true;
@@ -508,9 +511,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.x = 0;
     }
     buffer.y++;
-    if (buffer.y > buffer.scrollBottom) {
+    if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (buffer.x >= this._bufferService.cols) {
@@ -611,7 +616,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Up Ps Times (default = 1) (CUU).
    */
   public cursorUp(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    // stop at scrollTop
+    const diffToTop = this._bufferService.buffer.y - this._bufferService.buffer.scrollTop;
+    if (diffToTop >= 0) {
+      this._moveCursor(0, -Math.min(diffToTop, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, -(params.params[0] || 1));
+    }
   }
 
   /**
@@ -619,7 +630,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Down Ps Times (default = 1) (CUD).
    */
   public cursorDown(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    // stop at scrollBottom
+    const diffToBottom = this._bufferService.buffer.scrollBottom - this._bufferService.buffer.y;
+    if (diffToBottom >= 0) {
+      this._moveCursor(0, Math.min(diffToBottom, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, params.params[0] || 1);
+    }
   }
 
   /**
@@ -644,7 +661,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorDown (CUD) also set the cursor to first column.
    */
   public cursorNextLine(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    this.cursorDown(params);
     this._bufferService.buffer.x = 0;
   }
 
@@ -654,7 +671,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorUp (CUU) also set the cursor to first column.
    */
   public cursorPrecedingLine(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    this.cursorUp(params);
     this._bufferService.buffer.x = 0;
   }
 
@@ -996,7 +1013,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
@@ -1013,7 +1030,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
       }
       this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
     }
@@ -2043,10 +2060,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public index(): void {
     this._restrictCursor();
+    const buffer = this._bufferService.buffer;
     this._bufferService.buffer.y++;
-    if (this._bufferService.buffer.y > this._bufferService.buffer.scrollBottom) {
-      this._bufferService.buffer.y--;
+    if (buffer.y === buffer.scrollBottom + 1) {
+      buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     this._restrictCursor();
   }
