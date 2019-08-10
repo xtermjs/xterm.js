@@ -665,9 +665,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
     // apply mouse event classes set by escape codes before terminal was attached
-    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
       this._selectionService.disable();
+      this.element.classList.add('enable-mouse-events');
     } else {
       this._selectionService.enable();
     }
