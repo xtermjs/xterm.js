@@ -5,8 +5,9 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
+import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
@@ -204,11 +205,15 @@ class BufferLineApiView implements IBufferLineApi {
   constructor(private _line: IBufferLine) {}
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
+  public get length(): number { return this._line.length; }
   public getCell(x: number): IBufferCellApi | undefined {
     if (x < 0 || x >= this._line.length) {
       return undefined;
     }
-    return new BufferCellApiView(this._line, x);
+
+    const cell = new CellData();
+    this._line.loadCell(x, cell);
+    return new BufferCellApiView(cell);
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
@@ -216,7 +221,27 @@ class BufferLineApiView implements IBufferLineApi {
 }
 
 class BufferCellApiView implements IBufferCellApi {
-  constructor(private _line: IBufferLine, private _x: number) {}
-  public get char(): string { return this._line.getString(this._x); }
-  public get width(): number { return this._line.getWidth(this._x); }
+  constructor(private _cell: ICellData) {}
+
+  public get fg(): number { return this._cell.fg; }
+  public get bg(): number { return this._cell.bg; }
+  public get char(): string { return this._cell.getChars(); }
+  public get width(): number { return this._cell.getWidth(); }
+  public get isInverse(): number { return this._cell.isInverse(); }
+  public get isBold(): number { return this._cell.isBold(); }
+  public get isUnderline(): number { return this._cell.isUnderline(); }
+  public get isBlink(): number { return this._cell.isBlink(); }
+  public get isInvisible(): number { return this._cell.isInvisible(); }
+  public get isItalic(): number { return this._cell.isItalic(); }
+  public get isDim(): number { return this._cell.isDim(); }
+  public get fgColorMode(): number { return this._cell.getFgColorMode(); }
+  public get bgColorMode(): number { return this._cell.getBgColorMode(); }
+  public get isFgRGB(): boolean { return this._cell.isFgRGB(); }
+  public get isBgRGB(): boolean { return this._cell.isBgRGB(); }
+  public get isFgPalette(): boolean { return this._cell.isFgPalette(); }
+  public get isBgPalette(): boolean { return this._cell.isBgPalette(); }
+  public get isFgDefault(): boolean { return this._cell.isFgDefault(); }
+  public get isBgDefault(): boolean { return this._cell.isBgDefault(); }
+  public get fgColor(): number { return this._cell.getFgColor(); }
+  public get bgColor(): number { return this._cell.getBgColor(); }
 }

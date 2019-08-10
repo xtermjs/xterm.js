@@ -910,6 +910,7 @@ declare module 'xterm' {
      * Whether the line is wrapped from the previous line.
      */
     readonly isWrapped: boolean;
+    readonly length: number;
 
     /**
      * Gets a cell from the line, or undefined if the line index does not exist.
@@ -937,6 +938,9 @@ declare module 'xterm' {
    * Represents a single cell in the terminal's buffer.
    */
   interface IBufferCell {
+    readonly fg: number;
+    readonly bg: number;
+
     /**
      * The character within the cell.
      */
@@ -950,5 +954,28 @@ declare module 'xterm' {
      * - This is `0` for cells immediately following cells with a width of `2`.
      */
     readonly width: number;
+
+    // flags
+    readonly isInverse: number;
+    readonly isBold: number;
+    readonly isUnderline: number;
+    readonly isBlink: number;
+    readonly isInvisible: number;
+    readonly isItalic: number;
+    readonly isDim: number;
+
+    // color modes
+    readonly fgColorMode: number;
+    readonly bgColorMode: number;
+    readonly isFgRGB: boolean;
+    readonly isBgRGB: boolean;
+    readonly isFgPalette: boolean;
+    readonly isBgPalette: boolean;
+    readonly isFgDefault: boolean;
+    readonly isBgDefault: boolean;
+
+    // colors
+    readonly fgColor: number;
+    readonly bgColor: number;
   }
 }
