@@ -20,9 +20,6 @@ startServer();
  * For production builds see `webpack.config.js` in the root directory. If that is built the demo
  * can use that by switching out which `Terminal` is imported in `client.ts`, this is useful for
  * validating that the packaged version works correctly.
- *
- * The addons are not webpacked right now and are built directly to `lib/` via `tsc` as they are
- * the legacy format (`applyAddon`) and will be removed soon anyway.
  */
 const clientConfig = {
   entry: path.resolve(__dirname, 'client.ts'),

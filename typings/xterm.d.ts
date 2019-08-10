@@ -807,15 +807,7 @@ declare module 'xterm' {
     reset(): void
 
     /**
-     * Applies an addon to the Terminal prototype, making it available to all
-     * newly created Terminals.
-     * @param addon The addon to apply.
-     * @deprecated Use the new loadAddon API/addon format.
-     */
-    static applyAddon(addon: any): void;
-
-    /**
-     * (EXPERIMENTAL) Loads an addon into this instance of xterm.js.
+     * Loads an addon into this instance of xterm.js.
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
