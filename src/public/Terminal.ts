@@ -164,9 +164,6 @@ export class Terminal implements ITerminalApi {
   public reset(): void {
     this._core.reset();
   }
-  public static applyAddon(addon: any): void {
-    addon.apply(Terminal);
-  }
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
   }
