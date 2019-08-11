@@ -239,7 +239,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   // handler lookup containers
   protected _printHandler: PrintHandler;
-  protected _executeHandlers: any;
+  protected _executeHandlers: {[flag: number]: ExecuteHandler};
   protected _csiHandlers: IHandlerCollection<CsiHandler>;
   protected _escHandlers: IHandlerCollection<EscHandler>;
   protected _oscParser: IOscParser;
@@ -328,7 +328,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   public dispose(): void {
-    this._executeHandlers = null;
+    this._csiHandlers = Object.create(null);
+    this._executeHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
     this._oscParser.dispose();
     this._dcsParser.dispose();
