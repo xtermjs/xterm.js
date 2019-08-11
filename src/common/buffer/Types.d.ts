@@ -40,7 +40,7 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight?: boolean): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
