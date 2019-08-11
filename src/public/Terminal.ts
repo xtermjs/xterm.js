@@ -21,7 +21,6 @@ export class Terminal implements ITerminalApi {
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
-    this._parser = new ParserApi(this._core);
   }
 
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
@@ -35,7 +34,12 @@ export class Terminal implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
   public get element(): HTMLElement { return this._core.element; }
-  public get parser(): IParser { return this._parser; }
+  public get parser(): IParser {
+    if (!this._parser) {
+      this._parser = new ParserApi(this._core);
+    }
+    return this._parser;
+  }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }

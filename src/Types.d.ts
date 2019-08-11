@@ -114,7 +114,7 @@ export interface IInputHandler {
   /** CSI a */ hPositionRelative(params: IParams): void;
   /** CSI b */ repeatPrecedingCharacter(params: IParams): void;
   /** CSI c */ sendDeviceAttributesPrimary(params: IParams): void;
-               sendDeviceAttributesSecondary(params: IParams): void;
+  /** CSI > c */ sendDeviceAttributesSecondary(params: IParams): void;
   /** CSI d */ linePosAbsolute(params: IParams): void;
   /** CSI e */ vPositionRelative(params: IParams): void;
   /** CSI f */ hVPosition(params: IParams): void;

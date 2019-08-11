@@ -404,29 +404,29 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
-    return this._oscParser.addOscHandler(ident, handler);
+    return this._oscParser.addHandler(ident, handler);
   }
   public setOscHandler(ident: number, handler: IOscHandler): void {
-    this._oscParser.setOscHandler(ident, handler);
+    this._oscParser.setHandler(ident, handler);
   }
   public clearOscHandler(ident: number): void {
-    this._oscParser.clearOscHandler(ident);
+    this._oscParser.clearHandler(ident);
   }
   public setOscHandlerFallback(handler: OscFallbackHandler): void {
-    this._oscParser.setOscHandlerFallback(handler);
+    this._oscParser.setHandlerFallback(handler);
   }
 
   public addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
-    return this._dcsParser.addDcsHandler(this._identifier(id), handler);
+    return this._dcsParser.addHandler(this._identifier(id), handler);
   }
   public setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void {
-    this._dcsParser.setDcsHandler(this._identifier(id), handler);
+    this._dcsParser.setHandler(this._identifier(id), handler);
   }
   public clearDcsHandler(id: IFunctionIdentifier): void {
-    this._dcsParser.clearDcsHandler(this._identifier(id));
+    this._dcsParser.clearHandler(this._identifier(id));
   }
   public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
-    this._dcsParser.setDcsHandlerFallback(handler);
+    this._dcsParser.setHandlerFallback(handler);
   }
 
   public setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
@@ -443,7 +443,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params.reset();
     this._params.addParam(0); // ZDM
     this._collect = 0;
-    // this._activeDcsHandler = this._dcsHandlerFb;
     this.precedingCodepoint = 0;
   }
 

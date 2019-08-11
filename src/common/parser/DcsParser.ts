@@ -9,11 +9,11 @@ import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
+const EMPTY_HANDLERS: IDcsHandler[] = [];
 
 export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
-  private _empty: IDcsHandler[] = [];
-  private _active: IDcsHandler[] = this._empty;
+  private _active: IDcsHandler[] = EMPTY_HANDLERS;
   private _ident: number = 0;
   private _handlerFb: DcsFallbackHandler = () => {};
 
@@ -22,7 +22,7 @@ export class DcsParser implements IDcsParser {
     this._handlerFb = () => {};
   }
 
-  public addDcsHandler(ident: number, handler: IDcsHandler): IDisposable {
+  public addHandler(ident: number, handler: IDcsHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -38,15 +38,15 @@ export class DcsParser implements IDcsParser {
     };
   }
 
-  public setDcsHandler(ident: number, handler: IDcsHandler): void {
+  public setHandler(ident: number, handler: IDcsHandler): void {
     this._handlers[ident] = [handler];
   }
 
-  public clearDcsHandler(ident: number): void {
+  public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
 
-  public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
+  public setHandlerFallback(handler: DcsFallbackHandler): void {
     this._handlerFb = handler;
   }
 
@@ -54,7 +54,7 @@ export class DcsParser implements IDcsParser {
     if (this._active.length) {
       this.unhook(false);
     }
-    this._active = this._empty;
+    this._active = EMPTY_HANDLERS;
     this._ident = 0;
   }
 
@@ -62,7 +62,7 @@ export class DcsParser implements IDcsParser {
     // always reset leftover handlers
     this.reset();
     this._ident = ident;
-    this._active = this._handlers[ident] || this._empty;
+    this._active = this._handlers[ident] || EMPTY_HANDLERS;
     if (!this._active.length) {
       this._handlerFb(this._ident, 'HOOK', params);
     } else {
@@ -98,7 +98,7 @@ export class DcsParser implements IDcsParser {
         this._active[j].unhook(false);
       }
     }
-    this._active = this._empty;
+    this._active = EMPTY_HANDLERS;
     this._ident = 0;
   }
 }

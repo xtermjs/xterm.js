@@ -1576,7 +1576,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-
   /**
    * Helper to extract and apply color params/subparams.
    * Returns advance for params index.
@@ -1849,6 +1848,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
     }
   }
+
   public deviceStatusPrivate(params: IParams): void {
     // modern xterm doesnt seem to
     // respond to any of these except ?6, 6, and 5

@@ -970,7 +970,7 @@ declare module 'xterm' {
   }
 
   /**
-   * Parser interface.
+   * (EXPERIMENTAL) Parser interface.
    */
   export interface IParser {
     /**

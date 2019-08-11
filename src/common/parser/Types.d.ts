@@ -179,28 +179,37 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearErrorHandler(): void;
 }
 
-export interface IOscParser extends IDisposable {
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
-  setOscHandler(ident: number, handler: IOscHandler): void;
-  clearOscHandler(ident: number): void;
-  setOscHandlerFallback(handler: OscFallbackHandler): void;
+/**
+ * Subparser interfaces.
+ * The subparsers are instantiated in `EscapeSequenceParser` and
+ * called during `EscapeSequenceParser.parse`.
+ */
+export interface ISubParser<T, U> extends IDisposable {
   reset(): void;
-  start(): void;
+  addHandler(ident: number, handler: T): IDisposable;
+  setHandler(ident: number, handler: T): void;
+  clearHandler(ident: number): void;
+  setHandlerFallback(handler: U): void;
   put(data: Uint32Array, start: number, end: number): void;
+}
+
+export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandler> {
+  start(): void;
   end(success: boolean): void;
 }
 
-export interface IDcsParser extends IDisposable {
-  addDcsHandler(ident: number, handler: IDcsHandler): IDisposable;
-  setDcsHandler(ident: number, handler: IDcsHandler): void;
-  clearDcsHandler(ident: number): void;
-  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
-  reset(): void;
+export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandler> {
   hook(ident: number, params: IParams): void;
-  put(data: Uint32Array, start: number, end: number): void;
   unhook(success: boolean): void;
 }
 
+/**
+ * Interface to denote a specific ESC, CSI or DCS handler slot.
+ * The values are used to create an integer respresentation during handler
+ * regristation before passed to the subparsers as `ident`.
+ * The integer translation is made to allow faster key-value access
+ * in `EscapeSequenceParser.parse`.
+ */
 export interface IFunctionIdentifier {
   prefix?: string;
   intermediates?: string;
