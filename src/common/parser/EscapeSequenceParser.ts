@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler, IDcsParser, DcsFallbackHandler, IFunctionIdentifier, ExecuteFallbackHandler, CsiFallbackHandler, EscFallbackHandler, PrintHandler, PrintFallbackHandler, ExecuteHandler } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
@@ -238,19 +238,19 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _collect: number;
 
   // handler lookup containers
-  protected _printHandler: PrintHandler;
-  protected _executeHandlers: {[flag: number]: ExecuteHandler};
-  protected _csiHandlers: IHandlerCollection<CsiHandler>;
-  protected _escHandlers: IHandlerCollection<EscHandler>;
+  protected _printHandler: PrintHandlerType;
+  protected _executeHandlers: {[flag: number]: ExecuteHandlerType};
+  protected _csiHandlers: IHandlerCollection<CsiHandlerType>;
+  protected _escHandlers: IHandlerCollection<EscHandlerType>;
   protected _oscParser: IOscParser;
   protected _dcsParser: IDcsParser;
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: PrintFallbackHandler;
-  protected _executeHandlerFb: ExecuteFallbackHandler;
-  protected _csiHandlerFb: CsiFallbackHandler;
-  protected _escHandlerFb: EscFallbackHandler;
+  protected _printHandlerFb: PrintFallbackHandlerType;
+  protected _executeHandlerFb: ExecuteFallbackHandlerType;
+  protected _csiHandlerFb: CsiFallbackHandlerType;
+  protected _escHandlerFb: EscFallbackHandlerType;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
   constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
@@ -335,14 +335,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.dispose();
   }
 
-  public setPrintHandler(handler: PrintHandler): void {
+  public setPrintHandler(handler: PrintHandlerType): void {
     this._printHandler = handler;
   }
   public clearPrintHandler(): void {
     this._printHandler = this._printHandlerFb;
   }
 
-  public addEscHandler(id: IFunctionIdentifier, handler: EscHandler): IDisposable {
+  public addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
     if (this._escHandlers[ident] === undefined) {
       this._escHandlers[ident] = [];
@@ -358,27 +358,27 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  public setEscHandler(id: IFunctionIdentifier, handler: EscHandler): void {
+  public setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void {
     this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [handler];
   }
   public clearEscHandler(id: IFunctionIdentifier): void {
     if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
   }
-  public setEscHandlerFallback(handler: EscFallbackHandler): void {
+  public setEscHandlerFallback(handler: EscFallbackHandlerType): void {
     this._escHandlerFb = handler;
   }
 
-  public setExecuteHandler(flag: string, handler: ExecuteHandler): void {
+  public setExecuteHandler(flag: string, handler: ExecuteHandlerType): void {
     this._executeHandlers[flag.charCodeAt(0)] = handler;
   }
   public clearExecuteHandler(flag: string): void {
     if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
   }
-  public setExecuteHandlerFallback(handler: ExecuteFallbackHandler): void {
+  public setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void {
     this._executeHandlerFb = handler;
   }
 
-  public addCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): IDisposable {
+  public addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
     if (this._csiHandlers[ident] === undefined) {
       this._csiHandlers[ident] = [];
@@ -394,7 +394,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  public setCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): void {
+  public setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void {
     this._csiHandlers[this._identifier(id)] = [handler];
   }
   public clearCsiHandler(id: IFunctionIdentifier): void {
@@ -413,7 +413,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   public clearDcsHandler(id: IFunctionIdentifier): void {
     this._dcsParser.clearHandler(this._identifier(id));
   }
-  public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
+  public setDcsHandlerFallback(handler: DcsFallbackHandlerType): void {
     this._dcsParser.setHandlerFallback(handler);
   }
 
@@ -426,7 +426,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   public clearOscHandler(ident: number): void {
     this._oscParser.clearHandler(ident);
   }
-  public setOscHandlerFallback(handler: OscFallbackHandler): void {
+  public setOscHandlerFallback(handler: OscFallbackHandlerType): void {
     this._oscParser.setHandlerFallback(handler);
   }
 

@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandler } from 'common/parser/Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
@@ -15,7 +15,7 @@ export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
   private _active: IDcsHandler[] = EMPTY_HANDLERS;
   private _ident: number = 0;
-  private _handlerFb: DcsFallbackHandler = () => {};
+  private _handlerFb: DcsFallbackHandlerType = () => {};
 
   public dispose(): void {
     this._handlers = Object.create(null);
@@ -46,7 +46,7 @@ export class DcsParser implements IDcsParser {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
 
-  public setHandlerFallback(handler: DcsFallbackHandler): void {
+  public setHandlerFallback(handler: DcsFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 

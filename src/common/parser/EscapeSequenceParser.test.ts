@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandler } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -24,7 +24,7 @@ function r(a: number, b: number): string[] {
 }
 
 class MockOscPutParser implements IOscParser {
-  private _fallback: OscFallbackHandler = () => {};
+  private _fallback: OscFallbackHandlerType = () => {};
   public data = '';
   public reset(): void {
     this.data = '';
@@ -50,7 +50,7 @@ class MockOscPutParser implements IOscParser {
   clearHandler(ident: number): void {
     throw new Error('not implemented');
   }
-  setHandlerFallback(handler: OscFallbackHandler): void {
+  setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._fallback = handler;
   }
 }

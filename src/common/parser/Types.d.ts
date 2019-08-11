@@ -66,6 +66,13 @@ export interface IParsingState {
  */
 
 /**
+ * CSI handler types.
+ * Note: `params` is borrowed.
+ */
+export type CsiHandlerType = (params: IParams) => boolean | void;
+export type CsiFallbackHandlerType = (ident: number, params: IParams) => void;
+
+/**
  * DCS handler types.
  */
 export interface IDcsHandler {
@@ -88,26 +95,19 @@ export interface IDcsHandler {
    */
   unhook(success: boolean): void | boolean;
 }
-export type DcsFallbackHandler = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
+export type DcsFallbackHandlerType = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
 /**
  * ESC handler types.
  */
-export type EscHandler = () => boolean | void;
-export type EscFallbackHandler = (identifier: number) => void;
+export type EscHandlerType = () => boolean | void;
+export type EscFallbackHandlerType = (identifier: number) => void;
 
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandler = () => boolean | void;
-export type ExecuteFallbackHandler = (ident: number) => void;
-
-/**
- * CSI handler types.
- * Note: `params` is borrowed.
- */
-export type CsiHandler = (params: IParams) => boolean | void;
-export type CsiFallbackHandler = (ident: number, params: IParams) => void;
+export type ExecuteHandlerType = () => boolean | void;
+export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
  * OSC handler types.
@@ -131,13 +131,13 @@ export interface IOscHandler {
    */
   end(success: boolean): void | boolean;
 }
-export type OscFallbackHandler = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
+export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
 /**
  * PRINT handler types.
  */
-export type PrintHandler = (data: Uint32Array, start: number, end: number) => void;
-export type PrintFallbackHandler = PrintHandler;
+export type PrintHandlerType = (data: Uint32Array, start: number, end: number) => void;
+export type PrintFallbackHandlerType = PrintHandlerType;
 
 
 /**
@@ -171,31 +171,31 @@ export interface IEscapeSequenceParser extends IDisposable {
    */
   identToString(ident: number): string;
 
-  setPrintHandler(handler: PrintHandler): void;
+  setPrintHandler(handler: PrintHandlerType): void;
   clearPrintHandler(): void;
 
-  setEscHandler(id: IFunctionIdentifier, handler: EscHandler): void;
+  setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void;
   clearEscHandler(id: IFunctionIdentifier): void;
-  setEscHandlerFallback(handler: EscFallbackHandler): void;
-  addEscHandler(id: IFunctionIdentifier, handler: EscHandler): IDisposable;
+  setEscHandlerFallback(handler: EscFallbackHandlerType): void;
+  addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable;
 
-  setExecuteHandler(flag: string, handler: ExecuteHandler): void;
+  setExecuteHandler(flag: string, handler: ExecuteHandlerType): void;
   clearExecuteHandler(flag: string): void;
-  setExecuteHandlerFallback(handler: ExecuteFallbackHandler): void;
+  setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void;
 
-  setCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): void;
+  setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void;
   clearCsiHandler(id: IFunctionIdentifier): void;
-  setCsiHandlerFallback(callback: CsiFallbackHandler): void;
-  addCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): IDisposable;
+  setCsiHandlerFallback(callback: CsiFallbackHandlerType): void;
+  addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable;
 
   setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void;
   clearDcsHandler(id: IFunctionIdentifier): void;
-  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
+  setDcsHandlerFallback(handler: DcsFallbackHandlerType): void;
   addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
 
   setOscHandler(ident: number, handler: IOscHandler): void;
   clearOscHandler(ident: number): void;
-  setOscHandlerFallback(handler: OscFallbackHandler): void;
+  setOscHandlerFallback(handler: OscFallbackHandlerType): void;
   addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
   setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
@@ -216,12 +216,12 @@ export interface ISubParser<T, U> extends IDisposable {
   put(data: Uint32Array, start: number, end: number): void;
 }
 
-export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandler> {
+export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandlerType> {
   start(): void;
   end(success: boolean): void;
 }
 
-export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandler> {
+export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerType> {
   hook(ident: number, params: IParams): void;
   unhook(success: boolean): void;
 }
