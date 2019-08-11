@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler, IDcsParser, DcsFallbackHandler, IFunctionIdentifier } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandler, OscFallbackHandler, IOscParser, EscHandler, IDcsParser, DcsFallbackHandler, IFunctionIdentifier, ExecuteFallbackHandler, CsiFallbackHandler, EscFallbackHandler, PrintHandler, PrintFallbackHandler, ExecuteHandler } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
@@ -238,7 +238,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _collect: number;
 
   // handler lookup containers
-  protected _printHandler: (data: Uint32Array, start: number, end: number) => void;
+  protected _printHandler: PrintHandler;
   protected _executeHandlers: any;
   protected _csiHandlers: IHandlerCollection<CsiHandler>;
   protected _escHandlers: IHandlerCollection<EscHandler>;
@@ -247,10 +247,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
-  protected _executeHandlerFb: (code: number) => void;
-  protected _csiHandlerFb: (ident: number, params: IParams) => void;
-  protected _escHandlerFb: (ident: number) => void;
+  protected _printHandlerFb: PrintFallbackHandler;
+  protected _executeHandlerFb: ExecuteFallbackHandler;
+  protected _csiHandlerFb: CsiFallbackHandler;
+  protected _escHandlerFb: EscFallbackHandler;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
   constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
@@ -334,86 +334,73 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.dispose();
   }
 
-  public setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void {
-    this._printHandler = callback;
+  public setPrintHandler(handler: PrintHandler): void {
+    this._printHandler = handler;
   }
   public clearPrintHandler(): void {
     this._printHandler = this._printHandlerFb;
   }
 
-  public setExecuteHandler(flag: string, callback: () => void): void {
-    this._executeHandlers[flag.charCodeAt(0)] = callback;
-  }
-  public clearExecuteHandler(flag: string): void {
-    if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
-  }
-  public setExecuteHandlerFallback(callback: (code: number) => void): void {
-    this._executeHandlerFb = callback;
-  }
-
-  public addCsiHandler(id: IFunctionIdentifier, callback: CsiHandler): IDisposable {
-    const ident = this._identifier(id);
-    if (this._csiHandlers[ident] === undefined) {
-      this._csiHandlers[ident] = [];
+  public addEscHandler(id: IFunctionIdentifier, handler: EscHandler): IDisposable {
+    const ident = this._identifier(id, [0x30, 0x7e]);
+    if (this._escHandlers[ident] === undefined) {
+      this._escHandlers[ident] = [];
     }
-    const handlerList = this._csiHandlers[ident];
-    handlerList.push(callback);
+    const handlerList = this._escHandlers[ident];
+    handlerList.push(handler);
     return {
       dispose: () => {
-        const handlerIndex = handlerList.indexOf(callback);
+        const handlerIndex = handlerList.indexOf(handler);
         if (handlerIndex !== -1) {
           handlerList.splice(handlerIndex, 1);
         }
       }
     };
   }
-  public setCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => void): void {
-    this._csiHandlers[this._identifier(id)] = [callback];
+  public setEscHandler(id: IFunctionIdentifier, handler: EscHandler): void {
+    this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [handler];
+  }
+  public clearEscHandler(id: IFunctionIdentifier): void {
+    if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
+  }
+  public setEscHandlerFallback(handler: EscFallbackHandler): void {
+    this._escHandlerFb = handler;
+  }
+
+  public setExecuteHandler(flag: string, handler: ExecuteHandler): void {
+    this._executeHandlers[flag.charCodeAt(0)] = handler;
+  }
+  public clearExecuteHandler(flag: string): void {
+    if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
+  }
+  public setExecuteHandlerFallback(handler: ExecuteFallbackHandler): void {
+    this._executeHandlerFb = handler;
+  }
+
+  public addCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): IDisposable {
+    const ident = this._identifier(id);
+    if (this._csiHandlers[ident] === undefined) {
+      this._csiHandlers[ident] = [];
+    }
+    const handlerList = this._csiHandlers[ident];
+    handlerList.push(handler);
+    return {
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(handler);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex, 1);
+        }
+      }
+    };
+  }
+  public setCsiHandler(id: IFunctionIdentifier, handler: CsiHandler): void {
+    this._csiHandlers[this._identifier(id)] = [handler];
   }
   public clearCsiHandler(id: IFunctionIdentifier): void {
     if (this._csiHandlers[this._identifier(id)]) delete this._csiHandlers[this._identifier(id)];
   }
   public setCsiHandlerFallback(callback: (ident: number, params: IParams) => void): void {
     this._csiHandlerFb = callback;
-  }
-
-  public addEscHandler(id: IFunctionIdentifier, callback: EscHandler): IDisposable {
-    const ident = this._identifier(id, [0x30, 0x7e]);
-    if (this._escHandlers[ident] === undefined) {
-      this._escHandlers[ident] = [];
-    }
-    const handlerList = this._escHandlers[ident];
-    handlerList.push(callback);
-    return {
-      dispose: () => {
-        const handlerIndex = handlerList.indexOf(callback);
-        if (handlerIndex !== -1) {
-          handlerList.splice(handlerIndex, 1);
-        }
-      }
-    };
-  }
-  public setEscHandler(id: IFunctionIdentifier, callback: () => void): void {
-    this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [callback];
-  }
-  public clearEscHandler(id: IFunctionIdentifier): void {
-    if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
-  }
-  public setEscHandlerFallback(callback: (ident: number) => void): void {
-    this._escHandlerFb = callback;
-  }
-
-  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
-    return this._oscParser.addHandler(ident, handler);
-  }
-  public setOscHandler(ident: number, handler: IOscHandler): void {
-    this._oscParser.setHandler(ident, handler);
-  }
-  public clearOscHandler(ident: number): void {
-    this._oscParser.clearHandler(ident);
-  }
-  public setOscHandlerFallback(handler: OscFallbackHandler): void {
-    this._oscParser.setHandlerFallback(handler);
   }
 
   public addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
@@ -427,6 +414,19 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
   public setDcsHandlerFallback(handler: DcsFallbackHandler): void {
     this._dcsParser.setHandlerFallback(handler);
+  }
+
+  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+    return this._oscParser.addHandler(ident, handler);
+  }
+  public setOscHandler(ident: number, handler: IOscHandler): void {
+    this._oscParser.setHandler(ident, handler);
+  }
+  public clearOscHandler(ident: number): void {
+    this._oscParser.clearHandler(ident);
+  }
+  public setOscHandlerFallback(handler: OscFallbackHandler): void {
+    this._oscParser.setHandlerFallback(handler);
   }
 
   public setErrorHandler(callback: (state: IParsingState) => IParsingState): void {

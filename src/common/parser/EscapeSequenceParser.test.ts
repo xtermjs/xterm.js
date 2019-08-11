@@ -1220,26 +1220,26 @@ describe('EscapeSequenceParser', function (): void {
     });
     describe('ESC custom handlers', () => {
       it('prevent fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom - %G']);
       });
       it('allow fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return false; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom - %G', 'default - %G']);
       });
       it('Multiple custom handlers fallback once', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom2 - %G'); return false; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom2 - %G', 'custom - %G']);
       });
       it('Multiple custom handlers no fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom2 - %G'); return true; });
         parse(parser2, INPUT);
@@ -1247,21 +1247,21 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => order.push(1));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { order.push(1); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { order.push(2); return false; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { order.push(3); return false; });
         parse(parser2, '\x1b%G');
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         const dispo = parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         dispo.dispose();
         parse(parser2, INPUT);
         chai.expect(esc).eql(['default - %G']);
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         const dispo = parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         dispo.dispose();
         dispo.dispose();
@@ -1284,7 +1284,7 @@ describe('EscapeSequenceParser', function (): void {
     describe('CSI custom handlers', () => {
       it('Prevent fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
@@ -1292,7 +1292,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Allow fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return false; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']], 'Should fallback to original handler');
@@ -1301,7 +1301,7 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers fallback once', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
         const csiCustom2: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom2.push(['m', params.toArray(), '']); return false; });
         parse(parser2, INPUT);
@@ -1312,7 +1312,7 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers no fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
         const csiCustom2: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom2.push(['m', params.toArray(), '']); return true; });
         parse(parser2, INPUT);
@@ -1322,7 +1322,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setCsiHandler({final: 'm'}, () => order.push(1));
+        parser2.setCsiHandler({final: 'm'}, () => { order.push(1); });
         parser2.addCsiHandler({final: 'm'}, () => { order.push(2); return false; });
         parser2.addCsiHandler({final: 'm'}, () => { order.push(3); return false; });
         parse(parser2, '\x1b[0m');
@@ -1330,7 +1330,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Dispose should work', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         const customHandler = parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         customHandler.dispose();
         parse(parser2, INPUT);
@@ -1339,7 +1339,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         const customHandler = parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         customHandler.dispose();
         customHandler.dispose();
