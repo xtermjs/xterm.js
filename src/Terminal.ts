@@ -394,6 +394,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'rendererType':
           if (this._renderService) {
             this._renderService.setRenderer(this._createRenderer());
+            this._renderService.onResize(this.cols, this.rows);
           }
           break;
         case 'scrollback':
