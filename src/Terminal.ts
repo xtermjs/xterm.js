@@ -643,7 +643,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.screenElement);
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
@@ -663,6 +662,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
+
+    // This event listener must be registered aftre MouseZoneManager is created
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
     if (this.mouseEvents) {
