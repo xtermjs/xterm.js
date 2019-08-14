@@ -938,9 +938,6 @@ declare module 'xterm' {
    * Represents a single cell in the terminal's buffer.
    */
   interface IBufferCell {
-    readonly fg: number;
-    readonly bg: number;
-
     /**
      * The character within the cell.
      */
@@ -955,27 +952,58 @@ declare module 'xterm' {
      */
     readonly width: number;
 
-    // flags
-    readonly isInverse: number;
-    readonly isBold: number;
-    readonly isUnderline: number;
-    readonly isBlink: number;
-    readonly isInvisible: number;
-    readonly isItalic: number;
-    readonly isDim: number;
+    readonly foregroundColor: Color;
+    readonly backgroundColor: Color;
+    readonly style: CellStyle;
+  }
 
-    // color modes
-    readonly fgColorMode: number;
-    readonly bgColorMode: number;
-    readonly isFgRGB: boolean;
-    readonly isBgRGB: boolean;
-    readonly isFgPalette: boolean;
-    readonly isBgPalette: boolean;
-    readonly isFgDefault: boolean;
-    readonly isBgDefault: boolean;
+  export type Color = IDefaultColor | IPalette16Color | IPalette256Color | IRgbColor;
+  export enum CellStyle {
+    default = 0,
+    // foreground style
+    inverse = 0x4000000 >>> 24,
+    bold = 0x8000000 >>> 24,
+    underline = 0x10000000 >>> 24,
+    blink = 0x20000000 >>> 24,
+    invisible = 0x40000000 >>> 24,
+    // background style
+    italic = 0x4000000 >>> 16,
+    dim = 0x8000000 >>> 16
+  }
 
-    // colors
-    readonly fgColor: number;
-    readonly bgColor: number;
+  interface ICellColor {
+    type: string;
+    hash: number;
+  }
+
+  interface IDefaultColor extends ICellColor {
+    type: 'default';
+    hash: 0;
+  }
+
+  interface IRgbColor extends ICellColor {
+    type: 'rgb';
+    hash: number;
+
+    // 0-255
+    red: number;
+    green: number;
+    blue: number;
+  }
+
+  interface IPalette16Color extends ICellColor {
+    type: 'palette16';
+    hash: number;
+
+    // 0-15
+    id: number;
+  }
+
+  interface IPalette256Color extends ICellColor {
+    type: 'palette256';
+    hash: number;
+
+    // 0-255
+    id: number;
   }
 }

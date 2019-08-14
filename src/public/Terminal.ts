@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, Color, CellStyle} from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
+import { Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
@@ -220,28 +221,46 @@ class BufferLineApiView implements IBufferLineApi {
   }
 }
 
+const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
+
 class BufferCellApiView implements IBufferCellApi {
   constructor(private _cell: ICellData) {}
 
-  public get fg(): number { return this._cell.fg; }
-  public get bg(): number { return this._cell.bg; }
   public get char(): string { return this._cell.getChars(); }
   public get width(): number { return this._cell.getWidth(); }
-  public get isInverse(): number { return this._cell.isInverse(); }
-  public get isBold(): number { return this._cell.isBold(); }
-  public get isUnderline(): number { return this._cell.isUnderline(); }
-  public get isBlink(): number { return this._cell.isBlink(); }
-  public get isInvisible(): number { return this._cell.isInvisible(); }
-  public get isItalic(): number { return this._cell.isItalic(); }
-  public get isDim(): number { return this._cell.isDim(); }
-  public get fgColorMode(): number { return this._cell.getFgColorMode(); }
-  public get bgColorMode(): number { return this._cell.getBgColorMode(); }
-  public get isFgRGB(): boolean { return this._cell.isFgRGB(); }
-  public get isBgRGB(): boolean { return this._cell.isBgRGB(); }
-  public get isFgPalette(): boolean { return this._cell.isFgPalette(); }
-  public get isBgPalette(): boolean { return this._cell.isBgPalette(); }
-  public get isFgDefault(): boolean { return this._cell.isFgDefault(); }
-  public get isBgDefault(): boolean { return this._cell.isBgDefault(); }
-  public get fgColor(): number { return this._cell.getFgColor(); }
-  public get bgColor(): number { return this._cell.getBgColor(); }
+  public get foregroundColor(): Color {
+    const cell = this._cell;
+    const hash = cell.fg & COLOR_MASK;
+    if (cell.isFgDefault()) {
+      return { type: 'default', hash: 0 };
+    } else if (cell.isFgPalette()) {
+      switch (cell.getFgColorMode()) {
+        case Attributes.CM_P16: return { type: 'palette16', hash, id: cell.getFgColor() };
+        case Attributes.CM_P256: return { type: 'palette256', hash, id: cell.getFgColor() };
+      }
+    } else if (cell.isFgRGB()) {
+      const [red, green, blue] = CellData.toColorRGB(cell.fg);
+      return { type: 'rgb', hash, red, green, blue };
+    }
+    throw new Error('Invalid foregroundColor');
+  }
+  public get backgroundColor(): Color {
+    const cell = this._cell;
+    const hash = cell.bg & COLOR_MASK;
+    if (cell.isBgDefault()) {
+      return { type: 'default', hash: 0 };
+    } else if (cell.isBgPalette()) {
+      switch (cell.getBgColorMode()) {
+        case Attributes.CM_P16: return { type: 'palette16', hash, id: cell.getBgColor() };
+        case Attributes.CM_P256: return { type: 'palette256', hash, id: cell.getBgColor() };
+      }
+    } else if (cell.isBgRGB()) {
+      const [red, green, blue] = CellData.toColorRGB(cell.bg);
+      return { type: 'rgb', hash, red, green, blue };
+    }
+    throw new Error('Invalid backgroundColor');
+  }
+  public get style(): CellStyle {
+    return ((this._cell.bg & BgFlags.FM_MASK) >>> 16) | ((this._cell.fg & FgFlags.FM_MASK) >>> 24);
+  }
 }
