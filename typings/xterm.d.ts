@@ -387,6 +387,12 @@ declare module 'xterm' {
     readonly markers: ReadonlyArray<IMarker>;
 
     /**
+     * (EXPERIMENTAL) Get the parser interface to register
+     * custom escape sequence handlers.
+     */
+    readonly parser: IParser;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -919,7 +925,8 @@ declare module 'xterm' {
   }
 
   /**
-   * Data type to register a CSI, DCS or ESC callback in the parser in the form:
+   * (EXPERIMENTAL) Data type to register a CSI, DCS or ESC callback in the parser
+   * in the form:
    *    ESC I..I F
    *    CSI Prefix P..P I..I F
    *    DCS Prefix P..P I..I F data_bytes ST
