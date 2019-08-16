@@ -1,0 +1,84 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { perfContext, before, after, ThroughputRuntimeCase } from 'xterm-benchmark';
+
+import * as fs from 'fs'
+import { spawn } from 'node-pty';
+import * as profiler from 'v8-profiler-node8';
+import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { Terminal } from 'public/Terminal';
+import { SerializeAddon } from 'addons/xterm-addon-serialize/src/SerializeAddon';
+
+class TestTerminal extends Terminal {
+  writeSync(data: string): void {
+    (<any>this)._core.writeBuffer.push(data);
+    (<any>this)._core._innerWrite();
+  }
+  writeSyncUtf8(data: Uint8Array): void {
+    (<any>this)._core.writeBufferUtf8.push(data);
+    (<any>this)._core._innerWriteUtf8();
+  }
+}
+
+perfContext('Terminal: sh -c "dd if=/dev/random count=40 bs=1k | hexdump | lolcat -f"', () => {
+  let content = '';
+  let contentUtf8: Uint8Array;
+
+  before(async () => {
+    const p = spawn('sh', ['-c', 'dd if=/dev/random count=40 bs=1k | hexdump | lolcat -f'], {
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 25,
+      cwd: process.env.HOME,
+      env: process.env,
+      encoding: (null as unknown as string) // needs to be fixed in node-pty
+    });
+    const chunks: Buffer[] = [];
+    let length = 0;
+    p.on('data', data => {
+      chunks.push(data as unknown as Buffer);
+      length += data.length;
+    });
+    await new Promise(resolve => p.on('exit', () => resolve()));
+    contentUtf8 = Buffer.concat(chunks, length);
+    // translate to content string
+    const buffer = new Uint32Array(contentUtf8.length);
+    const decoder = new Utf8ToUtf32();
+    const codepoints = decoder.decode(contentUtf8, buffer);
+    for (let i = 0; i < codepoints; ++i) {
+      content += stringFromCodePoint(buffer[i]);
+      // peek into content to force flat repr in v8
+      if (!(i % 10000000)) {
+        content[i];
+      }
+    }
+  });
+
+  perfContext('serialize', () => {
+    let terminal: TestTerminal;
+    let serializeAddon = new SerializeAddon();
+    before(() => {
+      terminal = new TestTerminal({ cols: 80, rows: 25, scrollback: 5000 });
+      serializeAddon.activate(terminal);
+      terminal.writeSync(content);
+      profiler.startProfiling();
+    });
+    after(() => {
+      const p1 = profiler.stopProfiling();
+      p1.export((err, res) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        console.log(p1.getHeader());
+        fs.writeFileSync('serialize-profile.cpuprofile', res);
+      })
+    })
+    new ThroughputRuntimeCase('', () => {
+      return { payloadSize: serializeAddon.serialize().length };
+    }, { fork: false }).showAverageThroughput();
+  });
+});
