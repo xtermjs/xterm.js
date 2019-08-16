@@ -71,8 +71,8 @@ export class FitAddon implements ITerminalAddon {
     const availableHeight = parentElementHeight - elementPaddingVer;
     const availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth;
     const geometry = {
-      cols: Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth),
-      rows: Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight)
+      cols: Math.floor(availableWidth / core._renderCoordinator.dimensions.actualCellWidth),
+      rows: Math.floor(availableHeight / core._renderCoordinator.dimensions.actualCellHeight)
     };
     return geometry;
   }
