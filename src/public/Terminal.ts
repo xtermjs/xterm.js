@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -16,6 +16,7 @@ import { IParams } from 'common/parser/Types';
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
+  private _parser: IParser;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
@@ -33,6 +34,12 @@ export class Terminal implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
   public get element(): HTMLElement { return this._core.element; }
+  public get parser(): IParser {
+    if (!this._parser) {
+      this._parser = new ParserApi(this._core);
+    }
+    return this._parser;
+  }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
@@ -56,12 +63,6 @@ export class Terminal implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
-  }
-  public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
-    return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
-  }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._core.addOscHandler(ident, callback);
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
     return this._core.registerLinkMatcher(regex, handler, options);
@@ -216,4 +217,21 @@ class BufferCellApiView implements IBufferCellApi {
   constructor(private _line: IBufferLine, private _x: number) {}
   public get char(): string { return this._line.getString(this._x); }
   public get width(): number { return this._line.getWidth(this._x); }
+}
+
+class ParserApi implements IParser {
+  constructor(private _core: ITerminal) {}
+
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
+  }
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
+  }
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this._core.addEscHandler(id, handler);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._core.addOscHandler(ident, callback);
+  }
 }
