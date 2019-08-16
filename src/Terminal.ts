@@ -55,7 +55,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
@@ -390,6 +390,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'rendererType':
           if (this._renderService) {
             this._renderService.setRenderer(this._createRenderer());
+            this._renderService.onResize(this.cols, this.rows);
           }
           break;
         case 'scrollback':
@@ -639,7 +640,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.screenElement);
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
@@ -660,10 +660,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
+    // This event listener must be registered aftre MouseZoneManager is created
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
+
     // apply mouse event classes set by escape codes before terminal was attached
-    this.element.classList.toggle('enable-mouse-events', !!this.mouseEvents);
     if (this.mouseEvents) {
       this._selectionService.disable();
+      this.element.classList.add('enable-mouse-events');
     } else {
       this._selectionService.enable();
     }
@@ -1315,9 +1318,19 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
+  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
+  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+    return this._inputHandler.addEscHandler(id, callback);
+  }
+
+  /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+    return this._inputHandler.addDcsHandler(id, callback);
+  }
+
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(flag, callback);
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(id, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
