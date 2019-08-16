@@ -348,7 +348,6 @@ export class SearchAddon implements ITerminalAddon {
       let scroll = result.row - terminal.buffer.viewportY;
       scroll = scroll - Math.floor(terminal.rows / 2);
       terminal.scrollLines(scroll);
-      console.log('scrolling');
     }
     return true;
   }
