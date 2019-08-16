@@ -343,9 +343,13 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.term.length);
-    let scroll = result.row - terminal.buffer.viewportY;
-    scroll = scroll - Math.floor(terminal.rows / 2);
-    terminal.scrollLines(scroll);
+    // If it is not in the viewport then we scroll else it just gets selected
+    if (result.row > (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
+      let scroll = result.row - terminal.buffer.viewportY;
+      scroll = scroll - Math.floor(terminal.rows / 2);
+      terminal.scrollLines(scroll);
+      console.log('scrolling');
+    }
     return true;
   }
 }
