@@ -292,6 +292,16 @@ export class CoreMouseService implements ICoreMouseService {
     return true;
   }
 
+  public explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+    return {
+      DOWN: !!(events & CoreMouseEventType.DOWN),
+      UP: !!(events & CoreMouseEventType.UP),
+      DRAG: !!(events & CoreMouseEventType.DRAG),
+      MOVE: !!(events & CoreMouseEventType.MOVE),
+      WHEEL: !!(events & CoreMouseEventType.WHEEL)
+    };
+  }
+
   private _compareEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent): boolean {
     if (e1.col !== e2.col) return false;
     if (e1.row !== e2.row) return false;

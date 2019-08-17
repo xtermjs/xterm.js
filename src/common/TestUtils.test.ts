@@ -37,6 +37,9 @@ export class MockCoreMouseService implements ICoreMouseService {
   reset(): void {}
   triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
   onProtocolChange: IEvent<CoreMouseEventType> = new EventEmitter<CoreMouseEventType>().event;
+  explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCoreService implements ICoreService {

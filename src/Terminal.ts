@@ -850,11 +850,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // apply global changes on events
       this.mouseEvents = events;
       if (events) {
-        this._logService.info('Binding to mouse events:', events);
+        if (this.optionsService.options.logLevel === 'debug') {
+          this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
+        }
         this.element.classList.add('enable-mouse-events');
         this._selectionService.disable();
       } else {
-        this._logService.info('Unbinding from mouse events.');
+        this._logService.debug('Unbinding from mouse events.');
         this.element.classList.remove('enable-mouse-events');
         this._selectionService.enable();
       }
