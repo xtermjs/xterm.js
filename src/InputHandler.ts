@@ -21,8 +21,8 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
 import { ISelectionService } from 'browser/services/Services';
-import { OscHandlerFactory } from 'common/parser/OscParser';
-import { DcsHandlerFactory } from 'common/parser/DcsParser';
+import { OscHandler } from 'common/parser/OscParser';
+import { DcsHandler } from 'common/parser/DcsParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -245,10 +245,10 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    this._parser.setOscHandler(0, new OscHandlerFactory((data: string) => this.setTitle(data)));
+    this._parser.setOscHandler(0, new OscHandler((data: string) => this.setTitle(data)));
     //   1 - icon name
     //   2 - title
-    this._parser.setOscHandler(2, new OscHandlerFactory((data: string) => this.setTitle(data)));
+    this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
     //   5 - Change Special Color Number
@@ -433,10 +433,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           buffer.x = 0;
           buffer.y++;
-          if (buffer.y > buffer.scrollBottom) {
+          if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
             this._terminal.scroll(true);
           } else {
+            if (buffer.y >= this._bufferService.rows) {
+              buffer.y = this._bufferService.rows - 1;
+            }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
             buffer.lines.get(buffer.y).isWrapped = true;
@@ -506,7 +509,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Forward addDcsHandler from parser.
    */
   public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._parser.addDcsHandler(id, new DcsHandlerFactory(callback));
+    return this._parser.addDcsHandler(id, new DcsHandler(callback));
   }
 
   /**
@@ -520,7 +523,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Forward addOscHandler from parser.
    */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._parser.addOscHandler(ident, new OscHandlerFactory(callback));
+    return this._parser.addOscHandler(ident, new OscHandler(callback));
   }
 
   /**
@@ -543,9 +546,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.x = 0;
     }
     buffer.y++;
-    if (buffer.y > buffer.scrollBottom) {
+    if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (buffer.x >= this._bufferService.cols) {
@@ -646,7 +651,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Up Ps Times (default = 1) (CUU).
    */
   public cursorUp(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    // stop at scrollTop
+    const diffToTop = this._bufferService.buffer.y - this._bufferService.buffer.scrollTop;
+    if (diffToTop >= 0) {
+      this._moveCursor(0, -Math.min(diffToTop, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, -(params.params[0] || 1));
+    }
   }
 
   /**
@@ -654,7 +665,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Down Ps Times (default = 1) (CUD).
    */
   public cursorDown(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    // stop at scrollBottom
+    const diffToBottom = this._bufferService.buffer.scrollBottom - this._bufferService.buffer.y;
+    if (diffToBottom >= 0) {
+      this._moveCursor(0, Math.min(diffToBottom, params.params[0] || 1));
+    } else {
+      this._moveCursor(0, params.params[0] || 1);
+    }
   }
 
   /**
@@ -679,7 +696,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorDown (CUD) also set the cursor to first column.
    */
   public cursorNextLine(params: IParams): void {
-    this._moveCursor(0, params.params[0] || 1);
+    this.cursorDown(params);
     this._bufferService.buffer.x = 0;
   }
 
@@ -689,7 +706,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorUp (CUU) also set the cursor to first column.
    */
   public cursorPrecedingLine(params: IParams): void {
-    this._moveCursor(0, -(params.params[0] || 1));
+    this.cursorUp(params);
     this._bufferService.buffer.x = 0;
   }
 
@@ -1031,7 +1048,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
@@ -1633,7 +1650,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-
   /**
    * Helper to extract and apply color params/subparams.
    * Returns advance for params index.
@@ -1906,6 +1922,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
     }
   }
+
   public deviceStatusPrivate(params: IParams): void {
     // modern xterm doesnt seem to
     // respond to any of these except ?6, 6, and 5
@@ -2134,10 +2151,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public index(): void {
     this._restrictCursor();
+    const buffer = this._bufferService.buffer;
     this._bufferService.buffer.y++;
-    if (this._bufferService.buffer.y > this._bufferService.buffer.scrollBottom) {
-      this._bufferService.buffer.y--;
+    if (buffer.y === buffer.scrollBottom + 1) {
+      buffer.y--;
       this._terminal.scroll();
+    } else if (buffer.y >= this._bufferService.rows) {
+      buffer.y = this._bufferService.rows - 1;
     }
     this._restrictCursor();
   }

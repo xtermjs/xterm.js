@@ -108,7 +108,7 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public setRenderer(renderer: IRenderer): void {
-    // TODO: RenderCoordinator should be the only one to dispose the renderer
+    // TODO: RenderService should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
     this.refreshRows(0, this._rowCount - 1);

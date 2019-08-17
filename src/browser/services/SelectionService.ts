@@ -563,9 +563,10 @@ export class SelectionService implements ISelectionService {
     // to be sent to the pty.
     event.stopImmediatePropagation();
 
-    // Something went wrong
+    // Do nothing if there is no selection start, this can happen if the first
+    // click in the terminal is an incremental click
     if (!this._model.selectionStart) {
-      throw new Error('Selection start position was not set before mousemove event');
+      return;
     }
 
     // Record the previous position so we know whether to redraw the selection

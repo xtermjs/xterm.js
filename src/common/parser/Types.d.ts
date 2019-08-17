@@ -61,65 +61,84 @@ export interface IParsingState {
   abort: boolean;
 }
 
-export interface IHandlerCollection<T> {
-  [key: string]: T[];
-}
-
-export type CsiHandler = (params: IParams) => boolean | void;
-export type EscHandler = () => boolean | void;
+/**
+ * Command handler interfaces.
+ */
 
 /**
-* DCS handler signature for EscapeSequenceParser.
-* EscapeSequenceParser handles DCS commands via separate
-* subparsers that get hook/unhooked and can handle
-* arbitrary amount of data.
-*
-* On entering a DSC sequence `hook` is called by
-* `EscapeSequenceParser`. Use it to initialize or reset
-* states needed to handle the current DCS sequence.
-* Note: A DCS parser is only instantiated once, therefore
-* you cannot rely on the ctor to reinitialize state.
-*
-* EscapeSequenceParser will call `put` several times if the
-* parsed data got split, therefore you might have to collect
-* `data` until `unhook` is called.
-* Note: `data` is borrowed, if you cannot process the data
-* in chunks you have to copy it, doing otherwise will lead to
-* data losses or corruption.
-*
-* `unhook` marks the end of the current DCS sequence. `success`
-* indicates whether the command was aborted.
-*/
+ * CSI handler types.
+ * Note: `params` is borrowed.
+ */
+export type CsiHandlerType = (params: IParams) => boolean | void;
+export type CsiFallbackHandlerType = (ident: number, params: IParams) => void;
+
+/**
+ * DCS handler types.
+ */
 export interface IDcsHandler {
+  /**
+   * Called when a DCS command starts.
+   * Prepare needed data structures here.
+   * Note: `params` is borrowed.
+   */
   hook(params: IParams): void;
+  /**
+   * Incoming payload chunk.
+   * Note: `params` is borrowed.
+   */
   put(data: Uint32Array, start: number, end: number): void;
+  /**
+   * End of DCS command. `success` indicates whether the
+   * command finished normally or got aborted, thus final
+   * execution of the command should depend on `success`.
+   * To save memory also cleanup data structures here.
+   */
   unhook(success: boolean): void | boolean;
 }
+export type DcsFallbackHandlerType = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
-export type DcsFallbackHandler = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
+/**
+ * ESC handler types.
+ */
+export type EscHandlerType = () => boolean | void;
+export type EscFallbackHandlerType = (identifier: number) => void;
 
+/**
+ * EXECUTE handler types.
+ */
+export type ExecuteHandlerType = () => boolean | void;
+export type ExecuteFallbackHandlerType = (ident: number) => void;
+
+/**
+ * OSC handler types.
+ */
 export interface IOscHandler {
   /**
    * Announces start of this OSC command.
    * Prepare needed data structures here.
    */
   start(): void;
-
   /**
    * Incoming data chunk.
+   * Note: Data is borrowed.
    */
   put(data: Uint32Array, start: number, end: number): void;
-
   /**
    * End of OSC command. `success` indicates whether the
-   * command finished normally or got aborted, thus execution
-   * of the command should depend on `success`.
-   * To save memory cleanup data structures in `.end`.
+   * command finished normally or got aborted, thus final
+   * execution of the command should depend on `success`.
+   * To save memory also cleanup data structures here.
    */
   end(success: boolean): void | boolean;
 }
+export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
-export type OscFallbackHandler = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
+/**
+ * PRINT handler types.
+ */
+export type PrintHandlerType = (data: Uint32Array, start: number, end: number) => void;
+export type PrintFallbackHandlerType = PrintHandlerType;
+
 
 /**
 * EscapeSequenceParser interface.
@@ -144,65 +163,82 @@ export interface IEscapeSequenceParser extends IDisposable {
   parse(data: Uint32Array, length: number): void;
 
   /**
-   * Get string from ident number.
+   * Get string from numercial function identifier `ident`.
+   * Useful in fallback handlers which expose the low level
+   * numcerical function identifier for debugging purposes.
+   * Note: A full back translation to `IFunctionIdentifier`
+   * is not implemented.
    */
   identToString(ident: number): string;
 
-  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void;
+  setPrintHandler(handler: PrintHandlerType): void;
   clearPrintHandler(): void;
 
-  setExecuteHandler(flag: string, callback: () => void): void;
-  clearExecuteHandler(flag: string): void;
-  setExecuteHandlerFallback(callback: (code: number) => void): void;
-
-  setCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => void): void;
-  clearCsiHandler(id: IFunctionIdentifier): void;
-  setCsiHandlerFallback(callback: (identifier: number, params: IParams) => void): void;
-  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
-
-  setEscHandler(id: IFunctionIdentifier, callback: () => void): void;
+  setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void;
   clearEscHandler(id: IFunctionIdentifier): void;
-  setEscHandlerFallback(callback: (identifier: number) => void): void;
-  addEscHandler(id: IFunctionIdentifier, handler: EscHandler): IDisposable;
+  setEscHandlerFallback(handler: EscFallbackHandlerType): void;
+  addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable;
 
-  setOscHandler(ident: number, handler: IOscHandler): void;
-  clearOscHandler(ident: number): void;
-  setOscHandlerFallback(handler: OscFallbackHandler): void;
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
+  setExecuteHandler(flag: string, handler: ExecuteHandlerType): void;
+  clearExecuteHandler(flag: string): void;
+  setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void;
+
+  setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void;
+  clearCsiHandler(id: IFunctionIdentifier): void;
+  setCsiHandlerFallback(callback: CsiFallbackHandlerType): void;
+  addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable;
 
   setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void;
   clearDcsHandler(id: IFunctionIdentifier): void;
-  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
+  setDcsHandlerFallback(handler: DcsFallbackHandlerType): void;
   addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
 
-  setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
+  setOscHandler(ident: number, handler: IOscHandler): void;
+  clearOscHandler(ident: number): void;
+  setOscHandlerFallback(handler: OscFallbackHandlerType): void;
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
+
+  setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
 }
 
-export interface IOscParser extends IDisposable {
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
-  setOscHandler(ident: number, handler: IOscHandler): void;
-  clearOscHandler(ident: number): void;
-  setOscHandlerFallback(handler: OscFallbackHandler): void;
+/**
+ * Subparser interfaces.
+ * The subparsers are instantiated in `EscapeSequenceParser` and
+ * called during `EscapeSequenceParser.parse`.
+ */
+export interface ISubParser<T, U> extends IDisposable {
   reset(): void;
-  start(): void;
+  addHandler(ident: number, handler: T): IDisposable;
+  setHandler(ident: number, handler: T): void;
+  clearHandler(ident: number): void;
+  setHandlerFallback(handler: U): void;
   put(data: Uint32Array, start: number, end: number): void;
+}
+
+export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandlerType> {
+  start(): void;
   end(success: boolean): void;
 }
 
-export interface IDcsParser extends IDisposable {
-  addDcsHandler(ident: number, handler: IDcsHandler): IDisposable;
-  setDcsHandler(ident: number, handler: IDcsHandler): void;
-  clearDcsHandler(ident: number): void;
-  setDcsHandlerFallback(handler: DcsFallbackHandler): void;
-  reset(): void;
+export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerType> {
   hook(ident: number, params: IParams): void;
-  put(data: Uint32Array, start: number, end: number): void;
   unhook(success: boolean): void;
 }
 
+/**
+ * Interface to denote a specific ESC, CSI or DCS handler slot.
+ * The values are used to create an integer respresentation during handler
+ * regristation before passed to the subparsers as `ident`.
+ * The integer translation is made to allow a faster handler access
+ * in `EscapeSequenceParser.parse`.
+ */
 export interface IFunctionIdentifier {
   prefix?: string;
   intermediates?: string;
   final: string;
+}
+
+export interface IHandlerCollection<T> {
+  [key: string]: T[];
 }

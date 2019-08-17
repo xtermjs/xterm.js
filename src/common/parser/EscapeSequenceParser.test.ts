@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandler } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
-import { OscHandlerFactory } from 'common/parser/OscParser';
+import { OscHandler } from 'common/parser/OscParser';
 import { IDisposable } from 'common/Types';
-import { DcsHandlerFactory } from 'common/parser/DcsParser';
+import { DcsHandler } from 'common/parser/DcsParser';
 
 
 function r(a: number, b: number): string[] {
@@ -24,7 +24,7 @@ function r(a: number, b: number): string[] {
 }
 
 class MockOscPutParser implements IOscParser {
-  private _fallback: OscFallbackHandler = () => {};
+  private _fallback: OscFallbackHandlerType = () => {};
   public data = '';
   public reset(): void {
     this.data = '';
@@ -41,16 +41,16 @@ class MockOscPutParser implements IOscParser {
       this._fallback(id, 'END', this.data.slice(this.data.indexOf(';') + 1));
     }
   }
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+  addHandler(ident: number, handler: IOscHandler): IDisposable {
     throw new Error('not implemented');
   }
-  setOscHandler(ident: number, handler: IOscHandler): void {
+  setHandler(ident: number, handler: IOscHandler): void {
     throw new Error('not implemented');
   }
-  clearOscHandler(ident: number): void {
+  clearHandler(ident: number): void {
     throw new Error('not implemented');
   }
-  setOscHandlerFallback(handler: OscFallbackHandler): void {
+  setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._fallback = handler;
   }
 }
@@ -1220,26 +1220,26 @@ describe('EscapeSequenceParser', function (): void {
     });
     describe('ESC custom handlers', () => {
       it('prevent fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom - %G']);
       });
       it('allow fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return false; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom - %G', 'default - %G']);
       });
       it('Multiple custom handlers fallback once', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom2 - %G'); return false; });
         parse(parser2, INPUT);
         chai.expect(esc).eql(['custom2 - %G', 'custom - %G']);
       });
       it('Multiple custom handlers no fallback', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom2 - %G'); return true; });
         parse(parser2, INPUT);
@@ -1247,21 +1247,21 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => order.push(1));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { order.push(1); });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { order.push(2); return false; });
         parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { order.push(3); return false; });
         parse(parser2, '\x1b%G');
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         const dispo = parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         dispo.dispose();
         parse(parser2, INPUT);
         chai.expect(esc).eql(['default - %G']);
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
-        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => esc.push('default - %G'));
+        parser2.setEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('default - %G'); });
         const dispo = parser2.addEscHandler({intermediates: '%', final: 'G'}, () => { esc.push('custom - %G'); return true; });
         dispo.dispose();
         dispo.dispose();
@@ -1284,7 +1284,7 @@ describe('EscapeSequenceParser', function (): void {
     describe('CSI custom handlers', () => {
       it('Prevent fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
@@ -1292,7 +1292,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Allow fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return false; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']], 'Should fallback to original handler');
@@ -1301,7 +1301,7 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers fallback once', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
         const csiCustom2: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom2.push(['m', params.toArray(), '']); return false; });
         parse(parser2, INPUT);
@@ -1312,7 +1312,7 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers no fallback', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
         const csiCustom2: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         parser2.addCsiHandler({final: 'm'}, params => { csiCustom2.push(['m', params.toArray(), '']); return true; });
         parse(parser2, INPUT);
@@ -1322,7 +1322,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setCsiHandler({final: 'm'}, () => order.push(1));
+        parser2.setCsiHandler({final: 'm'}, () => { order.push(1); });
         parser2.addCsiHandler({final: 'm'}, () => { order.push(2); return false; });
         parser2.addCsiHandler({final: 'm'}, () => { order.push(3); return false; });
         parse(parser2, '\x1b[0m');
@@ -1330,7 +1330,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Dispose should work', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         const customHandler = parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         customHandler.dispose();
         parse(parser2, INPUT);
@@ -1339,7 +1339,7 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const csiCustom: [string, ParamsArray, string][] = [];
-        parser2.setCsiHandler({final: 'm'}, params => csi.push(['m', params.toArray(), '']));
+        parser2.setCsiHandler({final: 'm'}, params => { csi.push(['m', params.toArray(), '']); });
         const customHandler = parser2.addCsiHandler({final: 'm'}, params => { csiCustom.push(['m', params.toArray(), '']); return true; });
         customHandler.dispose();
         customHandler.dispose();
@@ -1364,7 +1364,7 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(exe).eql(['\n']);
     });
     it('OSC handler', function (): void {
-      parser2.setOscHandler(1, new OscHandlerFactory(function (data: string): void {
+      parser2.setOscHandler(1, new OscHandler(function (data: string): void {
         osc.push([1, data]);
       }));
       parse(parser2, INPUT);
@@ -1378,16 +1378,16 @@ describe('EscapeSequenceParser', function (): void {
     describe('OSC custom handlers', () => {
       it('Prevent fallback', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return true; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
       });
       it('Allow fallback', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return false; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return false; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']], 'Should fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
@@ -1395,9 +1395,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers fallback once', () => {
         const oscCustom: [number, string][] = [];
         const oscCustom2: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom2.push([1, data]); return false; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return true; }));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom2.push([1, data]); return false; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
@@ -1406,9 +1406,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers no fallback', () => {
         const oscCustom: [number, string][] = [];
         const oscCustom2: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
-        parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom2.push([1, data]); return true; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return true; }));
+        parser2.addOscHandler(1, new OscHandler(data => { oscCustom2.push([1, data]); return true; }));
         parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([], 'Should not fallback once');
@@ -1416,16 +1416,16 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(() => order.push(1)));
-        parser2.addOscHandler(1, new OscHandlerFactory(() => { order.push(2); return false; }));
-        parser2.addOscHandler(1, new OscHandlerFactory(() => { order.push(3); return false; }));
+        parser2.setOscHandler(1, new OscHandler(() => order.push(1)));
+        parser2.addOscHandler(1, new OscHandler(() => { order.push(2); return false; }));
+        parser2.addOscHandler(1, new OscHandler(() => { order.push(3); return false; }));
         parse(parser2, '\x1b]1;foo=bar\x1b\\');
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        const customHandler = parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        const customHandler = parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return true; }));
         customHandler.dispose();
         parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']]);
@@ -1433,8 +1433,8 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const oscCustom: [number, string][] = [];
-        parser2.setOscHandler(1, new OscHandlerFactory(data => osc.push([1, data])));
-        const customHandler = parser2.addOscHandler(1, new OscHandlerFactory(data => { oscCustom.push([1, data]); return true; }));
+        parser2.setOscHandler(1, new OscHandler(data => osc.push([1, data])));
+        const customHandler = parser2.addOscHandler(1, new OscHandler(data => { oscCustom.push([1, data]); return true; }));
         customHandler.dispose();
         customHandler.dispose();
         parse(parser2, INPUT);
@@ -1476,54 +1476,54 @@ describe('EscapeSequenceParser', function (): void {
       const DCS_INPUT = '\x1bP1;2;3+pabc\x1b\\';
       it('Prevent fallback', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
         parse(parser2, DCS_INPUT);
         chai.expect(dcsCustom).eql([['B', [1, 2, 3], 'abc']]);
       });
       it('Allow fallback', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return false; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return false; }));
         parse(parser2, DCS_INPUT);
         chai.expect(dcsCustom).eql([['B', [1, 2, 3], 'abc'], ['A', [1, 2, 3], 'abc']]);
       });
       it('Multiple custom handlers fallback once', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['C', params.toArray(), data]); return false; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['C', params.toArray(), data]); return false; }));
         parse(parser2, DCS_INPUT);
         chai.expect(dcsCustom).eql([['C', [1, 2, 3], 'abc'], ['B', [1, 2, 3], 'abc']]);
       });
       it('Multiple custom handlers no fallback', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['C', params.toArray(), data]); return true; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['C', params.toArray(), data]); return true; }));
         parse(parser2, DCS_INPUT);
         chai.expect(dcsCustom).eql([['C', [1, 2, 3], 'abc']]);
       });
       it('Execution order should go from latest handler down to the original', () => {
         const order: number[] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory(() => order.push(1)));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory(() => { order.push(2); return false; }));
-        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory(() => { order.push(3); return false; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler(() => order.push(1)));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler(() => { order.push(2); return false; }));
+        parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler(() => { order.push(3); return false; }));
         parse(parser2, DCS_INPUT);
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        const dispo = parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        const dispo = parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
         dispo.dispose();
         parse(parser2, DCS_INPUT);
         chai.expect(dcsCustom).eql([['A', [1, 2, 3], 'abc']]);
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const dcsCustom: [string, (number | number[])[], string][] = [];
-        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => dcsCustom.push(['A', params.toArray(), data])));
-        const dispo = parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandlerFactory((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
+        parser2.setDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => dcsCustom.push(['A', params.toArray(), data])));
+        const dispo = parser2.addDcsHandler({intermediates: '+', final: 'p'}, new DcsHandler((data, params) => { dcsCustom.push(['B', params.toArray(), data]); return true; }));
         dispo.dispose();
         dispo.dispose();
         parse(parser2, DCS_INPUT);

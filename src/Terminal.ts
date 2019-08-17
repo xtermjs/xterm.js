@@ -394,6 +394,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'rendererType':
           if (this._renderService) {
             this._renderService.setRenderer(this._createRenderer());
+            this._renderService.onResize(this.cols, this.rows);
           }
           break;
         case 'scrollback':
@@ -643,7 +644,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.screenElement);
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
@@ -664,10 +664,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
+    // This event listener must be registered aftre MouseZoneManager is created
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
+
     // apply mouse event classes set by escape codes before terminal was attached
-    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
       this._selectionService.disable();
+      this.element.classList.add('enable-mouse-events');
     } else {
       this._selectionService.enable();
     }

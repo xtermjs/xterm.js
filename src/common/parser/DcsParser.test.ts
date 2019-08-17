@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { DcsParser, DcsHandlerFactory } from 'common/parser/DcsParser';
+import { DcsParser, DcsHandler } from 'common/parser/DcsParser';
 import { IDcsHandler, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { utf32ToString, StringToUtf32 } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
@@ -75,7 +75,7 @@ describe('DcsParser', () => {
   beforeEach(() => {
     reports = [];
     parser = new DcsParser();
-    parser.setDcsHandlerFallback((id, action, data) => {
+    parser.setHandlerFallback((id, action, data) => {
       if (action === 'HOOK') {
         data = data.toArray();
       }
@@ -84,7 +84,7 @@ describe('DcsParser', () => {
   });
   describe('handler registration', () => {
     it('setDcsHandler', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -100,8 +100,8 @@ describe('DcsParser', () => {
       ]);
     });
     it('clearDcsHandler', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
-      parser.clearDcsHandler(identifier({intermediates: '+', final: 'p'}));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
+      parser.clearHandler(identifier({intermediates: '+', final: 'p'}));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -117,8 +117,8 @@ describe('DcsParser', () => {
       ]);
     });
     it('addDcsHandler', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
-      parser.addDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2'));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      parser.addHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2'));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -137,8 +137,8 @@ describe('DcsParser', () => {
       ]);
     });
     it('addDcsHandler with return false', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
-      parser.addDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      parser.addHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -157,8 +157,8 @@ describe('DcsParser', () => {
       ]);
     });
     it('dispose handlers', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
-      const dispo = parser.addDcsHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      const dispo = parser.addHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
       dispo.dispose();
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
@@ -176,7 +176,7 @@ describe('DcsParser', () => {
   });
   describe('DcsHandlerFactory', () => {
     it('should be called once on end(true)', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push([params.toArray(), data])));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push([params.toArray(), data])));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -186,7 +186,7 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, [[[1, 2, 3], 'Here comes the mouse!']]);
     });
     it('should not be called on end(false)', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push([params.toArray(), data])));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push([params.toArray(), data])));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -196,8 +196,8 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push(['one', params.toArray(), data])));
-      const dispo = parser.addDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push(['two', params.toArray(), data])));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push(['one', params.toArray(), data])));
+      const dispo = parser.addHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push(['two', params.toArray(), data])));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -215,8 +215,8 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'some other data']]);
     });
     it('should respect return false', () => {
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push(['one', params.toArray(), data])));
-      parser.addDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => { reports.push(['two', params.toArray(), data]); return false; }));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push(['one', params.toArray(), data])));
+      parser.addHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => { reports.push(['two', params.toArray(), data]); return false; }));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -227,7 +227,7 @@ describe('DcsParser', () => {
     });
     it('should work up to payload limit', function(): void {
       this.timeout(10000);
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push([params.toArray(), data])));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push([params.toArray(), data])));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       const data = toUtf32('A'.repeat(1000));
       for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
@@ -238,7 +238,7 @@ describe('DcsParser', () => {
     });
     it('should abort for payload limit +1', function(): void {
       this.timeout(10000);
-      parser.setDcsHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandlerFactory((data, params) => reports.push([params.toArray(), data])));
+      parser.setHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => reports.push([params.toArray(), data])));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('A'.repeat(1000));
       for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {

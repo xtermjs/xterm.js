@@ -3,20 +3,19 @@
  * @license MIT
  */
 
-import { IOscHandler, IHandlerCollection, OscFallbackHandler } from 'common/parser/Types';
+import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser } from 'common/parser/Types';
 import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
-import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
 
-export class OscParser extends Disposable {
+export class OscParser implements IOscParser {
   private _state = OscState.START;
   private _id = -1;
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
-  private _handlerFb: OscFallbackHandler = () => { };
+  private _handlerFb: OscFallbackHandlerType = () => { };
 
-  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+  public addHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -31,13 +30,13 @@ export class OscParser extends Disposable {
       }
     };
   }
-  public setOscHandler(ident: number, handler: IOscHandler): void {
+  public setHandler(ident: number, handler: IOscHandler): void {
     this._handlers[ident] = [handler];
   }
-  public clearOscHandler(ident: number): void {
+  public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
-  public setOscHandlerFallback(handler: OscFallbackHandler): void {
+  public setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 
@@ -168,7 +167,7 @@ export class OscParser extends Disposable {
  * Convenient class to allow attaching string based handler functions
  * as OSC handlers.
  */
-export class OscHandlerFactory implements IOscHandler {
+export class OscHandler implements IOscHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 
