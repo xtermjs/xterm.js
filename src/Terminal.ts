@@ -688,7 +688,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
-    // this.bindMouse();
     this.bindMouse();
   }
 
@@ -767,11 +766,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'mouseup':
           action = CoreMouseAction.UP;
-          but = ev.button < 3 ? ev.button : ev.button + 5;
+          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
           break;
         case 'mousedown':
           action = CoreMouseAction.DOWN;
-          but = ev.button < 3 ? ev.button : ev.button + 5;
+          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
           break;
         case 'wheel':
           // only UP/DOWN wheel events are respected
@@ -880,7 +879,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
 
       if (!(events & CoreMouseEventType.UP)) {
-        // always remove possible leftover handler
         this._document.removeEventListener('mouseup', requestedEvents.mouseup);
         requestedEvents.mouseup = null;
       } else if (!requestedEvents.mouseup) {
@@ -888,7 +886,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
 
       if (!(events & CoreMouseEventType.DRAG)) {
-        // always remove possible leftover handler
         this._document.removeEventListener('mousemove', requestedEvents.mousedrag);
         requestedEvents.mousedrag = null;
       } else if (!requestedEvents.mousedrag) {
