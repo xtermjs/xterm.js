@@ -130,6 +130,8 @@ export interface IInputHandler {
   /** CSI r */ setScrollRegion(params: IParams, collect?: string): void;
   /** CSI s */ saveCursor(params: IParams): void;
   /** CSI u */ restoreCursor(params: IParams): void;
+  /** CSI ' } */ insertColumns(params: IParams): void;
+  /** CSI ' ~ */ deleteColumns(params: IParams): void;
   /** OSC 0
       OSC 2 */ setTitle(data: string): void;
   /** ESC E */ nextLine(): void;
