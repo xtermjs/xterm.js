@@ -809,13 +809,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
      * Note: 'mousedown' currently is "always on" and not managed
      * by onProtocolChange.
      */
-    const requestedEvents: {[key: string]: any} = {
+    const requestedEvents: {[key: string]: ((ev: Event) => void) | null} = {
       mouseup: null,
       wheel: null,
       mousedrag: null,
       mousemove: null
     };
-    const eventListeners: {[key: string]: any} = {
+    const eventListeners: {[key: string]: (ev: Event) => void} = {
       mouseup: (ev: MouseEvent) => {
         sendEvent(ev);
         if (!ev.buttons) {

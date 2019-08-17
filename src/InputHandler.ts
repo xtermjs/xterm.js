@@ -1319,7 +1319,6 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1000: // vt200 mouse
           // no motion.
-          // no modifiers, except control on the wheel.
           this._coreMouseService.activeProtocol = 'VT200';
           break;
         case 1002: // button event mouse
@@ -1336,23 +1335,15 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.sendFocus = true;
           break;
         case 1005: // utf8 ext mode mouse
-          this._coreMouseService.activeEncoding = 'UTF8';
           // for wide terminals
           // simply encodes large values as utf8 characters
+          this._coreMouseService.activeEncoding = 'UTF8';
           break;
         case 1006: // sgr ext mode mouse
           this._coreMouseService.activeEncoding = 'SGR';
-          // for wide terminals
-          // does not add 32 to fields
-          // press: ^[[<b;x;yM
-          // release: ^[[<b;x;ym
           break;
         case 1015: // urxvt ext mode mouse
           this._coreMouseService.activeEncoding = 'URXVT';
-          // for wide terminals
-          // numbers for fields
-          // press: ^[[b;x;yM
-          // motion: ^[[b;x;yT
           break;
         case 25: // show cursor
           this._terminal.cursorHidden = false;
