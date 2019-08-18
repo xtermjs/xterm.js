@@ -23,7 +23,8 @@
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
-    "clean": "rm -rf lib out addons/*/lib addons/*/out"
+    "clean": "rm -rf lib out addons/*/lib addons/*/out",
+    "vtfeatures": "node bin/extract_vt.js src/**/*.ts src/*.ts"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -41,6 +42,7 @@
     "glob": "^7.0.5",
     "jsdom": "^11.11.0",
     "mocha": "^6.1.4",
+    "mustache": "^3.0.1",
     "node-pty": "0.7.6",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",

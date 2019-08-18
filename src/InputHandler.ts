@@ -177,13 +177,18 @@ export class InputHandler extends Disposable implements IInputHandler {
      * CSI handler
      */
     this._parser.setCsiHandler({final: '@'}, params => this.insertChars(params));
+    // @vt: supported CSI CUU "Cursor Up"       "CSI Ps A"  "Move the cursor position `Ps` times to the top (default=1)."
     this._parser.setCsiHandler({final: 'A'}, params => this.cursorUp(params));
+    // @vt: supported CSI CUD "Cursor Down"     "CSI Ps B"  "Move the cursor position `Ps` times to the bottom (default=1)."
     this._parser.setCsiHandler({final: 'B'}, params => this.cursorDown(params));
+    // @vt: supported CSI CUF "Cursor Forward"  "CSI Ps C"  "Move the cursor position `Ps` times to the right (default=1)."
     this._parser.setCsiHandler({final: 'C'}, params => this.cursorForward(params));
+    // @vt: supported CSI CUB "Cursor Backward" "CSI Ps D" "Move the cursor position `Ps` times to the left (default=1)."
     this._parser.setCsiHandler({final: 'D'}, params => this.cursorBackward(params));
     this._parser.setCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
     this._parser.setCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
     this._parser.setCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
+    // @vt: supported CSI CUP "Cursor Position" "CSI Ps ; Ps H"  "Set the cursor to position [`Ps`, `Ps`]."
     this._parser.setCsiHandler({final: 'H'}, params => this.cursorPosition(params));
     this._parser.setCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
     this._parser.setCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
@@ -210,6 +215,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
     this._parser.setCsiHandler({final: 'l'}, params => this.resetMode(params));
     this._parser.setCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
+    // @vt: partly   CSI    SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set various text attributes."
     this._parser.setCsiHandler({final: 'm'}, params => this.charAttributes(params));
     this._parser.setCsiHandler({final: 'n'}, params => this.deviceStatus(params));
     this._parser.setCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
@@ -222,11 +228,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * execute handler
      */
+    // @vt: supported   C0    BEL   "Bell"  "\x07"  "Rings the bell."
     this._parser.setExecuteHandler(C0.BEL, () => this.bell());
+    // @vt: supported   C0    LF   "Line Feed"  "\n"  "Moves the cursor one row down, scrolling if needed."
     this._parser.setExecuteHandler(C0.LF, () => this.lineFeed());
     this._parser.setExecuteHandler(C0.VT, () => this.lineFeed());
     this._parser.setExecuteHandler(C0.FF, () => this.lineFeed());
+    // @vt: supported   C0    CR   "Carriage Return"  "\r"  "Moves the cursor to the beginning of the row."
     this._parser.setExecuteHandler(C0.CR, () => this.carriageReturn());
+    // @vt: supported   C0    BS   "Backspace"  "\x08"  "Moves the cursor one position to the left."
     this._parser.setExecuteHandler(C0.BS, () => this.backspace());
     this._parser.setExecuteHandler(C0.HT, () => this.tab());
     this._parser.setExecuteHandler(C0.SO, () => this.shiftOut());
@@ -241,9 +251,12 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
+    // @vt: partly   OSC    OSC0   ""  "OSC 0 ; Pt BEL"  "Set window title and icon name."
     this._parser.setOscHandler(0, new OscHandler((data: string) => this.setTitle(data)));
     //   1 - icon name
+    // @vt: unsupported   OSC    OSC1   ""  "OSC 1 ; Pt BEL"  "Set icon name."
     //   2 - title
+    // @vt: supported   OSC    OSC2   ""  "OSC 2 ; Pt BEL"  "Set window title."
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
@@ -306,6 +319,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._parser.setEscHandler({intermediates: '.', final: flag}, () => this.selectCharset('.' + flag));
       this._parser.setEscHandler({intermediates: '/', final: flag}, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
+    // @vt: supported   ESC    DECALN   "Screen Alignment Pattern"  "ESC # 8"  "Fill viewport with a test pattern (E)."
     this._parser.setEscHandler({intermediates: '#', final: '8'}, () => this.screenAlignmentPattern());
 
     /**
