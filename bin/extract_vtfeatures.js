@@ -35,6 +35,55 @@ const TYPES = [
 const MARKDOWN_TMPL = `
 # Supported VT features by xterm.js
 Version: {{version}}
+
+### Table of Contents
+
+- [General notes](#general-notes)
+{{#C0.length}}
+- [C0](#c0)
+{{/C0.length}}
+{{#C1.length}}
+- [C1](#c1)
+{{/C1.length}}
+{{#CSI.length}}
+- [CSI](#csi)
+{{/CSI.length}}
+{{#DCS.length}}
+- [DCS](#dcs)
+{{/DCS.length}}
+{{#ESC.length}}
+- [ESC](#esc)
+{{/ESC.length}}
+{{#OSC.length}}
+- [OSC](#osc)
+{{/OSC.length}}
+
+### General notes
+
+This document lists xterm.js' support of typical VT commands. The commands are grouped by their type:
+
+- C0: single byte command (7bit control characters, byte range \\x00 .. \\x1f)
+- C1: single byte command (8bit control characters, byte range \\x80 .. \\x9f)
+- ESC: sequence starting with \`ESC\` (\`\\x1b\`)
+- CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9b\` 8bit)
+- DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\` 8bit)
+- OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9d\` 8bit)
+
+Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are not supported,
+any sequence of these types will be ignored.
+
+Note that the list only contains commands implemented in xterm.js' core codebase. Missing commands are either
+not supported or unstable/experimental. Furthermore addons can provide additional commands.
+
+To denote the sequences the lists use the same abbreviations as xterm does:
+- \`Ps\`: A single (usually optional) numeric parameter, composed of one or more decimal digits.
+- \`Pm\`: A multiple numeric parameter composed of any number of single numeric parameters, separated by ; character(s),
+  e.g. \` Ps ; Ps ; ... \`.
+- \`Pt\`: A text parameter composed of printable characters. Note that for most commands with \`Pt\` only
+  ASCII printables are specified to work. Additionally xterm.js will let any character >C1 pass as printable.
+
+
+{{#C0.length}}
 ### C0
 
 | Mnemonic | Name | Sequence | Short Description | Status |
@@ -42,8 +91,9 @@ Version: {{version}}
 {{#C0}}
 | {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/C0}}
+{{/C0.length}}
 
-
+{{#C1.length}}
 ### C1
 
 | Mnemonic | Name | Sequence | Short Description | Status |
@@ -51,8 +101,9 @@ Version: {{version}}
 {{#C1}}
 | {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/C1}}
+{{/C1.length}}
 
-
+{{#CSI.length}}
 ### CSI
 
 | Mnemonic | Name | Sequence | Short Description | Status |
@@ -60,8 +111,9 @@ Version: {{version}}
 {{#CSI}}
 | {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/CSI}}
+{{/CSI.length}}
 
-
+{{#DCS.length}}
 ### DCS
 
 | Mnemonic | Name | Sequence | Short Description | Status |
@@ -69,8 +121,9 @@ Version: {{version}}
 {{#DCS}}
 | {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/DCS}}
+{{/DCS.length}}
 
-
+{{#ESC.length}}
 ### ESC
 
 | Mnemonic | Name | Sequence | Short Description | Status |
@@ -78,15 +131,21 @@ Version: {{version}}
 {{#ESC}}
 | {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/ESC}}
+{{/ESC.length}}
 
-
+{{#OSC.length}}
 ### OSC
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Identifier | Sequence | Short Description | Status |
+| ---------- | -------- | ----------------- | ------ |
 {{#OSC}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
 {{/OSC}}
+{{/OSC.length}}
+
+### TODO
+- specific notes on several commands (long description)
+- references
 `
 
 function parseMultiLine(filename, s) {

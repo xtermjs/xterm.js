@@ -251,12 +251,12 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    // @vt: partly   OSC    OSC0   ""  "OSC 0 ; Pt BEL"  "Set window title and icon name."
+    // @vt: partly        OSC    0   ""  "OSC 0 ; Pt BEL"  "Set window title and icon name."
     this._parser.setOscHandler(0, new OscHandler((data: string) => this.setTitle(data)));
     //   1 - icon name
-    // @vt: unsupported   OSC    OSC1   ""  "OSC 1 ; Pt BEL"  "Set icon name."
+    // @vt: unsupported   OSC    1   ""  "OSC 1 ; Pt BEL"  "Set icon name."
     //   2 - title
-    // @vt: supported   OSC    OSC2   ""  "OSC 2 ; Pt BEL"  "Set window title."
+    // @vt: supported     OSC    2   ""  "OSC 2 ; Pt BEL"  "Set window title."
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
