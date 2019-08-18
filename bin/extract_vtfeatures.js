@@ -13,10 +13,9 @@ const Mustache = require('mustache');
  */
 const REX_COMMENTS = /^\s*?[/][*][*]([\s\S]*?)[*][/]|^\s*?\/\/ ([@]vt[:].*?)$/mug;
 
-// expected - "@vt: type name "sequence" "short description"
 /**
  * regexp to parse the @vt line
- * expected data - "@vt: <status> <kind> <mnemonic> <"name"> "<sequence>" "<short description>"
+ * expected data - "@vt: <status> <kind> <mnemonic> "<name>" "<sequence>" "<short description>"
  */
 const REX_VT_LINE = /^[@]vt\:\s*(\w+)\s*(\w+)\s*(\w+)\s*"(.*?)"\s*"(.*?)"\s*"(.*?)".*$/;
 
