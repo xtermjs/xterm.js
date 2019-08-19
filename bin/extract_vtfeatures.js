@@ -89,9 +89,22 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#C0}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/C0}}
+
+{{#C0.hasLongDescriptions}}
+{{#C0}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/C0}}
+{{/C0.hasLongDescriptions}}
+
 {{/C0.length}}
+
 
 {{#C1.length}}
 ### C1
@@ -99,9 +112,22 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#C1}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/C1}}
+
+{{#C1.hasLongDescriptions}}
+{{#C1}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/C1}}
+{{/C1.hasLongDescriptions}}
+
 {{/C1.length}}
+
 
 {{#CSI.length}}
 ### CSI
@@ -109,9 +135,22 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#CSI}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/CSI}}
+
+{{#CSI.hasLongDescriptions}}
+{{#CSI}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/CSI}}
+{{/CSI.hasLongDescriptions}}
+
 {{/CSI.length}}
+
 
 {{#DCS.length}}
 ### DCS
@@ -119,9 +158,22 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#DCS}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/DCS}}
+
+{{#DCS.hasLongDescriptions}}
+{{#DCS}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/DCS}}
+{{/DCS.hasLongDescriptions}}
+
 {{/DCS.length}}
+
 
 {{#ESC.length}}
 ### ESC
@@ -129,9 +181,22 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#ESC}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/ESC}}
+
+{{#ESC.hasLongDescriptions}}
+{{#ESC}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/ESC}}
+{{/ESC.hasLongDescriptions}}
+
 {{/ESC.length}}
+
 
 {{#OSC.length}}
 ### OSC
@@ -139,14 +204,34 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 | Identifier | Sequence | Short Description | Status |
 | ---------- | -------- | ----------------- | ------ |
 {{#OSC}}
-| {{mnemonic}} | \`{{sequence}}\` | {{shortDescription}} | {{status}} |
+| {{mnemonic}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/OSC}}
+
+{{#OSC.hasLongDescriptions}}
+{{#OSC}}
+{{#longDescription.length}}
+#### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+{{/longDescription.length}}
+{{/OSC}}
+{{/OSC.hasLongDescriptions}}
+
 {{/OSC.length}}
 
+
 ### TODO
-- specific notes on several commands (long description)
+- improve table sorting:
+  - sort C0/C1 in byte order
+  - sort OSC in numerical order
+  - sort CSI/ESC/DCS in final byte order
 - references
 `
+
+function createAnchorSlug(s) {
+  return s.toLowerCase().split(' ').join('-');
+}
 
 function parseMultiLine(filename, s) {
   if (!~s.indexOf('@vt:')) {
@@ -170,6 +255,7 @@ function parseMultiLine(filename, s) {
   }
   if (feature) {
     feature.longDescription = longDescription;
+    feature.longTarget = createAnchorSlug(feature.name);
     return feature;
   }
 }
@@ -189,6 +275,7 @@ function parseSingleLine(filename, s) {
       sequence: match[5],
       shortDescription: match[6],
       longDescription: [],
+      longTarget: '',
       source: filename
     };
   }
@@ -201,6 +288,9 @@ function postProcessData(features) {
       featureTable[feature.type] = [];
     }
     featureTable[feature.type].push(feature);
+    if (feature.longDescription) {
+      featureTable[feature.type].hasLongDescriptions = true;
+    }
   }
   for (const entry in featureTable) {
     featureTable[entry].sort((a, b) => a.sequence.slice(-1) > b.sequence.slice(-1));

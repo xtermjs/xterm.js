@@ -29,6 +29,14 @@ import { DcsHandler } from 'common/parser/DcsParser';
  */
 const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
 
+/**
+ * Document common VT features here that are currently unsupported
+ */
+// @vt: unsupported   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
+// @vt: unsupported   CSI   SL      "Scroll Left"     "CSI Ps SP @"   "Scroll viewport `Ps` times to the left."
+// @vt: unsupported   CSI   SR      "Scroll Right"    "CSI Ps SP A"   "Scroll viewport `Ps` times to the right."
+// @vt: unsupported   CSI   DECIC   "Insert Columns"  "CSI Ps ' }"    "Insert `Ps` columns at cursor position."
+// @vt: unsupported   CSI   DECDC   "Delete Columns"  "CSI Ps ' ~"    "Delete `Ps` columns at cursor position."
 
 /**
  * DCS subparser implementations
@@ -39,6 +47,12 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
  *   Request Status String (DECRQSS), VT420 and up.
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
+ * 
+ * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several the terminal settings."
+ * Supported:
+ * - Graphic Rendition (SGR): `DCS $ q m ST` (always reporting 0m)
+ * - Top and Bottom Margins (DECSTBM): `DCS $ q m ST`
+ * - Cursor Style (DECSCUSR): `DCS $ q SP q ST`
  */
 class DECRQSS implements IDcsHandler {
   private _data: Uint32Array = new Uint32Array(0);
@@ -177,86 +191,192 @@ export class InputHandler extends Disposable implements IInputHandler {
      * CSI handler
      */
     this._parser.setCsiHandler({final: '@'}, params => this.insertChars(params));
-    // @vt: supported CSI CUU "Cursor Up"       "CSI Ps A"  "Move the cursor position `Ps` times to the top (default=1)."
+    // @vt: supported CSI CUU   "Cursor Up"         "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
     this._parser.setCsiHandler({final: 'A'}, params => this.cursorUp(params));
-    // @vt: supported CSI CUD "Cursor Down"     "CSI Ps B"  "Move the cursor position `Ps` times to the bottom (default=1)."
+    // @vt: supported CSI CUD   "Cursor Down"       "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
     this._parser.setCsiHandler({final: 'B'}, params => this.cursorDown(params));
-    // @vt: supported CSI CUF "Cursor Forward"  "CSI Ps C"  "Move the cursor position `Ps` times to the right (default=1)."
+    // @vt: supported CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
     this._parser.setCsiHandler({final: 'C'}, params => this.cursorForward(params));
-    // @vt: supported CSI CUB "Cursor Backward" "CSI Ps D" "Move the cursor position `Ps` times to the left (default=1)."
+    // @vt: supported CSI CUB   "Cursor Backward"   "CSI Ps D"  "Move cursor `Ps` times backward (default=1)."
     this._parser.setCsiHandler({final: 'D'}, params => this.cursorBackward(params));
+    // @vt: supported CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
     this._parser.setCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
+    // @vt: supported CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
     this._parser.setCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
+    // @vt: supported CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
     this._parser.setCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
-    // @vt: supported CSI CUP "Cursor Position" "CSI Ps ; Ps H"  "Set the cursor to position [`Ps`, `Ps`]."
+    // @vt: supported CSI CUP   "Cursor Position"   "CSI Ps ; Ps H"  "Set cursor to position [`Ps`, `Ps`]."
     this._parser.setCsiHandler({final: 'H'}, params => this.cursorPosition(params));
+    // @vt: supported CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
     this._parser.setCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
+    /**
+     * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
+     * TODO: document different modes...
+     */
     this._parser.setCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
+    // @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
     this._parser.setCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
+    /**
+     * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
+     * TODO: document different modes...
+     */
     this._parser.setCsiHandler({final: 'K'}, params => this.eraseInLine(params));
+    // @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
     this._parser.setCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
+    // @vt: supported CSI IL    "Insert Line"       "CSI Ps L"  "Insert `Ps` blank lines at active row (default=1)."
     this._parser.setCsiHandler({final: 'L'}, params => this.insertLines(params));
+    // @vt: supported CSI DL    "Delete Line"       "CSI Ps M"  "Delete `Ps` lines at active row (default=1)."
     this._parser.setCsiHandler({final: 'M'}, params => this.deleteLines(params));
+    // @vt: supported CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters in the active row (default=1)."
     this._parser.setCsiHandler({final: 'P'}, params => this.deleteChars(params));
+    // @vt: supported CSI SU    "Scroll Up"         "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
     this._parser.setCsiHandler({final: 'S'}, params => this.scrollUp(params));
+    // @vt: supported CSI SD    "Scroll Down"       "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
     this._parser.setCsiHandler({final: 'T'}, params => this.scrollDown(params));
+    // @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to hte right (default=1)."
     this._parser.setCsiHandler({final: 'X'}, params => this.eraseChars(params));
+    //@vt: supported CSI CBT    "Cursor Backward Tabulation"    "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
     this._parser.setCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
+    // @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps `" "Same as CHA."
     this._parser.setCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
+    // @vt: supported CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
     this._parser.setCsiHandler({final: 'a'}, params => this.hPositionRelative(params));
+    /**
+     * @vt: supported CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
+     * Has no effect if the sequence does not follow a printed character (NOOP for any other sequence in between).
+     * TODO: document character limitations due to xterm compliance
+     */
     this._parser.setCsiHandler({final: 'b'}, params => this.repeatPrecedingCharacter(params));
+    /**
+     * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
+     * TODO: Describe response...
+     */
     this._parser.setCsiHandler({final: 'c'}, params => this.sendDeviceAttributesPrimary(params));
+    /**
+     * @vt: supported CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
+     * TODO: Describe response...
+     */
     this._parser.setCsiHandler({prefix: '>', final: 'c'}, params => this.sendDeviceAttributesSecondary(params));
+    // @vt: supported CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
     this._parser.setCsiHandler({final: 'd'}, params => this.linePosAbsolute(params));
+    // @vt: supported CSI VPR   "Vertical Position Relative"    "CSI Ps e"  "Move cursor `Ps` times down (default=1)."
     this._parser.setCsiHandler({final: 'e'}, params => this.vPositionRelative(params));
+    // @vt: supported CSI HVP   "Horizontal and Vertical Position" "CSI Ps ; Ps f"  "Same as CUP."
     this._parser.setCsiHandler({final: 'f'}, params => this.hVPosition(params));
+    // @vt: supported CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
     this._parser.setCsiHandler({final: 'g'}, params => this.tabClear(params));
+    /**
+     * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal attributes."
+     * TODO: Describe all supported attributes.
+     */
     this._parser.setCsiHandler({final: 'h'}, params => this.setMode(params));
+    /**
+     * @vt: partly    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
+     * TODO: Describe all supported attributes.
+     */
     this._parser.setCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
+    /**
+     * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
+     * TODO: Describe all supported attributes.
+     */
     this._parser.setCsiHandler({final: 'l'}, params => this.resetMode(params));
+    /**
+     * @vt: partly    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
+     * TODO: Describe all supported attributes.
+     */
     this._parser.setCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
-    // @vt: partly   CSI    SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set various text attributes."
+    /**
+     * @vt: partly    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Reset various text attributes."
+     * Detailed description goes here...
+     */
     this._parser.setCsiHandler({final: 'm'}, params => this.charAttributes(params));
+    // @vt: supported CSI DSR     "Device Status Report"      "CSI Ps n"  "Request cursor position (CPR) with `Ps` = 6."
     this._parser.setCsiHandler({final: 'n'}, params => this.deviceStatus(params));
+    // @vt: partly    CSI DECDSR  "DEC Device Status Report"  "CSI ? Ps n"  "Only CPR is supported (same as DSR)."
     this._parser.setCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
+    /**
+     * @vt: supported CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
+     * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
+     * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
+     * Attributes reset to default values:
+     * - TODO: list attributes here ...
+     */
     this._parser.setCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
+    /**
+     * @vt: supported CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
+     * Supported cursor styles (note that most renderers dont implement the blink feature,
+     * thus will show the steady variant instead):
+     *  - empty, 0 or 1: steady block
+     *  - 2: blink block
+     *  - 3: steady underline
+     *  - 4: blink underline
+     *  - 5: steady bar
+     *  - 6: blink bar
+     */
     this._parser.setCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
+    /**
+     * @vt: supported CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
+     * TODO: document specialties like dependent cursor commands and scrolling...
+     */
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
+    // @vt: partly    CSI SCOSC "Save Cursor"     "CSI s"   "Save cursor position, charmap and text attributes."
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
+    // @vt: partly    CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
 
     /**
      * execute handler
      */
-    // @vt: supported   C0    BEL   "Bell"  "\x07"  "Rings the bell."
+    /**
+     * @vt: supported   C0    BEL   "Bell"                "\a"  "Ring the bell."
+     * The behavior of the bell is further customizable with `ITerminalOptions.bellStyle`
+     * and `ITerminalOptions.bellSound`.
+     */
     this._parser.setExecuteHandler(C0.BEL, () => this.bell());
-    // @vt: supported   C0    LF   "Line Feed"  "\n"  "Moves the cursor one row down, scrolling if needed."
+    // @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
     this._parser.setExecuteHandler(C0.LF, () => this.lineFeed());
+    // @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
     this._parser.setExecuteHandler(C0.VT, () => this.lineFeed());
+    // @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
     this._parser.setExecuteHandler(C0.FF, () => this.lineFeed());
-    // @vt: supported   C0    CR   "Carriage Return"  "\r"  "Moves the cursor to the beginning of the row."
+    // @vt: supported   C0    CR   "Carriage Return"      "\r"  "Move the cursor to the beginning of the row."
     this._parser.setExecuteHandler(C0.CR, () => this.carriageReturn());
-    // @vt: supported   C0    BS   "Backspace"  "\x08"  "Moves the cursor one position to the left."
+    // @vt: supported   C0    BS   "Backspace"            "\b"  "Move the cursor one position to the left."
     this._parser.setExecuteHandler(C0.BS, () => this.backspace());
+    // @vt: supported   C0    HT   "Horizontal Tabulation"  "\t"  "Move the cursor to the next character tab stop."
     this._parser.setExecuteHandler(C0.HT, () => this.tab());
+    /**
+     * @vt: partly      C0    SO   "Shift Out"            "\x0e"  "Switch to an alternative character set."
+     * TODO: document supported native character sets and support limitations ...
+     */
     this._parser.setExecuteHandler(C0.SO, () => this.shiftOut());
+    // @vt: supported   C0    SI   "Shift In"             "\x0f"  "Return to regular character set after Shift Out."
     this._parser.setExecuteHandler(C0.SI, () => this.shiftIn());
     // FIXME:   What do to with missing? Old code just added those to print.
 
+    // @vt: supported   C1    IND   "Index"               "\x84"  "Move the cursor one line down scrolling if needed."
     this._parser.setExecuteHandler(C1.IND, () => this.index());
+    // @vt: supported   C1    NEL   "Next Line"           "\x85"  "Move the cursor to the beginning of the next row."
     this._parser.setExecuteHandler(C1.NEL, () => this.nextLine());
+    // @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88" "Places a tab stop at the current cursor position."
     this._parser.setExecuteHandler(C1.HTS, () => this.tabSet());
 
     /**
      * OSC handler
      */
     //   0 - icon name + title
-    // @vt: partly        OSC    0   ""  "OSC 0 ; Pt BEL"  "Set window title and icon name."
+    /**
+     * @vt: partly        OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
+     * Icon name is not supported. For Window Title see below.
+     */
     this._parser.setOscHandler(0, new OscHandler((data: string) => this.setTitle(data)));
     //   1 - icon name
-    // @vt: unsupported   OSC    1   ""  "OSC 1 ; Pt BEL"  "Set icon name."
+    // @vt: unsupported   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
     //   2 - title
-    // @vt: supported     OSC    2   ""  "OSC 2 ; Pt BEL"  "Set window title."
+    /**
+     * @vt: supported     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
+     * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
+     */
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
@@ -294,11 +414,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * ESC handlers
      */
+    // @vt: supported ESC  SC  "Save Cursor"     "ESC 7"   "Save cursor position, charmap and text attributes."
     this._parser.setEscHandler({final: '7'}, () => this.saveCursor());
+    // @vt: supported ESC  RC  "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
     this._parser.setEscHandler({final: '8'}, () => this.restoreCursor());
+    // @vt: supported ESC  IND "Index"           "ESC D"  "Move the cursor one line down scrolling if needed."
     this._parser.setEscHandler({final: 'D'}, () => this.index());
+    // @vt: supported ESC  NEL "Next Line"       "ESC E"  "Move the cursor to the beginning of the next row."
     this._parser.setEscHandler({final: 'E'}, () => this.nextLine());
+    // @vt: supported ESC  HTS "Horizontal Tabulation Set" "ESC H" "Places a tab stop at the current cursor position."
     this._parser.setEscHandler({final: 'H'}, () => this.tabSet());
+    // @vt: supported ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
     this._parser.setEscHandler({final: 'M'}, () => this.reverseIndex());
     this._parser.setEscHandler({final: '='}, () => this.keypadApplicationMode());
     this._parser.setEscHandler({final: '>'}, () => this.keypadNumericMode());
