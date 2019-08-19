@@ -47,7 +47,7 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
  *   Request Status String (DECRQSS), VT420 and up.
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
- * 
+ *
  * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several the terminal settings."
  * Supported:
  * - Graphic Rendition (SGR): `DCS $ q m ST` (always reporting 0m)
@@ -235,7 +235,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({final: 'T'}, params => this.scrollDown(params));
     // @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to hte right (default=1)."
     this._parser.setCsiHandler({final: 'X'}, params => this.eraseChars(params));
-    //@vt: supported CSI CBT    "Cursor Backward Tabulation"    "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
+    // @vt: supported CSI CBT    "Cursor Backward Tabulation"    "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
     this._parser.setCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
     // @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps `" "Same as CHA."
     this._parser.setCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
