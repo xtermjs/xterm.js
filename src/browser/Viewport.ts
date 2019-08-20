@@ -152,12 +152,19 @@ export class Viewport extends Disposable implements IViewport {
     this._scrollLines(diff, true);
   }
 
-
-  private _bubbleScroll(amount: number): boolean {
+  /**
+   * Handles bubbling of scroll event in case the viewport has reached top or bottom
+   * @param ev The scroll event.
+   * @param amount The amount scrolled
+   */
+  private _bubbleScroll(ev: Event, amount: number): boolean {
     const scrollPosFromTop = this._viewportElement.scrollTop + this._lastRecordedViewportHeight;
     if ((amount < 0 && this._viewportElement.scrollTop !== 0) ||
     (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
-        return false;
+      if (ev.cancelable) {
+        ev.preventDefault();
+      }
+      return false;
     }
     return true;
   }
@@ -174,12 +181,7 @@ export class Viewport extends Disposable implements IViewport {
       return false;
     }
     this._viewportElement.scrollTop += amount;
-    // Prevent the page from scrolling when the terminal scrolls
-    const shouldBubbleEvent = this._bubbleScroll(amount);
-    if (!shouldBubbleEvent && ev.cancelable) {
-      ev.preventDefault();
-    }
-    return shouldBubbleEvent;
+    return this._bubbleScroll(ev, amount);
   }
 
   private _getPixelsScrolled(ev: WheelEvent): number {
@@ -241,10 +243,6 @@ export class Viewport extends Disposable implements IViewport {
       return false;
     }
     this._viewportElement.scrollTop += deltaY;
-    const shouldBubbleEvent = this._bubbleScroll(deltaY);
-    if (!shouldBubbleEvent && ev.cancelable) {
-      ev.preventDefault();
-    }
-    return shouldBubbleEvent;
+    return this._bubbleScroll(ev, deltaY);
   }
 }
