@@ -160,7 +160,7 @@ export class Viewport extends Disposable implements IViewport {
   private _bubbleScroll(ev: Event, amount: number): boolean {
     const scrollPosFromTop = this._viewportElement.scrollTop + this._lastRecordedViewportHeight;
     if ((amount < 0 && this._viewportElement.scrollTop !== 0) ||
-    (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
+        (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
       if (ev.cancelable) {
         ev.preventDefault();
       }
