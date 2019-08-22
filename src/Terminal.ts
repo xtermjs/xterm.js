@@ -1037,8 +1037,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // the shell for example
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onWheel(ev);
-      return this.cancel(ev);
+      if (!this.viewport.onWheel(ev)) {
+        return this.cancel(ev);
+      }
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
@@ -1049,8 +1050,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onTouchMove(ev);
-      return this.cancel(ev);
+      if (!this.viewport.onTouchMove(ev)) {
+        return this.cancel(ev);
+      }
     }));
   }
 

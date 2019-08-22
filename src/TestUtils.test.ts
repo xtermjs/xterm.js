@@ -410,13 +410,13 @@ export class MockViewport implements IViewport {
   onThemeChange(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  onWheel(ev: WheelEvent): void {
+  onWheel(ev: WheelEvent): boolean {
     throw new Error('Method not implemented.');
   }
   onTouchStart(ev: TouchEvent): void {
     throw new Error('Method not implemented.');
   }
-  onTouchMove(ev: TouchEvent): void {
+  onTouchMove(ev: TouchEvent): boolean {
     throw new Error('Method not implemented.');
   }
   syncScrollArea(): void { }
