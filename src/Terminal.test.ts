@@ -234,10 +234,10 @@ describe('Terminal', () => {
     });
     it('should sanitize \n chars', done => {
       term.onData(e => {
-        assert.equal(e, '\rfoo\r');
+        assert.equal(e, '\rfoo\rbar\r');
         done();
       });
-      term.paste('\r\nfoo\n');
+      term.paste('\r\nfoo\nbar\r');
     });
     it('should respect bracketed paste mode', done => {
       term.onData(e => {
