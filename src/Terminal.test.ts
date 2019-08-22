@@ -224,6 +224,31 @@ describe('Terminal', () => {
     });
   });
 
+  describe('paste', () => {
+    it('should fire data event', done => {
+      term.onData(e => {
+        assert.equal(e, 'foo');
+        done();
+      });
+      term.paste('foo');
+    });
+    it('should sanitize \n chars', done => {
+      term.onData(e => {
+        assert.equal(e, '\rfoo\rbar\r');
+        done();
+      });
+      term.paste('\r\nfoo\nbar\r');
+    });
+    it('should respect bracketed paste mode', done => {
+      term.onData(e => {
+        assert.equal(e, '\x1b[200~foo\x1b[201~');
+        done();
+      });
+      term.write('\x1b[?2004h');
+      term.paste('foo');
+    });
+  });
+
   describe('scroll', () => {
     describe('scrollLines', () => {
       let startYDisp: number;
