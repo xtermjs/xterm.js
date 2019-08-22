@@ -226,6 +226,7 @@ export interface IPublicTerminal extends IDisposable {
   clear(): void;
   write(data: string): void;
   writeUtf8(data: Uint8Array): void;
+  paste(data: string): void;
   refresh(start: number, end: number): void;
   reset(): void;
 }

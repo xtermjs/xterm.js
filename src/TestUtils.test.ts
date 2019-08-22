@@ -68,6 +68,9 @@ export class MockTerminal implements ITerminal {
   writeln(data: string): void {
     throw new Error('Method not implemented.');
   }
+  paste(data: string): void {
+    throw new Error('Method not implemented.');
+  }
   open(parent: HTMLElement): void {
     throw new Error('Method not implemented.');
   }
