@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, Color, CellStyle} from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, CellColor as ICellColorApi, CellStyle } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -186,7 +186,7 @@ export class Terminal implements ITerminalApi {
 }
 
 class BufferApiView implements IBufferApi {
-  constructor(private _buffer: IBuffer) {}
+  constructor(private _buffer: IBuffer) { }
 
   public get cursorY(): number { return this._buffer.y; }
   public get cursorX(): number { return this._buffer.x; }
@@ -203,7 +203,7 @@ class BufferApiView implements IBufferApi {
 }
 
 class BufferLineApiView implements IBufferLineApi {
-  constructor(private _line: IBufferLine) {}
+  constructor(private _line: IBufferLine) { }
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public get length(): number { return this._line.length; }
@@ -223,40 +223,66 @@ class BufferLineApiView implements IBufferLineApi {
 
 const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
 
+class CellColorApi implements ICellColorApi {
+  readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
+  readonly value: number = 0;
+
+  constructor(type: 'default' | 'rgb' | 'palette16' | 'palette256', value: number) {
+    this.type = type;
+    this.value = value;
+  }
+  public isDefault(): boolean { return this.value === 0; }
+  public equals(c: ICellColorApi): boolean { return this.value === c.value; }
+  public paletteId(): number {
+    switch (this.type) {
+      case 'default':
+      case 'palette16':
+      case 'palette256': return this.value & Attributes.PCOLOR_MASK;
+    }
+    return -1;
+  }
+  public rgbColor(): [number, number, number] {
+    if (this.type === 'rgb') {
+      return CellData.toColorRGB(this.value);
+    }
+    return [-1, -1, -1];
+  }
+
+  public static getDefault(): ICellColorApi { return new CellColorApi('default', 0); }
+}
+
 class BufferCellApiView implements IBufferCellApi {
-  constructor(private _cell: ICellData) {}
+  constructor(private _cell: ICellData) { }
 
   public get char(): string { return this._cell.getChars(); }
   public get width(): number { return this._cell.getWidth(); }
-  public get foregroundColor(): Color {
+  public get foregroundColor(): ICellColorApi {
     const cell = this._cell;
-    const hash = cell.fg & COLOR_MASK;
+    const value = cell.fg & COLOR_MASK;
     if (cell.isFgDefault()) {
-      return { type: 'default', hash: 0 };
+      return new CellColorApi('default', 0);
     } else if (cell.isFgPalette()) {
       switch (cell.getFgColorMode()) {
-        case Attributes.CM_P16: return { type: 'palette16', hash, id: cell.getFgColor() };
-        case Attributes.CM_P256: return { type: 'palette256', hash, id: cell.getFgColor() };
+        case Attributes.CM_P16: return new CellColorApi('palette16', value);
+        case Attributes.CM_P256: return new CellColorApi('palette256', value);
       }
     } else if (cell.isFgRGB()) {
-      const [red, green, blue] = CellData.toColorRGB(cell.fg);
-      return { type: 'rgb', hash, red, green, blue };
+      return new CellColorApi('rgb', value);
     }
     throw new Error('Invalid foregroundColor');
   }
-  public get backgroundColor(): Color {
+  public get backgroundColor(): ICellColorApi {
     const cell = this._cell;
-    const hash = cell.bg & COLOR_MASK;
+    const value = cell.bg & COLOR_MASK;
     if (cell.isBgDefault()) {
-      return { type: 'default', hash: 0 };
+      return new CellColorApi('default', 0);
     } else if (cell.isBgPalette()) {
       switch (cell.getBgColorMode()) {
-        case Attributes.CM_P16: return { type: 'palette16', hash, id: cell.getBgColor() };
-        case Attributes.CM_P256: return { type: 'palette256', hash, id: cell.getBgColor() };
+        case Attributes.CM_P16: return new CellColorApi('palette16', value);
+        case Attributes.CM_P256: return new CellColorApi('palette256', value);
       }
     } else if (cell.isBgRGB()) {
-      const [red, green, blue] = CellData.toColorRGB(cell.bg);
-      return { type: 'rgb', hash, red, green, blue };
+      return new CellColorApi('rgb', value);
     }
     throw new Error('Invalid backgroundColor');
   }

@@ -952,12 +952,11 @@ declare module 'xterm' {
      */
     readonly width: number;
 
-    readonly foregroundColor: Color;
-    readonly backgroundColor: Color;
+    readonly foregroundColor: CellColor;
+    readonly backgroundColor: CellColor;
     readonly style: CellStyle;
   }
 
-  export type Color = IDefaultColor | IPalette16Color | IPalette256Color | IRgbColor;
   export enum CellStyle {
     default = 0,
     // foreground style
@@ -971,39 +970,17 @@ declare module 'xterm' {
     dim = 0x8000000 >>> 16
   }
 
-  interface ICellColor {
-    type: string;
-    hash: number;
-  }
+  export class CellColor {
+    readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
+    readonly value: number;
 
-  interface IDefaultColor extends ICellColor {
-    type: 'default';
-    hash: 0;
-  }
+    constructor(type: 'default' | 'rgb' | 'palette16' | 'palette256', value: number);
 
-  interface IRgbColor extends ICellColor {
-    type: 'rgb';
-    hash: number;
+    isDefault(): boolean;
+    equals(c: CellColor): boolean;
+    paletteId(): number;
+    rgbColor(): [number, number, number];
 
-    // 0-255
-    red: number;
-    green: number;
-    blue: number;
-  }
-
-  interface IPalette16Color extends ICellColor {
-    type: 'palette16';
-    hash: number;
-
-    // 0-15
-    id: number;
-  }
-
-  interface IPalette256Color extends ICellColor {
-    type: 'palette256';
-    hash: number;
-
-    // 0-255
-    id: number;
+    static getDefault(): CellColor;
   }
 }

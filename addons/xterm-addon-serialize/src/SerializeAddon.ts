@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell, Color } from 'xterm';
+import { Terminal, ITerminalAddon, IBuffer, IBufferCell, CellColor } from 'xterm';
 
 // TODO: Workaround here, will remove this later
 // If I use `import { CellStyle } from 'xterm'` instead, demo page will raise bellow error
@@ -38,8 +38,8 @@ function crop(value: number | undefined, low: number, high: number, initial: num
 class NullBufferCell implements IBufferCell {
   char: string = '';
   width: number = 0;
-  foregroundColor: Color = { type: 'default', hash: 0 };
-  backgroundColor: Color = { type: 'default', hash: 0 }
+  foregroundColor: CellColor = CellColor.getDefault();
+  backgroundColor: CellColor = CellColor.getDefault();
   style: CellStyle = CellStyle.default;
 }
 
@@ -64,8 +64,8 @@ abstract class BaseSerializeHandler {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
             continue;
           }
-          if ((cell.foregroundColor.hash !== oldCell.foregroundColor.hash)
-            || (cell.backgroundColor.hash !== oldCell.backgroundColor.hash)) {
+          if (!cell.foregroundColor.equals(oldCell.foregroundColor)
+            || !cell.backgroundColor.equals(oldCell.backgroundColor)) {
             this._cellColorChanged(cell, oldCell, row, col);
           }
           if (cell.style !== oldCell.style) {
@@ -122,7 +122,7 @@ function bgColor256to16(c: number): number {
 }
 
 function isDefaultColorStyle(cell: IBufferCell) {
-  return (cell.foregroundColor.hash === 0) && (cell.backgroundColor.hash === 0) && (cell.style === CellStyle.default);
+  return cell.foregroundColor.isDefault() && cell.backgroundColor.isDefault() && (cell.style === CellStyle.default);
 }
 
 class StringSerializeHandler extends BaseSerializeHandler {
@@ -178,8 +178,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _cellColorChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const foregroundColorChanged = cell.foregroundColor.hash !== oldCell.foregroundColor.hash;
-    const backgroundColorChanged = cell.backgroundColor.hash !== oldCell.backgroundColor.hash;
+    const foregroundColorChanged = !cell.foregroundColor.equals(oldCell.foregroundColor);
+    const backgroundColorChanged = !cell.backgroundColor.equals(oldCell.backgroundColor);
     const sgrSeq = this._sgrSeq;
 
     // skip if it's default color style, we will use \x1b[0m to clear every color style later
@@ -191,9 +191,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
       const foregroundColor = cell.foregroundColor;
       switch (foregroundColor.type) {
         case 'default': sgrSeq.push('39'); break;
-        case 'palette16': sgrSeq.push(fgColor256to16(foregroundColor.id).toString()); break;
-        case 'palette256': sgrSeq.push(`38;5;${foregroundColor.id}`); break;
-        case 'rgb': const { red, green, blue } = foregroundColor; sgrSeq.push(`38;2;${red};${green};${blue}`); break;
+        case 'palette16': sgrSeq.push(fgColor256to16(foregroundColor.paletteId()).toString()); break;
+        case 'palette256': sgrSeq.push(`38;5;${foregroundColor.paletteId()}`); break;
+        case 'rgb': const [red, green, blue] = foregroundColor.rgbColor(); sgrSeq.push(`38;2;${red};${green};${blue}`); break;
       }
     }
 
@@ -201,16 +201,16 @@ class StringSerializeHandler extends BaseSerializeHandler {
       const backgroundColor = cell.backgroundColor;
       switch (backgroundColor.type) {
         case 'default': sgrSeq.push('49'); break;
-        case 'palette16': sgrSeq.push(bgColor256to16(backgroundColor.id).toString()); break;
-        case 'palette256': sgrSeq.push(`48;5;${backgroundColor.id}`); break;
-        case 'rgb': const { red, green, blue } = backgroundColor; sgrSeq.push(`48;2;${red};${green};${blue}`); break;
+        case 'palette16': sgrSeq.push(bgColor256to16(backgroundColor.paletteId()).toString()); break;
+        case 'palette256': sgrSeq.push(`48;5;${backgroundColor.paletteId()}`); break;
+        case 'rgb': const [red, green, blue] = backgroundColor.rgbColor(); sgrSeq.push(`48;2;${red};${green};${blue}`); break;
       }
     }
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const foregroundColorChanged = cell.foregroundColor.hash !== oldCell.foregroundColor.hash;
-    const backgroundColorChanged = cell.backgroundColor.hash !== oldCell.backgroundColor.hash;
+    const foregroundColorChanged = !cell.foregroundColor.equals(oldCell.foregroundColor);
+    const backgroundColorChanged = !cell.backgroundColor.equals(oldCell.backgroundColor);
     const styleChanged = cell.style !== oldCell.style;
 
     if ((foregroundColorChanged || backgroundColorChanged || styleChanged) && isDefaultColorStyle(cell)) {
