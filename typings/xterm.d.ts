@@ -670,6 +670,12 @@ declare module 'xterm' {
     writeUtf8(data: Uint8Array): void;
 
     /**
+     * Writes text to the terminal, performing the necessary transformations for pasted text.
+     * @param data The text to write to the terminal.
+     */
+    paste(data: string): void;
+
+    /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
