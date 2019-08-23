@@ -212,7 +212,6 @@ export class Params implements IParams {
   /**
    * Add a single digit value to current parameter.
    * This is used by the parser to account digits on a char by char basis.
-   * Do not use this method directly, consider using `addParam` or `addSubParam` instead.
    */
   public addDigit(value: number): void {
     let length;
