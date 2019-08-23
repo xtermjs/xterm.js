@@ -80,13 +80,13 @@ describe('API Integration Tests', function(): void {
     await openTerminal();
     await page.evaluate(`
       window.calls = [];
-      window.term.onData(e => calls.push(e));
+      window.term.onStringData(e => calls.push(e));
       window.term.paste('foo');
       window.term.paste('\\r\\nfoo\\nbar\\r');
       window.term.write('\\x1b[?2004h');
       // TODO: Use promise/callback for write when we support that
       // Force sync write
-      window.term._core._innerWrite();
+      window.term._core._ioService._innerWrite();
       window.term.paste('foo');
     `);
     assert.deepEqual(await page.evaluate(`window.calls`), ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~']);
