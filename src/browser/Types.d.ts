@@ -37,9 +37,9 @@ export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(): void;
   getLinesScrolled(ev: WheelEvent): number;
-  onWheel(ev: WheelEvent): void;
+  onWheel(ev: WheelEvent): boolean;
   onTouchStart(ev: TouchEvent): void;
-  onTouchMove(ev: TouchEvent): void;
+  onTouchMove(ev: TouchEvent): boolean;
   onThemeChange(colors: IColorSet): void;
 }
 

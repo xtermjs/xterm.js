@@ -134,6 +134,9 @@ export class Terminal implements ITerminalApi {
   public writeUtf8(data: Uint8Array): void {
     this._core.writeUtf8(data);
   }
+  public paste(data: string): void {
+    this._core.paste(data);
+  }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
   public getOption(key: 'colors'): string[];

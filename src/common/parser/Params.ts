@@ -41,6 +41,7 @@ export class Params implements IParams {
   private _subParamsIdx: Uint16Array;
   private _rejectDigits: boolean;
   private _rejectSubDigits: boolean;
+  private _digitIsSub: boolean;
 
   /**
    * Create a `Params` type from JS array representation.
@@ -79,6 +80,7 @@ export class Params implements IParams {
     this._subParamsIdx = new Uint16Array(maxLength);
     this._rejectDigits = false;
     this._rejectSubDigits = false;
+    this._digitIsSub = false;
   }
 
   /**
@@ -91,6 +93,9 @@ export class Params implements IParams {
     newParams._subParams.set(this._subParams);
     newParams._subParamsLength = this._subParamsLength;
     newParams._subParamsIdx.set(this._subParamsIdx);
+    newParams._rejectDigits = this._rejectDigits;
+    newParams._rejectSubDigits = this._rejectSubDigits;
+    newParams._digitIsSub = this._digitIsSub;
     return newParams;
   }
 
@@ -121,6 +126,7 @@ export class Params implements IParams {
     this._subParamsLength = 0;
     this._rejectDigits = false;
     this._rejectSubDigits = false;
+    this._digitIsSub = false;
   }
 
   /**
@@ -131,6 +137,7 @@ export class Params implements IParams {
    * store up to 30.
    */
   public addParam(value: number): void {
+    this._digitIsSub = false;
     if (this.length >= this.maxLength) {
       this._rejectDigits = true;
       return;
@@ -150,10 +157,11 @@ export class Params implements IParams {
    * sub parameter will be ignored.
    */
   public addSubParam(value: number): void {
+    this._digitIsSub = true;
     if (!this.length) {
       return;
     }
-    if (this._subParamsLength >= this.maxSubParamsLength) {
+    if (this._rejectDigits || this._subParamsLength >= this.maxSubParamsLength) {
       this._rejectSubDigits = true;
       return;
     }
@@ -204,30 +212,18 @@ export class Params implements IParams {
   /**
    * Add a single digit value to current parameter.
    * This is used by the parser to account digits on a char by char basis.
-   * Do not use this method directly, consider using `addParam` instead.
    */
-  public addParamDigit(value: number): void {
-    if (this._rejectDigits) {
+  public addDigit(value: number): void {
+    let length;
+    if (this._rejectDigits
+      || !(length = this._digitIsSub ? this._subParamsLength : this.length)
+      || (this._digitIsSub && this._rejectSubDigits)
+    ) {
       return;
     }
-    const v = this.params[this.length - 1] * 10 + value;
-    this.params[this.length - 1] = v > MAX_VALUE ? MAX_VALUE : v;
-  }
 
-  /**
-   * Add a single digit value to current sub parameter.
-   * This is used by the parser to account digits on a char by char basis.
-   * Do not use this method directly, consider using `addSubParam` instead.
-   */
-  public addSubParamDigit(value: number): void {
-    if (!this._subParamsLength || this._rejectDigits || this._rejectSubDigits) {
-      return;
-    }
-    if (this._subParams[this._subParamsLength - 1] === -1) {
-      this._subParams[this._subParamsLength - 1] = value;
-    } else {
-      const v = this._subParams[this._subParamsLength - 1] * 10 + value;
-      this._subParams[this._subParamsLength - 1] = v > MAX_VALUE ? MAX_VALUE : v;
-    }
+    const store = this._digitIsSub ? this._subParams : this.params;
+    const cur = store[length - 1];
+    store[length - 1] = ~cur ? Math.min(cur * 10 + value, MAX_VALUE) : value;
   }
 }
