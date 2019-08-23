@@ -543,20 +543,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.PARAM:
           // inner loop: digits (0x30 - 0x39) and ; (0x3b) and : (0x3a)
-          let isSub = false;
           do {
             switch (code) {
               case 0x3b:
                 params.addParam(0);  // ZDM
-                isSub = false;
                 break;
               case 0x3a:
                 params.addSubParam(-1);
-                isSub = true;
                 break;
               default:  // 0x30 - 0x39
-                if (isSub) params.addSubParamDigit(code - 48);
-                else params.addParamDigit(code - 48);
+                params.addDigit(code - 48);
             }
           } while (++i < length && (code = data[i]) > 0x2f && code < 0x3c);
           i--;
