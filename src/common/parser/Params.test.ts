@@ -16,27 +16,29 @@ class TestParams extends Params {
 }
 
 /** `Params` parser shim */
-function parse(params: Params, s: string): void {
+function parse(params: Params, s: string | string[]): void {
   params.reset();
   params.addParam(0);
-  let isSub = false;
-  for (let i = 0; i < s.length; ++i) {
-    let code = s.charCodeAt(i);
-    do {
-      switch (code) {
-        case 0x3b:
-          params.addParam(0);
-          isSub = false;
-          break;
-        case 0x3a:
-          params.addSubParam(-1);
-          isSub = true;
-          break;
-        default:  // 0x30 - 0x39
-          if (isSub) params.addSubParamDigit(code - 48);
-          else params.addParamDigit(code - 48);
-      }
-    } while (++i < s.length && (code = s.charCodeAt(i)) > 0x2f && code < 0x3c);
+  if (typeof s === 'string') {
+    s = [s];
+  }
+  for (const chunk of s) {
+    for (let i = 0; i < chunk.length; ++i) {
+      let code = chunk.charCodeAt(i);
+      do {
+        switch (code) {
+          case 0x3b:
+            params.addParam(0);
+            break;
+          case 0x3a:
+            params.addSubParam(-1);
+            break;
+          default:  // 0x30 - 0x39
+            params.addDigit(code - 48);
+        }
+      } while (++i < s.length && (code = chunk.charCodeAt(i)) > 0x2f && code < 0x3c);
+      i--;
+    }
   }
 }
 
@@ -215,6 +217,21 @@ describe('Params', () => {
       const params = new Params();
       parse(params, ':2147483648');
       assert.deepEqual(params.toArray(), [0, [0x7FFFFFFF]]);
+    });
+  });
+  describe('issue 2389', () => {
+    it('should cancel subdigits if beyond params limit', () => {
+      const params = new Params();
+      parse(params, ';;;;;;;;;10;;;;;;;;;;20;;;;;;;;;;30;31;32;33;34;35::::::::');
+      assert.deepEqual(params.toArray(), [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 20,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 31, 32]);
+    });
+    it('should carry forward isSub state', () => {
+      const params = new Params();
+      parse(params, ['1:22:33', '44']);
+      assert.deepEqual(params.toArray(), [1, [22, 3344]]);
     });
   });
 });
