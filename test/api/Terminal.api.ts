@@ -76,6 +76,22 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });
 
+  it('paste', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`
+      window.calls = [];
+      window.term.onData(e => calls.push(e));
+      window.term.paste('foo');
+      window.term.paste('\\r\\nfoo\\nbar\\r');
+      window.term.write('\\x1b[?2004h');
+      // TODO: Use promise/callback for write when we support that
+      // Force sync write
+      window.term._core._innerWrite();
+      window.term.paste('foo');
+    `);
+    assert.deepEqual(await page.evaluate(`window.calls`), ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~']);
+  });
+
   it('clear', async function(): Promise<any> {
     await openTerminal({ rows: 5 });
     await page.evaluate(`

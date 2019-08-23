@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, ICompositionHelper, ITerminalOptions, ITerminal
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from 'browser/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
@@ -55,7 +55,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
@@ -384,6 +384,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'rendererType':
           if (this._renderService) {
             this._renderService.setRenderer(this._createRenderer());
+            this._renderService.onResize(this.cols, this.rows);
           }
           break;
         case 'scrollback':
@@ -487,7 +488,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this._coreService.triggerStringDataEvent(e, true));
+    const pasteHandlerWrapper = (event: ClipboardEvent) => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -633,7 +634,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.screenElement);
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
     this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
@@ -654,10 +654,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
 
+    // This event listener must be registered aftre MouseZoneManager is created
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
+
     // apply mouse event classes set by escape codes before terminal was attached
-    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
       this._selectionService.disable();
+      this.element.classList.add('enable-mouse-events');
     } else {
       this._selectionService.enable();
     }
@@ -1024,8 +1027,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // the shell for example
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onWheel(ev);
-      return this.cancel(ev);
+      if (!this.viewport.onWheel(ev)) {
+        return this.cancel(ev);
+      }
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
@@ -1036,8 +1040,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onTouchMove(ev);
-      return this.cancel(ev);
+      if (!this.viewport.onTouchMove(ev)) {
+        return this.cancel(ev);
+      }
     }));
   }
 
@@ -1234,6 +1239,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.write(data + '\r\n', callback);
   }
 
+  public paste(data: string): void {
+    paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
+  }
+
   /**
    * Attaches a custom key event handler which is run before keys are processed,
    * giving consumers of xterm.js ultimate control as to what keys should be
@@ -1247,9 +1256,19 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
+  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
+  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+    return this._inputHandler.addEscHandler(id, callback);
+  }
+
+  /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+    return this._inputHandler.addDcsHandler(id, callback);
+  }
+
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(flag, callback);
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(id, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {

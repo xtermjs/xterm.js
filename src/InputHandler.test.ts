@@ -61,39 +61,38 @@ describe('InputHandler', () => {
     it('should call Terminal.setOption with correct params', () => {
       const optionsService = new MockOptionsService();
       const inputHandler = new InputHandler(new MockInputHandlingTerminal(), new MockBufferService(80, 30), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), optionsService);
-      const collect = ' ';
 
-      inputHandler.setCursorStyle(Params.fromArray([0]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([0]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([1]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([1]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([2]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([2]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([3]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([3]));
       assert.equal(optionsService.options['cursorStyle'], 'underline');
       assert.equal(optionsService.options['cursorBlink'], true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([4]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([4]));
       assert.equal(optionsService.options['cursorStyle'], 'underline');
       assert.equal(optionsService.options['cursorBlink'], false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([5]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([5]));
       assert.equal(optionsService.options['cursorStyle'], 'bar');
       assert.equal(optionsService.options['cursorBlink'], true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
-      inputHandler.setCursorStyle(Params.fromArray([6]), collect);
+      inputHandler.setCursorStyle(Params.fromArray([6]));
       assert.equal(optionsService.options['cursorStyle'], 'bar');
       assert.equal(optionsService.options['cursorBlink'], false);
     });
@@ -101,14 +100,13 @@ describe('InputHandler', () => {
   describe('setMode', () => {
     it('should toggle Terminal.bracketedPasteMode', () => {
       const terminal = new MockInputHandlingTerminal();
-      const collect = '?';
       terminal.bracketedPasteMode = false;
       const inputHandler = new InputHandler(terminal, new MockBufferService(80, 30), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService());
       // Set bracketed paste mode
-      inputHandler.setMode(Params.fromArray([2004]), collect);
+      inputHandler.setModePrivate(Params.fromArray([2004]));
       assert.equal(terminal.bracketedPasteMode, true);
       // Reset bracketed paste mode
-      inputHandler.resetMode(Params.fromArray([2004]), collect);
+      inputHandler.resetModePrivate(Params.fromArray([2004]));
       assert.equal(terminal.bracketedPasteMode, false);
     });
   });
