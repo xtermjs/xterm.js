@@ -217,6 +217,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
+    this._parser.setCsiHandler({final: 't'}, params => this.manipulateWindowOptions(params));
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
 
     /**
@@ -1948,6 +1949,102 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.buffer.scrollTop = top - 1;
       this._bufferService.buffer.scrollBottom = bottom - 1;
       this._setCursor(0, 0);
+    }
+  }
+
+  /**
+   * CSI Ps ; Ps ; Ps t - Various window manipulations and reports (xterm)
+   *    Ps = 1  -> De-iconify window.                                     not supported
+   *    Ps = 2  -> Iconify window.                                        not supported
+   *    Ps = 3 ;  x ;  y -> Move window to [x, y].                        not supported
+   *    Ps = 4 ;  height ;  width                                         TBD
+   *      Resize the xterm window to  given height and width in pixels.
+   *      Omitted parameters reuse  the current height or width.
+   *      Zero parameters use the display's height or width.
+   *    Ps = 5                                                            not supported
+   *      Raise the xterm window to the front of the stacking order.
+   *    Ps = 6                                                            not supported
+   *      Lower the xterm window to the bottom of the stacking order.
+   *    Ps = 7                                                            TBD
+   *      Refresh the xterm window.
+   *    Ps = 8 ;  height ;  width                                         TBD
+   *      Resize the text area to given height and width in characters.
+   *      Omitted parameters reuse the current height or width.
+   *      Zero parameters use the display's height or width.
+   *    Ps = 9 ;  0  -> Restore maximized window.                         TBD
+   *    Ps = 9 ;  1                                                       TBD
+   *      Maximize window (i.e., resize to screen size).
+   *    Ps = 9 ; 2  -> Maximize window vertically.                        TBD
+   *    Ps = 9 ; 3  -> Maximize window horizontally.                      TBD
+   *    Ps = 10 ; 0  -> Undo full-screen mode.                            TBD
+   *    Ps = 10 ; 1  -> Change to full-screen.                            TBD
+   *    Ps = 10 ; 2  -> Toggle full-screen.                               TBD
+   *    Ps = 11                                                           not supported (always report non-iconified?)
+   *      Report xterm window state.
+   *      If the xterm window is non-iconified, it returns CSI 1 t .
+   *      If the xterm window is iconified, it returns CSI 2 t .
+   *    Ps = 13  -> Report xterm window position.                         TBD
+   *      Note: X Toolkit positions can be negative, but the reported
+   *      values are unsigned, in the range 0-65535.  Negative values
+   *      correspond to 32768-65535.
+   *      Result is CSI 3 ; x ; y t
+   *    Ps = 13 ; 2                                                       TBD
+   *      Report xterm text-area position. Result is CSI 3 ; x ; y t
+   *    Ps = 1 4                                                          TBD
+   *      Report xterm text area size in pixels. Result is CSI 4 ; height ; width t
+   *    Ps = 14 ; 2                                                       TBD
+   *      Report xterm window size in pixels.
+   *      Normally xterm's window is larger than its text area, since it
+   *      includes the frame (or decoration) applied by the window manager,
+   *      as well as the area used by a scroll-bar. Result is CSI 4 ; height ; width t
+   *    Ps = 15                                                           TBD
+   *      Report size of the screen in pixels. Result is CSI 5 ; height ; width t
+   *    Ps = 16                                                           TBD
+   *      Report xterm character cell size in pixels. Result is CSI 6 ; height ; width t
+   *    Ps = 18                                                           TBD
+   *      Report the size of the text area in characters. Result is CSI 8 ; height ; width t
+   *    Ps = 19                                                           TBD
+   *      Report the size of the screen in characters. Result is CSI 9 ; height ; width t
+   *    Ps = 20                                                           TBD
+   *      Report xterm window's icon label. Result is OSC L label ST
+   *    Ps = 21                                                           TBD
+   *      Report xterm window's title. Result is OSC l label ST
+   *    Ps = 22 ; 0  -> Save xterm icon and window title on stack.        TBD
+   *    Ps = 22 ; 1  -> Save xterm icon title on stack.                   TBD
+   *    Ps = 22 ; 2  -> Save xterm window title on stack.                 TBD
+   *    Ps = 23 ; 0  -> Restore xterm icon and window title from stack.   TBD
+   *    Ps = 23 ; 1  -> Restore xterm icon title from stack.              TBD
+   *    Ps = 23 ; 2  -> Restore xterm window title from stack.            TBD
+   *    Ps >= 24                                                          TBD
+   *    Resize to Ps lines (DECSLPP), VT340 and VT420. xterm adapts this by resizing its window.
+   */
+  public manipulateWindowOptions(params?: IParams): void {
+    console.log(params);
+    switch (params.params[0]) {
+      case 8:
+        if (params.length === 3) {
+          // TODO: 0/1 support
+          const cols = Math.max(2, params.params[2]);
+          const rows = Math.max(2, params.params[1]);
+          // make it work with demo thus shamelessly taken from demo's client.ts
+          const width = (cols * (this._terminal as any)._renderService.dimensions.actualCellWidth + this._terminal.viewport.scrollBarWidth).toString() + 'px';
+          const height = (rows * (this._terminal as any)._renderService.dimensions.actualCellHeight).toString() + 'px';
+          (this._terminal as any)._parent.style.width = width;
+          (this._terminal as any)._parent.style.height = height;
+          const term = Function('return this.term;')();
+          // move fit into browser codebase?
+          for (const addon of (term as any)._addonManager._addons) {
+            if (`${addon.instance.constructor}`.indexOf('FitAddon') !== -1) {
+              addon.instance.fit();
+            }
+          }
+        }
+        break;
+      case 18:
+        const height = this._bufferService.rows;
+        const width = this._bufferService.cols;
+        this._coreService.triggerDataEvent(`${C0.ESC}[8;${height};${width}t`);
+        break;
     }
   }
 
