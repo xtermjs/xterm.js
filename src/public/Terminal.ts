@@ -223,7 +223,7 @@ class BufferLineApiView implements IBufferLineApi {
 
 const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
 
-class CellColorApi implements ICellColorApi {
+export class CellColor implements ICellColorApi {
   readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
   readonly value: number = 0;
 
@@ -248,7 +248,7 @@ class CellColorApi implements ICellColorApi {
     return [-1, -1, -1];
   }
 
-  public static getDefault(): ICellColorApi { return new CellColorApi('default', 0); }
+  public static getDefault(): ICellColorApi { return new CellColor('default', 0); }
 }
 
 class BufferCellApiView implements IBufferCellApi {
@@ -260,14 +260,14 @@ class BufferCellApiView implements IBufferCellApi {
     const cell = this._cell;
     const value = cell.fg & COLOR_MASK;
     if (cell.isFgDefault()) {
-      return new CellColorApi('default', 0);
+      return new CellColor('default', 0);
     } else if (cell.isFgPalette()) {
       switch (cell.getFgColorMode()) {
-        case Attributes.CM_P16: return new CellColorApi('palette16', value);
-        case Attributes.CM_P256: return new CellColorApi('palette256', value);
+        case Attributes.CM_P16: return new CellColor('palette16', value);
+        case Attributes.CM_P256: return new CellColor('palette256', value);
       }
     } else if (cell.isFgRGB()) {
-      return new CellColorApi('rgb', value);
+      return new CellColor('rgb', value);
     }
     throw new Error('Invalid foregroundColor');
   }
@@ -275,14 +275,14 @@ class BufferCellApiView implements IBufferCellApi {
     const cell = this._cell;
     const value = cell.bg & COLOR_MASK;
     if (cell.isBgDefault()) {
-      return new CellColorApi('default', 0);
+      return new CellColor('default', 0);
     } else if (cell.isBgPalette()) {
       switch (cell.getBgColorMode()) {
-        case Attributes.CM_P16: return new CellColorApi('palette16', value);
-        case Attributes.CM_P256: return new CellColorApi('palette256', value);
+        case Attributes.CM_P16: return new CellColor('palette16', value);
+        case Attributes.CM_P256: return new CellColor('palette256', value);
       }
     } else if (cell.isBgRGB()) {
-      return new CellColorApi('rgb', value);
+      return new CellColor('rgb', value);
     }
     throw new Error('Invalid backgroundColor');
   }
