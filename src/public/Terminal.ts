@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, CellColor as ICellColorApi, CellStyle } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, CellColor as ICellColorApi } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -219,6 +219,19 @@ class BufferLineApiView implements IBufferLineApi {
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
+}
+
+export enum CellStyle {
+  default = 0,
+  // foreground style
+  inverse = 0x4000000 >>> 24,
+  bold = 0x8000000 >>> 24,
+  underline = 0x10000000 >>> 24,
+  blink = 0x20000000 >>> 24,
+  invisible = 0x40000000 >>> 24,
+  // background style
+  italic = 0x4000000 >>> 16,
+  dim = 0x8000000 >>> 16
 }
 
 const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;

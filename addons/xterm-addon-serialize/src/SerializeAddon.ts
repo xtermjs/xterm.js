@@ -3,30 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell, CellColor } from 'xterm';
-
-// TODO: Workaround here, will remove this later
-// If I use `import { CellStyle } from 'xterm'` instead, demo page will raise bellow error
-//
-// ERROR in ./addons/xterm-addon-serialize/out/SerializeAddon.js
-// Module not found: Error: Can't resolve 'xterm' in '/Users/javacs3/Lab/Playground/xterm.js/addons/xterm-addon-serialize/out'
-//  @ ./addons/xterm-addon-serialize/out/SerializeAddon.js 16:14-30
-//  @ ./demo/client.ts
-//
-// Looks like typescript generate this line `var xterm_1 = require("xterm");` that leads to the error;
-//
-enum CellStyle {
-  default = 0,
-  // foreground style
-  inverse = 0x4000000 >>> 24,
-  bold = 0x8000000 >>> 24,
-  underline = 0x10000000 >>> 24,
-  blink = 0x20000000 >>> 24,
-  invisible = 0x40000000 >>> 24,
-  // background style
-  italic = 0x4000000 >>> 16,
-  dim = 0x8000000 >>> 16
-}
+import { Terminal, ITerminalAddon, IBuffer, IBufferCell, CellColor, CellStyle } from 'xterm';
 
 function crop(value: number | undefined, low: number, high: number, initial: number): number {
   if (value === undefined) {

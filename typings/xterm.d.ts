@@ -958,16 +958,16 @@ declare module 'xterm' {
   }
 
   export enum CellStyle {
-    default = 0,
+    default,
     // foreground style
-    inverse = 0x4000000 >>> 24,
-    bold = 0x8000000 >>> 24,
-    underline = 0x10000000 >>> 24,
-    blink = 0x20000000 >>> 24,
-    invisible = 0x40000000 >>> 24,
+    inverse,
+    bold,
+    underline,
+    blink,
+    invisible,
     // background style
-    italic = 0x4000000 >>> 16,
-    dim = 0x8000000 >>> 16
+    italic,
+    dim
   }
 
   export class CellColor {
