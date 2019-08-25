@@ -974,7 +974,7 @@ declare module 'xterm' {
     readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
     readonly value: number;
 
-    constructor(type: 'default' | 'rgb' | 'palette16' | 'palette256', value: number);
+    constructor(value: number);
 
     isDefault(): boolean;
     equals(c: CellColor): boolean;

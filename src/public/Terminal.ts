@@ -227,9 +227,15 @@ export class CellColor implements ICellColorApi {
   readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
   readonly value: number = 0;
 
-  constructor(type: 'default' | 'rgb' | 'palette16' | 'palette256', value: number) {
-    this.type = type;
+  constructor(value: number) {
     this.value = value;
+    switch (value & Attributes.CM_MASK) {
+      case Attributes.CM_P16: this.type = 'palette16'; break;
+      case Attributes.CM_P256: this.type = 'palette256'; break;
+      case Attributes.CM_RGB: this.type = 'rgb'; break;
+      case Attributes.CM_DEFAULT: this.type = 'default'; break;
+      default: throw new Error('Invalid CellColor value');
+    }
   }
   public isDefault(): boolean { return this.value === 0; }
   public equals(c: ICellColorApi): boolean { return this.value === c.value; }
@@ -248,7 +254,7 @@ export class CellColor implements ICellColorApi {
     return [-1, -1, -1];
   }
 
-  public static getDefault(): ICellColorApi { return new CellColor('default', 0); }
+  public static getDefault(): ICellColorApi { return new CellColor(0); }
 }
 
 class BufferCellApiView implements IBufferCellApi {
@@ -257,34 +263,10 @@ class BufferCellApiView implements IBufferCellApi {
   public get char(): string { return this._cell.getChars(); }
   public get width(): number { return this._cell.getWidth(); }
   public get foregroundColor(): ICellColorApi {
-    const cell = this._cell;
-    const value = cell.fg & COLOR_MASK;
-    if (cell.isFgDefault()) {
-      return new CellColor('default', 0);
-    } else if (cell.isFgPalette()) {
-      switch (cell.getFgColorMode()) {
-        case Attributes.CM_P16: return new CellColor('palette16', value);
-        case Attributes.CM_P256: return new CellColor('palette256', value);
-      }
-    } else if (cell.isFgRGB()) {
-      return new CellColor('rgb', value);
-    }
-    throw new Error('Invalid foregroundColor');
+    return new CellColor(this._cell.fg & COLOR_MASK);
   }
   public get backgroundColor(): ICellColorApi {
-    const cell = this._cell;
-    const value = cell.bg & COLOR_MASK;
-    if (cell.isBgDefault()) {
-      return new CellColor('default', 0);
-    } else if (cell.isBgPalette()) {
-      switch (cell.getBgColorMode()) {
-        case Attributes.CM_P16: return new CellColor('palette16', value);
-        case Attributes.CM_P256: return new CellColor('palette256', value);
-      }
-    } else if (cell.isBgRGB()) {
-      return new CellColor('rgb', value);
-    }
-    throw new Error('Invalid backgroundColor');
+    return new CellColor(this._cell.bg & COLOR_MASK);
   }
   public get style(): CellStyle {
     return ((this._cell.bg & BgFlags.FM_MASK) >>> 16) | ((this._cell.fg & FgFlags.FM_MASK) >>> 24);
