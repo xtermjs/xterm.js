@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, CellColor as ICellColorApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IBufferCellColor as IBufferCellColorApi, IBufferCellFlags as IBufferCellFlagsApi } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine, ICellData } from 'common/Types';
+import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -14,6 +14,7 @@ import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -200,6 +201,7 @@ class BufferApiView implements IBufferApi {
     }
     return new BufferLineApiView(line);
   }
+  public getNullCell(): IBufferCellApi { return new BufferCellApiView(new CellData()); }
 }
 
 class BufferLineApiView implements IBufferLineApi {
@@ -207,81 +209,81 @@ class BufferLineApiView implements IBufferLineApi {
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public get length(): number { return this._line.length; }
-  public getCell(x: number): IBufferCellApi | undefined {
+  public getCell(x: number, cell?: BufferCellApiView): IBufferCellApi | undefined {
     if (x < 0 || x >= this._line.length) {
       return undefined;
     }
 
-    const cell = new CellData();
-    this._line.loadCell(x, cell);
-    return new BufferCellApiView(cell);
+    if (cell) {
+      this._line.loadCell(x, cell.cell);
+      return cell;
+    }
+    return new BufferCellApiView(this._line.loadCell(x, new CellData()));
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
 }
 
-export enum CellStyle {
-  default = 0,
-  // foreground style
-  inverse = 0x4000000 >>> 24,
-  bold = 0x8000000 >>> 24,
-  underline = 0x10000000 >>> 24,
-  blink = 0x20000000 >>> 24,
-  invisible = 0x40000000 >>> 24,
-  // background style
-  italic = 0x4000000 >>> 16,
-  dim = 0x8000000 >>> 16
-}
-
-const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
-
-export class CellColor implements ICellColorApi {
-  readonly type: 'default' | 'rgb' | 'palette16' | 'palette256';
-  readonly value: number = 0;
-
-  constructor(value: number) {
-    this.value = value;
-    switch (value & Attributes.CM_MASK) {
-      case Attributes.CM_P16: this.type = 'palette16'; break;
-      case Attributes.CM_P256: this.type = 'palette256'; break;
-      case Attributes.CM_RGB: this.type = 'rgb'; break;
-      case Attributes.CM_DEFAULT: this.type = 'default'; break;
-      default: throw new Error('Invalid CellColor value');
-    }
-  }
-  public isDefault(): boolean { return this.value === 0; }
-  public equals(c: ICellColorApi): boolean { return this.value === c.value; }
-  public paletteId(): number {
-    switch (this.type) {
-      case 'default':
-      case 'palette16':
-      case 'palette256': return this.value & Attributes.PCOLOR_MASK;
-    }
-    return -1;
-  }
-  public rgbColor(): [number, number, number] {
-    if (this.type === 'rgb') {
-      return CellData.toColorRGB(this.value);
-    }
-    return [-1, -1, -1];
-  }
-
-  public static getDefault(): ICellColorApi { return new CellColor(0); }
-}
+const fgFlagMask = FgFlags.BOLD | FgFlags.BLINK | FgFlags.INVERSE | FgFlags.INVISIBLE | FgFlags.UNDERLINE;
+const bgFlagMask = BgFlags.DIM | BgFlags.ITALIC;
+const colorMask = Attributes.CM_MASK | Attributes.RGB_MASK;
 
 class BufferCellApiView implements IBufferCellApi {
-  constructor(private _cell: ICellData) { }
-
-  public get char(): string { return this._cell.getChars(); }
-  public get width(): number { return this._cell.getWidth(); }
-  public get foregroundColor(): ICellColorApi {
-    return new CellColor(this._cell.fg & COLOR_MASK);
+  public flags: IBufferCellFlagsApi;
+  public fg: IBufferCellColorApi;
+  public bg: IBufferCellColorApi;
+  constructor(public cell: CellData) {
+    this.flags = {
+      get bold(): boolean { return !!(cell.fg & FgFlags.BOLD); },
+      get underline(): boolean { return !!(cell.fg & FgFlags.UNDERLINE); },
+      get blink(): boolean { return !!(cell.fg & FgFlags.BLINK); },
+      get inverse(): boolean { return !!(cell.fg & FgFlags.INVERSE); },
+      get invisible(): boolean { return !!(cell.fg & FgFlags.INVISIBLE); },
+      get italic(): boolean { return !!(cell.bg & BgFlags.ITALIC); },
+      get dim(): boolean { return !!(cell.bg & BgFlags.DIM); }
+    };
+    this.fg = {
+      get colorMode(): 'RGB' | 'P256' | 'P16' | 'DEFAULT' {
+        switch (cell.getFgColorMode()) {
+          case Attributes.CM_RGB: return 'RGB';
+          case Attributes.CM_P256: return 'P256';
+          case Attributes.CM_P16: return 'P16';
+          default: return 'DEFAULT';
+        }
+      },
+      get color(): number { return cell.getFgColor(); },
+      get rgb(): [number, number, number] { return AttributeData.toColorRGB(cell.getFgColor()); }
+    };
+    this.bg = {
+      get colorMode(): 'RGB' | 'P256' | 'P16' | 'DEFAULT' {
+        switch (cell.getFgColorMode()) {
+          case Attributes.CM_RGB: return 'RGB';
+          case Attributes.CM_P256: return 'P256';
+          case Attributes.CM_P16: return 'P16';
+          default: return 'DEFAULT';
+        }
+      },
+      get color(): number { return cell.getBgColor(); },
+      get rgb(): [number, number, number] { return AttributeData.toColorRGB(cell.getBgColor()); }
+    };
   }
-  public get backgroundColor(): ICellColorApi {
-    return new CellColor(this._cell.bg & COLOR_MASK);
+  public get char(): string { return this.cell.getChars(); }
+  public get width(): number { return this.cell.getWidth(); }
+  public isDefaultAttibutes(): boolean {
+    return this.cell.fg === 0 && this.cell.bg === 0;
   }
-  public get style(): CellStyle {
-    return ((this._cell.bg & BgFlags.FM_MASK) >>> 16) | ((this._cell.fg & FgFlags.FM_MASK) >>> 24);
+  public equalAttibutes(other: BufferCellApiView): boolean {
+    return this.cell.fg === other.cell.fg && this.cell.bg === other.cell.bg;
+  }
+  public equalFlags(other: BufferCellApiView): boolean {
+    return (this.cell.fg & fgFlagMask) === (other.cell.fg & fgFlagMask)
+      && (this.cell.bg & bgFlagMask) === (other.cell.bg & bgFlagMask);
+  }
+  public equalFg(other: BufferCellApiView): boolean {
+    return (this.cell.fg & colorMask) === (other.cell.fg & colorMask);
+  }
+  public equalBg(other: BufferCellApiView): boolean {
+    return (this.cell.bg & colorMask) === (other.cell.bg & colorMask);
   }
 }

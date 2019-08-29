@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell, CellColor, CellStyle } from 'xterm';
+import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
 
 function crop(value: number | undefined, low: number, high: number, initial: number): number {
   if (value === undefined) {
@@ -12,19 +12,14 @@ function crop(value: number | undefined, low: number, high: number, initial: num
   return Math.max(low, Math.min(value, high));
 }
 
-class NullBufferCell implements IBufferCell {
-  char: string = '';
-  width: number = 0;
-  foregroundColor: CellColor = CellColor.getDefault();
-  backgroundColor: CellColor = CellColor.getDefault();
-  style: CellStyle = CellStyle.default;
-}
-
 abstract class BaseSerializeHandler {
   constructor(private _buffer: IBuffer) { }
 
   serialize(startRow: number, endRow: number): string {
-    let oldCell: IBufferCell = new NullBufferCell();
+    // we need two of them to flip between old and new cell
+    const cell1 = this._buffer.getNullCell();
+    const cell2 = this._buffer.getNullCell();
+    let oldCell = cell1;
 
     this._serializeStart(endRow - startRow);
 
@@ -35,23 +30,22 @@ abstract class BaseSerializeHandler {
 
       if (line) {
         for (let col = 0; col < line.length; col++) {
-          const cell = line.getCell(col);
+          const newCell = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
 
-          if (!cell) {
+          if (!newCell) {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
             continue;
           }
-          if (!cell.foregroundColor.equals(oldCell.foregroundColor)
-            || !cell.backgroundColor.equals(oldCell.backgroundColor)) {
-            this._cellColorChanged(cell, oldCell, row, col);
+          if (!newCell.equalFg(oldCell) || !newCell.equalBg(oldCell)) {
+            this._cellFgBgChanged(newCell, oldCell, row, col);
           }
-          if (cell.style !== oldCell.style) {
-            this._cellStyleChanged(cell, oldCell, row, col);
+          if (!newCell.equalFlags(oldCell)) {
+            this._cellFlagsChanged(newCell, oldCell, row, col);
           }
 
-          this._nextCell(cell, oldCell, row, col);
+          this._nextCell(newCell, oldCell, row, col);
 
-          oldCell = cell;
+          oldCell = newCell;
         }
       }
 
@@ -65,9 +59,9 @@ abstract class BaseSerializeHandler {
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected _cellStyleChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
+  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected _cellColorChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
+  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
   protected _lineStart(row: number): void { }
 
@@ -80,33 +74,11 @@ abstract class BaseSerializeHandler {
   protected _serializeFinished(): string { return ''; }
 }
 
-function fgColor256to16(c: number): number {
-  if (0 <= c && c <= 7) {
-    return 30 + c;
-  } else if (8 <= c && c <= 15) {
-    return 82 + c;
-  }
-  return -1;
-}
-
-function bgColor256to16(c: number): number {
-  if (0 <= c && c <= 7) {
-    return 40 + c;
-  } else if (8 <= c && c <= 15) {
-    return 92 + c;
-  }
-  return -1;
-}
-
-function isDefaultColorStyle(cell: IBufferCell) {
-  return cell.foregroundColor.isDefault() && cell.backgroundColor.isDefault() && (cell.style === CellStyle.default);
-}
-
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
   private _currentRow: string = '';
-  private _sgrSeq: string[] = [];
+  private _sgrSeq: number[] = [];
 
   constructor(buffer: IBuffer) {
     super(buffer);
@@ -121,76 +93,54 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._currentRow = '';
   }
 
-  protected _cellStyleChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const styleChangedMask = cell.style ^ oldCell.style;
-    const style = cell.style;
+  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const sgrSeq = this._sgrSeq;
 
     // skip if it's default color style, we will use \x1b[0m to clear every color style later
-    if (isDefaultColorStyle(cell)) {
-      return;
-    }
+    if (cell.isDefaultAttibutes() || cell.equalFlags(oldCell)) { return; }
 
-    if (styleChangedMask & CellStyle.inverse) {
-      sgrSeq.push((style & CellStyle.inverse) ? '7' : '27');
-    }
-    if (styleChangedMask & CellStyle.bold) {
-      sgrSeq.push((style & CellStyle.bold) ? '1' : '22');
-    }
-    if (styleChangedMask & CellStyle.underline) {
-      sgrSeq.push((style & CellStyle.underline) ? '4' : '24');
-    }
-    if (styleChangedMask & CellStyle.blink) {
-      sgrSeq.push((style & CellStyle.blink) ? '5' : '25');
-    }
-    if (styleChangedMask & CellStyle.invisible) {
-      sgrSeq.push((style & CellStyle.invisible) ? '8' : '28');
-    }
-    if (styleChangedMask & CellStyle.italic) {
-      sgrSeq.push((style & CellStyle.italic) ? '3' : '23');
-    }
-    if (styleChangedMask & CellStyle.dim) {
-      sgrSeq.push((style & CellStyle.dim) ? '2' : '22');
-    }
+    if (cell.flags.inverse !== oldCell.flags.inverse) { sgrSeq.push(cell.flags.inverse ? 7 : 27); }
+    if (cell.flags.bold !== oldCell.flags.bold) { sgrSeq.push(cell.flags.bold ? 1 : 22); }
+    if (cell.flags.underline !== oldCell.flags.underline) { sgrSeq.push(cell.flags.underline ? 4 : 24); }
+    if (cell.flags.blink !== oldCell.flags.blink) { sgrSeq.push(cell.flags.blink ? 5 : 25); }
+    if (cell.flags.invisible !== oldCell.flags.invisible) { sgrSeq.push(cell.flags.invisible ? 8 : 28); }
+    if (cell.flags.italic !== oldCell.flags.italic) { sgrSeq.push(cell.flags.italic ? 3 : 23); }
+    if (cell.flags.dim !== oldCell.flags.dim) { sgrSeq.push(cell.flags.dim ? 2 : 22); }
   }
 
-  protected _cellColorChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const foregroundColorChanged = !cell.foregroundColor.equals(oldCell.foregroundColor);
-    const backgroundColorChanged = !cell.backgroundColor.equals(oldCell.backgroundColor);
+  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const sgrSeq = this._sgrSeq;
 
     // skip if it's default color style, we will use \x1b[0m to clear every color style later
-    if (isDefaultColorStyle(cell)) {
-      return;
-    }
+    if (cell.isDefaultAttibutes()) { return; }
 
-    if (foregroundColorChanged) {
-      const foregroundColor = cell.foregroundColor;
-      switch (foregroundColor.type) {
-        case 'default': sgrSeq.push('39'); break;
-        case 'palette16': sgrSeq.push(fgColor256to16(foregroundColor.paletteId()).toString()); break;
-        case 'palette256': sgrSeq.push(`38;5;${foregroundColor.paletteId()}`); break;
-        case 'rgb': const [red, green, blue] = foregroundColor.rgbColor(); sgrSeq.push(`38;2;${red};${green};${blue}`); break;
+    if (!cell.equalFg(oldCell)) {
+      const color = cell.fg.color;
+      switch (cell.fg.colorMode) {
+        case 'RGB': sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); break;
+        case 'P256': sgrSeq.push(38, 5, color); break;
+        case 'P16': sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); break;
+        default: sgrSeq.push(39); break;
       }
     }
 
-    if (backgroundColorChanged) {
-      const backgroundColor = cell.backgroundColor;
-      switch (backgroundColor.type) {
-        case 'default': sgrSeq.push('49'); break;
-        case 'palette16': sgrSeq.push(bgColor256to16(backgroundColor.paletteId()).toString()); break;
-        case 'palette256': sgrSeq.push(`48;5;${backgroundColor.paletteId()}`); break;
-        case 'rgb': const [red, green, blue] = backgroundColor.rgbColor(); sgrSeq.push(`48;2;${red};${green};${blue}`); break;
+    if (!cell.equalBg(oldCell)) {
+      const color = cell.bg.color;
+      switch (cell.bg.colorMode) {
+        case 'RGB': sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); break;
+        case 'P256': sgrSeq.push(48, 5, color); break;
+        case 'P16': sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); break;
+        default: sgrSeq.push(49); break;
       }
     }
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const foregroundColorChanged = !cell.foregroundColor.equals(oldCell.foregroundColor);
-    const backgroundColorChanged = !cell.backgroundColor.equals(oldCell.backgroundColor);
-    const styleChanged = cell.style !== oldCell.style;
+    const fgChanged = !cell.equalFg(oldCell);
+    const bgChanged = !cell.equalBg(oldCell);
+    const flagsChanged = !cell.equalFlags(oldCell);
 
-    if ((foregroundColorChanged || backgroundColorChanged || styleChanged) && isDefaultColorStyle(cell)) {
+    if (cell.isDefaultAttibutes() && (fgChanged || bgChanged || flagsChanged)) {
       this._currentRow += '\x1b[0m';
     }
 
