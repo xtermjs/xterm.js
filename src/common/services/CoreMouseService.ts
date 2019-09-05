@@ -285,7 +285,7 @@ export class CoreMouseService implements ICoreMouseService {
 
     // encode report and send
     const report = this._encodings[this._activeEncoding](e);
-    this._coreService.triggerDataEvent(report, true);
+    this._coreService.triggerStringDataEvent(report, true);
 
     this._lastEvent = e;
 

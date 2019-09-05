@@ -63,7 +63,7 @@ describe('CoreMouseService', () => {
   it('onProtocolChange', () => {
     const cms = new CoreMouseService(bufferService, coreService);
     const wantedEvents: CoreMouseEventType[] = [];
-    cms.onProtocolChange(events => wantedEvents.push(events));
+    cms.onProtocolChange((events: CoreMouseEventType) => wantedEvents.push(events));
     cms.activeProtocol = 'NONE';
     assert.deepEqual(wantedEvents, [CoreMouseEventType.NONE]);
     cms.activeProtocol = 'ANY';
@@ -78,7 +78,7 @@ describe('CoreMouseService', () => {
     beforeEach(() => {
       cms = new CoreMouseService(bufferService, coreService);
       reports = [];
-      coreService.triggerDataEvent = (data: string, userInput?: boolean) => reports.push(data);
+      coreService.triggerStringDataEvent = (data: string, userInput?: boolean) => reports.push(data);
     });
     it('NONE', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
