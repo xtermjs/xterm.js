@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -85,6 +85,9 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
   }
   public mockOscParser(): void {
     this._oscParser = oscPutParser;
+  }
+  public identifier(id: IFunctionIdentifier): number {
+    return this._identifier(id);
   }
 }
 
@@ -1550,6 +1553,111 @@ describe('EscapeSequenceParser', function (): void {
       errorState = null;
       parse(parser2, '\x1b[1;2;a;3m');
       chai.expect(errorState).eql(null);
+    });
+  });
+  describe('function identifiers', () => {
+    describe('registration limits', () => {
+      it('prefix range 0x3c .. 0x3f, one byte', () => {
+        for (let i = 0x3c; i <= 0x3f; ++i) {
+          const c = String.fromCharCode(i);
+          chai.expect(parser.identToString(parser.identifier({prefix: c, final: 'z'}))).eql(c + 'z');
+        }
+        chai.assert.throws(() => { parser.identifier({prefix: '\x3b', final: 'z'}); }, 'prefix must be in range 0x3c .. 0x3f');
+        chai.assert.throws(() => { parser.identifier({prefix: '\x40', final: 'z'}); }, 'prefix must be in range 0x3c .. 0x3f');
+        chai.assert.throws(() => { parser.identifier({prefix: '??', final: 'z'}); }, 'only one byte as prefix supported');
+      });
+      it('intermediates range 0x20 .. 0x2f, up to two bytes', () => {
+        for (let i = 0x20; i <= 0x2f; ++i) {
+          const c = String.fromCharCode(i);
+          chai.expect(parser.identToString(parser.identifier({intermediates: c + c, final: 'z'}))).eql(c + c + 'z');
+        }
+        chai.assert.throws(() => { parser.identifier({intermediates: '\x1f', final: 'z'}); }, 'intermediate must be in range 0x20 .. 0x2f');
+        chai.assert.throws(() => { parser.identifier({intermediates: '\x30', final: 'z'}); }, 'intermediate must be in range 0x20 .. 0x2f');
+        chai.assert.throws(() => { parser.identifier({intermediates: '!!!', final: 'z'}); }, 'only two bytes as intermediates are supported');
+      });
+      it('final CSI/DCS range 0x40 .. 0x7e (default), one byte', () => {
+        for (let i = 0x40; i <= 0x7e; ++i) {
+          const c = String.fromCharCode(i);
+          chai.expect(parser.identToString(parser.identifier({final: c}))).eql(c);
+        }
+        chai.assert.throws(() => { parser.identifier({final: '\x3f'}); }, 'final must be in range 64 .. 126');
+        chai.assert.throws(() => { parser.identifier({final: '\x7f'}); }, 'final must be in range 64 .. 126');
+        chai.assert.throws(() => { parser.identifier({final: 'zz'}); }, 'final must be a single byte');
+      });
+      it('final ESC range 0x30 .. 0x7e, one byte', () => {
+        for (let i = 0x30; i <= 0x7e; ++i) {
+          const c = String.fromCharCode(i);
+          let handler: IDisposable | undefined;
+          chai.assert.doesNotThrow(() => { handler = parser.addEscHandler({final: c}, () => {}); }, 'final must be in range 48 .. 126');
+          if (handler) handler.dispose();
+        }
+        chai.assert.throws(() => { parser.addEscHandler({final: '\x2f'}, () => {}); }, 'final must be in range 48 .. 126');
+        chai.assert.throws(() => { parser.addEscHandler({final: '\x7f'}, () => {}); }, 'final must be in range 48 .. 126');
+      });
+      it('id calculation - should stacking prefix -> intermediate -> final', () => {
+        chai.expect(parser.identToString(parser.identifier({final: 'z'}))).eql('z');
+        chai.expect(parser.identToString(parser.identifier({prefix: '?', final: 'z'}))).eql('?z');
+        chai.expect(parser.identToString(parser.identifier({intermediates: '!', final: 'z'}))).eql('!z');
+        chai.expect(parser.identToString(parser.identifier({prefix: '?', intermediates: '!', final: 'z'}))).eql('?!z');
+        chai.expect(parser.identToString(parser.identifier({prefix: '?', intermediates: '!!', final: 'z'}))).eql('?!!z');
+      });
+    });
+    describe('identifier invocation', () => {
+      it('ESC', () => {
+        const callstack: string[] = [];
+        const h1 = parser.addEscHandler({final: 'z'}, () => { callstack.push('z'); });
+        const h2 = parser.addEscHandler({intermediates: '!', final: 'z'}, () => { callstack.push('!z'); });
+        const h3 = parser.addEscHandler({intermediates: '!!', final: 'z'}, () => { callstack.push('!!z'); });
+        parse(parser, '\x1bz\x1b!z\x1b!!z');
+        h1.dispose();
+        h2.dispose();
+        h3.dispose();
+        parse(parser, '\x1bz\x1b!z\x1b!!z');
+        chai.expect(callstack).eql(['z', '!z', '!!z']);
+      });
+      it('CSI', () => {
+        const callstack: any[] = [];
+        const h1 = parser.addCsiHandler({final: 'z'}, params => { callstack.push(['z', params.toArray()]); });
+        const h2 = parser.addCsiHandler({intermediates: '!', final: 'z'}, params => { callstack.push(['!z', params.toArray()]); });
+        const h3 = parser.addCsiHandler({intermediates: '!!', final: 'z'}, params => { callstack.push(['!!z', params.toArray()]); });
+        const h4 = parser.addCsiHandler({prefix: '?', final: 'z'}, params => { callstack.push(['?z', params.toArray()]); });
+        const h5 = parser.addCsiHandler({prefix: '?', intermediates: '!', final: 'z'}, params => { callstack.push(['?!z', params.toArray()]); });
+        const h6 = parser.addCsiHandler({prefix: '?', intermediates: '!!', final: 'z'}, params => { callstack.push(['?!!z', params.toArray()]); });
+        parse(parser, '\x1b[1;z\x1b[1;!z\x1b[1;!!z\x1b[?1;z\x1b[?1;!z\x1b[?1;!!z');
+        h1.dispose();
+        h2.dispose();
+        h3.dispose();
+        h4.dispose();
+        h5.dispose();
+        h6.dispose();
+        parse(parser, '\x1b[1;z\x1b[1;!z\x1b[1;!!z\x1b[?1;z\x1b[?1;!z\x1b[?1;!!z');
+        chai.expect(callstack).eql([['z', [1, 0]], ['!z', [1, 0]], ['!!z', [1, 0]], ['?z', [1, 0]], ['?!z', [1, 0]], ['?!!z', [1, 0]]]);
+      });
+      it('DCS', () => {
+        const callstack: any[] = [];
+        const h1 = parser.addDcsHandler({final: 'z'}, new DcsHandler((data, params) => { callstack.push(['z', params.toArray(), data]); }));
+        const h2 = parser.addDcsHandler({intermediates: '!', final: 'z'}, new DcsHandler((data, params) => { callstack.push(['!z', params.toArray(), data]); }));
+        const h3 = parser.addDcsHandler({intermediates: '!!', final: 'z'}, new DcsHandler((data, params) => { callstack.push(['!!z', params.toArray(), data]); }));
+        const h4 = parser.addDcsHandler({prefix: '?', final: 'z'}, new DcsHandler((data, params) => { callstack.push(['?z', params.toArray(), data]); }));
+        const h5 = parser.addDcsHandler({prefix: '?', intermediates: '!', final: 'z'}, new DcsHandler((data, params) => { callstack.push(['?!z', params.toArray(), data]); }));
+        const h6 = parser.addDcsHandler({prefix: '?', intermediates: '!!', final: 'z'}, new DcsHandler((data, params) => { callstack.push(['?!!z', params.toArray(), data]); }));
+        parse(parser, '\x1bP1;zAB\x1b\\\x1bP1;!zAB\x1b\\\x1bP1;!!zAB\x1b\\\x1bP?1;zAB\x1b\\\x1bP?1;!zAB\x1b\\\x1bP?1;!!zAB\x1b\\');
+        h1.dispose();
+        h2.dispose();
+        h3.dispose();
+        h4.dispose();
+        h5.dispose();
+        h6.dispose();
+        parse(parser, '\x1bP1;zAB\x1b\\\x1bP1;!zAB\x1b\\\x1bP1;!!zAB\x1b\\\x1bP?1;zAB\x1b\\\x1bP?1;!zAB\x1b\\\x1bP?1;!!zAB\x1b\\');
+        chai.expect(callstack).eql([
+          ['z', [1, 0], 'AB'],
+          ['!z', [1, 0], 'AB'],
+          ['!!z', [1, 0], 'AB'],
+          ['?z', [1, 0], 'AB'],
+          ['?!z', [1, 0], 'AB'],
+          ['?!!z', [1, 0], 'AB']
+        ]);
+      });
     });
   });
   // TODO: error conditions and error recovery (not implemented yet in parser)
