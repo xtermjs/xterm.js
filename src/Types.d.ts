@@ -4,7 +4,7 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, CharData } from 'common/Types';
+import { ICharset, IAttributeData, CharData, CoreMouseEventType } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
@@ -36,14 +36,8 @@ export interface IInputHandlingTerminal {
   bracketedPasteMode: boolean;
   curAttrData: IAttributeData;
   savedCols: number;
-  x10Mouse: boolean;
-  vt200Mouse: boolean;
-  normalMouse: boolean;
-  mouseEvents: boolean;
+  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
-  utfMouse: boolean;
-  sgrMouse: boolean;
-  urxvtMouse: boolean;
   cursorHidden: boolean;
 
   buffers: IBufferSet;

@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
@@ -27,6 +27,19 @@ export class MockBufferService implements IBufferService {
     this.rows = rows;
   }
   reset(): void {}
+}
+
+export class MockCoreMouseService implements ICoreMouseService {
+  activeEncoding: string = '';
+  activeProtocol: string = '';
+  addEncoding(name: string): void {}
+  addProtocol(name: string): void {}
+  reset(): void {}
+  triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
+  onProtocolChange: IEvent<CoreMouseEventType> = new EventEmitter<CoreMouseEventType>().event;
+  explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCoreService implements ICoreService {

@@ -19,8 +19,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService } from 'common/services/Services';
-import { ISelectionService } from 'browser/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 
@@ -138,8 +137,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
-  private _selectionService: ISelectionService | undefined;
-
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -154,6 +151,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _coreMouseService: ICoreMouseService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -464,11 +462,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public dispose(): void {
     super.dispose();
-  }
-
-  // TODO: When InputHandler moves into common, browser dependencies need to move out
-  public setBrowserServices(selectionService: ISelectionService): void {
-    this._selectionService = selectionService;
   }
 
   public parse(data: string): void {
@@ -1462,27 +1455,19 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
+          this._coreMouseService.activeProtocol = 'X10';
+          break;
         case 1000: // vt200 mouse
           // no motion.
-          // no modifiers, except control on the wheel.
+          this._coreMouseService.activeProtocol = 'VT200';
+          break;
         case 1002: // button event mouse
+          this._coreMouseService.activeProtocol = 'DRAG';
+          break;
         case 1003: // any event mouse
           // any event - sends motion events,
           // even if there is no button held down.
-
-          // TODO: Why are params[0] compares nested within a switch for params[0]?
-
-          this._terminal.x10Mouse = params.params[i] === 9;
-          this._terminal.vt200Mouse = params.params[i] === 1000;
-          this._terminal.normalMouse = params.params[i] > 1000;
-          this._terminal.mouseEvents = true;
-          if (this._terminal.element) {
-            this._terminal.element.classList.add('enable-mouse-events');
-          }
-          if (this._selectionService) {
-            this._selectionService.disable();
-          }
-          this._logService.debug('Binding to mouse events.');
+          this._coreMouseService.activeProtocol = 'ANY';
           break;
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
@@ -1490,23 +1475,15 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.sendFocus = true;
           break;
         case 1005: // utf8 ext mode mouse
-          this._terminal.utfMouse = true;
           // for wide terminals
           // simply encodes large values as utf8 characters
+          this._coreMouseService.activeEncoding = 'UTF8';
           break;
         case 1006: // sgr ext mode mouse
-          this._terminal.sgrMouse = true;
-          // for wide terminals
-          // does not add 32 to fields
-          // press: ^[[<b;x;yM
-          // release: ^[[<b;x;ym
+          this._coreMouseService.activeEncoding = 'SGR';
           break;
         case 1015: // urxvt ext mode mouse
-          this._terminal.urxvtMouse = true;
-          // for wide terminals
-          // numbers for fields
-          // press: ^[[b;x;yM
-          // motion: ^[[b;x;yT
+          this._coreMouseService.activeEncoding = 'URXVT';
           break;
         case 25: // show cursor
           this._terminal.cursorHidden = false;
@@ -1665,28 +1642,19 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1000: // vt200 mouse
         case 1002: // button event mouse
         case 1003: // any event mouse
-          this._terminal.x10Mouse = false;
-          this._terminal.vt200Mouse = false;
-          this._terminal.normalMouse = false;
-          this._terminal.mouseEvents = false;
-          if (this._terminal.element) {
-            this._terminal.element.classList.remove('enable-mouse-events');
-          }
-          if (this._selectionService) {
-            this._selectionService.enable();
-          }
+          this._coreMouseService.activeProtocol = 'NONE';
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
           break;
         case 1005: // utf8 ext mode mouse
-          this._terminal.utfMouse = false;
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 1006: // sgr ext mode mouse
-          this._terminal.sgrMouse = false;
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 1015: // urxvt ext mode mouse
-          this._terminal.urxvtMouse = false;
+        this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
           this._terminal.cursorHidden = true;
