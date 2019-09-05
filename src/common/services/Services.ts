@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, IEncoding } from 'common/Types';
+import { IDecPrivateModes, IEncoding, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -21,6 +21,37 @@ export interface IBufferService {
 
   resize(cols: number, rows: number): void;
   reset(): void;
+}
+
+export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
+export interface ICoreMouseService {
+  activeProtocol: string;
+  activeEncoding: string;
+  addProtocol(name: string, protocol: ICoreMouseProtocol): void;
+  addEncoding(name: string, encoding: CoreMouseEncoding): void;
+  reset(): void;
+
+  /**
+   * Triggers a mouse event to be sent.
+   *
+   * Returns true if the event passed all protocol restrictions and a report
+   * was sent, otherwise false. The return value may be used to decide whether
+   * the default event action in the bowser component should be omitted.
+   *
+   * Note: The method will change values of the given event object
+   * to fullfill protocol and encoding restrictions.
+   */
+  triggerMouseEvent(event: ICoreMouseEvent): boolean;
+
+  /**
+   * Event to announce changes in mouse tracking.
+   */
+  onProtocolChange: IEvent<CoreMouseEventType>;
+
+  /**
+   * Human readable version of mouse events.
+   */
+  explainEvents(events: CoreMouseEventType): {[event: string]: boolean};
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');

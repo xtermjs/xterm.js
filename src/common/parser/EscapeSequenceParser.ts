@@ -282,7 +282,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.setEscHandler({final: '\\'}, () => {});
   }
 
-  private _identifier(id: IFunctionIdentifier, finalRange: number[] = [0x40, 0x7e]): number {
+  protected _identifier(id: IFunctionIdentifier, finalRange: number[] = [0x40, 0x7e]): number {
     let res = 0;
     if (id.prefix) {
       if (id.prefix.length > 1) {
@@ -559,6 +559,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           i--;
           break;
         case ParserAction.COLLECT:
+          collect <<= 8;
           collect |= code;
           break;
         case ParserAction.ESC_DISPATCH:

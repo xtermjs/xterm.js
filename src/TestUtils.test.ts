@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, IEncoding } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, CoreMouseEventType, IEncoding } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
@@ -225,7 +225,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   x10Mouse: boolean;
   vt200Mouse: boolean;
   normalMouse: boolean;
-  mouseEvents: boolean;
+  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
   utfMouse: boolean;
   sgrMouse: boolean;
