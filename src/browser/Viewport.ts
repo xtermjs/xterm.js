@@ -154,19 +154,35 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   /**
+   * Handles bubbling of scroll event in case the viewport has reached top or bottom
+   * @param ev The scroll event.
+   * @param amount The amount scrolled
+   */
+  private _bubbleScroll(ev: Event, amount: number): boolean {
+    const scrollPosFromTop = this._viewportElement.scrollTop + this._lastRecordedViewportHeight;
+    if ((amount < 0 && this._viewportElement.scrollTop !== 0) ||
+        (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
+      if (ev.cancelable) {
+        ev.preventDefault();
+      }
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Handles mouse wheel events by adjusting the viewport's scrollTop and delegating the actual
    * scrolling to `onScroll`, this event needs to be attached manually by the consumer of
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): void {
+  public onWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
     if (amount === 0) {
-      return;
+      return false;
     }
     this._viewportElement.scrollTop += amount;
-    // Prevent the page from scrolling when the terminal scrolls
-    ev.preventDefault();
+    return this._bubbleScroll(ev, amount);
   }
 
   private _getPixelsScrolled(ev: WheelEvent): number {
@@ -244,13 +260,13 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): void {
+  public onTouchMove(ev: TouchEvent): boolean {
     const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
-      return;
+      return false;
     }
     this._viewportElement.scrollTop += deltaY;
-    ev.preventDefault();
+    return this._bubbleScroll(ev, deltaY);
   }
 }
