@@ -257,7 +257,7 @@ class BufferCellApiView implements IBufferCellApi {
     };
     this.bg = {
       get colorMode(): 'RGB' | 'P256' | 'P16' | 'DEFAULT' {
-        switch (cell.getFgColorMode()) {
+        switch (cell.getBgColorMode()) {
           case Attributes.CM_RGB: return 'RGB';
           case Attributes.CM_P256: return 'P256';
           case Attributes.CM_P16: return 'P16';
