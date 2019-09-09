@@ -32,9 +32,8 @@ function startServer() {
     res.sendFile(__dirname + '/style.css');
   });
 
-  app.get('/dist/client-bundle.js', function(req, res){
-    res.sendFile(__dirname + '/dist/client-bundle.js');
-  });
+  app.use('/dist', express.static(__dirname + '/dist'));
+  app.use('/src', express.static(__dirname + '/src'));
 
   app.post('/terminals', function (req, res) {
     const env = Object.assign({}, process.env);
