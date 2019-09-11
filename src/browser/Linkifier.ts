@@ -211,7 +211,7 @@ export class Linkifier implements ILinkifier {
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
     // clone regex to do a global search on text
-    const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
+    const rex = new RegExp(matcher.regex.source, (matcher.regex.flags || '') + 'g');
     let match;
     let stringIndex = -1;
     while ((match = rex.exec(text)) !== null) {
