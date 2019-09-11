@@ -35,7 +35,6 @@ module.exports = {
   output: {
     filename: 'xterm.js',
     path: path.resolve('./lib'),
-    library: 'Terminal',
     libraryTarget: 'umd'
   },
   mode: 'production'
