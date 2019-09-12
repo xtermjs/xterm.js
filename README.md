@@ -32,8 +32,8 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 <!doctype html>
   <html>
     <head>
-      <link rel="stylesheet" href="node_modules/xterm/dist/xterm.css" />
-      <script src="node_modules/xterm/dist/xterm.js"></script>
+      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+      <script src="node_modules/xterm/lib/xterm.js"></script>
     </head>
     <body>
       <div id="terminal"></div>

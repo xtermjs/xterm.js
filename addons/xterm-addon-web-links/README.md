@@ -1,8 +1,6 @@
 ## xterm-addon-web-links
 
-[![Build Status](https://dev.azure.com/xtermjs/xterm-addon-web-links/_apis/build/status/xtermjs.xterm-addon-web-links?branchName=master)](https://dev.azure.com/xtermjs/xterm-addon-web-links/_build/latest?definitionId=5&branchName=master)
-
-An addon for [xterm.js](https://github.com/xtermjs/xterm.js) that enabled web links. This addon requires xterm.js 3.14+.
+An addon for [xterm.js](https://github.com/xtermjs/xterm.js) that enables web links. This addon requires xterm.js v4+.
 
 ### Install
 
@@ -20,4 +18,4 @@ const terminal = new Terminal();
 terminal.loadAddon(new WebLinksAddon());
 ```
 
-You can also specify a custom handler and options, see the [API](https://github.com/xtermjs/xterm-addon-web-links/blob/master/typings/web-links.d.ts) for more details.
+See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/xterm-addon-web-links/typings/xterm-addon-web-links.d.ts) for more advanced usage.

@@ -804,7 +804,7 @@ declare module 'xterm' {
    */
   export interface ITerminalAddon extends IDisposable {
     /**
-     * (EXPERIMENTAL) This is called when the addon is activated.
+     * This is called when the addon is activated.
      */
     activate(terminal: Terminal): void;
   }
