@@ -224,6 +224,31 @@ describe('Terminal', () => {
     });
   });
 
+  describe('paste', () => {
+    it('should fire data event', done => {
+      term.onData(e => {
+        assert.equal(e, 'foo');
+        done();
+      });
+      term.paste('foo');
+    });
+    it('should sanitize \n chars', done => {
+      term.onData(e => {
+        assert.equal(e, '\rfoo\rbar\r');
+        done();
+      });
+      term.paste('\r\nfoo\nbar\r');
+    });
+    it('should respect bracketed paste mode', done => {
+      term.onData(e => {
+        assert.equal(e, '\x1b[200~foo\x1b[201~');
+        done();
+      });
+      term.write('\x1b[?2004h');
+      term.paste('foo');
+    });
+  });
+
   describe('scroll', () => {
     describe('scrollLines', () => {
       let startYDisp: number;
@@ -1121,6 +1146,241 @@ describe('Terminal', () => {
       it('combining fullwidth - match over two lines', function(done: () => void): void {
         assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
       });
+    });
+  });
+
+  describe('Buffer.stringIndexToBufferIndex', () => {
+    let terminal: TestTerminal;
+
+    beforeEach(() => {
+      terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+    });
+
+    it('multiline ascii', () => {
+      const input = 'This is ASCII text spanning multiple lines.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([(i / terminal.cols) | 0, i % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('combining e\u0301 in a sentence', () => {
+      const input = 'Sitting in the cafe\u0301 drinking coffee.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < 19; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([(i / terminal.cols) | 0, i % terminal.cols], bufferIndex);
+      }
+      // string index 18 & 19 point to combining char e\u0301 ---> same buffer Index
+      assert.deepEqual(
+        terminal.buffer.stringIndexToBufferIndex(0, 18),
+        terminal.buffer.stringIndexToBufferIndex(0, 19));
+      // after the combining char every string index has an offset of -1
+      for (let i = 19; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i - 1) / terminal.cols) | 0, (i - 1) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('multiline combining e\u0301', () => {
+      const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      // every buffer cell index contains 2 string indices
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i >> 1) / terminal.cols) | 0, (i >> 1) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('surrogate char in a sentence', () => {
+      const input = 'The 𝄞 is a clef widely used in modern notation.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < 5; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([(i / terminal.cols) | 0, i % terminal.cols], bufferIndex);
+      }
+      // string index 4 & 5 point to surrogate char 𝄞 ---> same buffer Index
+      assert.deepEqual(
+        terminal.buffer.stringIndexToBufferIndex(0, 4),
+        terminal.buffer.stringIndexToBufferIndex(0, 5));
+      // after the combining char every string index has an offset of -1
+      for (let i = 5; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i - 1) / terminal.cols) | 0, (i - 1) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('multiline surrogate char', () => {
+      const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      // every buffer cell index contains 2 string indices
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i >> 1) / terminal.cols) | 0, (i >> 1) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('surrogate char with combining', () => {
+      // eye of Ra with acute accent - string length of 3
+      const input = '𓂀\u0301 - the eye hiroglyph with an acute accent.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      // index 0..2 should map to 0
+      assert.deepEqual([0, 0], terminal.buffer.stringIndexToBufferIndex(0, 1));
+      assert.deepEqual([0, 0], terminal.buffer.stringIndexToBufferIndex(0, 2));
+      for (let i = 2; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i - 2) / terminal.cols) | 0, (i - 2) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('multiline surrogate with combining', () => {
+      const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      // every buffer cell index contains 3 string indices
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([(((i / 3) | 0) / terminal.cols) | 0, ((i / 3) | 0) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('fullwidth chars', () => {
+      const input = 'These １２３ are some fat numbers.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < 6; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([(i / terminal.cols) | 0, i % terminal.cols], bufferIndex);
+      }
+      // string index 6, 7, 8 take 2 cells
+      assert.deepEqual([0, 8], terminal.buffer.stringIndexToBufferIndex(0, 7));
+      assert.deepEqual([1, 0], terminal.buffer.stringIndexToBufferIndex(0, 8));
+      // rest of the string has offset of +3
+      for (let i = 9; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i + 3) / terminal.cols) | 0, (i + 3) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('multiline fullwidth chars', () => {
+      const input = '１２３４５６７８９０１２３４５６７８９０';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 9; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.deepEqual([((i << 1) / terminal.cols) | 0, (i << 1) % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('fullwidth combining with emoji - match emoji cell', () => {
+      const input = 'Lots of ￥\u0301 make me 😃.';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      const stringIndex = s.match(/😃/).index;
+      const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
+      assert(terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
+    });
+
+    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
+      const input = 'a１２３４５６７８９０１２３４５６７８９０';
+      // the 'a' at the beginning moves all fullwidth chars one to the right
+      // now the end of the line contains a dangling empty cell since
+      // the next fullwidth char has to wrap early
+      // the dangling last cell is wrongly added in the string
+      // --> fixable after resolving #1685
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 10; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
+        const j = (i - 0) << 1;
+        assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
+      }
+    });
+
+    it('test fully wrapped buffer up to last char', () => {
+      const input = Array(6).join('1234567890');
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
+        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
+      }
+    });
+
+    it('test fully wrapped buffer up to last char with full width odd', () => {
+      const input = 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301'
+                    + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
+        assert.equal(
+          (!(i % 3))
+            ? input[i]
+            : (i % 3 === 1)
+              ? input.substr(i, 2)
+              : input.substr(i - 1, 2),
+          terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
+      }
+    });
+
+    it('should handle \t in lines correctly', () => {
+      const input = '\thttps://google.de';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(s, Array(terminal.optionsService.options.tabStopWidth + 1).join(' ') + 'https://google.de');
+    });
+  });
+
+  describe('BufferStringIterator', function(): void {
+    it('iterator does not overflow buffer limits', function(): void {
+      const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+      const data = [
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa'
+      ];
+      terminal.writeSync(data.join(''));
+      // brute force test with insane values
+      expect(() => {
+        for (let overscan = 0; overscan < 20; ++overscan) {
+          for (let start = -10; start < 20; ++start) {
+            for (let end = -10; end < 20; ++end) {
+              const it = terminal.buffer.iterator(false, start, end, overscan, overscan);
+              while (it.hasNext()) {
+                it.next();
+              }
+            }
+          }
+        }
+      }).to.not.throw();
     });
   });
 });

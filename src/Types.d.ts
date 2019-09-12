@@ -4,12 +4,12 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, CharData } from 'common/Types';
+import { ICharset, IAttributeData, CharData, CoreMouseEventType } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -36,14 +36,8 @@ export interface IInputHandlingTerminal {
   bracketedPasteMode: boolean;
   curAttrData: IAttributeData;
   savedCols: number;
-  x10Mouse: boolean;
-  vt200Mouse: boolean;
-  normalMouse: boolean;
-  mouseEvents: boolean;
+  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
-  utfMouse: boolean;
-  sgrMouse: boolean;
-  urxvtMouse: boolean;
   cursorHidden: boolean;
 
   buffers: IBufferSet;
@@ -113,7 +107,8 @@ export interface IInputHandler {
   /** CSI ` */ charPosAbsolute(params: IParams): void;
   /** CSI a */ hPositionRelative(params: IParams): void;
   /** CSI b */ repeatPrecedingCharacter(params: IParams): void;
-  /** CSI c */ sendDeviceAttributes(params: IParams, collect?: string): void;
+  /** CSI c */ sendDeviceAttributesPrimary(params: IParams): void;
+  /** CSI > c */ sendDeviceAttributesSecondary(params: IParams): void;
   /** CSI d */ linePosAbsolute(params: IParams): void;
   /** CSI e */ vPositionRelative(params: IParams): void;
   /** CSI f */ hVPosition(params: IParams): void;
@@ -200,7 +195,9 @@ export interface IPublicTerminal extends IDisposable {
   writeln(data: string): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
+  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): void;
@@ -223,6 +220,7 @@ export interface IPublicTerminal extends IDisposable {
   clear(): void;
   write(data: string): void;
   writeUtf8(data: Uint8Array): void;
+  paste(data: string): void;
   refresh(start: number, end: number): void;
   reset(): void;
 }

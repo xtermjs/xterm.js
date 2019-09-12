@@ -563,9 +563,10 @@ export class SelectionService implements ISelectionService {
     // to be sent to the pty.
     event.stopImmediatePropagation();
 
-    // Something went wrong
+    // Do nothing if there is no selection start, this can happen if the first
+    // click in the terminal is an incremental click
     if (!this._model.selectionStart) {
-      throw new Error('Selection start position was not set before mousemove event');
+      return;
     }
 
     // Record the previous position so we know whether to redraw the selection
@@ -663,7 +664,7 @@ export class SelectionService implements ISelectionService {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      if (event.altKey) {
+      if (event.altKey && this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
           this._element,
