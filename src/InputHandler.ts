@@ -329,7 +329,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
 
-    this._logService.debug('parsing data', data);
+    this._logService.debug(`parsing data "${data}"`, data.split('').map(e => e.charCodeAt(0)));
 
     if (this._parseBuffer.length < data.length) {
       this._parseBuffer = new Uint32Array(data.length);
