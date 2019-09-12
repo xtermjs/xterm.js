@@ -650,24 +650,26 @@ declare module 'xterm' {
     clear(): void;
 
     /**
-     * Writes text to the terminal.
-     * @param data The text to write to the terminal.
+     * Write data to the terminal.
+     * `data` can either be raw bytes given as Uint8Array from the pty or a string.
+     * Raw bytes will always be treated as UTF-8 encoded, string data as UTF-16.
+     * `callback` is an optional callback that gets called once the data
+     * chunk was processed by the parser.
      */
-    write(data: string): void;
+    write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Writes text to the terminal, followed by a break line character (\n).
-     * @param data The text to write to the terminal.
+     * Writes data to the terminal, followed by a break line character (\n).
+     * `callback` is an optional callback that gets called once the data
+     * chunk was processed by the parser.
      */
-    writeln(data: string): void;
+    writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Writes UTF8 data to the terminal. This has a slight performance advantage
-     * over the string based write method due to lesser data conversions needed
-     * on the way from the pty to xterm.js.
-     * @param data The data to write to the terminal.
+     * Write UTF8 data to the terminal. Deprecated, use `.write` instead.
+     * @deprecated
      */
-    writeUtf8(data: Uint8Array): void;
+    writeUtf8(data: Uint8Array, callback?: () => void): void;
 
     /**
      * Writes text to the terminal, performing the necessary transformations for pasted text.

@@ -31,7 +31,7 @@ describe('Terminal', () => {
     (<any>term)._compositionHelper = new MockCompositionHelper();
     // Force synchronous writes
     term.write = (data) => {
-      term.writeBuffer.push(data);
+      (<any>term)._writeBuffer.push(data);
       (<any>term)._innerWrite();
     };
     (<any>term).element = {

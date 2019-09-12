@@ -11,12 +11,12 @@ import { Terminal } from 'Terminal';
 
 class TestTerminal extends Terminal {
   writeSync(data: string): void {
-    this.writeBuffer.push(data);
+    this._writeBuffer.push(data);
     this._innerWrite();
   }
   writeSyncUtf8(data: Uint8Array): void {
-    this.writeBufferUtf8.push(data);
-    this._innerWriteUtf8();
+    this._writeBuffer.push(data);
+    this._innerWrite();
   }
 }
 

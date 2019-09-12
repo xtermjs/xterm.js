@@ -20,7 +20,7 @@ import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
-    this.writeBuffer.push(data);
+    this._writeBuffer.push(data);
     this._innerWrite();
   }
   keyDown(ev: any): boolean { return this._keyDown(ev); }
