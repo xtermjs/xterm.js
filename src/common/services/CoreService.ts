@@ -54,7 +54,7 @@ export class CoreService implements ICoreService {
     }
 
     // Fire onData API
-    this._logService.debug(`sending data "${data}"`, data.split('').map(e => e.charCodeAt(0)));
+    this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onData.fire(data);
   }
 }
