@@ -16,6 +16,6 @@
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
-    "xterm": "^3.14.0"
+    "xterm": "^4.0.0"
   }
 }
