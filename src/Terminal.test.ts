@@ -254,7 +254,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < INIT_ROWS * 2; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
         startYDisp = INIT_ROWS + 1;
       });
@@ -289,7 +289,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -312,7 +312,7 @@ describe('Terminal', () => {
     describe('scrollToTop', () => {
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
       });
       it('should scroll to the top', () => {
@@ -326,7 +326,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -347,7 +347,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -392,7 +392,7 @@ describe('Terminal', () => {
       it('should not scroll down, when a custom keydown handler prevents the event', () => {
         // Add some output to the terminal
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.write('test\r\n');
         }
         const startYDisp = (term.rows * 2) + 1;
         term.attachCustomKeyEventHandler(() => {

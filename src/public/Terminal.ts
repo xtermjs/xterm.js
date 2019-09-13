@@ -132,7 +132,8 @@ export class Terminal implements ITerminalApi {
     this._core.write(data, callback);
   }
   public writeln(data: string | Uint8Array, callback?: () => void): void {
-    this._core.writeln(data, callback);
+    this._core.write(data);
+    this._core.write('\r\n', callback);
   }
   public paste(data: string): void {
     this._core.paste(data);
