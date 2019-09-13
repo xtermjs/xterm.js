@@ -344,6 +344,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
       this._onCursorMove.fire();
     }
+    this._terminal.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
   }
 
   public print(data: Uint32Array, start: number, end: number): void {

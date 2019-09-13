@@ -62,34 +62,10 @@ import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions,
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
+import { WriteBuffer } from 'common/input/WriteBuffer';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
-
-/**
- * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
- * Enable flow control to avoid this limit and make sure that your backend correctly
- * propagates this to the underlying pty. (see docs for further instructions)
- * Since this limit is meant as a safety parachute to prevent browser crashs,
- * it is set to a very high number. Typically xterm.js gets unresponsive with
- * a 100 times lower number (>500 kB).
- */
-const DISCARD_WATERMARK = 50000000; // ~50 MB
-
-/**
- * The max number of ms to spend on writes before allowing the renderer to
- * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
- * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
- * depends on the time it takes for the renderer to draw the frame.
- */
-const WRITE_TIMEOUT_MS = 12;
-
-/**
- * Threshold of max held chunks in the write buffer, that were already processed.
- * This is a tradeoff between extensive write buffer shifts (bad runtime) and high
- * memory consumption by data thats not used anymore.
- */
-const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 
 export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -163,11 +139,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public params: (string | number)[];
   public currentParam: string | number;
 
-  // write data related containers
-  protected _writeBuffer: (Uint8Array | string)[] = [];
-  private _pendingWriteDataSize: number = 0;
-  private _writeChunkCallbacks: ((() => void) | undefined)[] = [];
-  private _writeInProgress = false;
+  // write buffer
+  private _deferredWriteBuffer: WriteBuffer;
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
@@ -258,6 +231,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setupOptionsListeners();
     this._setup();
+
+    this._deferredWriteBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -1137,60 +1112,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  public write(data: string | Uint8Array, callback?: () => void): void {
-    // Ensure the terminal isn't disposed
-    // NOOP on empty data
-    if (this._isDisposed || !data.length) {
-      return;
-    }
-
-    if (this._pendingWriteDataSize > DISCARD_WATERMARK) {
-      throw new Error('write data discarded, use flow control to avoid losing data');
-    }
-
-    this._pendingWriteDataSize += data.length;
-    this._writeBuffer.push(data);
-    this._writeChunkCallbacks.push(callback);
-
-    if (!this._writeInProgress) {
-      this._writeInProgress = true;
-      setTimeout(() => this._innerWrite());
-    }
-  }
-
-  protected _innerWrite(bufferOffset: number = 0): void {
-    const startTime = Date.now();
-    while (this._writeBuffer.length > bufferOffset) {
-      const data = this._writeBuffer[bufferOffset];
-      const cb = this._writeChunkCallbacks[bufferOffset];
-      bufferOffset++;
-
-      this._inputHandler.parse(data);
-      this._pendingWriteDataSize -= data.length;
-      if (cb) cb();
-
-      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
-
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
-        break;
-      }
-    }
-    if (this._writeBuffer.length > bufferOffset) {
-      // Allow renderer to catch up before processing the next batch
-      // trim already processed chunks if we are above threshold
-      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
-        this._writeBuffer = this._writeBuffer.slice(bufferOffset);
-        this._writeChunkCallbacks = this._writeChunkCallbacks.slice(bufferOffset);
-        bufferOffset = 0;
-      }
-      setTimeout(() => this._innerWrite(bufferOffset), 0);
-    } else {
-      this._writeInProgress = false;
-      this._writeBuffer = [];
-      this._writeChunkCallbacks = [];
-    }
-  }
-
   public paste(data: string): void {
     paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
   }
@@ -1628,8 +1549,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
     const cursorState = this.cursorState;
-    const writeBuffer = this._writeBuffer;
-    const writeInProgress = this._writeInProgress;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1644,8 +1563,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.cursorState = cursorState;
-    this._writeBuffer = writeBuffer;
-    this._writeInProgress = writeInProgress;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh
@@ -1675,6 +1592,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
+  }
+
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._deferredWriteBuffer.write(data, callback);
+  }
+  public writeSync(data: string | Uint8Array): void {
+    this._deferredWriteBuffer.writeSync(data);
   }
 }
 

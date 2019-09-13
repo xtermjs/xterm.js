@@ -49,8 +49,8 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     before(() => {
       terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
-    new ThroughputRuntimeCase('', async () => {
-      await new Promise(resolve => terminal.write(content, resolve));
+    new ThroughputRuntimeCase('', () => {
+      terminal.writeSync(content);
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });
@@ -60,8 +60,8 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     before(() => {
       terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
-    new ThroughputRuntimeCase('', async () => {
-      await new Promise(resolve => terminal.write(content, resolve));
+    new ThroughputRuntimeCase('', () => {
+      terminal.writeSync(content);
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });
