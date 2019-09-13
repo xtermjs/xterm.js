@@ -145,12 +145,7 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 }
 
 async function writeSync(data: string): Promise<void> {
-  await page.evaluate(`window.term.write('${data}');`);
-  while (true) {
-    if (await page.evaluate(`window.term._core._writeBuffer.length === 0`)) {
-      break;
-    }
-  }
+  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`);
 }
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
