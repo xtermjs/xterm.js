@@ -196,6 +196,16 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
+    it.only('IL: Insert Ps Line(s) (default = 1) - CSI Ps L', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('foo\x1b[La')
+        // Explicit
+        window.term.write('\x1b[2Lb')
+      `);
+      assert.deepEqual(await getLinesAsArray(4), ['b', '', 'a', 'foo']);
+    });
+
     describe('DSR: Device Status Report', () => {
       it('Status Report - CSI 5 n', async function(): Promise<any> {
         await page.evaluate(`
