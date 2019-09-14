@@ -223,7 +223,7 @@ describe('InputHandler Integration Tests', function(): void {
         // Explicit
         window.term.write('\\n\\rdef\x1b[2;1H\x1b[2P')
       `);
-      assert.deepEqual(await getLinesAsArray(5), ['bc', 'f', '', '', '']);
+      assert.deepEqual(await getLinesAsArray(2), ['bc', 'f']);
     });
 
     describe('DSR: Device Status Report', () => {
