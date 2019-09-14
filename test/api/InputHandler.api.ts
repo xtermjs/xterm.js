@@ -196,7 +196,7 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
-    it.only('IL: Insert Ps Line(s) (default = 1) - CSI Ps L', async function(): Promise<any> {
+    it('IL: Insert Ps Line(s) (default = 1) - CSI Ps L', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[La')
@@ -204,6 +204,16 @@ describe('InputHandler Integration Tests', function(): void {
         window.term.write('\x1b[2Lb')
       `);
       assert.deepEqual(await getLinesAsArray(4), ['b', '', 'a', 'foo']);
+    });
+
+    it('DL: Delete Ps Line(s) (default = 1) - CSI Ps M', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('a\\nb\x1b[1F\x1b[M')
+        // Explicit
+        window.term.write('\x1b[1Ed\\ne\\nf\x1b[2F\x1b[2M')
+      `);
+      assert.deepEqual(await getLinesAsArray(5), [' b', '  f', '', '', '']);
     });
 
     describe('DSR: Device Status Report', () => {
