@@ -216,6 +216,16 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(5), [' b', '  f', '', '', '']);
     });
 
+    it('DCH: Delete Ps Character(s) (default = 1) - CSI Ps P', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('abc\x1b[1;1H\x1b[P')
+        // Explicit
+        window.term.write('\\n\\rdef\x1b[2;1H\x1b[2P')
+      `);
+      assert.deepEqual(await getLinesAsArray(5), ['bc', 'f', '', '', '']);
+    });
+
     describe('DSR: Device Status Report', () => {
       it('Status Report - CSI 5 n', async function(): Promise<any> {
         await page.evaluate(`
