@@ -140,7 +140,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public currentParam: string | number;
 
   // write buffer
-  private _deferredWriteBuffer: WriteBuffer;
+  private _writeBuffer: WriteBuffer;
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
@@ -232,7 +232,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._setupOptionsListeners();
     this._setup();
 
-    this._deferredWriteBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
+    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -1595,10 +1595,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
-    this._deferredWriteBuffer.write(data, callback);
+    this._writeBuffer.write(data, callback);
   }
+  
   public writeSync(data: string | Uint8Array): void {
-    this._deferredWriteBuffer.writeSync(data);
+    this._writeBuffer.writeSync(data);
   }
 }
 
