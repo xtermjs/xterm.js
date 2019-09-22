@@ -51,6 +51,44 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });
 
+  it('write with callback', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`
+      window.term.write('foo', () => { window.__x = 'a'; });
+      window.term.write('bar', () => { window.__x += 'b'; });
+      window.term.write('文', () => { window.__x += 'c'; });
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+    assert.equal(await page.evaluate(`window.__x`), 'abc');
+  });
+
+  it('write - bytes (UTF8)', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`
+      // foo
+      window.term.write(new Uint8Array([102, 111, 111]));
+      // bar
+      window.term.write(new Uint8Array([98, 97, 114]));
+      // 文
+      window.term.write(new Uint8Array([230, 150, 135]));
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+  });
+
+  it('write - bytes (UTF8) with callback', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`
+      // foo
+      window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; });
+      // bar
+      window.term.write(new Uint8Array([98, 97, 114]), () => { window.__x += 'B'; });
+      // 文
+      window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; });
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+    assert.equal(await page.evaluate(`window.__x`), 'ABC');
+  });
+
   it('writeln', async function(): Promise<any> {
     await openTerminal();
     await page.evaluate(`
@@ -63,17 +101,29 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
   });
 
-  it('writeUtf8', async function(): Promise<any> {
+  it('writeln with callback', async function(): Promise<any> {
     await openTerminal();
     await page.evaluate(`
-      // foo
-      window.term.writeUtf8(new Uint8Array([102, 111, 111]));
-      // bar
-      window.term.writeUtf8(new Uint8Array([98, 97, 114]));
-      // 文
-      window.term.writeUtf8(new Uint8Array([230, 150, 135]));
+      window.term.writeln('foo', () => { window.__x = '1'; });
+      window.term.writeln('bar', () => { window.__x += '2'; });
+      window.term.writeln('文', () => { window.__x += '3'; });
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
+    assert.equal(await page.evaluate(`window.__x`), '123');
+  });
+
+  it('writeln - bytes (UTF8)', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`
+      window.term.writeln(new Uint8Array([102, 111, 111]));
+      window.term.writeln(new Uint8Array([98, 97, 114]));
+      window.term.writeln(new Uint8Array([230, 150, 135]));
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
   });
 
   it('paste', async function(): Promise<any> {
