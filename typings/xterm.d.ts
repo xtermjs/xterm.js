@@ -651,21 +651,21 @@ declare module 'xterm' {
 
     /**
      * Write data to the terminal.
-     * `data` can either be raw bytes given as Uint8Array from the pty or a string.
-     * Raw bytes will always be treated as UTF-8 encoded, string data as UTF-16.
-     * `callback` is an optional callback that gets called once the data
-     * chunk was processed by the parser.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
+     * @param data The data to write to the terminal. This can either be raw
+     * bytes given as Uint8Array from the pty or a string. Raw bytes will always
+     * be treated as UTF-8 encoded, string data as UTF-16.
+     * @param callback Optional callback that fires when the data was processed
+     * by the parser.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
-     * `callback` is an optional callback that gets called once the data
-     * chunk was processed by the parser.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
+     * @param data The data to write to the terminal. This can either be raw
+     * bytes given as Uint8Array from the pty or a string. Raw bytes will always
+     * be treated as UTF-8 encoded, string data as UTF-16.
+     * @param callback Optional callback that fires when the data was processed
+     * by the parser.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
