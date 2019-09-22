@@ -1597,7 +1597,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public write(data: string | Uint8Array, callback?: () => void): void {
     this._writeBuffer.write(data, callback);
   }
-  
+
   public writeSync(data: string | Uint8Array): void {
     this._writeBuffer.writeSync(data);
   }

@@ -167,14 +167,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  /**
-   * The demo defaults to string transport by default.
-   * To run it with UTF8 binary transport, swap comment on
-   * the lines below. (Must also be switched in server.js)
-   */
   term.loadAddon(new AttachAddon(socket));
-  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
-
   term._initialized = true;
 }
 
