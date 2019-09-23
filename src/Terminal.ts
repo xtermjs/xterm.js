@@ -604,8 +604,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._theme = this.options.theme;
-    this.options.theme = null;
+    this._theme = this.options.theme || this._theme;
+    this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
     this._colorManager.setTheme(this._theme);
 
