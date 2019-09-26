@@ -9,17 +9,6 @@ import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'Terminal';
 
-class TestTerminal extends Terminal {
-  writeSync(data: string): void {
-    this.writeBuffer.push(data);
-    this._innerWrite();
-  }
-  writeSyncUtf8(data: Uint8Array): void {
-    this.writeBufferUtf8.push(data);
-    this._innerWriteUtf8();
-  }
-}
-
 perfContext('Terminal: ls -lR /usr/lib', () => {
   let content = '';
   let contentUtf8: Uint8Array;
@@ -56,9 +45,9 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
   });
 
   perfContext('write', () => {
-    let terminal: TestTerminal;
+    let terminal: Terminal;
     before(() => {
-      terminal = new TestTerminal({cols: 80, rows: 25, scrollback: 1000});
+      terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
     new ThroughputRuntimeCase('', () => {
       terminal.writeSync(content);
@@ -67,12 +56,12 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
   });
 
   perfContext('writeUtf8', () => {
-    let terminal: TestTerminal;
+    let terminal: Terminal;
     before(() => {
-      terminal = new TestTerminal({cols: 80, rows: 25, scrollback: 1000});
+      terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
     new ThroughputRuntimeCase('', () => {
-      terminal.writeSyncUtf8(contentUtf8);
+      terminal.writeSync(content);
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });

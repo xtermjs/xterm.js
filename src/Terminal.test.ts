@@ -29,11 +29,6 @@ describe('Terminal', () => {
     (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
     (<any>term)._compositionHelper = new MockCompositionHelper();
-    // Force synchronous writes
-    term.write = (data) => {
-      term.writeBuffer.push(data);
-      (<any>term)._innerWrite();
-    };
     (<any>term).element = {
       classList: {
         toggle: () => { },
@@ -59,18 +54,18 @@ describe('Terminal', () => {
     // });
     it('should fire the onCursorMove event', (done) => {
       term.onCursorMove(() => done());
-      term.write('foo');
+      term.writeSync('foo');
     });
     it('should fire the onLineFeed event', (done) => {
       term.onLineFeed(() => done());
-      term.write('\n');
+      term.writeSync('\n');
     });
     it('should fire a scroll event when scrollback is created', (done) => {
       term.onScroll(() => done());
-      term.write('\n'.repeat(INIT_ROWS));
+      term.writeSync('\n'.repeat(INIT_ROWS));
     });
     it('should fire a scroll event when scrollback is cleared', (done) => {
-      term.write('\n'.repeat(INIT_ROWS));
+      term.writeSync('\n'.repeat(INIT_ROWS));
       term.onScroll(() => done());
       term.clear();
     });
@@ -195,7 +190,7 @@ describe('Terminal', () => {
     it('should clear a buffer larger than rows', () => {
       // Fill the buffer with dummy rows
       for (let i = 0; i < term.rows * 2; i++) {
-        term.write('test\n');
+        term.writeSync('test\n');
       }
 
       const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
@@ -244,7 +239,7 @@ describe('Terminal', () => {
         assert.equal(e, '\x1b[200~foo\x1b[201~');
         done();
       });
-      term.write('\x1b[?2004h');
+      term.writeSync('\x1b[?2004h');
       term.paste('foo');
     });
   });
@@ -254,7 +249,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < INIT_ROWS * 2; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
         startYDisp = INIT_ROWS + 1;
       });
@@ -289,7 +284,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -312,7 +307,7 @@ describe('Terminal', () => {
     describe('scrollToTop', () => {
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
       });
       it('should scroll to the top', () => {
@@ -326,7 +321,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -347,7 +342,7 @@ describe('Terminal', () => {
       let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -392,7 +387,7 @@ describe('Terminal', () => {
       it('should not scroll down, when a custom keydown handler prevents the event', () => {
         // Add some output to the terminal
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeln('test');
+          term.writeSync('test\r\n');
         }
         const startYDisp = (term.rows * 2) + 1;
         term.attachCustomKeyEventHandler(() => {
@@ -737,7 +732,7 @@ describe('Terminal', () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.write(high + String.fromCharCode(i));
+        term.writeSync(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0).loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
@@ -751,7 +746,7 @@ describe('Terminal', () => {
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
-        term.write(high + String.fromCharCode(i));
+        term.writeSync(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
         expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql('');
@@ -764,7 +759,7 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = true;
-        term.write('a' + high + String.fromCharCode(i));
+        term.writeSync('a' + high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
         expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(1).loadCell(0, cell).getChars().length).eql(2);
@@ -782,7 +777,7 @@ describe('Terminal', () => {
         if (width !== 1) {
           continue;
         }
-        term.write('a' + high + String.fromCharCode(i));
+        term.writeSync('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
         expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars().length).eql(2);
@@ -794,8 +789,8 @@ describe('Terminal', () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.write(high);
-        term.write(String.fromCharCode(i));
+        term.writeSync(high);
+        term.writeSync(String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0).loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
@@ -809,7 +804,7 @@ describe('Terminal', () => {
   describe('unicode - combining characters', () => {
     const cell = new CellData();
     it('café', () => {
-      term.write('cafe\u0301');
+      term.writeSync('cafe\u0301');
       term.buffer.lines.get(0).loadCell(3, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
@@ -817,7 +812,7 @@ describe('Terminal', () => {
     });
     it('café - end of line', () => {
       term.buffer.x = term.cols - 1 - 3;
-      term.write('cafe\u0301');
+      term.writeSync('cafe\u0301');
       term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
@@ -829,7 +824,7 @@ describe('Terminal', () => {
     });
     it('multiple combined é', () => {
       term.wraparoundMode = true;
-      term.write(Array(100).join('e\u0301'));
+      term.writeSync(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         expect(cell.getChars()).eql('e\u0301');
@@ -843,7 +838,7 @@ describe('Terminal', () => {
     });
     it('multiple surrogate with combined', () => {
       term.wraparoundMode = true;
-      term.write(Array(100).join('\uD800\uDC00\u0301'));
+      term.writeSync(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         expect(cell.getChars()).eql('\uD800\uDC00\u0301');
@@ -861,18 +856,18 @@ describe('Terminal', () => {
     const cell = new CellData();
     it('cursor movement even', () => {
       expect(term.buffer.x).eql(0);
-      term.write('￥');
+      term.writeSync('￥');
       expect(term.buffer.x).eql(2);
     });
     it('cursor movement odd', () => {
       term.buffer.x = 1;
       expect(term.buffer.x).eql(1);
-      term.write('￥');
+      term.writeSync('￥');
       expect(term.buffer.x).eql(3);
     });
     it('line of ￥ even', () => {
       term.wraparoundMode = true;
-      term.write(Array(50).join('￥'));
+      term.writeSync(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
@@ -893,7 +888,7 @@ describe('Terminal', () => {
     it('line of ￥ odd', () => {
       term.wraparoundMode = true;
       term.buffer.x = 1;
-      term.write(Array(50).join('￥'));
+      term.writeSync(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
@@ -918,7 +913,7 @@ describe('Terminal', () => {
     it('line of ￥ with combining odd', () => {
       term.wraparoundMode = true;
       term.buffer.x = 1;
-      term.write(Array(50).join('￥\u0301'));
+      term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
@@ -942,7 +937,7 @@ describe('Terminal', () => {
     });
     it('line of ￥ with combining even', () => {
       term.wraparoundMode = true;
-      term.write(Array(50).join('￥\u0301'));
+      term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
@@ -963,7 +958,7 @@ describe('Terminal', () => {
     it('line of surrogate fullwidth with combining odd', () => {
       term.wraparoundMode = true;
       term.buffer.x = 1;
-      term.write(Array(50).join('\ud843\ude6d\u0301'));
+      term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
@@ -987,7 +982,7 @@ describe('Terminal', () => {
     });
     it('line of surrogate fullwidth with combining even', () => {
       term.wraparoundMode = true;
-      term.write(Array(50).join('\ud843\ude6d\u0301'));
+      term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
@@ -1010,11 +1005,11 @@ describe('Terminal', () => {
   describe('insert mode', () => {
     const cell = new CellData();
     it('halfwidth - all', () => {
-      term.write(Array(9).join('0123456789').slice(-80));
+      term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.insertMode = true;
-      term.write('abcde');
+      term.writeSync('abcde');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
       expect(term.buffer.lines.get(0).loadCell(14, cell).getChars()).eql('e');
@@ -1022,11 +1017,11 @@ describe('Terminal', () => {
       expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('4');
     });
     it('fullwidth - insert', () => {
-      term.write(Array(9).join('0123456789').slice(-80));
+      term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.insertMode = true;
-      term.write('￥￥￥');
+      term.writeSync('￥￥￥');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('￥');
       expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('');
@@ -1035,16 +1030,16 @@ describe('Terminal', () => {
       expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('3');
     });
     it('fullwidth - right border', () => {
-      term.write(Array(41).join('￥'));
+      term.writeSync(Array(41).join('￥'));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.insertMode = true;
-      term.write('a');
+      term.writeSync('a');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
       expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('￥');
       expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
-      term.write('b');
+      term.writeSync('b');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('b');
       expect(term.buffer.lines.get(0).loadCell(12, cell).getChars()).eql('￥');
