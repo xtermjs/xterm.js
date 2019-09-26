@@ -25,12 +25,10 @@ export class AttachAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._disposables.push(
-      addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => {
-          const data: ArrayBuffer | string = (ev as any).data;
-          terminal.write(typeof data === 'string' ? data : new Uint8Array(data));
-        }
-      )
+      addSocketListener(this._socket, 'message', ev => {
+        const data: ArrayBuffer | string = ev.data;
+        terminal.write(typeof data === 'string' ? data : new Uint8Array(data));
+      })
     );
 
     if (this._bidirectional) {
@@ -55,7 +53,7 @@ export class AttachAddon implements ITerminalAddon {
   }
 }
 
-function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: MessageEvent | Event | CloseEvent) => any): IDisposable {
+function addSocketListener<K extends keyof WebSocketEventMap>(socket: WebSocket, type: K, handler: (this: WebSocket, ev: WebSocketEventMap[K]) => any): IDisposable {
   socket.addEventListener(type, handler);
   return {
     dispose: () => {
