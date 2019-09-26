@@ -12,7 +12,7 @@ npm install --save xterm-addon-attach
 
 ```ts
 import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-attach';
+import { AttachAddon } from 'xterm-addon-attach';
 
 const terminal = new Terminal();
 const attachAddon = new AttachAddon(webSocket);
