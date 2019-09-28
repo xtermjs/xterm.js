@@ -3,11 +3,8 @@ var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
 
-/**
- * Whether to use binary transport.
- */
-const USE_BINARY = true;
-
+// Whether to use binary transport.
+const USE_BINARY = os.platform() !== "win32";
 
 function startServer() {
   var app = express();
