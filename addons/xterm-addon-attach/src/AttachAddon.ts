@@ -9,13 +9,11 @@ import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
 
 interface IAttachOptions {
   bidirectional?: boolean;
-  inputUtf8?: boolean;
 }
 
 export class AttachAddon implements ITerminalAddon {
   private _socket: WebSocket;
   private _bidirectional: boolean;
-  private _utf8: boolean;
   private _disposables: IDisposable[] = [];
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
@@ -23,17 +21,15 @@ export class AttachAddon implements ITerminalAddon {
     // always set binary type to arraybuffer, we do not handle blobs
     this._socket.binaryType = 'arraybuffer';
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
-    this._utf8 = !!(options && options.inputUtf8);
   }
 
   public activate(terminal: Terminal): void {
-    if (this._utf8) {
-      this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => terminal.writeUtf8(new Uint8Array((ev as any).data as ArrayBuffer))));
-    } else {
-      this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => terminal.write((ev as any).data as string)));
-    }
+    this._disposables.push(
+      addSocketListener(this._socket, 'message', ev => {
+        const data: ArrayBuffer | string = ev.data;
+        terminal.write(typeof data === 'string' ? data : new Uint8Array(data));
+      })
+    );
 
     if (this._bidirectional) {
       this._disposables.push(terminal.onData(data => this._sendData(data)));
@@ -57,7 +53,7 @@ export class AttachAddon implements ITerminalAddon {
   }
 }
 
-function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: MessageEvent | Event | CloseEvent) => any): IDisposable {
+function addSocketListener<K extends keyof WebSocketEventMap>(socket: WebSocket, type: K, handler: (this: WebSocket, ev: WebSocketEventMap[K]) => any): IDisposable {
   socket.addEventListener(type, handler);
   return {
     dispose: () => {
