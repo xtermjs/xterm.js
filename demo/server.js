@@ -3,12 +3,8 @@ var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
 
-/**
- * Whether to use UTF8 binary transport.
- * (Must also be switched in client.ts)
- */
-const USE_BINARY_UTF8 = false;
-
+// Whether to use binary transport.
+const USE_BINARY = os.platform() !== "win32";
 
 function startServer() {
   var app = express();
@@ -46,7 +42,7 @@ function startServer() {
           rows: rows || 24,
           cwd: env.PWD,
           env: env,
-          encoding: USE_BINARY_UTF8 ? null : 'utf8'
+          encoding: USE_BINARY ? null : 'utf8'
         });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -108,7 +104,7 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
     term.on('data', function(data) {
       try {
