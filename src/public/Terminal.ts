@@ -55,9 +55,6 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public writeln(data: string): void {
-    this._core.writeln(data);
-  }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
   }
@@ -128,11 +125,15 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array): void {
-    this._core.writeUtf8(data);
+  public writeUtf8(data: Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
+  }
+  public writeln(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data);
+    this._core.write('\r\n', callback);
   }
   public paste(data: string): void {
     this._core.paste(data);

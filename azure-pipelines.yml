@@ -121,8 +121,7 @@ jobs:
     displayName: 'Install Yarn'
   - script: |
       yarn
-      BUILD_DIR=dist npm run build
     displayName: 'Install dependencies and build'
   - script: |
       NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
-    displayName: 'Publish to npm'
+    displayName: 'Package and publish to npm'

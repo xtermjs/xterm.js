@@ -316,23 +316,18 @@ export function evaluateKeyboardEvent(
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
-          // NUL
-          result.key = String.fromCharCode(0);
+          result.key = C0.NUL;
         } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
           // escape, file sep, group sep, record sep, unit sep
           result.key = String.fromCharCode(ev.keyCode - 51 + 27);
         } else if (ev.keyCode === 56) {
-          // delete
-          result.key = String.fromCharCode(127);
+          result.key = C0.DEL;
         } else if (ev.keyCode === 219) {
-          // ^[ - Control Sequence Introducer (CSI)
-          result.key = String.fromCharCode(27);
+          result.key = C0.ESC;
         } else if (ev.keyCode === 220) {
-          // ^\ - String Terminator (ST)
-          result.key = String.fromCharCode(28);
+          result.key = C0.FS;
         } else if (ev.keyCode === 221) {
-          // ^] - Operating System Command (OSC)
-          result.key = String.fromCharCode(29);
+          result.key = C0.GS;
         }
       } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.

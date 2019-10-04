@@ -30,9 +30,11 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-web-links'),
   path.resolve(__dirname, '../addons/xterm-addon-webgl')
 ];
+console.log(`Checking if addons need to be published`);
 addonPackageDirs.forEach(p => {
   const addon = path.basename(p);
   if (changedFiles.some(e => e.indexOf(addon) !== -1)) {
+    console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
   }
 });

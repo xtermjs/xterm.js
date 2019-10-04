@@ -325,7 +325,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     super.dispose();
   }
 
-  public parse(data: string): void {
+  public parse(data: string | Uint8Array): void {
     let buffer = this._bufferService.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
@@ -335,30 +335,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._parseBuffer.length < data.length) {
       this._parseBuffer = new Uint32Array(data.length);
     }
-    this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
+    this._parser.parse(this._parseBuffer,
+      (typeof data === 'string')
+        ? this._stringDecoder.decode(data, this._parseBuffer)
+        : this._utf8Decoder.decode(data, this._parseBuffer)
+    );
 
     buffer = this._bufferService.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
       this._onCursorMove.fire();
     }
-  }
-
-  public parseUtf8(data: Uint8Array): void {
-    let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
-
-    this._logService.debug('parsing data', data);
-
-    if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint32Array(data.length);
-    }
-    this._parser.parse(this._parseBuffer, this._utf8Decoder.decode(data, this._parseBuffer));
-
-    buffer = this._bufferService.buffer;
-    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._onCursorMove.fire();
-    }
+    this._terminal.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
