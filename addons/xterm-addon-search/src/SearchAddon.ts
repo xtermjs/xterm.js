@@ -344,7 +344,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     terminal.select(result.col, result.row, result.term.length);
     // If it is not in the viewport then we scroll else it just gets selected
-    if (result.row > (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
+    if (result.row >= (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
       let scroll = result.row - terminal.buffer.viewportY;
       scroll = scroll - Math.floor(terminal.rows / 2);
       terminal.scrollLines(scroll);
