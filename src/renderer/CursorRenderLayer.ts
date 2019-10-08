@@ -103,10 +103,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
         this._cursorBlinkStateManager.dispose();
         this._cursorBlinkStateManager = null;
       }
-      // Request a refresh from the terminal as management of rendering is being
-      // moved back to the terminal
-      this._terminal.refresh(this._bufferService.buffer.y, this._bufferService.buffer.y);
     }
+    // Request a refresh from the terminal as management of rendering is being
+    // moved back to the terminal
+    this._terminal.refresh(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
 
   public onCursorMove(): void {
