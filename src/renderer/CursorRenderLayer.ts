@@ -149,7 +149,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
       const cursorStyle = this._optionsService.options.cursorStyle;
-      if (cursorStyle && cursorStyle != 'block') {
+      if (cursorStyle && cursorStyle !== 'block') {
         this._cursorRenderers[cursorStyle](this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
       } else {
         this._renderBlurCursor(this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
