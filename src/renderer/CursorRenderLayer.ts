@@ -148,12 +148,17 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      this._renderBlurCursor(this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+      const cursorStyle = this._optionsService.options.cursorStyle;
+      if (cursorStyle && cursorStyle != 'block') {
+        this._cursorRenderers[cursorStyle](this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+      } else {
+        this._renderBlurCursor(this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+      }
       this._ctx.restore();
       this._state.x = this._bufferService.buffer.x;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
-      this._state.style = this._optionsService.options.cursorStyle;
+      this._state.style = cursorStyle;
       this._state.width = this._cell.getWidth();
       return;
     }
