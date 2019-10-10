@@ -8,6 +8,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 import { IBufferService } from 'common/services/Services';
+import { isWindows } from 'common/Platform';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -196,6 +197,28 @@ export class Viewport extends Disposable implements IViewport {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
       amount *= this._currentRowHeight * this._bufferService.rows;
+    }
+    else {
+      if (isWindows) {
+        // Windows doesn't scale the delta by the pixel ratio, so normalize it
+        amount /= window.devicePixelRatio;
+
+        const wheelDeltaY = (ev as any).wheelDeltaY;
+        if (wheelDeltaY !== undefined) {
+          // https://developer.mozilla.org/en-US/docs/Web/API/Element/mousewheel_event#Chrome
+          // https://devblogs.microsoft.com/oldnewthing/20130123-00/?p=5473
+          // If the wheelDeltaY is evenly divisible by 120, then assume this is a physical mouse
+          if (wheelDeltaY % 120 === 0) {
+            // With a scale factor of 1
+            // With Windows set to scroll 1 line per "notch", deltaY will be ~33.33
+            // With Windows set to scroll 2 lines per "notch", deltaY will be ~66.66
+            // With Windows set to scroll 3 lines per "notch", deltaY will be 100
+            // ...
+            // So divide the deltaY by 33.33 to get the number of lines scrolled in the "notch"
+            amount = this._currentRowHeight * Math.round(amount / (100 / 3));
+          }
+        }
+      }
     }
     return amount;
   }
