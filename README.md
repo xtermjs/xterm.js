@@ -155,6 +155,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**NgTerminal**](https://github.com/qwefgh90/ng-terminal): NgTerminal is a web terminal that leverages xterm.js on Angular 7+. You can easily add it into your application by adding `<ng-terminal></ng-terminal>` into your component.
 - [**tty-share**](https://tty-share.com): Extremely simple terminal sharing over the Internet.
 - [**Ten Hands**](https://github.com/saisandeepvaddi/ten-hands): One place to run your command-line tasks.
+- [**WebAssembly.sh**](https://webassembly.sh): A WebAssembly WASI browser terminal
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
