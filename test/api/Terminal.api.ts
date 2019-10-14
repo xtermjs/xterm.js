@@ -510,6 +510,20 @@ describe('API Integration Tests', function(): void {
       });
     });
   });
+
+  it('dispose', async function(): Promise<any> {
+    await page.evaluate(`
+      window.term = new Terminal();
+      window.term.dispose();
+    `);
+    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
+  });
+
+  it('dispose (opened)', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`window.term.dispose()`);
+    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
