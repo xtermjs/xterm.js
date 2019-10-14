@@ -269,7 +269,7 @@ declare module 'xterm' {
     /**
      * A callback that fires when the mouse hovers over a link for a moment.
      */
-    tooltipCallback?: (event: MouseEvent, uri: string) => boolean | void;
+    tooltipCallback?: (event: MouseEvent, uri: string, location: ILinkLocation) => boolean | void;
 
     /**
      * A callback that fires when the mouse leaves a link. Note that this can
@@ -838,6 +838,31 @@ declare module 'xterm' {
 
     /**
      * The end row of the selection.
+     */
+    endRow: number;
+  }
+
+  /**
+   * An object representing a link location within the terminal.
+   */
+  interface ILinkLocation {
+    /**
+     * The start column of the link.
+     */
+    startColumn: number;
+
+    /**
+     * The start row of the link.
+     */
+    startRow: number;
+
+    /**
+     * The end column of the link.
+     */
+    endColumn: number;
+
+    /**
+     * The end row of the link.
      */
     endRow: number;
   }
