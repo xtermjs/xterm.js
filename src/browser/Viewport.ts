@@ -191,7 +191,6 @@ export class Viewport extends Disposable implements IViewport {
       return 0;
     }
 
-
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
     let amount = this._applyFastScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
