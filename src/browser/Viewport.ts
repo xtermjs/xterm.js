@@ -191,31 +191,9 @@ export class Viewport extends Disposable implements IViewport {
       return 0;
     }
 
-    const modifier = this._optionsService.options.fastScrollModifier;
-    const sensitivity = this._optionsService.options.fastScrollSensitivity;
-
-    // Multiply the scroll speed when the modifier is down
-    let multiplier = 1;
-    switch (modifier) {
-      case 'alt':
-        if (ev.altKey) {
-          multiplier = sensitivity;
-        }
-        break;
-      case 'ctrl':
-        if (ev.ctrlKey) {
-          multiplier = sensitivity;
-        }
-        break;
-      case 'shift':
-        if (ev.shiftKey) {
-          multiplier = sensitivity;
-        }
-        break;
-    }
 
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let amount = ev.deltaY * multiplier;
+    let amount = this._applyFastScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
@@ -236,7 +214,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Fallback to WheelEvent.DOM_DELTA_LINE
-    let amount = ev.deltaY;
+    let amount = this._applyFastScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
       amount /= this._currentRowHeight + 0.0; // Prevent integer division
       this._wheelPartialScroll += amount;
@@ -244,6 +222,17 @@ export class Viewport extends Disposable implements IViewport {
       this._wheelPartialScroll %= 1;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
       amount *= this._bufferService.rows;
+    }
+    return amount;
+  }
+
+  private _applyFastScrollModifier(amount: number, ev: WheelEvent): number {
+    const modifier = this._optionsService.options.fastScrollModifier;
+    // Multiply the scroll speed when the modifier is down
+    if ((modifier === 'alt' && ev.altKey) ||
+        (modifier === 'ctrl' && ev.ctrlKey) ||
+        (modifier === 'shift' && ev.shiftKey)) {
+      return amount * this._optionsService.options.fastScrollSensitivity;
     }
     return amount;
   }
