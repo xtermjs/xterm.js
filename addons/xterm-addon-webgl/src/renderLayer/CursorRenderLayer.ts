@@ -92,10 +92,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
       if (this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager.dispose();
       }
-      // Request a refresh from the terminal as management of rendering is being
-      // moved back to the terminal
-      terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
     }
+    // Request a refresh from the terminal as management of rendering is being
+    // moved back to the terminal
+    terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
   }
 
   public onCursorMove(terminal: Terminal): void {
@@ -139,12 +139,17 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      const cursorStyle = terminal.getOption('cursorStyle');
+      if (cursorStyle && cursorStyle !== 'block') {
+        this._cursorRenderers[cursorStyle](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      } else {
+        this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      }
       this._ctx.restore();
       this._state.x = terminal.buffer.cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
-      this._state.style = terminal.getOption('cursorStyle');
+      this._state.style = cursorStyle;
       this._state.width = this._cell.getWidth();
       return;
     }
