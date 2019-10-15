@@ -76,7 +76,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
-  private _parent: HTMLElement;
+  private _parent: HTMLElement | null;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;

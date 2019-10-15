@@ -362,12 +362,12 @@ declare module 'xterm' {
     /**
      * The element containing the terminal.
      */
-    readonly element: HTMLElement;
+    readonly element: HTMLElement | undefined;
 
     /**
      * The textarea that accepts input for the terminal.
      */
-    readonly textarea: HTMLTextAreaElement;
+    readonly textarea: HTMLTextAreaElement | undefined;
 
     /**
      * The number of rows in the terminal's viewport. Use
