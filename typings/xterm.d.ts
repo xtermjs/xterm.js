@@ -83,6 +83,16 @@ declare module 'xterm' {
     drawBoldTextInBrightColors?: boolean;
 
     /**
+     * The modifier key hold to multiply scroll speed.
+     */
+    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
+
+    /**
+     * The scroll speed multiplier used for fast scrolling.
+     */
+    fastScrollSensitivity?: number;
+
+    /**
      * The font size used to render text.
      */
     fontSize?: number;

@@ -180,6 +180,8 @@ export interface IPartialTerminalOptions {
   cursorStyle?: 'block' | 'underline' | 'bar';
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
+  fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
+  fastScrollSensitivity?: number;
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: FontWeight;
@@ -209,6 +211,8 @@ export interface ITerminalOptions {
   cursorStyle: 'block' | 'underline' | 'bar';
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
+  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
+  fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;
   fontWeight: FontWeight;

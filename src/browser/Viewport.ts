@@ -7,7 +7,7 @@ import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -37,6 +37,7 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -191,7 +192,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let amount = ev.deltaY;
+    let amount = this._applyFastScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
@@ -212,7 +213,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Fallback to WheelEvent.DOM_DELTA_LINE
-    let amount = ev.deltaY;
+    let amount = this._applyFastScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
       amount /= this._currentRowHeight + 0.0; // Prevent integer division
       this._wheelPartialScroll += amount;
@@ -220,6 +221,17 @@ export class Viewport extends Disposable implements IViewport {
       this._wheelPartialScroll %= 1;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
       amount *= this._bufferService.rows;
+    }
+    return amount;
+  }
+
+  private _applyFastScrollModifier(amount: number, ev: WheelEvent): number {
+    const modifier = this._optionsService.options.fastScrollModifier;
+    // Multiply the scroll speed when the modifier is down
+    if ((modifier === 'alt' && ev.altKey) ||
+        (modifier === 'ctrl' && ev.ctrlKey) ||
+        (modifier === 'shift' && ev.shiftKey)) {
+      return amount * Math.max(1, this._optionsService.options.fastScrollSensitivity);
     }
     return amount;
   }
