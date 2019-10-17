@@ -1469,6 +1469,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._charSizeService.measure();
     }
 
+    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
+    // invalid location
+    this.viewport.syncScrollArea(true);
+
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });
   }

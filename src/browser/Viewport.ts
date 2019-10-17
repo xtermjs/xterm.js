@@ -61,7 +61,14 @@ export class Viewport extends Disposable implements IViewport {
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
    */
-  private _refresh(): void {
+  private _refresh(immediate: boolean): void {
+    if (immediate) {
+      this._innerRefresh();
+      if (this._refreshAnimationFrame !== null) {
+        cancelAnimationFrame(this._refreshAnimationFrame);
+      }
+      return;
+    }
     if (this._refreshAnimationFrame === null) {
       this._refreshAnimationFrame = requestAnimationFrame(() => this._innerRefresh());
     }
@@ -89,40 +96,39 @@ export class Viewport extends Disposable implements IViewport {
 
     this._refreshAnimationFrame = null;
   }
-
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
-  public syncScrollArea(): void {
+  public syncScrollArea(immediate: boolean = false): void {
     // If buffer height changed
     if (this._lastRecordedBufferLength !== this._bufferService.buffer.lines.length) {
       this._lastRecordedBufferLength = this._bufferService.buffer.lines.length;
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If viewport height changed
     if (this._lastRecordedViewportHeight !== this._renderService.dimensions.canvasHeight) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If the buffer position doesn't match last scroll top
     const newScrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
     if (this._lastScrollTop !== newScrollTop) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If element's scroll top changed, this can happen when hiding the element
     if (this._lastScrollTop !== this._viewportElement.scrollTop) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If row height changed
     if (this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
   }
