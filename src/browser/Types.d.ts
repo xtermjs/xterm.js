@@ -35,7 +35,7 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  syncScrollArea(): void;
+  syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   onWheel(ev: WheelEvent): boolean;
   onTouchStart(ev: TouchEvent): void;

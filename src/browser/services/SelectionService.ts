@@ -210,7 +210,7 @@ export class SelectionService implements ISelectionService {
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
         const bufferLine = buffer.lines.get(i);
         const lineText = buffer.translateBufferLineToString(i, true);
-        if (bufferLine!.isWrapped) {
+        if (bufferLine && bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -221,7 +221,7 @@ export class SelectionService implements ISelectionService {
       if (start[1] !== end[1]) {
         const bufferLine = buffer.lines.get(end[1]);
         const lineText = buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-        if (bufferLine!.isWrapped) {
+        if (bufferLine && bufferLine!.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);

@@ -49,7 +49,7 @@ export class FitAddon implements ITerminalAddon {
       return undefined;
     }
 
-    if (!this._terminal.element.parentElement) {
+    if (!this._terminal.element || !this._terminal.element.parentElement) {
       return undefined;
     }
 

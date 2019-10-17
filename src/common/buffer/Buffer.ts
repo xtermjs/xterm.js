@@ -167,19 +167,25 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
-              // There is room above the buffer and there are no empty elements below the line,
-              // scroll up
-              this.ybase--;
-              addToY++;
-              if (this.ydisp > 0) {
-                // Viewport is at the top of the buffer, must increase downwards
-                this.ydisp--;
-              }
-            } else {
-              // Add a blank line if there is no buffer left at the top to scroll to, or if there
-              // are blank lines after the cursor
+            if (this._optionsService.options.windowsMode) {
+              // Just add the new missing rows on Windows as conpty reprints the screen with it's
+              // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
+            } else {
+              if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+                // There is room above the buffer and there are no empty elements below the line,
+                // scroll up
+                this.ybase--;
+                addToY++;
+                if (this.ydisp > 0) {
+                  // Viewport is at the top of the buffer, must increase downwards
+                  this.ydisp--;
+                }
+              } else {
+                // Add a blank line if there is no buffer left at the top to scroll to, or if there
+                // are blank lines after the cursor
+                this.lines.push(new BufferLine(newCols, nullCell));
+              }
             }
           }
         }

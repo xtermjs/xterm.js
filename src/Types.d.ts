@@ -173,7 +173,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 
 // Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable {
-  textarea: HTMLTextAreaElement;
+  textarea: HTMLTextAreaElement | undefined;
   rows: number;
   cols: number;
   buffer: IBuffer;
@@ -226,7 +226,7 @@ export interface IBufferAccessor {
 }
 
 export interface IElementAccessor {
-  readonly element: HTMLElement;
+  readonly element: HTMLElement | undefined;
 }
 
 export interface ILinkifierAccessor {

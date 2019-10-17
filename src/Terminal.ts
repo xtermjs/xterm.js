@@ -76,7 +76,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
-  private _parent: HTMLElement;
+  private _parent: HTMLElement | null;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
@@ -1468,6 +1468,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this._charSizeService) {
       this._charSizeService.measure();
     }
+
+    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
+    // invalid location
+    this.viewport.syncScrollArea(true);
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });

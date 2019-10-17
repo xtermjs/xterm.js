@@ -23,6 +23,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
+  fastScrollModifier: 'alt',
+  fastScrollSensitivity: 5,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -47,7 +49,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\'"'
+  wordSeparator: ' ()[]{}\',:;"'
 });
 
 /**
