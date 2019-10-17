@@ -5,6 +5,7 @@
 
 const cp = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 // Setup auth
@@ -18,8 +19,9 @@ if (isDryRun) {
 const changedFiles = getChangedFilesInCommit('HEAD');
 
 // Publish xterm if any files were changed outside of the addons directory
+let isStableRelease = false;
 if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
-  checkAndPublishPackage(path.resolve(__dirname, '..'));
+  isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
 }
 
 // Publish addons if any files were changed inside of the addon
@@ -38,6 +40,11 @@ addonPackageDirs.forEach(p => {
     checkAndPublishPackage(p);
   }
 });
+
+// Publish website if it's a stable release
+if (isStableRelease) {
+  updateWebsite();
+}
 
 function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
@@ -76,6 +83,8 @@ function checkAndPublishPackage(packageDir) {
   }
 
   console.groupEnd();
+
+  return isStableRelease;
 }
 
 function getNextBetaVersion(packageJson) {
@@ -114,4 +123,13 @@ function getChangedFilesInCommit(commit) {
   const output = result.stdout.toString();
   const changedFiles = output.split('\n').filter(e => e.length > 0);
   return changedFiles;
+}
+
+function updateWebsite() {
+  console.log('Updating website');
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'website-'));
+  const packageJson = require(path.join(path.resolve(__dirname, '..'), 'package.json'));
+  if (!isDryRun) {
+    cp.spawnSync('sh', [path.join(__dirname, 'update-website.sh'), packageJson.version], { cwd, stdio: [process.stdin, process.stdout, process.stderr] });
+  }
 }
