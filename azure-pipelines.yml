@@ -107,7 +107,7 @@ jobs:
   - Windows
   - Linux_IntegrationTests
   - macOS_IntegrationTests
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/release/*')))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
