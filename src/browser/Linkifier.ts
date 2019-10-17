@@ -306,7 +306,7 @@ export class Linkifier implements ILinkifier {
       e => {
         this._onLinkTooltip.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         if (matcher.hoverTooltipCallback) {
-          matcher.hoverTooltipCallback(e, uri, { startRow: y1, startColumn: x1, endRow: y2, endColumn: x2 });
+          matcher.hoverTooltipCallback(e, uri, { start: { row: y1, col: x1 }, end: { row: y2, col: x2 } });
         }
       },
       () => {

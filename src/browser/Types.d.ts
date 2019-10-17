@@ -43,15 +43,18 @@ export interface IViewport extends IDisposable {
   onThemeChange(colors: IColorSet): void;
 }
 
-export interface ILinkLocation {
-  startColumn: number;
-  startRow: number;
-  endColumn: number;
-  endRow: number;
+export interface IViewportRange {
+  start: IViewportCellPosition;
+  end: IViewportCellPosition;
+}
+
+export interface IViewportCellPosition {
+  col: number;
+  row: number;
 }
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
-export type LinkMatcherHoverTooltipCallback = (event: MouseEvent, uri: string, position: ILinkLocation) => void;
+export type LinkMatcherHoverTooltipCallback = (event: MouseEvent, uri: string, position: IViewportRange) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export interface ILinkMatcher {
