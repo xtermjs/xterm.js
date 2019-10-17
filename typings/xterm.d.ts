@@ -862,12 +862,12 @@ declare module 'xterm' {
    */
   interface IViewportCellPosition {
     /**
-     * The column of the cell.
+     * The column of the cell. Note that this is 1-based; the first column is column 1.
      */
     col: number;
 
     /**
-     * The row of the cell.
+     * The row of the cell. Note that this is 1-based; the first row is row 1.
      */
     row: number;
   }
