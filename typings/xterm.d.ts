@@ -858,7 +858,7 @@ declare module 'xterm' {
   }
 
   /**
-   * An object representing a cell within the viewport of the terminal.
+   * An object representing a cell position within the viewport of the terminal.
    */
   interface IViewportCellPosition {
     /**
