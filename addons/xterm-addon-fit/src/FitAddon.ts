@@ -17,6 +17,9 @@ interface ITerminalDimensions {
   cols: number;
 }
 
+const MINIMUM_COLS = 2;
+const MINIMUM_ROWS = 1;
+
 export class FitAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
 
@@ -71,8 +74,8 @@ export class FitAddon implements ITerminalAddon {
     const availableHeight = parentElementHeight - elementPaddingVer;
     const availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth;
     const geometry = {
-      cols: Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth),
-      rows: Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight)
+      cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
+      rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))
     };
     return geometry;
   }
