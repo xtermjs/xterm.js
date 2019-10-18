@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 1024;
 const height = 768;
 
-describe('FitAddon', () => {
+describe.only('FitAddon', () => {
   before(async function(): Promise<any> {
     this.timeout(20000);
     browser = await puppeteer.launch({
@@ -24,25 +24,25 @@ describe('FitAddon', () => {
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
+    await page.goto(APP);
+    await openTerminal();
   });
 
   after(async () => {
     await browser.close();
   });
 
-  beforeEach(async function(): Promise<any> {
-    this.timeout(20000);
-    await page.goto(APP);
+  it('no terminal', async function(): Promise<any> {
+    await page.evaluate(`window.fit = new FitAddon();`);
+    assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
   });
 
   describe('proposeDimensions', () => {
-    it('no terminal', async function(): Promise<any> {
-      await page.evaluate(`window.fit = new FitAddon();`);
-      assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
+    afterEach(async () => {
+      return unloadFit();
     });
 
     it('default', async function(): Promise<any> {
-      await openTerminal();
       await loadFit();
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 87,
@@ -51,7 +51,6 @@ describe('FitAddon', () => {
     });
 
     it('width', async function(): Promise<any> {
-      await openTerminal();
       await loadFit(1008);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 110,
@@ -60,7 +59,6 @@ describe('FitAddon', () => {
     });
 
     it('small', async function(): Promise<any> {
-      await openTerminal();
       await loadFit(1, 1);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 2,
@@ -70,8 +68,11 @@ describe('FitAddon', () => {
   });
 
   describe('fit', () => {
+    afterEach(async () => {
+      return unloadFit();
+    });
+
     it('default', async function(): Promise<any> {
-      await openTerminal();
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 87);
@@ -79,7 +80,6 @@ describe('FitAddon', () => {
     });
 
     it('width', async function(): Promise<any> {
-      await openTerminal();
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 110);
@@ -87,7 +87,6 @@ describe('FitAddon', () => {
     });
 
     it('small', async function(): Promise<any> {
-      await openTerminal();
       await loadFit(1, 1);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 2);
@@ -103,6 +102,10 @@ async function loadFit(width: number = 800, height: number = 450): Promise<void>
     document.querySelector('#terminal-container').style.width='${width}px';
     document.querySelector('#terminal-container').style.height='${height}px';
   `);
+}
+
+async function unloadFit(): Promise<void> {
+  await page.evaluate(`window.fit.dispose();`);
 }
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
