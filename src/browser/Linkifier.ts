@@ -306,7 +306,9 @@ export class Linkifier implements ILinkifier {
       e => {
         this._onLinkTooltip.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         if (matcher.hoverTooltipCallback) {
-          matcher.hoverTooltipCallback(e, uri);
+          // Note that IViewportRange use 1-based coordinates to align with escape sequences such
+          // as CUP which use 1,1 as the default for row/col
+          matcher.hoverTooltipCallback(e, uri, { start: { row: y1 + 1, col: x1 + 1 }, end: { row: y2 + 1, col: x2 } });
         }
       },
       () => {
