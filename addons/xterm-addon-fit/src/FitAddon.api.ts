@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 1024;
 const height = 768;
 
-describe.only('FitAddon', () => {
+describe('FitAddon', () => {
   before(async function(): Promise<any> {
     this.timeout(20000);
     browser = await puppeteer.launch({
