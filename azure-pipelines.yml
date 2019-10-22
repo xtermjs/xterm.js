@@ -20,7 +20,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -38,7 +38,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -56,7 +56,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -80,7 +80,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'Linux Integration tests'
 
 - job: macOS_IntegrationTests
@@ -97,7 +97,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'MacOS Integration tests'
 
 - job: Release

@@ -15,15 +15,22 @@ let testFiles = [
   './out/**/*test.js'
 ];
 
-// ability to inject particular test files via
-// yarn test [testFileA testFileB ...]
+let flagArgs = [];
+
 if (process.argv.length > 2) {
-  testFiles = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  flagArgs = args.filter(e => e.startsWith('--'));
+  // ability to inject particular test files via
+  // yarn test [testFileA testFileB ...]
+  files = args.filter(e => !e.startsWith('--'));
+  if (files.length) {
+    testFiles = files;
+  }
 }
 
 const run = cp.spawnSync(
   path.resolve(__dirname, '../node_modules/.bin/mocha'),
-  testFiles,
+  [...testFiles, ...flagArgs],
   {
     cwd: path.resolve(__dirname, '..'),
     env,
