@@ -62,25 +62,11 @@ import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions,
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
+import { WriteBuffer } from 'common/input/WriteBuffer';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
-/**
- * The amount of write requests to queue before sending an XOFF signal to the
- * pty process. This number must be small in order for ^C and similar sequences
- * to be responsive.
- */
-const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
-
-/**
- * The max number of ms to spend on writes before allowing the renderer to
- * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
- * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
- * depends on the time it takes for the renderer to draw the frame.
- */
-const WRITE_TIMEOUT_MS = 12;
-const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
@@ -90,7 +76,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
-  private _parent: HTMLElement;
+  private _parent: HTMLElement | null;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
@@ -153,21 +139,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public params: (string | number)[];
   public currentParam: string | number;
 
-  // user input states
-  public writeBuffer: string[];
-  public writeBufferUtf8: Uint8Array[];
-  private _writeInProgress: boolean;
-
-  /**
-   * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
-   * This is a distinct state from writeStopped so that if the user requested
-   * XOFF via ^S that it will not automatically resume when the writeBuffer goes
-   * below threshold.
-   */
-  private _xoffSentToCatchUp: boolean;
-
-  /** Whether writing has been stopped as a result of XOFF */
-  // private _writeStopped: boolean;
+  // write buffer
+  private _writeBuffer: WriteBuffer;
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
@@ -258,6 +231,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setupOptionsListeners();
     this._setup();
+
+    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -306,13 +281,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.params = [];
     this.currentParam = 0;
 
-    // user input states
-    this.writeBuffer = [];
-    this.writeBufferUtf8 = [];
-    this._writeInProgress = false;
-
-    this._xoffSentToCatchUp = false;
-    // this._writeStopped = false;
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
@@ -415,18 +383,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'theme':
           this._setTheme(this.optionsService.options.theme);
           break;
-        case 'scrollback':
-          const newBufferLength = this.rows + this.optionsService.options.scrollback;
-          if (this.buffer.lines.length > newBufferLength) {
-            const amountToTrim = this.buffer.lines.length - newBufferLength;
-            const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
-            this.buffer.lines.trimStart(amountToTrim);
-            this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
-            this.buffer.ydisp = Math.max(this.buffer.ydisp - amountToTrim, 0);
-            if (needsRefresh) {
-              this.refresh(0, this.rows - 1);
-            }
-          }
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
             if (!this._windowsMode) {
@@ -552,6 +508,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       throw new Error('Terminal requires a parent element.');
     }
 
+    if (!document.body.contains(parent)) {
+      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
+    }
+
     this._document = this._parent.ownerDocument;
 
     // Create main element container
@@ -604,8 +564,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._theme = this.options.theme;
-    this.options.theme = null;
+    this._theme = this.options.theme || this._theme;
+    this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
     this._colorManager.setTheme(this._theme);
 
@@ -1144,168 +1104,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  /**
-   * Writes raw utf8 bytes to the terminal.
-   * @param data UintArray with UTF8 bytes to write to the terminal.
-   */
-  public writeUtf8(data: Uint8Array): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      return;
-    }
-
-    // Ignore falsy data values
-    if (!data) {
-      return;
-    }
-
-    this.writeBufferUtf8.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
-    }
-
-    if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
-      // Kick off a write which will write all data in sequence recursively
-      this._writeInProgress = true;
-      // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
-        this._innerWriteUtf8();
-      });
-    }
-  }
-
-  protected _innerWriteUtf8(bufferOffset: number = 0): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      this.writeBufferUtf8 = [];
-    }
-
-    const startTime = Date.now();
-    while (this.writeBufferUtf8.length > bufferOffset) {
-      const data = this.writeBufferUtf8[bufferOffset];
-      bufferOffset++;
-
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
-      this._inputHandler.parseUtf8(data);
-
-      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
-
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
-        break;
-      }
-    }
-    if (this.writeBufferUtf8.length > bufferOffset) {
-      // Allow renderer to catch up before processing the next batch
-      // trim already processed chunks if we are above threshold
-      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
-        this.writeBufferUtf8 = this.writeBufferUtf8.slice(bufferOffset);
-        bufferOffset = 0;
-      }
-      setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
-    } else {
-      this._writeInProgress = false;
-      this.writeBufferUtf8 = [];
-    }
-  }
-
-  /**
-   * Writes text to the terminal.
-   * @param data The text to write to the terminal.
-   */
-  public write(data: string): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      return;
-    }
-
-    // Ignore falsy data values (including the empty string)
-    if (!data) {
-      return;
-    }
-
-    this.writeBuffer.push(data);
-
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this._coreService.triggerDataEvent(C0.DC3);
-      this._xoffSentToCatchUp = true;
-    }
-
-    if (!this._writeInProgress && this.writeBuffer.length > 0) {
-      // Kick off a write which will write all data in sequence recursively
-      this._writeInProgress = true;
-      // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
-        this._innerWrite();
-      });
-    }
-  }
-
-  protected _innerWrite(bufferOffset: number = 0): void {
-    // Ensure the terminal isn't disposed
-    if (this._isDisposed) {
-      this.writeBuffer = [];
-    }
-
-    const startTime = Date.now();
-    while (this.writeBuffer.length > bufferOffset) {
-      const data = this.writeBuffer[bufferOffset];
-      bufferOffset++;
-
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
-        this._coreService.triggerDataEvent(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
-      this._inputHandler.parse(data);
-
-      this.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
-
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
-        break;
-      }
-    }
-    if (this.writeBuffer.length > bufferOffset) {
-      // Allow renderer to catch up before processing the next batch
-      // trim already processed chunks if we are above threshold
-      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
-        this.writeBuffer = this.writeBuffer.slice(bufferOffset);
-        bufferOffset = 0;
-      }
-      setTimeout(() => this._innerWrite(bufferOffset), 0);
-    } else {
-      this._writeInProgress = false;
-      this.writeBuffer = [];
-    }
-  }
-
-  /**
-   * Writes text to the terminal, followed by a break line character (\n).
-   * @param data The text to write to the terminal.
-   */
-  public writeln(data: string): void {
-    this.write(data + '\r\n');
-  }
-
   public paste(data: string): void {
     paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
   }
@@ -1663,6 +1461,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._charSizeService.measure();
     }
 
+    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
+    // invalid location
+    this.viewport.syncScrollArea(true);
+
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });
   }
@@ -1743,10 +1545,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
     const cursorState = this.cursorState;
-    const writeBuffer = this.writeBuffer;
-    const writeBufferUtf8 = this.writeBufferUtf8;
-    const writeInProgress = this._writeInProgress;
-    const xoffSentToCatchUp = this._xoffSentToCatchUp;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1761,10 +1559,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.cursorState = cursorState;
-    this.writeBuffer = writeBuffer;
-    this.writeBufferUtf8 = writeBufferUtf8;
-    this._writeInProgress = writeInProgress;
-    this._xoffSentToCatchUp = xoffSentToCatchUp;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh
@@ -1794,6 +1588,14 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
+  }
+
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._writeBuffer.write(data, callback);
+  }
+
+  public writeSync(data: string | Uint8Array): void {
+    this._writeBuffer.writeSync(data);
   }
 }
 

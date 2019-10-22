@@ -11,8 +11,10 @@ const APP = 'http://127.0.0.1:3000/test';
 
 let browser: puppeteer.Browser;
 let page: puppeteer.Page;
-const width = 1024;
-const height = 768;
+// adjusted to work inside devcontainer
+// see https://github.com/xtermjs/xterm.js/issues/2379
+const width = 1280;
+const height = 960;
 
 // adjust terminal row/col size so we can test
 // >80 up to 223 and >255
@@ -216,7 +218,7 @@ describe('Mouse Tracking Tests', function(): void {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });

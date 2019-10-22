@@ -167,14 +167,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  /**
-   * The demo defaults to string transport by default.
-   * To run it with UTF8 binary transport, swap comment on
-   * the lines below. (Must also be switched in server.js)
-   */
   term.loadAddon(new AttachAddon(socket));
-  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
-
   term._initialized = true;
 }
 
@@ -228,6 +221,7 @@ function initOptions(term: TerminalType): void {
     bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
+    fastScrollModifier: ['alt', 'ctrl', 'shift', undefined],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -260,7 +254,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
@@ -289,7 +283,7 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
-      } else if (o === 'lineHeight') {
+      } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
         term.setOption(o, parseFloat(input.value));
         updateTerminalSize();
       } else {

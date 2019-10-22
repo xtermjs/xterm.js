@@ -20,7 +20,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -38,7 +38,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -56,7 +56,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -80,7 +80,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'Linux Integration tests'
 
 - job: macOS_IntegrationTests
@@ -97,7 +97,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'MacOS Integration tests'
 
 - job: Release
@@ -107,7 +107,7 @@ jobs:
   - Windows
   - Linux_IntegrationTests
   - macOS_IntegrationTests
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/release/*')))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -121,8 +121,7 @@ jobs:
     displayName: 'Install Yarn'
   - script: |
       yarn
-      BUILD_DIR=dist npm run build
     displayName: 'Install dependencies and build'
   - script: |
       NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
-    displayName: 'Publish to npm'
+    displayName: 'Package and publish to npm'

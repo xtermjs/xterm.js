@@ -5,12 +5,14 @@
 
 import { ILogService, IOptionsService } from 'common/services/Services';
 
+type LogType = (message?: any, ...optionalParams: any[]) => void;
+
 interface IConsole {
-  log(message?: any, ...optionalParams: any[]): void;
-  error(message?: any, ...optionalParams: any[]): void;
-  info(message?: any, ...optionalParams: any[]): void;
-  trace(message?: any, ...optionalParams: any[]): void;
-  warn(message?: any, ...optionalParams: any[]): void;
+  log: LogType;
+  error: LogType;
+  info: LogType;
+  trace: LogType;
+  warn: LogType;
 }
 
 // console is available on both node.js and browser contexts but the common
@@ -56,27 +58,40 @@ export class LogService implements ILogService {
     this._logLevel = optionsKeyToLogLevel[this._optionsService.options.logLevel];
   }
 
+  private _evalLazyOptionalParams(optionalParams: any[]): void {
+    for (let i = 0; i < optionalParams.length; i++) {
+      if (typeof optionalParams[i] === 'function') {
+        optionalParams[i] = optionalParams[i]();
+      }
+    }
+  }
+
+  private _log(type: LogType, message: string, optionalParams: any[]): void {
+    this._evalLazyOptionalParams(optionalParams);
+    type.call(console, LOG_PREFIX + message, ...optionalParams);
+  }
+
   debug(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.DEBUG) {
-      console.log.call(console, LOG_PREFIX + message, ...optionalParams);
+      this._log(console.log, message, optionalParams);
     }
   }
 
   info(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.INFO) {
-      console.info.call(console, LOG_PREFIX + message, ...optionalParams);
+      this._log(console.info, message, optionalParams);
     }
   }
 
   warn(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.WARN) {
-      console.warn.call(console, LOG_PREFIX + message, ...optionalParams);
+      this._log(console.warn, message, optionalParams);
     }
   }
 
   error(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.ERROR) {
-      console.error.call(console, LOG_PREFIX + message, ...optionalParams);
+      this._log(console.error, message, optionalParams);
     }
   }
 }

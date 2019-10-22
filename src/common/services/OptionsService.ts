@@ -23,6 +23,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
+  fastScrollModifier: 'alt',
+  fastScrollSensitivity: 5,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -31,6 +33,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   letterSpacing: 0,
   logLevel: 'info',
   scrollback: 1000,
+  scrollSensitivity: 1,
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
@@ -47,7 +50,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\'"'
+  wordSeparator: ' ()[]{}\',:;"'
 });
 
 /**
@@ -117,6 +120,12 @@ export class OptionsService implements IOptionsService {
         value = Math.min(value, 4294967295);
         if (value < 0) {
           throw new Error(`${key} cannot be less than 0, value: ${value}`);
+        }
+        break;
+      case 'fastScrollSensitivity':
+      case 'scrollSensitivity':
+        if (value <= 0) {
+          throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
         break;
     }

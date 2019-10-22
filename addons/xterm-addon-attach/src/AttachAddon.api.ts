@@ -21,7 +21,7 @@ describe('AttachAddon', () => {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -54,7 +54,7 @@ describe('AttachAddon', () => {
     const server = new WebSocket.Server({ port });
     const data = new Uint8Array([102, 111, 111]);
     server.on('connection', socket => socket.send(data));
-    await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}'), { inputUtf8: true }))`);
+    await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}')))`);
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     server.close();
   });

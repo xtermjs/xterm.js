@@ -33,14 +33,14 @@ export class Terminal implements ITerminalApi {
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
-  public get element(): HTMLElement { return this._core.element; }
+  public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
   }
-  public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
+  public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
@@ -54,9 +54,6 @@ export class Terminal implements ITerminalApi {
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
-  }
-  public writeln(data: string): void {
-    this._core.writeln(data);
   }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
@@ -128,11 +125,15 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array): void {
-    this._core.writeUtf8(data);
+  public writeUtf8(data: Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
+  }
+  public writeln(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data);
+    this._core.write('\r\n', callback);
   }
   public paste(data: string): void {
     this._core.paste(data);
@@ -177,8 +178,8 @@ export class Terminal implements ITerminalApi {
 
   private _verifyIntegers(...values: number[]): void {
     values.forEach(value => {
-      if (value % 1 !== 0) {
-        throw new Error('This API does not accept floating point numbers');
+      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
+        throw new Error('This API only accepts integers');
       }
     });
   }

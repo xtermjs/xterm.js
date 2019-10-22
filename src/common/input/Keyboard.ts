@@ -117,13 +117,16 @@ export function evaluateKeyboardEvent(
       break;
     case 37:
       // left-arrow
+      if (ev.metaKey) {
+        break;
+      }
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'D';
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
         if (result.key === C0.ESC + '[1;3D') {
-          result.key = isMac ? C0.ESC + 'b' : C0.ESC + '[1;5D';
+          result.key = C0.ESC + (isMac ? 'b' : '[1;5D');
         }
       } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OD';
@@ -133,13 +136,16 @@ export function evaluateKeyboardEvent(
       break;
     case 39:
       // right-arrow
+      if (ev.metaKey) {
+        break;
+      }
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'C';
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
         if (result.key === C0.ESC + '[1;3C') {
-          result.key = isMac ? C0.ESC + 'f' : C0.ESC + '[1;5C';
+          result.key = C0.ESC + (isMac ? 'f' : '[1;5C');
         }
       } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OC';
@@ -149,11 +155,15 @@ export function evaluateKeyboardEvent(
       break;
     case 38:
       // up-arrow
+      if (ev.metaKey) {
+        break;
+      }
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
         // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key === C0.ESC + '[1;3A') {
+        // macOS uses different escape sequences than linux
+        if (!isMac && result.key === C0.ESC + '[1;3A') {
           result.key = C0.ESC + '[1;5A';
         }
       } else if (applicationCursorMode) {
@@ -164,11 +174,15 @@ export function evaluateKeyboardEvent(
       break;
     case 40:
       // down-arrow
+      if (ev.metaKey) {
+        break;
+      }
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
         // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key === C0.ESC + '[1;3B') {
+        // macOS uses different escape sequences than linux
+        if (!isMac && result.key === C0.ESC + '[1;3B') {
           result.key = C0.ESC + '[1;5B';
         }
       } else if (applicationCursorMode) {
@@ -320,23 +334,18 @@ export function evaluateKeyboardEvent(
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
-          // NUL
-          result.key = String.fromCharCode(0);
+          result.key = C0.NUL;
         } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
           // escape, file sep, group sep, record sep, unit sep
           result.key = String.fromCharCode(ev.keyCode - 51 + 27);
         } else if (ev.keyCode === 56) {
-          // delete
-          result.key = String.fromCharCode(127);
+          result.key = C0.DEL;
         } else if (ev.keyCode === 219) {
-          // ^[ - Control Sequence Introducer (CSI)
-          result.key = String.fromCharCode(27);
+          result.key = C0.ESC;
         } else if (ev.keyCode === 220) {
-          // ^\ - String Terminator (ST)
-          result.key = String.fromCharCode(28);
+          result.key = C0.FS;
         } else if (ev.keyCode === 221) {
-          // ^] - Operating System Command (OSC)
-          result.key = String.fromCharCode(29);
+          result.key = C0.GS;
         }
       } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.

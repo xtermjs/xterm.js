@@ -21,7 +21,7 @@ describe('InputHandler Integration Tests', function(): void {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -194,6 +194,36 @@ describe('InputHandler Integration Tests', function(): void {
       `);
       assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
       assert.deepEqual(await getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
+    });
+
+    it('IL: Insert Ps Line(s) (default = 1) - CSI Ps L', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('foo\x1b[La')
+        // Explicit
+        window.term.write('\x1b[2Lb')
+      `);
+      assert.deepEqual(await getLinesAsArray(4), ['b', '', 'a', 'foo']);
+    });
+
+    it('DL: Delete Ps Line(s) (default = 1) - CSI Ps M', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('a\\nb\x1b[1F\x1b[M')
+        // Explicit
+        window.term.write('\x1b[1Ed\\ne\\nf\x1b[2F\x1b[2M')
+      `);
+      assert.deepEqual(await getLinesAsArray(5), [' b', '  f', '', '', '']);
+    });
+
+    it('DCH: Delete Ps Character(s) (default = 1) - CSI Ps P', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('abc\x1b[1;1H\x1b[P')
+        // Explicit
+        window.term.write('\\n\\rdef\x1b[2;1H\x1b[2P')
+      `);
+      assert.deepEqual(await getLinesAsArray(2), ['bc', 'f']);
     });
 
     describe('DSR: Device Status Report', () => {

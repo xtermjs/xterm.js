@@ -22,7 +22,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -145,12 +145,7 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 }
 
 async function writeSync(data: string): Promise<void> {
-  await page.evaluate(`window.term.write('${data}');`);
-  while (true) {
-    if (await page.evaluate(`window.term._core.writeBuffer.length === 0`)) {
-      break;
-    }
-  }
+  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`);
 }
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
