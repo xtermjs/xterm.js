@@ -383,18 +383,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'theme':
           this._setTheme(this.optionsService.options.theme);
           break;
-        case 'scrollback':
-          const newBufferLength = this.rows + this.optionsService.options.scrollback;
-          if (this.buffer.lines.length > newBufferLength) {
-            const amountToTrim = this.buffer.lines.length - newBufferLength;
-            const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
-            this.buffer.lines.trimStart(amountToTrim);
-            this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
-            this.buffer.ydisp = Math.max(this.buffer.ydisp - amountToTrim, 0);
-            if (needsRefresh) {
-              this.refresh(0, this.rows - 1);
-            }
-          }
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
             if (!this._windowsMode) {
