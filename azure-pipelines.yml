@@ -20,7 +20,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -38,7 +38,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
@@ -56,7 +56,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit
+      yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: |
       yarn lint
