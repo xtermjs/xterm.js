@@ -8,7 +8,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ITerminalOptions, IOptionsService } from 'common/services/Services';
+import { IOptionsService } from 'common/services/Services';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
