@@ -23,7 +23,7 @@ if (process.argv.length > 2) {
   // ability to inject particular test files via
   // yarn test [testFileA testFileB ...]
   files = args.filter(e => !e.startsWith('--'));
-  if(files.length){
+  if (files.length) {
     testFiles = files;
   }
 }
