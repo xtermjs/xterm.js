@@ -508,6 +508,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       throw new Error('Terminal requires a parent element.');
     }
 
+    if (!document.body.contains(parent)) {
+      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
+    }
+
     this._document = this._parent.ownerDocument;
 
     // Create main element container

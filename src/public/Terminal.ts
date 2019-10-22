@@ -56,9 +56,6 @@ export class Terminal implements ITerminalApi {
     this._core.resize(columns, rows);
   }
   public open(parent: HTMLElement): void {
-    if (!document.body.contains(parent)) {
-      throw new Error('open must be called on an element that is attached to the DOM');
-    }
     this._core.open(parent);
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
