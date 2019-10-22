@@ -59,7 +59,7 @@ export class SearchAddon implements ITerminalAddon {
 
     let startCol = 0;
     let startRow = 0;
-    let currentSelection: ISelectionPosition | undefined = undefined;
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
@@ -124,9 +124,9 @@ export class SearchAddon implements ITerminalAddon {
     const isReverseSearch = true;
     let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-    let result: ISearchResult | undefined = undefined;
+    let result: ISearchResult | undefined;
     const incremental = searchOptions ? searchOptions.incremental : false;
-    let currentSelection: ISelectionPosition | undefined = undefined;
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       currentSelection = this._terminal.getSelectionPosition()!;
       // Start from selection start if there is a selection
