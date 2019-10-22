@@ -80,7 +80,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'Linux Integration tests'
 
 - job: macOS_IntegrationTests
@@ -97,7 +97,7 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless
+      yarn test-api --headless --forbid-only
     displayName: 'MacOS Integration tests'
 
 - job: Release
