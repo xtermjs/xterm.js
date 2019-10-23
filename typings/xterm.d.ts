@@ -449,7 +449,7 @@ declare module 'xterm' {
     onLineFeed: IEvent<void>;
 
     /**
-     * Adds an event listener for when a scroll occurs. The  event value is the
+     * Adds an event listener for when a scroll occurs. The event value is the
      * new position of the viewport.
      * @returns an `IDisposable` to stop listening.
      */
