@@ -1074,6 +1074,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
@@ -1101,6 +1102,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
@@ -1118,6 +1120,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
@@ -1135,6 +1138,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
