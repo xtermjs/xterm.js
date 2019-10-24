@@ -7,7 +7,6 @@ import { assert } from 'chai';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/TextDecoder';
 import { encode } from 'utf8';
 
-declare const console: any;
 
 // convert UTF32 codepoints to string
 function toString(data: Uint32Array, length: number): string {
