@@ -14,6 +14,7 @@ import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { ImageAddon } from '../addons/xterm-addon-image/out/ImageAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -35,6 +36,7 @@ export interface IWindowWithTerminal extends Window {
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  ImageAddon?: typeof ImageAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -113,6 +115,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(searchAddon);
   fitAddon = new FitAddon();
   typedTerm.loadAddon(fitAddon);
+  typedTerm.loadAddon(new ImageAddon());
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
