@@ -133,17 +133,6 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
     return `\x1b[M${S(params[0])}${S(params[1])}${S(params[2])}`;
   },
   /**
-   * UTF8 - CSI M Pb Px Py
-   * Same as DEFAULT, but with optional 2-byte UTF8
-   * encoding for values > 223 (can encode up to 2015).
-   */
-  UTF8: (e: ICoreMouseEvent) => {
-    let params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
-    // limit to 2-byte UTF8
-    params = params.map(v => (v > 2047) ? 0 : v);
-    return `\x1b[M${S(params[0])}${S(params[1])}${S(params[2])}`;
-  },
-  /**
    * SGR - CSI < Pb ; Px ; Py M|m
    * No encoding limitation.
    * Can report button on release and works with a well formed sequence.
@@ -151,14 +140,6 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
   SGR: (e: ICoreMouseEvent) => {
     const final = (e.action === CoreMouseAction.UP && e.button !== CoreMouseButton.WHEEL) ? 'm' : 'M';
     return `\x1b[<${eventCode(e, true)};${e.col};${e.row}${final}`;
-  },
-  /**
-   * URXVT - CSI Pb ; Px ; Py M
-   * Same button encoding as default, decimal encoding for coords.
-   * Ambiguity with other sequences, should not be used.
-   */
-  URXVT: (e: ICoreMouseEvent) => {
-    return `\x1b[${eventCode(e, false) + 32};${e.col};${e.row}M`;
   }
 };
 

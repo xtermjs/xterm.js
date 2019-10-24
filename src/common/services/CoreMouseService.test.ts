@@ -34,7 +34,7 @@ describe('CoreMouseService', () => {
   });
   it('default encodings - DEFAULT, UTF8, SGR, URXVT', () => {
     const cms = new CoreMouseService(bufferService, coreService);
-    assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'UTF8', 'SGR', 'URXVT']);
+    assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'SGR']);
   });
   it('protocol/encoding setter, reset', () => {
     const cms = new CoreMouseService(bufferService, coreService);
@@ -151,28 +151,12 @@ describe('CoreMouseService', () => {
           }
         }
       });
-      it('UTF8 encoding', () => {
-        cms.activeProtocol = 'ANY';
-        cms.activeEncoding = 'UTF8';
-        for (let i = 0; i < bufferService.cols; ++i) {
-          assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
-        }
-      });
       it('SGR encoding', () => {
         cms.activeProtocol = 'ANY';
         cms.activeEncoding = 'SGR';
         for (let i = 0; i < bufferService.cols; ++i) {
           assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
           assert.deepEqual(reports.pop(), `\x1b[<0;${i + 1};1M`);
-        }
-      });
-      it('URXVT', () => {
-        cms.activeProtocol = 'ANY';
-        cms.activeEncoding = 'URXVT';
-        for (let i = 0; i < bufferService.cols; ++i) {
-          assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          assert.deepEqual(reports.pop(), `\x1b[32;${i + 1};1M`);
         }
       });
     });
