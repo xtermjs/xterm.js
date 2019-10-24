@@ -1077,7 +1077,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * CSI Ps SP A  Scroll right Ps columns (default = 1) (SL) ECMA-48
+   * CSI Ps SP A  Scroll right Ps columns (default = 1) (SR) ECMA-48
    *
    * Notation: (Pn)
    * Representation: CSI Pn 02/00 04/01
