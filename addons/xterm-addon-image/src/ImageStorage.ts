@@ -24,16 +24,16 @@ interface IDcsHandler {
   unhook(): void;
 }
 
-interface CellSize {
+interface ICellSize {
   width: number;
   height: number;
 }
 
 interface IImageSpec {
   orig: HTMLCanvasElement;
-  origCellSize: CellSize;
+  origCellSize: ICellSize;
   actual: HTMLCanvasElement;
-  actualCellSize: CellSize;
+  actualCellSize: ICellSize;
   urlCache: {[key: number]: string};
 }
 
@@ -49,12 +49,12 @@ export class ImageStorage implements IDisposable {
     // FIXME: free stuff here...
   }
 
-  private get _cellSize(): CellSize {
+  private get _cellSize(): ICellSize {
     const internalTerm = (this._terminal as any)._core;
     return {
-      width: internalTerm._renderService.dimensions.actualCellWidth, //term._core._renderService.dimensions
+      width: internalTerm._renderService.dimensions.actualCellWidth,
       height: internalTerm._renderService.dimensions.actualCellHeight
-    }
+    };
   }
 
   private _rescale(imgId: number): void {
@@ -94,7 +94,7 @@ export class ImageStorage implements IDisposable {
      * TODO - create markers:
      *    start marker  - first line containing image data
      *    end marker    - line below last line containing image data
-     * 
+     *
      * use markers:
      *  - speedup rendering
      *    instead of searching cell by cell through all viewport cells,
@@ -218,7 +218,7 @@ export class ImageStorage implements IDisposable {
       parent = rows.parentNode;
       rows.remove();
     }
-    
+
     // walk all cells in viewport and draw tile if needed
     for (let row = start; row <= end; ++row) {
       const bufferRow = buffer.lines.get(row + buffer.ydisp);
@@ -250,7 +250,7 @@ export class ImageStorage implements IDisposable {
       const img = this._images[imgId].actual;
       const {width: cellWidth, height: cellHeight} = this._cellSize;
       const cols = Math.ceil(img.width / cellWidth);
-  
+
       const canvas = document.createElement('canvas');
       canvas.width = cellWidth;
       canvas.height = cellHeight;
@@ -267,7 +267,7 @@ export class ImageStorage implements IDisposable {
         0,
         0,
         cellWidth,
-        cellHeight,
+        cellHeight
       );
       this._images[imgId].urlCache[tileId] = canvas.toDataURL('image/jpeg');
       dataUrl = this._images[imgId].urlCache[tileId];
@@ -306,7 +306,7 @@ export class ImageStorage implements IDisposable {
       col * cellWidth,
       row * cellHeight,
       cellWidth,
-      cellHeight,
+      cellHeight
     );
   }
 }

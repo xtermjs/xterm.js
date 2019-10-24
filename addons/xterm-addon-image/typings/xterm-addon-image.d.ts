@@ -6,9 +6,7 @@
 import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-image' {
-  export interface IImageAddonOptions {
-    
-  }
+  export interface IImageAddonOptions {}
 
   export class ImageAddon implements ITerminalAddon {
     constructor(socket: WebSocket, options?: IImageAddonOptions);

@@ -19,6 +19,6 @@
     "xterm": "^4.0.0"
   },
   "dependencies": {
-    "sixel": "^0.11.0"
+    "sixel": "^0.12.0"
   }
 }

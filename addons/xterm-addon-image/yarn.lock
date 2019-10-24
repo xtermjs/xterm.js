@@ -2,14 +2,7 @@
 # yarn lockfile v1
 
 
-"@types/node@^10.14.21":
-  version "10.14.22"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.22.tgz#34bcdf6b6cb5fc0db33d24816ad9d3ece22feea4"
-  integrity sha512-9taxKC944BqoTVjE+UT3pQH0nHZlTvITwfsOZqyc+R3sfJuxaTtxWjfn1K2UlxyPcKHf0rnaXcVFrS9F9vf0bw==
-
-sixel@^0.11.0:
-  version "0.11.0"
-  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.11.0.tgz#7e8691f3678bc3f8bf52d2ff517bf045609d9d25"
-  integrity sha512-GfkRqVmlMaHlqv2mI3VRM4LIrvwFrO/oL1XeV0aAKRN5IRYfnFUZwXuE8949geH4gn7YD6RiyKVFqOzvtw1Edg==
-  dependencies:
-    "@types/node" "^10.14.21"
+sixel@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.12.0.tgz#820dbb0b802df9e7a57760749c56a094005fca82"
+  integrity sha512-RL2kt9fsZyo9rlbsw+zc7wOjKt2VnPEK9As6D9zmIE7RGWG7v65dI84nEBP7aJmcn0X1SGiDnZTWrs/FZjwoGw==

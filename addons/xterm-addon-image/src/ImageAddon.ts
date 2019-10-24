@@ -14,7 +14,7 @@ interface IImageAddonOptions {
   sixelScroll?: boolean;
   sixelPaletteLimit?: number;
   sixelPrivatePalette?: boolean;
-  sixelDefaultPalette: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256'
+  sixelDefaultPalette: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
 }
 
 const DEFAULT_OPTIONS: IImageAddonOptions = {
@@ -39,7 +39,7 @@ export class ImageAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._storage = new ImageStorage(terminal);
     if (this._opts.sixelSupport && !this._sixelHandler) {
-      this._sixelHandler = terminal.parser.addDcsHandler({final:'q'}, (data, params) => {
+      this._sixelHandler = terminal.parser.addDcsHandler({final: 'q'}, (data, params) => {
         const pal = this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette;
         // TODO: 0 - get startup background, 2 - get BCE
         const dec = new SixelDecoder(params[1] === 1 ? 0 : DEFAULT_BACKGROUND, pal, this._opts.sixelPaletteLimit);
