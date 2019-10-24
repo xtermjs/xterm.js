@@ -21,7 +21,7 @@ describe('API Integration Tests', function(): void {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -509,6 +509,20 @@ describe('API Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).width`), 0);
       });
     });
+  });
+
+  it('dispose', async function(): Promise<any> {
+    await page.evaluate(`
+      window.term = new Terminal();
+      window.term.dispose();
+    `);
+    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
+  });
+
+  it('dispose (opened)', async function(): Promise<any> {
+    await openTerminal();
+    await page.evaluate(`window.term.dispose()`);
+    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
 });
 

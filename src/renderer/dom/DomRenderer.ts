@@ -183,7 +183,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         `}`;
     // Cursor
     styles +=
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
         ` outline: 1px solid ${this._colors.cursor.css};` +
         ` outline-offset: -1px;` +
         `}` +
@@ -197,10 +197,10 @@ export class DomRenderer extends Disposable implements IRenderer {
         ` background-color: ${this._colors.cursor.css};` +
         ` color: ${this._colors.cursorAccent.css};` +
         `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
         ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
         `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
         ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
         `}`;
     // Selection
