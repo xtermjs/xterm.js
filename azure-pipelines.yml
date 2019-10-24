@@ -17,6 +17,10 @@ jobs:
       versionSpec: "1.9.4"
     displayName: 'Install Yarn'
   - script: |
+      cd addons/xterm-addon-image
+      yarn
+    displayName: 'Install addon dependencies and build'
+  - script: |
       yarn
     displayName: 'Install dependencies and build'
   - script: |
@@ -35,6 +39,10 @@ jobs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
   - script: |
+      cd addons/xterm-addon-image
+      yarn
+    displayName: 'Install addon dependencies and build'
+  - script: |
       yarn
     displayName: 'Install dependencies and build'
   - script: |
@@ -52,6 +60,10 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - script: |
+      cd addons\xterm-addon-image
+      yarn
+    displayName: 'Install addon dependencies and build'
   - script: |
       yarn
     displayName: 'Install dependencies and build'
@@ -75,6 +87,10 @@ jobs:
       versionSpec: "1.9.4"
     displayName: 'Install Yarn'
   - script: |
+      cd addons/xterm-addon-image
+      yarn
+    displayName: 'Install addon dependencies and build'
+  - script: |
       yarn
     displayName: 'Install dependencies and build'
   - script: |
@@ -91,6 +107,10 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - script: |
+      cd addons/xterm-addon-image
+      yarn
+    displayName: 'Install addon dependencies and build'
   - script: |
       yarn
     displayName: 'Install dependencies and build'
