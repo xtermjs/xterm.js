@@ -15,13 +15,13 @@ const width = 800;
 const height = 600;
 
 describe('Search Tests', function (): void {
-  this.timeout(200000);
+  this.timeout(20000);
 
   before(async function (): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -97,6 +97,14 @@ describe('Search Tests', function (): void {
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
     await page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'ABCD');
+  });
+
+  it('Search for single result twice should not unselect it', async () => {
+    await writeSync('abc def');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('abc')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('abc')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
   });
 });
 

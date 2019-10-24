@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "main": "lib/xterm.js",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
@@ -47,7 +47,7 @@
     "ts-loader": "^6.0.4",
     "tslint": "^5.18.0",
     "tslint-consistent-codestyle": "^1.13.0",
-    "typescript": "3.5",
+    "typescript": "3.6",
     "utf8": "^3.0.0",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.1.0",

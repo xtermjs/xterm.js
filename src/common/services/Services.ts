@@ -180,6 +180,8 @@ export interface IPartialTerminalOptions {
   cursorStyle?: 'block' | 'underline' | 'bar';
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
+  fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
+  fastScrollSensitivity?: number;
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: FontWeight;
@@ -194,6 +196,7 @@ export interface IPartialTerminalOptions {
   rows?: number;
   screenReaderMode?: boolean;
   scrollback?: number;
+  scrollSensitivity?: number;
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
@@ -209,6 +212,8 @@ export interface ITerminalOptions {
   cursorStyle: 'block' | 'underline' | 'bar';
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
+  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
+  fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;
   fontWeight: FontWeight;
@@ -223,6 +228,7 @@ export interface ITerminalOptions {
   rows: number;
   screenReaderMode: boolean;
   scrollback: number;
+  scrollSensitivity: number;
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;

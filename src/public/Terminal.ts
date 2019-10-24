@@ -33,14 +33,14 @@ export class Terminal implements ITerminalApi {
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
-  public get element(): HTMLElement { return this._core.element; }
+  public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
   }
-  public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
+  public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
@@ -178,8 +178,8 @@ export class Terminal implements ITerminalApi {
 
   private _verifyIntegers(...values: number[]): void {
     values.forEach(value => {
-      if (value % 1 !== 0) {
-        throw new Error('This API does not accept floating point numbers');
+      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
+        throw new Error('This API only accepts integers');
       }
     });
   }

@@ -25,6 +25,14 @@ function getCursor(term: TestTerminal): number[] {
   ];
 }
 
+function getLines(term: TestTerminal, limit: number = term.rows): string[] {
+  const res: string[] = [];
+  for (let i = 0; i < limit; ++i) {
+    res.push(term.buffer.lines.get(i).translateToString(true));
+  }
+  return res;
+}
+
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
@@ -1125,13 +1133,6 @@ describe('InputHandler', () => {
     beforeEach(() => {
       term = new TestTerminal({cols: 10, rows: 10});
     });
-    function getLines(term: TestTerminal, limit: number = term.rows): string[] {
-      const res: string[] = [];
-      for (let i = 0; i < limit; ++i) {
-        res.push(term.buffer.lines.get(i).translateToString(true));
-      }
-      return res;
-    }
     it('scrollUp', () => {
       term.writeSync('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
       assert.deepEqual(getLines(term), ['m', '3', '', '', '4', '5', '6', '7', '8', '9']);
@@ -1189,6 +1190,62 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(term), ['0', '1', '2', '3', '4', 'm', '6', '7', '8', '9']);
       term.writeSync('\x1b[3H\x1b[2Mn');
       assert.deepEqual(getLines(term), ['0', '1', 'n', 'm',  '',  '', '6', '7', '8', '9']);
+    });
+  });
+  describe('SL/SR/DECIC/DECDC', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
+    });
+    it('SL (scrollLeft)', () => {
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[ @');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '2345', '2345', '2345', '2345', '2345']);
+      term.writeSync('\x1b[0 @');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '345', '345', '345', '345', '345']);
+      term.writeSync('\x1b[2 @');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '5', '5', '5', '5', '5']);
+    });
+    it('SR (scrollRight)', () => {
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[ A');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
+      term.writeSync('\x1b[0 A');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '  123', '  123', '  123', '  123', '  123']);
+      term.writeSync('\x1b[2 A');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '    1', '    1', '    1', '    1', '    1']);
+    });
+    it('insertColumns (DECIC)', () => {
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[\'}');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+      term.reset();
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[1\'}');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+      term.reset();
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[2\'}');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
+    });
+    it('deleteColumns (DECDC)', () => {
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[\'~');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+      term.reset();
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[1\'~');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+      term.reset();
+      term.writeSync('12345'.repeat(6));
+      term.writeSync('\x1b[3;3H');
+      term.writeSync('\x1b[2\'~');
+      assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
     });
   });
 });

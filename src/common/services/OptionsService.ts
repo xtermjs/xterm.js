@@ -12,7 +12,7 @@ import { clone } from 'common/Clone';
 // This sound is released under the Creative Commons Attribution 3.0 Unported
 // (CC BY 3.0) license. It was created by 'altemark'. No modifications have been
 // made, apart from the conversion to base64.
-export const DEFAULT_BELL_SOUND = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAADpAFgCwAMlBZoG/wdmCcoKRAypDQ8PbRDBEQQTOxRtFYcWlBePGIUZXhoiG88bcBz7HHIdzh0WHlMeZx51HmkeUx4WHs8dah0AHXwc3hs9G4saxRnyGBIYGBcQFv8U4RPAEoYRQBACD70NWwwHC6gJOwjWBloF7gOBAhABkf8b/qv8R/ve+Xf4Ife79W/0JfPZ8Z/wde9N7ijtE+wU6xvqM+lb6H7nw+YX5mrlxuQz5Mzje+Ma49fioeKD4nXiYeJy4pHitOL04j/jn+MN5IPkFOWs5U3mDefM55/ogOl36m7rdOyE7abuyu8D8Unyj/Pg9D/2qfcb+Yn6/vuK/Qj/lAAlAg==';
+export const DEFAULT_BELL_SOUND = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
 
 // TODO: Freeze?
 export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
@@ -23,6 +23,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
+  fastScrollModifier: 'alt',
+  fastScrollSensitivity: 5,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -31,6 +33,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   letterSpacing: 0,
   logLevel: 'info',
   scrollback: 1000,
+  scrollSensitivity: 1,
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
@@ -47,7 +50,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\'"'
+  wordSeparator: ' ()[]{}\',:;"'
 });
 
 /**
@@ -117,6 +120,12 @@ export class OptionsService implements IOptionsService {
         value = Math.min(value, 4294967295);
         if (value < 0) {
           throw new Error(`${key} cannot be less than 0, value: ${value}`);
+        }
+        break;
+      case 'fastScrollSensitivity':
+      case 'scrollSensitivity':
+        if (value <= 0) {
+          throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
         break;
     }
