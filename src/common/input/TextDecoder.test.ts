@@ -7,6 +7,7 @@ import { assert } from 'chai';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/TextDecoder';
 import { encode } from 'utf8';
 
+
 // convert UTF32 codepoints to string
 function toString(data: Uint32Array, length: number): string {
   if ((String as any).fromCodePoint) {
@@ -213,6 +214,16 @@ describe('text encodings', () => {
           decoded += toString(target, written);
         }
         assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+      });
+      it('test break after 3 bytes - issue #2495', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xf0\xa0\x9c\x8e');
+        let written = decoder.decode(utf8Data.slice(0, 3), target);
+        assert.equal(written, 0);
+        written = decoder.decode(utf8Data.slice(3), target);
+        assert.equal(written, 1);
+        assert(toString(target, written), '𠜎');
       });
     });
   });
