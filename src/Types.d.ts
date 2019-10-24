@@ -85,7 +85,9 @@ export interface IInputHandler {
   /** C0 SI */ shiftIn(): void;
 
   /** CSI @ */ insertChars(params: IParams): void;
+  /** CSI SP @ */ scrollLeft(params: IParams): void;
   /** CSI A */ cursorUp(params: IParams): void;
+  /** CSI SP A */ scrollRight(params: IParams): void;
   /** CSI B */ cursorDown(params: IParams): void;
   /** CSI C */ cursorForward(params: IParams): void;
   /** CSI D */ cursorBackward(params: IParams): void;
@@ -121,6 +123,8 @@ export interface IInputHandler {
   /** CSI r */ setScrollRegion(params: IParams, collect?: string): void;
   /** CSI s */ saveCursor(params: IParams): void;
   /** CSI u */ restoreCursor(params: IParams): void;
+  /** CSI ' } */ insertColumns(params: IParams): void;
+  /** CSI ' ~ */ deleteColumns(params: IParams): void;
   /** OSC 0
       OSC 2 */ setTitle(data: string): void;
   /** ESC E */ nextLine(): void;
