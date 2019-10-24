@@ -1064,10 +1064,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   - always left shift (no line orientation setting respected)
    */
   public scrollLeft(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
     const param = params.params[0] || 1;
-    for (let y = 0; y < this._bufferService.rows; ++y) {
-      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
-      line.deleteCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.deleteCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
   }
@@ -1087,10 +1091,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   - always right shift (no line orientation setting respected)
    */
   public scrollRight(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
     const param = params.params[0] || 1;
-    for (let y = 0; y < this._bufferService.rows; ++y) {
-      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
-      line.insertCells(0, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.insertCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
   }
@@ -1100,10 +1108,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
    */
   public insertColumns(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
     const param = params.params[0] || 1;
-    for (let y = 0; y < this._bufferService.rows; ++y) {
-      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
-      line.insertCells(this._bufferService.buffer.x, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
+      line.insertCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
   }
@@ -1113,10 +1125,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
    */
   public deleteColumns(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
     const param = params.params[0] || 1;
-    for (let y = 0; y < this._bufferService.rows; ++y) {
-      const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
-      line.deleteCells(this._bufferService.buffer.x, param, this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.deleteCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
       line.isWrapped = false;
     }
   }
