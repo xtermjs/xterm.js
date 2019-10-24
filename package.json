@@ -11,7 +11,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "start": "node demo/start",
-    "lint": "tslint 'src/**/*.ts' 'addons/**/*.ts'",
+    "lint": "tslint 'src/**/*.ts' 'addons/**/*.ts' -e 'addons/*/node_modules/**'",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "test-api": "mocha \"**/*.api.js\"",
