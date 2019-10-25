@@ -1434,16 +1434,14 @@ export class InputHandler extends Disposable implements IInputHandler {
           // focusout: ^[[O
           this._terminal.sendFocus = true;
           break;
-        case 1005: // utf8 ext mode mouse
-          // for wide terminals
-          // simply encodes large values as utf8 characters
-          this._coreMouseService.activeEncoding = 'UTF8';
+        case 1005: // utf8 ext mode mouse - removed in #2507
+          this._logService.debug('DECSET 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
           this._coreMouseService.activeEncoding = 'SGR';
           break;
-        case 1015: // urxvt ext mode mouse
-          this._coreMouseService.activeEncoding = 'URXVT';
+        case 1015: // urxvt ext mode mouse - removed in #2507
+          this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 25: // show cursor
           this._terminal.cursorHidden = false;
@@ -1607,14 +1605,14 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
           break;
-        case 1005: // utf8 ext mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+        case 1005: // utf8 ext mode mouse - removed in #2507
+          this._logService.debug('DECRST 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
           this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
-        case 1015: // urxvt ext mode mouse
-        this._coreMouseService.activeEncoding = 'DEFAULT';
+        case 1015: // urxvt ext mode mouse - removed in #2507
+        this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 25: // hide cursor
           this._terminal.cursorHidden = true;
