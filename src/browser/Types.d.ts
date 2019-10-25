@@ -44,13 +44,13 @@ export interface IViewport extends IDisposable {
 }
 
 export interface IViewportRange {
-  start: IViewportCellPosition;
-  end: IViewportCellPosition;
+  start: IViewportRangePosition;
+  end: IViewportRangePosition;
 }
 
-export interface IViewportCellPosition {
-  col: number;
-  row: number;
+export interface IViewportRangePosition {
+  x: number;
+  y: number;
 }
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;

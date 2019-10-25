@@ -862,29 +862,34 @@ declare module 'xterm' {
    */
   export interface IViewportRange {
     /**
-     * The start cell of the range.
+     * The start of the range.
      */
-    start: IViewportCellPosition;
+    start: IViewportRangePosition;
 
     /**
-     * The end cell of the range.
+     * The end of the range.
      */
-    end: IViewportCellPosition;
+    end: IViewportRangePosition;
   }
 
   /**
    * An object representing a cell position within the viewport of the terminal.
    */
-  interface IViewportCellPosition {
+  interface IViewportRangePosition {
     /**
-     * The column of the cell. Note that this is 1-based; the first column is column 1.
+     * The x position of the cell. This is a 0-based index that refers to the
+     * space in between columns, not the column itself. Index 0 refers to the
+     * left side of the viewport, index `Terminal.cols` refers to the right side
+     * of the viewport. This can be thought of as how a cursor is positioned in
+     * a text editor.
      */
-    col: number;
+    x: number;
 
     /**
-     * The row of the cell. Note that this is 1-based; the first row is row 1.
+     * The y position of the cell. This is a 0-based index that refers to a
+     * specific row.
      */
-    row: number;
+    y: number;
   }
 
   /**
