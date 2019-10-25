@@ -28,6 +28,11 @@ import { DcsHandler } from 'common/parser/DcsParser';
  */
 const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
 
+/**
+ * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
+ */
+const MAX_PARSEBUFFER_LENGTH = 131072;
+
 
 /**
  * DCS subparser implementations
@@ -175,7 +180,9 @@ export class InputHandler extends Disposable implements IInputHandler {
      * CSI handler
      */
     this._parser.setCsiHandler({final: '@'}, params => this.insertChars(params));
+    this._parser.setCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
     this._parser.setCsiHandler({final: 'A'}, params => this.cursorUp(params));
+    this._parser.setCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
     this._parser.setCsiHandler({final: 'B'}, params => this.cursorDown(params));
     this._parser.setCsiHandler({final: 'C'}, params => this.cursorForward(params));
     this._parser.setCsiHandler({final: 'D'}, params => this.cursorBackward(params));
@@ -216,6 +223,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
+    this._parser.setCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
+    this._parser.setCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
 
     /**
      * execute handler
@@ -331,14 +340,28 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._logService.debug('parsing data', data);
 
+    // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint32Array(data.length);
+      if (this._parseBuffer.length < MAX_PARSEBUFFER_LENGTH) {
+        this._parseBuffer = new Uint32Array(Math.min(data.length, MAX_PARSEBUFFER_LENGTH));
+      }
     }
-    this._parser.parse(this._parseBuffer,
-      (typeof data === 'string')
+
+    // process big data in smaller chunks
+    if (data.length > MAX_PARSEBUFFER_LENGTH) {
+      for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
+        const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
+          : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
+        this._parser.parse(this._parseBuffer, len);
+      }
+    } else {
+      const len = (typeof data === 'string')
         ? this._stringDecoder.decode(data, this._parseBuffer)
-        : this._utf8Decoder.decode(data, this._parseBuffer)
-    );
+        : this._utf8Decoder.decode(data, this._parseBuffer);
+      this._parser.parse(this._parseBuffer, len);
+    }
 
     buffer = this._bufferService.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -1033,18 +1056,108 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    */
   public scrollDown(params: IParams): void {
-    if (params.length < 2) {
-      let param = params.params[0] || 1;
+    let param = params.params[0] || 1;
 
-      // make buffer local for faster access
-      const buffer = this._bufferService.buffer;
+    // make buffer local for faster access
+    const buffer = this._bufferService.buffer;
 
-      while (param--) {
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
-      }
-      this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    while (param--) {
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
+      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+  }
+
+  /**
+   * CSI Ps SP @  Scroll left Ps columns (default = 1) (SL) ECMA-48
+   *
+   * Notation: (Pn)
+   * Representation: CSI Pn 02/00 04/00
+   * Parameter default value: Pn = 1
+   * SL causes the data in the presentation component to be moved by n character positions
+   * if the line orientation is horizontal, or by n line positions if the line orientation
+   * is vertical, such that the data appear to move to the left; where n equals the value of Pn.
+   * The active presentation position is not affected by this control function.
+   *
+   * Supported:
+   *   - always left shift (no line orientation setting respected)
+   */
+  public scrollLeft(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
+    const param = params.params[0] || 1;
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.deleteCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+  }
+
+  /**
+   * CSI Ps SP A  Scroll right Ps columns (default = 1) (SR) ECMA-48
+   *
+   * Notation: (Pn)
+   * Representation: CSI Pn 02/00 04/01
+   * Parameter default value: Pn = 1
+   * SR causes the data in the presentation component to be moved by n character positions
+   * if the line orientation is horizontal, or by n line positions if the line orientation
+   * is vertical, such that the data appear to move to the right; where n equals the value of Pn.
+   * The active presentation position is not affected by this control function.
+   *
+   * Supported:
+   *   - always right shift (no line orientation setting respected)
+   */
+  public scrollRight(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
+    const param = params.params[0] || 1;
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.insertCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+  }
+
+  /**
+   * CSI Pm ' }
+   * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
+   */
+  public insertColumns(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
+    const param = params.params[0] || 1;
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
+      line.insertCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+  }
+
+  /**
+   * CSI Pm ' ~
+   * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
+   */
+  public deleteColumns(params: IParams): void {
+    const buffer = this._bufferService.buffer;
+    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+      return;
+    }
+    const param = params.params[0] || 1;
+    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      line.deleteCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.isWrapped = false;
+    }
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
 
   /**
