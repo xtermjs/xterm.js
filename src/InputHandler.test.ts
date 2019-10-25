@@ -1248,4 +1248,22 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
     });
   });
+  it('should parse big chunks in smaller subchunks', () => {
+    // max single chunk size is hardcoded as 131072
+    const calls: any[] = [];
+    const term = new TestTerminal({cols: 10, rows: 10});
+    (term as any)._inputHandler._parser.parse = (data: Uint32Array, length: number) => {
+      calls.push([data.length, length]);
+    };
+    term.writeSync('12345');
+    term.writeSync('a'.repeat(10000));
+    term.writeSync('a'.repeat(200000));
+    term.writeSync('a'.repeat(300000));
+    assert.deepEqual(calls, [
+      [4096, 5],
+      [10000, 10000],
+      [131072, 131072], [131072, 200000 - 131072],
+      [131072, 131072], [131072, 131072], [131072, 300000 - 131072 - 131072]
+    ]);
+  });
 });
