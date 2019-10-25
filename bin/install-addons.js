@@ -22,9 +22,18 @@ if (fs.existsSync(addonsPath)) {
       const addonPath = path.join(addonsPath, folder);
 
       // install only if there are dependencies listed
-      const packageJson = require(path.join(addonPath, 'package.json'));
-      if ((packageJson.devDependencies && Object.keys(packageJson.devDependencies).length)
-          || (packageJson.dependencies && Object.keys(packageJson.dependencies).length))
+      // also skip addon if it does not contain any package.json
+      // (might happen after branch switches)
+      let packageJson;
+      try {
+        packageJson = require(path.join(addonPath, 'package.json'));
+      } catch (e) {}
+      if (packageJson
+            && (
+              (packageJson.devDependencies && Object.keys(packageJson.devDependencies).length)
+              || (packageJson.dependencies && Object.keys(packageJson.dependencies).length)
+            )
+          )
       {
         console.log('Preparing', folder);
         if (hasYarn) {
