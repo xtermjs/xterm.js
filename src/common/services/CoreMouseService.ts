@@ -148,7 +148,7 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
  *
  * Provides mouse tracking reports with different protocols and encodings.
  *  - protocols: NONE (default), X10, VT200, DRAG, ANY
- *  - encodings: DEFAULT, SGR, UTF8, URXVT
+ *  - encodings: DEFAULT, SGR (UTF8, URXVT removed in #2507)
  *
  * Custom protocols/encodings can be added by `addProtocol` / `addEncoding`.
  * To activate a protocol/encoding, set `activeProtocol` / `activeEncoding`.

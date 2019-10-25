@@ -32,7 +32,7 @@ describe('CoreMouseService', () => {
     const cms = new CoreMouseService(bufferService, coreService);
     assert.deepEqual(Object.keys((cms as any)._protocols), ['NONE', 'X10', 'VT200', 'DRAG', 'ANY']);
   });
-  it('default encodings - DEFAULT, UTF8, SGR, URXVT', () => {
+  it('default encodings - DEFAULT, SGR', () => {
     const cms = new CoreMouseService(bufferService, coreService);
     assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'SGR']);
   });
