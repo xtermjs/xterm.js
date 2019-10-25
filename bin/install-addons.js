@@ -29,8 +29,6 @@ if (fs.existsSync(addonsPath)) {
       const addonPath = path.join(addonsPath, folder);
 
       // install only if there are dependencies listed
-      // also skip addon if it does not contain any package.json
-      // (might happen after branch switches)
       let packageJson;
       try {
         packageJson = require(path.join(addonPath, 'package.json'));
