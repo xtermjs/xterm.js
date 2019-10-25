@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ *
+ * Script to initialize addon packages under "addons/" with outer deps.
+ */
+
 const path = require('path');
 const cp = require('child_process');
 const fs = require('fs');
