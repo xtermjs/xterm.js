@@ -308,7 +308,7 @@ export class Linkifier implements ILinkifier {
         if (matcher.hoverTooltipCallback) {
           // Note that IViewportRange use 1-based coordinates to align with escape sequences such
           // as CUP which use 1,1 as the default for row/col
-          matcher.hoverTooltipCallback(e, uri, { start: { row: y1 + 1, col: x1 + 1 }, end: { row: y2 + 1, col: x2 } });
+          matcher.hoverTooltipCallback(e, uri, { start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
         }
       },
       () => {
