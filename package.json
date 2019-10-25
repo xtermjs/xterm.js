@@ -8,6 +8,7 @@
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "scripts": {
+    "postinstall": "node -e \"try { require('./bin/install-addons'); } catch(e) {}\"",
     "prepackage": "npm run build",
     "package": "webpack",
     "start": "node demo/start",
