@@ -1441,7 +1441,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreMouseService.activeEncoding = 'SGR';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
-          this._logService.debug('DECSET 1005 not supported (see #2507)');
+          this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 25: // show cursor
           this._terminal.cursorHidden = false;
