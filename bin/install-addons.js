@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ *
+ * Script to initialize addon packages under "addons/" with outer deps.
+ */
+
 const path = require('path');
 const cp = require('child_process');
 const fs = require('fs');
@@ -22,12 +29,12 @@ if (fs.existsSync(addonsPath)) {
       const addonPath = path.join(addonsPath, folder);
 
       // install only if there are dependencies listed
-      // also skip addon if it does not contain any package.json
-      // (might happen after branch switches)
       let packageJson;
       try {
         packageJson = require(path.join(addonPath, 'package.json'));
-      } catch (e) {}
+      } catch (e) {
+        // swallow as changing branches can leave folders around
+      }
       if (packageJson
             && (
               (packageJson.devDependencies && Object.keys(packageJson.devDependencies).length)

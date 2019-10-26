@@ -8,7 +8,6 @@
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "scripts": {
-    "postinstall": "node -e \"try { require('./bin/install-addons'); } catch(e) {}\"",
     "prepackage": "npm run build",
     "package": "webpack",
     "start": "node demo/start",
@@ -18,7 +17,9 @@
     "test-api": "mocha \"**/*.api.js\"",
     "test-unit": "node ./bin/test.js",
     "build": "tsc -b ./tsconfig.all.json",
-    "prepare": "npm run build",
+    "prepare": "npm run setup",
+    "setup": "npm run build",
+    "presetup": "node ./bin/install-addons.js",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
