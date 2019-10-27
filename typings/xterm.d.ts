@@ -437,7 +437,7 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for a key is pressed. The event value contains the
+     * Adds an event listener for when a key is pressed. The event value contains the
      * string that will be sent in the data event as well as the DOM event that
      * triggered it.
      * @returns an `IDisposable` to stop listening.
