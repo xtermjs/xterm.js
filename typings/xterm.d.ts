@@ -609,7 +609,7 @@ declare module 'xterm' {
 
     /**
      * Selects text within the terminal.
-     * @param column The column the selection starts at..
+     * @param column The column the selection starts at.
      * @param row The row the selection starts at.
      * @param length The length of the selection.
      */
