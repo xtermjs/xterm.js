@@ -918,7 +918,7 @@ declare module 'xterm' {
 
     /**
      * The line within the buffer where the top of the bottom page is (when
-     * fully scrolled down);
+     * fully scrolled down).
      */
     readonly baseY: number;
 
