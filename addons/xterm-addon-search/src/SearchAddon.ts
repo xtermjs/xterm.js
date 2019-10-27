@@ -228,11 +228,6 @@ export class SearchAddon implements ITerminalAddon {
   protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
 
-    // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    const firstLine = terminal.buffer.getLine(row);
-    if (firstLine && firstLine.isWrapped) {
-      return;
-    }
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
       stringLine = this._translateBufferLineToStringWithWrap(row, true);
