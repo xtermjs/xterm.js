@@ -27,7 +27,7 @@ declare module 'xterm-addon-search' {
     caseSensitive?: boolean;
 
     /**
-     * Whether to do an indcremental search, this will expand the selection if it
+     * Whether to do an incremental search, this will expand the selection if it
      * still matches the term the user typed. Note that this only affects
      * `findNext`, not `findPrevious`.
      */
