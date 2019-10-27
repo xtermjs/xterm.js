@@ -118,7 +118,6 @@ if (document.location.pathname === '/test') {
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
-  document.getElementById('webgl').addEventListener('click', () => term.loadAddon(new WebglAddon()));
 }
 
 function createTerminal(): void {
