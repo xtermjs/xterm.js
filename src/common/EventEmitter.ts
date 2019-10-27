@@ -56,11 +56,10 @@ export class EventEmitter<T> implements IEventEmitter<T> {
     }
   }
 
-public dispose(): void {
-  if (this._listeners) {
-    this._listeners.splice(0, this._listeners.length);
+  public dispose(): void {
+    if (this._listeners) {
+      this._listeners.length = 0;
+    }
+    this._disposed = true;
   }
-  this._disposed = true;
-}
-
 }
