@@ -17,7 +17,7 @@ declare module 'xterm-addon-search' {
 
     /**
      * Whether to search for a whole word, the result is only valid if it's
-     * suppounded in "non-word" characters such as `_`, `(`, `)` or space.
+     * surrounded in "non-word" characters such as `_`, `(`, `)` or space.
      */
     wholeWord?: boolean;
 
