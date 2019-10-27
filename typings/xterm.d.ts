@@ -1047,7 +1047,7 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addCsiHandler or setCsiHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
@@ -1066,7 +1066,7 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addDcsHandler or setDcsHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
@@ -1079,7 +1079,7 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
@@ -1097,7 +1097,7 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addOscHandler or setOscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
