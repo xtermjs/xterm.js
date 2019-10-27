@@ -16,11 +16,13 @@ export interface IEvent<T> {
 export interface IEventEmitter<T> {
   event: IEvent<T>;
   fire(data: T): void;
+  dispose(): void;
 }
 
 export class EventEmitter<T> implements IEventEmitter<T> {
   private _listeners: IListener<T>[] = [];
   private _event?: IEvent<T>;
+  private _disposed: boolean = false;
 
   public get event(): IEvent<T> {
     if (!this._event) {
@@ -28,10 +30,12 @@ export class EventEmitter<T> implements IEventEmitter<T> {
         this._listeners.push(listener);
         const disposable = {
           dispose: () => {
-            for (let i = 0; i < this._listeners.length; i++) {
-              if (this._listeners[i] === listener) {
-                this._listeners.splice(i, 1);
-                return;
+            if (!this._disposed) {
+              for (let i = 0; i < this._listeners.length; i++) {
+                if (this._listeners[i] === listener) {
+                  this._listeners.splice(i, 1);
+                  return;
+                }
               }
             }
           }
@@ -51,4 +55,12 @@ export class EventEmitter<T> implements IEventEmitter<T> {
       queue[i].call(undefined, data);
     }
   }
+
+public dispose(): void {
+  if (this._listeners) {
+    this._listeners.splice(0, this._listeners.length);
+  }
+  this._disposed = true;
+}
+
 }
