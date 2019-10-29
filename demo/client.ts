@@ -227,7 +227,8 @@ function initOptions(term: TerminalType): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
-    wordSeparator: null
+    wordSeparator: null,
+    allowedWindowOps: ''
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];
@@ -258,7 +259,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
-    if (stringOptions[o]) {
+    if (stringOptions[o] && typeof stringOptions[o] !== 'string') {
       html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
       html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`;

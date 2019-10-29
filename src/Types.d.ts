@@ -35,7 +35,6 @@ export interface IInputHandlingTerminal {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttrData: IAttributeData;
-  savedCols: number;
   mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
   cursorHidden: boolean;

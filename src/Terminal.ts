@@ -131,8 +131,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public sendFocus: boolean;
 
   // misc
-  public savedCols: number;
-
   public curAttrData: IAttributeData;
   private _eraseAttrData: IAttributeData;
 
@@ -1463,7 +1461,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
-    this.viewport.syncScrollArea(true);
+    if (this.viewport) {
+      this.viewport.syncScrollArea(true);
+    }
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });

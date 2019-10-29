@@ -14,6 +14,34 @@ import { clone } from 'common/Clone';
 // made, apart from the conversion to base64.
 export const DEFAULT_BELL_SOUND = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
 
+// setting names controlled by allowedWindowOps
+// not supported: GetChecksum, GetSelection, SetChecksum, SetSelection, SetXprop
+export const WINDOW_OPTIONS: {[key: string]: number} = {
+  'RestoreWin': 1,
+  'MinimizeWin': 2,
+  'SetWinPosition': 3,
+  'SetWinSizePixels': 4,
+  'RaiseWin': 5,
+  'LowerWin': 6,
+  'RefreshWin': 7,
+  'SetWinSizeChars': 8,
+  'MaximizeWin': 9,
+  'FullscreenWin': 10,
+  'GetWinState': 11,
+  'GetWinPosition': 13,
+  'GetWinSizePixels': 14,
+  'GetScreenSizePixels': 15,  // note: name not in xterm
+  'GetCellSizePixels': 16,    // note: name not in xterm
+  'GetWinSizeChars': 18,
+  'GetScreenSizeChars': 19,
+  'GetIconTitle': 20,
+  'GetWinTitle': 21,
+  'PushTitle': 22,
+  'PopTitle': 23,
+  'SetWinLines': 24           // any param >= 24, also handles DECCOLM
+};
+
+
 // TODO: Freeze?
 export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   cols: 80,
@@ -50,7 +78,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\',:;"'
+  wordSeparator: ' ()[]{}\',:;"',
+  allowedWindowOps: []
 });
 
 /**
@@ -128,6 +157,20 @@ export class OptionsService implements IOptionsService {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
         break;
+      case 'allowedWindowOps':
+        const values = (value as string).split(',');
+        const cleaned: number[] = [];
+        for (let i = 0; i < values.length; ++i) {
+          const option = parseInt(values[i].trim()) || WINDOW_OPTIONS[values[i].trim()];
+          if (!option || option < 0 || option > 24) {
+            throw new Error(`unknown window option "${values[i]}"`);
+          }
+          if (!~cleaned.indexOf(option)) {
+            cleaned.push(option);
+          }
+        }
+        value = cleaned;
+        break;
     }
     return value;
   }
@@ -135,6 +178,9 @@ export class OptionsService implements IOptionsService {
   public getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error(`No option with key "${key}"`);
+    }
+    if (key === 'allowedWindowOps') {
+      return this.options[key].join();
     }
     return this.options[key];
   }

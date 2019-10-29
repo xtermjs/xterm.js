@@ -201,6 +201,7 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
+  allowedWindowOps?: number[];
 }
 
 export interface ITerminalOptions {
@@ -240,6 +241,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
+  allowedWindowOps: number[];
 }
 
 export interface ITheme {
