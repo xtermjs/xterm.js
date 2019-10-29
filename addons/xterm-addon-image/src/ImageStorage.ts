@@ -194,7 +194,8 @@ export class ImageStorage implements IDisposable {
     canvas.height = sixel.height;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      const imageData = ctx.getImageData(0, 0, sixel.width, sixel.height);
+      // const imageData = ctx.getImageData(0, 0, sixel.width, sixel.height);
+      const imageData = new ImageData(sixel.width, sixel.height);
 
       // whether current BG should be applied to sixel image
       const applyBG = !!sixel.fillColor;
@@ -202,6 +203,9 @@ export class ImageStorage implements IDisposable {
 
       ctx.putImageData(imageData, 0, 0);
       this.addImage(canvas);
+      const img = new Image(sixel.width, sixel.height);
+      img.src = '' + imageData;
+      console.log(img);
     }
   }
 
