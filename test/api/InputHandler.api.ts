@@ -347,7 +347,7 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
 
-    describe.only('Window Options - CSI Ps ; Ps ; Ps t', () => {
+    describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
       it('should be disabled by default', async function() {
         assert.equal(await page.evaluate(`(() => window.term.getOption('allowedWindowOps'))()`), '');
         await page.evaluate(`(() => {
