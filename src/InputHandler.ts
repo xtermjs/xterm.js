@@ -2094,7 +2094,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (rs) {
           const w = rs.dimensions.actualCellWidth.toFixed(0);
           const h = rs.dimensions.actualCellHeight.toFixed(0);
-          this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);
+          this._coreService.triggerDataEvent(`${C0.ESC}[6;${h};${w}t`);
         }
         break;
       case 18:  // GetWinSizeChars, returns CSI 8 ; height ; width t
