@@ -17,7 +17,7 @@ declare module 'xterm-addon-search' {
 
     /**
      * Whether to search for a whole word, the result is only valid if it's
-     * suppounded in "non-word" characters such as `_`, `(`, `)` or space.
+     * surrounded in "non-word" characters such as `_`, `(`, `)` or space.
      */
     wholeWord?: boolean;
 
@@ -27,7 +27,7 @@ declare module 'xterm-addon-search' {
     caseSensitive?: boolean;
 
     /**
-     * Whether to do an indcremental search, this will expand the selection if it
+     * Whether to do an incremental search, this will expand the selection if it
      * still matches the term the user typed. Note that this only affects
      * `findNext`, not `findPrevious`.
      */
