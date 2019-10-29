@@ -28,6 +28,11 @@ import { DcsHandler } from 'common/parser/DcsParser';
  */
 const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
 
+/**
+ * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
+ */
+const MAX_PARSEBUFFER_LENGTH = 131072;
+
 
 /**
  * DCS subparser implementations
@@ -336,14 +341,28 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._logService.debug('parsing data', data);
 
+    // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint32Array(data.length);
+      if (this._parseBuffer.length < MAX_PARSEBUFFER_LENGTH) {
+        this._parseBuffer = new Uint32Array(Math.min(data.length, MAX_PARSEBUFFER_LENGTH));
+      }
     }
-    this._parser.parse(this._parseBuffer,
-      (typeof data === 'string')
+
+    // process big data in smaller chunks
+    if (data.length > MAX_PARSEBUFFER_LENGTH) {
+      for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
+        const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
+          : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
+        this._parser.parse(this._parseBuffer, len);
+      }
+    } else {
+      const len = (typeof data === 'string')
         ? this._stringDecoder.decode(data, this._parseBuffer)
-        : this._utf8Decoder.decode(data, this._parseBuffer)
-    );
+        : this._utf8Decoder.decode(data, this._parseBuffer);
+      this._parser.parse(this._parseBuffer, len);
+    }
 
     buffer = this._bufferService.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -1416,16 +1435,14 @@ export class InputHandler extends Disposable implements IInputHandler {
           // focusout: ^[[O
           this._terminal.sendFocus = true;
           break;
-        case 1005: // utf8 ext mode mouse
-          // for wide terminals
-          // simply encodes large values as utf8 characters
-          this._coreMouseService.activeEncoding = 'UTF8';
+        case 1005: // utf8 ext mode mouse - removed in #2507
+          this._logService.debug('DECSET 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
           this._coreMouseService.activeEncoding = 'SGR';
           break;
-        case 1015: // urxvt ext mode mouse
-          this._coreMouseService.activeEncoding = 'URXVT';
+        case 1015: // urxvt ext mode mouse - removed in #2507
+          this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 25: // show cursor
           this._terminal.cursorHidden = false;
@@ -1589,14 +1606,14 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
           break;
-        case 1005: // utf8 ext mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+        case 1005: // utf8 ext mode mouse - removed in #2507
+          this._logService.debug('DECRST 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
           this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
-        case 1015: // urxvt ext mode mouse
-        this._coreMouseService.activeEncoding = 'DEFAULT';
+        case 1015: // urxvt ext mode mouse - removed in #2507
+        this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 25: // hide cursor
           this._terminal.cursorHidden = true;
