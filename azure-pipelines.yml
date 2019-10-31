@@ -12,19 +12,32 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
+  - script: |
+      NODE_PATH=$(pwd)/out ./node_modules/.bin/nyc ./node_modules/.bin/mocha './out/*test.js' './out/**/*test.js'
+      ./node_modules/.bin/nyc report --reporter=cobertura
+    displayName: 'Coverage report'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+    displayName: 'Publish coverage'
+  - task: mspremier.BuildQualityChecks.QualityChecks-task.BuildQualityChecks@6
+    displayName: 'Check build quality'
+    inputs:
+      checkCoverage: true
+      coverageType: branches
+      coverageThreshold: 55
+      coverageFailOption: fixed
 
 - job: macOS
   pool:
@@ -34,14 +47,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Windows
@@ -52,14 +62,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Linux_IntegrationTests
@@ -70,12 +77,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -91,8 +97,7 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -115,13 +120,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
+  - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'
