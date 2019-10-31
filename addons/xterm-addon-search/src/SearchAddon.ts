@@ -4,6 +4,7 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { getStringCellWidth } from './CharWidth'
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -52,7 +53,7 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    if (!term || term.length === 0) {
+    if (!term || getStringCellWidth(term) === 0) {
       this._terminal.clearSelection();
       return false;
     }
@@ -116,7 +117,7 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    if (!term || term.length === 0) {
+    if (!term || getStringCellWidth(term) === 0) {
       this._terminal.clearSelection();
       return false;
     }
@@ -211,7 +212,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
     return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
-      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
+      (((searchIndex + getStringCellWidth(term)) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + getStringCellWidth(term)]) !== -1)));
   }
 
   /**
@@ -251,21 +252,21 @@ export class SearchAddon implements ITerminalAddon {
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..col
         while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
-          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
+          resultIndex = searchRegex.lastIndex - getStringCellWidth(foundTerm[0]);
           term = foundTerm[0];
-          searchRegex.lastIndex -= (term.length - 1);
+          searchRegex.lastIndex -= (getStringCellWidth(term) - 1);
         }
       } else {
         foundTerm = searchRegex.exec(searchStringLine.slice(col));
-        if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = col + (searchRegex.lastIndex - foundTerm[0].length);
+        if (foundTerm && getStringCellWidth(foundTerm[0]) > 0) {
+          resultIndex = col + (searchRegex.lastIndex - getStringCellWidth(foundTerm[0]));
           term = foundTerm[0];
         }
       }
     } else {
       if (isReverseSearch) {
-        if (col - searchTerm.length >= 0) {
-          resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
+        if (col - getStringCellWidth(searchTerm) >= 0) {
+          resultIndex = searchStringLine.lastIndexOf(searchTerm, col - getStringCellWidth(searchTerm));
         }
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, col);
@@ -292,7 +293,7 @@ export class SearchAddon implements ITerminalAddon {
           }
           // Adjust the searchIndex to normalize emoji into single chars
           const char = cell.char;
-          if (char.length > 1) {
+          if (char.length == 2 && getStringCellWidth(char) == 2) {
             resultIndex -= char.length - 1;
           }
           // Adjust the searchIndex for empty characters following wide unicode
@@ -349,7 +350,7 @@ export class SearchAddon implements ITerminalAddon {
       terminal.clearSelection();
       return false;
     }
-    terminal.select(result.col, result.row, result.term.length);
+    terminal.select(result.col, result.row, getStringCellWidth(result.term));
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
       let scroll = result.row - terminal.buffer.viewportY;

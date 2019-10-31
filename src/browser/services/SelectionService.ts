@@ -14,6 +14,7 @@ import { ICharSizeService, IMouseService, ISelectionService } from 'browser/serv
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
+import { getStringCellWidth } from 'common/CharWidth'
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -263,7 +264,7 @@ export class SelectionService implements ISelectionService {
     // we need to update the selection for middle click to paste selection.
     if (Browser.isLinux && isLinuxMouseSelection) {
       const selectionText = this.selectionText;
-      if (selectionText.length) {
+      if (getStringCellWidth(selectionText)) {
         this._onLinuxMouseSelection.fire(this.selectionText);
       }
     }
@@ -663,7 +664,7 @@ export class SelectionService implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
+    if (getStringCellWidth(this.selectionText) <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
       if (event.altKey && this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
@@ -702,7 +703,7 @@ export class SelectionService implements ISelectionService {
   private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
-      const length = bufferLine.loadCell(i, this._workCell).getChars().length;
+      const length = getStringCellWidth(bufferLine.loadCell(i, this._workCell).getChars());
       if (this._workCell.getWidth() === 0) {
         // Wide characters aren't included in the line string so decrement the
         // index so the index is back on the wide character.
@@ -782,7 +783,7 @@ export class SelectionService implements ISelectionService {
       }
 
       // Adjust the end index for characters whose length are > 1 (emojis)
-      const length = bufferLine.getString(endCol).length;
+      const length = getStringCellWidth(bufferLine.getString(endCol));
       if (length > 1) {
         rightLongCharOffset += length - 1;
         endIndex += length - 1;
@@ -791,7 +792,7 @@ export class SelectionService implements ISelectionService {
       // Expand the string in both directions until a space is hit
       while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._workCell))) {
         bufferLine.loadCell(startCol - 1, this._workCell);
-        const length = this._workCell.getChars().length;
+        const length = getStringCellWidth(this._workCell.getChars());
         if (this._workCell.getWidth() === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
@@ -807,7 +808,7 @@ export class SelectionService implements ISelectionService {
       }
       while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._workCell))) {
         bufferLine.loadCell(endCol + 1, this._workCell);
-        const length = this._workCell.getChars().length;
+        const length = getStringCellWidth(this._workCell.getChars());
         if (this._workCell.getWidth() === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
