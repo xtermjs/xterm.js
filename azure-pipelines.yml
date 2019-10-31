@@ -16,14 +16,11 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: macOS
@@ -34,14 +31,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Windows
@@ -52,14 +46,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Linux_IntegrationTests
@@ -74,8 +65,7 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -91,8 +81,7 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -119,9 +108,7 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn
     displayName: 'Install dependencies and build'
-  - script: |
-      NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
+  - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'
