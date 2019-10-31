@@ -35,8 +35,8 @@ jobs:
     displayName: 'Check build quality'
     inputs:
       checkCoverage: true
-      coverageType: branches
-      coverageThreshold: 55
+      coverageType: lines
+      coverageThreshold: 60
       coverageFailOption: fixed
 
 - job: macOS
