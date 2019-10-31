@@ -22,6 +22,23 @@ jobs:
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
+  - script: |
+      NODE_PATH=$(pwd)/out ./node_modules/.bin/nyc ./node_modules/.bin/mocha './out/*test.js' './out/**/*test.js'
+      ./node_modules/.bin/nyc report --reporter=cobertura
+    displayName: 'Coverage report'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/coverage'
+    displayName: 'Publish coverage'
+  - task: mspremier.BuildQualityChecks.QualityChecks-task.BuildQualityChecks@6
+    displayName: 'Check build quality'
+    inputs:
+      checkCoverage: true
+      coverageType: branches
+      coverageThreshold: 55
+      coverageFailOption: fixed
 
 - job: macOS
   pool:
