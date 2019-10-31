@@ -12,9 +12,9 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
   - script: |
       yarn
@@ -70,9 +70,9 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
   - script: |
       yarn
@@ -115,9 +115,9 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
   - script: |
       yarn
