@@ -43,7 +43,11 @@ export class Linkifier2 implements ILinkifier2 {
   }
 
   private _onMouseMove(event: MouseEvent): void {
-    const position = this._positionFromMouseEvent(event);
+    if (!this._element || !this._mouseService) {
+      return;
+    }
+
+    const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
 
     if (!position) {
       return;
@@ -53,32 +57,34 @@ export class Linkifier2 implements ILinkifier2 {
 
     // Check the cache for a link and determine if we need to show or hide tooltip
     let foundLink = false;
-    this._linkCache.forEach((cachedLink, i) => {
-      const isInPosition = this._linkAtPosition(cachedLink.link, position);
-      const range = cachedLink.link.range;
-      if (isInPosition && !cachedLink.mouseOver) {
+    for (let i = 0; i < this._linkCache.length; i++) {
+      const cachedLink = this._linkCache[i].link;
+      const isInPosition = this._linkAtPosition(cachedLink, position);
+      const range = cachedLink.range;
+
+      if (isInPosition && !this._linkCache[i].mouseOver) {
         // Show the tooltip
         this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
-        this._element!.classList.add('xterm-cursor-pointer');
+        this._element.classList.add('xterm-cursor-pointer');
 
-        if (cachedLink.link.showTooltip) {
-          cachedLink.link.showTooltip(event, cachedLink.link.url);
+        if (cachedLink.showTooltip) {
+          cachedLink.showTooltip(event, cachedLink.url);
         }
 
         this._linkCache[i].mouseOver = true;
         foundLink = true;
-      } else if (!isInPosition && cachedLink.mouseOver) {
+      } else if (!isInPosition && this._linkCache[i].mouseOver) {
         // Hide the tooltip
         this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
-        this._element!.classList.remove('xterm-cursor-pointer');
+        this._element.classList.remove('xterm-cursor-pointer');
 
-        if (cachedLink.link.hideTooltip) {
-          cachedLink.link.hideTooltip(event, cachedLink.link.url);
+        if (cachedLink.hideTooltip) {
+          cachedLink.hideTooltip(event, cachedLink.url);
         }
 
         this._linkCache[i].mouseOver = false;
       }
-    });
+    }
 
     if (foundLink) {
       return;
@@ -91,7 +97,11 @@ export class Linkifier2 implements ILinkifier2 {
   }
 
   private _onMouseDown(event: MouseEvent): void {
-    const position = this._positionFromMouseEvent(event);
+    if (!this._element || !this._mouseService) {
+      return;
+    }
+
+    const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
 
     if (!position) {
       return;
@@ -106,7 +116,7 @@ export class Linkifier2 implements ILinkifier2 {
 
   private _handleNewLink(link: ILink | undefined): void {
     if (link && !this._linkCache.find(cachedLink => cachedLink.link = link)) {
-      this._linkCache.push({ link: link, mouseOver: false });
+      this._linkCache.push({ link, mouseOver: false });
     }
   }
 
@@ -116,22 +126,18 @@ export class Linkifier2 implements ILinkifier2 {
    * @param position
    */
   private _linkAtPosition(link: ILink, position: IBufferCellPosition): boolean {
-    return link.range.start.x <= position.x
-      && link.range.start.y <= position.y
-      && link.range.end.x >= position.x
-      && link.range.end.y >= position.y;
+    return link.range.start.x <= position.x &&
+      link.range.start.y <= position.y &&
+      link.range.end.x >= position.x &&
+      link.range.end.y >= position.y;
   }
 
   /**
    * Get the buffer position from a mouse event
    * @param event
    */
-  private _positionFromMouseEvent(event: MouseEvent): IBufferCellPosition | undefined {
-    if (!this._element) {
-      return;
-    }
-
-    const coords = this._mouseService!.getCoords(event, this._element, this._bufferService.cols, this._bufferService.rows);
+  private _positionFromMouseEvent(event: MouseEvent, element: HTMLElement, mouseService: IMouseService): IBufferCellPosition | undefined {
+    const coords = mouseService.getCoords(event, element, this._bufferService.cols, this._bufferService.rows);
     if (!coords) {
       return;
     }
