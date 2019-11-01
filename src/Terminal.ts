@@ -37,7 +37,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
+import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -58,11 +58,12 @@ import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';
-import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport } from 'browser/Types';
+import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+import { Linkifier2 } from 'browser/Linkifier2';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -154,6 +155,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _inputHandler: InputHandler;
   public linkifier: ILinkifier;
+  public linkifier2: ILinkifier2;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
   private _mouseZoneManager: IMouseZoneManager;
@@ -248,7 +250,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._renderService.dispose();
     }
     this._customKeyEventHandler = null;
-    this.write = () => {};
+    this.write = () => { };
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
@@ -290,6 +292,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._inputHandler);
 
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
+    this.linkifier2 = this.linkifier2 || new Linkifier2(this._bufferService);
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -619,6 +622,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
+    this.linkifier2.attachToDom(this.element, this._mouseService);
 
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
@@ -719,8 +723,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           } else {
             // according to MDN buttons only reports up to button 5 (AUX2)
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
-                  ev.buttons & 4 ? CoreMouseButton.MIDDLE :
-                  ev.buttons & 2 ? CoreMouseButton.RIGHT :
+              ev.buttons & 4 ? CoreMouseButton.MIDDLE :
+                ev.buttons & 2 ? CoreMouseButton.RIGHT :
                   CoreMouseButton.NONE; // fallback to NONE
           }
           break;
@@ -769,13 +773,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
      * Note: 'mousedown' currently is "always on" and not managed
      * by onProtocolChange.
      */
-    const requestedEvents: {[key: string]: ((ev: Event) => void) | null} = {
+    const requestedEvents: { [key: string]: ((ev: Event) => void) | null } = {
       mouseup: null,
       wheel: null,
       mousedrag: null,
       mousemove: null
     };
-    const eventListeners: {[key: string]: (ev: Event) => void} = {
+    const eventListeners: { [key: string]: (ev: Event) => void } = {
       mouseup: (ev: MouseEvent) => {
         sendEvent(ev);
         if (!ev.buttons) {
@@ -898,7 +902,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           }
 
           // Construct and send sequences
-          const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
+          const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
           let data = '';
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
@@ -1166,6 +1170,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
+  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    if (!this.linkifier2) {
+      return;
+    }
+    return this.linkifier2.registerLinkProvider(linkProvider);
+  }
+
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     const joinerId = this._renderService.registerCharacterJoiner(handler);
     this.refresh(0, this.rows - 1);
@@ -1324,8 +1335,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
-        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-        (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;

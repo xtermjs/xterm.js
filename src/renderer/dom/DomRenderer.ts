@@ -80,6 +80,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
     this._terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
+
+    this._terminal.linkifier2.onShowTooltip(e => this._onLinkHover(e));
+    this._terminal.linkifier2.onHideTooltip(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -119,12 +122,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     const styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-        ` display: inline-block;` +
-        ` height: 100%;` +
-        ` vertical-align: top;` +
-        ` width: ${this.dimensions.actualCellWidth}px` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      ` display: inline-block;` +
+      ` height: 100%;` +
+      ` vertical-align: top;` +
+      ` width: ${this.dimensions.actualCellWidth}px` +
+      `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
 
@@ -146,85 +149,85 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     // Base CSS
     let styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
-        ` color: ${this._colors.foreground.css};` +
-        ` background-color: ${this._colors.background.css};` +
-        ` font-family: ${this._terminal.options.fontFamily};` +
-        ` font-size: ${this._terminal.options.fontSize}px;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      ` color: ${this._colors.foreground.css};` +
+      ` background-color: ${this._colors.background.css};` +
+      ` font-family: ${this._terminal.options.fontFamily};` +
+      ` font-size: ${this._terminal.options.fontSize}px;` +
+      `}`;
     // Text styles
     styles +=
-        `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-        ` font-weight: ${this._terminal.options.fontWeight};` +
-        `}` +
-        `${this._terminalSelector} span.${BOLD_CLASS} {` +
-        ` font-weight: ${this._terminal.options.fontWeightBold};` +
-        `}` +
-        `${this._terminalSelector} span.${ITALIC_CLASS} {` +
-        ` font-style: italic;` +
-        `}`;
+      `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
+      ` font-weight: ${this._terminal.options.fontWeight};` +
+      `}` +
+      `${this._terminalSelector} span.${BOLD_CLASS} {` +
+      ` font-weight: ${this._terminal.options.fontWeightBold};` +
+      `}` +
+      `${this._terminalSelector} span.${ITALIC_CLASS} {` +
+      ` font-style: italic;` +
+      `}`;
     // Blink animation
     styles +=
-        `@keyframes blink_box_shadow {` +
-        ` 50% {` +
-        `  box-shadow: none;` +
-        ` }` +
-        `}`;
+      `@keyframes blink_box_shadow {` +
+      ` 50% {` +
+      `  box-shadow: none;` +
+      ` }` +
+      `}`;
     styles +=
-        `@keyframes blink_block {` +
-        ` 0% {` +
-        `  background-color: ${this._colors.cursor.css};` +
-        `  color: ${this._colors.cursorAccent.css};` +
-        ` }` +
-        ` 50% {` +
-        `  background-color: ${this._colors.cursorAccent.css};` +
-        `  color: ${this._colors.cursor.css};` +
-        ` }` +
-        `}`;
+      `@keyframes blink_block {` +
+      ` 0% {` +
+      `  background-color: ${this._colors.cursor.css};` +
+      `  color: ${this._colors.cursorAccent.css};` +
+      ` }` +
+      ` 50% {` +
+      `  background-color: ${this._colors.cursorAccent.css};` +
+      `  color: ${this._colors.cursor.css};` +
+      ` }` +
+      `}`;
     // Cursor
     styles +=
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` outline: 1px solid ${this._colors.cursor.css};` +
-        ` outline-offset: -1px;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
-        ` animation: blink_box_shadow 1s step-end infinite;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` animation: blink_block 1s step-end infinite;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` background-color: ${this._colors.cursor.css};` +
-        ` color: ${this._colors.cursorAccent.css};` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-        ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-        ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` outline: 1px solid ${this._colors.cursor.css};` +
+      ` outline-offset: -1px;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
+      ` animation: blink_box_shadow 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` animation: blink_block 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` background-color: ${this._colors.cursor.css};` +
+      ` color: ${this._colors.cursorAccent.css};` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+      ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
+      `}`;
     // Selection
     styles +=
-        `${this._terminalSelector} .${SELECTION_CLASS} {` +
-        ` position: absolute;` +
-        ` top: 0;` +
-        ` left: 0;` +
-        ` z-index: 1;` +
-        ` pointer-events: none;` +
-        `}` +
-        `${this._terminalSelector} .${SELECTION_CLASS} div {` +
-        ` position: absolute;` +
-        ` background-color: ${this._colors.selection.css};` +
-        `}`;
+      `${this._terminalSelector} .${SELECTION_CLASS} {` +
+      ` position: absolute;` +
+      ` top: 0;` +
+      ` left: 0;` +
+      ` z-index: 1;` +
+      ` pointer-events: none;` +
+      `}` +
+      `${this._terminalSelector} .${SELECTION_CLASS} div {` +
+      ` position: absolute;` +
+      ` background-color: ${this._colors.selection.css};` +
+      `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {
       styles +=
-          `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-          `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this._colors.background.css}; }` +
-        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this._colors.background.css}; }` +
+      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
   }

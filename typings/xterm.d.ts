@@ -540,6 +540,13 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
+     * (EXPERIMENTAL) Registers a link provider, allowing a custom parser to
+     * be used to match and handle links.
+     * @param linkProvider
+     */
+    registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+
+    /**
      * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
      * characters to be rendered as a single unit. This is useful in particular
      * for rendering ligatures and graphemes, among other things.
@@ -885,6 +892,84 @@ declare module 'xterm' {
      * The row of the cell. Note that this is 1-based; the first row is row 1.
      */
     row: number;
+  }
+
+  /**
+   * A custom link provider
+   */
+  interface ILinkProvider {
+    /**
+     * Provides a link a buffer position
+     * @param position
+     * @param callback
+     */
+    provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void;
+  }
+
+  /**
+   * A link
+   */
+  interface ILink {
+    /**
+     * The buffer range of the link
+     */
+    range: IBufferRange;
+
+    /**
+     * The url of the link
+     */
+    url: string;
+
+    /**
+     * The show tooltip callback
+     * @param event
+     * @param link
+     */
+    showTooltip(event: MouseEvent, link: string): void;
+
+    /**
+     * The hide tooltip callback
+     * @param event
+     * @param link
+     */
+    hideTooltip(event: MouseEvent, link: string): void;
+
+    /**
+     * Handles when the link is opened
+     * @param event
+     * @param link
+     */
+    handle(event: MouseEvent, link: string): void;
+  }
+
+  /**
+   * A range in the buffer
+   */
+  interface IBufferRange {
+    /**
+     * The start position of the range
+     */
+    start: IBufferCellPosition;
+
+    /**
+     * The end position of the range
+     */
+    end: IBufferCellPosition;
+  }
+
+  /**
+   * A position in the buffer
+   */
+  interface IBufferCellPosition {
+    /**
+     * The x of the buffer position
+     */
+    x: number;
+
+    /**
+     * The y of the buffer position
+     */
+    y: number;
   }
 
   /**

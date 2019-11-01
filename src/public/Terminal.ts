@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -66,6 +66,9 @@ export class Terminal implements ITerminalApi {
   }
   public deregisterLinkMatcher(matcherId: number): void {
     this._core.deregisterLinkMatcher(matcherId);
+  }
+  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     return this._core.registerCharacterJoiner(handler);
@@ -186,7 +189,7 @@ export class Terminal implements ITerminalApi {
 }
 
 class BufferApiView implements IBufferApi {
-  constructor(private _buffer: IBuffer) {}
+  constructor(private _buffer: IBuffer) { }
 
   public get cursorY(): number { return this._buffer.y; }
   public get cursorX(): number { return this._buffer.x; }
@@ -203,7 +206,7 @@ class BufferApiView implements IBufferApi {
 }
 
 class BufferLineApiView implements IBufferLineApi {
-  constructor(private _line: IBufferLine) {}
+  constructor(private _line: IBufferLine) { }
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public getCell(x: number): IBufferCellApi | undefined {
@@ -218,13 +221,13 @@ class BufferLineApiView implements IBufferLineApi {
 }
 
 class BufferCellApiView implements IBufferCellApi {
-  constructor(private _line: IBufferLine, private _x: number) {}
+  constructor(private _line: IBufferLine, private _x: number) { }
   public get char(): string { return this._line.getString(this._x); }
   public get width(): number { return this._line.getWidth(this._x); }
 }
 
 class ParserApi implements IParser {
-  constructor(private _core: ITerminal) {}
+  constructor(private _core: ITerminal) { }
 
   public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
     return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
