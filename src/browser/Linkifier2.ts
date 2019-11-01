@@ -14,6 +14,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
  */
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
+  private _viewportElement: HTMLElement | undefined;
   private _linkProviders: ILinkProvider[] = [];
   private _mouseService: IMouseService | undefined;
   private _linkCache: ILinkCache[] = [];
@@ -31,15 +32,22 @@ export class Linkifier2 implements ILinkifier2 {
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     this._linkProviders.push(linkProvider);
-    return { dispose: () => console.log('disposing link providers') };
+    return {
+      dispose: () => {
+        // Remove the link provider from the list
+        this._linkProviders = this._linkProviders.splice(this._linkProviders.indexOf(linkProvider), 1);
+      }
+    };
   }
 
-  public attachToDom(element: HTMLElement, mouseService: IMouseService): void {
+  public attachToDom(element: HTMLElement, viewportElement: HTMLElement, mouseService: IMouseService): void {
     this._element = element;
+    this._viewportElement = viewportElement;
     this._mouseService = mouseService;
 
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
     this._element.addEventListener('click', this._onMouseDown.bind(this));
+    this._viewportElement.addEventListener('scroll', this._onScroll.bind(this));
   }
 
   private _onMouseMove(event: MouseEvent): void {
@@ -62,6 +70,7 @@ export class Linkifier2 implements ILinkifier2 {
       const isInPosition = this._linkAtPosition(cachedLink, position);
       const range = cachedLink.range;
 
+      // Check if the mouse position contains a link
       if (isInPosition && !this._linkCache[i].mouseOver) {
         // Show the tooltip
         this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
@@ -75,13 +84,7 @@ export class Linkifier2 implements ILinkifier2 {
         foundLink = true;
       } else if (!isInPosition && this._linkCache[i].mouseOver) {
         // Hide the tooltip
-        this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
-        this._element.classList.remove('xterm-cursor-pointer');
-
-        if (cachedLink.hideTooltip) {
-          cachedLink.hideTooltip(event, cachedLink.url);
-        }
-
+        this._hideTooltip(this._element, this._linkCache[i].link, event);
         this._linkCache[i].mouseOver = false;
       }
     }
@@ -114,9 +117,42 @@ export class Linkifier2 implements ILinkifier2 {
     });
   }
 
+  private _onScroll(event: Event): void {
+    this._invalidateCache();
+  }
+
   private _handleNewLink(link: ILink | undefined): void {
     if (link && !this._linkCache.find(cachedLink => cachedLink.link = link)) {
       this._linkCache.push({ link, mouseOver: false });
+      this._bufferService.buffer.addMarker(link.range.start.y);
+    }
+  }
+
+  private _invalidateCache(): void {
+    if (!this._element) {
+      return;
+    }
+
+    // We want to invalidate the cache
+    // but we need to check if we need to hide any tooltip
+    for (let i = 0; i < this._linkCache.length; i++) {
+      if (this._linkCache[i].mouseOver) {
+        this._hideTooltip(this._element, this._linkCache[i].link, new MouseEvent('invalid event'));
+      }
+    }
+
+    this._linkCache = [];
+  }
+
+  private _hideTooltip(element: HTMLElement, link: ILink, event: MouseEvent): void {
+    const range = link.range;
+    const scrollOffset = this._bufferService.buffer.ydisp;
+
+    this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
+    element.classList.remove('xterm-cursor-pointer');
+
+    if (link.hideTooltip) {
+      link.hideTooltip(event, link.url);
     }
   }
 

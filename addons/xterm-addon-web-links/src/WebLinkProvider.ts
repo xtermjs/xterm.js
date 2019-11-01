@@ -16,7 +16,7 @@ export default class WebLinkProvider implements ILinkProvider {
 }
 
 export class LinkComputer {
-  public static computeLink(position: IBufferCellPosition, regex: RegExp, buffer: IBuffer, handler: (event: MouseEvent, uri: string) => void): ILink | undefined {
+  public static computeLink(position: IBufferCellPosition, regex: RegExp, buffer: IBuffer, handle: (event: MouseEvent, uri: string) => void): ILink | undefined {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
     const bufferLine = buffer.getLine(position.y - 1);
 
@@ -29,9 +29,38 @@ export class LinkComputer {
     let match;
     let stringIndex = -1;
 
-    // while ((match = rex.exec(line)) !== null) {
-    //   const uri = match[1];
-    // }
+    while ((match = rex.exec(line)) !== null) {
+      const url = match[1];
+      if (!url) {
+        // something matched but does not comply with the given matchIndex
+        // since this is most likely a bug the regex itself we simply do nothing here
+        console.log('match found without corresponding matchIndex');
+        break;
+      }
 
+      // Get index, match.index is for the outer match which includes negated chars
+      // therefore we cannot use match.index directly, instead we search the position
+      // of the match group in text again
+      // also correct regex and string search offsets for the next loop run
+      stringIndex = line.indexOf(url, stringIndex + 1);
+      rex.lastIndex = stringIndex + url.length;
+      if (stringIndex < 0) {
+        // invalid stringIndex (should not have happened)
+        break;
+      }
+
+      const range = {
+        start: {
+          x: stringIndex + 1,
+          y: position.y
+        },
+        end: {
+          x: stringIndex + url.length + 1,
+          y: position.y
+        }
+      };
+
+      return { range, url, handle };
+    }
   }
 }

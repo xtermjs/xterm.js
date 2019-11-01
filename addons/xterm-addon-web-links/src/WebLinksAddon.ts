@@ -45,12 +45,12 @@ export class WebLinksAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
 
-    // if ('registerLinkProvider' in this._terminal) {
-    this._linkProvider = new WebLinkProvider(this._terminal, strictUrlRegex, this._handler);
-    this._terminal.registerLinkProvider(this._linkProvider);
-    // } else {
-    //   this._linkMatcherId = this._terminal.registerLinkMatcher(strictUrlRegex, this._handler, this._options);
-    // }
+    if ('registerLinkProvider' in this._terminal as any) {
+      this._linkProvider = new WebLinkProvider(this._terminal, strictUrlRegex, this._handler);
+      this._terminal.registerLinkProvider(this._linkProvider);
+    } else {
+      this._linkMatcherId = this._terminal.registerLinkMatcher(strictUrlRegex, this._handler, this._options);
+    }
   }
 
   public dispose(): void {

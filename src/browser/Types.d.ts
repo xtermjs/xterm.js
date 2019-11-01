@@ -98,7 +98,7 @@ export interface ILinkifier2 {
   onShowTooltip: IEvent<ILinkifierEvent>;
   onHideTooltip: IEvent<ILinkifierEvent>;
 
-  attachToDom(element: HTMLElement, mouseService: IMouseService): void;
+  attachToDom(element: HTMLElement, viewportElement: HTMLElement, mouseService: IMouseService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 }
 
