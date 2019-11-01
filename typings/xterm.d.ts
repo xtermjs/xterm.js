@@ -925,14 +925,14 @@ declare module 'xterm' {
      * @param event
      * @param link
      */
-    showTooltip(event: MouseEvent, link: string): void;
+    showTooltip?(event: MouseEvent, link: string): void;
 
     /**
      * The hide tooltip callback
      * @param event
      * @param link
      */
-    hideTooltip(event: MouseEvent, link: string): void;
+    hideTooltip?(event: MouseEvent, link: string): void;
 
     /**
      * Handles when the link is opened

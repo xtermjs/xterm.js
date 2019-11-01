@@ -13,11 +13,7 @@ export default class WebLinkProvider implements ILinkProvider {
   }
 
   provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
-    const link = LinkComputer.computeLink(position, this._terminal.buffer);
-
-    if (link) {
-      link.handle = this._handler;
-    }
+    const link = LinkComputer.computeLink(position, this._terminal.buffer, this._handler);
 
     callback(link);
   }
@@ -30,9 +26,6 @@ export const enum State {
   HT = 3,
   HTT = 4,
   HTTP = 5,
-  F = 6,
-  FI = 7,
-  FIL = 8,
   BEFORE_COLON = 9,
   AFTER_COLON = 10,
   ALMOST_THERE = 11,
@@ -119,8 +112,6 @@ function getStateMachine(): StateMachine {
     stateMachine = new StateMachine([
       [State.START, CharCode.h, State.H],
       [State.START, CharCode.H, State.H],
-      [State.START, CharCode.f, State.F],
-      [State.START, CharCode.F, State.F],
 
       [State.H, CharCode.t, State.HT],
       [State.H, CharCode.T, State.HT],
@@ -134,15 +125,6 @@ function getStateMachine(): StateMachine {
       [State.HTTP, CharCode.s, State.BEFORE_COLON],
       [State.HTTP, CharCode.S, State.BEFORE_COLON],
       [State.HTTP, CharCode.Colon, State.AFTER_COLON],
-
-      [State.F, CharCode.i, State.FI],
-      [State.F, CharCode.I, State.FI],
-
-      [State.FI, CharCode.l, State.FIL],
-      [State.FI, CharCode.L, State.FIL],
-
-      [State.FIL, CharCode.e, State.BEFORE_COLON],
-      [State.FIL, CharCode.E, State.BEFORE_COLON],
 
       [State.BEFORE_COLON, CharCode.Colon, State.AFTER_COLON],
 
@@ -181,7 +163,7 @@ function getClassifier(): CharacterClassifier<CharacterClass> {
 
 export class LinkComputer {
 
-  private static _createLink(classifier: CharacterClassifier<CharacterClass>, line: string, lineNumber: number, linkBeginIndex: number, linkEndIndex: number): ILink {
+  private static _createLink(classifier: CharacterClassifier<CharacterClass>, line: string, lineNumber: number, linkBeginIndex: number, linkEndIndex: number, handler: (event: MouseEvent, link: string) => void): ILink {
     // Do not allow to end link in certain characters...
     let lastIncludedCharIndex = linkEndIndex - 1;
     do {
@@ -222,13 +204,11 @@ export class LinkComputer {
         }
       },
       url: line.substring(linkBeginIndex, lastIncludedCharIndex + 1),
-      showTooltip: (event: MouseEvent, link: string) => console.log('Show toolip for ' + link),
-      hideTooltip: (event: MouseEvent, link: string) => console.log('Hide tooltip for ' + link),
-      handle: (event: MouseEvent, link: string) => { }
+      handle: handler
     };
   }
 
-  public static computeLink(position: IBufferCellPosition, buffer: IBuffer): ILink | undefined {
+  public static computeLink(position: IBufferCellPosition, buffer: IBuffer, handler: (event: MouseEvent, link: string) => void): ILink | undefined {
     const stateMachine: StateMachine = getStateMachine();
     const classifier = getClassifier();
 
@@ -299,7 +279,7 @@ export class LinkComputer {
 
           // Check if character terminates link
           if (chClass === CharacterClass.FORCE_TERMINATION) {
-            return LinkComputer._createLink(classifier, line, i, linkBeginIndex, j);
+            return LinkComputer._createLink(classifier, line, i, linkBeginIndex, j, handler);
           }
         } else if (state === State.END) {
 
@@ -342,7 +322,7 @@ export class LinkComputer {
       }
 
       if (state === State.ACCEPT) {
-        return LinkComputer._createLink(classifier, line, i, linkBeginIndex, len);
+        return LinkComputer._createLink(classifier, line, i, linkBeginIndex, len, handler);
       }
     }
   }

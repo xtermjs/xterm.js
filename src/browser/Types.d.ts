@@ -160,8 +160,8 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   url: string;
-  showTooltip(event: MouseEvent, link: string): void;
-  hideTooltip(event: MouseEvent, link: string): void;
+  showTooltip?(event: MouseEvent, link: string): void;
+  hideTooltip?(event: MouseEvent, link: string): void;
   handle(event: MouseEvent, link: string): void;
 }
 

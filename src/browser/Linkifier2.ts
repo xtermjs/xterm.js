@@ -58,7 +58,10 @@ export class Linkifier2 implements ILinkifier2 {
         // Show the tooltip
         this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - 1, range.end.x - 1, range.end.y - 1, undefined));
         this._element!.classList.add('xterm-cursor-pointer');
-        cachedLink.link.showTooltip(event, cachedLink.link.url);
+
+        if (cachedLink.link.showTooltip) {
+          cachedLink.link.showTooltip(event, cachedLink.link.url);
+        }
 
         this._linkCache[i].mouseOver = true;
         foundLink = true;
@@ -66,7 +69,10 @@ export class Linkifier2 implements ILinkifier2 {
         // Hide the tooltip
         this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - 1, range.end.x - 1, range.end.y - 1, undefined));
         this._element!.classList.remove('xterm-cursor-pointer');
-        cachedLink.link.hideTooltip(event, cachedLink.link.url);
+
+        if (cachedLink.link.hideTooltip) {
+          cachedLink.link.hideTooltip(event, cachedLink.link.url);
+        }
 
         this._linkCache[i].mouseOver = false;
       }
