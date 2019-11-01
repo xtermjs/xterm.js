@@ -49,6 +49,8 @@ export class Linkifier2 implements ILinkifier2 {
       return;
     }
 
+    const scrollOffset = this._bufferService.buffer.ydisp;
+
     // Check the cache for a link and determine if we need to show or hide tooltip
     let foundLink = false;
     this._linkCache.forEach((cachedLink, i) => {
@@ -56,7 +58,7 @@ export class Linkifier2 implements ILinkifier2 {
       const range = cachedLink.link.range;
       if (isInPosition && !cachedLink.mouseOver) {
         // Show the tooltip
-        this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - 1, range.end.x - 1, range.end.y - 1, undefined));
+        this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
         this._element!.classList.add('xterm-cursor-pointer');
 
         if (cachedLink.link.showTooltip) {
@@ -67,7 +69,7 @@ export class Linkifier2 implements ILinkifier2 {
         foundLink = true;
       } else if (!isInPosition && cachedLink.mouseOver) {
         // Hide the tooltip
-        this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - 1, range.end.x - 1, range.end.y - 1, undefined));
+        this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
         this._element!.classList.remove('xterm-cursor-pointer');
 
         if (cachedLink.link.hideTooltip) {
