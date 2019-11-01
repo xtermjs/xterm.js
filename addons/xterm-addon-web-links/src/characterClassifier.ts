@@ -2,20 +2,20 @@
  * A fast character classifier that uses a compact array for ASCII values.
  */
 export class CharacterClassifier<T extends number> {
-	/**
+  /**
 	 * Maintain a compact (fully initialized ASCII map for quickly classifying ASCII characters - used more often in code).
 	 */
   private _asciiMap: Uint8Array;
 
-	/**
+  /**
 	 * The entire map (sparse array).
 	 */
   private _map: Map<number, number>;
 
   private _defaultValue: number;
 
-  constructor(_defaultValue: T) {
-    let defaultValue = toUint8(_defaultValue);
+  constructor(newDefaultValue: T) {
+    const defaultValue = toUint8(newDefaultValue);
 
     this._defaultValue = defaultValue;
     this._asciiMap = CharacterClassifier._createAsciiMap(defaultValue);
@@ -23,15 +23,15 @@ export class CharacterClassifier<T extends number> {
   }
 
   private static _createAsciiMap(defaultValue: number): Uint8Array {
-    let asciiMap: Uint8Array = new Uint8Array(256);
+    const asciiMap: Uint8Array = new Uint8Array(256);
     for (let i = 0; i < 256; i++) {
       asciiMap[i] = defaultValue;
     }
     return asciiMap;
   }
 
-  public set(charCode: number, _value: T): void {
-    let value = toUint8(_value);
+  public set(charCode: number, newValue: T): void {
+    const value = toUint8(newValue);
 
     if (charCode >= 0 && charCode < 256) {
       this._asciiMap[charCode] = value;
@@ -43,15 +43,14 @@ export class CharacterClassifier<T extends number> {
   public get(charCode: number): T {
     if (charCode >= 0 && charCode < 256) {
       return <T>this._asciiMap[charCode];
-    } else {
-      return <T>(this._map.get(charCode) || this._defaultValue);
     }
+    return <T>(this._map.get(charCode) || this._defaultValue);
   }
 }
 
 const enum Boolean {
-  False = 0,
-  True = 1
+  FALSE = 0,
+  TRUE = 1
 }
 
 export class CharacterSet {
@@ -59,20 +58,20 @@ export class CharacterSet {
   private readonly _actual: CharacterClassifier<Boolean>;
 
   constructor() {
-    this._actual = new CharacterClassifier<Boolean>(Boolean.False);
+    this._actual = new CharacterClassifier<Boolean>(Boolean.FALSE);
   }
 
   public add(charCode: number): void {
-    this._actual.set(charCode, Boolean.True);
+    this._actual.set(charCode, Boolean.TRUE);
   }
 
   public has(charCode: number): boolean {
-    return (this._actual.get(charCode) === Boolean.True);
+    return (this._actual.get(charCode) === Boolean.TRUE);
   }
 }
 
 export const enum Constants {
-	/**
+  /**
 	 * MAX SMI (SMall Integer) as defined in v8.
 	 * one bit is lost for boxing/unboxing flag.
 	 * one bit is lost for sign flag.
@@ -80,7 +79,7 @@ export const enum Constants {
 	 */
   MAX_SAFE_SMALL_INTEGER = 1 << 30,
 
-	/**
+  /**
 	 * MIN SMI (SMall Integer) as defined in v8.
 	 * one bit is lost for boxing/unboxing flag.
 	 * one bit is lost for sign flag.
@@ -88,17 +87,17 @@ export const enum Constants {
 	 */
   MIN_SAFE_SMALL_INTEGER = -(1 << 30),
 
-	/**
+  /**
 	 * Max unsigned integer that fits on 8 bits.
 	 */
   MAX_UINT_8 = 255, // 2^8 - 1
 
-	/**
+  /**
 	 * Max unsigned integer that fits on 16 bits.
 	 */
   MAX_UINT_16 = 65535, // 2^16 - 1
 
-	/**
+  /**
 	 * Max unsigned integer that fits on 32 bits.
 	 */
   MAX_UINT_32 = 4294967295, // 2^32 - 1

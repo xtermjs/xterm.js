@@ -124,13 +124,13 @@ function getStateMachine(): StateMachine {
 
       [State.HTTP, CharCode.s, State.BEFORE_COLON],
       [State.HTTP, CharCode.S, State.BEFORE_COLON],
-      [State.HTTP, CharCode.Colon, State.AFTER_COLON],
+      [State.HTTP, CharCode.COLON, State.AFTER_COLON],
 
-      [State.BEFORE_COLON, CharCode.Colon, State.AFTER_COLON],
+      [State.BEFORE_COLON, CharCode.COLON, State.AFTER_COLON],
 
-      [State.AFTER_COLON, CharCode.Slash, State.ALMOST_THERE],
+      [State.AFTER_COLON, CharCode.SLASH, State.ALMOST_THERE],
 
-      [State.ALMOST_THERE, CharCode.Slash, State.END]
+      [State.ALMOST_THERE, CharCode.SLASH, State.END]
     ]);
   }
   return stateMachine;
@@ -181,9 +181,9 @@ export class LinkComputer {
       const lastCharCodeInLink = line.charCodeAt(lastIncludedCharIndex);
 
       if (
-        (charCodeBeforeLink === CharCode.OpenParen && lastCharCodeInLink === CharCode.CloseParen)
-        || (charCodeBeforeLink === CharCode.OpenSquareBracket && lastCharCodeInLink === CharCode.CloseSquareBracket)
-        || (charCodeBeforeLink === CharCode.OpenCurlyBrace && lastCharCodeInLink === CharCode.CloseCurlyBrace)
+        (charCodeBeforeLink === CharCode.OPEN_PAREN && lastCharCodeInLink === CharCode.CLOSE_PAREN)
+        || (charCodeBeforeLink === CharCode.OPEN_SQUARE_BRACKET && lastCharCodeInLink === CharCode.CLOSE_SQUARE_BRACKET)
+        || (charCodeBeforeLink === CharCode.OPEN_CURLY_BRACE && lastCharCodeInLink === CharCode.CLOSE_CURLY_BRACE)
       ) {
         // Do not end in ) if ( is before the link start
         // Do not end in ] if [ is before the link start
@@ -238,40 +238,40 @@ export class LinkComputer {
         if (state === State.ACCEPT) {
           let chClass: CharacterClass;
           switch (chCode) {
-            case CharCode.OpenParen:
+            case CharCode.OPEN_PAREN:
               hasOpenParens = true;
               chClass = CharacterClass.NONE;
               break;
-            case CharCode.CloseParen:
+            case CharCode.CLOSE_PAREN:
               chClass = (hasOpenParens ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION);
               break;
-            case CharCode.OpenSquareBracket:
+            case CharCode.OPEN_SQUARE_BRACKET:
               hasOpenSquareBracket = true;
               chClass = CharacterClass.NONE;
               break;
-            case CharCode.CloseSquareBracket:
+            case CharCode.CLOSE_SQUARE_BRACKET:
               chClass = (hasOpenSquareBracket ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION);
               break;
-            case CharCode.OpenCurlyBrace:
+            case CharCode.OPEN_CURLY_BRACE:
               hasOpenCurlyBracket = true;
               chClass = CharacterClass.NONE;
               break;
-            case CharCode.CloseCurlyBrace:
+            case CharCode.CLOSE_CURLY_BRACE:
               chClass = (hasOpenCurlyBracket ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION);
               break;
             /* The following three rules make it that ' or " or ` are allowed inside links if the link began with a different one */
-            case CharCode.SingleQuote:
-              chClass = (linkBeginChCode === CharCode.DoubleQuote || linkBeginChCode === CharCode.BackTick) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
+            case CharCode.SINGLE_QUOTE:
+              chClass = (linkBeginChCode === CharCode.DOUBLE_QUOTE || linkBeginChCode === CharCode.BACK_TICK) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
               break;
-            case CharCode.DoubleQuote:
-              chClass = (linkBeginChCode === CharCode.SingleQuote || linkBeginChCode === CharCode.BackTick) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
+            case CharCode.DOUBLE_QUOTE:
+              chClass = (linkBeginChCode === CharCode.SINGLE_QUOTE || linkBeginChCode === CharCode.BACK_TICK) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
               break;
-            case CharCode.BackTick:
-              chClass = (linkBeginChCode === CharCode.SingleQuote || linkBeginChCode === CharCode.DoubleQuote) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
+            case CharCode.BACK_TICK:
+              chClass = (linkBeginChCode === CharCode.SINGLE_QUOTE || linkBeginChCode === CharCode.DOUBLE_QUOTE) ? CharacterClass.NONE : CharacterClass.FORCE_TERMINATION;
               break;
-            case CharCode.Asterisk:
+            case CharCode.ASTERISK:
               // `*` terminates a link if the link began with `*`
-              chClass = (linkBeginChCode === CharCode.Asterisk) ? CharacterClass.FORCE_TERMINATION : CharacterClass.NONE;
+              chClass = (linkBeginChCode === CharCode.ASTERISK) ? CharacterClass.FORCE_TERMINATION : CharacterClass.NONE;
               break;
             default:
               chClass = classifier.get(chCode);
@@ -284,7 +284,7 @@ export class LinkComputer {
         } else if (state === State.END) {
 
           let chClass: CharacterClass;
-          if (chCode === CharCode.OpenSquareBracket) {
+          if (chCode === CharCode.OPEN_SQUARE_BRACKET) {
             // Allow for the authority part to contain ipv6 addresses which contain [ and ]
             hasOpenSquareBracket = true;
             chClass = CharacterClass.NONE;
@@ -302,7 +302,7 @@ export class LinkComputer {
           state = stateMachine.nextState(state, chCode);
           if (state === State.INVALID) {
             // Two spaces in a row, return
-            if (chCode === CharCode.Space && j > 0 && line.charCodeAt(j - 1) === CharCode.Space) {
+            if (chCode === CharCode.SPACE && j > 0 && line.charCodeAt(j - 1) === CharCode.SPACE) {
               return;
             }
 
