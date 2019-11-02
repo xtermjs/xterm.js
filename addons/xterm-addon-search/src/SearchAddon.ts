@@ -255,13 +255,12 @@ export class SearchAddon implements ITerminalAddon {
         searchPosition.startCol += terminal.cols;
         return;
       }
-      else {
-        // This will iterate until we find the line start.
-        // When we find it, we will search using the calculated start column.
-        searchPosition.startRow--;
-        searchPosition.startCol += terminal.cols;
-        return this._findInLine(term, searchPosition, searchOptions);
-      }
+
+      // This will iterate until we find the line start.
+      // When we find it, we will search using the calculated start column.
+      searchPosition.startRow--;
+      searchPosition.startCol += terminal.cols;
+      return this._findInLine(term, searchPosition, searchOptions);
     }
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
