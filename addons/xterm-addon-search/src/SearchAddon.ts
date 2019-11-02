@@ -246,6 +246,7 @@ export class SearchAddon implements ITerminalAddon {
     if (firstLine && firstLine.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += terminal.cols;
+        return;
       }
       else {
         // This will iterate until we find the line start.
