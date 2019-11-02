@@ -105,9 +105,6 @@ export class GlyphRenderer {
     const gl = this._gl;
 
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
-    if (program === undefined) {
-      throw new Error('Could not create WebGL program');
-    }
     this._program = program;
 
     // Uniform locations

@@ -35,7 +35,7 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  syncScrollArea(): void;
+  syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   onWheel(ev: WheelEvent): boolean;
   onTouchStart(ev: TouchEvent): void;
@@ -43,14 +43,25 @@ export interface IViewport extends IDisposable {
   onThemeChange(colors: IColorSet): void;
 }
 
+export interface IViewportRange {
+  start: IViewportRangePosition;
+  end: IViewportRangePosition;
+}
+
+export interface IViewportRangePosition {
+  x: number;
+  y: number;
+}
+
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
+export type LinkMatcherHoverTooltipCallback = (event: MouseEvent, uri: string, position: IViewportRange) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export interface ILinkMatcher {
   id: number;
   regex: RegExp;
   handler: LinkMatcherHandler;
-  hoverTooltipCallback?: LinkMatcherHandler;
+  hoverTooltipCallback?: LinkMatcherHoverTooltipCallback;
   hoverLeaveCallback?: () => void;
   matchIndex?: number;
   validationCallback?: LinkMatcherValidationCallback;
@@ -96,7 +107,7 @@ export interface ILinkMatcherOptions {
   /**
    * A callback that fires when the mouse hovers over a link.
    */
-  tooltipCallback?: LinkMatcherHandler;
+  tooltipCallback?: LinkMatcherHoverTooltipCallback;
   /**
    * A callback that fires when the mouse leaves a link that was hovered.
    */

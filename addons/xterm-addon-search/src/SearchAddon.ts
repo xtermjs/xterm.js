@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -64,12 +64,12 @@ export class SearchAddon implements ITerminalAddon {
 
     let startCol = 0;
     let startRow = 0;
-
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
-      const currentSelection = this._terminal.getSelectionPosition()!;
+      currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
     }
@@ -110,6 +110,9 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
+    // If there is only one result, return true.
+    if (!result && currentSelection) return true;
+
     // Set selection and scroll if a result was found
     return this._selectResult(result);
   }
@@ -134,10 +137,11 @@ export class SearchAddon implements ITerminalAddon {
     const isReverseSearch = true;
     let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-    let result: ISearchResult | undefined = undefined;
+    let result: ISearchResult | undefined;
     const incremental = searchOptions ? searchOptions.incremental : false;
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
-      const currentSelection = this._terminal.getSelectionPosition()!;
+      currentSelection = this._terminal.getSelectionPosition()!;
       // Start from selection start if there is a selection
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
@@ -179,6 +183,9 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
+
+    // If there is only one result, return true.
+    if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
     return this._selectResult(result);

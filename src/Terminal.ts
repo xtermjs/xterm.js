@@ -383,18 +383,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'theme':
           this._setTheme(this.optionsService.options.theme);
           break;
-        case 'scrollback':
-          const newBufferLength = this.rows + this.optionsService.options.scrollback;
-          if (this.buffer.lines.length > newBufferLength) {
-            const amountToTrim = this.buffer.lines.length - newBufferLength;
-            const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
-            this.buffer.lines.trimStart(amountToTrim);
-            this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
-            this.buffer.ydisp = Math.max(this.buffer.ydisp - amountToTrim, 0);
-            if (needsRefresh) {
-              this.refresh(0, this.rows - 1);
-            }
-          }
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
             if (!this._windowsMode) {
@@ -518,6 +506,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     if (!this._parent) {
       throw new Error('Terminal requires a parent element.');
+    }
+
+    if (!document.body.contains(parent)) {
+      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
     }
 
     this._document = this._parent.ownerDocument;
@@ -1468,6 +1460,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this._charSizeService) {
       this._charSizeService.measure();
     }
+
+    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
+    // invalid location
+    this.viewport.syncScrollArea(true);
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });

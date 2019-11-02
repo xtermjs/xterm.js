@@ -196,6 +196,7 @@ export interface IPartialTerminalOptions {
   rows?: number;
   screenReaderMode?: boolean;
   scrollback?: number;
+  scrollSensitivity?: number;
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
@@ -227,6 +228,7 @@ export interface ITerminalOptions {
   rows: number;
   screenReaderMode: boolean;
   scrollback: number;
+  scrollSensitivity: number;
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
