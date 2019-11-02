@@ -14,24 +14,26 @@ function startServer() {
       logs = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
-  app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
+  app.get('/logo.png', (req, res) => { // lgtm [js/missing-rate-limiting]
+    res.sendFile(__dirname + '/logo.png');
+  });
 
-  app.get('/', function(req, res){
+  app.get('/', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/index.html');
   });
 
-  app.get('/test', function(req, res){
+  app.get('/test', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/test.html');
   });
 
-  app.get('/style.css', function(req, res){
+  app.get('/style.css', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/style.css');
   });
 
   app.use('/dist', express.static(__dirname + '/dist'));
   app.use('/src', express.static(__dirname + '/src'));
 
-  app.post('/terminals', function (req, res) {
+  app.post('/terminals', (req, res) => {
     const env = Object.assign({}, process.env);
     env['COLORTERM'] = 'truecolor';
     var cols = parseInt(req.query.cols),
@@ -55,7 +57,7 @@ function startServer() {
     res.end();
   });
 
-  app.post('/terminals/:pid/size', function (req, res) {
+  app.post('/terminals/:pid/size', (req, res) => {
     var pid = parseInt(req.params.pid),
         cols = parseInt(req.query.cols),
         rows = parseInt(req.query.rows),
