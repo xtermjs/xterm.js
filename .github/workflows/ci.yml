@@ -15,17 +15,13 @@ jobs:
       id: cache
       uses: actions/cache@v1
       with:
-        path: node_modules
-        key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}-1
+        path: ~/.cache/yarn
+        key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
         restore-keys: |
           ${{ runner.os }}-yarn-
     - name: Install dependencies and build
-      if: steps.cache.outputs.cache-hit != 'true'
       run: yarn
       env:
         CI: true
-    - name: Build
-      if: steps.cache.outputs.cache-hit == 'true'
-      run: yarn setup
     - name: Lint
       run: yarn lint
