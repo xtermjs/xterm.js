@@ -1,0 +1,30 @@
+name: CI
+
+on: [push]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8.x
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/yarn
+        key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Install dependencies and build
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: yarn
+      env:
+        CI: true
+    - name: Build
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: yarn setup
+    - name: Lint
+      run: yarn lint
