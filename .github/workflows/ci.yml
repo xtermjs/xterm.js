@@ -29,6 +29,8 @@ jobs:
         CI: true
     - name: Lint
       run: yarn lint
+    - name: ls
+      run: ls -lR .
     - name: Upload out/
       uses: actions/upload-artifact@v1
       with:
@@ -65,6 +67,8 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: out-test
+    - name: ls
+      run: ls -lR .
     - name: Run unit tests
       run: yarn test-unit --forbid-only
 
