@@ -17,16 +17,18 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}-3
         restore-keys: |
           ${{ runner.os }}-yarn-
-    - name: Install dependencies and build
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         # HACK: Install all deps except puppeteer (see #2539)
         yarn remove puppeteer
-        yarn prepare
       env:
         CI: true
+    - name: Build
+      run: yarn prepare
     - name: Lint
       run: yarn lint
     - name: ls
