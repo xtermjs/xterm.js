@@ -3,6 +3,7 @@ name: CI
 on: [push]
 
 jobs:
+
   linux-build:
     runs-on: ubuntu-latest
     steps:
@@ -20,8 +21,49 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-yarn-
     - name: Install dependencies and build
-      run: yarn
+      run: |
+        # Don't install puppeteer as it's only used in the integration tests
+        yarn remove puppeteer
       env:
         CI: true
     - name: Lint
       run: yarn lint
+    - name: Upload out/
+      uses: actions/upload-artifact@v1
+      with:
+        name: out
+        path: out
+    - name: Upload out-test/
+      uses: actions/upload-artifact@v1
+      with:
+        name: out
+        path: out
+
+  linux-test-unit:
+    needs: linux-build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8.x
+    - name: Cache node modules
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/yarn
+        key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Download out/
+      uses: actions/download-artifact@v1
+      with:
+        name: out
+    - name: Download out-test/
+      uses: actions/download-artifact@v1
+      with:
+        name: out-test
+    - name: Run unit tests
+      run: yarn test-unit --forbid-only
+
