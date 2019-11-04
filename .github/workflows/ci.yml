@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
 
-  linux-build:
+  Linux compile:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -44,7 +44,7 @@ jobs:
         name: out-test
         path: out-test
 
-  linux-test-unit:
+  Linux unit tests:
     needs: linux-build
     runs-on: ubuntu-latest
     steps:
@@ -57,8 +57,8 @@ jobs:
       id: cache
       uses: actions/cache@v1
       with:
-        path: ~/.cache/yarn
-        key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+        path: node_modules
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}-3
         restore-keys: |
           ${{ runner.os }}-yarn-
     - name: Download out/
