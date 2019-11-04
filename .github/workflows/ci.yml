@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
 
-  Linux compile:
+  linux-compile:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -44,8 +44,8 @@ jobs:
         name: out-test
         path: out-test
 
-  Linux unit tests:
-    needs: linux-build
+  linux-unit-tests:
+    needs: linux-compile
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
