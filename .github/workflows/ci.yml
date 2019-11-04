@@ -37,8 +37,8 @@ jobs:
     - name: Upload out-test/
       uses: actions/upload-artifact@v1
       with:
-        name: out
-        path: out
+        name: out-test
+        path: out-test
 
   linux-test-unit:
     needs: linux-build
