@@ -30,7 +30,7 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: ls
-      run: ls -lR .
+      run: ls -lR out
     - name: Upload out/
       uses: actions/upload-artifact@v1
       with:
@@ -68,7 +68,7 @@ jobs:
       with:
         name: out-test
     - name: ls
-      run: ls -lR .
+      run: ls -lR out
     - name: Run unit tests
       run: yarn test-unit --forbid-only
 
