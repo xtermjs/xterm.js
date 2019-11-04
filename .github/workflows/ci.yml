@@ -22,14 +22,13 @@ jobs:
           ${{ runner.os }}-yarn-
     - name: Install dependencies and build
       run: |
-        # Don't install puppeteer as it's only used in the integration tests
+        # HACK: Install all deps except puppeteer (see #2539)
         yarn remove puppeteer
+        yarn prepare
       env:
         CI: true
     - name: Lint
       run: yarn lint
-    - name: ls
-      run: ls
     - name: Upload out/
       uses: actions/upload-artifact@v1
       with:
