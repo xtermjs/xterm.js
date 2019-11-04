@@ -12,7 +12,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 8.x
-    - name: Cache node modules
+    - name: Cache yarn
       id: cache
       uses: actions/cache@v1
       with:
@@ -28,6 +28,8 @@ jobs:
         CI: true
     - name: Lint
       run: yarn lint
+    - name: ls
+      run: ls
     - name: Upload out/
       uses: actions/upload-artifact@v1
       with:
