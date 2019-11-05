@@ -124,6 +124,8 @@ interface ISettingsBase<T extends IOptionCollection> {
 
 
 class Settings<T extends IOptionCollection, K extends keyof T> {
+  [key: string]: Settings<T[K], keyof T[K]> | number | string | boolean | object;
+
   constructor(definition: T, initials?: InitialOptions<T>) {
     const def = definition as IndexedOptionCollection<T>;
     for (const optionName in definition) {
@@ -148,9 +150,11 @@ class Settings<T extends IOptionCollection, K extends keyof T> {
             return subSettings;
           },
           set(values: WriteableOptions<T[K]>): void {
-            for (const v in values) {
+            const v = values as AddIndex<WriteableOptions<T[K]>, number | string | boolean | object>;
+            for (const optionName in v) {
+              // guard: only allow assignment of known values
               if (subSettings.hasOwnProperty(optionName)) {
-                (subSettings as any)[v] = values[v] as any;
+                subSettings[optionName] = v[optionName];
               }
             }
           }
@@ -159,10 +163,12 @@ class Settings<T extends IOptionCollection, K extends keyof T> {
     }
   }
   // writeable options (setter only)
-  set asWriteable(value: WriteableOptions<T>) {
-    for (const optionName in value) {
+  set asWriteable(values: WriteableOptions<T>) {
+    const v = values as AddIndex<WriteableOptions<T>, number | string | boolean | object>;
+    for (const optionName in v) {
+      // guard: only allow assignment of known values
       if (this.hasOwnProperty(optionName)) {
-        (this as any)[optionName] = value[optionName];
+        this[optionName] = v[optionName];
       }
     }
   }
