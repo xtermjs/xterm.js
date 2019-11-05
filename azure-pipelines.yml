@@ -9,6 +9,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -51,6 +52,7 @@ jobs:
     vmImage: 'xcode9-macos10.13'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -73,6 +75,7 @@ jobs:
     vmImage: 'vs2017-win2016'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -93,6 +96,8 @@ jobs:
 - job: Linux_IntegrationTests
   pool:
     vmImage: 'ubuntu-16.04'
+  variables:
+    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -118,6 +123,8 @@ jobs:
 - job: macOS_IntegrationTests
   pool:
     vmImage: 'xcode9-macos10.13'
+  variables:
+    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
