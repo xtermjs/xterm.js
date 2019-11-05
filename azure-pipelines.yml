@@ -18,7 +18,12 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
@@ -51,7 +56,12 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
@@ -68,7 +78,12 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
@@ -87,7 +102,12 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -103,7 +123,12 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
@@ -130,7 +155,12 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn | $(Agent.OS) | yarn.lock
+      path: $(YARN_CACHE_FOLDER)
+    displayName: Cache Yarn packages
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'
