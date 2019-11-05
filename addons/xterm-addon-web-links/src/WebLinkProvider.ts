@@ -1,6 +1,6 @@
 import { ILinkProvider, IBufferCellPosition, ILink, Terminal, IBuffer } from 'xterm';
 
-export default class WebLinkProvider implements ILinkProvider {
+export class WebLinkProvider implements ILinkProvider {
 
   constructor(
     private readonly _terminal: Terminal,

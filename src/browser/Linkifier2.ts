@@ -1,17 +1,14 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, IBufferRange } from './Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService } from './services/Services';
 import { IBufferService, ICoreService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
-/**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
- * @license MIT
- */
-
-
-/**
- */
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
   private _viewportElement: HTMLElement | undefined;
@@ -69,21 +66,13 @@ export class Linkifier2 implements ILinkifier2 {
     }
 
     // Check the cache for a link and determine if we need to show or hide tooltip
-    let foundLink = false;
     let mouseOver = false;
     for (let i = 0; i < this._linkCache.length; i++) {
       const cachedLink = this._linkCache[i].link;
       const isInPosition = this._linkAtPosition(cachedLink, position);
 
-      // Check if the mouse position contains a link
-      // Also check if it isn't the current line
-      if (isInPosition && !this._linkCache[i].mouseOver && position.y < this._bufferService.buffer.y) {
-        // Show the tooltip
-        this._showTooltip(this._element, this._linkCache[i].link, event);
-        this._linkCache[i].mouseOver = true;
-        foundLink = true;
-        this._mouseOverLink = true;
-      } else if (!isInPosition && this._linkCache[i].mouseOver) {
+      // Check if we need to hide the tooltip
+      if (!isInPosition && this._linkCache[i].mouseOver) {
         // Hide the tooltip
         this._hideTooltip(this._element, this._linkCache[i].link, event);
         this._linkCache[i].mouseOver = false;
@@ -94,12 +83,9 @@ export class Linkifier2 implements ILinkifier2 {
       }
     }
 
-    if (foundLink) {
-      return;
-    }
-
     if (!mouseOver) {
       this._mouseOverLink = false;
+      this._linkCache = [];
     }
 
     // The is no link in the cache, so ask for one

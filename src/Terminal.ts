@@ -1171,9 +1171,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
-    if (!this.linkifier2) {
-      return;
-    }
     return this.linkifier2.registerLinkProvider(linkProvider);
   }
 
