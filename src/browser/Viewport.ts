@@ -237,7 +237,7 @@ export class Viewport extends Disposable implements IViewport {
     if ((modifier === 'alt' && ev.altKey) ||
         (modifier === 'ctrl' && ev.ctrlKey) ||
         (modifier === 'shift' && ev.shiftKey)) {
-      return amount * this._optionsService.options.fastScrollSensitivity;
+      return amount * this._optionsService.options.fastScrollSensitivity * this._optionsService.options.scrollSensitivity;
     }
 
     return amount * this._optionsService.options.scrollSensitivity;

@@ -688,9 +688,7 @@ export class SelectionService implements ISelectionService {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    if (this._trimListener) {
-      this._trimListener.dispose();
-    }
+    this._trimListener.dispose();
     this._trimListener = e.activeBuffer.lines.onTrim(amount => this._onTrim(amount));
   }
 
