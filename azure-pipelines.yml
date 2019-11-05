@@ -109,6 +109,8 @@ jobs:
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: yarn add puppeteer
+    displayName: 'Install puppeteer'
   - script: |
       yarn start &
       sleep 10
@@ -130,6 +132,8 @@ jobs:
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: yarn add puppeteer
+    displayName: 'Install puppeteer'
   - script: |
       yarn start &
       sleep 10
