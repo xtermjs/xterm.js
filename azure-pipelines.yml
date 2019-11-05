@@ -93,7 +93,6 @@ jobs:
 - job: Linux_IntegrationTests
   pool:
     vmImage: 'ubuntu-16.04'
-  variables:
   steps:
   - task: NodeTool@0
     inputs:
@@ -119,7 +118,6 @@ jobs:
 - job: macOS_IntegrationTests
   pool:
     vmImage: 'xcode9-macos10.13'
-  variables:
   steps:
   - task: NodeTool@0
     inputs:
