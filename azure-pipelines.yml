@@ -20,7 +20,7 @@ jobs:
     displayName: 'Install Yarn'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
@@ -58,7 +58,7 @@ jobs:
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
@@ -80,7 +80,7 @@ jobs:
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
@@ -105,7 +105,7 @@ jobs:
     displayName: 'Install Yarn'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
@@ -127,7 +127,7 @@ jobs:
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
@@ -159,7 +159,7 @@ jobs:
     displayName: 'Install Yarn'
   - task: CacheBeta@1
     inputs:
-      key: yarn | $(Agent.OS) | yarn.lock
+      key: yarn1 | $(Agent.OS) | yarn.lock
       path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
