@@ -98,7 +98,7 @@ jobs:
       with:
         name: out-test
     - name: Install puppeteer
-      runs: yarn add puppeteer
+      run: yarn add puppeteer
     - name: Run unit tests
       run: yarn test-api --headless
 
