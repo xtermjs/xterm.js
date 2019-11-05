@@ -99,8 +99,11 @@ jobs:
         name: out-test
     - name: Install puppeteer
       run: yarn add puppeteer
-    - name: Run unit tests
-      run: yarn test-api --headless
+    - name: Run API tests
+      run: |
+        yarn start &
+        sleep 10
+        yarn test-api --headless --forbid-only
 
   macos-compile:
     runs-on: macOS-latest
@@ -128,6 +131,67 @@ jobs:
     - name: Build
       run: yarn prepare
 
+  macos-unit-tests:
+    needs: [macos-compile, linux-compile]
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8.x
+    - name: Cache node modules
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}-3
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Download out/
+      uses: actions/download-artifact@v1
+      with:
+        name: out
+    - name: Download out-test/
+      uses: actions/download-artifact@v1
+      with:
+        name: out-test
+    - name: Run unit tests
+      run: yarn test-unit --forbid-only
+
+  macos-api-tests:
+    needs: [macos-compile, linux-compile]
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8.x
+    - name: Cache node modules
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}-3
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Download out/
+      uses: actions/download-artifact@v1
+      with:
+        name: out
+    - name: Download out-test/
+      uses: actions/download-artifact@v1
+      with:
+        name: out-test
+    - name: Install puppeteer
+      run: yarn add puppeteer
+    - name: Run API tests
+      run: |
+        yarn start &
+        sleep 10
+        yarn test-api --headless --forbid-only
+
   windows-compile:
     runs-on: windows-latest
     steps:
@@ -153,3 +217,31 @@ jobs:
         CI: true
     - name: Build
       run: yarn prepare
+
+  windows-unit-tests:
+    needs: [windows-compile, linux-compile]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8.x
+    - name: Cache node modules
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '\yarn.lock')) }}-3
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Download out/
+      uses: actions/download-artifact@v1
+      with:
+        name: out
+    - name: Download out-test/
+      uses: actions/download-artifact@v1
+      with:
+        name: out-test
+    - name: Run unit tests
+      run: yarn test-unit --forbid-only
