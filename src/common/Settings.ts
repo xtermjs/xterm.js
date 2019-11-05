@@ -101,6 +101,10 @@ type WriteableOptions<T> = T extends IOption<infer O, boolean> ? O
 
 interface ISettingsBase<T extends IOptionCollection> {
   asWriteable: WriteableOptions<T>;
+  resetToDefault(): void;
+  resetToInitial(): void;
+  definition: IndexedOptionCollection<T>;
+  initial: AddIndex<InitialOptions<T>, number | string | boolean | object>;
 }
 
 /**
@@ -125,16 +129,20 @@ interface ISettingsBase<T extends IOptionCollection> {
 
 class Settings<T extends IOptionCollection, K extends keyof T> {
   [key: string]: Settings<T[K], keyof T[K]> | number | string | boolean | object;
+  public definition: IndexedOptionCollection<T>;
+  public initial: AddIndex<InitialOptions<T>, number | string | boolean | object>;
 
   constructor(definition: T, initials?: InitialOptions<T>) {
-    const def = definition as IndexedOptionCollection<T>;
+    this.definition = definition as IndexedOptionCollection<T>;
+    Object.defineProperty(this, 'definition', {enumerable: false});
+    this.initial = initials as AddIndex<InitialOptions<T>, number | string | boolean | object>;
+    Object.defineProperty(this, 'initial', {enumerable: false});
     for (const optionName in definition) {
-      const option = def[optionName];
-      const init = initials as AddIndex<InitialOptions<T>, number | string | boolean | object>;
+      const option = this.definition[optionName];
       if (option.hasOwnProperty('init')) {
         // IOption
         const op = option as IOption<AllowedOptionTypes, boolean>;
-        const v = init && init[optionName] !== undefined ? init[optionName] : op.init;
+        const v = this.initial && this.initial[optionName] !== undefined ? this.initial[optionName] : op.init;
         Object.defineProperty(this, optionName, {
           value: v,
           writable: !op.readonly,
@@ -143,7 +151,7 @@ class Settings<T extends IOptionCollection, K extends keyof T> {
       } else {
         // IOptionCollection
         const op = option as any;
-        const subSettings: Settings<T[K], keyof T[K]> = new Settings(op, init ? init[optionName] : undefined);
+        const subSettings: Settings<T[K], keyof T[K]> = new Settings(op, this.initial ? this.initial[optionName] : undefined);
         Object.defineProperty(this, optionName, {
           enumerable: true,
           get(): Settings<T[K], keyof T[K]> {
@@ -169,6 +177,32 @@ class Settings<T extends IOptionCollection, K extends keyof T> {
       // guard: only allow assignment of known values
       if (this.hasOwnProperty(optionName)) {
         this[optionName] = v[optionName];
+      }
+    }
+  }
+  public resetToDefault(): void {
+    for (const optionName in this.definition) {
+      const option = this.definition[optionName];
+      if (option.hasOwnProperty('init')) {
+        const op = option as IOption<any, boolean>;
+        if (!op.readonly) {
+          this[optionName] = op.init;
+        }
+      } else {
+        (this[optionName] as Settings<T[K], keyof T[K]>).resetToDefault();
+      }
+    }
+  }
+  public resetToInitial(): void {
+    for (const optionName in this.definition) {
+      const option = this.definition[optionName];
+      if (option.hasOwnProperty('init')) {
+        const op = option as IOption<any, boolean>;
+        if (!op.readonly) {
+          this[optionName] = this.initial && this.initial[optionName] !== undefined ? this.initial[optionName] : op.init;
+        }
+      } else {
+        (this[optionName] as Settings<T[K], keyof T[K]>).resetToInitial();
       }
     }
   }
@@ -211,13 +245,13 @@ interface IWindowOptions extends IOptionCollection {
 // initial definitions with defaults
 // can be defined all in once
 const ALL_IN_ONCE: ITerminalOptions = {
-  cols: {init: 80, readonly: true},
-  rows: {init: 25, readonly: false},
+  cols: {init: 1, readonly: true},
+  rows: {init: 1, readonly: false},
   parser: {
       x: {init: true, readonly: false},
-      y: {init: 'red', readonly: true},
+      y: {init: 'blue', readonly: true},
       windowOptions: {
-          resizeWin: {init: false, readonly: false}
+          resizeWin: {init: true, readonly: false}
         }
   }
 };
@@ -245,13 +279,13 @@ const T_DEFAULT: ITerminalOptions = {
 // some settings shall be changed on init
 // Note: all values are correctly inferred from the definition above
 const customizedInitialValues: InitialOptions<ITerminalOptions> = {
-  cols: 12,
-  rows: 88,
+  cols: 10,
+  rows: 10,
   parser: {
     x: false,
-    y: 'blue',
+    y: 'red',
     windowOptions: {
-      resizeWin: true
+      resizeWin: false
     }
   }
 };
@@ -279,3 +313,10 @@ console.log('read writeable:', settings.asWriteable);
 
 // should always be true
 console.log(savedWindowOptions === settings.parser.windowOptions);
+
+// reset tests
+console.log(JSON.stringify(settings));
+settings.resetToDefault();
+console.log(JSON.stringify(settings));
+settings.resetToInitial();
+console.log(JSON.stringify(settings));
