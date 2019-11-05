@@ -205,7 +205,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '\yarn.lock')) }}-3
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles('yarn.lock') }}-3
         restore-keys: |
           ${{ runner.os }}-yarn-
     - name: Install dependencies
@@ -232,7 +232,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: ${{ runner.os }}-nodemodules-${{ hashFiles(format('{0}{1}', github.workspace, '\yarn.lock')) }}-3
+        key: ${{ runner.os }}-nodemodules-${{ hashFiles('yarn.lock') }}-3
         restore-keys: |
           ${{ runner.os }}-yarn-
     - name: Download out/
