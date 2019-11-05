@@ -7,6 +7,8 @@ jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -42,6 +44,8 @@ jobs:
 - job: macOS
   pool:
     vmImage: 'xcode9-macos10.13'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -57,6 +61,8 @@ jobs:
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
