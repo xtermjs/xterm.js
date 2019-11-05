@@ -9,7 +9,6 @@ jobs:
     vmImage: 'ubuntu-16.04'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
-    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -22,7 +21,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -52,7 +51,6 @@ jobs:
     vmImage: 'xcode9-macos10.13'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
-    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -61,7 +59,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -75,7 +73,6 @@ jobs:
     vmImage: 'vs2017-win2016'
   variables:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
-    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -84,7 +81,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -97,7 +94,6 @@ jobs:
   pool:
     vmImage: 'ubuntu-16.04'
   variables:
-    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -110,7 +106,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -124,7 +120,6 @@ jobs:
   pool:
     vmImage: 'xcode9-macos10.13'
   variables:
-    YARN_CACHE_FOLDER: .yarn-cache
   steps:
   - task: NodeTool@0
     inputs:
@@ -133,7 +128,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -165,7 +160,7 @@ jobs:
   - task: CacheBeta@1
     inputs:
       key: yarn | $(Agent.OS) | yarn.lock
-      path: $(YARN_CACHE_FOLDER)
+      path: node_modules
     displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
