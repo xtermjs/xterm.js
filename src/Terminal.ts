@@ -240,18 +240,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
     super.dispose();
-    if (this._windowsMode) {
-      this._windowsMode.dispose();
-      this._windowsMode = undefined;
-    }
-    if (this._renderService) {
-      this._renderService.dispose();
-    }
+    this._windowsMode?.dispose();
+    this._windowsMode = undefined;
+    this._renderService?.dispose();
     this._customKeyEventHandler = null;
     this.write = () => {};
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
+    this.element?.parentNode?.removeChild(this.element);
   }
 
   private _setup(): void {
@@ -336,12 +330,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'fontFamily':
         case 'fontSize':
           // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderService) {
-            this._renderService.clear();
-          }
-          if (this._charSizeService) {
-            this._charSizeService.measure();
-          }
+          this._renderService?.clear();
+          this._charSizeService?.measure();
           break;
         case 'drawBoldTextInBrightColors':
         case 'letterSpacing':
@@ -363,9 +353,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'scrollback':
           this.buffers.resize(this.cols, this.rows);
-          if (this.viewport) {
-            this.viewport.syncScrollArea();
-          }
+          this.viewport?.syncScrollArea();
           break;
         case 'screenReaderMode':
           if (this.optionsService.options.screenReaderMode) {
@@ -373,10 +361,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
               this._accessibilityManager = new AccessibilityManager(this, this._renderService);
             }
           } else {
-            if (this._accessibilityManager) {
-              this._accessibilityManager.dispose();
-              this._accessibilityManager = null;
-            }
+            this._accessibilityManager?.dispose();
+            this._accessibilityManager = null;
           }
           break;
         case 'tabStopWidth': this.buffers.setupTabStops(); break;
@@ -389,10 +375,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
               this._windowsMode = applyWindowsMode(this);
             }
           } else {
-            if (this._windowsMode) {
-              this._windowsMode.dispose();
-              this._windowsMode = undefined;
-            }
+            this._windowsMode?.dispose();
+            this._windowsMode = undefined;
           }
           break;
       }
@@ -665,15 +649,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    if (this._colorManager) {
-      this._colorManager.setTheme(theme);
-    }
-    if (this._renderService) {
-      this._renderService.setColors(this._colorManager.colors);
-    }
-    if (this.viewport) {
-      this.viewport.onThemeChange(this._colorManager.colors);
-    }
+    this._colorManager?.setTheme(theme);
+    this._renderService?.setColors(this._colorManager.colors);
+    this.viewport?.onThemeChange(this._colorManager.colors);
   }
 
   /**
@@ -940,9 +918,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
-    if (this._renderService) {
-      this._renderService.refreshRows(start, end);
-    }
+    this._renderService?.refreshRows(start, end);
   }
 
   /**
@@ -951,9 +927,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param end The row to end at (between start and this.rows - 1).
    */
   private _queueLinkification(start: number, end: number): void {
-    if (this.linkifier) {
-      this.linkifier.linkifyRows(start, end);
-    }
+    this.linkifier?.linkifyRows(start, end);
   }
 
   /**
@@ -1233,24 +1207,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Clears the current terminal selection.
    */
   public clearSelection(): void {
-    if (this._selectionService) {
-      this._selectionService.clearSelection();
-    }
+    this._selectionService?.clearSelection();
   }
 
   /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
-    if (this._selectionService) {
-      this._selectionService.selectAll();
-    }
+    this._selectionService?.selectAll();
   }
 
   public selectLines(start: number, end: number): void {
-    if (this._selectionService) {
-      this._selectionService.selectLines(start, end);
-    }
+    this._selectionService?.selectLines(start, end);
   }
 
   /**
@@ -1457,9 +1425,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._bufferService.resize(x, y);
     this.buffers.setupTabStops(this.cols);
 
-    if (this._charSizeService) {
-      this._charSizeService.measure();
-    }
+    this._charSizeService?.measure();
 
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
@@ -1551,9 +1517,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._bufferService.reset();
     this._coreService.reset();
     this._coreMouseService.reset();
-    if (this._selectionService) {
-      this._selectionService.reset();
-    }
+    this._selectionService?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
@@ -1563,9 +1527,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
-    if (this.viewport) {
-      this.viewport.syncScrollArea();
-    }
+    this.viewport?.syncScrollArea();
   }
 
   // TODO: Remove cancel function and cancelEvents option
