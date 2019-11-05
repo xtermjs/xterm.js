@@ -292,7 +292,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._inputHandler);
 
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
-    this.linkifier2 = this.linkifier2 || new Linkifier2(this._bufferService);
+    this.linkifier2 = this.linkifier2 || new Linkifier2(this._bufferService, this._coreService);
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
