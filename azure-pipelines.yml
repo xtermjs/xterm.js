@@ -98,6 +98,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - task: CacheBeta@1
+    inputs:
+      key: yarn_puppeteer | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache Yarn packages
   - task: YarnInstaller@3
     inputs:
       versionSpec: '1.x'
@@ -120,6 +125,11 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - task: CacheBeta@1
+    inputs:
+      key: yarn_puppeteer | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn add puppeteer
