@@ -8,6 +8,7 @@ import { IDisposable } from 'common/Types';
 import { IMouseService } from './services/Services';
 import { IBufferService, ICoreService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { LinkRenderLayer } from './renderer/LinkRenderLayer';
 
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
@@ -206,9 +207,16 @@ export class Linkifier2 implements ILinkifier2 {
    * @param position
    */
   private _linkAtPosition(link: ILink, position: IBufferCellPosition): boolean {
-    return link.range.start.x <= position.x &&
+    const sameLine = link.range.start.y === link.range.end.y;
+    const wrappedFromLeft = link.range.start.y < position.y;
+    const wrappedToRight = link.range.end.y > position.y;
+
+    // If the start and end have the same y, then the position must be between start and end x
+    // If not, then handle each case seperately, depending on which way it wraps
+    return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
+      (wrappedFromLeft && link.range.end.x >= position.x) ||
+      (wrappedToRight && link.range.start.x <= position.x)) &&
       link.range.start.y <= position.y &&
-      link.range.end.x >= position.x &&
       link.range.end.y >= position.y;
   }
 

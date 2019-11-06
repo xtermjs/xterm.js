@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { ILinkProvider, IBufferCellPosition, ILink, Terminal, IBuffer } from 'xterm';
 
 export class WebLinkProvider implements ILinkProvider {
@@ -11,20 +16,15 @@ export class WebLinkProvider implements ILinkProvider {
   }
 
   provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
-    callback(LinkComputer.computeLink(position, this._regex, this._terminal.buffer, this._handler));
+    callback(LinkComputer.computeLink(position, this._regex, this._terminal, this._handler));
   }
 }
 
 export class LinkComputer {
-  public static computeLink(position: IBufferCellPosition, regex: RegExp, buffer: IBuffer, handle: (event: MouseEvent, uri: string) => void): ILink | undefined {
+  public static computeLink(position: IBufferCellPosition, regex: RegExp, terminal: Terminal, handle: (event: MouseEvent, uri: string) => void): ILink | undefined {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
-    const bufferLine = buffer.getLine(position.y - 1);
 
-    if (!bufferLine) {
-      return;
-    }
-
-    const line = bufferLine.translateToString();
+    const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(position.y - 1, false, terminal);
 
     let match;
     let stringIndex = -1;
@@ -49,18 +49,66 @@ export class LinkComputer {
         break;
       }
 
+      let endX = stringIndex + url.length + 1;
+      let endY = startLineIndex + 1;
+
+      while (endX > terminal.cols) {
+        endX -= terminal.cols;
+        endY++;
+      }
+
       const range = {
         start: {
           x: stringIndex + 1,
-          y: position.y
+          y: startLineIndex + 1
         },
         end: {
-          x: stringIndex + url.length + 1,
-          y: position.y
+          x: endX,
+          y: endY
         }
       };
 
       return { range, url, handle };
     }
+  }
+
+  /**
+   * Gets the entire line for the buffer line
+   * @param line The line being translated.
+   * @param trimRight Whether to trim whitespace to the right.
+   * @param terminal The terminal
+   */
+  private static _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean, terminal: Terminal): [string, number] {
+    let lineString = '';
+    let lineWrapsToNext: boolean;
+    let prevLinesToWrap: boolean;
+
+    do {
+      const line = terminal.buffer.getLine(lineIndex);
+      if (!line) {
+        break;
+      }
+
+      if (line.isWrapped) {
+        lineIndex--;
+      }
+
+      prevLinesToWrap = line.isWrapped;
+    } while (prevLinesToWrap);
+
+    const startLineIndex = lineIndex;
+
+    do {
+      const nextLine = terminal.buffer.getLine(lineIndex + 1);
+      lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
+      const line = terminal.buffer.getLine(lineIndex);
+      if (!line) {
+        break;
+      }
+      lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
+      lineIndex++;
+    } while (lineWrapsToNext);
+
+    return [lineString, startLineIndex];
   }
 }
