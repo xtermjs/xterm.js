@@ -34,8 +34,8 @@ const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
 
 if (checkCoverage) {
   flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
-  const executable = path.resolve(__dirname, '../node_modules/.bin/nyc');
-  const args = ['--check-coverage', `--lines=${COVERAGE_LINES_THRESHOLD}`, path.resolve(__dirname, '../node_modules/.bin/mocha'), ...testFiles, ...flagArgs];
+  const executable = npmBinScript('nyc');
+  const args = ['--check-coverage', `--lines=${COVERAGE_LINES_THRESHOLD}`, npmBinScript('mocha'), ...testFiles, ...flagArgs];
   console.info('executable', executable);
   console.info('args', args);
   const run = cp.spawnSync(
@@ -51,7 +51,7 @@ if (checkCoverage) {
 }
 
 const run = cp.spawnSync(
-  path.resolve(__dirname, '../node_modules/.bin/mocha'),
+  npmBinScript('mocha'),
   [...testFiles, ...flagArgs],
   {
     cwd: path.resolve(__dirname, '..'),
@@ -59,4 +59,9 @@ const run = cp.spawnSync(
     stdio: 'inherit'
   }
 );
+
+function npmBinScript(script) {
+  return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ? `${script}.cmd` : script));
+}
+
 process.exit(run.status);
