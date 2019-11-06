@@ -52,7 +52,7 @@ describe('WebLinksAddon', () => {
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal({ rendererType: 'dom' });
+  await openTerminal({ rendererType: 'dom', cols: 40 });
   await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   await page.evaluate(`
     window.term.writeln('  http://${hostname}  ');
@@ -62,6 +62,7 @@ async function testHostName(hostname: string): Promise<void> {
     window.term.writeln('"http://${hostname}/"');
     window.term.writeln('\\'http://${hostname}/\\'');
     window.term.writeln('http://${hostname}/subpath/+/id');
+    window.term.writeln('http://${hostname}/subpath/subpath2/subpath3/subpath4/subpath5/+/id');
   `);
   assert.equal(await getLinkAtCell(3, 1), `http://${hostname}`);
   assert.equal(await getLinkAtCell(3, 2), `http://${hostname}/a~b#c~d?e~f`);
@@ -70,6 +71,7 @@ async function testHostName(hostname: string): Promise<void> {
   assert.equal(await getLinkAtCell(2, 5), `http://${hostname}/`);
   assert.equal(await getLinkAtCell(2, 6), `http://${hostname}/`);
   assert.equal(await getLinkAtCell(1, 7), `http://${hostname}/subpath/+/id`);
+  assert.equal(await getLinkAtCell(1, 8) + await getLinkAtCell(1, 9), `http://${hostname}/subpath/subpath2/subpath3/subpath4/subpath5/+/id`);
 }
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
