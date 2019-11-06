@@ -52,7 +52,7 @@ jobs:
     displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-coverage --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
@@ -74,7 +74,7 @@ jobs:
     displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-coverage --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
