@@ -28,6 +28,26 @@ if (process.argv.length > 2) {
   }
 }
 
+const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
+
+if (checkCoverage) {
+  flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
+  const executable = path.resolve(__dirname, '../node_modules/.bin/nyc');
+  const args = ['--check-coverage', '--lines=100', path.resolve(__dirname, '../node_modules/.bin/mocha'), ...testFiles, ...flagArgs];
+  console.info('executable', executable);
+  console.info('args', args);
+  const run = cp.spawnSync(
+    executable,
+    args,
+    {
+      cwd: path.resolve(__dirname, '..'),
+      env,
+      stdio: 'inherit'
+    }
+  );
+  process.exit(run.status);
+}
+
 const run = cp.spawnSync(
   path.resolve(__dirname, '../node_modules/.bin/mocha'),
   [...testFiles, ...flagArgs],
@@ -37,5 +57,4 @@ const run = cp.spawnSync(
     stdio: 'inherit'
   }
 );
-
 process.exit(run.status);
