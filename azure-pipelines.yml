@@ -22,7 +22,7 @@ jobs:
     inputs:
       key: yarn2 | $(Agent.OS) | yarn.lock
       path: node_modules
-    displayName: Cache Yarn packages
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
@@ -60,7 +60,7 @@ jobs:
     inputs:
       key: yarn2 | $(Agent.OS) | yarn.lock
       path: node_modules
-    displayName: Cache Yarn packages
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
@@ -82,7 +82,7 @@ jobs:
     inputs:
       key: yarn2 | $(Agent.OS) | yarn.lock
       path: node_modules
-    displayName: Cache Yarn packages
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
@@ -102,7 +102,7 @@ jobs:
     inputs:
       key: yarn_puppeteer | $(Agent.OS) | yarn.lock
       path: node_modules
-    displayName: Cache Yarn packages
+    displayName: Cache node modules
   - task: YarnInstaller@3
     inputs:
       versionSpec: '1.x'
@@ -125,11 +125,6 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: CacheBeta@1
-    inputs:
-      key: yarn_puppeteer | $(Agent.OS) | yarn.lock
-      path: node_modules
-    displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn add puppeteer
@@ -159,11 +154,6 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - task: CacheBeta@1
-    inputs:
-      key: yarn2 | $(Agent.OS) | yarn.lock
-      path: node_modules
-    displayName: Cache Yarn packages
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
