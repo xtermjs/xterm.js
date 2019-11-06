@@ -7,6 +7,8 @@ jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -16,38 +18,39 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-unit --forbid-only
+  - script: yarn test-unit-coverage --forbid-only
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
-  - script: |
-      NODE_PATH=$(pwd)/out ./node_modules/.bin/nyc ./node_modules/.bin/mocha './out/*test.js' './out/**/*test.js'
-      ./node_modules/.bin/nyc report --reporter=cobertura
-    displayName: 'Coverage report'
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
     displayName: 'Publish coverage'
-  - task: mspremier.BuildQualityChecks.QualityChecks-task.BuildQualityChecks@6
-    displayName: 'Check build quality'
-    inputs:
-      checkCoverage: true
-      coverageType: lines
-      coverageThreshold: 60
-      coverageFailOption: fixed
 
 - job: macOS
   pool:
     vmImage: 'xcode9-macos10.13'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
@@ -57,12 +60,19 @@ jobs:
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
@@ -77,12 +87,19 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - task: CacheBeta@1
+    inputs:
+      key: yarn_puppeteer | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
   - task: YarnInstaller@3
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: yarn add puppeteer
+    displayName: 'Install puppeteer'
   - script: |
       yarn start &
       sleep 10
@@ -97,8 +114,10 @@ jobs:
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - script: yarn
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: yarn add puppeteer
+    displayName: 'Install puppeteer'
   - script: |
       yarn start &
       sleep 10
@@ -124,7 +143,7 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: yarn
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'

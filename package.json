@@ -16,6 +16,7 @@
     "posttest": "npm run lint",
     "test-api": "mocha \"**/*.api.js\"",
     "test-unit": "node ./bin/test.js",
+    "test-unit-coverage": "node ./bin/test.js --coverage",
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run setup",
     "setup": "npm run build",
