@@ -6,6 +6,8 @@
 const cp = require('child_process');
 const path = require('path');
 
+const COVERAGE_LINES_THRESHOLD = 60;
+
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
@@ -33,7 +35,7 @@ const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
 if (checkCoverage) {
   flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
   const executable = path.resolve(__dirname, '../node_modules/.bin/nyc');
-  const args = ['--check-coverage', '--lines=100', path.resolve(__dirname, '../node_modules/.bin/mocha'), ...testFiles, ...flagArgs];
+  const args = ['--check-coverage', `--lines=${COVERAGE_LINES_THRESHOLD}`, path.resolve(__dirname, '../node_modules/.bin/mocha'), ...testFiles, ...flagArgs];
   console.info('executable', executable);
   console.info('args', args);
   const run = cp.spawnSync(
