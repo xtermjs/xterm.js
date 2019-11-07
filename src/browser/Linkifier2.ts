@@ -8,7 +8,6 @@ import { IDisposable } from 'common/Types';
 import { IMouseService } from './services/Services';
 import { IBufferService, ICoreService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { LinkRenderLayer } from './renderer/LinkRenderLayer';
 
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
@@ -106,7 +105,7 @@ export class Linkifier2 implements ILinkifier2 {
       return;
     }
 
-    this._linkCache.forEach((cachedLink, i) => {
+    this._linkCache.forEach(cachedLink => {
       if (this._linkAtPosition(cachedLink.link, position)) {
         cachedLink.link.handle(event, cachedLink.link.url);
       }
@@ -117,13 +116,16 @@ export class Linkifier2 implements ILinkifier2 {
     if (this._lastMouseEvent && this._mouseOverLink) {
       this._hideAllTooltips();
     }
+
+    this._linkCache = [];
   }
 
   private _onData(e: string): void {
     if (this._lastMouseEvent && this._mouseOverLink) {
-      const index = this._hideAllTooltips();
-      this._linkCache.splice(index, 1);
+      this._hideAllTooltips();
     }
+
+    this._linkCache = [];
   }
 
   private _handleNewLink(link: ILink | undefined): void {
@@ -185,20 +187,19 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _hideAllTooltips(): number {
+  private _hideAllTooltips(): void {
     if (!this._element) {
-      return -1;
+      return;
     }
 
     // Hide all the tooltips
     for (let i = 0; i < this._linkCache.length; i++) {
       if (this._linkCache[i].mouseOver) {
         this._hideTooltip(this._element, this._linkCache[i].link, new MouseEvent('invalid event'));
-        return i;
       }
     }
 
-    return -1;
+    return;
   }
 
   /**
@@ -215,7 +216,8 @@ export class Linkifier2 implements ILinkifier2 {
     // If not, then handle each case seperately, depending on which way it wraps
     return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
       (wrappedFromLeft && link.range.end.x >= position.x) ||
-      (wrappedToRight && link.range.start.x <= position.x)) &&
+      (wrappedToRight && link.range.start.x <= position.x) ||
+      (wrappedFromLeft && wrappedToRight)) &&
       link.range.start.y <= position.y &&
       link.range.end.y >= position.y;
   }
