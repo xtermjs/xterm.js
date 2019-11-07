@@ -239,7 +239,7 @@ export class SearchAddon implements ITerminalAddon {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param {ISearchPosition} position The position to start the search.
+   * @param position The position to start the search.
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
