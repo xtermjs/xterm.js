@@ -347,6 +347,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
+    // Clear the dirty row service so we know which lines changed as a result of parsing
+    this._dirtyRowService.clearRange();
+
     // process big data in smaller chunks
     if (data.length > MAX_PARSEBUFFER_LENGTH) {
       for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
@@ -367,6 +370,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
       this._onCursorMove.fire();
     }
+
+    // Refresh any dirty rows accumulated as part of parsing
     this._terminal.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
   }
 
