@@ -15,13 +15,14 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal } from 'xterm';
+import { Terminal, IEvent } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 import { FLAGS } from './Constants';
 import { getCompatAttr } from './CharDataCompat';
+import { EventEmitter } from 'common/EventEmitter';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -41,6 +42,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _core: ITerminal;
 
+  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
+  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+
   constructor(
     private _terminal: Terminal,
     private _colors: IColorSet,
@@ -54,7 +58,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors)
+      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRefreshRows)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -186,7 +190,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.updateSelection(this._model, columnSelectMode);
 
     // TODO: #2102 Should this move to RenderCoordinator?
-    this._core.refresh(0, this._terminal.rows - 1);
+    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {

@@ -34,7 +34,6 @@ if (os.platform() === 'darwin') {
 // filter skipFilenames
 const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slice(-1)[0]) === -1);
 
-
 describe('Escape Sequence Files', function(): void {
   this.timeout(1000);
 
@@ -44,6 +43,9 @@ describe('Escape Sequence Files', function(): void {
   let customHandler: IDisposable | undefined;
 
   before(() => {
+    if (process.platform === 'win32') {
+      return;
+    }
     ptyTerm = (pty as any).open({cols: COLS, rows: ROWS});
     slaveEnd = ptyTerm._slave;
     term = new Terminal({cols: COLS, rows: ROWS});
@@ -51,12 +53,15 @@ describe('Escape Sequence Files', function(): void {
   });
 
   after(() => {
+    if (process.platform === 'win32') {
+      return;
+    }
     ptyTerm._master.end();
     ptyTerm._master.destroy();
   });
 
   FILES.forEach(filename => {
-    it(filename.split('/').slice(-1)[0], async () => {
+    (process.platform === 'win32' ? it.skip : it)(filename.split('/').slice(-1)[0], async () => {
       // reset terminal and handler
       if (customHandler) {
         customHandler.dispose();

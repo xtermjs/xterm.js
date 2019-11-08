@@ -5,6 +5,7 @@
 
 import { IDisposable } from 'common/Types';
 import { IColorSet } from 'browser/Types';
+import { IEvent } from 'common/EventEmitter';
 
 export type CharacterJoinerHandler = (text: string) => [number, number][];
 
@@ -23,12 +24,19 @@ export interface IRenderDimensions {
   actualCellHeight: number;
 }
 
+export interface IRequestRefreshRowsEvent {
+  start: number;
+  end: number;
+}
+
 /**
  * Note that IRenderer implementations should emit the refresh event after
  * rendering rows to the screen.
  */
 export interface IRenderer extends IDisposable {
   readonly dimensions: IRenderDimensions;
+
+  readonly onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
 
   dispose(): void;
   setColors(colors: IColorSet): void;

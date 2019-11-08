@@ -15,6 +15,8 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 export class CoreService implements ICoreService {
   serviceBrand: any;
 
+  public isCursorInitialized: boolean = false;
+  public isCursorHidden: boolean = false;
   public decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();

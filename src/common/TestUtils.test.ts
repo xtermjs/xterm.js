@@ -43,6 +43,9 @@ export class MockCoreMouseService implements ICoreMouseService {
 }
 
 export class MockCoreService implements ICoreService {
+  isCursorInitialized: boolean = false;
+  isCursorHidden: boolean = false;
+  isFocused: boolean = false;
   serviceBrand: any;
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;

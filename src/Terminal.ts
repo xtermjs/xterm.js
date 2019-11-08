@@ -28,7 +28,7 @@ import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
-import { Renderer } from './renderer/Renderer';
+import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
@@ -38,7 +38,7 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
-import { DomRenderer } from './renderer/dom/DomRenderer';
+import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -48,7 +48,7 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
@@ -64,6 +64,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
+import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -90,10 +91,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // TODO: We should remove options once components adopt optionsService
   public get options(): ITerminalOptions { return this.optionsService.options; }
-
-  // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
-  public cursorState: number;
-  public cursorHidden: boolean;
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
@@ -253,8 +250,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _setup(): void {
     this._parent = document ? document.body : null;
 
-    this.cursorState = 0;
-    this.cursorHidden = false;
     this._customKeyEventHandler = null;
 
     // modes
@@ -320,10 +315,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (this.textarea) {
       this.textarea.focus({ preventScroll: true });
     }
-  }
-
-  public get isFocused(): boolean {
-    return document.activeElement === this.textarea && document.hasFocus();
   }
 
   private _setupOptionsListeners(): void {
@@ -540,6 +531,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
+    const coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
+    this._instantiationService.setService(ICoreBrowserService, coreBrowserService);
+
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
@@ -641,8 +635,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
-      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
+      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager.colors, this.screenElement, this.linkifier, this.linkifier2);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier, this.linkifier2);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -949,8 +943,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Display the cursor element
    */
   public showCursor(): void {
-    if (!this.cursorState) {
-      this.cursorState = 1;
+    if (!this._coreService.isCursorInitialized) {
+      this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
     }
   }
@@ -1518,7 +1512,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
-    const cursorState = this.cursorState;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1530,7 +1523,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
-    this.cursorState = cursorState;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh
