@@ -120,7 +120,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _render(terminal: Terminal, triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
     // TODO: Need to expose API for this
-    if (!(terminal as any)._core.cursorState || (terminal as any)._core.cursorHidden) {
+    if (!(terminal as any)._core._coreService.isCursorInitialized || (terminal as any)._core._coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }
