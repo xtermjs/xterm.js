@@ -246,7 +246,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._windowsMode = undefined;
     this._renderService?.dispose();
     this._customKeyEventHandler = null;
-    this.write = () => {};
+    this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
   }
 
@@ -286,7 +286,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._inputHandler);
 
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
-    this.linkifier2 = this.linkifier2 || new Linkifier2(this._bufferService, this._coreService);
+    this.linkifier2 = this.linkifier2 || new Linkifier2(this._bufferService, this._coreService, this.onScroll.bind(this));
 
     if (this.options.windowsMode) {
       this._windowsMode = applyWindowsMode(this);
@@ -606,7 +606,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
-    this.linkifier2.attachToDom(this.element, this._viewportElement, this._mouseService);
+    this.linkifier2.attachToDom(this.element, this._mouseService);
 
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));

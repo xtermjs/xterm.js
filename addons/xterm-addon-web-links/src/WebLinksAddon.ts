@@ -45,10 +45,11 @@ export class WebLinksAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
 
-    if ('registerLinkProvider' in this._terminal as any) {
+    if ('registerLinkProvider' in this._terminal) {
       this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler));
     } else {
-      this._linkMatcherId = this._terminal.registerLinkMatcher(strictUrlRegex, this._handler, this._options);
+      // HACK: This is an older version of xterm.js, use registerLinkMatcher
+      this._linkMatcherId = (<Terminal>this._terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
     }
   }
 
@@ -57,8 +58,6 @@ export class WebLinksAddon implements ITerminalAddon {
       this._terminal.deregisterLinkMatcher(this._linkMatcherId);
     }
 
-    if (this._linkProvider) {
-      this._linkProvider.dispose();
-    }
+    this._linkProvider?.dispose();
   }
 }
