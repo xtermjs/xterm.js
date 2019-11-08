@@ -23,6 +23,13 @@ export interface ICharSizeService {
   measure(): void;
 }
 
+export const ICoreBrowserService = createDecorator<ICoreBrowserService>('CoreBrowserService');
+export interface ICoreBrowserService {
+  serviceBrand: any;
+
+  readonly isFocused: boolean;
+}
+
 export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
   serviceBrand: any;

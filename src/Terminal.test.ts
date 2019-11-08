@@ -163,17 +163,6 @@ describe('Terminal', () => {
     });
   });
 
-  describe('reset', () => {
-    it('should not affect cursorState', () => {
-      term.cursorState = 1;
-      term.reset();
-      assert.equal(term.cursorState, 1);
-      term.cursorState = 0;
-      term.reset();
-      assert.equal(term.cursorState, 0);
-    });
-  });
-
   describe('clear', () => {
     it('should clear a buffer equal to rows', () => {
       const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
