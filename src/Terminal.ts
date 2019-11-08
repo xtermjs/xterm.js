@@ -90,8 +90,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // TODO: We should remove options once components adopt optionsService
   public get options(): ITerminalOptions { return this.optionsService.options; }
 
-  public cursorHidden: boolean;
-
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // common services
@@ -249,7 +247,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _setup(): void {
     this._parent = document ? document.body : null;
 
-    this.cursorHidden = false;
     this._customKeyEventHandler = null;
 
     // modes

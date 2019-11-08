@@ -128,7 +128,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _render(triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
-    if (!this._coreService.isCursorInitialized || this._terminal.cursorHidden) {
+    if (!this._coreService.isCursorInitialized || this._coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }

@@ -1449,7 +1449,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 25: // show cursor
-          this._terminal.cursorHidden = false;
+          this._coreService.isCursorHidden = false;
           break;
         case 1048: // alt screen cursor
           this.saveCursor();
@@ -1620,7 +1620,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 25: // hide cursor
-          this._terminal.cursorHidden = true;
+          this._coreService.isCursorHidden = true;
           break;
         case 1048: // alt screen cursor
           this.restoreCursor();
@@ -1954,7 +1954,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * http://vt100.net/docs/vt220-rm/table4-10.html
    */
   public softReset(params: IParams): void {
-    this._terminal.cursorHidden = false;
+    this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
     this._terminal.originMode = false;
     this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
