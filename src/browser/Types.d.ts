@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IDisposable } from 'common/Types';
-import { IMouseService } from './services/Services';
+import { IMouseService, IRenderService } from './services/Services';
 
 export interface IColorManager {
   colors: IColorSet;
@@ -98,7 +98,7 @@ export interface ILinkifier2 {
   onShowTooltip: IEvent<ILinkifierEvent>;
   onHideTooltip: IEvent<ILinkifierEvent>;
 
-  attachToDom(element: HTMLElement, mouseService: IMouseService): void;
+  attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 }
 

@@ -5,14 +5,15 @@
 
 import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent } from './Types';
 import { IDisposable } from 'common/Types';
-import { IMouseService } from './services/Services';
+import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService, ICoreService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
-  private _linkProviders: ILinkProvider[] = [];
   private _mouseService: IMouseService | undefined;
+  private _renderService: IRenderService | undefined;
+  private _linkProviders: ILinkProvider[] = [];
   private _currentLink: ILink | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
@@ -24,9 +25,7 @@ export class Linkifier2 implements ILinkifier2 {
   public get onHideTooltip(): IEvent<ILinkifierEvent> { return this._onHideTooltip.event; }
 
   constructor(
-    private readonly _bufferService: IBufferService,
-    private readonly _coreService: ICoreService,
-    private readonly _onScroll: IEvent<number>
+    private readonly _bufferService: IBufferService
   ) {
 
   }
@@ -45,9 +44,10 @@ export class Linkifier2 implements ILinkifier2 {
     };
   }
 
-  public attachToDom(element: HTMLElement, mouseService: IMouseService): void {
+  public attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void {
     this._element = element;
     this._mouseService = mouseService;
+    this._renderService = renderService;
 
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
     this._element.addEventListener('click', this._onMouseDown.bind(this));
@@ -162,9 +162,10 @@ export class Linkifier2 implements ILinkifier2 {
       this._currentLink = link;
       this._showTooltip(this._element, link, this._lastMouseEvent);
 
-      // Add listeners for onData and onScroll
-      this._linkCacheDisposables.push(this._coreService.onData(() => this._clearCurrentLink()));
-      this._linkCacheDisposables.push(this._onScroll(() => this._clearCurrentLink()));
+      // Add listener for rerendering
+      if (this._renderService) {
+        this._linkCacheDisposables.push(this._renderService.onRender(() => this._clearCurrentLink()));
+      }
     }
   }
 
