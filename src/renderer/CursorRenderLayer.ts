@@ -9,7 +9,7 @@ import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
 
 interface ICursorState {
@@ -39,7 +39,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     rendererId: number,
     private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>,
     readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    readonly optionsService: IOptionsService,
+    private readonly _coreService: ICoreService
   ) {
     super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._state = {
@@ -127,7 +128,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _render(triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
-    if (!this._terminal.cursorState || this._terminal.cursorHidden) {
+    if (!this._coreService.isCursorInitialized || this._terminal.cursorHidden) {
       this._clearCursor();
       return;
     }

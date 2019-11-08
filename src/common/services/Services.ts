@@ -58,6 +58,13 @@ export const ICoreService = createDecorator<ICoreService>('CoreService');
 export interface ICoreService {
   serviceBrand: any;
 
+  /**
+   * Initially the cursor will not be visible until the first time the terminal
+   * is focused.
+   */
+  isCursorInitialized: boolean;
+  isCursorHidden: boolean;
+  isFocused: boolean;
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;

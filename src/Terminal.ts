@@ -90,8 +90,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // TODO: We should remove options once components adopt optionsService
   public get options(): ITerminalOptions { return this.optionsService.options; }
 
-  // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
-  public cursorState: number;
   public cursorHidden: boolean;
 
   private _customKeyEventHandler: CustomKeyEventHandler;
@@ -251,7 +249,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _setup(): void {
     this._parent = document ? document.body : null;
 
-    this.cursorState = 0;
     this.cursorHidden = false;
     this._customKeyEventHandler = null;
 
@@ -637,7 +634,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
+      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService, this._coreService);
       case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
@@ -945,8 +942,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Display the cursor element
    */
   public showCursor(): void {
-    if (!this.cursorState) {
-      this.cursorState = 1;
+    if (!this._coreService.isCursorInitialized) {
+      this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
     }
   }
@@ -1510,7 +1507,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
-    const cursorState = this.cursorState;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1522,7 +1518,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
-    this.cursorState = cursorState;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh

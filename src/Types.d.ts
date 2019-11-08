@@ -155,7 +155,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   screenElement: HTMLElement;
   browser: IBrowser;
   cursorHidden: boolean;
-  cursorState: number;
   buffer: IBuffer;
   buffers: IBufferSet;
   isFocused: boolean;

@@ -13,7 +13,7 @@ import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistr
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
@@ -36,7 +36,8 @@ export class Renderer extends Disposable implements IRenderer {
     private readonly _terminal: ITerminal,
     private readonly _bufferService: IBufferService,
     private readonly _charSizeService: ICharSizeService,
-    private readonly _optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService,
+    readonly coreService: ICoreService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
@@ -46,7 +47,7 @@ export class Renderer extends Disposable implements IRenderer {
       new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
       new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, this._bufferService, _optionsService),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService)
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
