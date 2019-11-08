@@ -4,13 +4,12 @@
  */
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { ITerminal } from '../../Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent } from 'browser/Types';
-import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService } from 'common/services/Services';
+import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
+import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -39,10 +38,15 @@ export class DomRenderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   constructor(
-    private _terminal: ITerminal,
     private _colors: IColorSet,
-    private _charSizeService: ICharSizeService,
-    private _optionsService: IOptionsService
+    private readonly _element: HTMLElement,
+    private readonly _screenElement: HTMLElement,
+    private readonly _viewportElement: HTMLElement,
+    private readonly _linkifier: ILinkifier,
+    private readonly _charSizeService: ICharSizeService,
+    private readonly _optionsService: IOptionsService,
+    private readonly _bufferService: IBufferService,
+    private readonly _renderService: IRenderService
   ) {
     super();
 
@@ -50,7 +54,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
-    this._refreshRowElements(this._terminal.cols, this._terminal.rows);
+    this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
     this._selectionContainer = document.createElement('div');
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
@@ -74,36 +78,36 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._rowFactory = new DomRendererRowFactory(document, this._optionsService);
 
-    this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
-    this._terminal.screenElement.appendChild(this._rowContainer);
-    this._terminal.screenElement.appendChild(this._selectionContainer);
+    this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this._screenElement.appendChild(this._rowContainer);
+    this._screenElement.appendChild(this._selectionContainer);
 
-    this._terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
-    this._terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    this._linkifier.onLinkHover(e => this._onLinkHover(e));
+    this._linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {
-    this._terminal.element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
-    this._terminal.screenElement.removeChild(this._rowContainer);
-    this._terminal.screenElement.removeChild(this._selectionContainer);
-    this._terminal.screenElement.removeChild(this._themeStyleElement);
-    this._terminal.screenElement.removeChild(this._dimensionsStyleElement);
+    this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this._screenElement.removeChild(this._rowContainer);
+    this._screenElement.removeChild(this._selectionContainer);
+    this._screenElement.removeChild(this._themeStyleElement);
+    this._screenElement.removeChild(this._dimensionsStyleElement);
     super.dispose();
   }
 
   private _updateDimensions(): void {
     this.dimensions.scaledCharWidth = this._charSizeService.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.options.letterSpacing);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.options.lineHeight);
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
-    this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._terminal.cols;
-    this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._terminal.rows;
+    this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
+    this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._bufferService.rows;
     this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
     this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
 
     this._rowElements.forEach(element => {
       element.style.width = `${this.dimensions.canvasWidth}px`;
@@ -115,7 +119,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     if (!this._dimensionsStyleElement) {
       this._dimensionsStyleElement = document.createElement('style');
-      this._terminal.screenElement.appendChild(this._dimensionsStyleElement);
+      this._screenElement.appendChild(this._dimensionsStyleElement);
     }
 
     const styles =
@@ -128,9 +132,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._dimensionsStyleElement.innerHTML = styles;
 
-    this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
-    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._selectionContainer.style.height = this._viewportElement.style.height;
+    this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
   public setColors(colors: IColorSet): void {
@@ -141,7 +145,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _injectCss(): void {
     if (!this._themeStyleElement) {
       this._themeStyleElement = document.createElement('style');
-      this._terminal.screenElement.appendChild(this._themeStyleElement);
+      this._screenElement.appendChild(this._themeStyleElement);
     }
 
     // Base CSS
@@ -149,16 +153,16 @@ export class DomRenderer extends Disposable implements IRenderer {
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this._colors.foreground.css};` +
         ` background-color: ${this._colors.background.css};` +
-        ` font-family: ${this._terminal.options.fontFamily};` +
-        ` font-size: ${this._terminal.options.fontSize}px;` +
+        ` font-family: ${this._optionsService.options.fontFamily};` +
+        ` font-size: ${this._optionsService.options.fontSize}px;` +
         `}`;
     // Text styles
     styles +=
         `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-        ` font-weight: ${this._terminal.options.fontWeight};` +
+        ` font-weight: ${this._optionsService.options.fontWeight};` +
         `}` +
         `${this._terminalSelector} span.${BOLD_CLASS} {` +
-        ` font-weight: ${this._terminal.options.fontWeightBold};` +
+        ` font-weight: ${this._optionsService.options.fontWeightBold};` +
         `}` +
         `${this._terminalSelector} span.${ITALIC_CLASS} {` +
         ` font-style: italic;` +
@@ -275,13 +279,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
+    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
+    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
+    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
 
     // No need to draw the selection
-    if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
+    if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
       return;
     }
 
@@ -295,15 +299,15 @@ export class DomRenderer extends Disposable implements IRenderer {
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+      const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
       documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
       // Draw middle rows
       const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
+      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
       // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewporttartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
         documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
       }
     }
@@ -333,7 +337,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();
-    this._terminal.refresh(0, this._terminal.rows - 1);
+    this._renderService.refreshRows(0, this._bufferService.rows - 1);
   }
 
   public clear(): void {
@@ -341,20 +345,18 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public renderRows(start: number, end: number): void {
-    const terminal = this._terminal;
-
-    const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;
-    const cursorX = this._terminal.buffer.x;
-    const cursorBlink = this._terminal.options.cursorBlink;
+    const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
+    const cursorX = this._bufferService.buffer.x;
+    const cursorBlink = this._optionsService.options.cursorBlink;
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerHTML = '';
 
-      const row = y + terminal.buffer.ydisp;
-      const lineData = terminal.buffer.lines.get(row);
-      const cursorStyle = terminal.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
+      const row = y + this._bufferService.buffer.ydisp;
+      const lineData = this._bufferService.buffer.lines.get(row);
+      const cursorStyle = this._optionsService.options.cursorStyle;
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
     }
   }
 
