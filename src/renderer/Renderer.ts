@@ -30,19 +30,19 @@ export class Renderer extends Disposable implements IRenderer {
   constructor(
     private _colors: IColorSet,
     private readonly _terminal: ITerminal,
-    readonly bufferService: IBufferService,
+    private readonly _bufferService: IBufferService,
     private readonly _charSizeService: ICharSizeService,
-    readonly optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService
   ) {
     super();
-    const allowTransparency = this._terminal.options.allowTransparency;
-    this._characterJoinerRegistry = new CharacterJoinerRegistry(bufferService);
+    const allowTransparency = this._optionsService.options.allowTransparency;
+    this._characterJoinerRegistry = new CharacterJoinerRegistry(this._bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, bufferService, optionsService),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, bufferService, optionsService),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, bufferService, optionsService),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, bufferService, optionsService)
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, this._bufferService, _optionsService),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._bufferService, _optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -74,7 +74,7 @@ export class Renderer extends Disposable implements IRenderer {
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== window.devicePixelRatio) {
       this._devicePixelRatio = window.devicePixelRatio;
-      this.onResize(this._terminal.cols, this._terminal.rows);
+      this.onResize(this._bufferService.cols, this._bufferService.rows);
     }
   }
 
@@ -101,7 +101,7 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   public onCharSizeChanged(): void {
-    this.onResize(this._terminal.cols, this._terminal.rows);
+    this.onResize(this._bufferService.cols, this._bufferService.rows);
   }
 
   public onBlur(): void {
@@ -163,23 +163,23 @@ export class Renderer extends Disposable implements IRenderer {
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.options.lineHeight);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._optionsService.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.options.letterSpacing);
 
     // Calculate the x coordinate with a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._optionsService.options.letterSpacing / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
-    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
+    this.dimensions.scaledCanvasHeight = this._bufferService.rows * this.dimensions.scaledCellHeight;
+    this.dimensions.scaledCanvasWidth = this._bufferService.cols * this.dimensions.scaledCellWidth;
 
     // The the size of the canvas on the page. It's very important that this
     // rounds to nearest integer and not ceils as browsers often set
@@ -194,8 +194,8 @@ export class Renderer extends Disposable implements IRenderer {
     // account window.devicePixelRatio. ICharSizeService.width/height by itself
     // is insufficient when the page is not at 100% zoom level as it's measured
     // in CSS pixels, but the actual char size on the canvas can differ.
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
