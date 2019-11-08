@@ -34,11 +34,11 @@ export class Renderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
     private readonly _linkifier: ILinkifier,
-    private readonly _bufferService: IBufferService,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _optionsService: IOptionsService,
-    readonly coreService: ICoreService,
-    readonly coreBrowserService: ICoreBrowserService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICoreService readonly coreService: ICoreService,
+    @ICoreBrowserService readonly coreBrowserService: ICoreBrowserService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
@@ -51,18 +51,18 @@ export class Renderer extends Disposable implements IRenderer {
       new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService, coreBrowserService)
     ];
     this.dimensions = {
-      scaledCharWidth: null,
-      scaledCharHeight: null,
-      scaledCellWidth: null,
-      scaledCellHeight: null,
-      scaledCharLeft: null,
-      scaledCharTop: null,
-      scaledCanvasWidth: null,
-      scaledCanvasHeight: null,
-      canvasWidth: null,
-      canvasHeight: null,
-      actualCellWidth: null,
-      actualCellHeight: null
+      scaledCharWidth: 0,
+      scaledCharHeight: 0,
+      scaledCellWidth: 0,
+      scaledCellHeight: 0,
+      scaledCharLeft: 0,
+      scaledCharTop: 0,
+      scaledCanvasWidth: 0,
+      scaledCanvasHeight: 0,
+      canvasWidth: 0,
+      canvasHeight: 0,
+      actualCellWidth: 0,
+      actualCellHeight: 0
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
