@@ -29,8 +29,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
-  private _themeStyleElement: HTMLStyleElement;
-  private _dimensionsStyleElement: HTMLStyleElement;
+  private _themeStyleElement!: HTMLStyleElement;
+  private _dimensionsStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -43,10 +43,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
     private readonly _linkifier: ILinkifier,
-    private readonly _charSizeService: ICharSizeService,
-    private readonly _optionsService: IOptionsService,
-    private readonly _bufferService: IBufferService,
-    private readonly _renderService: IRenderService
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
 
@@ -60,18 +60,18 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
     this.dimensions = {
-      scaledCharWidth: null,
-      scaledCharHeight: null,
-      scaledCellWidth: null,
-      scaledCellHeight: null,
-      scaledCharLeft: null,
-      scaledCharTop: null,
-      scaledCanvasWidth: null,
-      scaledCanvasHeight: null,
-      canvasWidth: null,
-      canvasHeight: null,
-      actualCellWidth: null,
-      actualCellHeight: null
+      scaledCharWidth: 0,
+      scaledCharHeight: 0,
+      scaledCellWidth: 0,
+      scaledCellHeight: 0,
+      scaledCharLeft: 0,
+      scaledCharTop: 0,
+      scaledCanvasWidth: 0,
+      scaledCanvasHeight: 0,
+      canvasWidth: 0,
+      canvasHeight: 0,
+      actualCellWidth: 0,
+      actualCellHeight: 0
     };
     this._updateDimensions();
     this._injectCss();
@@ -246,7 +246,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
     // Remove excess elements
     while (this._rowElements.length > rows) {
-      this._rowContainer.removeChild(this._rowElements.pop());
+      this._rowContainer.removeChild(this._rowElements.pop()!);
     }
   }
 
@@ -356,7 +356,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData!, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
     }
   }
 

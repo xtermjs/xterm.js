@@ -38,7 +38,7 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { DomRenderer } from './renderer/dom/DomRenderer';
+import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -638,7 +638,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
       case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
-      case 'dom': return new DomRenderer(this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier, this._charSizeService, this.optionsService, this._bufferService, this._renderService);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
