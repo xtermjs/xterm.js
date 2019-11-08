@@ -3,16 +3,15 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from '../browser/renderer/TextRenderLayer';
-import { SelectionRenderLayer } from '../browser/renderer/SelectionRenderLayer';
-import { CursorRenderLayer } from './CursorRenderLayer';
+import { TextRenderLayer } from 'browser/renderer/TextRenderLayer';
+import { SelectionRenderLayer } from 'browser/renderer/SelectionRenderLayer';
+import { CursorRenderLayer } from 'browser/renderer/CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
-import { ITerminal } from '../Types';
-import { LinkRenderLayer } from '../browser/renderer/LinkRenderLayer';
+import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet } from 'browser/Types';
-import { ICharSizeService } from 'browser/services/Services';
+import { IColorSet, ILinkifier } from 'browser/Types';
+import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -33,21 +32,23 @@ export class Renderer extends Disposable implements IRenderer {
 
   constructor(
     private _colors: IColorSet,
-    private readonly _terminal: ITerminal,
+    private readonly _screenElement: HTMLElement,
+    private readonly _linkifier: ILinkifier,
     private readonly _bufferService: IBufferService,
     private readonly _charSizeService: ICharSizeService,
     private readonly _optionsService: IOptionsService,
-    readonly coreService: ICoreService
+    readonly coreService: ICoreService,
+    readonly coreBrowserService: ICoreBrowserService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
     this._characterJoinerRegistry = new CharacterJoinerRegistry(this._bufferService);
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, this._bufferService, _optionsService),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService)
+      new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
+      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
+      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, this._linkifier, this._bufferService, _optionsService),
+      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService, coreBrowserService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -101,8 +102,8 @@ export class Renderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.resize(this.dimensions));
 
     // Resize the screen
-    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
   public onCharSizeChanged(): void {

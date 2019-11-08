@@ -48,7 +48,7 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
@@ -63,6 +63,7 @@ import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -313,10 +314,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  public get isFocused(): boolean {
-    return document.activeElement === this.textarea && document.hasFocus();
-  }
-
   private _setupOptionsListeners(): void {
     // TODO: These listeners should be owned by individual components
     this.optionsService.onOptionChange(key => {
@@ -531,6 +528,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
+    const coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
+    this._instantiationService.setService(ICoreBrowserService, coreBrowserService);
+
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
@@ -631,7 +631,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService, this._coreService);
+      case 'canvas': return new Renderer(this._colorManager.colors, this.screenElement, this.linkifier, this._bufferService, this._charSizeService, this.optionsService, this._coreService, this._coreBrowserService);
       case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }

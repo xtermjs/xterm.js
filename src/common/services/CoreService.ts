@@ -17,7 +17,6 @@ export class CoreService implements ICoreService {
 
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;
-  public isFocused: boolean = false;
   public decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();

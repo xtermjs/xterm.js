@@ -95,9 +95,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
         });
       }
     } else {
-      if (this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager.dispose();
-      }
+      this._cursorBlinkStateManager?.dispose();
+      this._cursorBlinkStateManager = undefined;
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal

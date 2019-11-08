@@ -64,7 +64,6 @@ export interface ICoreService {
    */
   isCursorInitialized: boolean;
   isCursorHidden: boolean;
-  isFocused: boolean;
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;

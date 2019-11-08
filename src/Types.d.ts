@@ -155,7 +155,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   browser: IBrowser;
   buffer: IBuffer;
   buffers: IBufferSet;
-  isFocused: boolean;
   viewport: IViewport;
   bracketedPasteMode: boolean;
   optionsService: IOptionsService;
