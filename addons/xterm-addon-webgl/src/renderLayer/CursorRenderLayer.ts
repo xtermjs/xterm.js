@@ -8,7 +8,8 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IEventEmitter } from 'common/EventEmitter';
 
 interface ICursorState {
   x: number;
@@ -29,7 +30,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
   private _cell: ICellData = new CellData();
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>
+  ) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {
       x: 0,
@@ -70,14 +76,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
   public onFocus(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume(terminal);
     } else {
-      terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
     }
   }
 
@@ -95,7 +101,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
-    terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
   public onCursorMove(terminal: Terminal): void {

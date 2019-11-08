@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
-import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService } from 'common/services/Services';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -37,6 +38,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
+  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
+  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+
   constructor(
     private _colors: IColorSet,
     private readonly _element: HTMLElement,
@@ -45,8 +49,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _linkifier: ILinkifier,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
 
@@ -337,7 +340,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();
-    this._renderService.refreshRows(0, this._bufferService.rows - 1);
+    this._onRequestRefreshRows.fire({ start: 0, end: this._bufferService.rows - 1 });
   }
 
   public clear(): void {

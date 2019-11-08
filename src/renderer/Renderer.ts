@@ -6,7 +6,7 @@
 import { TextRenderLayer } from '../browser/renderer/TextRenderLayer';
 import { SelectionRenderLayer } from '../browser/renderer/SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry } from 'browser/renderer/Types';
+import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { LinkRenderLayer } from '../browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
@@ -15,6 +15,7 @@ import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 let nextRendererId = 1;
 
@@ -26,6 +27,9 @@ export class Renderer extends Disposable implements IRenderer {
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public dimensions: IRenderDimensions;
+
+  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
+  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
 
   constructor(
     private _colors: IColorSet,
@@ -42,7 +46,7 @@ export class Renderer extends Disposable implements IRenderer {
       new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
       new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._id, this._terminal.linkifier, this._bufferService, _optionsService),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._bufferService, _optionsService)
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors, this._terminal, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: null,
