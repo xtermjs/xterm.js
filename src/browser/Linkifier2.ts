@@ -80,43 +80,48 @@ export class Linkifier2 implements ILinkifier2 {
       // Check if we need to clear the link
       if (!isInPosition) {
         this._clearCurrentLink();
+        this._askForLink(position);
       }
     } else {
-      const providerReplies: Map<Number, ILink | undefined> = new Map();
-      let linkProvided = false;
-
-      // There is no link cached, so ask for one
-      this._linkProviders.forEach((linkProvider, i) => {
-        linkProvider.provideLink(position, (link: ILink | undefined) => {
-          providerReplies.set(i, link);
-
-          // Check if every provider before this one has come back undefined
-          let hasLinkBefore = false;
-          for (let j = 0; j < i; j++) {
-            if (!providerReplies.has(j) || providerReplies.get(j)) {
-              hasLinkBefore = true;
-            }
-          }
-
-          // If all providers with higher priority came back undefined, then this link should be used
-          if (!hasLinkBefore && link) {
-            linkProvided = true;
-            this._handleNewLink(link);
-          }
-
-          // Check if all the providers have responded
-          if (providerReplies.size === this._linkProviders.length && !linkProvided) {
-            // Respect the order of the link providers
-            for (let j = 0; j < providerReplies.size; j++) {
-              const currentLink = providerReplies.get(j);
-              if (currentLink) {
-                this._handleNewLink(currentLink);
-              }
-            }
-          }
-        });
-      });
+      this._askForLink(position);
     }
+  }
+
+  private _askForLink(position: IBufferCellPosition): void {
+    const providerReplies: Map<Number, ILink | undefined> = new Map();
+    let linkProvided = false;
+
+    // There is no link cached, so ask for one
+    this._linkProviders.forEach((linkProvider, i) => {
+      linkProvider.provideLink(position, (link: ILink | undefined) => {
+        providerReplies.set(i, link);
+
+        // Check if every provider before this one has come back undefined
+        let hasLinkBefore = false;
+        for (let j = 0; j < i; j++) {
+          if (!providerReplies.has(j) || providerReplies.get(j)) {
+            hasLinkBefore = true;
+          }
+        }
+
+        // If all providers with higher priority came back undefined, then this link should be used
+        if (!hasLinkBefore && link) {
+          linkProvided = true;
+          this._handleNewLink(link);
+        }
+
+        // Check if all the providers have responded
+        if (providerReplies.size === this._linkProviders.length && !linkProvided) {
+          // Respect the order of the link providers
+          for (let j = 0; j < providerReplies.size; j++) {
+            const currentLink = providerReplies.get(j);
+            if (currentLink) {
+              this._handleNewLink(currentLink);
+            }
+          }
+        }
+      });
+    });
   }
 
   private _onMouseDown(event: MouseEvent): void {
@@ -135,15 +140,18 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _clearCurrentLink(): void {
+  private _clearCurrentLink(startRow?: number, endRow?: number): void {
     if (!this._element || !this._currentLink || !this._lastMouseEvent) {
       return;
     }
 
-    this._hideTooltip(this._element, this._currentLink, this._lastMouseEvent);
-    this._currentLink = undefined;
-    this._linkCacheDisposables.forEach(l => l.dispose());
-    this._linkCacheDisposables = [];
+    // If we have a start and end row, check that the link is within it
+    if (!startRow || !endRow || (this._currentLink.range.start.y >= startRow && this._currentLink.range.end.y <= endRow)) {
+      this._hideTooltip(this._element, this._currentLink, this._lastMouseEvent);
+      this._currentLink = undefined;
+      this._linkCacheDisposables.forEach(l => l.dispose());
+      this._linkCacheDisposables = [];
+    }
   }
 
   private _handleNewLink(link: ILink): void {
@@ -164,7 +172,9 @@ export class Linkifier2 implements ILinkifier2 {
 
       // Add listener for rerendering
       if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRender(() => this._clearCurrentLink()));
+        this._linkCacheDisposables.push(this._renderService.onRender((e: { start: number, end: number }) => {
+          this._clearCurrentLink(e.start + 1 + this._bufferService.buffer.ydisp, e.end + 1 + this._bufferService.buffer.ydisp);
+        }));
       }
     }
   }
