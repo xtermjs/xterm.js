@@ -95,6 +95,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   public changeOptions(): void {
     this._renderer.onOptionsChanged();
+    this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();
   }
 

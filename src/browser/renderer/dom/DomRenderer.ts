@@ -340,7 +340,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();
-    this._onRequestRefreshRows.fire({ start: 0, end: this._bufferService.rows - 1 });
   }
 
   public clear(): void {
