@@ -15,13 +15,10 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('WebGL Renderer Integration Tests', function(): void {
-  this.timeout(20000);
-
+describe.only('WebGL Renderer Integration Tests', function(): void {
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 0,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
@@ -53,14 +50,14 @@ describe('WebGL Renderer Integration Tests', function(): void {
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
-      assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
-      assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
-      assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
-      assert.deepEqual(await getCellColor(4, 1), [10, 11, 12, 255]);
-      assert.deepEqual(await getCellColor(5, 1), [13, 14, 15, 255]);
-      assert.deepEqual(await getCellColor(6, 1), [16, 17, 18, 255]);
-      assert.deepEqual(await getCellColor(7, 1), [19, 20, 21, 255]);
-      assert.deepEqual(await getCellColor(8, 1), [22, 23, 24, 255]);
+      await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [10, 11, 12, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [13, 14, 15, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [16, 17, 18, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [19, 20, 21, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
     it('foreground colors bright', async function(): Promise<any> {
@@ -76,14 +73,14 @@ describe('WebGL Renderer Integration Tests', function(): void {
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
-      assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
-      assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
-      assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
-      assert.deepEqual(await getCellColor(4, 1), [10, 11, 12, 255]);
-      assert.deepEqual(await getCellColor(5, 1), [13, 14, 15, 255]);
-      assert.deepEqual(await getCellColor(6, 1), [16, 17, 18, 255]);
-      assert.deepEqual(await getCellColor(7, 1), [19, 20, 21, 255]);
-      assert.deepEqual(await getCellColor(8, 1), [22, 23, 24, 255]);
+      await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [10, 11, 12, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [13, 14, 15, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [16, 17, 18, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [19, 20, 21, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
     it('background colors normal', async function(): Promise<any> {
@@ -99,14 +96,14 @@ describe('WebGL Renderer Integration Tests', function(): void {
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
-      assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
-      assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
-      assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
-      assert.deepEqual(await getCellColor(4, 1), [10, 11, 12, 255]);
-      assert.deepEqual(await getCellColor(5, 1), [13, 14, 15, 255]);
-      assert.deepEqual(await getCellColor(6, 1), [16, 17, 18, 255]);
-      assert.deepEqual(await getCellColor(7, 1), [19, 20, 21, 255]);
-      assert.deepEqual(await getCellColor(8, 1), [22, 23, 24, 255]);
+      await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [10, 11, 12, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [13, 14, 15, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [16, 17, 18, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [19, 20, 21, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
     it('background colors bright', async function(): Promise<any> {
@@ -122,14 +119,14 @@ describe('WebGL Renderer Integration Tests', function(): void {
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
-      assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
-      assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
-      assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
-      assert.deepEqual(await getCellColor(4, 1), [10, 11, 12, 255]);
-      assert.deepEqual(await getCellColor(5, 1), [13, 14, 15, 255]);
-      assert.deepEqual(await getCellColor(6, 1), [16, 17, 18, 255]);
-      assert.deepEqual(await getCellColor(7, 1), [19, 20, 21, 255]);
-      assert.deepEqual(await getCellColor(8, 1), [22, 23, 24, 255]);
+      await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [10, 11, 12, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [13, 14, 15, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [16, 17, 18, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [19, 20, 21, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
   });
 });
@@ -160,4 +157,22 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
     );
   `);
   return await page.evaluate(`Array.from(window.result)`);
+}
+
+async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
+  if (preFn) {
+    await preFn();
+  }
+  const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
+  let equal = false;
+  if (typeof result === 'object') {
+    equal = Object.keys(result).every(e => result[e] === (val as any)[e]);
+  } else {
+    equal = result === val;
+  }
+  if (!equal) {
+    return new Promise<void>(r => {
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 10);
+    });
+  }
 }
