@@ -189,7 +189,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
     this._glyphRenderer.updateSelection(this._model, columnSelectMode);
 
-    // TODO: #2102 Should this move to RenderCoordinator?
     this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
@@ -201,6 +200,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
     this._updateDimensions();
     this._refreshCharAtlas();
+    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   /**
