@@ -18,17 +18,17 @@ const height = 600;
 describe('WebGL Renderer Integration Tests', function(): void {
   this.timeout(20000);
 
-  after(async () => browser.close());
-
   it('dispose removes renderer canvases', async () => {
     await setupBrowser();
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
     await page.evaluate(`addon.dispose()`);
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
+    await browser.close();
   });
 
   describe('colors', () => {
     before(async () => setupBrowser());
+    after(async () => browser.close());
     beforeEach(async () => page.evaluate(`window.term.reset()`));
 
     it('foreground colors normal', async () => {
