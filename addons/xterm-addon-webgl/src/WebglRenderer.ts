@@ -200,7 +200,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
     this._updateDimensions();
     this._refreshCharAtlas();
-    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   /**
