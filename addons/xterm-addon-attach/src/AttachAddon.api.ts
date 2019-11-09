@@ -43,7 +43,6 @@ describe('AttachAddon', () => {
     server.on('connection', socket => socket.send('foo'));
     await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}')))`);
     await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     server.close();
   });
 
@@ -56,7 +55,6 @@ describe('AttachAddon', () => {
     server.on('connection', socket => socket.send(data));
     await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}')))`);
     await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     server.close();
   });
 });
