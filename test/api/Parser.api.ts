@@ -20,7 +20,7 @@ describe('Parser Integration Tests', function(): void {
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
+      slowMo: 0,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
