@@ -4,7 +4,6 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 
@@ -15,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('WebGL Renderer Integration Tests', function(): void {
+describe('WebGL Renderer Integration Tests', function(): void {
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
