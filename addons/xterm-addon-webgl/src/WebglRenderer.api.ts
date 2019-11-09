@@ -18,9 +18,7 @@ const height = 600;
 describe('WebGL Renderer Integration Tests', function(): void {
   this.timeout(20000);
 
-  after(() => {
-    browser.close();
-  });
+  after(async () => browser.close());
 
   it('dispose removes renderer canvases', async () => {
     await setupBrowser();
@@ -31,10 +29,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
 
   describe('colors', () => {
     before(async () => setupBrowser());
-
-    beforeEach(async () => {
-      await page.evaluate(`window.term.reset()`);
-    });
+    beforeEach(async () => page.evaluate(`window.term.reset()`));
 
     it('foreground colors normal', async () => {
       const theme: ITheme = {
