@@ -82,6 +82,8 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 
 async function pollForLinkAtCell(col: number, row: number, value: string): Promise<void> {
   const rowSelector = `.xterm-rows > :nth-child(${row})`;
+  // Ensure the hover element exists before trying to hover it
+  await pollFor(page, `!!document.querySelector('${rowSelector} > :nth-child(${col})')`, true);
   await pollFor(page, `document.querySelectorAll('${rowSelector} > span[style]').length >= ${value.length}`, true, async () => page.hover(`${rowSelector} > :nth-child(${col})`));
   assert.equal(await page.evaluate(`Array.prototype.reduce.call(document.querySelectorAll('${rowSelector} > span[style]'), (a, b) => a + b.textContent, '');`), value);
 }
