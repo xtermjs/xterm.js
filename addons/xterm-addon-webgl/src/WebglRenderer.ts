@@ -14,14 +14,12 @@ import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
-import { FLAGS } from './Constants';
-import { getCompatAttr } from './CharDataCompat';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 
@@ -264,7 +262,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         const chars = this._workCell.getChars();
         let code = this._workCell.getCode();
-        const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
@@ -306,7 +303,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         // Cache the results in the model
         this._model.cells[i    ] = code;
         // TODO: Remove attr from model
-        this._model.cells[i + 1] = attr;
+        this._model.cells[i + 1] = 0;
         this._model.cells[i + 2] = bg;
         this._model.cells[i + 3] = fg;
 
