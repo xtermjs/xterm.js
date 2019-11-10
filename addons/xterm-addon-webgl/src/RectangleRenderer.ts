@@ -6,12 +6,11 @@
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { is256Color } from './atlas/CharAtlasUtils';
 import { DEFAULT_COLOR, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { MODEL_FG_OFFSET, MODEL_BG_OFFSET } from './Constants';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -251,8 +250,8 @@ export class RectangleRenderer {
       let currentFg = DEFAULT_COLOR;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * 4;
-        const bg = model.cells[modelIndex + 2];
-        const fg = model.cells[modelIndex + 1];
+        const bg = model.cells[modelIndex + MODEL_BG_OFFSET];
+        const fg = model.cells[modelIndex + MODEL_FG_OFFSET];
         if (bg !== currentBg) {
           // A rectangle needs to be drawn if going from non-default to another color
           // TODO: DEFAULT_COLOR probably isn't right anymore?

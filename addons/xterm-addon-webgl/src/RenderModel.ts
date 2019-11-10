@@ -6,7 +6,7 @@
 import { IRenderModel, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 
-export const RENDER_MODEL_INDICIES_PER_CELL = 4;
+export const RENDER_MODEL_INDICIES_PER_CELL = 3;
 
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 

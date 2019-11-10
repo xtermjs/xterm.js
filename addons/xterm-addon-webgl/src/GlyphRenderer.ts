@@ -260,9 +260,6 @@ export class GlyphRenderer {
     let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
       const offset = (y * this._terminal.cols + x) * INDICIES_PER_CELL;
-      // Because the cache uses attr as a lookup key it needs to contain the selection colors as well
-      let attr = model.cells[offset + 1];
-      attr = attr & ~0x3ffff | bg << 9 | fg;
       const code = model.cells[offset];
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {

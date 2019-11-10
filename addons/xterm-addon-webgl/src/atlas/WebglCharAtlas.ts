@@ -6,11 +6,10 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, DEFAULT_ATTR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
-import { FLAGS } from '../Constants';
 import { IDisposable } from 'xterm';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,

@@ -22,6 +22,7 @@ import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
+import { MODEL_BG_OFFSET, MODEL_FG_OFFSET } from './Constants';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -273,7 +274,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
         let fg = this._workCell.fg;
 
         // Nothing has changed, no updates needed
-        if (this._model.cells[i] === code && this._model.cells[i + 2] === bg && this._model.cells[i + 3] === fg) {
+        if (this._model.cells[i] === code &&
+            this._model.cells[i + MODEL_BG_OFFSET] === bg &&
+            this._model.cells[i + MODEL_FG_OFFSET] === fg) {
           continue;
         }
 
@@ -301,11 +304,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // Cache the results in the model
-        this._model.cells[i    ] = code;
-        // TODO: Remove attr from model
-        this._model.cells[i + 1] = 0;
-        this._model.cells[i + 2] = bg;
-        this._model.cells[i + 3] = fg;
+        this._model.cells[i] = code;
+        this._model.cells[i + MODEL_BG_OFFSET] = bg;
+        this._model.cells[i + MODEL_FG_OFFSET] = fg;
 
         this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
       }

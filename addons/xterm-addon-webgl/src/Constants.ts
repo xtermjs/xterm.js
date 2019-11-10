@@ -3,13 +3,5 @@
  * @license MIT
  */
 
-// TODO: Should be removed after chardata workaround is fixed
-export const enum FLAGS {
-  BOLD = 1,
-  UNDERLINE = 2,
-  BLINK = 4,
-  INVERSE = 8,
-  INVISIBLE = 16,
-  DIM = 32,
-  ITALIC = 64
-}
+export const MODEL_BG_OFFSET = 2;
+export const MODEL_FG_OFFSET = 3;
