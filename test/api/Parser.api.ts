@@ -15,12 +15,9 @@ const width = 800;
 const height = 600;
 
 describe('Parser Integration Tests', function(): void {
-  this.timeout(20000);
-
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 0,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
@@ -29,9 +26,7 @@ describe('Parser Integration Tests', function(): void {
     await openTerminal();
   });
 
-  after(() => {
-    browser.close();
-  });
+  after(async () => browser.close());
 
   describe('addCsiHandler', () => {
     it('should call custom CSI handler with js array params', async () => {

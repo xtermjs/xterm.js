@@ -198,8 +198,8 @@ function parseReport(encoding: string, msg: number[]): {state: any; row: number;
 /**
  * Mouse tracking tests.
  */
-describe('Mouse Tracking Tests', function(): void {
-  before(async function(): Promise<any> {
+describe('Mouse Tracking Tests', () => {
+  before(async () => {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
