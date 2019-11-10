@@ -440,3 +440,4 @@ function toPaddedHex(c: number): string {
   const s = c.toString(16);
   return s.length < 2 ? '0' + s : s;
 }
+
