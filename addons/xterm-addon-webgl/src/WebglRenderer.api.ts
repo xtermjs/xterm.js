@@ -15,28 +15,20 @@ const width = 800;
 const height = 600;
 
 describe('WebGL Renderer Integration Tests', function(): void {
-  before(async function(): Promise<any> {
-    browser = await puppeteer.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
-    });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
-    await page.goto(APP);
-    await openTerminal();
-    await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
+  it('dispose removes renderer canvases', async () => {
+    await setupBrowser();
+    assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
+    await page.evaluate(`addon.dispose()`);
+    assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
+    await browser.close();
   });
 
-  after(() => {
-    browser.close();
-  });
+  describe('colors', () => {
+    before(async () => setupBrowser());
+    after(async () => browser.close());
+    beforeEach(async () => page.evaluate(`window.term.reset()`));
 
-  beforeEach(async () => {
-    await page.evaluate(`window.term.reset()`);
-  });
-
-  describe('WebGL Renderer', () => {
-    it('foreground colors normal', async function(): Promise<any> {
+    it('foreground colors normal', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -59,7 +51,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground colors bright', async function(): Promise<any> {
+    it('foreground colors bright', async () => {
       const theme: ITheme = {
         brightBlack: '#010203',
         brightRed: '#040506',
@@ -82,7 +74,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background colors normal', async function(): Promise<any> {
+    it('background colors normal', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -105,7 +97,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background colors bright', async function(): Promise<any> {
+    it('background colors bright', async () => {
       const theme: ITheme = {
         brightBlack: '#010203',
         brightRed: '#040506',
@@ -156,6 +148,23 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
     );
   `);
   return await page.evaluate(`Array.from(window.result)`);
+}
+
+async function setupBrowser(): Promise<void> {
+  browser = await puppeteer.launch({
+    headless: process.argv.indexOf('--headless') !== -1,
+    args: [`--window-size=${width},${height}`, `--no-sandbox`]
+  });
+  page = (await browser.pages())[0];
+  await page.setViewport({ width, height });
+  await page.goto(APP);
+  await openTerminal({
+    rendererType: 'dom'
+  });
+  await page.evaluate(`
+    window.addon = new WebglAddon(true);
+    window.term.loadAddon(window.addon);
+  `);
 }
 
 async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
