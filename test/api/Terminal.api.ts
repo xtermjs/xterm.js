@@ -6,7 +6,7 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
-import { pollFor, writeSync } from './TestUtils';
+import { pollFor, timeout, writeSync } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -15,7 +15,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('API Integration Tests', function(): void {
+describe('API Integration Tests', function(): void {
   before(async () => {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
@@ -162,7 +162,7 @@ describe.only('API Integration Tests', function(): void {
     it('foreground', async () => {
       await openTerminal({ rendererType: 'dom' });
       await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
-      await pollFor(page, `!!document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)')`, true);
+      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
         [
           document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
@@ -187,7 +187,7 @@ describe.only('API Integration Tests', function(): void {
     it('background', async () => {
       await openTerminal({ rendererType: 'dom' });
       await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
-      await pollFor(page, `!!document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)')`, true);
+      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
         [
           document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
@@ -358,6 +358,7 @@ describe.only('API Integration Tests', function(): void {
 
     it('onRender', async () => {
       await openTerminal();
+      await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
         window.term.onRender(e => window.calls.push([e.start, e.end]));
@@ -371,6 +372,7 @@ describe.only('API Integration Tests', function(): void {
 
     it('onResize', async () => {
       await openTerminal();
+      await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
         window.term.onResize(e => window.calls.push([e.cols, e.rows]));
