@@ -5,7 +5,7 @@
 
 import { IColorManager, IColor, IColorSet } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { fromCss, toPaddedHex, toCss, blend } from 'browser/Color';
+import { fromCss, toCss, blend, toRgba } from 'browser/Color';
 
 const DEFAULT_FOREGROUND = fromCss('#ffffff');
 const DEFAULT_BACKGROUND = fromCss('#000000');
@@ -49,18 +49,16 @@ export const DEFAULT_ANSI_COLORS = (() => {
     const b = v[i % 6];
     colors.push({
       css: toCss(r, g, b),
-      // Use >>> 0 to force a conversion to an unsigned int
-      rgba: ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0
+      rgba: toRgba(r, g, b)
     });
   }
 
   // Generate greys (232-255)
   for (let i = 0; i < 24; i++) {
     const c = 8 + i * 10;
-    const ch = toPaddedHex(c);
     colors.push({
-      css: `#${ch}${ch}${ch}`,
-      rgba: ((c << 24) | (c << 16) | (c << 8) | 0xFF) >>> 0
+      css: toCss(c, c, c),
+      rgba: toRgba(c, c, c)
     });
   }
 
@@ -175,7 +173,7 @@ export class ColorManager implements IColorManager {
 
     return {
       css,
-      rgba: (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) >>> 0
+      rgba: toRgba(data[0], data[1], data[2], data[3])
     };
   }
 }

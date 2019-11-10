@@ -23,7 +23,7 @@ export function blend(bg: IColor, fg: IColor): IColor {
   const g = bgG + Math.round((fgG - bgG) * a);
   const b = bgB + Math.round((fgB - bgB) * a);
   const css = toCss(r, g, b);
-  const rgba = ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
+  const rgba = toRgba(r, g, b);
   return { css, rgba };
 }
 
@@ -41,4 +41,9 @@ export function toPaddedHex(c: number): string {
 
 export function toCss(r: number, g: number, b: number): string {
   return `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}`;
+}
+
+export function toRgba(r: number, g: number, b: number, a: number = 0xFF): number {
+  // >>> 0 forces an unsigned int
+  return (r << 24 | g << 16 | b << 8 | a) >>> 0;
 }
