@@ -11,6 +11,7 @@ import { is256Color } from './CharAtlasUtils';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -186,18 +187,33 @@ export class WebglCharAtlas implements IDisposable {
       return this._config.colors.foreground;
     } else if (is256Color(bg)) {
       return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
+    } else if ((bg & Attributes.CM_MASK) === Attributes.CM_RGB) {
+      // TODO: Use a switch for the color mode?
+      // True color
+      const rgb = bg & Attributes.RGB_MASK;
+      const arr = AttributeData.toColorRGB(rgb);
+      // TODO: This object creation is slow
+      return {
+        rgba: rgb << 255,
+        css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
+      };
     }
-    // TODO: Support true color
     return this._config.colors.background;
   }
 
-  private _getForegroundColor(fg: number): IColor {
+  private _getForegroundColor(fg: number): { css: string } {
+    // TODO: Just return the string value
     if (fg & FgFlags.INVERSE) {
       return this._config.colors.background;
     } else if (is256Color(fg)) {
       return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK);
+    } else if ((fg & Attributes.CM_MASK) === Attributes.CM_RGB) {
+      // TODO: Use a switch for the color mode?
+      // TODO: True color
+      const rgb = fg & Attributes.RGB_MASK;
+      const arr = AttributeData.toColorRGB(rgb);
+      return { css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}` };
     }
-    // TODO: Support true color
     return this._config.colors.foreground;
   }
 
@@ -410,4 +426,9 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
     }
   }
   return isEmpty;
+}
+
+function toPaddedHex(c: number): string {
+  const s = c.toString(16);
+  return s.length < 2 ? '0' + s : s;
 }

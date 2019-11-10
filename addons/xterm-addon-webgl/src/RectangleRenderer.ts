@@ -11,6 +11,7 @@ import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -274,26 +275,31 @@ export class RectangleRenderer {
   }
 
   private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
-    let color: IColor | null = null;
+    let rgba: number | undefined;
+    const colorMode = bg & Attributes.CM_MASK;
     if (fg & FgFlags.INVERSE) {
       // Inverted color
-      color = this._colors.foreground;
+      rgba = this._colors.foreground.rgba;
     } else if ((bg & Attributes.CM_MASK) === Attributes.CM_P16 || (bg & Attributes.CM_MASK) === Attributes.CM_P256) {
       // 256 palette
-      color = this._colors.ansi[bg & Attributes.PCOLOR_MASK];
+      rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+    } else if (colorMode === Attributes.CM_RGB) {
+      // True color
+      // TODO: Use a switch instead?
+      rgba = (bg & Attributes.RGB_MASK) << 8;
     } else {
-      // TODO: Support true color
       // Default color
-      color = this._colors.background;
+      rgba = this._colors.background.rgba;
     }
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
     const x1 = startX * this._dimensions.scaledCellWidth;
     const y1 = y * this._dimensions.scaledCellHeight;
-    const r = ((color.rgba >> 24) & 0xFF) / 255;
-    const g = ((color.rgba >> 16) & 0xFF) / 255;
-    const b = ((color.rgba >> 8 ) & 0xFF) / 255;
+    const r = ((rgba >> 24) & 0xFF) / 255;
+    const g = ((rgba >> 16) & 0xFF) / 255;
+    const b = ((rgba >> 8 ) & 0xFF) / 255;
+    console.log(r, g, b);
 
     this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, 1);
   }
