@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColor } from './Types';
+import { IColor } from 'browser/Types';
 
 export function blend(bg: IColor, fg: IColor): IColor {
   const a = (fg.rgba & 0xFF) / 255;
