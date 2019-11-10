@@ -4,14 +4,13 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
-import { is256Color } from './CharAtlasUtils';
+import { DEFAULT_COLOR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
-import { FLAGS } from '../Constants';
 import { IDisposable } from 'xterm';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -103,9 +102,11 @@ export class WebglCharAtlas implements IDisposable {
   protected _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
-        [DEFAULT_ATTR]: rasterizedGlyph
+        [DEFAULT_COLOR]: {
+          [DEFAULT_COLOR]: rasterizedGlyph
+        }
       };
     }
   }
@@ -123,16 +124,23 @@ export class WebglCharAtlas implements IDisposable {
     return false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMapCombined[chars] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, attr, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(chars, bg, fg);
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
@@ -140,16 +148,23 @@ export class WebglCharAtlas implements IDisposable {
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMap[code] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, attr, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(code, bg, fg);
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
@@ -161,48 +176,70 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bg: number): IColor {
+  private _getBackgroundColor(bg: number, fg: number): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (bg === INVERTED_DEFAULT_COLOR) {
+    } else if (fg & FgFlags.INVERSE) {
       return this._config.colors.foreground;
-    } else if (is256Color(bg)) {
-      return this._getColorFromAnsiIndex(bg);
     }
-    // TODO: Support true color
-    return this._config.colors.background;
+
+    const colorMode = bg & Attributes.CM_MASK;
+    switch (colorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
+      case Attributes.CM_RGB:
+        const rgb = bg & Attributes.RGB_MASK;
+        const arr = AttributeData.toColorRGB(rgb);
+        // TODO: This object creation is slow
+        return {
+          rgba: rgb << 8,
+          css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
+        };
+      case Attributes.CM_DEFAULT:
+      default:
+        return this._config.colors.background;
+    }
   }
 
-  private _getForegroundColor(fg: number): IColor {
-    if (fg === INVERTED_DEFAULT_COLOR) {
-      return this._config.colors.background;
-    } else if (is256Color(fg)) {
-      return this._getColorFromAnsiIndex(fg);
+  private _getForegroundCss(fg: number): string {
+    if (fg & FgFlags.INVERSE) {
+      return this._config.colors.background.css;
     }
-    // TODO: Support true color
-    return this._config.colors.foreground;
+
+    const colorMode = fg & Attributes.CM_MASK;
+    switch (colorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK).css;
+      case Attributes.CM_RGB:
+        const rgb = fg & Attributes.RGB_MASK;
+        const arr = AttributeData.toColorRGB(rgb);
+        return `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`;
+      case Attributes.CM_DEFAULT:
+      default:
+        return this._config.colors.foreground.css;
+    }
   }
 
-  private _drawToCache(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(codeOrChars: number | string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(chars: string, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
 
-    const flags = attr >> 18;
-
-    const bold = !!(flags & FLAGS.BOLD);
-    const dim = !!(flags & FLAGS.DIM);
-    const italic = !!(flags & FLAGS.ITALIC);
+    const bold = !!(fg & FgFlags.BOLD);
+    const dim = !!(bg & BgFlags.DIM);
+    const italic = !!(bg & BgFlags.ITALIC);
 
     this._tmpCtx.save();
 
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bg);
+    const backgroundColor = this._getBackgroundColor(bg, fg);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -217,7 +254,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundColor(fg).css;
+    this._tmpCtx.fillStyle = this._getForegroundCss(fg);
 
     // Apply alpha to dim the character
     if (dim) {
@@ -397,4 +434,9 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
     }
   }
   return isEmpty;
+}
+
+function toPaddedHex(c: number): string {
+  const s = c.toString(16);
+  return s.length < 2 ? '0' + s : s;
 }

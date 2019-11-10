@@ -12,19 +12,15 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
-import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
-import { FLAGS } from './Constants';
-import { getCompatAttr } from './CharDataCompat';
 import { EventEmitter } from 'common/EventEmitter';
-
-export const INDICIES_PER_CELL = 4;
+import { CellData } from 'common/buffer/CellData';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -32,6 +28,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();
+  private _workCell: CellData = new CellData();
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -53,8 +50,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super();
 
     this._core = (<any>this._terminal)._core;
-
-    this._applyBgLuminanceBasedSelection();
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
@@ -103,19 +98,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super.dispose();
   }
 
-  private _applyBgLuminanceBasedSelection(): void {
-    // HACK: This is needed until webgl renderer adds support for selection colors
-    if (getLuminance(this._colors.background) > 0.5) {
-      this._colors.selection = { css: '#000', rgba: 255 };
-    } else {
-      this._colors.selection = { css: '#fff', rgba: 4294967295 };
-    }
-  }
-
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
-    this._applyBgLuminanceBasedSelection();
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
@@ -258,28 +242,29 @@ export class WebglRenderer extends Disposable implements IRenderer {
       const line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line.get(x);
-        const chars = charData[CHAR_DATA_CHAR_INDEX];
-        let code = charData[CHAR_DATA_CODE_INDEX];
-        const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
-        const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
+        line.loadCell(x, this._workCell);
+
+        const chars = this._workCell.getChars();
+        let code = this._workCell.getCode();
+        const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
         }
 
+        // Resolve bg and fg
+        let bg = this._workCell.bg;
+        let fg = this._workCell.fg;
+
         // Nothing has changed, no updates needed
-        if (this._model.cells[i] === code && this._model.cells[i + 1] === attr) {
+        if (this._model.cells[i] === code &&
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
           continue;
         }
 
-        // Resolve bg and fg and cache in the model
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
-
         // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
+        if (this._workCell.isInverse()) {
           const temp = bg;
           bg = fg;
           fg = temp;
@@ -290,20 +275,23 @@ export class WebglRenderer extends Disposable implements IRenderer {
             bg = INVERTED_DEFAULT_COLOR;
           }
         }
-        const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && !!(flags & FLAGS.BOLD) && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
-        fg += drawInBrightColor ? 8 : 0;
+
+        // Apply drawBoldTextInBrightColors
+        if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
+          fg += 8;
+        }
 
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {
           code = code | COMBINED_CHAR_BIT_MASK;
         }
 
-        this._model.cells[i    ] = code;
-        this._model.cells[i + 1] = attr;
-        this._model.cells[i + 2] = bg;
-        this._model.cells[i + 3] = fg;
+        // Cache the results in the model
+        this._model.cells[i] = code;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
 
-        this._glyphRenderer.updateCell(x, y, code, attr, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
