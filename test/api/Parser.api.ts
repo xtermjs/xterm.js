@@ -6,6 +6,7 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
+import { writeSync } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -38,9 +39,7 @@ describe('Parser Integration Tests', function(): void {
           return false;
         }, '');
       `);
-      await page.evaluate(`
-        window.term.write('\x1b[38;5;123mparams\x1b[38:2::50:100:150msubparams');
-      `);
+      await writeSync(page, '\x1b[38;5;123mparams\x1b[38:2::50:100:150msubparams');
       assert.deepEqual(await page.evaluate(`(() => _customCsiHandlerParams)();`), [[38, 5, 123], [38, [2, -1, 50, 100, 150]]]);
     });
   });
@@ -62,9 +61,7 @@ describe('Parser Integration Tests', function(): void {
           return false;
         });
       `);
-      await page.evaluate(`
-        window.term.write('\x1bP1;2+psome data\x1b\\\\');
-      `);
+      await writeSync(page, '\x1bP1;2+psome data\x1b\\\\');
       assert.deepEqual(await page.evaluate(`(() => _customDcsHandlerCallStack)();`), [['C', [1, 2], 'some data'], ['B', [1, 2], 'some data']]);
     });
   });
@@ -86,9 +83,7 @@ describe('Parser Integration Tests', function(): void {
           return false;
         });
       `);
-      await page.evaluate(`
-        window.term.write('\x1b(B');
-      `);
+      await writeSync(page, '\x1b(B');
       assert.deepEqual(await page.evaluate(`(() => _customEscHandlerCallStack)();`), ['C', 'B']);
     });
   });
@@ -110,9 +105,7 @@ describe('Parser Integration Tests', function(): void {
           return false;
         });
       `);
-      await page.evaluate(`
-        window.term.write('\x1b]1234;some data\x07');
-      `);
+      await writeSync(page, '\x1b]1234;some data\x07');
       assert.deepEqual(await page.evaluate(`(() => _customOscHandlerCallStack)();`), [['C', 'some data'], ['B', 'some data']]);
     });
   });

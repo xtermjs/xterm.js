@@ -5,7 +5,7 @@
 
 import * as puppeteer from 'puppeteer';
 import { ITerminalOptions } from 'xterm';
-import { pollFor } from './TestUtils';
+import { pollFor, writeSync } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -199,7 +199,7 @@ function parseReport(encoding: string, msg: number[]): {state: any; row: number;
  * Mouse tracking tests.
  */
 describe('Mouse Tracking Tests', () => {
-  before(async () => {
+  before(async function(): Promise<void> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
@@ -237,7 +237,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?9h');`);
+      await writeSync(page, '\x1b[?9h');
 
       // test at 0,0
       await mouseDown('left');
@@ -359,7 +359,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?9h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?9h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');
@@ -486,7 +486,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1000h');`);
+      await writeSync(page, '\x1b[?1000h');
 
       // test at 0,0
       await mouseDown('left');
@@ -638,7 +638,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1000h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1000h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');
@@ -796,7 +796,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1002h');`);
+      await writeSync(page, '\x1b[?1002h');
 
       // test at 0,0
       await mouseDown('left');
@@ -953,7 +953,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1002h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1002h\x1b[?1006h');
 
       // test at 0,0
       // bug: release is fired immediately
@@ -1115,7 +1115,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1003h');`);
+      await writeSync(page, '\x1b[?1003h');
 
       // test at 0,0
       await mouseDown('left');
@@ -1276,7 +1276,7 @@ describe('Mouse Tracking Tests', () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1003h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1003h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');

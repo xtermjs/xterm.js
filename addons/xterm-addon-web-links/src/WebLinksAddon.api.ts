@@ -53,18 +53,14 @@ describe('WebLinksAddon', () => {
 async function testHostName(hostname: string): Promise<void> {
   await openTerminal({ rendererType: 'dom' });
   await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
-  await new Promise<void>(r => setTimeout(r, 100));
-  await page.evaluate(`
-    window.ready = false;
-    window.term.writeln('  http://${hostname}  ');
-    window.term.writeln('  http://${hostname}/a~b#c~d?e~f  ');
-    window.term.writeln('  http://${hostname}/colon:test  ');
-    window.term.writeln('  http://${hostname}/colon:test:  ');
-    window.term.writeln('"http://${hostname}/"');
-    window.term.writeln('\\'http://${hostname}/\\'');
-    window.term.writeln('http://${hostname}/subpath/+/id', () => window.ready = true);
-  `);
-  await pollFor(page, 'window.ready', true);
+  const data = `  http://${hostname}  \\r\\n` +
+    `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +
+    `  http://${hostname}/colon:test  \\r\\n` +
+    `  http://${hostname}/colon:test:  \\r\\n` +
+    `"http://${hostname}/"\\r\\n` +
+    `\\'http://${hostname}/\\'\\r\\n` +
+    `http://${hostname}/subpath/+/id`;
+  await writeSync(page, data);
   await pollForLinkAtCell(3, 1, `http://${hostname}`);
   await pollForLinkAtCell(3, 2, `http://${hostname}/a~b#c~d?e~f`);
   await pollForLinkAtCell(3, 3, `http://${hostname}/colon:test`);
@@ -100,4 +96,12 @@ async function pollFor(page: puppeteer.Page, fn: string, val: any, preFn?: () =>
       setTimeout(() => r(pollFor(page, fn, val, preFn)), 10);
     });
   }
+}
+
+async function writeSync(page: puppeteer.Page, data: string): Promise<void> {
+  await page.evaluate(`
+    window.ready = false;
+    window.term.write('${data}', () => window.ready = true);
+  `);
+  await pollFor(page, 'window.ready', true);
 }
