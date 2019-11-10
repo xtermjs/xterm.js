@@ -122,11 +122,11 @@ describe.only('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background 16-255', async function(): Promise<void> {
+    it('background 16-255', async () => {
       let data = '';
-      for (let x = 0; x < 240 / 16; x++) {
-        for (let y = 0; y < 16; y++) {
-          data += `\\x1b[48;5;${16 + x * 16 + y}m \x1b[0m`;
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          data += `\\x1b[48;5;${16 + y * 16 + x}m \x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -142,11 +142,11 @@ describe.only('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground 16-255', async function(): Promise<void> {
+    it('foreground 16-255', async () => {
       let data = '';
-      for (let x = 0; x < 240 / 16; x++) {
-        for (let y = 0; y < 16; y++) {
-          data += `\\x1b[38;5;${16 + x * 16 + y}m█\x1b[0m`;
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          data += `\\x1b[38;5;${16 + y * 16 + x}m█\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -158,6 +158,78 @@ describe.only('WebGL Renderer Integration Tests', function(): void {
           const g = parseInt(cssColor.substr(3, 2), 16);
           const b = parseInt(cssColor.substr(5, 2), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
+        }
+      }
+    });
+
+    it('foreground true color red', async () => {
+      let data = '';
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          data += `\\x1b[38;2;${i};0;0m█\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(data);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          await pollFor(page, () => getCellColor(x + 1, y + 1), [i, 0, 0, 255]);
+        }
+      }
+    });
+
+    it('foreground true color green', async () => {
+      let data = '';
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          data += `\\x1b[38;2;0;${i};0m█\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(data);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          await pollFor(page, () => getCellColor(x + 1, y + 1), [0, i, 0, 255]);
+        }
+      }
+    });
+
+    it('foreground true color blue', async () => {
+      let data = '';
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          data += `\\x1b[38;2;0;0;${i}m█\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(data);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          await pollFor(page, () => getCellColor(x + 1, y + 1), [0, 0, i, 255]);
+        }
+      }
+    });
+
+    it('foreground true color grey', async () => {
+      let data = '';
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          data += `\\x1b[38;2;${i};${i};${i}m█\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(data);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = y * 16 + x;
+          await pollFor(page, () => getCellColor(x + 1, y + 1), [i, i, i, 255]);
         }
       }
     });
