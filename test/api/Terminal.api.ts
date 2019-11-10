@@ -356,7 +356,8 @@ describe('API Integration Tests', function(): void {
       await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onRender', async () => {
+    it('onRender', async function (): Promise<void> {
+      this.retries(3);
       await openTerminal();
       await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
