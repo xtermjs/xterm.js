@@ -6,11 +6,10 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
-import { getLuminance } from './ColorUtils';
 import { Terminal, IBufferLine } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
@@ -219,41 +218,37 @@ export class GlyphRenderer {
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
-    // TODO: Make fg and bg configurable, currently since the buffer doesn't
-    // support truecolor the char atlas cannot store it.
-    const lumi = getLuminance(this._colors.background);
-    const fg = (lumi > 0.5 ? 7 : 0) | Attributes.CM_P16;
-    const bg = (lumi > 0.5 ? 0 : 7) | Attributes.CM_P16;
+    const bg = (this._colors.selection.rgba >>> 8) | Attributes.CM_RGB;
 
     if (columnSelectMode) {
       const startCol = model.selection.startCol;
       const width = model.selection.endCol - startCol;
       const height = model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow + 1;
       for (let y = model.selection.viewportCappedStartRow; y < model.selection.viewportCappedStartRow + height; y++) {
-        this._updateSelectionRange(startCol, startCol + width, y, model, bg, fg);
+        this._updateSelectionRange(startCol, startCol + width, y, model, bg);
       }
     } else {
       // Draw first row
       const startCol = model.selection.viewportStartRow === model.selection.viewportCappedStartRow ? model.selection.startCol : 0;
       const startRowEndCol = model.selection.viewportCappedStartRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-      this._updateSelectionRange(startCol, startRowEndCol, model.selection.viewportCappedStartRow, model, bg, fg);
+      this._updateSelectionRange(startCol, startRowEndCol, model.selection.viewportCappedStartRow, model, bg);
 
       // Draw middle rows
       const middleRowsCount = Math.max(model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow - 1, 0);
       for (let y = model.selection.viewportCappedStartRow + 1; y <= model.selection.viewportCappedStartRow + middleRowsCount; y++) {
-        this._updateSelectionRange(0, startRowEndCol, y, model, bg, fg);
+        this._updateSelectionRange(0, startRowEndCol, y, model, bg);
       }
 
       // Draw final row
       if (model.selection.viewportCappedStartRow !== model.selection.viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
         const endCol = model.selection.viewportEndRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-        this._updateSelectionRange(0, endCol, model.selection.viewportCappedEndRow, model, bg, fg);
+        this._updateSelectionRange(0, endCol, model.selection.viewportCappedEndRow, model, bg);
       }
     }
   }
 
-  private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number, fg: number): void {
+  private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number): void {
     const terminal = this._terminal;
     const row = y + terminal.buffer.viewportY;
     let line: IBufferLine | undefined;
@@ -265,9 +260,9 @@ export class GlyphRenderer {
           line = terminal.buffer.getLine(row);
         }
         const chars = line!.getCell(x)!.char;
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, model.cells[offset + RENDER_MODEL_FG_OFFSET], chars);
       } else {
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, model.cells[offset + RENDER_MODEL_FG_OFFSET]);
       }
     }
   }

@@ -16,7 +16,6 @@ import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MOD
 import { Disposable } from 'common/Lifecycle';
 import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
-import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
@@ -51,8 +50,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super();
 
     this._core = (<any>this._terminal)._core;
-
-    this._applyBgLuminanceBasedSelection();
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
@@ -101,19 +98,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super.dispose();
   }
 
-  private _applyBgLuminanceBasedSelection(): void {
-    // HACK: This is needed until webgl renderer adds support for selection colors
-    if (getLuminance(this._colors.background) > 0.5) {
-      this._colors.selection = { css: '#000', rgba: 255 };
-    } else {
-      this._colors.selection = { css: '#fff', rgba: 4294967295 };
-    }
-  }
-
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
-    this._applyBgLuminanceBasedSelection();
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
