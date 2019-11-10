@@ -185,36 +185,46 @@ export class WebglCharAtlas implements IDisposable {
       return TRANSPARENT_COLOR;
     } else if (fg & FgFlags.INVERSE) {
       return this._config.colors.foreground;
-    } else if (is256Color(bg)) {
-      return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
-    } else if ((bg & Attributes.CM_MASK) === Attributes.CM_RGB) {
-      // TODO: Use a switch for the color mode?
-      // True color
-      const rgb = bg & Attributes.RGB_MASK;
-      const arr = AttributeData.toColorRGB(rgb);
-      // TODO: This object creation is slow
-      return {
-        rgba: rgb << 8,
-        css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
-      };
     }
-    return this._config.colors.background;
+
+    const colorMode = bg & Attributes.CM_MASK;
+    switch (colorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
+      case Attributes.CM_RGB:
+        const rgb = bg & Attributes.RGB_MASK;
+        const arr = AttributeData.toColorRGB(rgb);
+        // TODO: This object creation is slow
+        return {
+          rgba: rgb << 8,
+          css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
+        };
+      case Attributes.CM_DEFAULT:
+      default:
+        return this._config.colors.background;
+    }
   }
 
   private _getForegroundColor(fg: number): { css: string } {
     // TODO: Just return the string value
     if (fg & FgFlags.INVERSE) {
       return this._config.colors.background;
-    } else if (is256Color(fg)) {
-      return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK);
-    } else if ((fg & Attributes.CM_MASK) === Attributes.CM_RGB) {
-      // TODO: Use a switch for the color mode?
-      // TODO: True color
-      const rgb = fg & Attributes.RGB_MASK;
-      const arr = AttributeData.toColorRGB(rgb);
-      return { css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}` };
     }
-    return this._config.colors.foreground;
+
+    const colorMode = fg & Attributes.CM_MASK;
+    switch (colorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK);
+      case Attributes.CM_RGB:
+        const rgb = fg & Attributes.RGB_MASK;
+        const arr = AttributeData.toColorRGB(rgb);
+        return { css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}` };
+      case Attributes.CM_DEFAULT:
+      default:
+        return this._config.colors.foreground;
+    }
   }
 
   private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;

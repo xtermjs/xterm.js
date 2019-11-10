@@ -280,17 +280,21 @@ export class RectangleRenderer {
     if (fg & FgFlags.INVERSE) {
       // Inverted color
       rgba = this._colors.foreground.rgba;
-    } else if ((bg & Attributes.CM_MASK) === Attributes.CM_P16 || (bg & Attributes.CM_MASK) === Attributes.CM_P256) {
-      // 256 palette
-      rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
-    } else if (colorMode === Attributes.CM_RGB) {
-      // True color
-      // TODO: Use a switch instead?
-      rgba = (bg & Attributes.RGB_MASK) << 8;
     } else {
-      // Default color
-      rgba = this._colors.background.rgba;
+      switch (colorMode) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+          break;
+        case Attributes.CM_RGB:
+          rgba = (bg & Attributes.RGB_MASK) << 8;
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          rgba = this._colors.background.rgba;
+      }
     }
+
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
@@ -299,7 +303,6 @@ export class RectangleRenderer {
     const r = ((rgba >> 24) & 0xFF) / 255;
     const g = ((rgba >> 16) & 0xFF) / 255;
     const b = ((rgba >> 8 ) & 0xFF) / 255;
-    console.log(r, g, b);
 
     this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, 1);
   }
