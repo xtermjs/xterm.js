@@ -10,7 +10,7 @@ import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { getLuminance } from './ColorUtils';
 import { Terminal, IBufferLine } from 'xterm';
 import { IColorSet } from 'browser/Types';
@@ -223,8 +223,8 @@ export class GlyphRenderer {
     // TODO: Make fg and bg configurable, currently since the buffer doesn't
     // support truecolor the char atlas cannot store it.
     const lumi = getLuminance(this._colors.background);
-    const fg = lumi > 0.5 ? 7 : 0;
-    const bg = lumi > 0.5 ? 0 : 7;
+    const fg = (lumi > 0.5 ? 7 : 0) | Attributes.CM_P16;
+    const bg = (lumi > 0.5 ? 0 : 7) | Attributes.CM_P16;
 
     if (columnSelectMode) {
       const startCol = model.selection.startCol;

@@ -271,14 +271,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
           this._model.lineLengths[y] = x + 1;
         }
 
-        // Nothing has changed, no updates needed
-        if (this._model.cells[i] === code && this._model.cells[i + 1] === attr) {
-          continue;
-        }
-
-        // Resolve bg and fg and cache in the model
+        // Resolve bg and fg
         let bg = this._workCell.bg;
         let fg = this._workCell.fg;
+
+        // Nothing has changed, no updates needed
+        if (this._model.cells[i] === code && this._model.cells[i + 2] === bg && this._model.cells[i + 3] === fg) {
+          continue;
+        }
 
         // If inverse flag is on, the foreground should become the background.
         if (this._workCell.isInverse()) {
@@ -303,6 +303,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           code = code | COMBINED_CHAR_BIT_MASK;
         }
 
+        // Cache the results in the model
         this._model.cells[i    ] = code;
         // TODO: Remove attr from model
         this._model.cells[i + 1] = attr;
