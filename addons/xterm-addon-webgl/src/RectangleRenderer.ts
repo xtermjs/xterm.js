@@ -10,7 +10,7 @@ import { DEFAULT_COLOR, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { MODEL_FG_OFFSET, MODEL_BG_OFFSET } from './Constants';
+import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -249,9 +249,9 @@ export class RectangleRenderer {
       let currentBg = DEFAULT_COLOR;
       let currentFg = DEFAULT_COLOR;
       for (let x = 0; x < terminal.cols; x++) {
-        const modelIndex = ((y * terminal.cols) + x) * 4;
-        const bg = model.cells[modelIndex + MODEL_BG_OFFSET];
-        const fg = model.cells[modelIndex + MODEL_FG_OFFSET];
+        const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
+        const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
         if (bg !== currentBg) {
           // A rectangle needs to be drawn if going from non-default to another color
           // TODO: DEFAULT_COLOR probably isn't right anymore?

@@ -6,8 +6,7 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { INDICIES_PER_CELL } from './WebglRenderer';
-import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
@@ -259,7 +258,7 @@ export class GlyphRenderer {
     const row = y + terminal.buffer.viewportY;
     let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
-      const offset = (y * this._terminal.cols + x) * INDICIES_PER_CELL;
+      const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
       const code = model.cells[offset];
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {

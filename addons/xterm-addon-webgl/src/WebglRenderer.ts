@@ -12,7 +12,7 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
@@ -22,9 +22,6 @@ import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
-import { MODEL_BG_OFFSET, MODEL_FG_OFFSET } from './Constants';
-
-export const INDICIES_PER_CELL = 4;
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -263,7 +260,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         const chars = this._workCell.getChars();
         let code = this._workCell.getCode();
-        const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
+        const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
@@ -275,8 +272,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + MODEL_BG_OFFSET] === bg &&
-            this._model.cells[i + MODEL_FG_OFFSET] === fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
           continue;
         }
 
@@ -305,8 +302,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + MODEL_BG_OFFSET] = bg;
-        this._model.cells[i + MODEL_FG_OFFSET] = fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
 
         this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
       }
