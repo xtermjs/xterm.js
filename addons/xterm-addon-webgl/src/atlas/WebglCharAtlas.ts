@@ -7,7 +7,6 @@ import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
-import { is256Color } from './CharAtlasUtils';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';

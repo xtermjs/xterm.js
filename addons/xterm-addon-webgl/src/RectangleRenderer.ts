@@ -11,7 +11,6 @@ import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { AttributeData } from 'common/buffer/AttributeData';
 
 const enum VertexAttribLocations {
   POSITION = 0,
