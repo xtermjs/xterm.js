@@ -218,7 +218,7 @@ export class GlyphRenderer {
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
-    const bg = (this._colors.selection.rgba >>> 8) | Attributes.CM_RGB;
+    const bg = (this._colors.selectionOpaque.rgba >>> 8) | Attributes.CM_RGB;
 
     if (columnSelectMode) {
       const startCol = model.selection.startCol;

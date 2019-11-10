@@ -13,7 +13,7 @@ const DEFAULT_CURSOR = fromCss('#ffffff');
 const DEFAULT_CURSOR_ACCENT = fromCss('#000000');
 const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
-  rgba: 0xFFFFFF77
+  rgba: 0xFFFFFF4D
 };
 
 // An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
@@ -108,6 +108,7 @@ export class ColorManager implements IColorManager {
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    this.colors.selectionOpaque = blend(this.colors.background, this.colors.selection);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);

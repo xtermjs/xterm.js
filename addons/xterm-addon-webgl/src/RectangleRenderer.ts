@@ -155,7 +155,7 @@ export class RectangleRenderer {
 
   private _updateCachedColors(): void {
     this._bgFloat = this._colorToFloat32Array(this._colors.background);
-    this._selectionFloat = this._colorToFloat32Array(this._colors.selection);
+    this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
   }
 
   private _updateViewportRectangle(): void {
