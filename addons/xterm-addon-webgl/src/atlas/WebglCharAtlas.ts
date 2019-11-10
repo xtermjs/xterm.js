@@ -6,7 +6,7 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, DEFAULT_ATTR, FgFlags, Attributes } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, DEFAULT_ATTR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
@@ -103,7 +103,7 @@ export class WebglCharAtlas implements IDisposable {
   protected _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
         [DEFAULT_ATTR]: rasterizedGlyph
       };
@@ -131,7 +131,7 @@ export class WebglCharAtlas implements IDisposable {
     }
     let rasterizedGlyph = rasterizedGlyphSet[attr];
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, attr, bg, fg);
+      rasterizedGlyph = this._drawToCache(chars, bg, fg);
       rasterizedGlyphSet[attr] = rasterizedGlyph;
     }
     return rasterizedGlyph;
@@ -148,7 +148,7 @@ export class WebglCharAtlas implements IDisposable {
     }
     let rasterizedGlyph = rasterizedGlyphSet[attr];
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, attr, bg, fg);
+      rasterizedGlyph = this._drawToCache(code, bg, fg);
       rasterizedGlyphSet[attr] = rasterizedGlyph;
     }
     return rasterizedGlyph;
@@ -186,18 +186,16 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.foreground;
   }
 
-  private _drawToCache(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(codeOrChars: number | string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(chars: string, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
 
-    const flags = attr >> 18;
-
-    const bold = !!(flags & FLAGS.BOLD);
-    const dim = !!(flags & FLAGS.DIM);
-    const italic = !!(flags & FLAGS.ITALIC);
+    const bold = !!(fg & FgFlags.BOLD);
+    const dim = !!(bg & BgFlags.DIM);
+    const italic = !!(bg & BgFlags.ITALIC);
 
     this._tmpCtx.save();
 
