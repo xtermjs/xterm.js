@@ -6,6 +6,7 @@
 import * as puppeteer from 'puppeteer';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
+import { assert } from 'chai';
 
 const APP = 'http://127.0.0.1:3000/test';
 
