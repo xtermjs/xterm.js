@@ -206,24 +206,23 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundColor(fg: number): { css: string } {
-    // TODO: Just return the string value
+  private _getForegroundCss(fg: number): string {
     if (fg & FgFlags.INVERSE) {
-      return this._config.colors.background;
+      return this._config.colors.background.css;
     }
 
     const colorMode = fg & Attributes.CM_MASK;
     switch (colorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK);
+        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK).css;
       case Attributes.CM_RGB:
         const rgb = fg & Attributes.RGB_MASK;
         const arr = AttributeData.toColorRGB(rgb);
-        return { css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}` };
+        return `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`;
       case Attributes.CM_DEFAULT:
       default:
-        return this._config.colors.foreground;
+        return this._config.colors.foreground.css;
     }
   }
 
@@ -256,7 +255,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundColor(fg).css;
+    this._tmpCtx.fillStyle = this._getForegroundCss(fg);
 
     // Apply alpha to dim the character
     if (dim) {
