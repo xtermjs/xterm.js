@@ -82,7 +82,7 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 
 async function pollForLinkAtCell(col: number, row: number, value: string): Promise<void> {
   const rowSelector = `.xterm-rows > :nth-child(${row})`;
-  await pollFor(page, `document.querySelectorAll('${rowSelector} > span[style]').length > 0`, true, async () => page.hover(`${rowSelector} > :nth-child(${col})`));
+  await pollFor(page, `document.querySelectorAll('${rowSelector} > span[style]').length >= ${value.length}`, true, async () => page.hover(`${rowSelector} > :nth-child(${col})`));
   assert.equal(await page.evaluate(`Array.prototype.reduce.call(document.querySelectorAll('${rowSelector} > span[style]'), (a, b) => a + b.textContent, '');`), value);
 }
 
