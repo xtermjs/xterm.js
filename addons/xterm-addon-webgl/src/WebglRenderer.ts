@@ -304,11 +304,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         this._model.cells[i    ] = code;
+        // TODO: Remove attr from model
         this._model.cells[i + 1] = attr;
         this._model.cells[i + 2] = bg;
         this._model.cells[i + 3] = fg;
 
-        this._glyphRenderer.updateCell(x, y, code, attr, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);

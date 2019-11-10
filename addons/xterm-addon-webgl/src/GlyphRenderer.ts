@@ -169,11 +169,11 @@ export class GlyphRenderer {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, attr: number, bg: number, fg: number, chars: string): void {
-    this._updateCell(this._vertices.attributes, x, y, code, attr, bg, fg, chars);
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, attr: number, bg: number, fg: number, chars?: string): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars?: string): void {
     const terminal = this._terminal;
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
@@ -189,9 +189,9 @@ export class GlyphRenderer {
       throw new Error('atlas must be set before updating cell');
     }
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg);
     }
 
     // Fill empty if no glyph was found
@@ -269,9 +269,9 @@ export class GlyphRenderer {
           line = terminal.buffer.getLine(row);
         }
         const chars = line!.getCell(x)!.char;
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg, chars);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
       } else {
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);
       }
     }
   }

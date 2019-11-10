@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, DEFAULT_ATTR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
@@ -105,7 +105,9 @@ export class WebglCharAtlas implements IDisposable {
     for (let i = 33; i < 126; i++) {
       const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
-        [DEFAULT_ATTR]: rasterizedGlyph
+        [DEFAULT_COLOR]: {
+          [DEFAULT_COLOR]: rasterizedGlyph
+        }
       };
     }
   }
@@ -123,16 +125,23 @@ export class WebglCharAtlas implements IDisposable {
     return false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMapCombined[chars] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
       rasterizedGlyph = this._drawToCache(chars, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
@@ -140,16 +149,23 @@ export class WebglCharAtlas implements IDisposable {
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMap[code] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
       rasterizedGlyph = this._drawToCache(code, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
