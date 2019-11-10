@@ -6,7 +6,7 @@
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
-import { DEFAULT_COLOR, Attributes, FgFlags } from 'common/buffer/Constants';
+import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
@@ -246,16 +246,15 @@ export class RectangleRenderer {
 
     for (let y = 0; y < terminal.rows; y++) {
       let currentStartX = -1;
-      let currentBg = DEFAULT_COLOR;
-      let currentFg = DEFAULT_COLOR;
+      let currentBg = 0;
+      let currentFg = 0;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
         const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
         const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
         if (bg !== currentBg) {
           // A rectangle needs to be drawn if going from non-default to another color
-          // TODO: DEFAULT_COLOR probably isn't right anymore?
-          if (currentBg !== DEFAULT_COLOR) {
+          if (currentBg !== 0) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
             this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
@@ -265,7 +264,7 @@ export class RectangleRenderer {
         }
       }
       // Finish rectangle if it's still going
-      if (currentBg !== DEFAULT_COLOR) {
+      if (currentBg !== 0) {
         const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
