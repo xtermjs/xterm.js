@@ -194,7 +194,7 @@ export class WebglCharAtlas implements IDisposable {
       const arr = AttributeData.toColorRGB(rgb);
       // TODO: This object creation is slow
       return {
-        rgba: rgb << 255,
+        rgba: rgb << 8,
         css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
       };
     }
