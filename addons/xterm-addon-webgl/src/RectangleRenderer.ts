@@ -8,7 +8,7 @@ import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelect
 import { fill } from 'common/TypedArrayUtils';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from './atlas/CharAtlasUtils';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
@@ -248,37 +248,44 @@ export class RectangleRenderer {
     for (let y = 0; y < terminal.rows; y++) {
       let currentStartX = -1;
       let currentBg = DEFAULT_COLOR;
+      let currentFg = DEFAULT_COLOR;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * 4;
         const bg = model.cells[modelIndex + 2];
+        const fg = model.cells[modelIndex + 1];
         if (bg !== currentBg) {
           // A rectangle needs to be drawn if going from non-default to another color
+          // TODO: DEFAULT_COLOR probably isn't right anymore?
           if (currentBg !== DEFAULT_COLOR) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-            this._updateRectangle(vertices, offset, currentBg, currentStartX, x, y);
+            this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
           currentStartX = x;
           currentBg = bg;
+          currentFg = fg;
         }
       }
       // Finish rectangle if it's still going
       if (currentBg !== DEFAULT_COLOR) {
         const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-        this._updateRectangle(vertices, offset, currentBg, currentStartX, terminal.cols, y);
+        this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
     }
     vertices.count = rectangleCount;
   }
 
-  private _updateRectangle(vertices: IVertices, offset: number, bg: number, startX: number, endX: number, y: number): void {
+  private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
     let color: IColor | null = null;
-    if (bg === INVERTED_DEFAULT_COLOR) {
+    if (fg & FgFlags.INVERSE) {
+      // Inverted color
       color = this._colors.foreground;
-    } else if (is256Color(bg)) {
-      color = this._colors.ansi[bg];
+    } else if ((bg & Attributes.CM_MASK) === Attributes.CM_P16 || (bg & Attributes.CM_MASK) === Attributes.CM_P256) {
+      // 256 palette
+      color = this._colors.ansi[bg & Attributes.PCOLOR_MASK];
     } else {
-      // TODO: Add support for true color
-      color = this._colors.foreground;
+      // TODO: Support true color
+      // Default color
+      color = this._colors.background;
     }
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);

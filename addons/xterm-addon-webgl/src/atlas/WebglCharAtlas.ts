@@ -6,7 +6,7 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, DEFAULT_ATTR, FgFlags, Attributes } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
@@ -161,26 +161,26 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bg: number): IColor {
+  private _getBackgroundColor(bg: number, fg: number): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (bg === INVERTED_DEFAULT_COLOR) {
+    } else if (fg & FgFlags.INVERSE) {
       return this._config.colors.foreground;
     } else if (is256Color(bg)) {
-      return this._getColorFromAnsiIndex(bg);
+      return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
     }
     // TODO: Support true color
     return this._config.colors.background;
   }
 
   private _getForegroundColor(fg: number): IColor {
-    if (fg === INVERTED_DEFAULT_COLOR) {
+    if (fg & FgFlags.INVERSE) {
       return this._config.colors.background;
     } else if (is256Color(fg)) {
-      return this._getColorFromAnsiIndex(fg);
+      return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK);
     }
     // TODO: Support true color
     return this._config.colors.foreground;
@@ -202,7 +202,7 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.save();
 
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bg);
+    const backgroundColor = this._getBackgroundColor(bg, fg);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';

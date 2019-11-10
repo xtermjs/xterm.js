@@ -14,7 +14,7 @@ import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
@@ -262,16 +262,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       for (let x = 0; x < terminal.cols; x++) {
         line.loadCell(x, this._workCell);
 
-        // const charData = line.get(x);
-        // const chars = charData[CHAR_DATA_CHAR_INDEX];
         const chars = this._workCell.getChars();
-        // let code = charData[CHAR_DATA_CODE_INDEX];
         let code = this._workCell.getCode();
         const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
-
-        // console.log('workcell', this._workCell);
-        // console.log('attr: ' + attr);
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
@@ -283,12 +277,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // Resolve bg and fg and cache in the model
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
+        let bg = this._workCell.bg;
+        let fg = this._workCell.fg;
 
         // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
+        if (this._workCell.isInverse()) {
           const temp = bg;
           bg = fg;
           fg = temp;
@@ -299,8 +292,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
             bg = INVERTED_DEFAULT_COLOR;
           }
         }
-        const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && !!(flags & FLAGS.BOLD) && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
-        fg += drawInBrightColor ? 8 : 0;
+
+        // Apply drawBoldTextInBrightColors
+        if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
+          fg += 8;
+        }
 
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {

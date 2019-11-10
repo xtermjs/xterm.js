@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { Terminal, FontWeight } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 
@@ -57,5 +57,5 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
 }
 
 export function is256Color(colorCode: number): boolean {
-  return colorCode < DEFAULT_COLOR;
+  return (colorCode & Attributes.CM_MASK) === Attributes.CM_P16 || (colorCode & Attributes.CM_MASK) === Attributes.CM_P256;
 }
