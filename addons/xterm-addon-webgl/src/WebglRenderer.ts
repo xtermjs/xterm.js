@@ -23,6 +23,7 @@ import { IColorSet } from 'browser/Types';
 import { FLAGS } from './Constants';
 import { getCompatAttr } from './CharDataCompat';
 import { EventEmitter } from 'common/EventEmitter';
+import { CellData } from 'common/buffer/CellData';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -32,6 +33,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();
+  private _workCell: CellData = new CellData();
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -258,11 +260,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
       const line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line.get(x);
-        const chars = charData[CHAR_DATA_CHAR_INDEX];
-        let code = charData[CHAR_DATA_CODE_INDEX];
+        line.loadCell(x, this._workCell);
+
+        // const charData = line.get(x);
+        // const chars = charData[CHAR_DATA_CHAR_INDEX];
+        const chars = this._workCell.getChars();
+        // let code = charData[CHAR_DATA_CODE_INDEX];
+        let code = this._workCell.getCode();
         const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
+
+        // console.log('workcell', this._workCell);
+        // console.log('attr: ' + attr);
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
