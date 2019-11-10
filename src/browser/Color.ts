@@ -25,7 +25,7 @@ export function blend(bg: IColor, fg: IColor): IColor {
 export function fromCss(css: string): IColor {
   return {
     css,
-    rgba: parseInt(css.slice(1), 16) << 8 | 0xFF
+    rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
   };
 }
 
