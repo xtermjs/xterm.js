@@ -47,3 +47,7 @@ export function toRgba(r: number, g: number, b: number, a: number = 0xFF): numbe
   // >>> 0 forces an unsigned int
   return (r << 24 | g << 16 | b << 8 | a) >>> 0;
 }
+
+export function fromRgba(value: number): [number, number, number, number] {
+  return [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
+}
