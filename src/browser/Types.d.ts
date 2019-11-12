@@ -25,7 +25,7 @@ export interface IColorSet {
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
   ansi: IColor[];
-  contrastCache: IColorContrastCache
+  contrastCache: IColorContrastCache;
 }
 
 export interface IColorContrastCache {
