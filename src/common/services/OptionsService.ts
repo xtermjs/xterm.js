@@ -37,7 +37,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
-  minimumContrastRatio: 6,
+  minimumContrastRatio: 1,
   disableStdin: false,
   allowTransparency: false,
   tabStopWidth: 8,

@@ -75,9 +75,7 @@ export function rgbRelativeLuminance2(r: number, g: number, b: number): number {
  * Gets the contrast ratio between two relative luminance values.
  * @param l1 The first relative luminance.
  * @param l2 The first relative luminance.
- *
- * // TODO: Is this link right?
- * @see https://www.w3.org/TR/WCAG20/#contrastratio
+ * @see https://www.w3.org/TR/WCAG20/#contrast-ratiodef
  */
 export function contrastRatio(l1: number, l2: number): number {
   if (l1 < l2) {

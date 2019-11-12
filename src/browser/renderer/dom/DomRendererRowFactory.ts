@@ -9,7 +9,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
-import { rgbRelativeLuminance, fromCss, contrastRatio, ensureContrastRatio } from 'browser/Color';
+import { ensureContrastRatio } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
