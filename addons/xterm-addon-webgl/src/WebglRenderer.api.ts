@@ -16,7 +16,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe.only('WebGL Renderer Integration Tests', function(): void {
+describe('WebGL Renderer Integration Tests', function(): void {
   it('dispose removes renderer canvases', async () => {
     await setupBrowser();
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
@@ -560,6 +560,76 @@ describe.only('WebGL Renderer Integration Tests', function(): void {
           await pollFor(page, () => getCellColor(x + 1, y + 1), [i, i, i, 255]);
         }
       }
+    });
+  });
+
+  describe('minimumContrastRatio', async () => {
+    before(async () => setupBrowser());
+    after(async () => browser.close());
+    beforeEach(async () => page.evaluate(`window.term.reset()`));
+
+    it('should adjust 0-15 colors on black background', async () => {
+      const theme: ITheme = {
+        black: '#2e3436',
+        red: '#cc0000',
+        green: '#4e9a06',
+        yellow: '#c4a000',
+        blue: '#3465a4',
+        magenta: '#75507b',
+        cyan: '#06989a',
+        white: '#d3d7cf',
+        brightBlack: '#555753',
+        brightRed: '#ef2929',
+        brightGreen: '#8ae234',
+        brightYellow: '#fce94f',
+        brightBlue: '#729fcf',
+        brightMagenta: '#ad7fa8',
+        brightCyan: '#34e2e2',
+        brightWhite: '#eeeeec'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await writeSync(
+        `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
+        `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
+      );
+      // Validate before minimumContrastRatio is applied
+      await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [0xcc, 0x00, 0x00, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [0x4e, 0x9a, 0x06, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [0xc4, 0xa0, 0x00, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [0x34, 0x65, 0xa4, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [0x75, 0x50, 0x7b, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [0x06, 0x98, 0x9a, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [0xd3, 0xd7, 0xcf, 255]);
+      await pollFor(page, () => getCellColor(1, 2), [0x55, 0x57, 0x53, 255]);
+      await pollFor(page, () => getCellColor(2, 2), [0xef, 0x29, 0x29, 255]);
+      await pollFor(page, () => getCellColor(3, 2), [0x8a, 0xe2, 0x34, 255]);
+      await pollFor(page, () => getCellColor(4, 2), [0xfc, 0xe9, 0x4f, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [0x72, 0x9f, 0xcf, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [0xad, 0x7f, 0xa8, 255]);
+      await pollFor(page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
+      await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
+      // Setting and check for minimum contrast values, note that these are note
+      // exact to the contrast ratio, if the increase luminance algorithm
+      // changes then these will probably fail
+      await page.evaluate(`window.term.setOption('minimumContrastRatio', 10);`);
+      await pollFor(page, () => getCellColor(1, 1), [179, 182, 182, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [234, 163, 163, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [196, 221, 174, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [231, 219, 163, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [133, 162, 200, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [180, 159, 182, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [106, 192, 194, 255]);
+      await pollFor(page, () => getCellColor(8, 1), [211, 215, 207, 255]);
+      await pollFor(page, () => getCellColor(1, 2), [180, 181, 179, 255]);
+      await pollFor(page, () => getCellColor(2, 2), [246, 160, 160, 255]);
+      await pollFor(page, () => getCellColor(3, 2), [138, 226, 52, 255]);
+      await pollFor(page, () => getCellColor(4, 2), [252, 233, 79, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [114, 159, 207, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [188, 150, 183, 255]);
+      // Unchanged
+      await pollFor(page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
+      await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
     });
   });
 });

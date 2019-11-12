@@ -86,28 +86,47 @@ export function contrastRatio(l1: number, l2: number): number {
 
 // TODO: Cache [bg][fg]: result, should probably be owned by ColorManager?
 
-export function ensureContrastRatio(bg: IColor, fg: IColor, ratio: number): IColor | undefined {
-  const bgL = rgbRelativeLuminance(bg.rgba >> 8);
-  const fgL = rgbRelativeLuminance(fg.rgba >> 8);
+function rgbaToColor(r: number, g: number, b: number): IColor {
+  return {
+    css: toCss(r, g, b),
+    rgba: toRgba(r, g, b)
+  };
+}
+
+export function ensureContrastRatioRgba(bgRgba: number, fgRgba: number, ratio: number): number | undefined {
+  const bgL = rgbRelativeLuminance(bgRgba >> 8);
+  const fgL = rgbRelativeLuminance(fgRgba >> 8);
   const cr = contrastRatio(bgL, fgL);
   if (cr < ratio) {
     if (fgL < bgL) {
-      return reduceLuminance(bg, fg, ratio);
+      return reduceLuminance(bgRgba, fgRgba, ratio);
     }
-    return increaseLuminance(bg, fg, ratio);
+    return increaseLuminance(bgRgba, fgRgba, ratio);
   }
   return undefined;
 }
 
-export function reduceLuminance(bg: IColor, fg: IColor, ratio: number): IColor {
+export function ensureContrastRatio(bg: IColor, fg: IColor, ratio: number): IColor | undefined {
+  const result = ensureContrastRatioRgba(bg.rgba, fg.rgba, ratio);
+  if (!result) {
+    return undefined;
+  }
+  return rgbaToColor(
+    (result >> 24 & 0xFF),
+    (result >> 16 & 0xFF),
+    (result >> 8  & 0xFF)
+  );
+}
+
+export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): number {
   // This is a naive but fast approach to reducing luminance as converting to
   // HSL and back is expensive
-  const bgR = (bg.rgba >> 24) & 0xFF;
-  const bgG = (bg.rgba >> 16) & 0xFF;
-  const bgB = (bg.rgba >>  8) & 0xFF;
-  let fgR = (fg.rgba >> 24) & 0xFF;
-  let fgG = (fg.rgba >> 16) & 0xFF;
-  let fgB = (fg.rgba >>  8) & 0xFF;
+  const bgR = (bgRgba >> 24) & 0xFF;
+  const bgG = (bgRgba >> 16) & 0xFF;
+  const bgB = (bgRgba >>  8) & 0xFF;
+  let fgR = (fgRgba >> 24) & 0xFF;
+  let fgG = (fgRgba >> 16) & 0xFF;
+  let fgB = (fgRgba >>  8) & 0xFF;
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR > 0 || fgG > 0 || fgB > 0)) {
     // Increase by 10% (ceil) until the ratio is hit
@@ -116,21 +135,18 @@ export function reduceLuminance(bg: IColor, fg: IColor, ratio: number): IColor {
     fgB -= Math.max(0, Math.ceil(fgB * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
-  return {
-    css: toCss(fgR, fgG, fgB),
-    rgba: toRgba(fgR, fgG, fgB)
-  };
+  return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
 }
 
-export function increaseLuminance(bg: IColor, fg: IColor, ratio: number): IColor {
+export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number): number {
   // This is a naive but fast approach to increasing luminance as converting to
   // HSL and back is expensive
-  const bgR = (bg.rgba >> 24) & 0xFF;
-  const bgG = (bg.rgba >> 16) & 0xFF;
-  const bgB = (bg.rgba >>  8) & 0xFF;
-  let fgR = (fg.rgba >> 24) & 0xFF;
-  let fgG = (fg.rgba >> 16) & 0xFF;
-  let fgB = (fg.rgba >>  8) & 0xFF;
+  const bgR = (bgRgba >> 24) & 0xFF;
+  const bgG = (bgRgba >> 16) & 0xFF;
+  const bgB = (bgRgba >>  8) & 0xFF;
+  let fgR = (fgRgba >> 24) & 0xFF;
+  let fgG = (fgRgba >> 16) & 0xFF;
+  let fgB = (fgRgba >>  8) & 0xFF;
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR < 0xFF || fgG < 0xFF || fgB < 0xFF)) {
     // Increase by 10% until the ratio is hit
@@ -139,8 +155,5 @@ export function increaseLuminance(bg: IColor, fg: IColor, ratio: number): IColor
     fgB = Math.min(0xFF, fgB + Math.floor((255 - fgB) * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
-  return {
-    css: toCss(fgR, fgG, fgB),
-    rgba: toRgba(fgR, fgG, fgB)
-  };
+  return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
 }
