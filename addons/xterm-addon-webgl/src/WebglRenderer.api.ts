@@ -8,7 +8,6 @@ import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
 import deepEqual = require('deep-equal');
-import { contrastRatio, reduceLuminance, toRgba } from 'atlas/WebglCharAtlas';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -588,7 +587,10 @@ describe('WebGL Renderer Integration Tests', function(): void {
         brightCyan: '#34e2e2',
         brightWhite: '#eeeeec'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`
+        window.term.setOption('theme', ${JSON.stringify(theme)});
+        window.term.setOption('minimumContrastRatio', 1);
+      `);
       await writeSync(
         `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
         `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
@@ -653,7 +655,10 @@ describe('WebGL Renderer Integration Tests', function(): void {
         brightCyan: '#34e2e2',
         brightWhite: '#eeeeec'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`
+        window.term.setOption('theme', ${JSON.stringify(theme)});
+        window.term.setOption('minimumContrastRatio', 1);
+      `);
       await writeSync(
         `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
         `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
