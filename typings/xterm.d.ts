@@ -149,6 +149,14 @@ declare module 'xterm' {
     macOptionClickForcesSelection?: boolean;
 
     /**
+     * The minimum contrast ratio for text in the terminal, setting this will
+     * change the foreground color dynamically depending on whether the contrast
+     * ratio is met. This can be to set 0.1 increments between 1 (default, do
+     * nothing) and 21 (foreground will be black or white).
+     */
+    minimumContrastRatio?: number;
+
+    /**
      * The type of renderer to use, this allows using the fallback DOM renderer
      * when canvas is too slow for the environment. The following features do
      * not work when the DOM renderer is used:

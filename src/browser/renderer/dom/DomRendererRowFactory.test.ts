@@ -19,7 +19,7 @@ describe('DomRendererRowFactory', () => {
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
-    rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }));
+    rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }), {} as any);
     lineData = createEmptyLineData(2);
   });
 

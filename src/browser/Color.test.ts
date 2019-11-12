@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { blend, fromCss, toPaddedHex, toCss, toRgba } from 'browser/Color';
+import { blend, fromCss, toPaddedHex, toCss, toRgba, rgbRelativeLuminance, contrastRatio } from 'browser/Color';
 
 describe('Color', () => {
   describe('blend', () => {
@@ -133,6 +133,28 @@ describe('Color', () => {
       assert.equal(toRgba(0xe0, 0xe0, 0xe0, 0xe0), 0xe0e0e0e0);
       assert.equal(toRgba(0xf0, 0xf0, 0xf0, 0xf0), 0xf0f0f0f0);
       assert.equal(toRgba(0xff, 0xff, 0xff, 0xff), 0xffffffff);
+    });
+  });
+  describe('rgbRelativeLuminance', () => {
+    it('should calculate the relative luminance of the color', () => {
+      assert.equal(rgbRelativeLuminance(0x000000), 0);
+
+      // TODO: Fill in tests
+
+      assert.equal(rgbRelativeLuminance(0xFFFFFF), 1);
+    });
+  });
+  describe('contrastRatio', () => {
+    it('should calculate the relative luminance of the color', () => {
+      assert.equal(contrastRatio(0, 0), 1);
+
+      // TODO: Fill in tests
+
+      assert.equal(contrastRatio(0, 1), 21);
+    });
+    it('should work regardless of the parameter order', () => {
+      assert.equal(contrastRatio(0, 1), 21);
+      assert.equal(contrastRatio(1, 0), 21);
     });
   });
 });
