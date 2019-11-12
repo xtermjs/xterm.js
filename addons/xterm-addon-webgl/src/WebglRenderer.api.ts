@@ -754,7 +754,6 @@ export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() =>
     await preFn();
   }
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
-  console.log(result);
   if (!deepEqual(result, val)) {
     return new Promise<void>(r => {
       setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 1);
