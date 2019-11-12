@@ -329,6 +329,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'lineHeight':
         case 'fontWeight':
         case 'fontWeightBold':
+        case 'minimumContrastRatio':
           // When the font changes the size of the cells may change which requires a renderer clear
           if (this._renderService) {
             this._renderService.clear();
