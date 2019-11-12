@@ -207,8 +207,8 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundCss(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
-    const minimumContrastCss = this._getMinimumContrastCss(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
+  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
+    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
     if (minimumContrastCss) {
       return minimumContrastCss;
     }
@@ -267,21 +267,34 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getMinimumContrastCss(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
-    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
-    const fgRgba = this._resolveForegroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
+  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
     if (this._config.minimumContrastRatio === 1) {
       return undefined;
     }
+
+    // Try get from cache first
+    const adjustedColor = this._config.colors.contrastCache.getCss(bg, fg);
+    if (adjustedColor !== undefined) {
+      return adjustedColor || undefined;
+    }
+
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
+    const fgRgba = this._resolveForegroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
     const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._config.minimumContrastRatio);
+
     if (!result) {
+      this._config.colors.contrastCache.setCss(bg, fg, null);
       return undefined;
     }
-    return toCss(
+
+    const css = toCss(
       (result >> 24) & 0xFF,
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF
     );
+    this._config.colors.contrastCache.setCss(bg, fg, css);
+
+    return css;
   }
 
   private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
@@ -327,7 +340,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundCss(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
+    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
     // Apply alpha to dim the character
     if (dim) {

@@ -30,8 +30,8 @@ export interface IColorSet {
 
 export interface IColorContrastCache {
   clear(): void;
-  setRgba(bg: number, fg: number, value: number | null): void;
-  getRgba(bg: number, fg: number): number | null | undefined;
+  setCss(bg: number, fg: number, value: string | null): void;
+  getCss(bg: number, fg: number): string | null | undefined;
   setColor(bg: number, fg: number, value: IColor | null): void;
   getColor(bg: number, fg: number): IColor | null | undefined;
 }

@@ -25,7 +25,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice(),
-    contrastCache: {} as any
+    contrastCache: colors.contrastCache
   };
   return {
     devicePixelRatio: window.devicePixelRatio,
