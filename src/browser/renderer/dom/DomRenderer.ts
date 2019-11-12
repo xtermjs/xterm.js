@@ -11,7 +11,7 @@ import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { fromRgba, toCss } from 'browser/Color';
+import { opaque } from 'browser/Color';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -230,9 +230,8 @@ export class DomRenderer extends Disposable implements IRenderer {
           `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
           `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
-    const rgba = fromRgba(this._colors.background.rgba);
     styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${toCss(rgba[0], rgba[1], rgba[2])}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${opaque(this._colors.background).css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;

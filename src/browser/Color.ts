@@ -51,3 +51,12 @@ export function toRgba(r: number, g: number, b: number, a: number = 0xFF): numbe
 export function fromRgba(value: number): [number, number, number, number] {
   return [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
 }
+
+export function opaque(color: IColor): IColor {
+  const rgba = (color.rgba | 0xFF) >>> 0;
+  const [r, g, b] = fromRgba(rgba);
+  return {
+    css: toCss(r, g, b),
+    rgba
+  };
+}
