@@ -632,7 +632,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
     });
 
-    it.only('should adjust 0-15 colors on white background', async () => {
+    it('should adjust 0-15 colors on white background', async () => {
       const theme: ITheme = {
         background: '#ffffff',
         black: '#2e3436',
