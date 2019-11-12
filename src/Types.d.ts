@@ -37,7 +37,6 @@ export interface IInputHandlingTerminal {
   curAttrData: IAttributeData;
   mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
-  cursorHidden: boolean;
 
   buffers: IBufferSet;
   buffer: IBuffer;
@@ -153,11 +152,8 @@ export interface IInputHandler {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   browser: IBrowser;
-  cursorHidden: boolean;
-  cursorState: number;
   buffer: IBuffer;
   buffers: IBufferSet;
-  isFocused: boolean;
   viewport: IViewport;
   bracketedPasteMode: boolean;
   optionsService: IOptionsService;

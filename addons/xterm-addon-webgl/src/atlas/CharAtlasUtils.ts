@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { Attributes } from 'common/buffer/Constants';
 import { Terminal, FontWeight } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 
@@ -21,6 +21,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     cursor: NULL_COLOR,
     cursorAccent: NULL_COLOR,
     selection: NULL_COLOR,
+    selectionOpaque: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice()
@@ -57,5 +58,5 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
 }
 
 export function is256Color(colorCode: number): boolean {
-  return colorCode < DEFAULT_COLOR;
+  return (colorCode & Attributes.CM_MASK) === Attributes.CM_P16 || (colorCode & Attributes.CM_MASK) === Attributes.CM_P256;
 }

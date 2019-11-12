@@ -51,6 +51,9 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
+    // No need to register this as renderer is explicitly disposed in RenderService.dispose
+    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
+
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.onDevicePixelRatioChange()));
@@ -92,6 +95,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   public changeOptions(): void {
     this._renderer.onOptionsChanged();
+    this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();
   }
 
@@ -105,12 +109,14 @@ export class RenderService extends Disposable implements IRenderService {
 
   public dispose(): void {
     this._renderer.dispose();
+    super.dispose();
   }
 
   public setRenderer(renderer: IRenderer): void {
     // TODO: RenderService should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
+    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
     this.refreshRows(0, this._rowCount - 1);
   }
 
