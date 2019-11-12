@@ -167,9 +167,17 @@ export class DomRendererRowFactory {
       return false;
     }
 
-    const adustedColor = ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
-    if (adustedColor) {
-      element.setAttribute('style', `${element.getAttribute('style') || ''}color:${adustedColor.css}`);
+    // Try get from cache first
+    let adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+
+    // Calculate and store in cache
+    if (adjustedColor === undefined) {
+      adjustedColor = ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
+      this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+    }
+
+    if (adjustedColor) {
+      element.setAttribute('style', `${element.getAttribute('style') || ''}color:${adjustedColor.css}`);
       return true;
     }
 

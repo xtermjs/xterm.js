@@ -546,6 +546,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._theme = this.options.theme || this._theme;
     this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this.optionsService.onOptionChange(e => this._colorManager.onOptionsChange(e));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
