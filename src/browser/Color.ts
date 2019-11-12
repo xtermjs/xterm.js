@@ -84,8 +84,6 @@ export function contrastRatio(l1: number, l2: number): number {
   return (l1 + 0.05) / (l2 + 0.05);
 }
 
-// TODO: Cache [bg][fg]: result, should probably be owned by ColorManager?
-
 function rgbaToColor(r: number, g: number, b: number): IColor {
   return {
     css: toCss(r, g, b),
