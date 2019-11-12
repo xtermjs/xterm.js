@@ -208,7 +208,7 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   private _getForegroundCss(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
-    const minimumContrastCss = this._getMinimumContrastCss(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
+    const minimumContrastCss = this._getMinimumContrastCss(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
     if (minimumContrastCss) {
       return minimumContrastCss;
     }
@@ -248,10 +248,13 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _resolveForegroundRgba(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean): number {
+  private _resolveForegroundRgba(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
         return this._getColorFromAnsiIndex(fgColor).rgba;
       case Attributes.CM_RGB:
         return fgColor << 8;
@@ -264,15 +267,13 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getMinimumContrastCss(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean): string | undefined {
+  private _getMinimumContrastCss(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
-    const fgRgba = this._resolveForegroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
-    console.log('ratio', this._config.minimumContrastRatio);
+    const fgRgba = this._resolveForegroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
     if (this._config.minimumContrastRatio === 1) {
       return undefined;
     }
     const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._config.minimumContrastRatio);
-    console.log('get min', result, bgRgba, fgRgba);
     if (!result) {
       return undefined;
     }
@@ -618,10 +619,10 @@ export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): 
   let fgB = (fgRgba >>  8) & 0xFF;
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR > 0 || fgG > 0 || fgB > 0)) {
-    // Increase by 10% (ceil) until the ratio is hit
-    fgR -= Math.max(0, Math.ceil(fgR * 0.1));
-    fgG -= Math.max(0, Math.ceil(fgG * 0.1));
-    fgB -= Math.max(0, Math.ceil(fgB * 0.1));
+    // Reduce by 10% until the ratio is hit
+    fgR -= Math.max(0, Math.floor(fgR * 0.1));
+    fgG -= Math.max(0, Math.floor(fgG * 0.1));
+    fgB -= Math.max(0, Math.floor(fgB * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
   return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
@@ -639,9 +640,9 @@ export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number)
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR < 0xFF || fgG < 0xFF || fgB < 0xFF)) {
     // Increase by 10% until the ratio is hit
-    fgR = Math.min(0xFF, fgR + Math.floor((255 - fgR) * 0.1));
-    fgG = Math.min(0xFF, fgG + Math.floor((255 - fgG) * 0.1));
-    fgB = Math.min(0xFF, fgB + Math.floor((255 - fgB) * 0.1));
+    fgR = Math.min(0xFF, fgR + Math.ceil((255 - fgR) * 0.1));
+    fgG = Math.min(0xFF, fgG + Math.ceil((255 - fgG) * 0.1));
+    fgB = Math.min(0xFF, fgB + Math.ceil((255 - fgB) * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
   return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;

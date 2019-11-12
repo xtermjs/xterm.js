@@ -129,10 +129,10 @@ export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): 
   let fgB = (fgRgba >>  8) & 0xFF;
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR > 0 || fgG > 0 || fgB > 0)) {
-    // Increase by 10% (ceil) until the ratio is hit
-    fgR -= Math.max(0, Math.ceil(fgR * 0.1));
-    fgG -= Math.max(0, Math.ceil(fgG * 0.1));
-    fgB -= Math.max(0, Math.ceil(fgB * 0.1));
+    // Reduce by 10% until the ratio is hit
+    fgR -= Math.max(0, Math.floor(fgR * 0.1));
+    fgG -= Math.max(0, Math.floor(fgG * 0.1));
+    fgB -= Math.max(0, Math.floor(fgB * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
   return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
@@ -150,9 +150,9 @@ export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number)
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR < 0xFF || fgG < 0xFF || fgB < 0xFF)) {
     // Increase by 10% until the ratio is hit
-    fgR = Math.min(0xFF, fgR + Math.floor((255 - fgR) * 0.1));
-    fgG = Math.min(0xFF, fgG + Math.floor((255 - fgG) * 0.1));
-    fgB = Math.min(0xFF, fgB + Math.floor((255 - fgB) * 0.1));
+    fgR = Math.min(0xFF, fgR + Math.ceil((255 - fgR) * 0.1));
+    fgG = Math.min(0xFF, fgG + Math.ceil((255 - fgG) * 0.1));
+    fgB = Math.min(0xFF, fgB + Math.ceil((255 - fgB) * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
   return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
