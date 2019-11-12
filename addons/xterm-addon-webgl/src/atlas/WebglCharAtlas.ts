@@ -68,7 +68,10 @@ export class WebglCharAtlas implements IDisposable {
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
 
-  constructor(document: Document, private _config: ICharAtlasConfig) {
+  constructor(
+    document: Document,
+    private _config: ICharAtlasConfig
+  ) {
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
     this.cacheCanvas.height = TEXTURE_HEIGHT;
@@ -204,10 +207,13 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundCss(fgColorMode: number, fgColor: number, inverse: boolean): string {
+  private _getForegroundCss(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
         return this._getColorFromAnsiIndex(fgColor).css;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(fgColor);
@@ -248,12 +254,6 @@ export class WebglCharAtlas implements IDisposable {
       bgColorMode = temp2;
     }
 
-    // TODO: Pass drawBoldTextInBrightColors through
-    // Apply drawBoldTextInBrightColors
-    // if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
-    //   fg += 8;
-    // }
-
     // draw the background
     const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
@@ -270,7 +270,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundCss(fgColorMode, fgColor, inverse);
+    this._tmpCtx.fillStyle = this._getForegroundCss(fgColorMode, fgColor, inverse, bold);
 
     // Apply alpha to dim the character
     if (dim) {

@@ -35,6 +35,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     fontWeight: terminal.getOption('fontWeight') as FontWeight,
     fontWeightBold: terminal.getOption('fontWeightBold') as FontWeight,
     allowTransparency: terminal.getOption('allowTransparency'),
+    drawBoldTextInBrightColors: terminal.getOption('drawBoldTextInBrightColors'),
     colors: clonedColors
   };
 }
