@@ -8,6 +8,7 @@ import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
 import deepEqual = require('deep-equal');
+import { contrastRatio, reduceLuminance, toRgba } from 'atlas/WebglCharAtlas';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -613,20 +614,20 @@ describe('WebGL Renderer Integration Tests', function(): void {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await page.evaluate(`window.term.setOption('minimumContrastRatio', 10);`);
-      await pollFor(page, () => getCellColor(1, 1), [179, 182, 182, 255]);
-      await pollFor(page, () => getCellColor(2, 1), [234, 163, 163, 255]);
-      await pollFor(page, () => getCellColor(3, 1), [196, 221, 174, 255]);
-      await pollFor(page, () => getCellColor(4, 1), [231, 219, 163, 255]);
-      await pollFor(page, () => getCellColor(5, 1), [133, 162, 200, 255]);
-      await pollFor(page, () => getCellColor(6, 1), [180, 159, 182, 255]);
-      await pollFor(page, () => getCellColor(7, 1), [106, 192, 194, 255]);
+      await pollFor(page, () => getCellColor(1, 1), [176, 180, 180, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [238, 158, 158, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [197, 223, 171, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [235, 221, 158, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [124, 156, 198, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [183, 165, 187, 255]);
+      await pollFor(page, () => getCellColor(7, 1), [110, 197, 198, 255]);
       await pollFor(page, () => getCellColor(8, 1), [211, 215, 207, 255]);
-      await pollFor(page, () => getCellColor(1, 2), [180, 181, 179, 255]);
-      await pollFor(page, () => getCellColor(2, 2), [246, 160, 160, 255]);
+      await pollFor(page, () => getCellColor(1, 2), [183, 185, 183, 255]);
+      await pollFor(page, () => getCellColor(2, 2), [249, 156, 156, 255]);
       await pollFor(page, () => getCellColor(3, 2), [138, 226, 52, 255]);
       await pollFor(page, () => getCellColor(4, 2), [252, 233, 79, 255]);
       await pollFor(page, () => getCellColor(5, 2), [114, 159, 207, 255]);
-      await pollFor(page, () => getCellColor(6, 2), [188, 150, 183, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [190, 152, 185, 255]);
       // Unchanged
       await pollFor(page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
       await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
@@ -748,6 +749,7 @@ export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() =>
     await preFn();
   }
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
+  console.log(result);
   if (!deepEqual(result, val)) {
     return new Promise<void>(r => {
       setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 1);
