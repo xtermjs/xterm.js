@@ -130,9 +130,9 @@ export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): 
   let cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   while (cr < ratio && (fgR > 0 || fgG > 0 || fgB > 0)) {
     // Reduce by 10% until the ratio is hit
-    fgR -= Math.max(0, Math.floor(fgR * 0.1));
-    fgG -= Math.max(0, Math.floor(fgG * 0.1));
-    fgB -= Math.max(0, Math.floor(fgB * 0.1));
+    fgR -= Math.max(0, Math.ceil(fgR * 0.1));
+    fgG -= Math.max(0, Math.ceil(fgG * 0.1));
+    fgB -= Math.max(0, Math.ceil(fgB * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
   return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
