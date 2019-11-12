@@ -133,7 +133,7 @@ export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): 
     fgB -= Math.max(0, Math.ceil(fgB * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
-  return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
+  return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
 }
 
 export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number): number {
@@ -153,5 +153,5 @@ export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number)
     fgB = Math.min(0xFF, fgB + Math.ceil((255 - fgB) * 0.1));
     cr = contrastRatio(rgbRelativeLuminance2(fgR, fgB, fgG), rgbRelativeLuminance2(bgR, bgG, bgB));
   }
-  return fgR << 24 | fgG << 16 | fgB << 8 | 0xFF;
+  return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
 }
