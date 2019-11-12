@@ -248,23 +248,26 @@ export class RectangleRenderer {
       let currentStartX = -1;
       let currentBg = 0;
       let currentFg = 0;
+      let currentInverse = false;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
         const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
         const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
-        if (bg !== currentBg) {
+        const inverse = !!(fg & FgFlags.INVERSE);
+        if (bg !== currentBg || ((inverse || currentInverse) && fg !== currentFg)) {
           // A rectangle needs to be drawn if going from non-default to another color
-          if (currentBg !== 0) {
+          if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
             this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
           currentStartX = x;
           currentBg = bg;
           currentFg = fg;
+          currentInverse = inverse;
         }
       }
       // Finish rectangle if it's still going
-      if (currentBg !== 0) {
+      if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
         const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
@@ -274,12 +277,21 @@ export class RectangleRenderer {
 
   private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
     let rgba: number | undefined;
-    const colorMode = bg & Attributes.CM_MASK;
     if (fg & FgFlags.INVERSE) {
-      // Inverted color
-      rgba = this._colors.foreground.rgba;
+      switch (fg & Attributes.CM_MASK) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
+          break;
+        case Attributes.CM_RGB:
+          rgba = (fg & Attributes.RGB_MASK) << 8;
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          rgba = this._colors.foreground.rgba;
+      }
     } else {
-      switch (colorMode) {
+      switch (bg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
           rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;

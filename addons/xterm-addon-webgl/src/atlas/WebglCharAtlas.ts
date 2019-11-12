@@ -176,51 +176,47 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bg: number, fg: number): IColor {
+  private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (fg & FgFlags.INVERSE) {
-      return this._config.colors.foreground;
     }
 
-    const colorMode = bg & Attributes.CM_MASK;
-    switch (colorMode) {
+    switch (bgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
+        return this._getColorFromAnsiIndex(bgColor);
       case Attributes.CM_RGB:
-        const rgb = bg & Attributes.RGB_MASK;
-        const arr = AttributeData.toColorRGB(rgb);
+        const arr = AttributeData.toColorRGB(bgColor);
         // TODO: This object creation is slow
         return {
-          rgba: rgb << 8,
+          rgba: bgColor << 8,
           css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
         };
       case Attributes.CM_DEFAULT:
       default:
+        if (inverse) {
+          return this._config.colors.foreground;
+        }
         return this._config.colors.background;
     }
   }
 
-  private _getForegroundCss(fg: number): string {
-    if (fg & FgFlags.INVERSE) {
-      return this._config.colors.background.css;
-    }
-
-    const colorMode = fg & Attributes.CM_MASK;
-    switch (colorMode) {
+  private _getForegroundCss(fgColorMode: number, fgColor: number, inverse: boolean): string {
+    switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK).css;
+        return this._getColorFromAnsiIndex(fgColor).css;
       case Attributes.CM_RGB:
-        const rgb = fg & Attributes.RGB_MASK;
-        const arr = AttributeData.toColorRGB(rgb);
+        const arr = AttributeData.toColorRGB(fgColor);
         return `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`;
       case Attributes.CM_DEFAULT:
       default:
+        if (inverse) {
+          return this._config.colors.background.css;
+        }
         return this._config.colors.foreground.css;
     }
   }
@@ -233,13 +229,33 @@ export class WebglCharAtlas implements IDisposable {
     this.hasCanvasChanged = true;
 
     const bold = !!(fg & FgFlags.BOLD);
+    const inverse = !!(fg & FgFlags.INVERSE);
     const dim = !!(bg & BgFlags.DIM);
     const italic = !!(bg & BgFlags.ITALIC);
 
     this._tmpCtx.save();
 
+    let fgColor = getFgColor(fg);
+    let fgColorMode = fg & Attributes.CM_MASK;
+    let bgColor = getBgColor(bg);
+    let bgColorMode = bg & Attributes.CM_MASK;
+    if (inverse) {
+      const temp = fgColor;
+      fgColor = bgColor;
+      bgColor = temp;
+      const temp2 = fgColorMode;
+      fgColorMode = bgColorMode;
+      bgColorMode = temp2;
+    }
+
+    // TODO: Pass drawBoldTextInBrightColors through
+    // Apply drawBoldTextInBrightColors
+    // if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
+    //   fg += 8;
+    // }
+
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bg, fg);
+    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -254,7 +270,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundCss(fg);
+    this._tmpCtx.fillStyle = this._getForegroundCss(fgColorMode, fgColor, inverse);
 
     // Apply alpha to dim the character
     if (dim) {
@@ -441,3 +457,19 @@ function toPaddedHex(c: number): string {
   return s.length < 2 ? '0' + s : s;
 }
 
+function getFgColor(fg: number): number {
+  switch (fg & Attributes.CM_MASK) {
+    case Attributes.CM_P16:
+    case Attributes.CM_P256:  return fg & Attributes.PCOLOR_MASK;
+    case Attributes.CM_RGB:   return fg & Attributes.RGB_MASK;
+    default:                  return -1;  // CM_DEFAULT defaults to -1
+  }
+}
+function getBgColor(bg: number): number {
+  switch (bg & Attributes.CM_MASK) {
+    case Attributes.CM_P16:
+    case Attributes.CM_P256:  return bg & Attributes.PCOLOR_MASK;
+    case Attributes.CM_RGB:   return bg & Attributes.RGB_MASK;
+    default:                  return -1;  // CM_DEFAULT defaults to -1
+  }
+}
