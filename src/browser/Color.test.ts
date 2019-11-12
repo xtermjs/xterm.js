@@ -138,18 +138,28 @@ describe('Color', () => {
   describe('rgbRelativeLuminance', () => {
     it('should calculate the relative luminance of the color', () => {
       assert.equal(rgbRelativeLuminance(0x000000), 0);
-
-      // TODO: Fill in tests
-
+      assert.equal(rgbRelativeLuminance(0x101010).toFixed(4), '0.0052');
+      assert.equal(rgbRelativeLuminance(0x202020).toFixed(4), '0.0144');
+      assert.equal(rgbRelativeLuminance(0x303030).toFixed(4), '0.0296');
+      assert.equal(rgbRelativeLuminance(0x404040).toFixed(4), '0.0513');
+      assert.equal(rgbRelativeLuminance(0x505050).toFixed(4), '0.0802');
+      assert.equal(rgbRelativeLuminance(0x606060).toFixed(4), '0.1170');
+      assert.equal(rgbRelativeLuminance(0x707070).toFixed(4), '0.1620');
+      assert.equal(rgbRelativeLuminance(0x808080).toFixed(4), '0.2159');
+      assert.equal(rgbRelativeLuminance(0x909090).toFixed(4), '0.2789');
+      assert.equal(rgbRelativeLuminance(0xA0A0A0).toFixed(4), '0.3515');
+      assert.equal(rgbRelativeLuminance(0xB0B0B0).toFixed(4), '0.4342');
+      assert.equal(rgbRelativeLuminance(0xC0C0C0).toFixed(4), '0.5271');
+      assert.equal(rgbRelativeLuminance(0xD0D0D0).toFixed(4), '0.6308');
+      assert.equal(rgbRelativeLuminance(0xE0E0E0).toFixed(4), '0.7454');
+      assert.equal(rgbRelativeLuminance(0xF0F0F0).toFixed(4), '0.8714');
       assert.equal(rgbRelativeLuminance(0xFFFFFF), 1);
     });
   });
   describe('contrastRatio', () => {
     it('should calculate the relative luminance of the color', () => {
       assert.equal(contrastRatio(0, 0), 1);
-
-      // TODO: Fill in tests
-
+      assert.equal(contrastRatio(0, 0.5), 11);
       assert.equal(contrastRatio(0, 1), 21);
     });
     it('should work regardless of the parameter order', () => {
