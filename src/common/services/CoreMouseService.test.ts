@@ -6,7 +6,7 @@ import { CoreMouseService } from 'common/services/CoreMouseService';
 import { MockCoreService, MockBufferService } from 'common/TestUtils.test';
 import { assert } from 'chai';
 import { ICoreMouseEvent, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
-declare const console: any;
+
 // needed mock services
 const bufferService = new MockBufferService(300, 100);
 const coreService = new MockCoreService();
