@@ -61,6 +61,14 @@ export function rgbRelativeLuminance(rgb: number): number {
     (rgb      ) & 0xFF);
 }
 
+/**
+ * Gets the relative luminance of an RGB color, this is useful in determining the contrast ratio
+ * between two colors.
+ * @param r The red channel (0x00 to 0xFF).
+ * @param g The green channel (0x00 to 0xFF).
+ * @param b The blue channel (0x00 to 0xFF).
+ * @see https://www.w3.org/TR/WCAG20/#relativeluminancedef
+ */
 export function rgbRelativeLuminance2(r: number, g: number, b: number): number {
   const rs = r / 255;
   const gs = g / 255;
