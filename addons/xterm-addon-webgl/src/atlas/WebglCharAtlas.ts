@@ -68,6 +68,7 @@ export class WebglCharAtlas implements IDisposable {
   public hasCanvasChanged = false;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
+  private _workAttributeData: AttributeData = new AttributeData();
 
   constructor(
     document: Document,
@@ -305,17 +306,19 @@ export class WebglCharAtlas implements IDisposable {
 
     this.hasCanvasChanged = true;
 
-    const bold = !!(fg & FgFlags.BOLD);
-    const inverse = !!(fg & FgFlags.INVERSE);
-    const dim = !!(bg & BgFlags.DIM);
-    const italic = !!(bg & BgFlags.ITALIC);
-
     this._tmpCtx.save();
 
-    let fgColor = getFgColor(fg);
-    let fgColorMode = fg & Attributes.CM_MASK;
-    let bgColor = getBgColor(bg);
-    let bgColorMode = bg & Attributes.CM_MASK;
+    this._workAttributeData.fg = fg;
+    this._workAttributeData.bg = bg;
+
+    const bold = !!this._workAttributeData.isBold();
+    const inverse = !!this._workAttributeData.isInverse();
+    const dim = !!this._workAttributeData.isDim();
+    const italic = !!this._workAttributeData.isItalic();
+    let fgColor = this._workAttributeData.getFgColor();
+    let fgColorMode = this._workAttributeData.getFgColorMode();
+    let bgColor = this._workAttributeData.getBgColor();
+    let bgColorMode = this._workAttributeData.getBgColorMode();
     if (inverse) {
       const temp = fgColor;
       fgColor = bgColor;
