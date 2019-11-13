@@ -130,7 +130,7 @@ export class DomRendererRowFactory {
           }
           break;
         case Attributes.CM_RGB:
-          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}color:rgb(${(AttributeData.toColorRGB(fg)).join(',')});`);
+          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}color:#${padStart(fg.toString(16), '0', 6)};`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -148,7 +148,7 @@ export class DomRendererRowFactory {
           charElement.classList.add(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}background-color:rgb(${(AttributeData.toColorRGB(bg)).join(',')});`);
+          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}background-color:#${padStart(bg.toString(16), '0', 6)};`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -183,4 +183,11 @@ export class DomRendererRowFactory {
 
     return false;
   }
+}
+
+function padStart(text: string, padChar: string, length: number): string {
+  while (text.length < length) {
+    text = padChar + text;
+  }
+  return text;
 }

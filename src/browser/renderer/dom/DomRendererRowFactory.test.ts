@@ -212,7 +212,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="color:rgb(1,2,3);background-color:rgb(4,5,6);">a</span>'
+          '<span style="color:#010203;background-color:#040506;">a</span>'
         );
       });
 
@@ -223,7 +223,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="color:rgb(4,5,6);background-color:rgb(1,2,3);">a</span>'
+          '<span style="color:#040506;background-color:#010203;">a</span>'
         );
       });
     });
