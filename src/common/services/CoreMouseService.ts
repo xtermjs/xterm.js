@@ -264,7 +264,7 @@ export class CoreMouseService implements ICoreMouseService {
 
     // encode report and send
     const report = this._encodings[this._activeEncoding](e);
-    if (this._activeProtocol === 'DEFAULT') {
+    if (this._activeEncoding === 'DEFAULT') {
       // always send DEFAULT as binary data
       if (report) {
         this._coreService.triggerBinaryEvent(report);
