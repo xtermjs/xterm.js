@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, IWindowOptions } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { WindowOptions } from 'common/WindowOptions';
 
@@ -167,6 +167,7 @@ export interface IOptionsService {
   serviceBrand: any;
 
   readonly options: ITerminalOptions;
+  readonly windowOptions: WindowOptions;
 
   readonly onOptionChange: IEvent<string>;
 
@@ -208,7 +209,7 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
-  windowOptions?: WindowOptions;
+  windowOptions?: IWindowOptions;
 }
 
 export interface ITerminalOptions {
@@ -248,7 +249,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
-  windowOptions: WindowOptions;
+  windowOptions: IWindowOptions;
 }
 
 export interface ITheme {

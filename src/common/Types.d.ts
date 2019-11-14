@@ -256,7 +256,6 @@ export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
  * WindowOption settings.
  */
 export interface IWindowOptions {
-  [key: string]: boolean | undefined;
   restoreWin?: boolean;
   minimizeWin?: boolean;
   setWinPosition?: boolean;

@@ -215,6 +215,12 @@ declare module 'xterm' {
      * double click to select work logic.
     */
     wordSeparator?: string;
+
+    /**
+     * Enable various window manipulation and report features.
+     * All features are disabled by default for security reasons.
+     */
+    windowOptions?: IWindowOptions;
   }
 
   /**

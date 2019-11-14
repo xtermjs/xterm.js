@@ -521,7 +521,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.addCsiHandler(id, params => {
-        if (!hasWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+        if (!hasWindowOption(params.params[0], this._optionsService.windowOptions)) {
           return true;
         }
         return callback(params);
@@ -1422,7 +1422,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is listed
            * in `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions & WindowOptions.setWinLines) {
+          if (this._optionsService.windowOptions & WindowOptions.setWinLines) {
             this._terminal.resize(132, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -1609,7 +1609,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is listed
            * in `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions & WindowOptions.setWinLines) {
+          if (this._optionsService.windowOptions & WindowOptions.setWinLines) {
             this._terminal.resize(80, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -2083,7 +2083,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps >= 24                                                          not implemented
    */
   public windowOptions(params: IParams): void {
-    if (!hasWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+    if (!hasWindowOption(params.params[0], this._optionsService.windowOptions)) {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
