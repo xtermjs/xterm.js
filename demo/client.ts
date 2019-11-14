@@ -288,7 +288,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
-    if (stringOptions[o] && typeof stringOptions[o] !== 'string') {
+    if (stringOptions[o]) {
       html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
       html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`;

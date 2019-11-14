@@ -75,7 +75,6 @@ export class MockLogService implements ILogService {
 export class MockOptionsService implements IOptionsService {
   serviceBrand: any;
   options: ITerminalOptions = clone(DEFAULT_OPTIONS);
-  windowOptions = 0;
   onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: IPartialTerminalOptions) {
     if (testOptions) {
