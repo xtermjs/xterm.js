@@ -22,6 +22,7 @@ import { IAttributeData, IDisposable } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { hasWindowOption, WindowOptions } from 'common/WindowOptions';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -520,7 +521,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.addCsiHandler(id, params => {
-        if (!~this._optionsService.options.allowedWindowOps.indexOf(params.params[0])) {
+        if (!hasWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
           return true;
         }
         return callback(params);
@@ -1419,9 +1420,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           /**
            * DECCOLM - 132 column mode.
            * This is only active if 'SetWinLines' (24) is listed
-           * in `options.allowedWindowOps`.
+           * in `options.windowsOptions`.
            */
-          if (~this._optionsService.options.allowedWindowOps.indexOf(24)) {
+          if (this._optionsService.options.windowOptions & WindowOptions.setWinLines) {
             this._terminal.resize(132, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -1606,9 +1607,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           /**
            * DECCOLM - 80 column mode.
            * This is only active if 'SetWinLines' (24) is listed
-           * in `options.allowedWindowOps`.
+           * in `options.windowsOptions`.
            */
-          if (~this._optionsService.options.allowedWindowOps.indexOf(24)) {
+          if (this._optionsService.options.windowOptions & WindowOptions.setWinLines) {
             this._terminal.resize(80, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -2081,8 +2082,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps = 23 ; 2  -> Restore xterm window title from stack.            supported
    *    Ps >= 24                                                          not implemented
    */
-  public windowOptions(params?: IParams): void {
-    if (!~this._optionsService.options.allowedWindowOps.indexOf(params.params[0])) {
+  public windowOptions(params: IParams): void {
+    if (!hasWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
@@ -2090,15 +2091,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
         if (rs && second !== 2) {
-          const w = rs.dimensions.canvasWidth.toFixed(0);
-          const h = rs.dimensions.canvasHeight.toFixed(0);
+          console.log(rs.dimensions);
+          const w = rs.dimensions.scaledCanvasWidth.toFixed(0);
+          const h = rs.dimensions.scaledCanvasHeight.toFixed(0);
           this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);
         }
         break;
       case 16:  // GetCellSizePixels, returns CSI 6 ; height ; width t
         if (rs) {
-          const w = rs.dimensions.actualCellWidth.toFixed(0);
-          const h = rs.dimensions.actualCellHeight.toFixed(0);
+          const w = rs.dimensions.scaledCellWidth.toFixed(0);
+          const h = rs.dimensions.scaledCellHeight.toFixed(0);
           this._coreService.triggerDataEvent(`${C0.ESC}[6;${h};${w}t`);
         }
         break;

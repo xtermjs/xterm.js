@@ -2,34 +2,9 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+import { IWindowOptions } from 'common/Types';
 
-interface IWindowOptions {
-  [key: string]: boolean | undefined;
-  restoreWin?: boolean;
-  minimizeWin?: boolean;
-  setWinPosition?: boolean;
-  setWinSizePixels?: boolean;
-  raiseWin?: boolean;
-  lowerWin?: boolean;
-  refreshWin?: boolean;
-  setWinSizeChars?: boolean;
-  maximizeWin?: boolean;
-  fullscreenWin?: boolean;
-  getWinState?: boolean;
-  getWinPosition?: boolean;
-  getWinSizePixels?: boolean;
-  getScreenSizePixels?: boolean;
-  getCellSizePixels?: boolean;
-  getWinSizeChars?: boolean;
-  getScreenSizeChars?: boolean;
-  getIconTitle?: boolean;
-  getWinTitle?: boolean;
-  pushTitle?: boolean;
-  popTitle?: boolean;
-  setWinLines?: boolean;
-}
-
-const enum WindowOptions {
+export const enum WindowOptions {
   restoreWin = 1 << 1,
   minimizeWin = 1 << 2,
   setWinPosition = 1 << 3,
@@ -54,21 +29,11 @@ const enum WindowOptions {
   setWinLines = 1 << 24           // any param >= 24, also handles DECCOLM
 }
 
-let layer: {[key in keyof typeof WindowOptions]?: boolean}
-
-function hasOption(n: number, opts: WindowOptions): boolean {
-  return !!(opts & (1 << Math.max(n, 24)));
+export function hasWindowOption(n: number, opts: WindowOptions): boolean {
+  return !!(opts & (1 << Math.min(n, 24)));
 }
 
-function getOptions(opts: WindowOptions): IWindowOptions {
-  /*
-  const result: IWindowOptions = {};
-  for (const key in WindowOptions) {
-    if (parseInt(key)) continue;
-    result[key] = !!(opts & WindowOptions[key as any] as unknown as number);
-  }
-  return result;
-  */
+export function getWindowOptions(opts: WindowOptions): IWindowOptions {
   return {
     restoreWin: !!(opts & WindowOptions.restoreWin),
     minimizeWin: !!(opts & WindowOptions.minimizeWin),
@@ -95,11 +60,9 @@ function getOptions(opts: WindowOptions): IWindowOptions {
   };
 }
 
-function setOptions(v: IWindowOptions & {[key: string]: boolean}, opts: WindowOptions): WindowOptions {
+export function setWindowOptions(v: IWindowOptions & {[key: string]: boolean}, opts: WindowOptions): WindowOptions {
   for (const optionName in v) {
     const value = v[optionName];
-    //const option = WindowOptions[optionName as any] as unknown as number;
-    //opts = value ? opts | option : opts & ~option;
     switch (optionName) {
       case 'restoreWin': opts = value ? opts | WindowOptions.restoreWin : opts & ~WindowOptions.restoreWin; break;
       case 'minimizeWin': opts = value ? opts | WindowOptions.minimizeWin : opts & ~WindowOptions.minimizeWin; break;
@@ -128,10 +91,3 @@ function setOptions(v: IWindowOptions & {[key: string]: boolean}, opts: WindowOp
   }
   return opts;
 }
-
-declare const console: any;
-let opts: WindowOptions = 0;
-
-opts = setOptions({refreshWin: true, pushTitle: true, popTitle: true}, opts);
-console.log(opts);
-console.log(getOptions(opts));

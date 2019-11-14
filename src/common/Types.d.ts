@@ -251,3 +251,32 @@ export interface ICoreMouseProtocol {
  * with the active encoding and sent out.
  */
 export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
+
+/**
+ * WindowOption settings.
+ */
+export interface IWindowOptions {
+  [key: string]: boolean | undefined;
+  restoreWin?: boolean;
+  minimizeWin?: boolean;
+  setWinPosition?: boolean;
+  setWinSizePixels?: boolean;
+  raiseWin?: boolean;
+  lowerWin?: boolean;
+  refreshWin?: boolean;
+  setWinSizeChars?: boolean;
+  maximizeWin?: boolean;
+  fullscreenWin?: boolean;
+  getWinState?: boolean;
+  getWinPosition?: boolean;
+  getWinSizePixels?: boolean;
+  getScreenSizePixels?: boolean;
+  getCellSizePixels?: boolean;
+  getWinSizeChars?: boolean;
+  getScreenSizeChars?: boolean;
+  getIconTitle?: boolean;
+  getWinTitle?: boolean;
+  pushTitle?: boolean;
+  popTitle?: boolean;
+  setWinLines?: boolean;
+}

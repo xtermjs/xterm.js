@@ -17,6 +17,7 @@ import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsSer
 import { IBufferService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
+import { WindowOptions } from 'common/WindowOptions';
 
 function getCursor(term: TestTerminal): number[] {
   return [
@@ -1266,10 +1267,10 @@ describe('InputHandler', () => {
       [131072, 131072], [131072, 131072], [131072, 300000 - 131072 - 131072]
     ]);
   });
-  describe('windowOps', () => {
+  describe('windowOptions', () => {
     it('all should be disabled by default and not report', () => {
       const term = new TestTerminal({cols: 10, rows: 10});
-      assert.deepEqual(term.options.allowedWindowOps, []);
+      assert.deepEqual(term.options.windowOptions, 0);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b[14t');
@@ -1280,8 +1281,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, []);
     });
     it('14 - GetWinSizePixels', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [14]});
-      assert.deepEqual(term.options.allowedWindowOps, [14]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.getWinSizePixels});
+      assert.deepEqual(term.options.windowOptions, 1 << 14);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b[14t');
@@ -1289,8 +1290,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, []);
     });
     it('16 - GetCellSizePixels', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [16]});
-      assert.deepEqual(term.options.allowedWindowOps, [16]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.getCellSizePixels});
+      assert.deepEqual(term.options.windowOptions, 1 << 16);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b[16t');
@@ -1298,8 +1299,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, []);
     });
     it('18 - GetWinSizeChars', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [18]});
-      assert.deepEqual(term.options.allowedWindowOps, [18]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.getWinSizeChars});
+      assert.deepEqual(term.options.windowOptions, 1 << 18);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b[18t');
@@ -1309,8 +1310,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, ['\x1b[8;10;10t', '\x1b[8;20;50t']);
     });
     it('20 - GetIconTitle', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [20]});
-      assert.deepEqual(term.options.allowedWindowOps, [20]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.getIconTitle});
+      assert.deepEqual(term.options.windowOptions, 1 << 20);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b]1;hello world!\x07');
@@ -1321,8 +1322,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, ['\x1b]Lhello world!\x1b\\', '\x1b]Lsome other\x1b\\']);
     });
     it('21 - GetWinTitle', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [21]});
-      assert.deepEqual(term.options.allowedWindowOps, [21]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.getWinTitle});
+      assert.deepEqual(term.options.windowOptions, 1 << 21);
       const stack: string[] = [];
       term.onData(data => stack.push(data));
       term.writeSync('\x1b]2;hello world!\x07');
@@ -1333,8 +1334,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, ['\x1b]lhello world!\x1b\\', '\x1b]lsome other\x1b\\']);
     });
     it('22/23 - PushTitle/PopTitle', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [22, 23]});
-      assert.deepEqual(term.options.allowedWindowOps, [22, 23]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.pushTitle | WindowOptions.popTitle});
+      assert.deepEqual(term.options.windowOptions, (1 << 22) | (1 << 23));
       const stack: string[] = [];
       term.onTitleChange(data => stack.push(data));
       term.writeSync('\x1b]0;1\x07');
@@ -1355,8 +1356,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, ['1', '2', '3', '3', '2', '1']);
     });
     it('22/23 - PushTitle/PopTitle with ;1', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [22, 23]});
-      assert.deepEqual(term.options.allowedWindowOps, [22, 23]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.pushTitle | WindowOptions.popTitle});
+      assert.deepEqual(term.options.windowOptions, (1 << 22) | (1 << 23));
       const stack: string[] = [];
       term.onTitleChange(data => stack.push(data));
       term.writeSync('\x1b]0;1\x07');
@@ -1377,8 +1378,8 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, ['1', '2', '3']);
     });
     it('22/23 - PushTitle/PopTitle with ;2', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [22, 23]});
-      assert.deepEqual(term.options.allowedWindowOps, [22, 23]);
+      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.pushTitle | WindowOptions.popTitle});
+      assert.deepEqual(term.options.windowOptions, (1 << 22) | (1 << 23));
       const stack: string[] = [];
       term.onTitleChange(data => stack.push(data));
       term.writeSync('\x1b]0;1\x07');
@@ -1406,7 +1407,7 @@ describe('InputHandler', () => {
       term.writeSync('\x1b[?3h');
       assert.equal((term as any)._bufferService.cols, 10);
       // enabled
-      const term2 = new TestTerminal({cols: 10, rows: 10, allowedWindowOps: [24]});
+      const term2 = new TestTerminal({cols: 10, rows: 10, windowOptions: WindowOptions.setWinLines});
       term2.writeSync('\x1b[?3l');
       assert.equal((term2 as any)._bufferService.cols, 80);
       term2.writeSync('\x1b[?3h');

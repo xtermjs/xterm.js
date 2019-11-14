@@ -7,6 +7,7 @@ import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import { WindowOptions } from 'common/WindowOptions';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -207,7 +208,7 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
-  allowedWindowOps?: number[];
+  windowOptions?: WindowOptions;
 }
 
 export interface ITerminalOptions {
@@ -247,7 +248,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
-  allowedWindowOps: number[];
+  windowOptions: WindowOptions;
 }
 
 export interface ITheme {
@@ -273,3 +274,4 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
 }
+

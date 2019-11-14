@@ -440,7 +440,7 @@ declare module 'xterm' {
     /**
      * Ps=14      Report xterm text area size in pixels. Result is "CSI 4 ; height ; width t".
      * Ps=14 ; 2  Report xterm window size in pixels. Result is "CSI  4 ; height ; width t".
-     * Ps=14 has a default implementation.
+     * Ps=14 has a default implementation (also handles Ps=14 ; 2 if not overwritten by custom implementation).
      */
     getWinSizePixels?: boolean;
     /** Ps=15    Report size of the screen in pixels. Result is "CSI 5 ; height ; width t". */
