@@ -58,10 +58,17 @@ export const ICoreService = createDecorator<ICoreService>('CoreService');
 export interface ICoreService {
   serviceBrand: any;
 
+  /**
+   * Initially the cursor will not be visible until the first time the terminal
+   * is focused.
+   */
+  isCursorInitialized: boolean;
+  isCursorHidden: boolean;
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
+  readonly onBinary: IEvent<string>;
 
   reset(): void;
 
@@ -72,8 +79,14 @@ export interface ICoreService {
    * resulting from parsing incoming data). When true this will also:
    * - Scroll to the bottom of the buffer.s
    * - Fire the `onUserInput` event (so selection can be cleared).
-    */
+   */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
+
+  /**
+   * Triggers the onBinary event in the public API.
+   * @param data The data that is being emitted.
+   */
+   triggerBinaryEvent(data: string): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');

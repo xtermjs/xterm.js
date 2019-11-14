@@ -5,14 +5,15 @@
 
 import { IColorManager, IColor, IColorSet } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
+import { fromCss, toCss, blend, toRgba } from 'browser/Color';
 
-const DEFAULT_FOREGROUND = fromHex('#ffffff');
-const DEFAULT_BACKGROUND = fromHex('#000000');
-const DEFAULT_CURSOR = fromHex('#ffffff');
-const DEFAULT_CURSOR_ACCENT = fromHex('#000000');
+const DEFAULT_FOREGROUND = fromCss('#ffffff');
+const DEFAULT_BACKGROUND = fromCss('#000000');
+const DEFAULT_CURSOR = fromCss('#ffffff');
+const DEFAULT_CURSOR_ACCENT = fromCss('#000000');
 const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
-  rgba: 0xFFFFFF77
+  rgba: 0xFFFFFF4D
 };
 
 // An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
@@ -20,23 +21,23 @@ const DEFAULT_SELECTION = {
 export const DEFAULT_ANSI_COLORS = (() => {
   const colors = [
     // dark:
-    fromHex('#2e3436'),
-    fromHex('#cc0000'),
-    fromHex('#4e9a06'),
-    fromHex('#c4a000'),
-    fromHex('#3465a4'),
-    fromHex('#75507b'),
-    fromHex('#06989a'),
-    fromHex('#d3d7cf'),
+    fromCss('#2e3436'),
+    fromCss('#cc0000'),
+    fromCss('#4e9a06'),
+    fromCss('#c4a000'),
+    fromCss('#3465a4'),
+    fromCss('#75507b'),
+    fromCss('#06989a'),
+    fromCss('#d3d7cf'),
     // bright:
-    fromHex('#555753'),
-    fromHex('#ef2929'),
-    fromHex('#8ae234'),
-    fromHex('#fce94f'),
-    fromHex('#729fcf'),
-    fromHex('#ad7fa8'),
-    fromHex('#34e2e2'),
-    fromHex('#eeeeec')
+    fromCss('#555753'),
+    fromCss('#ef2929'),
+    fromCss('#8ae234'),
+    fromCss('#fce94f'),
+    fromCss('#729fcf'),
+    fromCss('#ad7fa8'),
+    fromCss('#34e2e2'),
+    fromCss('#eeeeec')
   ];
 
   // Fill in the remaining 240 ANSI colors.
@@ -47,36 +48,22 @@ export const DEFAULT_ANSI_COLORS = (() => {
     const g = v[(i / 6) % 6 | 0];
     const b = v[i % 6];
     colors.push({
-      css: `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}`,
-      // Use >>> 0 to force a conversion to an unsigned int
-      rgba: ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0
+      css: toCss(r, g, b),
+      rgba: toRgba(r, g, b)
     });
   }
 
   // Generate greys (232-255)
   for (let i = 0; i < 24; i++) {
     const c = 8 + i * 10;
-    const ch = toPaddedHex(c);
     colors.push({
-      css: `#${ch}${ch}${ch}`,
-      rgba: ((c << 24) | (c << 16) | (c << 8) | 0xFF) >>> 0
+      css: toCss(c, c, c),
+      rgba: toRgba(c, c, c)
     });
   }
 
   return colors;
 })();
-
-function fromHex(css: string): IColor {
-  return {
-    css,
-    rgba: parseInt(css.slice(1), 16) << 8 | 0xFF
-  };
-}
-
-function toPaddedHex(c: number): string {
-  const s = c.toString(16);
-  return s.length < 2 ? '0' + s : s;
-}
 
 /**
  * Manages the source of truth for a terminal's colors.
@@ -103,6 +90,7 @@ export class ColorManager implements IColorManager {
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
+      selectionOpaque: blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice()
     };
   }
@@ -118,6 +106,7 @@ export class ColorManager implements IColorManager {
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    this.colors.selectionOpaque = blend(this.colors.background, this.colors.selection);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
@@ -184,7 +173,7 @@ export class ColorManager implements IColorManager {
 
     return {
       css,
-      rgba: (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) >>> 0
+      rgba: toRgba(data[0], data[1], data[2], data[3])
     };
   }
 }

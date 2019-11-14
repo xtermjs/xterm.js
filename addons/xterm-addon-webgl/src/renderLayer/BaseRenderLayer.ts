@@ -4,7 +4,6 @@
  */
 
 import { IRenderLayer } from './Types';
-import { IGlyphIdentifier } from '../atlas/Types';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
@@ -24,19 +23,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharTop: number = 0;
 
   protected _charAtlas: WebglCharAtlas | undefined;
-
-  /**
-   * An object that's reused when drawing glyphs in order to reduce GC.
-   */
-  private _currentGlyphIdentifier: IGlyphIdentifier = {
-    chars: '',
-    code: 0,
-    bg: 0,
-    fg: 0,
-    bold: false,
-    dim: false,
-    italic: false
-  };
 
   constructor(
     private _container: HTMLElement,

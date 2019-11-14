@@ -43,12 +43,17 @@ export class MockCoreMouseService implements ICoreMouseService {
 }
 
 export class MockCoreService implements ICoreService {
+  isCursorInitialized: boolean = false;
+  isCursorHidden: boolean = false;
+  isFocused: boolean = false;
   serviceBrand: any;
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
+  onBinary: IEvent<string> = new EventEmitter<string>().event;
   reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+  triggerBinaryEvent(data: string): void {}
 }
 
 export class MockDirtyRowService implements IDirtyRowService {

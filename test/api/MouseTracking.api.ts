@@ -4,8 +4,8 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
+import { pollFor, writeSync } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -198,22 +198,17 @@ function parseReport(encoding: string, msg: number[]): {state: any; row: number;
 /**
  * Mouse tracking tests.
  */
-describe('Mouse Tracking Tests', function(): void {
-  this.timeout(60000);
-
-  before(async function(): Promise<any> {
+describe('Mouse Tracking Tests', () => {
+  before(async function(): Promise<void> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
   });
 
-  after(() => {
-    browser.close();
-  });
+  after(async () => browser.close());
 
   beforeEach(async () => {
     await page.goto(APP);
@@ -225,6 +220,7 @@ describe('Mouse Tracking Tests', function(): void {
     await page.evaluate(`
       window.calls = [];
       window.term.onData(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
+      window.term.onBinary(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
       window.term.setOption('fontSize', ${fontSize});
       window.term.resize(${cols}, ${rows});
     `);
@@ -242,30 +238,35 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?9h');`);
+      await writeSync(page, '\x1b[?9h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // mouseup should not report
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+
+      // higher than 223 should not report at all
+      await mouseMove(257, rows - 1);
+      await mouseDown('left');
+      await mouseUp('left');
+      await pollFor(page, () => getReports(encoding), []);
 
       // button press/move/release tests
       // left button
@@ -274,7 +275,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
       // await mouseMove(43, 24);
@@ -282,7 +283,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -290,15 +291,15 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
 
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
 
       // modifiers
       // CTRL
@@ -310,7 +311,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
 
       // ALT
@@ -322,7 +323,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // SHIFT
       // note: caught by selection manager
@@ -337,9 +338,9 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), []);
+        await pollFor(page, () => getReports(encoding), []);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
         ]);
       }
@@ -358,34 +359,34 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
     });
     it('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?9h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?9h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // mouseup should not report
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // test at max rows/cols
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // button press/move/release tests
       // left button
@@ -394,7 +395,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
       // middle button
       // bug: default action not cancelled (adds data to getReports from clipboard under X11)
       // await mouseMove(43, 24);
@@ -402,7 +403,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -410,15 +411,15 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}}]);
 
       // wheel
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
 
       // modifiers
       // CTRL
@@ -430,7 +431,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
 
       // ALT
@@ -442,7 +443,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // SHIFT
       // note: caught by selection manager
@@ -455,9 +456,9 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), []);
+        await pollFor(page, () => getReports(encoding), []);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
         ]);
       }
@@ -476,7 +477,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
     });
   });
   describe('DECSET 1000 (VT200 mouse)', () => {
@@ -491,39 +492,38 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1000h');`);
+      await writeSync(page, '\x1b[?1000h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+      await pollFor(page, () => getReports(encoding), [
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -533,7 +533,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -544,7 +544,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -552,7 +552,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -561,9 +561,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -575,7 +575,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
@@ -590,7 +590,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
@@ -608,11 +608,11 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
@@ -633,7 +633,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: true}}}
@@ -643,26 +643,26 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1000h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1000h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -671,7 +671,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -683,7 +683,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -694,7 +694,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -702,7 +702,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'right', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -711,9 +711,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -725,7 +725,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: false}}}
@@ -740,7 +740,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: true}}}
@@ -757,11 +757,11 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
@@ -782,7 +782,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: true, shift: false, meta: true}}}
@@ -801,39 +801,38 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1002h');`);
+      await writeSync(page, '\x1b[?1002h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+      await pollFor(page, () => getReports(encoding), [
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -843,7 +842,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
@@ -855,7 +854,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -863,7 +862,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
@@ -873,9 +872,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -887,7 +886,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
@@ -903,7 +902,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
@@ -921,11 +920,11 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
@@ -947,7 +946,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: '<none>', modifier: {control: true, shift: false, meta: true}}},
@@ -958,27 +957,27 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1002h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1002h\x1b[?1006h');
 
       // test at 0,0
       // bug: release is fired immediately
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should not report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), []);
+      await pollFor(page, () => getReports(encoding), []);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -987,7 +986,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -999,7 +998,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
@@ -1011,7 +1010,7 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
@@ -1019,7 +1018,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'right', modifier: {control: false, shift: false, meta: false}}}
@@ -1029,9 +1028,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -1043,7 +1042,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: false}}},
@@ -1059,7 +1058,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: true}}},
@@ -1077,11 +1076,11 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: false, shift: true, meta: false}}},
@@ -1103,7 +1102,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'release', button: 'left', modifier: {control: true, shift: false, meta: true}}},
@@ -1120,42 +1119,41 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1003h');`);
+      await writeSync(page, '\x1b[?1003h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+      await pollFor(page, () => getReports(encoding), [
+        {col: 223, row: rows, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1164,7 +1162,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
@@ -1177,14 +1175,14 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
@@ -1195,9 +1193,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -1208,7 +1206,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
@@ -1224,7 +1222,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
@@ -1242,12 +1240,12 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
@@ -1269,7 +1267,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: true, shift: false, meta: true}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: true}}},
@@ -1281,28 +1279,28 @@ describe('Mouse Tracking Tests', function(): void {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
-      await page.evaluate(`window.term.write('\x1b[?1003h\x1b[?1006h');`);
+      await writeSync(page, '\x1b[?1003h\x1b[?1006h');
 
       // test at 0,0
       await mouseDown('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mouseup should report, encoding cannot report released button
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 1, row: 1, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // mousemove should report
       await mouseMove(50, 10);
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 51, row: 11, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
       ]);
@@ -1313,7 +1311,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: cols, row: rows, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
         {col: cols, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: cols, row: rows, state: {action: 'release', button: 'left', modifier: {control: false, shift: false, meta: false}}}
@@ -1325,7 +1323,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: false}}},
@@ -1338,14 +1336,14 @@ describe('Mouse Tracking Tests', function(): void {
       // await mouseDown('middle');
       // await mouseMove(44, 24);
       // await mouseUp('middle');
-      // assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
       // right button
       // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await mouseDown('right');
       await mouseMove(44, 24);
       await mouseUp('right');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'right', modifier: {control: false, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'right', modifier: {control: false, shift: false, meta: false}}},
@@ -1356,9 +1354,9 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await wheelUp();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'up', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
       await wheelDown();
-      assert.deepEqual(await getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: false, meta: false}}}]);
 
       // modifiers
       // CTRL
@@ -1369,7 +1367,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Control');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: true, shift: false, meta: false}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: false}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: false}}},
@@ -1385,7 +1383,7 @@ describe('Mouse Tracking Tests', function(): void {
       await mouseUp('left');
       await wheelDown();
       await page.keyboard.up('Alt');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: true}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: false, meta: true}}},
@@ -1403,12 +1401,12 @@ describe('Mouse Tracking Tests', function(): void {
       await wheelDown();
       await page.keyboard.up('Shift');
       if (noShift) {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'down', button: 'wheel', modifier: {control: false, shift: true, meta: false}}}
         ]);
       } else {
-        assert.deepEqual(await getReports(encoding), [
+        await pollFor(page, () => getReports(encoding), [
           {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: false, shift: true, meta: false}}},
           {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: false, shift: true, meta: false}}},
           {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: false, shift: true, meta: false}}},
@@ -1430,7 +1428,7 @@ describe('Mouse Tracking Tests', function(): void {
       await page.keyboard.up('Control');
       await page.keyboard.up('Alt');
       // await page.keyboard.up('Shift');
-      assert.deepEqual(await getReports(encoding), [
+      await pollFor(page, () => getReports(encoding), [
         {col: 44, row: 25, state: {action: 'move', button: '<none>', modifier: {control: true, shift: false, meta: true}}},
         {col: 44, row: 25, state: {action: 'press', button: 'left', modifier: {control: true, shift: false, meta: true}}},
         {col: 45, row: 25, state: {action: 'move', button: 'left', modifier: {control: true, shift: false, meta: true}}},

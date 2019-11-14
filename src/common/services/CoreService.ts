@@ -15,12 +15,16 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 export class CoreService implements ICoreService {
   serviceBrand: any;
 
+  public isCursorInitialized: boolean = false;
+  public isCursorHidden: boolean = false;
   public decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
   private _onUserInput = new EventEmitter<void>();
   public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
+  private _onBinary = new EventEmitter<string>();
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
 
   constructor(
     // TODO: Move this into a service
@@ -56,5 +60,13 @@ export class CoreService implements ICoreService {
     // Fire onData API
     this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onData.fire(data);
+  }
+
+  public triggerBinaryEvent(data: string): void {
+    if (this._optionsService.options.disableStdin) {
+      return;
+    }
+    this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._onBinary.fire(data);
   }
 }

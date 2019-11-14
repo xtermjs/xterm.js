@@ -49,7 +49,7 @@ declare module 'xterm' {
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
-     * with every new line. This equivalent to sending '\r\n' for each '\n'.
+     * with every new line. This is equivalent to sending '\r\n' for each '\n'.
      * Normally the termios settings of the underlying PTY deals with the
      * translation of '\n' to '\r\n' and this setting should not be used. If you
      * deal with data from a non-PTY related source, this settings might be
@@ -422,6 +422,17 @@ declare module 'xterm' {
     constructor(options?: ITerminalOptions);
 
     /**
+     * Adds an event listener for when a binary event fires. This is used to
+     * enable non UTF-8 conformant binary messages to be sent to the backend.
+     * Currently this is only used for a certain type of mouse reports that
+     * happen to be not UTF-8 compatible.
+     * The event value is a JS string, pass it to the underlying pty as
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBinary: IEvent<string>;
+
+    /**
      * Adds an event listener for the cursor moves.
      * @returns an `IDisposable` to stop listening.
      */
@@ -437,7 +448,7 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for a key is pressed. The event value contains the
+     * Adds an event listener for when a key is pressed. The event value contains the
      * string that will be sent in the data event as well as the DOM event that
      * triggered it.
      * @returns an `IDisposable` to stop listening.
@@ -609,7 +620,7 @@ declare module 'xterm' {
 
     /**
      * Selects text within the terminal.
-     * @param column The column the selection starts at..
+     * @param column The column the selection starts at.
      * @param row The row the selection starts at.
      * @param length The length of the selection.
      */
@@ -918,7 +929,7 @@ declare module 'xterm' {
 
     /**
      * The line within the buffer where the top of the bottom page is (when
-     * fully scrolled down);
+     * fully scrolled down).
      */
     readonly baseY: number;
 
@@ -1047,7 +1058,7 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addCsiHandler or setCsiHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
@@ -1066,7 +1077,7 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addDcsHandler or setDcsHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
@@ -1079,7 +1090,7 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
@@ -1097,7 +1108,7 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addOscHandler or setOscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
