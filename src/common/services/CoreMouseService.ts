@@ -125,6 +125,10 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
    */
   DEFAULT: (e: ICoreMouseEvent) => {
     const params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
+    // supress mouse report if we exceed addressible range
+    // Note this is handled differently by emulators
+    // - xterm:         sends 0;0 coords instead
+    // - vte, konsole:  no report
     if (params[0] > 255 || params[1] > 255 || params[2] > 255) {
       return '';
     }
@@ -264,13 +268,13 @@ export class CoreMouseService implements ICoreMouseService {
 
     // encode report and send
     const report = this._encodings[this._activeEncoding](e);
-    if (this._activeEncoding === 'DEFAULT') {
+    if (report) {
       // always send DEFAULT as binary data
-      if (report) {
+      if (this._activeEncoding === 'DEFAULT') {
         this._coreService.triggerBinaryEvent(report);
+      } else {
+        this._coreService.triggerDataEvent(report, true);
       }
-    } else {
-      this._coreService.triggerDataEvent(report, true);
     }
 
     this._lastEvent = e;
