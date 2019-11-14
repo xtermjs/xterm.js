@@ -33,6 +33,7 @@ export class AttachAddon implements ITerminalAddon {
 
     if (this._bidirectional) {
       this._disposables.push(terminal.onData(data => this._sendData(data)));
+      this._disposables.push(terminal.onBinary(data => this._sendBinary(data)));
     }
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
@@ -50,6 +51,17 @@ export class AttachAddon implements ITerminalAddon {
       return;
     }
     this._socket.send(data);
+  }
+
+  private _sendBinary(data: string): void {
+    if (this._socket.readyState !== 1) {
+      return;
+    }
+    const buffer = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; ++i) {
+      buffer[i] = data.charCodeAt(i) & 255;
+    }
+    this._socket.send(buffer);
   }
 }
 

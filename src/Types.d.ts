@@ -179,6 +179,7 @@ export interface IPublicTerminal extends IDisposable {
   markers: IMarker[];
   onCursorMove: IEvent<void>;
   onData: IEvent<string>;
+  onBinary: IEvent<string>;
   onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   onLineFeed: IEvent<void>;
   onScroll: IEvent<number>;
