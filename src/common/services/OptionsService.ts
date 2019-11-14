@@ -7,7 +7,6 @@ import { IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'comm
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { clone } from 'common/Clone';
-import { setWindowOptions, getWindowOptions, WindowOptions } from 'common/WindowOptions';
 
 // Source: https://freesound.org/people/altemark/sounds/45759/
 // This sound is released under the Creative Commons Attribution 3.0 Unported
@@ -65,7 +64,6 @@ export class OptionsService implements IOptionsService {
   serviceBrand: any;
 
   public options: ITerminalOptions;
-  public windowOptions: WindowOptions = 0;
 
   private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
@@ -78,9 +76,6 @@ export class OptionsService implements IOptionsService {
         this.options[k] = newValue;
       }
     });
-    if (options.windowOptions) {
-      this.windowOptions = setWindowOptions(options.windowOptions as any, 0);
-    }
   }
 
   public setOption(key: string, value: any): void {
@@ -135,8 +130,6 @@ export class OptionsService implements IOptionsService {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
         break;
-      case 'windowOptions':
-        this.windowOptions = setWindowOptions(value, this.windowOptions);
     }
     return value;
   }
@@ -144,9 +137,6 @@ export class OptionsService implements IOptionsService {
   public getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error(`No option with key "${key}"`);
-    }
-    if (key === 'windowOptions') {
-      return getWindowOptions(this.windowOptions);
     }
     return this.options[key];
   }

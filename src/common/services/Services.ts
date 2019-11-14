@@ -7,7 +7,6 @@ import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, IWindowOptions } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { WindowOptions } from 'common/WindowOptions';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -167,7 +166,6 @@ export interface IOptionsService {
   serviceBrand: any;
 
   readonly options: ITerminalOptions;
-  readonly windowOptions: WindowOptions;
 
   readonly onOptionChange: IEvent<string>;
 

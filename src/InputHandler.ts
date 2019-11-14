@@ -18,11 +18,10 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IAttributeData, IDisposable } from 'common/Types';
+import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
-import { hasWindowOption, WindowOptions } from 'common/WindowOptions';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -38,6 +37,39 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  * Limit length of title and icon name stacks.
  */
 const STACK_LIMIT = 10;
+
+// map params to window option
+function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
+  if (n > 24) {
+    return opts.setWinLines || false;
+  }
+  switch (n) {
+    case 1: return opts.restoreWin || false;
+    case 2: return opts.minimizeWin || false;
+    case 3: return opts.setWinPosition || false;
+    case 4: return opts.setWinSizePixels || false;
+    case 5: return opts.raiseWin || false;
+    case 6: return opts.lowerWin || false;
+    case 7: return opts.refreshWin || false;
+    case 8: return opts.setWinSizeChars || false;
+    case 9: return opts.maximizeWin || false;
+    case 10: return opts.fullscreenWin || false;
+    case 11: return opts.getWinState || false;
+    case 13: return opts.getWinPosition || false;
+    case 14: return opts.getWinSizePixels || false;
+    case 15: return opts.getScreenSizePixels || false;
+    case 16: return opts.getCellSizePixels || false;
+    case 18: return opts.getWinSizeChars || false;
+    case 19: return opts.getScreenSizeChars || false;
+    case 20: return opts.getIconTitle || false;
+    case 21: return opts.getWinTitle || false;
+    case 22: return opts.pushTitle || false;
+    case 23: return opts.popTitle || false;
+    case 24: return opts.setWinLines || false;
+  }
+  return false;
+}
+
 
 
 /**
@@ -521,7 +553,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.addCsiHandler(id, params => {
-        if (!hasWindowOption(params.params[0], this._optionsService.windowOptions)) {
+        if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
           return true;
         }
         return callback(params);
@@ -1422,7 +1454,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is listed
            * in `options.windowsOptions`.
            */
-          if (this._optionsService.windowOptions & WindowOptions.setWinLines) {
+          if (this._optionsService.options.windowOptions.setWinLines) {
             this._terminal.resize(132, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -1609,7 +1641,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is listed
            * in `options.windowsOptions`.
            */
-          if (this._optionsService.windowOptions & WindowOptions.setWinLines) {
+          if (this._optionsService.options.windowOptions.setWinLines) {
             this._terminal.resize(80, this._bufferService.rows);
             this._terminal.reset();
           }
@@ -2083,7 +2115,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps >= 24                                                          not implemented
    */
   public windowOptions(params: IParams): void {
-    if (!hasWindowOption(params.params[0], this._optionsService.windowOptions)) {
+    if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
