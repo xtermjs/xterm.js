@@ -348,7 +348,6 @@ describe('InputHandler Integration Tests', function(): void {
 
     describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
       it('should be disabled by default', async function() {
-        assert.equal(await page.evaluate(`(() => window.term.getOption('allowedWindowOps'))()`), '');
         await page.evaluate(`(() => {
           window._stack = [];
           const _h = window.term.onData(data => window._stack.push(data));
@@ -359,13 +358,10 @@ describe('InputHandler Integration Tests', function(): void {
           window.term.write('\x1b[21t');
           return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
         })()`);
-        assert.deepEqual(await page.evaluate(`(() => _stack)()`), []);
+        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
       it('14 - GetWinSizePixels', async function() {
-        assert.equal(await page.evaluate(`(() => {
-          window.term.setOption('allowedWindowOps', 'GetWinSizePixels');
-          return window.term.getOption('allowedWindowOps');
-        })()`), '14');
+        await page.evaluate(`window.term.setOption('windowOptions', {getWinSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
           const _h = window.term.onData(data => window._stack.push(data));
@@ -373,13 +369,10 @@ describe('InputHandler Integration Tests', function(): void {
           return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
         })()`);
         const d = await getDimensions();
-        assert.deepEqual(await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
+        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
       it('16 - GetCellSizePixels', async function() {
-        assert.equal(await page.evaluate(`(() => {
-          window.term.setOption('allowedWindowOps', 'GetCellSizePixels');
-          return window.term.getOption('allowedWindowOps');
-        })()`), '16');
+        await page.evaluate(`window.term.setOption('windowOptions', {getCellSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
           const _h = window.term.onData(data => window._stack.push(data));
@@ -387,7 +380,7 @@ describe('InputHandler Integration Tests', function(): void {
           return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
         })()`);
         const d = await getDimensions();
-        assert.deepEqual(await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
+        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
     });
   });
