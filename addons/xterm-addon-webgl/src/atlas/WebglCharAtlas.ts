@@ -244,7 +244,7 @@ export class WebglCharAtlas implements IDisposable {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          this._config.colors.foreground.rgba;
+          return this._config.colors.foreground.rgba;
         }
         return this._config.colors.background.rgba;
     }
@@ -263,7 +263,7 @@ export class WebglCharAtlas implements IDisposable {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          this._config.colors.background.rgba;
+          return this._config.colors.background.rgba;
         }
         return this._config.colors.foreground.rgba;
     }
