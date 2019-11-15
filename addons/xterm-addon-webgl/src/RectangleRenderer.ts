@@ -254,7 +254,7 @@ export class RectangleRenderer {
         const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
         const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
         const inverse = !!(fg & FgFlags.INVERSE);
-        if (bg !== currentBg || ((inverse || currentInverse) && fg !== currentFg)) {
+        if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color
           if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
