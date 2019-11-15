@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet } from 'browser/Types';
+import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
 import { fromCss, toCss, blend, toRgba } from 'browser/Color';
+import { ColorContrastCache } from 'browser/ColorContrastCache';
 
 const DEFAULT_FOREGROUND = fromCss('#ffffff');
 const DEFAULT_BACKGROUND = fromCss('#000000');
@@ -72,6 +73,7 @@ export class ColorManager implements IColorManager {
   public colors: IColorSet;
   private _ctx: CanvasRenderingContext2D;
   private _litmusColor: CanvasGradient;
+  private _contrastCache: IColorContrastCache;
 
   constructor(document: Document, public allowTransparency: boolean) {
     const canvas = document.createElement('canvas');
@@ -84,6 +86,7 @@ export class ColorManager implements IColorManager {
     this._ctx = ctx;
     this._ctx.globalCompositeOperation = 'copy';
     this._litmusColor = this._ctx.createLinearGradient(0, 0, 1, 1);
+    this._contrastCache = new ColorContrastCache();
     this.colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
@@ -91,8 +94,15 @@ export class ColorManager implements IColorManager {
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
       selectionOpaque: blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
-      ansi: DEFAULT_ANSI_COLORS.slice()
+      ansi: DEFAULT_ANSI_COLORS.slice(),
+      contrastCache: this._contrastCache
     };
+  }
+
+  public onOptionsChange(key: string): void {
+    if (key === 'minimumContrastRatio') {
+      this._contrastCache.clear();
+    }
   }
 
   /**
@@ -123,6 +133,8 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[13] = this._parseColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
     this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
+    // Clear our the cache
+    this._contrastCache.clear();
   }
 
   private _parseColor(

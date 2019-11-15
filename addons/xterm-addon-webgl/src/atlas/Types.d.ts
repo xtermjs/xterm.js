@@ -25,5 +25,7 @@ export interface ICharAtlasConfig {
   scaledCharWidth: number;
   scaledCharHeight: number;
   allowTransparency: boolean;
+  drawBoldTextInBrightColors: boolean;
+  minimumContrastRatio: number;
   colors: IColorSet;
 }

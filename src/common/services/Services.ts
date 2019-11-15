@@ -236,6 +236,7 @@ export interface ITerminalOptions {
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
+  minimumContrastRatio: number;
   rendererType: RendererType;
   rightClickSelectsWord: boolean;
   rows: number;

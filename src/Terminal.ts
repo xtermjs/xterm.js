@@ -332,6 +332,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'lineHeight':
         case 'fontWeight':
         case 'fontWeightBold':
+        case 'minimumContrastRatio':
           // When the font changes the size of the cells may change which requires a renderer clear
           if (this._renderService) {
             this._renderService.clear();
@@ -548,6 +549,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._theme = this.options.theme || this._theme;
     this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this.optionsService.onOptionChange(e => this._colorManager.onOptionsChange(e));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
