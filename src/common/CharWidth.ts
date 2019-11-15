@@ -5,7 +5,7 @@
 
 import { fill } from 'common/TypedArrayUtils';
 
-export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
+export const wcwidthV6 = (function(opts: {nul: number, control: number}): (ucs: number) => number {
   // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
   // combining characters
   const COMBINING_BMP = [
@@ -141,7 +141,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
 /**
  * Get the terminal cell width for a string.
  */
-export function getStringCellWidth(s: string): number {
+export function getStringCellWidthV6(s: string): number {
   let result = 0;
   const length = s.length;
   for (let i = 0; i < length; ++i) {
@@ -154,7 +154,7 @@ export function getStringCellWidth(s: string): number {
         // and therefore always should contain the second part
         // for any other string we still have to handle it somehow:
         // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-        return result + wcwidth(code);
+        return result + wcwidthV6(code);
       }
       const second = s.charCodeAt(i);
       // convert surrogate pair to high codepoint only for valid second part (UTF-16)
@@ -162,10 +162,10 @@ export function getStringCellWidth(s: string): number {
       if (0xDC00 <= second && second <= 0xDFFF) {
         code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
       } else {
-        result += wcwidth(second);
+        result += wcwidthV6(second);
       }
     }
-    result += wcwidth(code);
+    result += wcwidthV6(code);
   }
   return result;
 }
@@ -377,7 +377,7 @@ for (let r = 0; r < WIDE_BMP.length; ++r) {
   fill(TABLE, 2, WIDE_BMP[r][0], WIDE_BMP[r][1] + 1);
 }
 
-export function wcwidth10(num: number): number {
+export function wcwidthV10(num: number): number {
   if (num < 32) {
     return 0;
   }
@@ -390,7 +390,7 @@ export function wcwidth10(num: number): number {
   return wcwidthHigh(num);
 };
 
-export function getStringCellWidth10(s: string): number {
+export function getStringCellWidthV10(s: string): number {
   let result = 0;
   const length = s.length;
   for (let i = 0; i < length; ++i) {
@@ -403,7 +403,7 @@ export function getStringCellWidth10(s: string): number {
         // and therefore always should contain the second part
         // for any other string we still have to handle it somehow:
         // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-        return result + wcwidth10(code);
+        return result + wcwidthV10(code);
       }
       const second = s.charCodeAt(i);
       // convert surrogate pair to high codepoint only for valid second part (UTF-16)
@@ -411,10 +411,10 @@ export function getStringCellWidth10(s: string): number {
       if (0xDC00 <= second && second <= 0xDFFF) {
         code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
       } else {
-        result += wcwidth10(second);
+        result += wcwidthV10(second);
       }
     }
-    result += wcwidth10(code);
+    result += wcwidthV10(code);
   }
   return result;
 }

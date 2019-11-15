@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { wcwidth } from 'common/CharWidth';
+import { wcwidthV6 } from 'common/CharWidth';
 import { IBufferService } from 'common/services/Services';
 import { Linkifier } from 'browser/Linkifier';
 import { MockLogService } from 'common/TestUtils.test';
@@ -762,7 +762,7 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = false;
-        const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
+        const width = wcwidthV6((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
         if (width !== 1) {
           continue;
         }

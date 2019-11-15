@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { wcwidth } from 'common/CharWidth';
+import { wcwidthV6 } from 'common/CharWidth';
 
 it('wcwidth should match all values from the old implementation', function(): void {
   // old implementation
@@ -177,6 +177,6 @@ it('wcwidth should match all values from the old implementation', function(): vo
 
   // test full BMP range old vs new implmenetation
   for (let i = 0; i < 65536; ++i) {
-    assert.equal(wcwidth(i), wcwidthOld(i), `mismatch for i: ${i}`);
+    assert.equal(wcwidthV6(i), wcwidthOld(i), `mismatch for i: ${i}`);
   }
 });

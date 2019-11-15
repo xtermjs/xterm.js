@@ -7,7 +7,7 @@
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { wcwidth, wcwidth10 } from 'common/CharWidth';
+import { wcwidthV6, wcwidthV10 } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
@@ -127,6 +127,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
+  private _wcwidth: (codepoint: number) => number;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -146,6 +147,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
+    this._wcwidth = this._optionsService.options.unicodeVersion === '10' ? wcwidthV10 : wcwidthV6;
+    this._optionsService.onOptionChange(option => {
+      if (option === 'unicodeVersion') {
+        this._wcwidth = this._optionsService.options.unicodeVersion === '10' ? wcwidthV10 : wcwidthV6;
+      }
+    });
 
     this.register(this._parser);
 
@@ -393,8 +400,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      chWidth = wcwidth(code);
-      chWidth = wcwidth10(code);
+      chWidth = this._wcwidth(code);
 
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
