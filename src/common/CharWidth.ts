@@ -5,143 +5,28 @@
 
 import { fill } from 'common/TypedArrayUtils';
 
-export const wcwidthV6 = (function(opts: {nul: number, control: number}): (ucs: number) => number {
-  // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
-  // combining characters
-  const COMBINING_BMP = [
-    [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
-    [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
-    [0x05C4, 0x05C5], [0x05C7, 0x05C7], [0x0600, 0x0603],
-    [0x0610, 0x0615], [0x064B, 0x065E], [0x0670, 0x0670],
-    [0x06D6, 0x06E4], [0x06E7, 0x06E8], [0x06EA, 0x06ED],
-    [0x070F, 0x070F], [0x0711, 0x0711], [0x0730, 0x074A],
-    [0x07A6, 0x07B0], [0x07EB, 0x07F3], [0x0901, 0x0902],
-    [0x093C, 0x093C], [0x0941, 0x0948], [0x094D, 0x094D],
-    [0x0951, 0x0954], [0x0962, 0x0963], [0x0981, 0x0981],
-    [0x09BC, 0x09BC], [0x09C1, 0x09C4], [0x09CD, 0x09CD],
-    [0x09E2, 0x09E3], [0x0A01, 0x0A02], [0x0A3C, 0x0A3C],
-    [0x0A41, 0x0A42], [0x0A47, 0x0A48], [0x0A4B, 0x0A4D],
-    [0x0A70, 0x0A71], [0x0A81, 0x0A82], [0x0ABC, 0x0ABC],
-    [0x0AC1, 0x0AC5], [0x0AC7, 0x0AC8], [0x0ACD, 0x0ACD],
-    [0x0AE2, 0x0AE3], [0x0B01, 0x0B01], [0x0B3C, 0x0B3C],
-    [0x0B3F, 0x0B3F], [0x0B41, 0x0B43], [0x0B4D, 0x0B4D],
-    [0x0B56, 0x0B56], [0x0B82, 0x0B82], [0x0BC0, 0x0BC0],
-    [0x0BCD, 0x0BCD], [0x0C3E, 0x0C40], [0x0C46, 0x0C48],
-    [0x0C4A, 0x0C4D], [0x0C55, 0x0C56], [0x0CBC, 0x0CBC],
-    [0x0CBF, 0x0CBF], [0x0CC6, 0x0CC6], [0x0CCC, 0x0CCD],
-    [0x0CE2, 0x0CE3], [0x0D41, 0x0D43], [0x0D4D, 0x0D4D],
-    [0x0DCA, 0x0DCA], [0x0DD2, 0x0DD4], [0x0DD6, 0x0DD6],
-    [0x0E31, 0x0E31], [0x0E34, 0x0E3A], [0x0E47, 0x0E4E],
-    [0x0EB1, 0x0EB1], [0x0EB4, 0x0EB9], [0x0EBB, 0x0EBC],
-    [0x0EC8, 0x0ECD], [0x0F18, 0x0F19], [0x0F35, 0x0F35],
-    [0x0F37, 0x0F37], [0x0F39, 0x0F39], [0x0F71, 0x0F7E],
-    [0x0F80, 0x0F84], [0x0F86, 0x0F87], [0x0F90, 0x0F97],
-    [0x0F99, 0x0FBC], [0x0FC6, 0x0FC6], [0x102D, 0x1030],
-    [0x1032, 0x1032], [0x1036, 0x1037], [0x1039, 0x1039],
-    [0x1058, 0x1059], [0x1160, 0x11FF], [0x135F, 0x135F],
-    [0x1712, 0x1714], [0x1732, 0x1734], [0x1752, 0x1753],
-    [0x1772, 0x1773], [0x17B4, 0x17B5], [0x17B7, 0x17BD],
-    [0x17C6, 0x17C6], [0x17C9, 0x17D3], [0x17DD, 0x17DD],
-    [0x180B, 0x180D], [0x18A9, 0x18A9], [0x1920, 0x1922],
-    [0x1927, 0x1928], [0x1932, 0x1932], [0x1939, 0x193B],
-    [0x1A17, 0x1A18], [0x1B00, 0x1B03], [0x1B34, 0x1B34],
-    [0x1B36, 0x1B3A], [0x1B3C, 0x1B3C], [0x1B42, 0x1B42],
-    [0x1B6B, 0x1B73], [0x1DC0, 0x1DCA], [0x1DFE, 0x1DFF],
-    [0x200B, 0x200F], [0x202A, 0x202E], [0x2060, 0x2063],
-    [0x206A, 0x206F], [0x20D0, 0x20EF], [0x302A, 0x302F],
-    [0x3099, 0x309A], [0xA806, 0xA806], [0xA80B, 0xA80B],
-    [0xA825, 0xA826], [0xFB1E, 0xFB1E], [0xFE00, 0xFE0F],
-    [0xFE20, 0xFE23], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB]
-  ];
-  const COMBINING_HIGH = [
-    [0x10A01, 0x10A03], [0x10A05, 0x10A06], [0x10A0C, 0x10A0F],
-    [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F], [0x1D167, 0x1D169],
-    [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
-    [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
-    [0xE0100, 0xE01EF]
-  ];
-  // binary search
-  function bisearch(ucs: number, data: number[][]): boolean {
-    let min = 0;
-    let max = data.length - 1;
-    let mid;
-    if (ucs < data[0][0] || ucs > data[max][1]) {
-      return false;
-    }
-    while (max >= min) {
-      mid = (min + max) >> 1;
-      if (ucs > data[mid][1]) {
-        min = mid + 1;
-      } else if (ucs < data[mid][0]) {
-        max = mid - 1;
-      } else {
-        return true;
-      }
-    }
+// helper: binary search
+function bisearch(ucs: number, data: number[][]): boolean {
+  let min = 0;
+  let max = data.length - 1;
+  let mid;
+  if (ucs < data[0][0] || ucs > data[max][1]) {
     return false;
   }
-  function wcwidthHigh(ucs: number): 0 | 1 | 2 {
-    if (bisearch(ucs, COMBINING_HIGH)) {
-      return 0;
+  while (max >= min) {
+    mid = (min + max) >> 1;
+    if (ucs > data[mid][1]) {
+      min = mid + 1;
+    } else if (ucs < data[mid][0]) {
+      max = mid - 1;
+    } else {
+      return true;
     }
-    if ((ucs >= 0x20000 && ucs <= 0x2fffd) || (ucs >= 0x30000 && ucs <= 0x3fffd)) {
-      return 2;
-    }
-    return 1;
   }
-  const control = opts.control | 0;
+  return false;
+}
 
-  // create lookup table for BMP plane
-  const table = new Uint8Array(65536);
-  fill(table, 1);
-  table[0] = opts.nul;
-  // control chars
-  fill(table, opts.control, 1, 32);
-  fill(table, opts.control, 0x7f, 0xa0);
-
-  // apply wide char rules first
-  // wide chars
-  fill(table, 2, 0x1100, 0x1160);
-  table[0x2329] = 2;
-  table[0x232a] = 2;
-  fill(table, 2, 0x2e80, 0xa4d0);
-  table[0x303f] = 1;  // wrongly in last line
-
-  fill(table, 2, 0xac00, 0xd7a4);
-  fill(table, 2, 0xf900, 0xfb00);
-  fill(table, 2, 0xfe10, 0xfe1a);
-  fill(table, 2, 0xfe30, 0xfe70);
-  fill(table, 2, 0xff00, 0xff61);
-  fill(table, 2, 0xffe0, 0xffe7);
-
-  // apply combining last to ensure we overwrite
-  // wrongly wide set chars:
-  //    the original algo evals combining first and falls
-  //    through to wide check so we simply do here the opposite
-  // combining 0
-  for (let r = 0; r < COMBINING_BMP.length; ++r) {
-    fill(table, 0, COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1);
-  }
-
-  return function (num: number): number {
-    if (num < 32) {
-      return control | 0;
-    }
-    if (num < 127) {
-      return 1;
-    }
-    if (num < 65536) {
-      return table[num];
-    }
-    // do a full search for high codepoints
-    return wcwidthHigh(num);
-  };
-})({nul: 0, control: 0});  // configurable options
-
-/**
- * Get the terminal cell width for a string.
- */
-export function getStringCellWidthV6(s: string): number {
+function getStringCellWidthPrivate(wcwidthImpl: (cp: number) => number, s: string): number {
   let result = 0;
   const length = s.length;
   for (let i = 0; i < length; ++i) {
@@ -154,7 +39,7 @@ export function getStringCellWidthV6(s: string): number {
         // and therefore always should contain the second part
         // for any other string we still have to handle it somehow:
         // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-        return result + wcwidthV6(code);
+        return result + wcwidthImpl(code);
       }
       const second = s.charCodeAt(i);
       // convert surrogate pair to high codepoint only for valid second part (UTF-16)
@@ -162,17 +47,119 @@ export function getStringCellWidthV6(s: string): number {
       if (0xDC00 <= second && second <= 0xDFFF) {
         code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
       } else {
-        result += wcwidthV6(second);
+        result += wcwidthImpl(second);
       }
     }
-    result += wcwidthV6(code);
+    result += wcwidthImpl(code);
   }
   return result;
 }
 
+/**
+ * Unicode version 6
+ */
+const BMP_COMBINING_V6 = [
+  [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
+  [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
+  [0x05C4, 0x05C5], [0x05C7, 0x05C7], [0x0600, 0x0603],
+  [0x0610, 0x0615], [0x064B, 0x065E], [0x0670, 0x0670],
+  [0x06D6, 0x06E4], [0x06E7, 0x06E8], [0x06EA, 0x06ED],
+  [0x070F, 0x070F], [0x0711, 0x0711], [0x0730, 0x074A],
+  [0x07A6, 0x07B0], [0x07EB, 0x07F3], [0x0901, 0x0902],
+  [0x093C, 0x093C], [0x0941, 0x0948], [0x094D, 0x094D],
+  [0x0951, 0x0954], [0x0962, 0x0963], [0x0981, 0x0981],
+  [0x09BC, 0x09BC], [0x09C1, 0x09C4], [0x09CD, 0x09CD],
+  [0x09E2, 0x09E3], [0x0A01, 0x0A02], [0x0A3C, 0x0A3C],
+  [0x0A41, 0x0A42], [0x0A47, 0x0A48], [0x0A4B, 0x0A4D],
+  [0x0A70, 0x0A71], [0x0A81, 0x0A82], [0x0ABC, 0x0ABC],
+  [0x0AC1, 0x0AC5], [0x0AC7, 0x0AC8], [0x0ACD, 0x0ACD],
+  [0x0AE2, 0x0AE3], [0x0B01, 0x0B01], [0x0B3C, 0x0B3C],
+  [0x0B3F, 0x0B3F], [0x0B41, 0x0B43], [0x0B4D, 0x0B4D],
+  [0x0B56, 0x0B56], [0x0B82, 0x0B82], [0x0BC0, 0x0BC0],
+  [0x0BCD, 0x0BCD], [0x0C3E, 0x0C40], [0x0C46, 0x0C48],
+  [0x0C4A, 0x0C4D], [0x0C55, 0x0C56], [0x0CBC, 0x0CBC],
+  [0x0CBF, 0x0CBF], [0x0CC6, 0x0CC6], [0x0CCC, 0x0CCD],
+  [0x0CE2, 0x0CE3], [0x0D41, 0x0D43], [0x0D4D, 0x0D4D],
+  [0x0DCA, 0x0DCA], [0x0DD2, 0x0DD4], [0x0DD6, 0x0DD6],
+  [0x0E31, 0x0E31], [0x0E34, 0x0E3A], [0x0E47, 0x0E4E],
+  [0x0EB1, 0x0EB1], [0x0EB4, 0x0EB9], [0x0EBB, 0x0EBC],
+  [0x0EC8, 0x0ECD], [0x0F18, 0x0F19], [0x0F35, 0x0F35],
+  [0x0F37, 0x0F37], [0x0F39, 0x0F39], [0x0F71, 0x0F7E],
+  [0x0F80, 0x0F84], [0x0F86, 0x0F87], [0x0F90, 0x0F97],
+  [0x0F99, 0x0FBC], [0x0FC6, 0x0FC6], [0x102D, 0x1030],
+  [0x1032, 0x1032], [0x1036, 0x1037], [0x1039, 0x1039],
+  [0x1058, 0x1059], [0x1160, 0x11FF], [0x135F, 0x135F],
+  [0x1712, 0x1714], [0x1732, 0x1734], [0x1752, 0x1753],
+  [0x1772, 0x1773], [0x17B4, 0x17B5], [0x17B7, 0x17BD],
+  [0x17C6, 0x17C6], [0x17C9, 0x17D3], [0x17DD, 0x17DD],
+  [0x180B, 0x180D], [0x18A9, 0x18A9], [0x1920, 0x1922],
+  [0x1927, 0x1928], [0x1932, 0x1932], [0x1939, 0x193B],
+  [0x1A17, 0x1A18], [0x1B00, 0x1B03], [0x1B34, 0x1B34],
+  [0x1B36, 0x1B3A], [0x1B3C, 0x1B3C], [0x1B42, 0x1B42],
+  [0x1B6B, 0x1B73], [0x1DC0, 0x1DCA], [0x1DFE, 0x1DFF],
+  [0x200B, 0x200F], [0x202A, 0x202E], [0x2060, 0x2063],
+  [0x206A, 0x206F], [0x20D0, 0x20EF], [0x302A, 0x302F],
+  [0x3099, 0x309A], [0xA806, 0xA806], [0xA80B, 0xA80B],
+  [0xA825, 0xA826], [0xFB1E, 0xFB1E], [0xFE00, 0xFE0F],
+  [0xFE20, 0xFE23], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB]
+];
+const HIGH_COMBINING_V6 = [
+  [0x10A01, 0x10A03], [0x10A05, 0x10A06], [0x10A0C, 0x10A0F],
+  [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F], [0x1D167, 0x1D169],
+  [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
+  [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
+  [0xE0100, 0xE01EF]
+];
 
+// create lookup table for BMP plane
+const BMP_TABLE_V6 = new Uint8Array(65536);
+fill(BMP_TABLE_V6, 1);
+BMP_TABLE_V6[0] = 0;
+// control chars
+fill(BMP_TABLE_V6, 0, 1, 32);
+fill(BMP_TABLE_V6, 0, 0x7f, 0xa0);
 
-const COMBINING_BMP = [
+// apply wide char rules first
+// wide chars
+fill(BMP_TABLE_V6, 2, 0x1100, 0x1160);
+BMP_TABLE_V6[0x2329] = 2;
+BMP_TABLE_V6[0x232a] = 2;
+fill(BMP_TABLE_V6, 2, 0x2e80, 0xa4d0);
+BMP_TABLE_V6[0x303f] = 1;  // wrongly in last line
+
+fill(BMP_TABLE_V6, 2, 0xac00, 0xd7a4);
+fill(BMP_TABLE_V6, 2, 0xf900, 0xfb00);
+fill(BMP_TABLE_V6, 2, 0xfe10, 0xfe1a);
+fill(BMP_TABLE_V6, 2, 0xfe30, 0xfe70);
+fill(BMP_TABLE_V6, 2, 0xff00, 0xff61);
+fill(BMP_TABLE_V6, 2, 0xffe0, 0xffe7);
+
+// apply combining last to ensure we overwrite
+// wrongly wide set chars:
+//    the original algo evals combining first and falls
+//    through to wide check so we simply do here the opposite
+// combining 0
+for (let r = 0; r < BMP_COMBINING_V6.length; ++r) {
+  fill(BMP_TABLE_V6, 0, BMP_COMBINING_V6[r][0], BMP_COMBINING_V6[r][1] + 1);
+}
+
+export function wcwidthV6(num: number): number {
+  if (num < 32) return 0;
+  if (num < 127) return 1;
+  if (num < 65536) return BMP_TABLE_V6[num];
+  if (bisearch(num, HIGH_COMBINING_V6)) return 0;
+  if ((num >= 0x20000 && num <= 0x2fffd) || (num >= 0x30000 && num <= 0x3fffd)) return 2;
+  return 1;
+}
+
+export function getStringCellWidthV6(s: string): number {
+  return getStringCellWidthPrivate(wcwidthV6, s);
+}
+
+/**
+ * Unicode version 10
+ */
+const BMP_COMBINING_V10 = [
   [0x0300, 0x036F], [0x0483, 0x0489], [0x0591, 0x05BD],
   [0x05BF, 0x05BF], [0x05C1, 0x05C2], [0x05C4, 0x05C5],
   [0x05C7, 0x05C7], [0x0600, 0x0605], [0x0610, 0x061A],
@@ -244,10 +231,10 @@ const COMBINING_BMP = [
   [0xAAEC, 0xAAED], [0xAAF6, 0xAAF6], [0xABE5, 0xABE5],
   [0xABE8, 0xABE8], [0xABED, 0xABED], [0xFB1E, 0xFB1E],
   [0xFE00, 0xFE0F], [0xFE20, 0xFE2F], [0xFEFF, 0xFEFF],
-  [0xFFF9, 0xFFFB] 
+  [0xFFF9, 0xFFFB]
 ];
-  
-const COMBINING_HIGH = [
+
+const HIGH_COMBINING_V10 = [
   [0x101FD, 0x101FD], [0x102E0, 0x102E0],
   [0x10376, 0x1037A], [0x10A01, 0x10A03], [0x10A05, 0x10A06],
   [0x10A0C, 0x10A0F], [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F],
@@ -290,7 +277,7 @@ const COMBINING_HIGH = [
   [0xE0100, 0xE01EF]
 ];
 
-const WIDE_BMP = [
+const BMP_WIDE_V10 = [
   [0x1100, 0x115F], [0x231A, 0x231B], [0x2329, 0x232A],
   [0x23E9, 0x23EC], [0x23F0, 0x23F0], [0x23F3, 0x23F3],
   [0x25FD, 0x25FE], [0x2614, 0x2615], [0x2648, 0x2653],
@@ -313,8 +300,8 @@ const WIDE_BMP = [
   [0xFE54, 0xFE66], [0xFE68, 0xFE6B], [0xFF01, 0xFF60],
   [0xFFE0, 0xFFE6]
 ];
-  
-const WIDE_HIGH = [
+
+const HIGH_WIDE_V10 = [
   [0x16FE0, 0x16FE3], [0x17000, 0x187F7],
   [0x18800, 0x18AF2], [0x1B000, 0x1B11E], [0x1B150, 0x1B152],
   [0x1B164, 0x1B167], [0x1B170, 0x1B2FB], [0x1F004, 0x1F004],
@@ -335,86 +322,27 @@ const WIDE_HIGH = [
   [0x1FA90, 0x1FA95], [0x20000, 0x2FFFD], [0x30000, 0x3FFFD]
 ];
 
-function bisearch(ucs: number, data: number[][]): boolean {
-  let min = 0;
-  let max = data.length - 1;
-  let mid;
-  if (ucs < data[0][0] || ucs > data[max][1]) {
-    return false;
-  }
-  while (max >= min) {
-    mid = (min + max) >> 1;
-    if (ucs > data[mid][1]) {
-      min = mid + 1;
-    } else if (ucs < data[mid][0]) {
-      max = mid - 1;
-    } else {
-      return true;
-    }
-  }
-  return false;
+const BMP_TABLE_V10 = new Uint8Array(65536);
+fill(BMP_TABLE_V10, 1);
+BMP_TABLE_V10[0] = 0;
+fill(BMP_TABLE_V10, 0, 1, 32);
+fill(BMP_TABLE_V10, 0, 0x7f, 0xa0);
+for (let r = 0; r < BMP_COMBINING_V10.length; ++r) {
+  fill(BMP_TABLE_V10, 0, BMP_COMBINING_V10[r][0], BMP_COMBINING_V10[r][1] + 1);
 }
-
-function wcwidthHigh(ucs: number): 0 | 1 | 2 {
-  if (bisearch(ucs, COMBINING_HIGH)) {
-    return 0;
-  }
-  if (bisearch(ucs, WIDE_HIGH)) {
-    return 2;
-  }
-  return 1;
-}
-
-
-const TABLE = new Uint8Array(65536);
-fill(TABLE, 1);
-fill(TABLE, 0, 1, 32);
-fill(TABLE, 0, 0x7f, 0xa0);
-for (let r = 0; r < COMBINING_BMP.length; ++r) {
-  fill(TABLE, 0, COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1);
-}
-for (let r = 0; r < WIDE_BMP.length; ++r) {
-  fill(TABLE, 2, WIDE_BMP[r][0], WIDE_BMP[r][1] + 1);
+for (let r = 0; r < BMP_WIDE_V10.length; ++r) {
+  fill(BMP_TABLE_V10, 2, BMP_WIDE_V10[r][0], BMP_WIDE_V10[r][1] + 1);
 }
 
 export function wcwidthV10(num: number): number {
-  if (num < 32) {
-    return 0;
-  }
-  if (num < 127) {
-    return 1;
-  }
-  if (num < 65536) {
-    return TABLE[num];
-  }
-  return wcwidthHigh(num);
-};
+  if (num < 32) return 0;
+  if (num < 127) return 1;
+  if (num < 65536) return BMP_TABLE_V10[num];
+  if (bisearch(num, HIGH_COMBINING_V10)) return 0;
+  if (bisearch(num, HIGH_WIDE_V10)) return 2;
+  return 1;
+}
 
 export function getStringCellWidthV10(s: string): number {
-  let result = 0;
-  const length = s.length;
-  for (let i = 0; i < length; ++i) {
-    let code = s.charCodeAt(i);
-    // surrogate pair first
-    if (0xD800 <= code && code <= 0xDBFF) {
-      if (++i >= length) {
-        // this should not happen with strings retrieved from
-        // Buffer.translateToString as it converts from UTF-32
-        // and therefore always should contain the second part
-        // for any other string we still have to handle it somehow:
-        // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-        return result + wcwidthV10(code);
-      }
-      const second = s.charCodeAt(i);
-      // convert surrogate pair to high codepoint only for valid second part (UTF-16)
-      // otherwise treat them independently (UCS-2 behavior)
-      if (0xDC00 <= second && second <= 0xDFFF) {
-        code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-      } else {
-        result += wcwidthV10(second);
-      }
-    }
-    result += wcwidthV10(code);
-  }
-  return result;
+  return getStringCellWidthPrivate(wcwidthV10, s);
 }
