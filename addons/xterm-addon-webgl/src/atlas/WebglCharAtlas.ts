@@ -234,7 +234,7 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean): number {
+  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
     switch (bgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
@@ -250,7 +250,7 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _resolveForegroundRgba(bgColorMode: number, bgColor: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
+  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
@@ -280,8 +280,8 @@ export class WebglCharAtlas implements IDisposable {
       return adjustedColor || undefined;
     }
 
-    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse);
-    const fgRgba = this._resolveForegroundRgba(bgColorMode, bgColor, fgColorMode, fgColor, inverse, bold);
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
+    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
     const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._config.minimumContrastRatio);
 
     if (!result) {
