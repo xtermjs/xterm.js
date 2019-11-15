@@ -10,7 +10,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 - **Performant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
 - **Rich unicode support**: Supports CJK, emojis and IMEs.
 - **Self-contained**: Requires zero dependencies to work.
-- **Accessible**: Screen reader support can be turned on using the `screenReaderMode` option.
+- **Accessible**: Screen reader and minimum contrast ratio support can be turned on
 - **And much more**: Links, theming, addons, well documented API, etc.
 
 ## What xterm.js is not

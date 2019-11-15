@@ -8,6 +8,7 @@ import { IDisposable } from 'common/Types';
 
 export interface IColorManager {
   colors: IColorSet;
+  onOptionsChange(key: string): void;
 }
 
 export interface IColor {
@@ -24,6 +25,15 @@ export interface IColorSet {
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
   ansi: IColor[];
+  contrastCache: IColorContrastCache;
+}
+
+export interface IColorContrastCache {
+  clear(): void;
+  setCss(bg: number, fg: number, value: string | null): void;
+  getCss(bg: number, fg: number): string | null | undefined;
+  setColor(bg: number, fg: number, value: IColor | null): void;
+  getColor(bg: number, fg: number): IColor | null | undefined;
 }
 
 export interface IPartialColorSet {
