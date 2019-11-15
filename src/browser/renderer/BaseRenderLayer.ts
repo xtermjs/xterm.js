@@ -282,7 +282,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -325,7 +325,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       } else if (cell.isBgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
-        this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+        let bg = cell.getBgColor();
+        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+          bg += 8;
+        }
+        this._ctx.fillStyle = this._colors.ansi[bg].css;
       }
     } else {
       if (cell.isFgDefault()) {
