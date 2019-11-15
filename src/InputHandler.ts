@@ -7,7 +7,7 @@
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { wcwidth } from 'common/CharWidth';
+import { wcwidth, wcwidth10 } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
@@ -394,6 +394,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // calculate print space
       // expensive call, therefore we save width in line buffer
       chWidth = wcwidth(code);
+      chWidth = wcwidth10(code);
 
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
