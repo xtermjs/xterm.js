@@ -7,7 +7,7 @@
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { wcwidthV6, wcwidthV10 } from 'common/CharWidth';
+import { wcwidthV6, wcwidthV11 } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
@@ -147,10 +147,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
-    this._wcwidth = this._optionsService.options.unicodeVersion === '10' ? wcwidthV10 : wcwidthV6;
+    this._wcwidth = this._optionsService.options.unicodeVersion === '11' ? wcwidthV11 : wcwidthV6;
     this._optionsService.onOptionChange(option => {
       if (option === 'unicodeVersion') {
-        this._wcwidth = this._optionsService.options.unicodeVersion === '10' ? wcwidthV10 : wcwidthV6;
+        this._wcwidth = this._optionsService.options.unicodeVersion === '11' ? wcwidthV11 : wcwidthV6;
       }
     });
 

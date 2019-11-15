@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { wcwidthV6 } from 'common/CharWidth';
+import { wcwidthV6, getStringCellWidthV6, getStringCellWidthV11 } from 'common/CharWidth';
 
 it('wcwidth should match all values from the old implementation', function(): void {
   // old implementation
@@ -179,4 +179,11 @@ it('wcwidth should match all values from the old implementation', function(): vo
   for (let i = 0; i < 65536; ++i) {
     assert.equal(wcwidthV6(i), wcwidthOld(i), `mismatch for i: ${i}`);
   }
+});
+
+it('wcwidth V6 vs. V11', () => {
+  const widthV6 = getStringCellWidthV6('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣');
+  assert.equal(widthV6, 10);
+  const widthV10 = getStringCellWidthV11('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣');
+  assert.equal(widthV10, 20);
 });

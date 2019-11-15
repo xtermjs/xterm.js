@@ -257,7 +257,7 @@ function initOptions(term: TerminalType): void {
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
     wordSeparator: null,
-    unicodeVersion: ['6', '10']
+    unicodeVersion: ['6', '11']
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];

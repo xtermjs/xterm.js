@@ -199,6 +199,11 @@ declare module 'xterm' {
     theme?: ITheme;
 
     /**
+     * Unicode version to be used for wcwidth. Default is version 6.
+     */
+    unicodeVersion?: '6' | '11';
+
+    /**
      * Whether "Windows mode" is enabled. Because Windows backends winpty and
      * conpty operate by doing line wrapping on their side, xterm.js does not
      * have access to wrapped lines. When Windows mode is enabled the following

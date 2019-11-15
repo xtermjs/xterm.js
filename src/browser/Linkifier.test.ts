@@ -9,12 +9,12 @@ import { IBufferLine } from 'common/Types';
 import { Linkifier } from 'browser/Linkifier';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockLogService, MockBufferService } from 'common/TestUtils.test';
+import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
 
 class TestLinkifier extends Linkifier {
   constructor(bufferService: IBufferService) {
-    super(bufferService, new MockLogService());
+    super(bufferService, new MockLogService(), new MockOptionsService());
     Linkifier._timeBeforeLatency = 0;
   }
 

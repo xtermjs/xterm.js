@@ -159,7 +159,7 @@ export function getStringCellWidthV6(s: string): number {
 /**
  * Unicode version 10
  */
-const BMP_COMBINING_V10 = [
+const BMP_COMBINING_V11 = [
   [0x0300, 0x036F], [0x0483, 0x0489], [0x0591, 0x05BD],
   [0x05BF, 0x05BF], [0x05C1, 0x05C2], [0x05C4, 0x05C5],
   [0x05C7, 0x05C7], [0x0600, 0x0605], [0x0610, 0x061A],
@@ -234,7 +234,7 @@ const BMP_COMBINING_V10 = [
   [0xFFF9, 0xFFFB]
 ];
 
-const HIGH_COMBINING_V10 = [
+const HIGH_COMBINING_V11 = [
   [0x101FD, 0x101FD], [0x102E0, 0x102E0],
   [0x10376, 0x1037A], [0x10A01, 0x10A03], [0x10A05, 0x10A06],
   [0x10A0C, 0x10A0F], [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F],
@@ -277,7 +277,7 @@ const HIGH_COMBINING_V10 = [
   [0xE0100, 0xE01EF]
 ];
 
-const BMP_WIDE_V10 = [
+const BMP_WIDE_V11 = [
   [0x1100, 0x115F], [0x231A, 0x231B], [0x2329, 0x232A],
   [0x23E9, 0x23EC], [0x23F0, 0x23F0], [0x23F3, 0x23F3],
   [0x25FD, 0x25FE], [0x2614, 0x2615], [0x2648, 0x2653],
@@ -301,7 +301,7 @@ const BMP_WIDE_V10 = [
   [0xFFE0, 0xFFE6]
 ];
 
-const HIGH_WIDE_V10 = [
+const HIGH_WIDE_V11 = [
   [0x16FE0, 0x16FE3], [0x17000, 0x187F7],
   [0x18800, 0x18AF2], [0x1B000, 0x1B11E], [0x1B150, 0x1B152],
   [0x1B164, 0x1B167], [0x1B170, 0x1B2FB], [0x1F004, 0x1F004],
@@ -322,27 +322,27 @@ const HIGH_WIDE_V10 = [
   [0x1FA90, 0x1FA95], [0x20000, 0x2FFFD], [0x30000, 0x3FFFD]
 ];
 
-const BMP_TABLE_V10 = new Uint8Array(65536);
-fill(BMP_TABLE_V10, 1);
-BMP_TABLE_V10[0] = 0;
-fill(BMP_TABLE_V10, 0, 1, 32);
-fill(BMP_TABLE_V10, 0, 0x7f, 0xa0);
-for (let r = 0; r < BMP_COMBINING_V10.length; ++r) {
-  fill(BMP_TABLE_V10, 0, BMP_COMBINING_V10[r][0], BMP_COMBINING_V10[r][1] + 1);
+const BMP_TABLE_V11 = new Uint8Array(65536);
+fill(BMP_TABLE_V11, 1);
+BMP_TABLE_V11[0] = 0;
+fill(BMP_TABLE_V11, 0, 1, 32);
+fill(BMP_TABLE_V11, 0, 0x7f, 0xa0);
+for (let r = 0; r < BMP_COMBINING_V11.length; ++r) {
+  fill(BMP_TABLE_V11, 0, BMP_COMBINING_V11[r][0], BMP_COMBINING_V11[r][1] + 1);
 }
-for (let r = 0; r < BMP_WIDE_V10.length; ++r) {
-  fill(BMP_TABLE_V10, 2, BMP_WIDE_V10[r][0], BMP_WIDE_V10[r][1] + 1);
+for (let r = 0; r < BMP_WIDE_V11.length; ++r) {
+  fill(BMP_TABLE_V11, 2, BMP_WIDE_V11[r][0], BMP_WIDE_V11[r][1] + 1);
 }
 
-export function wcwidthV10(num: number): number {
+export function wcwidthV11(num: number): number {
   if (num < 32) return 0;
   if (num < 127) return 1;
-  if (num < 65536) return BMP_TABLE_V10[num];
-  if (bisearch(num, HIGH_COMBINING_V10)) return 0;
-  if (bisearch(num, HIGH_WIDE_V10)) return 2;
+  if (num < 65536) return BMP_TABLE_V11[num];
+  if (bisearch(num, HIGH_COMBINING_V11)) return 0;
+  if (bisearch(num, HIGH_WIDE_V11)) return 2;
   return 1;
 }
 
-export function getStringCellWidthV10(s: string): number {
-  return getStringCellWidthPrivate(wcwidthV10, s);
+export function getStringCellWidthV11(s: string): number {
+  return getStringCellWidthPrivate(wcwidthV11, s);
 }
