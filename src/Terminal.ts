@@ -43,7 +43,7 @@ import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeDa
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { applyWindowsMode } from './WindowsMode';
+import { handleWindowsModeLineFeed } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
@@ -284,7 +284,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
 
     if (this.options.windowsMode) {
-      this._windowsMode = applyWindowsMode(this);
+      this._enableWindowsMode();
+    }
+  }
+
+  private _enableWindowsMode(): void {
+    if (!this._windowsMode) {
+      this._windowsMode = this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService));
     }
   }
 
@@ -366,9 +372,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
-            if (!this._windowsMode) {
-              this._windowsMode = applyWindowsMode(this);
-            }
+            this._enableWindowsMode();
           } else {
             this._windowsMode?.dispose();
             this._windowsMode = undefined;
