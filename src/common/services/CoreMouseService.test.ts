@@ -79,6 +79,7 @@ describe('CoreMouseService', () => {
       cms = new CoreMouseService(bufferService, coreService);
       reports = [];
       coreService.triggerDataEvent = (data: string, userInput?: boolean) => reports.push(data);
+      coreService.triggerBinaryEvent = (data: string) => reports.push(data);
     });
     it('NONE', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
@@ -143,11 +144,11 @@ describe('CoreMouseService', () => {
         cms.activeProtocol = 'ANY';
         for (let i = 0; i < bufferService.cols; ++i) {
           assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          // capped at 95
-          if (i < 95) {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
+          if (i > 222) {
+            // supress mouse reports if we are out of addressible range (max. 222)
+            assert.deepEqual(toBytes(reports.pop()), []);
           } else {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, 0x7f, 0x21]);
+            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
           }
         }
       });

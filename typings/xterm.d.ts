@@ -434,6 +434,17 @@ declare module 'xterm' {
     constructor(options?: ITerminalOptions);
 
     /**
+     * Adds an event listener for when a binary event fires. This is used to
+     * enable non UTF-8 conformant binary messages to be sent to the backend.
+     * Currently this is only used for a certain type of mouse reports that
+     * happen to be not UTF-8 compatible.
+     * The event value is a JS string, pass it to the underlying pty as
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBinary: IEvent<string>;
+
+    /**
      * Adds an event listener for the cursor moves.
      * @returns an `IDisposable` to stop listening.
      */

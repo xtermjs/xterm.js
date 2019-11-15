@@ -50,8 +50,10 @@ export class MockCoreService implements ICoreService {
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
+  onBinary: IEvent<string> = new EventEmitter<string>().event;
   reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+  triggerBinaryEvent(data: string): void {}
 }
 
 export class MockDirtyRowService implements IDirtyRowService {
