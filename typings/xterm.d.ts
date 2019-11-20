@@ -943,49 +943,6 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents foreground and background color settings of a cell.
-   */
-  interface IBufferCellColor {
-    /**
-     * Color mode of the color setting.
-     * RGB        Color is an RGB color, use `.rgb` to grab the different channels.
-     * P256       Color is an indexed value of the 256 color palette.
-     * P16        Color is an indexed value of the 8 color palette (+8 for AIX bright colors).
-     * DEFAULT    No color set, thus default color should be used.
-     */
-    colorMode: 'RGB' | 'P256' | 'P16' | 'DEFAULT';
-
-    /**
-     * Color value set in the current color mode.
-     * Note that the color value can only be interpreted in conjunction
-     * with the color mode:
-     * RGB      color contains 8 bit channels in RGB32 bitorder, e.g. red << 16 | green << 8 | blue
-     * P256     color contains indexed value 0..255
-     * P16      color contains indexed value 0..15
-     * DEFAULT  color always contains -1
-     */
-    color: number;
-
-    /**
-     * Helper to get RGB channels from color mode RGB. Reports channels as [red, green, blue].
-     */
-    rgb: [number, number, number];
-  }
-
-  /**
-   * Represents style flags of a cell.
-   */
-  interface IBufferCellFlags {
-    readonly bold: boolean;
-    readonly underline: boolean;
-    readonly blink: boolean;
-    readonly inverse: boolean;
-    readonly invisible: boolean;
-    readonly italic: boolean;
-    readonly dim: boolean;
-  }
-
-  /**
    * Represents a single cell in the terminal's buffer.
    */
   interface IBufferCell {
@@ -1003,48 +960,37 @@ declare module 'xterm' {
      */
     readonly width: number;
 
-    /**
-     * Text attribute flags like bold, underline etc.
-     */
-    readonly flags: IBufferCellFlags;
+    getWidth(): number;
+    getChars(): string;
+    getCode(): number;
 
-    /**
-     * Foreground color.
-     */
-    readonly fg: IBufferCellColor;
+    getFgColorMode(): number;
+    getBgColorMode(): number;
+    getFgColor(): number;
+    getBgColor(): number;
 
-    /**
-     * Background color.
-     */
-    readonly bg: IBufferCellColor;
+    isInverse(): number;
+    isBold(): number;
+    isUnderline(): number;
+    isBlink(): number;
+    isInvisible(): number;
+    isItalic(): number;
+    isDim(): number;
 
-    /**
-     * Whether cells have default attributes (flags and colors).
-     */
-    isDefaultAttibutes(): boolean;
+    isFgRGB(): boolean;
+    isBgRGB(): boolean;
+    isFgPalette(): boolean;
+    isBgPalette(): boolean;
+    isFgPalette16(): boolean;
+    isBgPalette16(): boolean;
+    isFgPalette256(): boolean;
+    isBgPalette256(): boolean;
+    isAttributeDefault(): boolean;
+    isFgDefault(): boolean;
+    isBgDefault(): boolean;
 
-    /**
-     * Whether cells have the same text attributes (flags and colors).
-     * @param other Other cell.
-     */
-    equalAttibutes(other: IBufferCell): boolean;
-
-    /**
-     * Whether cells have the same text attribute flags.
-     * @param other Other cell.
-     */
-    equalFlags(other: IBufferCell): boolean;
-
-    /**
-     * Whether cells have the same foreground color.
-     * @param other Other cell.
-     */
-    equalFg(other: IBufferCell): boolean;
-
-    /**
-     * Whether cells have the same background color.
-     * @param other Other cell.
-     */
-    equalBg(other: IBufferCell): boolean;
+    equalFg(cell: IBufferCell): boolean;
+    equalBg(cell: IBufferCell): boolean;
+    equalFlags(cell: IBufferCell): boolean;
   }
 }

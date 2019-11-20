@@ -14,7 +14,7 @@
     "lint": "tslint 'src/**/*.ts' 'addons/**/*.ts'",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
-    "test-api": "mocha \"**/SerializeAddon.api.js\"",
+    "test-api": "mocha \"**/*.api.js\"",
     "test-unit": "node ./bin/test.js",
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run build",
