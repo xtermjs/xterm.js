@@ -22,12 +22,12 @@ abstract class BaseSerializeHandler {
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
-    this.serializeStart(endRow - startRow);
+    this._serializeStart(endRow - startRow);
 
     for (let row = startRow; row < endRow; row++) {
       const line = this._buffer.getLine(row);
 
-      this.lineStart(row);
+      this._lineStart(row);
 
       if (line) {
         for (let col = 0; col < line.length; col++) {
@@ -38,41 +38,41 @@ abstract class BaseSerializeHandler {
             continue;
           }
           if (!newCell.equalFg(oldCell) || !newCell.equalBg(oldCell)) {
-            this.cellFgBgChanged(newCell, oldCell, row, col);
+            this._cellFgBgChanged(newCell, oldCell, row, col);
           }
           if (!newCell.equalFlags(oldCell)) {
-            this.cellFlagsChanged(newCell, oldCell, row, col);
+            this._cellFlagsChanged(newCell, oldCell, row, col);
           }
 
-          this.nextCell(newCell, oldCell, row, col);
+          this._nextCell(newCell, oldCell, row, col);
 
           oldCell = newCell;
         }
       }
 
-      this.lineEnd(row);
+      this._lineEnd(row);
     }
 
-    this.serializeEnd();
+    this._serializeEnd();
 
-    return this.serializeFinished();
+    return this._serializeFinished();
   }
 
-  protected nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
+  protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
+  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
+  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected lineStart(row: number): void { }
+  protected _lineStart(row: number): void { }
 
-  protected lineEnd(row: number): void { }
+  protected _lineEnd(row: number): void { }
 
-  protected serializeStart(rows: number): void { }
+  protected _serializeStart(rows: number): void { }
 
-  protected serializeEnd(): void { }
+  protected _serializeEnd(): void { }
 
-  protected serializeFinished(): string { return ''; }
+  protected _serializeFinished(): string { return ''; }
 }
 
 class StringSerializeHandler extends BaseSerializeHandler {
@@ -85,16 +85,16 @@ class StringSerializeHandler extends BaseSerializeHandler {
     super(buffer);
   }
 
-  protected serializeStart(rows: number): void {
+  protected _serializeStart(rows: number): void {
     this._allRows = new Array<string>(rows);
   }
 
-  protected lineEnd(row: number): void {
+  protected _lineEnd(row: number): void {
     this._allRows[this._rowIndex++] = this._currentRow;
     this._currentRow = '';
   }
 
-  protected cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const sgrSeq = this._sgrSeq;
 
     // skip if it's default color style, we will use \x1b[0m to clear every color style later
@@ -109,7 +109,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
   }
 
-  protected cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const sgrSeq = this._sgrSeq;
 
     // skip if it's default color style, we will use \x1b[0m to clear every color style later
@@ -132,7 +132,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     }
   }
 
-  protected nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+  protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const fgChanged = !cell.equalFg(oldCell);
     const bgChanged = !cell.equalBg(oldCell);
     const flagsChanged = !cell.equalFlags(oldCell);
@@ -149,7 +149,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._currentRow += cell.char;
   }
 
-  protected serializeFinished(): string {
+  protected _serializeFinished(): string {
     let rowEnd = this._allRows.length;
 
     for (; rowEnd > 0; rowEnd--) {

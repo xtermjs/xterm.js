@@ -252,10 +252,10 @@ class BufferCellApiView implements IBufferCellApi {
   public isBgRGB(): boolean { return this.cell.isBgRGB(); }
   public isFgPalette(): boolean { return this.cell.isFgPalette(); }
   public isBgPalette(): boolean { return this.cell.isBgPalette(); }
-  public isFgPalette16(): boolean { return this.cell.getFgColorMode() == Attributes.CM_P16; }
-  public isBgPalette16(): boolean { return this.cell.getBgColorMode() == Attributes.CM_P16; }
-  public isFgPalette256(): boolean { return this.cell.getFgColorMode() == Attributes.CM_P256; }
-  public isBgPalette256(): boolean { return this.cell.getBgColorMode() == Attributes.CM_P256; }
+  public isFgPalette16(): boolean { return this.cell.getFgColorMode() === Attributes.CM_P16; }
+  public isBgPalette16(): boolean { return this.cell.getBgColorMode() === Attributes.CM_P16; }
+  public isFgPalette256(): boolean { return this.cell.getFgColorMode() === Attributes.CM_P256; }
+  public isBgPalette256(): boolean { return this.cell.getBgColorMode() === Attributes.CM_P256; }
 
   public isAttributeDefault(): boolean { return this.cell.fg === 0 && this.cell.bg === 0; }
   public isFgDefault(): boolean { return this.cell.isFgDefault(); }
