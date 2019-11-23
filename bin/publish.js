@@ -105,7 +105,7 @@ function getNextBetaVersion(packageJson) {
     return aVersion > bVersion ? -1 : 1;
   })[0];
   const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/[0-9]+$/)), 10);
-  return `${nextStableVersion}-${tag}${latestTagVersion + 1}`;
+  return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
 function getPublishedVersions(packageJson, version, tag) {
