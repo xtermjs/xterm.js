@@ -37,6 +37,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
+  private _isAttached: boolean;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
   public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
@@ -89,6 +90,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
+
+    this._isAttached = document.body.contains(this._core.screenElement);
   }
 
   public dispose(): void {
@@ -99,7 +102,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
       l.setColors(this._terminal, this._colors);
@@ -192,6 +194,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    */
   private _refreshCharAtlas(): void {
     if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {
+      // Mark as not attached so char atlas gets refreshed on next render
+      this._isAttached = false;
       return;
     }
 
@@ -217,6 +221,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public renderRows(start: number, end: number): void {
+    if (!this._isAttached) {
+      if (document.body.contains(this._core.screenElement) && (<any>this._core)._charSizeService.width && (<any>this._core)._charSizeService.height) {
+        this._updateDimensions();
+        this._refreshCharAtlas();
+        this._isAttached = true;
+      } else {
+        return;
+      }
+    }
+
     // Update render layers
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
