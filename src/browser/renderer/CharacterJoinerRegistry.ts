@@ -303,7 +303,6 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
           // current range
           ranges[i - 1][1] = Math.max(newRange[1], range[1]);
           ranges.splice(i, 1);
-          inRange = false;
           return ranges;
         }
 

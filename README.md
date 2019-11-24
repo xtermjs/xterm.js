@@ -10,7 +10,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 - **Performant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
 - **Rich unicode support**: Supports CJK, emojis and IMEs.
 - **Self-contained**: Requires zero dependencies to work.
-- **Accessible**: Screen reader support can be turned on using the `screenReaderMode` option.
+- **Accessible**: Screen reader and minimum contrast ratio support can be turned on
 - **And much more**: Links, theming, addons, well documented API, etc.
 
 ## What xterm.js is not
@@ -32,8 +32,8 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 <!doctype html>
   <html>
     <head>
-      <link rel="stylesheet" href="node_modules/xterm/dist/xterm.css" />
-      <script src="node_modules/xterm/dist/xterm.js"></script>
+      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+      <script src="node_modules/xterm/lib/xterm.js"></script>
     </head>
     <body>
       <div id="terminal"></div>
@@ -110,7 +110,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using xterm.js, socket.io, and ssh2.
 - [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE.
 - [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
-- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses xterm.js.
+- [**Next Tech**](https://next.tech "Next Tech"): Online platform for interactive coding and web development courses. Live container-backed terminal uses xterm.js.
 - [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
 - [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
 - [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.
@@ -154,6 +154,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**PHP App Server**](https://github.com/cubiclesoft/php-app-server/): Create lightweight, installable almost-native applications for desktop OSes.  ExecTerminal (nicely wraps the xterm.js Terminal), TerminalManager, and RunProcessSDK are self-contained, reusable ES5+ compliant Javascript components.
 - [**NgTerminal**](https://github.com/qwefgh90/ng-terminal): NgTerminal is a web terminal that leverages xterm.js on Angular 7+. You can easily add it into your application by adding `<ng-terminal></ng-terminal>` into your component.
 - [**tty-share**](https://tty-share.com): Extremely simple terminal sharing over the Internet.
+- [**Ten Hands**](https://github.com/saisandeepvaddi/ten-hands): One place to run your command-line tasks.
+- [**WebAssembly.sh**](https://webassembly.sh): A WebAssembly WASI browser terminal
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 

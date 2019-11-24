@@ -12,9 +12,9 @@ import { Terminal } from '../out/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
+import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
-import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -34,20 +34,48 @@ export interface IWindowWithTerminal extends Window {
   AttachAddon?: typeof AttachAddon;
   FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
+  SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
-  SerializeAddon?: typeof SerializeAddon;
 }
 declare let window: IWindowWithTerminal;
 
 let term;
-let fitAddon: FitAddon;
-let searchAddon: SearchAddon;
-let serializeAddon: SerializeAddon;
 let protocol;
 let socketURL;
 let socket;
 let pid;
+
+type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'web-links' | 'webgl';
+
+interface IDemoAddon<T extends AddonType> {
+  name: T;
+  canChange: boolean;
+  ctor:
+    T extends 'attach' ? typeof AttachAddon :
+    T extends 'fit' ? typeof FitAddon :
+    T extends 'search' ? typeof SearchAddon :
+    T extends 'serialize' ? typeof SerializeAddon :
+    T extends 'web-links' ? typeof WebLinksAddon :
+    typeof WebglAddon;
+  instance?:
+    T extends 'attach' ? AttachAddon :
+    T extends 'fit' ? FitAddon :
+    T extends 'search' ? SearchAddon :
+    T extends 'serialize' ? SerializeAddon :
+    T extends 'web-links' ? WebLinksAddon :
+    T extends 'webgl' ? WebglAddon :
+    never;
+}
+
+const addons: { [T in AddonType]: IDemoAddon<T>} = {
+  attach: { name: 'attach', ctor: AttachAddon, canChange: false },
+  fit: { name: 'fit', ctor: FitAddon, canChange: false },
+  search: { name: 'search', ctor: SearchAddon, canChange: true },
+  serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
+  'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
+  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true }
+};
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
@@ -96,7 +124,6 @@ if (document.location.pathname === '/test') {
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
-  document.getElementById('webgl').addEventListener('click', () => term.loadAddon(new WebglAddon()));
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
 }
 
@@ -113,13 +140,14 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as TerminalType;
-  typedTerm.loadAddon(new WebLinksAddon());
-  searchAddon = new SearchAddon();
-  typedTerm.loadAddon(searchAddon);
-  fitAddon = new FitAddon();
-  typedTerm.loadAddon(fitAddon);
-  serializeAddon = new SerializeAddon();
-  typedTerm.loadAddon(serializeAddon);
+  addons.search.instance = new SearchAddon();
+  addons.serialize.instance = new SerializeAddon();
+  addons.fit.instance = new FitAddon();
+  addons['web-links'].instance = new WebLinksAddon();
+  typedTerm.loadAddon(addons.fit.instance);
+  typedTerm.loadAddon(addons.search.instance);
+  typedTerm.loadAddon(addons.serialize.instance);
+  typedTerm.loadAddon(addons['web-links'].instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -136,17 +164,17 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  fitAddon.fit();
+  addons.fit.instance!.fit();
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
 
   addDomListener(actionElements.findNext, 'keyup', (e) => {
-    searchAddon.findNext(actionElements.findNext.value, getSearchOptions(e));
+    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
-    searchAddon.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
   });
 
   // fit is called within a setTimeout, cols and rows need this.
@@ -174,15 +202,10 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  /**
-   * The demo defaults to string transport by default.
-   * To run it with UTF8 binary transport, swap comment on
-   * the lines below. (Must also be switched in server.js)
-   */
-  term.loadAddon(new AttachAddon(socket));
-  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
-
+  addons.attach.instance = new AttachAddon(socket);
+  term.loadAddon(addons.attach.instance);
   term._initialized = true;
+  initAddons(term);
 }
 
 function runFakeTerminal(): void {
@@ -191,6 +214,7 @@ function runFakeTerminal(): void {
   }
 
   term._initialized = true;
+  initAddons(term);
 
   term.prompt = () => {
     term.write('\r\n$ ');
@@ -235,6 +259,7 @@ function initOptions(term: TerminalType): void {
     bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
+    fastScrollModifier: ['alt', 'ctrl', 'shift', undefined],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -267,7 +292,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
@@ -296,7 +321,7 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
-      } else if (o === 'lineHeight') {
+      } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
         term.setOption(o, parseFloat(input.value));
         updateTerminalSize();
       } else {
@@ -313,6 +338,40 @@ function initOptions(term: TerminalType): void {
   });
 }
 
+function initAddons(term: TerminalType): void {
+  const fragment = document.createDocumentFragment();
+  Object.keys(addons).forEach((name: AddonType) => {
+    const addon = addons[name];
+    const checkbox = document.createElement('input') as HTMLInputElement;
+    checkbox.type = 'checkbox';
+    checkbox.checked = !!addon.instance;
+    if (!addon.canChange) {
+      checkbox.disabled = true;
+    }
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        addon.instance = new addon.ctor();
+        term.loadAddon(addon.instance);
+      } else {
+        addon.instance!.dispose();
+        addon.instance = undefined;
+      }
+    });
+    const label = document.createElement('label');
+    label.classList.add('addon');
+    if (!addon.canChange) {
+      label.title = 'This addon is needed for the demo to operate';
+    }
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(name));
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('addon');
+    wrapper.appendChild(label);
+    fragment.appendChild(wrapper);
+  });
+  document.getElementById('addons-container').appendChild(fragment);
+}
+
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
   term._core.register({ dispose: () => element.removeEventListener(type, handler) });
@@ -325,11 +384,11 @@ function updateTerminalSize(): void {
   const height = (rows * term._core._renderService.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
-  fitAddon.fit();
+  addons.fit.instance.fit();
 }
 
 function serializeButtonHandler(): void {
-  const output = serializeAddon.serialize();
+  const output = addons.serialize.instance.serialize();
   const outputString = JSON.stringify(output);
   console.log('serialize output', outputString);
 

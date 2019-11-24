@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, CoreMouseEventType } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
@@ -15,14 +15,10 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
-import { IParams } from 'common/parser/Types';
+import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
-  writeSync(data: string): void {
-    this.writeBuffer.push(data);
-    this._innerWrite();
-  }
   keyDown(ev: any): boolean { return this._keyDown(ev); }
   keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
@@ -36,6 +32,7 @@ export class MockTerminal implements ITerminal {
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;
   onData: IEvent<string>;
+  onBinary: IEvent<string>;
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
@@ -68,17 +65,26 @@ export class MockTerminal implements ITerminal {
   writeln(data: string): void {
     throw new Error('Method not implemented.');
   }
+  paste(data: string): void {
+    throw new Error('Method not implemented.');
+  }
   open(parent: HTMLElement): void {
     throw new Error('Method not implemented.');
   }
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    throw new Error('Method not implemented.');
+  }
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+    throw new Error('Method not implemented.');
+  }
+  addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    throw new Error('Method not implemented.');
   }
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
     throw new Error('Method not implemented.');
@@ -210,7 +216,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   x10Mouse: boolean;
   vt200Mouse: boolean;
   normalMouse: boolean;
-  mouseEvents: boolean;
+  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
   utfMouse: boolean;
   sgrMouse: boolean;
@@ -357,6 +363,7 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
   onCanvasResize: IEvent<{ width: number; height: number; }>;
   onRender: IEvent<{ start: number; end: number; }>;
   dispose(): void {
@@ -401,13 +408,13 @@ export class MockViewport implements IViewport {
   onThemeChange(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  onWheel(ev: WheelEvent): void {
+  onWheel(ev: WheelEvent): boolean {
     throw new Error('Method not implemented.');
   }
   onTouchStart(ev: TouchEvent): void {
     throw new Error('Method not implemented.');
   }
-  onTouchMove(ev: TouchEvent): void {
+  onTouchMove(ev: TouchEvent): boolean {
     throw new Error('Method not implemented.');
   }
   syncScrollArea(): void { }

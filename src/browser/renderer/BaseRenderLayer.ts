@@ -5,16 +5,17 @@
 
 import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
 import { ICellData } from 'common/Types';
-import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IColor } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { toCss, ensureContrastRatioRgba } from 'browser/Color';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -60,9 +61,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public dispose(): void {
     this._container.removeChild(this._canvas);
-    if (this._charAtlas) {
-      this._charAtlas.dispose();
-    }
+    this._charAtlas?.dispose();
   }
 
   private _initCanvas(): void {
@@ -264,13 +263,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
+    const contrastColor = this._getContrastColor(cell);
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
     //       in the cache handler itself (atlasDidDraw == false) and
     //       fall through to uncached later down below
-    if (cell.isFgRGB() || cell.isBgRGB()) {
-      this._drawUncachedChars(cell, x, y);
+    if (contrastColor || cell.isFgRGB() || cell.isBgRGB()) {
+      this._drawUncachedChars(cell, x, y, contrastColor);
       return;
     }
 
@@ -284,7 +284,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -316,21 +316,29 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChars(cell: ICellData, x: number, y: number): void {
+  private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
     this._ctx.textBaseline = 'middle';
 
     if (cell.isInverse()) {
-      if (cell.isBgDefault()) {
+      if (fgOverride) {
+        this._ctx.fillStyle = fgOverride.css;
+      } else if (cell.isBgDefault()) {
         this._ctx.fillStyle = this._colors.background.css;
       } else if (cell.isBgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
-        this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+        let bg = cell.getBgColor();
+        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+          bg += 8;
+        }
+        this._ctx.fillStyle = this._colors.ansi[bg].css;
       }
     } else {
-      if (cell.isFgDefault()) {
+      if (fgOverride) {
+        this._ctx.fillStyle = fgOverride.css;
+      } else if (cell.isFgDefault()) {
         this._ctx.fillStyle = this._colors.foreground.css;
       } else if (cell.isFgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
@@ -380,6 +388,89 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontStyle = isItalic ? 'italic' : '';
 
     return `${fontStyle} ${fontWeight} ${this._optionsService.options.fontSize * window.devicePixelRatio}px ${this._optionsService.options.fontFamily}`;
+  }
+
+  private _getContrastColor(cell: CellData): IColor | undefined {
+    if (this._optionsService.options.minimumContrastRatio === 1) {
+      return undefined;
+    }
+
+    // Try get from cache first
+    const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
+    if (adjustedColor !== undefined) {
+      return adjustedColor || undefined;
+    }
+
+    let fgColor = cell.getFgColor();
+    let fgColorMode = cell.getFgColorMode();
+    let bgColor = cell.getBgColor();
+    let bgColorMode = cell.getBgColorMode();
+    const isInverse = !!cell.isInverse();
+    const isBold = !!cell.isInverse();
+    if (isInverse) {
+      const temp = fgColor;
+      fgColor = bgColor;
+      bgColor = temp;
+      const temp2 = fgColorMode;
+      fgColorMode = bgColorMode;
+      bgColorMode = temp2;
+    }
+
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
+    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
+    const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
+
+    if (!result) {
+      this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
+      return undefined;
+    }
+
+    const color: IColor = {
+      css: toCss(
+        (result >> 24) & 0xFF,
+        (result >> 16) & 0xFF,
+        (result >> 8) & 0xFF
+      ),
+      rgba: result
+    };
+    this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+
+    return color;
+  }
+
+  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
+    switch (bgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._colors.ansi[bgColor].rgba;
+      case Attributes.CM_RGB:
+        return bgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._colors.foreground.rgba;
+        }
+        return this._colors.background.rgba;
+    }
+  }
+
+  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
+    switch (fgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        if (this._optionsService.options.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._colors.ansi[fgColor].rgba;
+      case Attributes.CM_RGB:
+        return fgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._colors.background.rgba;
+        }
+        return this._colors.foreground.rgba;
+    }
   }
 }
 

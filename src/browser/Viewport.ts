@@ -7,7 +7,7 @@ import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -37,6 +37,7 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -60,7 +61,14 @@ export class Viewport extends Disposable implements IViewport {
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
    */
-  private _refresh(): void {
+  private _refresh(immediate: boolean): void {
+    if (immediate) {
+      this._innerRefresh();
+      if (this._refreshAnimationFrame !== null) {
+        cancelAnimationFrame(this._refreshAnimationFrame);
+      }
+      return;
+    }
     if (this._refreshAnimationFrame === null) {
       this._refreshAnimationFrame = requestAnimationFrame(() => this._innerRefresh());
     }
@@ -88,40 +96,39 @@ export class Viewport extends Disposable implements IViewport {
 
     this._refreshAnimationFrame = null;
   }
-
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
-  public syncScrollArea(): void {
+  public syncScrollArea(immediate: boolean = false): void {
     // If buffer height changed
     if (this._lastRecordedBufferLength !== this._bufferService.buffer.lines.length) {
       this._lastRecordedBufferLength = this._bufferService.buffer.lines.length;
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If viewport height changed
     if (this._lastRecordedViewportHeight !== this._renderService.dimensions.canvasHeight) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If the buffer position doesn't match last scroll top
     const newScrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
     if (this._lastScrollTop !== newScrollTop) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If element's scroll top changed, this can happen when hiding the element
     if (this._lastScrollTop !== this._viewportElement.scrollTop) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
 
     // If row height changed
     if (this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
-      this._refresh();
+      this._refresh(immediate);
       return;
     }
   }
@@ -153,19 +160,35 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   /**
+   * Handles bubbling of scroll event in case the viewport has reached top or bottom
+   * @param ev The scroll event.
+   * @param amount The amount scrolled
+   */
+  private _bubbleScroll(ev: Event, amount: number): boolean {
+    const scrollPosFromTop = this._viewportElement.scrollTop + this._lastRecordedViewportHeight;
+    if ((amount < 0 && this._viewportElement.scrollTop !== 0) ||
+        (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
+      if (ev.cancelable) {
+        ev.preventDefault();
+      }
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Handles mouse wheel events by adjusting the viewport's scrollTop and delegating the actual
    * scrolling to `onScroll`, this event needs to be attached manually by the consumer of
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): void {
+  public onWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
     if (amount === 0) {
-      return;
+      return false;
     }
     this._viewportElement.scrollTop += amount;
-    // Prevent the page from scrolling when the terminal scrolls
-    ev.preventDefault();
+    return this._bubbleScroll(ev, amount);
   }
 
   private _getPixelsScrolled(ev: WheelEvent): number {
@@ -175,7 +198,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let amount = ev.deltaY;
+    let amount = this._applyScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
@@ -196,7 +219,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Fallback to WheelEvent.DOM_DELTA_LINE
-    let amount = ev.deltaY;
+    let amount = this._applyScrollModifier(ev.deltaY, ev);
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
       amount /= this._currentRowHeight + 0.0; // Prevent integer division
       this._wheelPartialScroll += amount;
@@ -206,6 +229,18 @@ export class Viewport extends Disposable implements IViewport {
       amount *= this._bufferService.rows;
     }
     return amount;
+  }
+
+  private _applyScrollModifier(amount: number, ev: WheelEvent): number {
+    const modifier = this._optionsService.options.fastScrollModifier;
+    // Multiply the scroll speed when the modifier is down
+    if ((modifier === 'alt' && ev.altKey) ||
+        (modifier === 'ctrl' && ev.ctrlKey) ||
+        (modifier === 'shift' && ev.shiftKey)) {
+      return amount * this._optionsService.options.fastScrollSensitivity * this._optionsService.options.scrollSensitivity;
+    }
+
+    return amount * this._optionsService.options.scrollSensitivity;
   }
 
   /**
@@ -220,13 +255,13 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): void {
+  public onTouchMove(ev: TouchEvent): boolean {
     const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
-      return;
+      return false;
     }
     this._viewportElement.scrollTop += deltaY;
-    ev.preventDefault();
+    return this._bubbleScroll(ev, deltaY);
   }
 }

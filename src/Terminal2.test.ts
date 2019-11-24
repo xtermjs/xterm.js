@@ -17,12 +17,6 @@ const ROWS = 25;
 
 const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
 const SKIP_FILES = [
-  't0070-DECSTBM_LF.in',      // lineFeed not working correctly
-  't0071-DECSTBM_IND.in',
-  't0072-DECSTBM_NEL.in',
-  't0075-DECSTBM_CUU_CUD.in',
-  't0076-DECSTBM_IL_DL.in',   // not working due to lineFeed
-  't0077-DECSTBM_quirks.in',
   't0084-CBT.in',
   't0101-NLM.in',
   't0103-reverse_wrap.in',
@@ -40,9 +34,8 @@ if (os.platform() === 'darwin') {
 // filter skipFilenames
 const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slice(-1)[0]) === -1);
 
-
 describe('Escape Sequence Files', function(): void {
-  this.timeout(20000);
+  this.timeout(1000);
 
   let ptyTerm: any;
   let slaveEnd: any;
@@ -50,6 +43,9 @@ describe('Escape Sequence Files', function(): void {
   let customHandler: IDisposable | undefined;
 
   before(() => {
+    if (process.platform === 'win32') {
+      return;
+    }
     ptyTerm = (pty as any).open({cols: COLS, rows: ROWS});
     slaveEnd = ptyTerm._slave;
     term = new Terminal({cols: COLS, rows: ROWS});
@@ -57,12 +53,15 @@ describe('Escape Sequence Files', function(): void {
   });
 
   after(() => {
+    if (process.platform === 'win32') {
+      return;
+    }
     ptyTerm._master.end();
     ptyTerm._master.destroy();
   });
 
   FILES.forEach(filename => {
-    it(filename.split('/').slice(-1)[0], async () => {
+    (process.platform === 'win32' ? it.skip : it)(filename.split('/').slice(-1)[0], async () => {
       // reset terminal and handler
       if (customHandler) {
         customHandler.dispose();

@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { Attributes } from 'common/buffer/Constants';
 import { Terminal, FontWeight } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 
@@ -21,9 +21,11 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     cursor: NULL_COLOR,
     cursorAccent: NULL_COLOR,
     selection: NULL_COLOR,
+    selectionOpaque: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
-    ansi: colors.ansi.slice()
+    ansi: colors.ansi.slice(),
+    contrastCache: colors.contrastCache
   };
   return {
     devicePixelRatio: window.devicePixelRatio,
@@ -34,6 +36,8 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     fontWeight: terminal.getOption('fontWeight') as FontWeight,
     fontWeightBold: terminal.getOption('fontWeightBold') as FontWeight,
     allowTransparency: terminal.getOption('allowTransparency'),
+    drawBoldTextInBrightColors: terminal.getOption('drawBoldTextInBrightColors'),
+    minimumContrastRatio: terminal.getOption('minimumContrastRatio'),
     colors: clonedColors
   };
 }
@@ -52,10 +56,12 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.allowTransparency === b.allowTransparency &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
+      a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&
+      a.minimumContrastRatio === b.minimumContrastRatio &&
       a.colors.foreground === b.colors.foreground &&
       a.colors.background === b.colors.background;
 }
 
 export function is256Color(colorCode: number): boolean {
-  return colorCode < DEFAULT_COLOR;
+  return (colorCode & Attributes.CM_MASK) === Attributes.CM_P16 || (colorCode & Attributes.CM_MASK) === Attributes.CM_P256;
 }

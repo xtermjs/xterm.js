@@ -4,6 +4,7 @@
  */
 
 import { ISelectionService } from 'browser/services/Services';
+import { ICoreService } from 'common/services/Services';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
@@ -41,22 +42,19 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
  * @param ev The original paste event to be handled
  * @param term The terminal on which to apply the handled paste event
  */
-export function pasteHandler(ev: ClipboardEvent, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, triggerUserInput: (data: string) => void): void {
+export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, coreService: ICoreService): void {
   ev.stopPropagation();
-
-  let text: string;
-
-  const dispatchPaste = function(text: string): void {
-    text = prepareTextForTerminal(text);
-    text = bracketTextForPaste(text, bracketedPasteMode);
-    triggerUserInput(text);
-    textarea.value = '';
-  };
-
   if (ev.clipboardData) {
-    text = ev.clipboardData.getData('text/plain');
-    dispatchPaste(text);
+    const text = ev.clipboardData.getData('text/plain');
+    paste(text, textarea, bracketedPasteMode, coreService);
   }
+}
+
+export function paste(text: string, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, coreService: ICoreService): void {
+  text = prepareTextForTerminal(text);
+  text = bracketTextForPaste(text, bracketedPasteMode);
+  coreService.triggerDataEvent(text, true);
+  textarea.value = '';
 }
 
 /**
@@ -84,12 +82,12 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   // Reset the terminal textarea's styling
   // Timeout needs to be long enough for click event to be handled.
   setTimeout(() => {
-    textarea.style.position = null;
-    textarea.style.width = null;
-    textarea.style.height = null;
-    textarea.style.left = null;
-    textarea.style.top = null;
-    textarea.style.zIndex = null;
+    textarea.style.position = '';
+    textarea.style.width = '';
+    textarea.style.height = '';
+    textarea.style.left = '';
+    textarea.style.top = '';
+    textarea.style.zIndex = '';
   }, 200);
 }
 
