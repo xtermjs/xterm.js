@@ -4,7 +4,6 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import * as util from 'util';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 
@@ -17,42 +16,30 @@ const height = 600;
 
 describe('SerializeAddon', () => {
   before(async function (): Promise<any> {
-    this.timeout(20000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
-      devtools: true,
       args: [`--window-size=${width},${height}`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
-  });
-
-  after(async () => {
-    await browser.close();
-  });
-
-  beforeEach(async function (): Promise<any> {
-    this.timeout(20000);
     await page.goto(APP);
-  });
-
-  it('empty content', async function (): Promise<any> {
-    this.timeout(20000);
-    const rows = 10;
-    const cols = 10;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
+    await openTerminal({ rows: 10, cols: 10, rendererType: 'dom' });
     await page.evaluate(`
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
     `);
+  });
 
+  after(async () => await browser.close());
+  beforeEach(async () => await page.evaluate(`window.term.reset()`));
+
+  it('empty content', async function (): Promise<any> {
+    const rows = 10;
+    const cols = 10;
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
   });
 
   it('trim last empty lines', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const lines = [
       '',
@@ -67,70 +54,37 @@ describe('SerializeAddon', () => {
       '',
       ''
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.slice(0, 8).join('\r\n'));
   });
 
   it('digits content', async function (): Promise<any> {
-    this.timeout(20000);
     const rows = 10;
     const cols = 10;
     const digitsLine = digitsString(cols);
     const lines = newArray<string>(digitsLine, rows);
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize half rows of content', async function (): Promise<any> {
-    this.timeout(20000);
     const rows = 10;
     const halfRows = rows >> 1;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(halfRows, 2 * halfRows).join('\r\n'));
   });
 
   it('serialize 0 rows of content', async function (): Promise<any> {
-    this.timeout(20000);
     const rows = 10;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), '');
   });
 
   it('serialize all rows of content with color16', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const color16 = [
       30, 31, 32, 33, 34, 35, 36, 37, // Set foreground color
@@ -143,19 +97,11 @@ describe('SerializeAddon', () => {
       (index: number) => digitsString(cols, index, `\x1b[${color16[index % color16.length]}m`),
       rows
     );
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with fg/bg flags', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -172,38 +118,22 @@ describe('SerializeAddon', () => {
       mkSGR(NO_INVISIBLE) + line
     ];
     const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with color256', async function (): Promise<any> {
-    this.timeout(20000);
     const rows = 32;
     const cols = 10;
     const lines = newArray<string>(
       (index: number) => digitsString(cols, index, `\x1b[38;5;${index}m`),
       rows
     );
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with color16 and style separately', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -218,20 +148,11 @@ describe('SerializeAddon', () => {
       mkSGR(BG_RESET) + line,       // Underlined, Inverse
       mkSGR(NORMAL) + line          // Back to normal
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with color16 and style together', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -249,20 +170,11 @@ describe('SerializeAddon', () => {
       mkSGR(FG_RESET, ITALIC) + line,             // bg Yellow, Italic
       mkSGR(BG_RESET) + line                      // Italic
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with color256 and style separately', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -277,20 +189,11 @@ describe('SerializeAddon', () => {
       mkSGR(BG_RESET) + line,       // Underlined, Inverse
       mkSGR(NORMAL) + line          // Back to normal
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with color256 and style together', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -308,20 +211,11 @@ describe('SerializeAddon', () => {
       mkSGR(FG_RESET, ITALIC) + line,               // bg Yellow 256, Italic
       mkSGR(BG_RESET) + line                        // Italic
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with colorRGB and style separately', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -336,20 +230,11 @@ describe('SerializeAddon', () => {
       mkSGR(BG_RESET) + line,       // Underlined, Inverse
       mkSGR(NORMAL) + line          // Back to normal
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize all rows of content with colorRGB and style together', async function (): Promise<any> {
-    this.timeout(20000);
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -367,15 +252,7 @@ describe('SerializeAddon', () => {
       mkSGR(FG_RESET, ITALIC) + line,             // bg Yellow RGB, Italic
       mkSGR(BG_RESET) + line                      // Italic
     ];
-    const rows = lines.length;
-
-    await openTerminal({ rows: rows, cols: cols, rendererType: 'dom' });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
-      window.term.write(${util.inspect(lines.join('\r\n'))});
-    `);
-
+    await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 });
@@ -456,3 +333,23 @@ const DIM = '2';
 
 const NO_ITALIC = '23';
 const NO_DIM = '22';
+
+async function writeSync(page: puppeteer.Page, data: string): Promise<void> {
+  await page.evaluate(`
+    window.ready = false;
+    window.term.write('${data}', () => window.ready = true);
+  `);
+  await pollFor(page, 'window.ready', true);
+}
+
+async function pollFor(page: puppeteer.Page, fn: string, val: any, preFn?: () => Promise<void>): Promise<void> {
+  if (preFn) {
+    await preFn();
+  }
+  const result = await page.evaluate(fn);
+  if (result !== val) {
+    return new Promise<void>(r => {
+      setTimeout(() => r(pollFor(page, fn, val, preFn)), 10);
+    });
+  }
+}
