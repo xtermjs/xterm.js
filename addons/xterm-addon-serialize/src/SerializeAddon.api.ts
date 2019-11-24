@@ -255,6 +255,15 @@ describe('SerializeAddon', () => {
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
+
+  it('serialize tabs correctly', async () =>  {
+    const lines = [
+      'a\tb',
+      'foo\tbar\tbaz'
+    ];
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
