@@ -101,7 +101,6 @@ export class GlyphRenderer {
     private _dimensions: IRenderDimensions
   ) {
     const gl = this._gl;
-
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
     this._program = program;
 
