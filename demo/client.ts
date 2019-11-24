@@ -21,6 +21,7 @@ import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 // import { AttachAddon } from 'xterm-addon-attach';
 // import { FitAddon } from 'xterm-addon-fit';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+// import { SerializeAddon } from 'xterm-addon-serialize';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
 
