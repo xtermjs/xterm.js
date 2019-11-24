@@ -175,11 +175,9 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     // Find the active zone, prevent event propagation if found to prevent other
     // components from handling the mouse event.
     const zone = this._findZoneEventAt(e);
-    if (zone) {
-      if (zone.willLinkActivate(e)) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-      }
+    if (zone?.willLinkActivate(e)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
   }
 

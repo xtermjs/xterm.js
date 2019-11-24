@@ -1,12 +1,13 @@
 {
   "name": "xterm-addon-web-links",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
   "main": "lib/xterm-addon-web-links.js",
   "types": "typings/xterm-addon-web-links.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "scripts": {
     "build": "../../node_modules/.bin/tsc -p src",
@@ -15,6 +16,6 @@
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
-    "xterm": "^3.14.0"
+    "xterm": "^4.0.0"
   }
 }

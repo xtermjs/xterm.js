@@ -6,6 +6,8 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
+import { readFile } from 'fs';
+import { resolve } from 'path';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -15,13 +17,12 @@ const width = 800;
 const height = 600;
 
 describe('Search Tests', function (): void {
-  this.timeout(200000);
+  this.timeout(20000);
 
   before(async function (): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
-      args: [`--window-size=${width},${height}`]
+      args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
@@ -91,12 +92,100 @@ describe('Search Tests', function (): void {
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
     assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
   });
-  it ('Simple Regex', async () => {
+  it('Simple Regex', async () => {
     await writeSync('abc123defABCD');
     await page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
     await page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'ABCD');
+  });
+
+  it('Search for single result twice should not unselect it', async () => {
+    await writeSync('abc def');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('abc')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('abc')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
+  });
+
+  describe('Regression tests', () => {
+    describe('#2444 wrapped line content not being found', () => {
+      let fixture: string;
+      before(async () => {
+        const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)));
+        fixture = rawFixture.toString()
+          .replace(/\n/g, '\\n\\r')
+          .replace(/'/g, '\\\'');
+      });
+      it('should find all occurrences using findNext', async () => {
+        await writeSync(fixture);
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        let selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 76, endColumn: 30, endRow: 76 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 96, endColumn: 30, endRow: 96 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 114, endColumn: 7, endRow: 114 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 115, endColumn: 17, endRow: 115 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 126, endColumn: 7, endRow: 126 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 127, endColumn: 17, endRow: 127 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 135, endColumn: 7, endRow: 135 });
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+        // Wrap around to first result
+        assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+      });
+      it('should find all occurrences using findPrevious', async () => {
+        await writeSync(fixture);
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        let selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 135, endColumn: 7, endRow: 135 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 127, endColumn: 17, endRow: 127 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 126, endColumn: 7, endRow: 126 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 115, endColumn: 17, endRow: 115 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 114, endColumn: 7, endRow: 114 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 96, endColumn: 30, endRow: 96 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 76, endColumn: 30, endRow: 76 });
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+        // Wrap around to first result
+        assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
+        selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+      });
+    });
   });
 });
 
@@ -111,12 +200,7 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 }
 
 async function writeSync(data: string): Promise<void> {
-  await page.evaluate(`window.term.write('${data}');`);
-  while (true) {
-    if (await page.evaluate(`window.term._core.writeBuffer.length === 0`)) {
-      break;
-    }
-  }
+  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`);
 }
 
 function makeData(length: number): string {

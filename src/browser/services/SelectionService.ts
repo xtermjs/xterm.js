@@ -210,7 +210,7 @@ export class SelectionService implements ISelectionService {
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
         const bufferLine = buffer.lines.get(i);
         const lineText = buffer.translateBufferLineToString(i, true);
-        if (bufferLine!.isWrapped) {
+        if (bufferLine && bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -221,7 +221,7 @@ export class SelectionService implements ISelectionService {
       if (start[1] !== end[1]) {
         const bufferLine = buffer.lines.get(end[1]);
         const lineText = buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-        if (bufferLine!.isWrapped) {
+        if (bufferLine && bufferLine!.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -563,9 +563,10 @@ export class SelectionService implements ISelectionService {
     // to be sent to the pty.
     event.stopImmediatePropagation();
 
-    // Something went wrong
+    // Do nothing if there is no selection start, this can happen if the first
+    // click in the terminal is an incremental click
     if (!this._model.selectionStart) {
-      throw new Error('Selection start position was not set before mousemove event');
+      return;
     }
 
     // Record the previous position so we know whether to redraw the selection
@@ -663,7 +664,7 @@ export class SelectionService implements ISelectionService {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      if (event.altKey) {
+      if (event.altKey && this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
           this._element,
@@ -687,9 +688,7 @@ export class SelectionService implements ISelectionService {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    if (this._trimListener) {
-      this._trimListener.dispose();
-    }
+    this._trimListener.dispose();
     this._trimListener = e.activeBuffer.lines.onTrim(amount => this._onTrim(amount));
   }
 

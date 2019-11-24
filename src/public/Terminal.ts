@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -16,6 +16,7 @@ import { IParams } from 'common/parser/Types';
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
+  private _parser: IParser;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
@@ -26,14 +27,21 @@ export class Terminal implements ITerminalApi {
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onData(): IEvent<string> { return this._core.onData; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
-  public get element(): HTMLElement { return this._core.element; }
-  public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
+  public get element(): HTMLElement | undefined { return this._core.element; }
+  public get parser(): IParser {
+    if (!this._parser) {
+      this._parser = new ParserApi(this._core);
+    }
+    return this._parser;
+  }
+  public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
@@ -48,20 +56,11 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public writeln(data: string): void {
-    this._core.writeln(data);
-  }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
-  }
-  public addCsiHandler(flag: string, callback: (params: (number | number[])[], collect: string) => boolean): IDisposable {
-    return this._core.addCsiHandler(flag, (params: IParams, collect: string) => callback(params.toArray(), collect));
-  }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._core.addOscHandler(ident, callback);
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
     return this._core.registerLinkMatcher(regex, handler, options);
@@ -127,11 +126,18 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array): void {
-    this._core.writeUtf8(data);
+  public writeUtf8(data: Uint8Array, callback?: () => void): void {
+    this._core.write(data, callback);
+  }
+  public writeln(data: string | Uint8Array, callback?: () => void): void {
+    this._core.write(data);
+    this._core.write('\r\n', callback);
+  }
+  public paste(data: string): void {
+    this._core.paste(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
@@ -164,9 +170,6 @@ export class Terminal implements ITerminalApi {
   public reset(): void {
     this._core.reset();
   }
-  public static applyAddon(addon: any): void {
-    addon.apply(Terminal);
-  }
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
   }
@@ -176,8 +179,8 @@ export class Terminal implements ITerminalApi {
 
   private _verifyIntegers(...values: number[]): void {
     values.forEach(value => {
-      if (value % 1 !== 0) {
-        throw new Error('This API does not accept floating point numbers');
+      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
+        throw new Error('This API only accepts integers');
       }
     });
   }
@@ -219,4 +222,21 @@ class BufferCellApiView implements IBufferCellApi {
   constructor(private _line: IBufferLine, private _x: number) {}
   public get char(): string { return this._line.getString(this._x); }
   public get width(): number { return this._line.getWidth(this._x); }
+}
+
+class ParserApi implements IParser {
+  constructor(private _core: ITerminal) {}
+
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
+  }
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
+  }
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this._core.addEscHandler(id, handler);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._core.addOscHandler(ident, callback);
+  }
 }

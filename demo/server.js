@@ -3,12 +3,8 @@ var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
 
-/**
- * Whether to use UTF8 binary transport.
- * (Must also be switched in client.ts)
- */
-const USE_BINARY_UTF8 = false;
-
+// Whether to use binary transport.
+const USE_BINARY = os.platform() !== "win32";
 
 function startServer() {
   var app = express();
@@ -18,25 +14,26 @@ function startServer() {
       logs = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
-  app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
+  app.get('/logo.png', (req, res) => { // lgtm [js/missing-rate-limiting]
+    res.sendFile(__dirname + '/logo.png');
+  });
 
-  app.get('/', function(req, res){
+  app.get('/', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/index.html');
   });
 
-  app.get('/test', function(req, res){
+  app.get('/test', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/test.html');
   });
 
-  app.get('/style.css', function(req, res){
+  app.get('/style.css', (req, res) => { // lgtm [js/missing-rate-limiting]
     res.sendFile(__dirname + '/style.css');
   });
 
-  app.get('/dist/client-bundle.js', function(req, res){
-    res.sendFile(__dirname + '/dist/client-bundle.js');
-  });
+  app.use('/dist', express.static(__dirname + '/dist'));
+  app.use('/src', express.static(__dirname + '/src'));
 
-  app.post('/terminals', function (req, res) {
+  app.post('/terminals', (req, res) => {
     const env = Object.assign({}, process.env);
     env['COLORTERM'] = 'truecolor';
     var cols = parseInt(req.query.cols),
@@ -47,7 +44,7 @@ function startServer() {
           rows: rows || 24,
           cwd: env.PWD,
           env: env,
-          encoding: USE_BINARY_UTF8 ? null : 'utf8'
+          encoding: USE_BINARY ? null : 'utf8'
         });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -60,7 +57,7 @@ function startServer() {
     res.end();
   });
 
-  app.post('/terminals/:pid/size', function (req, res) {
+  app.post('/terminals/:pid/size', (req, res) => {
     var pid = parseInt(req.params.pid),
         cols = parseInt(req.query.cols),
         rows = parseInt(req.query.rows),
@@ -109,7 +106,7 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
     term.on('data', function(data) {
       try {

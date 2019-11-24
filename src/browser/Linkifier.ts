@@ -211,7 +211,7 @@ export class Linkifier implements ILinkifier {
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
     // clone regex to do a global search on text
-    const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
+    const rex = new RegExp(matcher.regex.source, (matcher.regex.flags || '') + 'g');
     let match;
     let stringIndex = -1;
     while ((match = rex.exec(text)) !== null) {
@@ -306,7 +306,9 @@ export class Linkifier implements ILinkifier {
       e => {
         this._onLinkTooltip.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         if (matcher.hoverTooltipCallback) {
-          matcher.hoverTooltipCallback(e, uri);
+          // Note that IViewportRange use 1-based coordinates to align with escape sequences such
+          // as CUP which use 1,1 as the default for row/col
+          matcher.hoverTooltipCallback(e, uri, { start: { x: x1, y: y1 }, end: { x: x2, y: y2 } });
         }
       },
       () => {

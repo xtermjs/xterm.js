@@ -8,7 +8,8 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IEventEmitter } from 'common/EventEmitter';
 
 interface ICursorState {
   x: number;
@@ -29,7 +30,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
   private _cell: ICellData = new CellData();
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>
+  ) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {
       x: 0,
@@ -70,14 +76,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
   public onFocus(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume(terminal);
     } else {
-      terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
     }
   }
 
@@ -89,13 +95,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
         });
       }
     } else {
-      if (this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager.dispose();
-      }
-      // Request a refresh from the terminal as management of rendering is being
-      // moved back to the terminal
-      terminal.refresh(terminal.buffer.cursorY, terminal.buffer.cursorY);
+      this._cursorBlinkStateManager?.dispose();
+      this._cursorBlinkStateManager = undefined;
     }
+    // Request a refresh from the terminal as management of rendering is being
+    // moved back to the terminal
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
   public onCursorMove(terminal: Terminal): void {
@@ -115,7 +120,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _render(terminal: Terminal, triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
     // TODO: Need to expose API for this
-    if (!(terminal as any)._core.cursorState || (terminal as any)._core.cursorHidden) {
+    if (!(terminal as any)._core._coreService.isCursorInitialized || (terminal as any)._core._coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }
@@ -139,12 +144,17 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      const cursorStyle = terminal.getOption('cursorStyle');
+      if (cursorStyle && cursorStyle !== 'block') {
+        this._cursorRenderers[cursorStyle](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      } else {
+        this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+      }
       this._ctx.restore();
       this._state.x = terminal.buffer.cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
-      this._state.style = terminal.getOption('cursorStyle');
+      this._state.style = cursorStyle;
       this._state.width = this._cell.getWidth();
       return;
     }
