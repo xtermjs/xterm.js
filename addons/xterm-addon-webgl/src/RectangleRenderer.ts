@@ -22,13 +22,13 @@ const enum VertexAttribLocations {
 const vertexShaderSource = `#version 300 es
 layout (location = ${VertexAttribLocations.POSITION}) in vec2 a_position;
 layout (location = ${VertexAttribLocations.SIZE}) in vec2 a_size;
-layout (location = ${VertexAttribLocations.COLOR}) in vec3 a_color;
+layout (location = ${VertexAttribLocations.COLOR}) in vec4 a_color;
 layout (location = ${VertexAttribLocations.UNIT_QUAD}) in vec2 a_unitquad;
 
 uniform mat4 u_projection;
 uniform vec2 u_resolution;
 
-out vec3 v_color;
+out vec4 v_color;
 
 void main() {
   vec2 zeroToOne = (a_position + (a_unitquad * a_size)) / u_resolution;
@@ -39,12 +39,12 @@ void main() {
 const fragmentShaderSource = `#version 300 es
 precision lowp float;
 
-in vec3 v_color;
+in vec4 v_color;
 
 out vec4 outColor;
 
 void main() {
-  outColor = vec4(v_color, 1);
+  outColor = v_color;
 }`;
 
 interface IVertices {

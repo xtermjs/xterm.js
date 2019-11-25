@@ -228,7 +228,12 @@ export class WebglCharAtlas implements IDisposable {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          return this._config.colors.background.css;
+          const bg = this._config.colors.background.css;
+          if (bg.length === 9) {
+            // Remove bg alpha channel if present
+            return bg.substr(0, 7);
+          }
+          return bg;
         }
         return this._config.colors.foreground.css;
     }
