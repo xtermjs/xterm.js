@@ -5,7 +5,7 @@
 
 import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { fromCss, toCss, blend, toRgba } from 'browser/Color';
+import { fromCss, toCss, blend, toRgba, toPaddedHex } from 'browser/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 
 const DEFAULT_FOREGROUND = fromCss('#ffffff');
@@ -159,28 +159,55 @@ export class ColorManager implements IColorManager {
     this._ctx.fillRect(0, 0, 1, 1);
     const data = this._ctx.getImageData(0, 0, 1, 1).data;
 
-    if (!allowTransparency && data[3] !== 0xFF) {
-      // Ideally we'd just ignore the alpha channel, but...
-      //
-      // Browsers may not give back exactly the same RGB values we put in, because most/all
-      // convert the color to a pre-multiplied representation. getImageData converts that back to
-      // a un-premultipled representation, but the precision loss may make the RGB channels unuable
-      // on their own.
-      //
-      // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
-      // into 0x00000000.
-      //
-      // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
-      // pixels that have just been set using putImageData() might be returned to an equivalent
-      // getImageData() as different values."
-      // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
-      //
-      // So let's just use the fallback color in this case instead.
-      console.warn(
-        `Color: ${css} is using transparency, but allowTransparency is false. ` +
-        `Using fallback ${fallback.css}.`
-      );
-      return fallback;
+    // Check if the printed color was transparent
+    if (data[3] !== 0xFF) {
+      if (!allowTransparency) {
+        // Ideally we'd just ignore the alpha channel, but...
+        //
+        // Browsers may not give back exactly the same RGB values we put in, because most/all
+        // convert the color to a pre-multiplied representation. getImageData converts that back to
+        // a un-premultipled representation, but the precision loss may make the RGB channels unuable
+        // on their own.
+        //
+        // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
+        // into 0x00000000.
+        //
+        // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
+        // pixels that have just been set using putImageData() might be returned to an equivalent
+        // getImageData() as different values."
+        // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
+        //
+        // So let's just use the fallback color in this case instead.
+        console.warn(
+          `Color: ${css} is using transparency, but allowTransparency is false. ` +
+          `Using fallback ${fallback.css}.`
+        );
+        return fallback;
+      }
+      let r: number;
+      let g: number;
+      let b: number;
+      let a: number;
+      let rgba: number;
+      if (css.length === 5) {
+        const num = parseInt(css.substr(1), 16);
+        r = ((num >> 12) & 0xF) * 16;
+        g = ((num >> 8) & 0xF) * 16;
+        b = ((num >> 4) & 0xF) * 16;
+        a = (num & 0xF) * 16;
+        rgba = (r << 24) | (g << 16) | (b << 8) | a;
+      } else {
+        rgba = parseInt(css.substr(1), 16);
+        r = (rgba >> 24) & 0xFF;
+        g = (rgba >> 16) & 0xFF;
+        b = (rgba >>  8) & 0xFF;
+        a = (rgba      ) & 0xFF;
+      }
+
+      return {
+        rgba,
+        css: toCss(r, g, b, a)
+      };
     }
 
     return {

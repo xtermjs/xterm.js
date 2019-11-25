@@ -39,7 +39,10 @@ export function toPaddedHex(c: number): string {
   return s.length < 2 ? '0' + s : s;
 }
 
-export function toCss(r: number, g: number, b: number): string {
+export function toCss(r: number, g: number, b: number, a?: number): string {
+  if (a !== undefined) {
+    return `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}${toPaddedHex(a)}`;
+  }
   return `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}`;
 }
 
