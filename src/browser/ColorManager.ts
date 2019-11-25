@@ -195,7 +195,7 @@ export class ColorManager implements IColorManager {
         g = ((num >> 8) & 0xF) * 16;
         b = ((num >> 4) & 0xF) * 16;
         a = (num & 0xF) * 16;
-        rgba = (r << 24) | (g << 16) | (b << 8) | a;
+        rgba = toRgba(r, g, b, a);
       } else {
         rgba = parseInt(css.substr(1), 16);
         r = (rgba >> 24) & 0xFF;
