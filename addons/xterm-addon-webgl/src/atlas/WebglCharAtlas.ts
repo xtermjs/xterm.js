@@ -6,7 +6,7 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
@@ -529,21 +529,4 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
 function toPaddedHex(c: number): string {
   const s = c.toString(16);
   return s.length < 2 ? '0' + s : s;
-}
-
-function getFgColor(fg: number): number {
-  switch (fg & Attributes.CM_MASK) {
-    case Attributes.CM_P16:
-    case Attributes.CM_P256:  return fg & Attributes.PCOLOR_MASK;
-    case Attributes.CM_RGB:   return fg & Attributes.RGB_MASK;
-    default:                  return -1;  // CM_DEFAULT defaults to -1
-  }
-}
-function getBgColor(bg: number): number {
-  switch (bg & Attributes.CM_MASK) {
-    case Attributes.CM_P16:
-    case Attributes.CM_P256:  return bg & Attributes.PCOLOR_MASK;
-    case Attributes.CM_RGB:   return bg & Attributes.RGB_MASK;
-    default:                  return -1;  // CM_DEFAULT defaults to -1
-  }
 }
