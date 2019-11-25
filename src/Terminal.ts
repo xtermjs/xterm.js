@@ -43,7 +43,7 @@ import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeDa
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { applyWindowsMode } from './WindowsMode';
+import { handleWindowsModeLineFeed } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
@@ -169,6 +169,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
+  private _onBinary = new EventEmitter<string>();
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -221,6 +223,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
+    this._coreService.onBinary(e => this._onBinary.fire(e));
     this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
@@ -281,7 +284,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
 
     if (this.options.windowsMode) {
-      this._windowsMode = applyWindowsMode(this);
+      this._enableWindowsMode();
+    }
+  }
+
+  private _enableWindowsMode(): void {
+    if (!this._windowsMode) {
+      this._windowsMode = this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService));
     }
   }
 
@@ -329,6 +338,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'lineHeight':
         case 'fontWeight':
         case 'fontWeightBold':
+        case 'minimumContrastRatio':
           // When the font changes the size of the cells may change which requires a renderer clear
           if (this._renderService) {
             this._renderService.clear();
@@ -362,9 +372,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
-            if (!this._windowsMode) {
-              this._windowsMode = applyWindowsMode(this);
-            }
+            this._enableWindowsMode();
           } else {
             this._windowsMode?.dispose();
             this._windowsMode = undefined;
@@ -545,6 +553,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._theme = this.options.theme || this._theme;
     this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this.optionsService.onOptionChange(e => this._colorManager.onOptionsChange(e));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();

@@ -11,6 +11,7 @@ import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockOptionsService } from 'common/TestUtils.test';
+import { fromCss } from 'browser/Color';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -19,7 +20,30 @@ describe('DomRendererRowFactory', () => {
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
-    rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }));
+    rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }), {
+      background: fromCss('#010101'),
+      foreground: fromCss('#020202'),
+      ansi: [
+        // dark:
+        fromCss('#2e3436'),
+        fromCss('#cc0000'),
+        fromCss('#4e9a06'),
+        fromCss('#c4a000'),
+        fromCss('#3465a4'),
+        fromCss('#75507b'),
+        fromCss('#06989a'),
+        fromCss('#d3d7cf'),
+        // bright:
+        fromCss('#555753'),
+        fromCss('#ef2929'),
+        fromCss('#8ae234'),
+        fromCss('#fce94f'),
+        fromCss('#729fcf'),
+        fromCss('#ad7fa8'),
+        fromCss('#34e2e2'),
+        fromCss('#eeeeec')
+      ]
+    } as any);
     lineData = createEmptyLineData(2);
   });
 
@@ -142,7 +166,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-bg-2 xterm-fg-1">a</span>'
+          '<span class="xterm-fg-1 xterm-bg-2">a</span>'
         );
       });
 
@@ -153,7 +177,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-bg-257 xterm-fg-1">a</span>'
+          '<span class="xterm-fg-1 xterm-bg-257">a</span>'
         );
       });
 
@@ -163,7 +187,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-bg-1 xterm-fg-257">a</span>'
+          '<span class="xterm-fg-257 xterm-bg-1">a</span>'
         );
       });
 
@@ -188,7 +212,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="color:rgb(1,2,3);background-color:rgb(4,5,6);">a</span>'
+          '<span style="color:#010203;background-color:#040506;">a</span>'
         );
       });
 
@@ -199,7 +223,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="background-color:rgb(1,2,3);color:rgb(4,5,6);">a</span>'
+          '<span style="color:#040506;background-color:#010203;">a</span>'
         );
       });
     });

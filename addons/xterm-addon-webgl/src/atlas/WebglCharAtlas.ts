@@ -6,11 +6,12 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, FgFlags, Attributes, BgFlags } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { toCss, ensureContrastRatioRgba } from 'browser/Color';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -67,8 +68,12 @@ export class WebglCharAtlas implements IDisposable {
   public hasCanvasChanged = false;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
+  private _workAttributeData: AttributeData = new AttributeData();
 
-  constructor(document: Document, private _config: ICharAtlasConfig) {
+  constructor(
+    document: Document,
+    private _config: ICharAtlasConfig
+  ) {
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
     this.cacheCanvas.height = TEXTURE_HEIGHT;
@@ -176,53 +181,122 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bg: number, fg: number): IColor {
+  private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (fg & FgFlags.INVERSE) {
-      return this._config.colors.foreground;
     }
 
-    const colorMode = bg & Attributes.CM_MASK;
-    switch (colorMode) {
+    switch (bgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(bg & Attributes.PCOLOR_MASK);
+        return this._getColorFromAnsiIndex(bgColor);
       case Attributes.CM_RGB:
-        const rgb = bg & Attributes.RGB_MASK;
-        const arr = AttributeData.toColorRGB(rgb);
+        const arr = AttributeData.toColorRGB(bgColor);
         // TODO: This object creation is slow
         return {
-          rgba: rgb << 8,
+          rgba: bgColor << 8,
           css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
         };
       case Attributes.CM_DEFAULT:
       default:
+        if (inverse) {
+          return this._config.colors.foreground;
+        }
         return this._config.colors.background;
     }
   }
 
-  private _getForegroundCss(fg: number): string {
-    if (fg & FgFlags.INVERSE) {
-      return this._config.colors.background.css;
+  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
+    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
+    if (minimumContrastCss) {
+      return minimumContrastCss;
     }
 
-    const colorMode = fg & Attributes.CM_MASK;
-    switch (colorMode) {
+    switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(fg & Attributes.PCOLOR_MASK).css;
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._getColorFromAnsiIndex(fgColor).css;
       case Attributes.CM_RGB:
-        const rgb = fg & Attributes.RGB_MASK;
-        const arr = AttributeData.toColorRGB(rgb);
-        return `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`;
+        const arr = AttributeData.toColorRGB(fgColor);
+        return toCss(arr[0], arr[1], arr[2]);
       case Attributes.CM_DEFAULT:
       default:
+        if (inverse) {
+          return this._config.colors.background.css;
+        }
         return this._config.colors.foreground.css;
     }
+  }
+
+  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
+    switch (bgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(bgColor).rgba;
+      case Attributes.CM_RGB:
+        return bgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._config.colors.foreground.rgba;
+        }
+        return this._config.colors.background.rgba;
+    }
+  }
+
+  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
+    switch (fgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._getColorFromAnsiIndex(fgColor).rgba;
+      case Attributes.CM_RGB:
+        return fgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._config.colors.background.rgba;
+        }
+        return this._config.colors.foreground.rgba;
+    }
+  }
+
+  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
+    if (this._config.minimumContrastRatio === 1) {
+      return undefined;
+    }
+
+    // Try get from cache first
+    const adjustedColor = this._config.colors.contrastCache.getCss(bg, fg);
+    if (adjustedColor !== undefined) {
+      return adjustedColor || undefined;
+    }
+
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
+    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
+    const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._config.minimumContrastRatio);
+
+    if (!result) {
+      this._config.colors.contrastCache.setCss(bg, fg, null);
+      return undefined;
+    }
+
+    const css = toCss(
+      (result >> 24) & 0xFF,
+      (result >> 16) & 0xFF,
+      (result >> 8) & 0xFF
+    );
+    this._config.colors.contrastCache.setCss(bg, fg, css);
+
+    return css;
   }
 
   private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
@@ -232,14 +306,30 @@ export class WebglCharAtlas implements IDisposable {
 
     this.hasCanvasChanged = true;
 
-    const bold = !!(fg & FgFlags.BOLD);
-    const dim = !!(bg & BgFlags.DIM);
-    const italic = !!(bg & BgFlags.ITALIC);
-
     this._tmpCtx.save();
 
+    this._workAttributeData.fg = fg;
+    this._workAttributeData.bg = bg;
+
+    const bold = !!this._workAttributeData.isBold();
+    const inverse = !!this._workAttributeData.isInverse();
+    const dim = !!this._workAttributeData.isDim();
+    const italic = !!this._workAttributeData.isItalic();
+    let fgColor = this._workAttributeData.getFgColor();
+    let fgColorMode = this._workAttributeData.getFgColorMode();
+    let bgColor = this._workAttributeData.getBgColor();
+    let bgColorMode = this._workAttributeData.getBgColorMode();
+    if (inverse) {
+      const temp = fgColor;
+      fgColor = bgColor;
+      bgColor = temp;
+      const temp2 = fgColorMode;
+      fgColorMode = bgColorMode;
+      bgColorMode = temp2;
+    }
+
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bg, fg);
+    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -254,7 +344,7 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundCss(fg);
+    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
     // Apply alpha to dim the character
     if (dim) {
@@ -440,4 +530,3 @@ function toPaddedHex(c: number): string {
   const s = c.toString(16);
   return s.length < 2 ? '0' + s : s;
 }
-

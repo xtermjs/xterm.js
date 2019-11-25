@@ -24,7 +24,8 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     selectionOpaque: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
-    ansi: colors.ansi.slice()
+    ansi: colors.ansi.slice(),
+    contrastCache: colors.contrastCache
   };
   return {
     devicePixelRatio: window.devicePixelRatio,
@@ -35,6 +36,8 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     fontWeight: terminal.getOption('fontWeight') as FontWeight,
     fontWeightBold: terminal.getOption('fontWeightBold') as FontWeight,
     allowTransparency: terminal.getOption('allowTransparency'),
+    drawBoldTextInBrightColors: terminal.getOption('drawBoldTextInBrightColors'),
+    minimumContrastRatio: terminal.getOption('minimumContrastRatio'),
     colors: clonedColors
   };
 }
@@ -53,6 +56,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.allowTransparency === b.allowTransparency &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
+      a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&
+      a.minimumContrastRatio === b.minimumContrastRatio &&
       a.colors.foreground === b.colors.foreground &&
       a.colors.background === b.colors.background;
 }

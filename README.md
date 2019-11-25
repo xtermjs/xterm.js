@@ -10,7 +10,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 - **Performant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
 - **Rich unicode support**: Supports CJK, emojis and IMEs.
 - **Self-contained**: Requires zero dependencies to work.
-- **Accessible**: Screen reader support can be turned on using the `screenReaderMode` option.
+- **Accessible**: Screen reader and minimum contrast ratio support can be turned on
 - **And much more**: Links, theming, addons, well documented API, etc.
 
 ## What xterm.js is not
@@ -110,7 +110,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using xterm.js, socket.io, and ssh2.
 - [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE.
 - [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
-- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses xterm.js.
+- [**Next Tech**](https://next.tech "Next Tech"): Online platform for interactive coding and web development courses. Live container-backed terminal uses xterm.js.
 - [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
 - [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
 - [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.

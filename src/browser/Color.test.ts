@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { blend, fromCss, toPaddedHex, toCss, toRgba, fromRgba, opaque } from 'browser/Color';
+import { blend, fromCss, toPaddedHex, toCss, toRgba, fromRgba, opaque, rgbRelativeLuminance, contrastRatio, ensureContrastRatioRgba } from 'browser/Color';
 
 describe('Color', () => {
   describe('blend', () => {
@@ -177,6 +177,91 @@ describe('Color', () => {
       assert.deepEqual(opaque({ css: '#e0e0e0e0', rgba: 0xe0e0e0e0 }), { css: '#e0e0e0', rgba: 0xe0e0e0FF });
       assert.deepEqual(opaque({ css: '#f0f0f0f0', rgba: 0xf0f0f0f0 }), { css: '#f0f0f0', rgba: 0xf0f0f0FF });
       assert.deepEqual(opaque({ css: '#ffffffff', rgba: 0xffffffff }), { css: '#ffffff', rgba: 0xffffffFF });
+    });
+  });
+
+  describe('rgbRelativeLuminance', () => {
+    it('should calculate the relative luminance of the color', () => {
+      assert.equal(rgbRelativeLuminance(0x000000), 0);
+      assert.equal(rgbRelativeLuminance(0x101010).toFixed(4), '0.0052');
+      assert.equal(rgbRelativeLuminance(0x202020).toFixed(4), '0.0144');
+      assert.equal(rgbRelativeLuminance(0x303030).toFixed(4), '0.0296');
+      assert.equal(rgbRelativeLuminance(0x404040).toFixed(4), '0.0513');
+      assert.equal(rgbRelativeLuminance(0x505050).toFixed(4), '0.0802');
+      assert.equal(rgbRelativeLuminance(0x606060).toFixed(4), '0.1170');
+      assert.equal(rgbRelativeLuminance(0x707070).toFixed(4), '0.1620');
+      assert.equal(rgbRelativeLuminance(0x808080).toFixed(4), '0.2159');
+      assert.equal(rgbRelativeLuminance(0x909090).toFixed(4), '0.2789');
+      assert.equal(rgbRelativeLuminance(0xA0A0A0).toFixed(4), '0.3515');
+      assert.equal(rgbRelativeLuminance(0xB0B0B0).toFixed(4), '0.4342');
+      assert.equal(rgbRelativeLuminance(0xC0C0C0).toFixed(4), '0.5271');
+      assert.equal(rgbRelativeLuminance(0xD0D0D0).toFixed(4), '0.6308');
+      assert.equal(rgbRelativeLuminance(0xE0E0E0).toFixed(4), '0.7454');
+      assert.equal(rgbRelativeLuminance(0xF0F0F0).toFixed(4), '0.8714');
+      assert.equal(rgbRelativeLuminance(0xFFFFFF), 1);
+    });
+  });
+  describe('contrastRatio', () => {
+    it('should calculate the relative luminance of the color', () => {
+      assert.equal(contrastRatio(0, 0), 1);
+      assert.equal(contrastRatio(0, 0.5), 11);
+      assert.equal(contrastRatio(0, 1), 21);
+    });
+    it('should work regardless of the parameter order', () => {
+      assert.equal(contrastRatio(0, 1), 21);
+      assert.equal(contrastRatio(1, 0), 21);
+    });
+  });
+  describe('ensureContrastRatioRgba', () => {
+    it('should return undefined if the color already meets the contrast ratio (black bg)', () => {
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 1), undefined);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 2), undefined);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 3), undefined);
+    });
+    it('should return a color that meets the contrast ratio (black bg)', () => {
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 4), 0x707070ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 5), 0x7f7f7fff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 6), 0x8c8c8cff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 7), 0x989898ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 8), 0xa3a3a3ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 9), 0xadadadff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 10), 0xb6b6b6ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 11), 0xbebebeff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 12), 0xc5c5c5ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 13), 0xd1d1d1ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 14), 0xd6d6d6ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 15), 0xdbdbdbff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 16), 0xe3e3e3ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 17), 0xe9e9e9ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 18), 0xeeeeeeff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 19), 0xf4f4f4ff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 20), 0xfafafaff);
+      assert.equal(ensureContrastRatioRgba(0x000000ff, 0x606060ff, 21), 0xffffffff);
+    });
+    it('should return undefined if the color already meets the contrast ratio (white bg)', () => {
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 1), undefined);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 2), undefined);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 3), undefined);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 4), undefined);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 5), undefined);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 6), undefined);
+    });
+    it('should return a color that meets the contrast ratio (white bg)', () => {
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 7), 0x565656ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 8), 0x4d4d4dff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 9), 0x454545ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 10), 0x3e3e3eff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 11), 0x373737ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 12), 0x313131ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 13), 0x313131ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 14), 0x272727ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 15), 0x232323ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 16), 0x1f1f1fff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 17), 0x1b1b1bff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 18), 0x151515ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 19), 0x101010ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 20), 0x080808ff);
+      assert.equal(ensureContrastRatioRgba(0xffffffff, 0x606060ff, 21), 0x000000ff);
     });
   });
 });

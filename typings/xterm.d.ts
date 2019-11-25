@@ -149,6 +149,18 @@ declare module 'xterm' {
     macOptionClickForcesSelection?: boolean;
 
     /**
+     * The minimum contrast ratio for text in the terminal, setting this will
+     * change the foreground color dynamically depending on whether the contrast
+     * ratio is met. Example values:
+     *
+     * - 1: The default, do nothing.
+     * - 4.5: Minimum for WCAG AA compliance.
+     * - 7: Minimum for WCAG AAA compliance.
+     * - 21: White on black or black on white.
+     */
+    minimumContrastRatio?: number;
+
+    /**
      * The type of renderer to use, this allows using the fallback DOM renderer
      * when canvas is too slow for the environment. The following features do
      * not work when the DOM renderer is used:
@@ -420,6 +432,17 @@ declare module 'xterm' {
      * @param options An object containing a set of options.
      */
     constructor(options?: ITerminalOptions);
+
+    /**
+     * Adds an event listener for when a binary event fires. This is used to
+     * enable non UTF-8 conformant binary messages to be sent to the backend.
+     * Currently this is only used for a certain type of mouse reports that
+     * happen to be not UTF-8 compatible.
+     * The event value is a JS string, pass it to the underlying pty as
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBinary: IEvent<string>;
 
     /**
      * Adds an event listener for the cursor moves.

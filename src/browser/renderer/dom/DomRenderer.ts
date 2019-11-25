@@ -80,7 +80,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = new DomRendererRowFactory(document, this._optionsService);
+    this._rowFactory = new DomRendererRowFactory(document, this._optionsService, this._colors);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);

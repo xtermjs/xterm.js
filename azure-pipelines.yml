@@ -25,7 +25,9 @@ jobs:
     displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-unit-coverage --forbid-only
+  - script: |
+      yarn test-unit-coverage --forbid-only
+      ./node_modules/.bin/nyc report --reporter=cobertura
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
@@ -125,6 +127,8 @@ jobs:
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
+  variables:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -138,6 +142,7 @@ jobs:
     inputs:
       key: yarn2 | $(Agent.OS) | yarn.lock
       path: node_modules
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
