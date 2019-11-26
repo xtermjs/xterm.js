@@ -5,10 +5,11 @@
 
 import { IBufferLine } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
+import { ensureContrastRatio } from 'browser/Color';
+import { IColorSet, IColor } from 'browser/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -24,9 +25,14 @@ export class DomRendererRowFactory {
   private _workCell: CellData = new CellData();
 
   constructor(
-    private _document: Document,
-    private _optionsService: IOptionsService
+    private readonly _document: Document,
+    private readonly _optionsService: IOptionsService,
+    private _colors: IColorSet
   ) {
+  }
+
+  public setColors(colors: IColorSet): void {
+    this._colors = colors;
   }
 
   public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
@@ -97,36 +103,90 @@ export class DomRendererRowFactory {
 
       charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
 
-      const swapColor = this._workCell.isInverse();
-
-      // fg
-      if (this._workCell.isFgRGB()) {
-        let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? 'background-' : ''}color:rgb(${(AttributeData.toColorRGB(this._workCell.getFgColor())).join(',')});`;
-        charElement.setAttribute('style', style);
-      } else if (this._workCell.isFgPalette()) {
-        let fg = this._workCell.getFgColor();
-        if (this._workCell.isBold() && fg < 8 && !swapColor && this._optionsService.options.drawBoldTextInBrightColors) {
-          fg += 8;
-        }
-        charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);
-      } else if (swapColor) {
-        charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
+      let fg = this._workCell.getFgColor();
+      let fgColorMode = this._workCell.getFgColorMode();
+      let bg = this._workCell.getBgColor();
+      let bgColorMode = this._workCell.getBgColorMode();
+      const isInverse = !!this._workCell.isInverse();
+      if (isInverse) {
+        const temp = fg;
+        fg = bg;
+        bg = temp;
+        const temp2 = fgColorMode;
+        fgColorMode = bgColorMode;
+        bgColorMode = temp2;
       }
 
-      // bg
-      if (this._workCell.isBgRGB()) {
-        let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? '' : 'background-'}color:rgb(${(AttributeData.toColorRGB(this._workCell.getBgColor())).join(',')});`;
-        charElement.setAttribute('style', style);
-      } else if (this._workCell.isBgPalette()) {
-        charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._workCell.getBgColor()}`);
-      } else if (swapColor) {
-        charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
+      // Foreground
+      switch (fgColorMode) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          if (this._workCell.isBold() && fg < 8 && this._optionsService.options.drawBoldTextInBrightColors) {
+            fg += 8;
+          }
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg])) {
+            charElement.classList.add(`xterm-fg-${fg}`);
+          }
+          break;
+        case Attributes.CM_RGB:
+          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}color:#${padStart(fg.toString(16), '0', 6)};`);
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground)) {
+            if (isInverse) {
+              charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
+            }
+          }
+      }
+
+      // Background
+      switch (bgColorMode) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          charElement.classList.add(`xterm-bg-${bg}`);
+          break;
+        case Attributes.CM_RGB:
+          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}background-color:#${padStart(bg.toString(16), '0', 6)};`);
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          if (isInverse) {
+            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
+          }
       }
 
       fragment.appendChild(charElement);
     }
     return fragment;
   }
+
+  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor): boolean {
+    if (this._optionsService.options.minimumContrastRatio === 1) {
+      return false;
+    }
+
+    // Try get from cache first
+    let adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+
+    // Calculate and store in cache
+    if (adjustedColor === undefined) {
+      adjustedColor = ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
+      this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+    }
+
+    if (adjustedColor) {
+      element.setAttribute('style', `${element.getAttribute('style') || ''}color:${adjustedColor.css}`);
+      return true;
+    }
+
+    return false;
+  }
+}
+
+function padStart(text: string, padChar: string, length: number): string {
+  while (text.length < length) {
+    text = padChar + text;
+  }
+  return text;
 }

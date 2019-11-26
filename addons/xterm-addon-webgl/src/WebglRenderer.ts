@@ -11,10 +11,9 @@ import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
@@ -252,33 +251,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
           this._model.lineLengths[y] = x + 1;
         }
 
-        // Resolve bg and fg
-        let bg = this._workCell.bg;
-        let fg = this._workCell.fg;
-
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workCell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workCell.fg) {
           continue;
-        }
-
-        // If inverse flag is on, the foreground should become the background.
-        if (this._workCell.isInverse()) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
-          if (fg === DEFAULT_COLOR) {
-            fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === DEFAULT_COLOR) {
-            bg = INVERTED_DEFAULT_COLOR;
-          }
-        }
-
-        // Apply drawBoldTextInBrightColors
-        if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
-          fg += 8;
         }
 
         // Flag combined chars with a bit mask so they're easily identifiable
@@ -288,10 +265,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workCell.bg, this._workCell.fg, chars);
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
