@@ -280,3 +280,28 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
 }
+
+export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
+export interface IUnicodeService {
+  /** Register an Unicode version provider. */
+  registerVersion(provider: IUnicodeVersionProvider): void;
+  /** Registered Unicode versions. */
+  readonly versions: string[];
+  /** Currently active version. */
+  readonly activeVersion: string;
+  /** Event triggered, when activate version changed. */
+  readonly onChange: IEvent<string>;
+  /** Event triggered, when a new version provider was registered. */
+  readonly onRegister: IEvent<string>;
+
+  /**
+   * Unicode version dependent
+   */
+  wcwidth(codepoint: number): number;
+  getStringCellWidth(s: string): number;
+}
+
+export interface IUnicodeVersionProvider {
+  version: string;
+  wcwidth(ucs: number): number;
+}
