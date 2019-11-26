@@ -599,6 +599,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._bufferService.buffer;
 
+    this._dirtyRowService.markDirty(buffer.y);
     if (this._optionsService.options.convertEol) {
       buffer.x = 0;
     }
@@ -613,6 +614,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (buffer.x >= this._bufferService.cols) {
       buffer.x--;
     }
+    this._dirtyRowService.markDirty(buffer.y);
 
     this._onLineFeed.fire();
   }
@@ -677,12 +679,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y = this._terminal.originMode
       ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
+    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
   }
 
   /**
    * Set absolute cursor position.
    */
   private _setCursor(x: number, y: number): void {
+    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     if (this._terminal.originMode) {
       this._bufferService.buffer.x = x;
       this._bufferService.buffer.y = this._bufferService.buffer.scrollTop + y;
@@ -691,6 +695,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.buffer.y = y;
     }
     this._restrictCursor();
+    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
   }
 
   /**
