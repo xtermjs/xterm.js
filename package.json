@@ -55,7 +55,6 @@
     "tslint-consistent-codestyle": "^1.13.0",
     "typescript": "3.7",
     "utf8": "^3.0.0",
-    "v8-profiler-node8": "^6.1.1",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.1.0",
     "ws": "^7.0.0",

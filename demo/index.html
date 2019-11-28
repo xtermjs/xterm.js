@@ -12,22 +12,6 @@
     <h1 style="color: #2D2E2C">xterm.js: A terminal for the <em style="color: #5DA5D5">web</em></h1>
     <div id="terminal-container"></div>
     <div>
-      <h3>Actions</h3>
-      <p>
-        <label>Find next <input id="find-next"/></label>
-        <label>Find previous <input id="find-previous"/></label>
-        <label>Use regex<input type="checkbox" id="regex"/></label>
-        <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
-        <label>Whole word<input type="checkbox" id="whole-word"/></label>
-      </p>
-      <div>
-        <h3>SerializeAddon</h3>
-        <button id="serialize">Serialize the content of terminal</button>
-        <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
-        <div><pre id="serialize-output"></pre></div>
-      </div>
-    </div>
-    <div>
       <h3>Options</h3>
       <p>These options can be set in the <code>Terminal</code> constructor or using the <code>Terminal.setOption</code> function.</p>
       <div id="options-container"></div>
@@ -36,6 +20,21 @@
       <h3>Addons</h3>
       <p>Addons can be loaded and unloaded on a particular terminal to extend its functionality.</p>
       <div id="addons-container"></div>
+      <h3>Addons Control</h3>
+      <h4>SearchAddon</h4>
+      <p>
+        <label>Find next <input id="find-next"/></label>
+        <label>Find previous <input id="find-previous"/></label>
+        <label>Use regex<input type="checkbox" id="regex"/></label>
+        <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
+        <label>Whole word<input type="checkbox" id="whole-word"/></label>
+      </p>
+      <h4>SerializeAddon</h4>
+      <p>
+        <button id="serialize">Serialize the content of terminal</button>
+        <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
+        <div><pre id="serialize-output"></pre></div>
+      </p>
     </div>
     <div>
       <h3>Style</h3>

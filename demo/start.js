@@ -48,8 +48,7 @@ const clientConfig = {
     extensions: [ '.tsx', '.ts', '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      browser: path.resolve('./out/browser'),
-      xterm$: path.resolve('./out/public/Terminal.js')
+      browser: path.resolve('./out/browser')
     }
   },
   output: {

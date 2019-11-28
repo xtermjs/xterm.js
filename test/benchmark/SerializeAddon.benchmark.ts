@@ -3,23 +3,16 @@
  * @license MIT
  */
 
-import { perfContext, before, after, ThroughputRuntimeCase } from 'xterm-benchmark';
+import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
-import * as fs from 'fs'
 import { spawn } from 'node-pty';
-import * as profiler from 'v8-profiler-node8';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'public/Terminal';
 import { SerializeAddon } from 'addons/xterm-addon-serialize/src/SerializeAddon';
 
 class TestTerminal extends Terminal {
   writeSync(data: string): void {
-    (<any>this)._core.writeBuffer.push(data);
-    (<any>this)._core._innerWrite();
-  }
-  writeSyncUtf8(data: Uint8Array): void {
-    (<any>this)._core.writeBufferUtf8.push(data);
-    (<any>this)._core._innerWriteUtf8();
+    (<any>this)._core.writeSync(data);
   }
 }
 
@@ -59,24 +52,12 @@ perfContext('Terminal: sh -c "dd if=/dev/random count=40 bs=1k | hexdump | lolca
 
   perfContext('serialize', () => {
     let terminal: TestTerminal;
-    let serializeAddon = new SerializeAddon();
+    const serializeAddon = new SerializeAddon();
     before(() => {
       terminal = new TestTerminal({ cols: 80, rows: 25, scrollback: 5000 });
       serializeAddon.activate(terminal);
       terminal.writeSync(content);
-      profiler.startProfiling();
     });
-    after(() => {
-      const p1 = profiler.stopProfiling();
-      p1.export((err, res) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log(p1.getHeader());
-        fs.writeFileSync('serialize-profile.cpuprofile', res);
-      })
-    })
     new ThroughputRuntimeCase('', () => {
       return { payloadSize: serializeAddon.serialize().length };
     }, { fork: false }).showAverageThroughput();

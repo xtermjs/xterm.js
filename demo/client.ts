@@ -391,10 +391,8 @@ function updateTerminalSize(): void {
 function serializeButtonHandler(): void {
   const output = addons.serialize.instance.serialize();
   const outputString = JSON.stringify(output);
-  console.log('serialize output', outputString);
 
   document.getElementById('serialize-output').innerText = outputString;
-
   if ((document.getElementById('write-to-terminal') as HTMLInputElement).checked) {
     term.reset();
     term.write(output);
