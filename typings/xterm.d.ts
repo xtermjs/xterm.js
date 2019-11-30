@@ -73,6 +73,11 @@ declare module 'xterm' {
     cursorStyle?: 'block' | 'underline' | 'bar';
 
     /**
+     * The width of the bar cursor.
+     */
+    cursorBarWidth?: number;
+
+    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
