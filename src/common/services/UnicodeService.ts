@@ -4,15 +4,22 @@
  */
 import { IUnicodeService, IUnicodeVersionProvider } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 
 export class UnicodeService implements IUnicodeService {
   private _providers: {[key: string]: IUnicodeVersionProvider} = Object.create(null);
   private _active: string = '';
-  private _onRegister = new EventEmitter<string>();
-  public get onRegister(): IEvent<string> { return this._onRegister.event; }
+  private _activeProvider: IUnicodeVersionProvider;
   private _onChange = new EventEmitter<string>();
   public get onChange(): IEvent<string> { return this._onChange.event; }
+
+  constructor() {
+    const defaultProvider = new UnicodeV6();
+    this.register(defaultProvider);
+    this._active = defaultProvider.version;
+    this._activeProvider = defaultProvider;
+  }
 
   public get versions(): string[] {
     return Object.keys(this._providers);
@@ -27,22 +34,20 @@ export class UnicodeService implements IUnicodeService {
       throw new Error(`unknown Unicode version "${version}"`);
     }
     this._active = version;
-    this.wcwidth = (num: number) => this._providers[version].wcwidth(num);  // perf an issue here?
+    this._activeProvider = this._providers[version];
     this._onChange.fire(version);
   }
 
-  public registerVersion(provider: IUnicodeVersionProvider): void {
+  public register(provider: IUnicodeVersionProvider): void {
     this._providers[provider.version] = provider;
-    this._onRegister.fire(provider.version);
-    if (!this.activeVersion) {
-      this.activeVersion = provider.version;
-    }
   }
 
   /**
    * Unicode version dependent interface.
    */
-  public wcwidth: (num: number) => number = () => { throw new Error('no Unicode version registered and activated'); }
+  public wcwidth(num: number): number {
+    return this._activeProvider.wcwidth(num);
+  }
 
   public getStringCellWidth(s: string): number {
     let result = 0;

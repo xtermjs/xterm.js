@@ -5,7 +5,7 @@
 
 import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
-import { getStringCellWidthV6, getStringCellWidthV11 } from 'common/CharWidth';
+import { getStringCellWidthV6 } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ILogService, IBufferService, IOptionsService } from 'common/services/Services';
 
@@ -278,7 +278,7 @@ export class Linkifier implements ILinkifier {
     if (!this._mouseZoneManager || !this._element) {
       return;
     }
-    const width = this._optionsService.options.unicodeVersion === '11' ? getStringCellWidthV11(uri) : getStringCellWidthV6(uri);
+    const width = getStringCellWidthV6(uri);  // FIXME: get cell length from buffer to avoid mismatch after version change
     const x1 = x % this._bufferService.cols;
     const y1 = y + Math.floor(x / this._bufferService.cols);
     let x2 = (x1 + width) % this._bufferService.cols;

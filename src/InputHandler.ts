@@ -7,7 +7,6 @@
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { wcwidthV6, wcwidthV11 } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
@@ -19,7 +18,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, IUnicodeService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 
@@ -127,7 +126,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
-  private _wcwidth: (codepoint: number) => number;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -144,16 +142,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _coreMouseService: ICoreMouseService,
+    private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
-    this._wcwidth = this._optionsService.options.unicodeVersion === '11' ? wcwidthV11 : wcwidthV6;
-    this._optionsService.onOptionChange(option => {
-      if (option === 'unicodeVersion') {
-        this._wcwidth = this._optionsService.options.unicodeVersion === '11' ? wcwidthV11 : wcwidthV6;
-      }
-    });
-
     this.register(this._parser);
 
     /**
@@ -400,7 +392,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      chWidth = this._wcwidth(code);
+      chWidth = this._unicodeService.wcwidth(code);
 
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only

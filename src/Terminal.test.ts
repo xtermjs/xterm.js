@@ -7,14 +7,16 @@ import { assert, expect } from 'chai';
 import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { wcwidthV6 } from 'common/CharWidth';
 import { IBufferService } from 'common/services/Services';
 import { Linkifier } from 'browser/Linkifier';
-import { MockLogService, MockOptionsService } from 'common/TestUtils.test';
+import { MockLogService, MockOptionsService, MockUnicodeService } from 'common/TestUtils.test';
 import { IRegisteredLinkMatcher, IMouseZoneManager, IMouseZone } from 'browser/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
+
+// grab wcwidth from mock unicode service (hardcoded to V6)
+const wcwidth = (new MockUnicodeService()).wcwidth;
 
 describe('Terminal', () => {
   let term: TestTerminal;
@@ -762,7 +764,7 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = false;
-        const width = wcwidthV6((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
+        const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
         if (width !== 1) {
           continue;
         }

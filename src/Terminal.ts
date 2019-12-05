@@ -46,7 +46,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { handleWindowsModeLineFeed } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, IUnicodeService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -64,6 +64,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { UnicodeService } from 'common/services/UnicodeService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -101,6 +102,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
   public optionsService: IOptionsService;
+  private _unicodeService: IUnicodeService;
 
   // browser services
   private _charSizeService: ICharSizeService;
@@ -228,6 +230,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._unicodeService = this._instantiationService.createInstance(UnicodeService);
+    this._instantiationService.setService(IUnicodeService, this._unicodeService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -276,7 +280,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
+    this._inputHandler = new InputHandler(
+      this,
+      this._bufferService,
+      this._coreService,
+      this._dirtyRowService,
+      this._logService,
+      this.optionsService,
+      this._coreMouseService,
+      this._unicodeService
+    );
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
