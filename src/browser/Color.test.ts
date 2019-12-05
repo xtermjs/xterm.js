@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { blend, fromCss, toPaddedHex, toCss, toRgba, rgbRelativeLuminance, contrastRatio, ensureContrastRatioRgba } from 'browser/Color';
+import { blend, fromCss, toPaddedHex, toCss, toRgba, fromRgba, opaque, rgbRelativeLuminance, contrastRatio, ensureContrastRatioRgba } from 'browser/Color';
 
 describe('Color', () => {
   describe('blend', () => {
@@ -135,6 +135,51 @@ describe('Color', () => {
       assert.equal(toRgba(0xff, 0xff, 0xff, 0xff), 0xffffffff);
     });
   });
+
+  describe('fromRgba', () => {
+    it('should convert an rgba number to an rgba array', () => {
+      assert.deepEqual(fromRgba(0x00000000), [0x00, 0x00, 0x00, 0x00]);
+      assert.deepEqual(fromRgba(0x10101010), [0x10, 0x10, 0x10, 0x10]);
+      assert.deepEqual(fromRgba(0x20202020), [0x20, 0x20, 0x20, 0x20]);
+      assert.deepEqual(fromRgba(0x30303030), [0x30, 0x30, 0x30, 0x30]);
+      assert.deepEqual(fromRgba(0x40404040), [0x40, 0x40, 0x40, 0x40]);
+      assert.deepEqual(fromRgba(0x50505050), [0x50, 0x50, 0x50, 0x50]);
+      assert.deepEqual(fromRgba(0x60606060), [0x60, 0x60, 0x60, 0x60]);
+      assert.deepEqual(fromRgba(0x70707070), [0x70, 0x70, 0x70, 0x70]);
+      assert.deepEqual(fromRgba(0x80808080), [0x80, 0x80, 0x80, 0x80]);
+      assert.deepEqual(fromRgba(0x90909090), [0x90, 0x90, 0x90, 0x90]);
+      assert.deepEqual(fromRgba(0xa0a0a0a0), [0xa0, 0xa0, 0xa0, 0xa0]);
+      assert.deepEqual(fromRgba(0xb0b0b0b0), [0xb0, 0xb0, 0xb0, 0xb0]);
+      assert.deepEqual(fromRgba(0xc0c0c0c0), [0xc0, 0xc0, 0xc0, 0xc0]);
+      assert.deepEqual(fromRgba(0xd0d0d0d0), [0xd0, 0xd0, 0xd0, 0xd0]);
+      assert.deepEqual(fromRgba(0xe0e0e0e0), [0xe0, 0xe0, 0xe0, 0xe0]);
+      assert.deepEqual(fromRgba(0xf0f0f0f0), [0xf0, 0xf0, 0xf0, 0xf0]);
+      assert.deepEqual(fromRgba(0xffffffff), [0xff, 0xff, 0xff, 0xff]);
+    });
+  });
+
+  describe('opaque', () => {
+    it('should make the color opaque', () => {
+      assert.deepEqual(opaque({ css: '#00000000', rgba: 0x00000000 }), { css: '#000000', rgba: 0x000000FF });
+      assert.deepEqual(opaque({ css: '#10101010', rgba: 0x10101010 }), { css: '#101010', rgba: 0x101010FF });
+      assert.deepEqual(opaque({ css: '#20202020', rgba: 0x20202020 }), { css: '#202020', rgba: 0x202020FF });
+      assert.deepEqual(opaque({ css: '#30303030', rgba: 0x30303030 }), { css: '#303030', rgba: 0x303030FF });
+      assert.deepEqual(opaque({ css: '#40404040', rgba: 0x40404040 }), { css: '#404040', rgba: 0x404040FF });
+      assert.deepEqual(opaque({ css: '#50505050', rgba: 0x50505050 }), { css: '#505050', rgba: 0x505050FF });
+      assert.deepEqual(opaque({ css: '#60606060', rgba: 0x60606060 }), { css: '#606060', rgba: 0x606060FF });
+      assert.deepEqual(opaque({ css: '#70707070', rgba: 0x70707070 }), { css: '#707070', rgba: 0x707070FF });
+      assert.deepEqual(opaque({ css: '#80808080', rgba: 0x80808080 }), { css: '#808080', rgba: 0x808080FF });
+      assert.deepEqual(opaque({ css: '#90909090', rgba: 0x90909090 }), { css: '#909090', rgba: 0x909090FF });
+      assert.deepEqual(opaque({ css: '#a0a0a0a0', rgba: 0xa0a0a0a0 }), { css: '#a0a0a0', rgba: 0xa0a0a0FF });
+      assert.deepEqual(opaque({ css: '#b0b0b0b0', rgba: 0xb0b0b0b0 }), { css: '#b0b0b0', rgba: 0xb0b0b0FF });
+      assert.deepEqual(opaque({ css: '#c0c0c0c0', rgba: 0xc0c0c0c0 }), { css: '#c0c0c0', rgba: 0xc0c0c0FF });
+      assert.deepEqual(opaque({ css: '#d0d0d0d0', rgba: 0xd0d0d0d0 }), { css: '#d0d0d0', rgba: 0xd0d0d0FF });
+      assert.deepEqual(opaque({ css: '#e0e0e0e0', rgba: 0xe0e0e0e0 }), { css: '#e0e0e0', rgba: 0xe0e0e0FF });
+      assert.deepEqual(opaque({ css: '#f0f0f0f0', rgba: 0xf0f0f0f0 }), { css: '#f0f0f0', rgba: 0xf0f0f0FF });
+      assert.deepEqual(opaque({ css: '#ffffffff', rgba: 0xffffffff }), { css: '#ffffff', rgba: 0xffffffFF });
+    });
+  });
+
   describe('rgbRelativeLuminance', () => {
     it('should calculate the relative luminance of the color', () => {
       assert.equal(rgbRelativeLuminance(0x000000), 0);

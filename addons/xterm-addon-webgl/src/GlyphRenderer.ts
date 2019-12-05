@@ -101,7 +101,6 @@ export class GlyphRenderer {
     private _dimensions: IRenderDimensions
   ) {
     const gl = this._gl;
-
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
     this._program = program;
 
@@ -184,7 +183,7 @@ export class GlyphRenderer {
 
     let rasterizedGlyph: IRasterizedGlyph;
     if (!this._atlas) {
-      throw new Error('atlas must be set before updating cell');
+      return;
     }
     if (chars && chars.length > 1) {
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
