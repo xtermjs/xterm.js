@@ -118,10 +118,10 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
     }
   }
 
-  public wcwidth(num: number): number {
+  public wcwidth(num: number): 0 | 1 | 2 {
     if (num < 32) return 0;
     if (num < 127) return 1;
-    if (num < 65536) return UnicodeV6.bmpTable[num];
+    if (num < 65536) return UnicodeV6.bmpTable[num] as 0 | 1 | 2;
     if (UnicodeV6.bisearch(num, UnicodeV6.highCombining)) return 0;
     if ((num >= 0x20000 && num <= 0x2fffd) || (num >= 0x30000 && num <= 0x3fffd)) return 2;
     return 1;

@@ -9,8 +9,8 @@ import { IUnicodeVersionProvider } from 'common/services/Services';
 
 class DummyProvider implements IUnicodeVersionProvider {
   version = '123';
-  wcwidth(n: number): number {
-    return 123;
+  wcwidth(n: number): 0 | 1 | 2 {
+    return 2;
   }
 }
 
@@ -41,7 +41,7 @@ describe('unicode provider', () => {
     const dummyProvider = new DummyProvider();
     us.register(dummyProvider);
     us.activeVersion = dummyProvider.version;
-    assert.equal(us.getStringCellWidth('hello'), 123 * 5);
+    assert.equal(us.getStringCellWidth('hello'), 2 * 5);
   });
   it('wcwidth V6 emoji test', () => {
     const widthV6 = us.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣');

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -40,6 +40,9 @@ export class Terminal implements ITerminalApi {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
+  }
+  public get unicode(): IUnicodeHandling {
+    return new UnicodeApi(this._core);
   }
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
@@ -238,5 +241,23 @@ class ParserApi implements IParser {
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._core.addOscHandler(ident, callback);
+  }
+}
+
+class UnicodeApi implements IUnicodeHandling {
+  constructor(private _core: ITerminal) {}
+
+  public register(provider: IUnicodeVersionProvider): void {}
+
+  public get versions(): string[] {
+    return (this._core as any)._unicodeService.versions;
+  }
+
+  public get activeVersion(): string {
+    return (this._core as any)._unicodeService.activeVersion;
+  }
+
+  public set activeVersion(version: string) {
+    (this._core as any)._unicodeService.activeVersion = version;
   }
 }

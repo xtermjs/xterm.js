@@ -205,10 +205,10 @@ export class UnicodeV11 implements IUnicodeVersionProvider {
     }
   }
 
-  public wcwidth(num: number): number {
+  public wcwidth(num: number): 0 | 1 | 2 {
     if (num < 32) return 0;
     if (num < 127) return 1;
-    if (num < 65536) return UnicodeV11.bmpTable[num];
+    if (num < 65536) return UnicodeV11.bmpTable[num] as 0 | 1 | 2;
     if (UnicodeV11.bisearch(num, UnicodeV11.highCombining)) return 0;
     if (UnicodeV11.bisearch(num, UnicodeV11.highWide)) return 2;
     return 1;

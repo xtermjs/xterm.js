@@ -427,6 +427,12 @@ declare module 'xterm' {
     readonly parser: IParser;
 
     /**
+     * (EXPERIMENTAL) Get the Unicode handling interface
+     * to register and switch Unicode version.
+     */
+    readonly unicode: IUnicodeHandling;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -1129,5 +1135,30 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode version provider.
+   * Used to register custom Unicode versions with `Terminal.unicode.register`.
+   */
+  export interface IUnicodeVersionProvider {
+    /** String indicating the Unicode version provided. */
+    version: string;
+    /** Unicode version dependent wcwidth implementation. */
+    wcwidth(ucs: number): 0 | 1 | 2;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode handling interface.
+   */
+  export interface IUnicodeHandling {
+    /**
+     * Register a custom Unicode version provider.
+     */
+    register(provider: IUnicodeVersionProvider): void;
+    /**
+     * Registered Unicode versions.
+     */
+    versions: string[];
   }
 }

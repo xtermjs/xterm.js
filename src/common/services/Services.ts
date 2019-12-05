@@ -289,7 +289,7 @@ export interface IUnicodeService {
   /** Registered Unicode versions. */
   readonly versions: string[];
   /** Currently active version. */
-  readonly activeVersion: string;
+  activeVersion: string;
   /** Event triggered, when activate version changed. */
   readonly onChange: IEvent<string>;
 
@@ -302,5 +302,5 @@ export interface IUnicodeService {
 
 export interface IUnicodeVersionProvider {
   version: string;
-  wcwidth(ucs: number): number;
+  wcwidth(ucs: number): 0 | 1 | 2;
 }
