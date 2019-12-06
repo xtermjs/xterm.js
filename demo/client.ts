@@ -14,6 +14,7 @@ import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -22,6 +23,7 @@ import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
+// import { Unicode11Addon } from 'xterm-addon-unicode11';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -35,6 +37,7 @@ export interface IWindowWithTerminal extends Window {
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  Unicode11Addon?: typeof Unicode11Addon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -44,7 +47,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'web-links' | 'webgl';
+type AddonType = 'attach' | 'fit' | 'search' | 'web-links' | 'webgl' | 'unicode11';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -54,6 +57,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'fit' ? typeof FitAddon :
     T extends 'search' ? typeof SearchAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     typeof WebglAddon;
   instance?:
     T extends 'attach' ? AttachAddon :
@@ -61,6 +65,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'search' ? SearchAddon :
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     never;
 }
 
@@ -69,7 +74,8 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
-  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true }
+  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: false }
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -115,6 +121,7 @@ if (document.location.pathname === '/test') {
   window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
+  window.Unicode11Addon = Unicode11Addon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
@@ -136,9 +143,11 @@ function createTerminal(): void {
   addons['web-links'].instance = new WebLinksAddon();
   addons.search.instance = new SearchAddon();
   addons.fit.instance = new FitAddon();
+  addons.unicode11.instance = new Unicode11Addon();
   typedTerm.loadAddon(addons['web-links'].instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.fit.instance);
+  typedTerm.loadAddon(addons.unicode11.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -257,7 +266,7 @@ function initOptions(term: TerminalType): void {
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
     wordSeparator: null,
-    unicodeVersion: ['6']
+    unicodeVersion: ['6', '11']
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];

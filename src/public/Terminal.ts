@@ -247,7 +247,9 @@ class ParserApi implements IParser {
 class UnicodeApi implements IUnicodeHandling {
   constructor(private _core: ITerminal) {}
 
-  public register(provider: IUnicodeVersionProvider): void {}
+  public register(provider: IUnicodeVersionProvider): void {
+    (this._core as any)._unicodeService.register(provider);
+  }
 
   public get versions(): string[] {
     return (this._core as any)._unicodeService.versions;
