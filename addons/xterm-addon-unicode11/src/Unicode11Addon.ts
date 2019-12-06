@@ -258,8 +258,6 @@ class UnicodeV11 implements IUnicodeVersionProvider {
 
 export class Unicode11Addon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
-    console.log('got we loaded?');
-    (window as any)._v11 = new UnicodeV11();
     terminal.unicode.register(new UnicodeV11());
   }
 

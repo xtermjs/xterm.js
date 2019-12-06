@@ -213,7 +213,7 @@ declare module 'xterm' {
     /**
      * Unicode version to be used for wcwidth. Default is version 6.
      */
-    unicodeVersion?: '6' | '11';
+    unicodeVersion?: string;
 
     /**
      * Whether "Windows mode" is enabled. Because Windows backends winpty and

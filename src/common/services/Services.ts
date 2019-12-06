@@ -212,7 +212,7 @@ export interface IPartialTerminalOptions {
   scrollSensitivity?: number;
   tabStopWidth?: number;
   theme?: ITheme;
-  unicodeVersion?: '6' | '11';
+  unicodeVersion?: string;
   windowsMode?: boolean;
   wordSeparator?: string;
 }
@@ -246,7 +246,7 @@ export interface ITerminalOptions {
   scrollSensitivity: number;
   tabStopWidth: number;
   theme: ITheme;
-  unicodeVersion: '6' | '11';
+  unicodeVersion: string;
   windowsMode: boolean;
   wordSeparator: string;
 
