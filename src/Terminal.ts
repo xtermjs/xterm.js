@@ -294,7 +294,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
 
-    this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService, this.optionsService);
+    this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService, this.optionsService, this._unicodeService);
 
     if (this.options.windowsMode) {
       this._enableWindowsMode();

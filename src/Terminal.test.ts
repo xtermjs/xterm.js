@@ -1373,7 +1373,7 @@ describe('Terminal', () => {
 
 class TestLinkifier extends Linkifier {
   constructor(bufferService: IBufferService) {
-    super(bufferService, new MockLogService(), new MockOptionsService());
+    super(bufferService, new MockLogService(), new MockOptionsService(), new MockUnicodeService());
     Linkifier._timeBeforeLatency = 0;
   }
 

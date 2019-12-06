@@ -5,9 +5,8 @@
 
 import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
-import { getStringCellWidthV6 } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ILogService, IBufferService, IOptionsService } from 'common/services/Services';
+import { ILogService, IBufferService, IOptionsService, IUnicodeService } from 'common/services/Services';
 
 /**
  * Limit of the unwrapping line expansion (overscan) at the top and bottom
@@ -46,7 +45,8 @@ export class Linkifier implements ILinkifier {
   constructor(
     protected readonly _bufferService: IBufferService,
     private readonly _logService: ILogService,
-    private readonly _optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService,
+    private readonly _unicodeService: IUnicodeService
   ) {
     this._rowsToLinkify = {
       start: undefined,
@@ -278,7 +278,8 @@ export class Linkifier implements ILinkifier {
     if (!this._mouseZoneManager || !this._element) {
       return;
     }
-    const width = getStringCellWidthV6(uri);  // FIXME: get cell length from buffer to avoid mismatch after version change
+    // FIXME: get cell length from buffer to avoid mismatch after Unicode version change
+    const width = this._unicodeService.getStringCellWidth(uri);
     const x1 = x % this._bufferService.cols;
     const y1 = y + Math.floor(x / this._bufferService.cols);
     let x2 = (x1 + width) % this._bufferService.cols;
