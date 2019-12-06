@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IUnicodeService } from 'common/services/Services';
 import { Linkifier } from 'browser/Linkifier';
 import { MockLogService, MockOptionsService, MockUnicodeService } from 'common/TestUtils.test';
 import { IRegisteredLinkMatcher, IMouseZoneManager, IMouseZone } from 'browser/Types';
@@ -1047,7 +1047,7 @@ describe('Terminal', () => {
     // to get the special handling of fullwidth, surrogate and combining chars in the input handler
     beforeEach(() => {
       terminal = new TestTerminal({ cols: 10, rows: 5 });
-      linkifier = new TestLinkifier((terminal as any)._bufferService);
+      linkifier = new TestLinkifier((terminal as any)._bufferService, (terminal as any)._unicodeService);
       mouseZoneManager = new TestMouseZoneManager();
       linkifier.attachToDom({} as any, mouseZoneManager);
     });
@@ -1372,8 +1372,8 @@ describe('Terminal', () => {
 });
 
 class TestLinkifier extends Linkifier {
-  constructor(bufferService: IBufferService) {
-    super(bufferService, new MockLogService(), new MockOptionsService(), new MockUnicodeService());
+  constructor(bufferService: IBufferService, unicodeService: IUnicodeService) {
+    super(bufferService, new MockLogService(), new MockOptionsService(), unicodeService);
     Linkifier._timeBeforeLatency = 0;
   }
 
