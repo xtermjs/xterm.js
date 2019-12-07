@@ -260,10 +260,16 @@ describe('SerializeAddon', () => {
   it('serialize tabs correctly', async () =>  {
     const lines = [
       'a\tb',
-      'foo\tbar\tbaz'
+      'aa\tc',
+      'aaa\td'
+    ];
+    const expected = [
+      'a\x1b[7Cb',
+      'aa\x1b[6Cc',
+      'aaa\x1b[5Cd'
     ];
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
   });
 });
 

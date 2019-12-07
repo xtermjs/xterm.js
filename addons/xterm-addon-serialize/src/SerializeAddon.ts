@@ -79,6 +79,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
   private _currentRow: string = '';
+  private _nullCellCount: number = 0;
   private _sgrSeq: number[] = [];
 
   constructor(buffer: IBuffer) {
@@ -92,6 +93,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   protected _lineEnd(row: number): void {
     this._allRows[this._rowIndex++] = this._currentRow;
     this._currentRow = '';
+    this._nullCellCount = 0;
   }
 
   protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
@@ -133,6 +135,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+    // Count number of null cells encountered after the last non-null cell and move the cursor
+    // if a non-null cell is found (eg. \t or cursor move)
+    if (cell.char === '') {
+      this._nullCellCount++;
+    } else if (this._nullCellCount > 0) {
+      this._currentRow += `\x1b[${this._nullCellCount}C`;
+      this._nullCellCount = 0;
+    }
+
     const fgChanged = !cell.equalFg(oldCell);
     const bgChanged = !cell.equalBg(oldCell);
     const flagsChanged = !cell.equalFlags(oldCell);
