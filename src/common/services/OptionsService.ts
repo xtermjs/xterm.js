@@ -20,7 +20,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
-  cursorBarWidth: 1,
+  cursorWidth: 1,
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,

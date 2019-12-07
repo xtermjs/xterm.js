@@ -191,7 +191,7 @@ export interface IPartialTerminalOptions {
   cols?: number;
   cursorBlink?: boolean;
   cursorStyle?: 'block' | 'underline' | 'bar';
-  cursorBarWidth?: number;
+  cursorWidth?: number;
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
   fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
@@ -224,7 +224,7 @@ export interface ITerminalOptions {
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
-  cursorBarWidth: number;
+  cursorWidth: number;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;

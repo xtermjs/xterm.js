@@ -75,7 +75,7 @@ declare module 'xterm' {
     /**
      * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
      */
-    cursorBarWidth?: number;
+    cursorWidth?: number;
 
     /**
      * Whether input should be disabled.
