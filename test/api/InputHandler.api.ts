@@ -443,11 +443,7 @@ async function getCursor(): Promise<{col: number, row: number}> {
 }
 
 async function getDimensions(): Promise<any> {
-  const dim = await page.evaluate(`
-    (function() {
-      return term._core._renderService.dimensions;
-    })();
-  `);
+  const dim = await page.evaluate(`term._core._renderService.dimensions`);
   return {
     cellWidth: dim.actualCellWidth.toFixed(0),
     cellHeight: dim.actualCellHeight.toFixed(0),

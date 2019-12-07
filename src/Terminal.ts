@@ -127,12 +127,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
   public sendFocus: boolean;
 
-  // misc
   public curAttrData: IAttributeData;
   private _eraseAttrData: IAttributeData;
-
-  public params: (string | number)[];
-  public currentParam: string | number;
 
   // write buffer
   private _writeBuffer: WriteBuffer;
@@ -267,9 +263,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
-
-    this.params = [];
-    this.currentParam = 0;
 
     this._userScrolling = false;
 
@@ -1430,9 +1423,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
-    if (this.viewport) {
-      this.viewport.syncScrollArea(true);
-    }
+    this.viewport?.syncScrollArea(true);
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });

@@ -2146,20 +2146,14 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.triggerDataEvent(`${C0.ESC}[8;${this._bufferService.rows};${this._bufferService.cols}t`);
         }
         break;
-      case 20:  // GetIconTitle, returns OSC L label ST
-        this._coreService.triggerDataEvent(`${C0.ESC}]L${this._iconName}${C0.ESC}\\`);
-        break;
-      case 21:  // GetWinTitle, returns OSC l label ST
-        this._coreService.triggerDataEvent(`${C0.ESC}]l${this._windowTitle}${C0.ESC}\\`);
-        break;
       case 22:  // PushTitle
-        if (!second || second === 2) {
+        if (second === 0 || second === 2) {
           this._windowTitleStack.push(this._windowTitle);
           if (this._windowTitleStack.length > STACK_LIMIT) {
             this._windowTitleStack.shift();
           }
         }
-        if (!second || second === 1) {
+        if (second === 0 || second === 1) {
           this._iconNameStack.push(this._iconName);
           if (this._iconNameStack.length > STACK_LIMIT) {
             this._iconNameStack.shift();
@@ -2167,12 +2161,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         break;
       case 23:  // PopTitle
-        if (!second || second === 2) {
+        if (second === 0 || second === 2) {
           if (this._windowTitleStack.length) {
             this.setTitle(this._windowTitleStack.pop());
           }
         }
-        if (!second || second === 1) {
+        if (second === 0 || second === 1) {
           if (this._iconNameStack.length) {
             this.setIconName(this._iconNameStack.pop());
           }

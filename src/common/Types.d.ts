@@ -256,7 +256,7 @@ export interface ICoreMouseProtocol {
 export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
 
 /**
- * WindowOption settings.
+ * windowOptions
  */
 export interface IWindowOptions {
   restoreWin?: boolean;

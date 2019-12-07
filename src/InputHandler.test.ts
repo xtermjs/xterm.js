@@ -1304,28 +1304,6 @@ describe('InputHandler', () => {
       term.writeSync('\x1b[18t');
       assert.deepEqual(stack, ['\x1b[8;10;10t', '\x1b[8;20;50t']);
     });
-    it('20 - GetIconTitle', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: {getIconTitle: true}});
-      const stack: string[] = [];
-      term.onData(data => stack.push(data));
-      term.writeSync('\x1b]1;hello world!\x07');
-      term.writeSync('\x1b[20t');
-      assert.deepEqual(stack, ['\x1b]Lhello world!\x1b\\']);
-      term.writeSync('\x1b]1;some other\x07');
-      term.writeSync('\x1b[20t');
-      assert.deepEqual(stack, ['\x1b]Lhello world!\x1b\\', '\x1b]Lsome other\x1b\\']);
-    });
-    it('21 - GetWinTitle', () => {
-      const term = new TestTerminal({cols: 10, rows: 10, windowOptions: {getWinTitle: true}});
-      const stack: string[] = [];
-      term.onData(data => stack.push(data));
-      term.writeSync('\x1b]2;hello world!\x07');
-      term.writeSync('\x1b[21t');
-      assert.deepEqual(stack, ['\x1b]lhello world!\x1b\\']);
-      term.writeSync('\x1b]2;some other\x07');
-      term.writeSync('\x1b[21t');
-      assert.deepEqual(stack, ['\x1b]lhello world!\x1b\\', '\x1b]lsome other\x1b\\']);
-    });
     it('22/23 - PushTitle/PopTitle', () => {
       const term = new TestTerminal({cols: 10, rows: 10, windowOptions: {pushTitle: true, popTitle: true}});
       const stack: string[] = [];
