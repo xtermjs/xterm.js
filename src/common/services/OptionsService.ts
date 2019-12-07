@@ -112,6 +112,9 @@ export class OptionsService implements IOptionsService {
           value = DEFAULT_OPTIONS[key];
         }
         break;
+      case 'cursorWidth':
+        value = Math.floor(value);
+        // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {
@@ -120,6 +123,7 @@ export class OptionsService implements IOptionsService {
         break;
       case 'minimumContrastRatio':
         value = Math.max(1, Math.min(21, Math.round(value * 10) / 10));
+        break;
       case 'scrollback':
         value = Math.min(value, 4294967295);
         if (value < 0) {
@@ -127,7 +131,6 @@ export class OptionsService implements IOptionsService {
         }
         break;
       case 'fastScrollSensitivity':
-      case 'cursorWidth':
       case 'scrollSensitivity':
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
