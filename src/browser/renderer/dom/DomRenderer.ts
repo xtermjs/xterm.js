@@ -206,7 +206,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         ` color: ${this._colors.cursorAccent.css};` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-        ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
+        ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
         ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
