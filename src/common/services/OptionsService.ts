@@ -127,6 +127,7 @@ export class OptionsService implements IOptionsService {
         }
         break;
       case 'fastScrollSensitivity':
+      case 'cursorWidth':
       case 'scrollSensitivity':
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
