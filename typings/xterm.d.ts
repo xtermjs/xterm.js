@@ -73,7 +73,7 @@ declare module 'xterm' {
     cursorStyle?: 'block' | 'underline' | 'bar';
 
     /**
-     * The width of the bar cursor.
+     * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
      */
     cursorBarWidth?: number;
 
