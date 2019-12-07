@@ -15,7 +15,7 @@ import { IColorSet, IColor } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { toCss, ensureContrastRatioRgba } from 'browser/Color';
+import { toCss, ensureContrastRatioRgba, opaque } from 'browser/Color';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -325,7 +325,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       if (fgOverride) {
         this._ctx.fillStyle = fgOverride.css;
       } else if (cell.isBgDefault()) {
-        this._ctx.fillStyle = this._colors.background.css;
+        this._ctx.fillStyle = opaque(this._colors.background).css;
       } else if (cell.isBgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {

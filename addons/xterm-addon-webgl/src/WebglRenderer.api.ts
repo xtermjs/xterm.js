@@ -702,6 +702,22 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 2), [64, 64, 64, 255]);
     });
   });
+
+  describe('allowTransparency', async () => {
+    before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true}));
+    after(async () => browser.close());
+    beforeEach(async () => page.evaluate(`window.term.reset()`));
+    it('transparent background inverse', async () => {
+      const theme: ITheme = {
+        background: '#ff000080'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      const data = `\\x1b[7m█\x1b[0m`;
+      await writeSync(data);
+      // Inverse background should be opaque
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
@@ -732,7 +748,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
   return await page.evaluate(`Array.from(window.result)`);
 }
 
-async function setupBrowser(): Promise<void> {
+async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
   browser = await puppeteer.launch({
     headless: process.argv.indexOf('--headless') !== -1,
     args: [`--window-size=${width},${height}`, `--no-sandbox`]
@@ -740,9 +756,7 @@ async function setupBrowser(): Promise<void> {
   page = (await browser.pages())[0];
   await page.setViewport({ width, height });
   await page.goto(APP);
-  await openTerminal({
-    rendererType: 'dom'
-  });
+  await openTerminal(options);
   await page.evaluate(`
     window.addon = new WebglAddon(true);
     window.term.loadAddon(window.addon);
