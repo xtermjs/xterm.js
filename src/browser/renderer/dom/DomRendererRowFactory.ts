@@ -8,7 +8,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
-import { ensureContrastRatio } from 'browser/Color';
+import { ensureContrastRatio, rgbaToColor } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
@@ -129,7 +129,14 @@ export class DomRendererRowFactory {
           }
           break;
         case Attributes.CM_RGB:
-          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}color:#${padStart(fg.toString(16), '0', 6)};`);
+          const color = rgbaToColor(
+            (fg >> 16) & 0xFF,
+            (fg >>  8) & 0xFF,
+            (fg      ) & 0xFF
+          );
+          if (!this._applyMinimumContrast(charElement, this._colors.background, color)) {
+            this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
+          }
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -147,7 +154,7 @@ export class DomRendererRowFactory {
           charElement.classList.add(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          charElement.setAttribute('style', `${charElement.getAttribute('style') || ''}background-color:#${padStart(bg.toString(16), '0', 6)};`);
+          this._addStyle(charElement, `background-color:#${padStart(bg.toString(16), '0', 6)}`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -176,11 +183,15 @@ export class DomRendererRowFactory {
     }
 
     if (adjustedColor) {
-      element.setAttribute('style', `${element.getAttribute('style') || ''}color:${adjustedColor.css}`);
+      this._addStyle(element, `color:${adjustedColor.css}`);
       return true;
     }
 
     return false;
+  }
+
+  private _addStyle(element: HTMLElement, style: string): void {
+    element.setAttribute('style', `${element.getAttribute('style') || ''}${style};`);
   }
 }
 
