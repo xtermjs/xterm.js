@@ -226,7 +226,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
-  public renderRows(start: number, end: number): void {
+  public renderRows(start: number, end: number, isCursorBlinking: boolean): void {
     if (!this._isAttached) {
       if (document.body.contains(this._core.screenElement) && (<any>this._core)._charSizeService.width && (<any>this._core)._charSizeService.height) {
         this._updateDimensions();
@@ -246,15 +246,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Update model to reflect what's drawn
-    this._updateModel(start, end);
+    this._updateModel(start, end, isCursorBlinking);
 
     // Render
     this._rectangleRenderer.render();
     this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
   }
 
-  private _updateModel(start: number, end: number): void {
+  private _updateModel(start: number, end: number, isCursorBlinking: boolean): void {
     const terminal = this._core;
+    this._model.cursor.isBlinking = isCursorBlinking;
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -272,7 +273,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // Adjust style for cursor
-        if (x === this._model.cursor.position.x && y === this._model.cursor.position.y) {
+        if (!this._model.cursor.isBlinking && x === this._model.cursor.position.x && y === this._model.cursor.position.y) {
           const cursorStyle = this._terminal.getOption('cursorStyle');
           if (cursorStyle === 'block' && !this._model.cursor.isHidden &&  this._model.cursor.isFocused) {
             if (this._workCell.isInverse()) {

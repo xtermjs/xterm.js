@@ -81,7 +81,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public onFocus(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume(terminal);
+      this._cursorBlinkStateManager.resume();
     } else {
       this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
     }
@@ -103,9 +103,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
-  public onCursorMove(terminal: Terminal): void {
+  public onCursorMove(): void {
     if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
+      this._cursorBlinkStateManager.restartBlinkAnimation();
     }
   }
 
@@ -113,7 +113,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
     } else {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
+      this._cursorBlinkStateManager.restartBlinkAnimation();
     }
   }
 
@@ -273,7 +273,7 @@ class CursorBlinkStateManager {
     }
   }
 
-  public restartBlinkAnimation(terminal: Terminal): void {
+  public restartBlinkAnimation(): void {
     if (this.isPaused) {
       return;
     }
@@ -356,10 +356,10 @@ class CursorBlinkStateManager {
     }
   }
 
-  public resume(terminal: Terminal): void {
+  public resume(): void {
     this._animationTimeRestarted = undefined;
     this._restartInterval();
-    this.restartBlinkAnimation(terminal);
+    this.restartBlinkAnimation();
   }
 }
 

@@ -276,7 +276,7 @@ export class RectangleRenderer {
     }
 
     // Render cursor
-    if (!model.cursor.isHidden) {
+    if (!model.cursor.isHidden && !model.cursor.isBlinking) {
       const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
       const cursorRectangles = this._drawCursor(vertices, offset, model.cursor.position.x, model.cursor.position.y, model.cursor.isFocused);
       rectangleCount += cursorRectangles - 1;
@@ -329,7 +329,6 @@ export class RectangleRenderer {
   }
 
   private _drawCursor(vertices: IVertices, offset: number, x: number, y: number, isFocused: boolean): number {
-    console.log('render cursor at', x, y);
     const cursorStyle = this._terminal.getOption('cursorStyle');
     // TODO: Handle unfocused block (4 rectangles)
     // TODO: Refactor the switch?

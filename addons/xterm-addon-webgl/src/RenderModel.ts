@@ -36,7 +36,8 @@ export class RenderModel implements IRenderModel {
         y: 0
       },
       isHidden: true,
-      isFocused: false
+      isFocused: false,
+      isBlinking: false
     };
   }
 

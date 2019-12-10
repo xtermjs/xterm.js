@@ -69,6 +69,7 @@ export interface ICursorRenderModel {
   position: IVector;
   isHidden: boolean;
   isFocused: boolean;
+  isBlinking: boolean;
 }
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {
