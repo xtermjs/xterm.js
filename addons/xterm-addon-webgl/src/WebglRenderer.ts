@@ -12,7 +12,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { NULL_CELL_CODE } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
@@ -269,6 +269,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
+        }
+
+        // Adjust style for cursor
+        if (x === this._model.cursor.position.x && y === this._model.cursor.position.y) {
+          const cursorStyle = this._terminal.getOption('cursorStyle');
+          if (cursorStyle === 'block' && !this._model.cursor.isHidden &&  this._model.cursor.isFocused) {
+            if (this._workCell.isInverse()) {
+              this._workCell.fg = this._workCell.fg & ~FgFlags.INVERSE;
+            } else {
+              this._workCell.fg = this._workCell.fg | FgFlags.INVERSE;
+            }
+          }
         }
 
         // Nothing has changed, no updates needed
