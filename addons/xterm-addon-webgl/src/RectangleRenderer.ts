@@ -67,6 +67,7 @@ export class RectangleRenderer {
   private _projectionLocation: WebGLUniformLocation;
   private _bgFloat!: Float32Array;
   private _selectionFloat!: Float32Array;
+  private _cursorFloat!: Float32Array;
 
   private _vertices: IVertices = {
     count: 0,
@@ -156,6 +157,7 @@ export class RectangleRenderer {
   private _updateCachedColors(): void {
     this._bgFloat = this._colorToFloat32Array(this._colors.background);
     this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
+    this._cursorFloat = this._colorToFloat32Array(this._colors.cursor);
   }
 
   private _updateViewportRectangle(): void {
@@ -272,6 +274,15 @@ export class RectangleRenderer {
         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
     }
+
+    // Render cursor
+    if (!model.cursor.isHidden) {
+      const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      const cursorRectangles = this._drawCursor(vertices, offset, model.cursor.position.x, model.cursor.position.y, model.cursor.isFocused);
+      rectangleCount += cursorRectangles - 1;
+    }
+
+    // Count total number of rectangle
     vertices.count = rectangleCount;
   }
 
@@ -315,6 +326,89 @@ export class RectangleRenderer {
     const b = ((rgba >> 8 ) & 0xFF) / 255;
 
     this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, 1);
+  }
+
+  private _drawCursor(vertices: IVertices, offset: number, x: number, y: number, isFocused: boolean): number {
+    console.log('render cursor at', x, y);
+    const cursorStyle = this._terminal.getOption('cursorStyle');
+    // TODO: Handle unfocused block (4 rectangles)
+    // TODO: Refactor the switch?
+    switch (cursorStyle) {
+      case 'bar':
+        this._addRectangleFloat(
+          vertices.attributes,
+          offset,
+          x * this._dimensions.scaledCellWidth,
+          y * this._dimensions.scaledCellHeight,
+          window.devicePixelRatio,
+          this._dimensions.scaledCellHeight,
+          this._cursorFloat
+        );
+        break;
+      case 'underline':
+        this._addRectangleFloat(
+          vertices.attributes,
+          offset,
+          x * this._dimensions.scaledCellWidth,
+          (y + 1) * this._dimensions.scaledCellHeight - window.devicePixelRatio,
+          this._dimensions.scaledCellWidth,
+          window.devicePixelRatio,
+          this._cursorFloat
+        );
+        break;
+      case 'block':
+        if (isFocused) {
+          this._addRectangleFloat(
+            vertices.attributes,
+            offset,
+            x * this._dimensions.scaledCellWidth,
+            y * this._dimensions.scaledCellHeight,
+            this._dimensions.scaledCellWidth,
+            this._dimensions.scaledCellHeight,
+            this._cursorFloat
+          );
+        } else {
+          this._addRectangleFloat(
+            vertices.attributes,
+            offset,
+            x * this._dimensions.scaledCellWidth,
+            y * this._dimensions.scaledCellHeight,
+            window.devicePixelRatio,
+            this._dimensions.scaledCellHeight,
+            this._cursorFloat
+          );
+          this._addRectangleFloat(
+            vertices.attributes,
+            offset + INDICES_PER_RECTANGLE,
+            (x + 1) * this._dimensions.scaledCellWidth - window.devicePixelRatio,
+            y * this._dimensions.scaledCellHeight,
+            window.devicePixelRatio,
+            this._dimensions.scaledCellHeight,
+            this._cursorFloat
+          );
+          this._addRectangleFloat(
+            vertices.attributes,
+            offset + INDICES_PER_RECTANGLE * 2,
+            x * this._dimensions.scaledCellWidth,
+            y * this._dimensions.scaledCellHeight,
+            this._dimensions.scaledCellWidth,
+            window.devicePixelRatio,
+            this._cursorFloat
+          );
+          this._addRectangleFloat(
+            vertices.attributes,
+            offset + INDICES_PER_RECTANGLE * 3,
+            x * this._dimensions.scaledCellWidth,
+            (y + 1) * this._dimensions.scaledCellHeight - window.devicePixelRatio,
+            this._dimensions.scaledCellWidth,
+            window.devicePixelRatio,
+            this._cursorFloat
+          );
+          return 4;
+        }
+        break;
+    }
+    return 1;
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {

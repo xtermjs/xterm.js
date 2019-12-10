@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 export class RenderService extends Disposable implements IRenderService {
@@ -38,7 +38,8 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     readonly screenElement: HTMLElement,
     @IOptionsService readonly optionsService: IOptionsService,
-    @ICharSizeService readonly charSizeService: ICharSizeService
+    @ICharSizeService readonly charSizeService: ICharSizeService,
+    @IBufferService readonly bufferService: IBufferService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -48,7 +49,11 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
-    this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
+    this.register(optionsService.onOptionChange(() => {
+      this._renderer.onOptionsChanged();
+      // TODO: A better place for this? Otherwise focus is required to redraw the cursor
+      this.refreshRows(this.bufferService.buffer.y, this.bufferService.buffer.y);
+    }));
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose

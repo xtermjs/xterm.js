@@ -6,7 +6,6 @@
 import { ITerminal } from '../../../src/Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
-import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -20,6 +19,7 @@ import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
+import { ICoreService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -38,6 +38,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _core: ITerminal;
   private _isAttached: boolean;
+  private _isFocused: boolean = false;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
   public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
@@ -52,8 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (<any>this._terminal)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRefreshRows)
+      new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -71,6 +71,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
+    this._updateCursorModel();
 
     this._canvas = document.createElement('canvas');
 
@@ -159,10 +160,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
+    this._isFocused = false;
+    this._updateCursorModel();
     this._renderLayers.forEach(l => l.onBlur(this._terminal));
   }
 
   public onFocus(): void {
+    this._isFocused = true;
+    this._updateCursorModel();
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
@@ -178,6 +183,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onCursorMove(): void {
+    this._updateCursorModel();
     this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
   }
 
@@ -316,6 +322,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
     this._model.selection.startCol = start[0];
     this._model.selection.endCol = end[0];
+  }
+
+  private _updateCursorModel(): void {
+    const terminal = this._terminal;
+    this._model.cursor.position.x = terminal.buffer.cursorX;
+    this._model.cursor.position.y = terminal.buffer.cursorY;
+    const coreService: ICoreService = (<any>terminal)._core._coreService;
+    this._model.cursor.isHidden = !coreService.isCursorInitialized || coreService.isCursorHidden;
+    this._model.cursor.isFocused = this._isFocused;
   }
 
   /**

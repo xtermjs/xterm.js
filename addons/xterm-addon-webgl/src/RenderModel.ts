@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderModel, ISelectionRenderModel } from './Types';
+import { IRenderModel, ISelectionRenderModel, ICursorRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 
 export const RENDER_MODEL_INDICIES_PER_CELL = 3;
@@ -16,6 +16,7 @@ export class RenderModel implements IRenderModel {
   public cells: Uint32Array;
   public lineLengths: Uint32Array;
   public selection: ISelectionRenderModel;
+  public cursor: ICursorRenderModel;
 
   constructor() {
     this.cells = new Uint32Array(0);
@@ -28,6 +29,14 @@ export class RenderModel implements IRenderModel {
       viewportCappedEndRow: 0,
       startCol: 0,
       endCol: 0
+    };
+    this.cursor = {
+      position: {
+        x: 0,
+        y: 0
+      },
+      isHidden: true,
+      isFocused: false
     };
   }
 
