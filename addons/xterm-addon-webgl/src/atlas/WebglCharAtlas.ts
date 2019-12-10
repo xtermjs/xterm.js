@@ -316,6 +316,11 @@ export class WebglCharAtlas implements IDisposable {
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
 
+    const invisible = !!this._workAttributeData.isInvisible();
+    if (invisible) {
+      return NULL_RASTERIZED_GLYPH;
+    }
+
     const bold = !!this._workAttributeData.isBold();
     const inverse = !!this._workAttributeData.isInverse();
     const dim = !!this._workAttributeData.isDim();
