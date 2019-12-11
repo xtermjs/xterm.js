@@ -10,6 +10,7 @@ import { IColorSet } from 'browser/Types';
 
 export class WebglAddon implements ITerminalAddon {
   private _terminal?: Terminal;
+  private _renderer?: WebglRenderer;
 
   constructor(
     private _preserveDrawingBuffer?: boolean
@@ -22,7 +23,8 @@ export class WebglAddon implements ITerminalAddon {
     this._terminal = terminal;
     const renderService: IRenderService =  (<any>terminal)._core._renderService;
     const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
-    renderService.setRenderer(new WebglRenderer(terminal, colors, this._preserveDrawingBuffer));
+    this._renderer = new WebglRenderer(terminal, colors, this._preserveDrawingBuffer);
+    renderService.setRenderer(this._renderer);
   }
 
   public dispose(): void {
@@ -32,5 +34,10 @@ export class WebglAddon implements ITerminalAddon {
     const renderService: IRenderService = (<any>this._terminal)._core._renderService;
     renderService.setRenderer((<any>this._terminal)._core._createRenderer());
     renderService.onResize(this._terminal.cols, this._terminal.rows);
+    this._renderer = undefined;
+  }
+
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._renderer?.textureAtlas;
   }
 }
