@@ -439,7 +439,5 @@ export class MockCompositionHelper implements ICompositionHelper {
   keydown(ev: KeyboardEvent): boolean {
     return true;
   }
-  moveTextAreaUnderMouseCursor(): void {
-    throw new Error('Method not implemented.');
-  }
+  moveTextAreaUnderMouseCursor(): void { }
 }
