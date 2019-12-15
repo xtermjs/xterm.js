@@ -200,7 +200,7 @@ export class CompositionHelper {
     }
   }
 
-  public moveTextAreaUnderMouseCursor(): void{
+  public moveTextAreaUnderMouseCursor(): void {
     if (this._bufferService.buffer.isCursorInViewport) {
       const cellHeight = Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
       const cursorTop = this._bufferService.buffer.y * cellHeight;
