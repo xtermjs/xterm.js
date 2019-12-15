@@ -188,10 +188,19 @@ export class CompositionHelper {
    *   necessary as the IME events across browsers are not consistently triggered.
    */
   public updateCompositionElements(dontRecurse?: boolean): void {
+
     if (!this._isComposing) {
       return;
     }
 
+    this.moveTextAreaUnderMouseCursor();
+
+    if (!dontRecurse) {
+      setTimeout(() => this.updateCompositionElements(true), 0);
+    }
+  }
+
+  public moveTextAreaUnderMouseCursor(): void{
     if (this._bufferService.buffer.isCursorInViewport) {
       const cellHeight = Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
       const cursorTop = this._bufferService.buffer.y * cellHeight;
@@ -211,10 +220,6 @@ export class CompositionHelper {
       this._textarea.style.width = compositionViewBounds.width + 'px';
       this._textarea.style.height = compositionViewBounds.height + 'px';
       this._textarea.style.lineHeight = compositionViewBounds.height + 'px';
-    }
-
-    if (!dontRecurse) {
-      setTimeout(() => this.updateCompositionElements(true), 0);
     }
   }
 

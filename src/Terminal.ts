@@ -1302,6 +1302,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return thirdLevelKey;
     }
 
+    this._compositionHelper.moveTextAreaUnderMouseCursor();
     // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
