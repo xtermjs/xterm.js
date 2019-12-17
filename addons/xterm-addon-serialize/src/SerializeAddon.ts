@@ -27,8 +27,6 @@ abstract class BaseSerializeHandler {
     for (let row = startRow; row < endRow; row++) {
       const line = this._buffer.getLine(row);
 
-      this._lineStart(row);
-
       if (line) {
         for (let col = 0; col < line.length; col++) {
           const newCell = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
@@ -37,12 +35,6 @@ abstract class BaseSerializeHandler {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
             continue;
           }
-          if (!newCell.equalFg(oldCell) || !newCell.equalBg(oldCell)) {
-            this._cellFgBgChanged(newCell, oldCell, row, col);
-          }
-          if (!newCell.equalFlags(oldCell)) {
-            this._cellFlagsChanged(newCell, oldCell, row, col);
-          }
 
           this._nextCell(newCell, oldCell, row, col);
 
@@ -50,7 +42,7 @@ abstract class BaseSerializeHandler {
         }
       }
 
-      this._lineEnd(row);
+      this._nextRow(row);
     }
 
     this._serializeEnd();
@@ -60,13 +52,7 @@ abstract class BaseSerializeHandler {
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
-
-  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
-
-  protected _lineStart(row: number): void { }
-
-  protected _lineEnd(row: number): void { }
+  protected _nextRow(row: number): void { }
 
   protected _serializeStart(rows: number): void { }
 
@@ -80,7 +66,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _allRows: string[] = new Array<string>();
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
-  private _sgrSeq: number[] = [];
 
   constructor(buffer: IBuffer) {
     super(buffer);
@@ -90,51 +75,52 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._allRows = new Array<string>(rows);
   }
 
-  protected _lineEnd(row: number): void {
+  protected _nextRow(row: number): void {
     this._allRows[this._rowIndex++] = this._currentRow;
     this._currentRow = '';
     this._nullCellCount = 0;
   }
 
-  protected _cellFlagsChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const sgrSeq = this._sgrSeq;
-
-    // skip if it's default color style, we will use \x1b[0m to clear every color style later
-    if (cell.isAttributeDefault() || cell.equalFlags(oldCell)) { return; }
-
-    if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
-    if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
-    if (cell.isUnderline() !== oldCell.isUnderline()) { sgrSeq.push(cell.isUnderline() ? 4 : 24); }
-    if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
-    if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
-    if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
-    if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
-  }
-
-  protected _cellFgBgChanged(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
-    const sgrSeq = this._sgrSeq;
-
-    // skip if it's default color style, we will use \x1b[0m to clear every color style later
-    if (cell.isAttributeDefault()) { return; }
-
-    if (!cell.equalFg(oldCell)) {
-      const color = cell.getFgColor();
-      if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-      else if (cell.isFgPalette256()) { sgrSeq.push(38, 5, color); }
-      else if (cell.isFgPalette16()) { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
-      else { sgrSeq.push(39); }
-    }
-
-    if (!cell.equalBg(oldCell)) {
-      const color = cell.getBgColor();
-      if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-      else if (cell.isBgPalette256()) { sgrSeq.push(48, 5, color); }
-      else if (cell.isBgPalette16()) { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
-      else { sgrSeq.push(49); }
-    }
-  }
-
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+    const sgrSeq: number[] = [];
+    const fgChanged = !cell.equalFg(oldCell);
+    const bgChanged = !cell.equalBg(oldCell);
+    const flagsChanged = !cell.equalFlags(oldCell);
+
+    if (fgChanged || bgChanged || flagsChanged) {
+      if (cell.isAttributeDefault()) {
+        this._currentRow += '\x1b[0m';
+      } else {
+        if (fgChanged) {
+          const color = cell.getFgColor();
+          if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
+          else if (cell.isFgPalette256()) { sgrSeq.push(38, 5, color); }
+          else if (cell.isFgPalette16()) { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
+          else { sgrSeq.push(39); }
+        }
+        if (bgChanged) {
+          const color = cell.getBgColor();
+          if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
+          else if (cell.isBgPalette256()) { sgrSeq.push(48, 5, color); }
+          else if (cell.isBgPalette16()) { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
+          else { sgrSeq.push(49); }
+        }
+        if (flagsChanged) {
+          if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
+          if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
+          if (cell.isUnderline() !== oldCell.isUnderline()) { sgrSeq.push(cell.isUnderline() ? 4 : 24); }
+          if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
+          if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
+          if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
+          if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
+        }
+      }
+    }
+
+    if (sgrSeq.length) {
+      this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
+    }
+
     // Count number of null cells encountered after the last non-null cell and move the cursor
     // if a non-null cell is found (eg. \t or cursor move)
     if (cell.char === '') {
@@ -142,19 +128,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
     } else if (this._nullCellCount > 0) {
       this._currentRow += `\x1b[${this._nullCellCount}C`;
       this._nullCellCount = 0;
-    }
-
-    const fgChanged = !cell.equalFg(oldCell);
-    const bgChanged = !cell.equalBg(oldCell);
-    const flagsChanged = !cell.equalFlags(oldCell);
-
-    if (cell.isAttributeDefault() && (fgChanged || bgChanged || flagsChanged)) {
-      this._currentRow += '\x1b[0m';
-    }
-
-    if (this._sgrSeq.length) {
-      this._currentRow += `\x1b[${this._sgrSeq.join(';')}m`;
-      this._sgrSeq = [];
     }
 
     this._currentRow += cell.char;
