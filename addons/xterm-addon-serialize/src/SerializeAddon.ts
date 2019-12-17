@@ -42,7 +42,7 @@ abstract class BaseSerializeHandler {
         }
       }
 
-      this._nextRow(row);
+      this._rowEnd(row);
     }
 
     this._serializeEnd();
@@ -52,7 +52,7 @@ abstract class BaseSerializeHandler {
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
 
-  protected _nextRow(row: number): void { }
+  protected _rowEnd(row: number): void { }
 
   protected _serializeStart(rows: number): void { }
 
@@ -75,7 +75,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._allRows = new Array<string>(rows);
   }
 
-  protected _nextRow(row: number): void {
+  protected _rowEnd(row: number): void {
     this._allRows[this._rowIndex++] = this._currentRow;
     this._currentRow = '';
     this._nullCellCount = 0;
