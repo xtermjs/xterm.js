@@ -5,7 +5,7 @@
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, ICharset, ICharsetModes } from 'common/Types';
 import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
@@ -18,6 +18,11 @@ export class CoreService implements ICoreService {
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;
   public decPrivateModes: IDecPrivateModes;
+  public charsetModes: ICharsetModes = {
+    charset: undefined,
+    charsets: [],
+    glevel: 0
+  };
 
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
@@ -38,6 +43,12 @@ export class CoreService implements ICoreService {
 
   public reset(): void {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+  }
+
+  public softReset(): void {
+    this.charsetModes.charset = undefined;
+    this.charsetModes.charsets = [];
+    this.charsetModes.glevel = 0;
   }
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
@@ -68,5 +79,17 @@ export class CoreService implements ICoreService {
     }
     this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onBinary.fire(data);
+  }
+
+  public setgLevel(g: number): void {
+    this.charsetModes.glevel = g;
+    this.charsetModes.charset = this.charsetModes.charsets[g];
+  }
+
+  public setgCharset(g: number, charset: ICharset): void {
+    this.charsetModes.charsets[g] = charset;
+    if (this.charsetModes.glevel === g) {
+      this.charsetModes.charset = charset;
+    }
   }
 }

@@ -201,10 +201,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   options: ITerminalOptions = {};
   cols: number;
   rows: number;
-  charset: { [key: string]: string; };
-  gcharset: number;
-  glevel: number;
-  charsets: { [key: string]: string; }[];
   applicationKeypad: boolean;
   applicationCursor: boolean;
   originMode: boolean;
@@ -243,9 +239,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   nextStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
-  setgLevel(g: number): void {
-    throw new Error('Method not implemented.');
-  }
   eraseAttrData(): IAttributeData {
     throw new Error('Method not implemented.');
   }
@@ -264,9 +257,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   is(term: string): boolean {
     throw new Error('Method not implemented.');
   }
-  setgCharset(g: number, charset: { [key: string]: string; }): void {
-    throw new Error('Method not implemented.');
-  }
   resize(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
@@ -277,9 +267,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   showCursor(): void {
-    throw new Error('Method not implemented.');
-  }
-  refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
   matchColor(r1: number, g1: number, b1: number): number {

@@ -381,7 +381,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let code: number;
     let chWidth: number;
     const buffer = this._bufferService.buffer;
-    const charset = this._terminal.charset;
+    const charset = this._coreService.charsetModes.charset;
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._terminal.wraparoundMode;
@@ -608,7 +608,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * G1 character set.
    */
   public shiftOut(): void {
-    this._terminal.setgLevel(1);
+    this._coreService.setgLevel(1);
   }
 
   /**
@@ -617,7 +617,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * character set (the default).
    */
   public shiftIn(): void {
-    this._terminal.setgLevel(0);
+    this._coreService.setgLevel(0);
   }
 
   /**
@@ -1396,10 +1396,10 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.applicationCursorKeys = true;
           break;
         case 2:
-          this._terminal.setgCharset(0, DEFAULT_CHARSET);
-          this._terminal.setgCharset(1, DEFAULT_CHARSET);
-          this._terminal.setgCharset(2, DEFAULT_CHARSET);
-          this._terminal.setgCharset(3, DEFAULT_CHARSET);
+          this._coreService.setgCharset(0, DEFAULT_CHARSET);
+          this._coreService.setgCharset(1, DEFAULT_CHARSET);
+          this._coreService.setgCharset(2, DEFAULT_CHARSET);
+          this._coreService.setgCharset(3, DEFAULT_CHARSET);
           // set VT100 mode here
           break;
         case 3: // 132 col mode
@@ -1974,9 +1974,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
-    this._terminal.charset = null;
-    this._terminal.glevel = 0; // ??
-    this._terminal.charsets = [null]; // ??
+    this._coreService.softReset();
   }
 
   /**
@@ -2040,7 +2038,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     this._bufferService.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
     this._bufferService.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
-    this._bufferService.buffer.savedCharset = this._terminal.charset;
+    this._bufferService.buffer.savedCharset = this._coreService.charsetModes.charset;
   }
 
 
@@ -2054,9 +2052,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._bufferService.buffer.savedCurAttrData.bg;
-    this._terminal.charset = (this as any)._savedCharset;
+    this._coreService.charsetModes.charset = (this as any)._savedCharset;
     if (this._bufferService.buffer.savedCharset) {
-      this._terminal.charset = this._bufferService.buffer.savedCharset;
+      this._coreService.charsetModes.charset = this._bufferService.buffer.savedCharset;
     }
     this._restrictCursor();
   }
@@ -2115,8 +2113,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   therefore ESC % G does the same.
    */
   public selectDefaultCharset(): void {
-    this._terminal.setgLevel(0);
-    this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
+    this._coreService.setgLevel(0);
+    this._coreService.setgCharset(0, DEFAULT_CHARSET); // US (default)
   }
 
   /**
@@ -2143,7 +2141,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collectAndFlag[0] === '/') {
       return;  // TODO: Is this supported?
     }
-    this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    this._coreService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
     return;
   }
 
@@ -2222,7 +2220,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   you use another locking shift. (partly supported)
    */
   public setgLevel(level: number): void {
-    this._terminal.setgLevel(level);  // TODO: save to move from terminal?
+    this._coreService.setgLevel(level);
   }
 
   /**

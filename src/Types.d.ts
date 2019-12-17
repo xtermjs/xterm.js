@@ -25,10 +25,6 @@ export interface IInputHandlingTerminal {
   options: ITerminalOptions;
   cols: number;
   rows: number;
-  charset: ICharset;
-  gcharset: number;
-  glevel: number;
-  charsets: ICharset[];
   applicationKeypad: boolean;
   originMode: boolean;
   insertMode: boolean;
@@ -49,10 +45,8 @@ export interface IInputHandlingTerminal {
   bell(): void;
   focus(): void;
   scroll(isWrapped?: boolean): void;
-  setgLevel(g: number): void;
   eraseAttrData(): IAttributeData;
   is(term: string): boolean;
-  setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
   reset(): void;
   showCursor(): void;

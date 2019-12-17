@@ -65,6 +65,12 @@ export interface ICharset {
   [key: string]: string;
 }
 
+export interface ICharsetModes {
+  charset: ICharset | undefined;
+  glevel: number;
+  charsets: ICharset[];
+}
+
 export type CharData = [number, string, number, number];
 export type IColorRGB = [number, number, number];
 

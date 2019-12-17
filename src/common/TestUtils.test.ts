@@ -9,7 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharsetModes, ICharset } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
@@ -47,11 +47,19 @@ export class MockCoreService implements ICoreService {
   isCursorHidden: boolean = false;
   isFocused: boolean = false;
   serviceBrand: any;
+  charsetModes: ICharsetModes = {
+    charset: undefined,
+    charsets: [],
+    glevel: 0
+  };
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
   onBinary: IEvent<string> = new EventEmitter<string>().event;
   reset(): void {}
+  softReset(): void {}
+  setgLevel(g: number): void {}
+  setgCharset(g: number, charset: ICharset): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
   triggerBinaryEvent(data: string): void {}
 }

@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -115,13 +115,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public insertMode: boolean;
   public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
   public bracketedPasteMode: boolean;
-
-  // charset
-  // The current charset
-  public charset: ICharset;
-  public gcharset: number;
-  public glevel: number;
-  public charsets: ICharset[];
 
   // mouse properties
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
@@ -261,11 +254,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.bracketedPasteMode = false;
 
     // charset
-    this.charset = null;
-    this.gcharset = null;
-    this.glevel = 0;
-    // TODO: Can this be just []?
-    this.charsets = [null];
+    this._coreService.softReset();
 
     this.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
@@ -1305,27 +1294,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-  }
-
-  /**
-   * Set the G level of the terminal
-   * @param g
-   */
-  public setgLevel(g: number): void {
-    this.glevel = g;
-    this.charset = this.charsets[g];
-  }
-
-  /**
-   * Set the charset for the given G level of the terminal
-   * @param g
-   * @param charset
-   */
-  public setgCharset(g: number, charset: ICharset): void {
-    this.charsets[g] = charset;
-    if (this.glevel === g) {
-      this.charset = charset;
-    }
   }
 
   protected _keyUp(ev: KeyboardEvent): void {
