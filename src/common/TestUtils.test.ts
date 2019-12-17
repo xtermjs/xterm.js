@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharsetModes, ICharset } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset } from 'common/Types';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
@@ -42,24 +42,26 @@ export class MockCoreMouseService implements ICoreMouseService {
   }
 }
 
+export class MockCharsetService implements ICharsetService {
+  serviceBrand: any;
+  charset: ICharset | undefined;
+  glevel: number = 0;
+  charsets: readonly ICharset[] = [];
+  reset(): void {}
+  setgLevel(g: number): void {}
+  setgCharset(g: number, charset: ICharset): void {}
+}
+
 export class MockCoreService implements ICoreService {
+  serviceBrand: any;
   isCursorInitialized: boolean = false;
   isCursorHidden: boolean = false;
   isFocused: boolean = false;
-  serviceBrand: any;
-  charsetModes: ICharsetModes = {
-    charset: undefined,
-    charsets: [],
-    glevel: 0
-  };
   decPrivateModes: IDecPrivateModes = {} as any;
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
   onBinary: IEvent<string> = new EventEmitter<string>().event;
   reset(): void {}
-  softReset(): void {}
-  setgLevel(g: number): void {}
-  setgCharset(g: number, charset: ICharset): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
   triggerBinaryEvent(data: string): void {}
 }

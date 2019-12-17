@@ -46,7 +46,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { handleWindowsModeLineFeed } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -64,6 +64,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { CharsetService } from 'common/services/CharsetService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -96,6 +97,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _charsetService: ICharsetService;
   private _coreMouseService: ICoreMouseService;
   private _dirtyRowService: IDirtyRowService;
   private _instantiationService: IInstantiationService;
@@ -221,6 +223,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._charsetService = this._instantiationService.createInstance(CharsetService);
+    this._instantiationService.setService(ICharsetService, this._charsetService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -254,7 +258,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.bracketedPasteMode = false;
 
     // charset
-    this._coreService.softReset();
+    this._charsetService.reset();
 
     this.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
@@ -265,7 +269,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._userScrolling = false;
 
     // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
+    this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
     this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());

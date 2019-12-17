@@ -62,13 +62,7 @@ export interface IKeyboardResult {
 }
 
 export interface ICharset {
-  [key: string]: string;
-}
-
-export interface ICharsetModes {
-  charset: ICharset | undefined;
-  glevel: number;
-  charsets: ICharset[];
+  [key: string]: string | undefined;
 }
 
 export type CharData = [number, string, number, number];

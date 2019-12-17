@@ -19,7 +19,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 
@@ -140,6 +140,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   constructor(
     protected _terminal: IInputHandlingTerminal,
     private readonly _bufferService: IBufferService,
+    private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
@@ -381,7 +382,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let code: number;
     let chWidth: number;
     const buffer = this._bufferService.buffer;
-    const charset = this._coreService.charsetModes.charset;
+    const charset = this._charsetService.charset;
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._terminal.wraparoundMode;
@@ -608,7 +609,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * G1 character set.
    */
   public shiftOut(): void {
-    this._coreService.setgLevel(1);
+    this._charsetService.setgLevel(1);
   }
 
   /**
@@ -617,7 +618,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * character set (the default).
    */
   public shiftIn(): void {
-    this._coreService.setgLevel(0);
+    this._charsetService.setgLevel(0);
   }
 
   /**
@@ -1396,10 +1397,10 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.applicationCursorKeys = true;
           break;
         case 2:
-          this._coreService.setgCharset(0, DEFAULT_CHARSET);
-          this._coreService.setgCharset(1, DEFAULT_CHARSET);
-          this._coreService.setgCharset(2, DEFAULT_CHARSET);
-          this._coreService.setgCharset(3, DEFAULT_CHARSET);
+          this._charsetService.setgCharset(0, DEFAULT_CHARSET);
+          this._charsetService.setgCharset(1, DEFAULT_CHARSET);
+          this._charsetService.setgCharset(2, DEFAULT_CHARSET);
+          this._charsetService.setgCharset(3, DEFAULT_CHARSET);
           // set VT100 mode here
           break;
         case 3: // 132 col mode
@@ -1974,7 +1975,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
-    this._coreService.softReset();
+    this._charsetService.reset();
   }
 
   /**
@@ -2038,7 +2039,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     this._bufferService.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
     this._bufferService.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
-    this._bufferService.buffer.savedCharset = this._coreService.charsetModes.charset;
+    this._bufferService.buffer.savedCharset = this._charsetService.charset;
   }
 
 
@@ -2052,9 +2053,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._bufferService.buffer.savedCurAttrData.bg;
-    this._coreService.charsetModes.charset = (this as any)._savedCharset;
+    this._charsetService.charset = (this as any)._savedCharset;
     if (this._bufferService.buffer.savedCharset) {
-      this._coreService.charsetModes.charset = this._bufferService.buffer.savedCharset;
+      this._charsetService.charset = this._bufferService.buffer.savedCharset;
     }
     this._restrictCursor();
   }
@@ -2113,8 +2114,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   therefore ESC % G does the same.
    */
   public selectDefaultCharset(): void {
-    this._coreService.setgLevel(0);
-    this._coreService.setgCharset(0, DEFAULT_CHARSET); // US (default)
+    this._charsetService.setgLevel(0);
+    this._charsetService.setgCharset(0, DEFAULT_CHARSET); // US (default)
   }
 
   /**
@@ -2141,7 +2142,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collectAndFlag[0] === '/') {
       return;  // TODO: Is this supported?
     }
-    this._coreService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
     return;
   }
 
@@ -2220,7 +2221,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   you use another locking shift. (partly supported)
    */
   public setgLevel(level: number): void {
-    this._coreService.setgLevel(level);
+    this._charsetService.setgLevel(level);
   }
 
   /**
