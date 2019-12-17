@@ -56,7 +56,6 @@ export interface IInputHandlingTerminal {
   resize(x: number, y: number): void;
   reset(): void;
   showCursor(): void;
-  refresh(start: number, end: number): void;
   handleTitle(title: string): void;
 }
 

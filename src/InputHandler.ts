@@ -128,6 +128,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
+  private _onRequestRefreshRows = new EventEmitter<number, number>();
+  public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -372,7 +374,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Refresh any dirty rows accumulated as part of parsing
-    this._terminal.refresh(this._dirtyRowService.start, this._dirtyRowService.end);
+    this._onRequestRefreshRows.fire(this._dirtyRowService.start, this._dirtyRowService.end);
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
@@ -1465,7 +1467,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._terminal.eraseAttrData());
-          this._terminal.refresh(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
@@ -1639,7 +1641,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (params.params[i] === 1049) {
             this.restoreCursor();
           }
-          this._terminal.refresh(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
