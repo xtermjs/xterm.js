@@ -152,6 +152,7 @@ export interface IMarker extends IDisposable {
 
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
+  origin: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 

@@ -59,6 +59,7 @@ export class MockCoreService implements ICoreService {
   isFocused: boolean = false;
   decPrivateModes: IDecPrivateModes = {
     applicationCursorKeys: false,
+    origin: false,
     wraparound: true
   };
   onData: IEvent<string> = new EventEmitter<string>().event;

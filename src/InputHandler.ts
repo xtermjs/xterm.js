@@ -626,7 +626,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _restrictCursor(): void {
     this._bufferService.buffer.x = Math.min(this._bufferService.cols - 1, Math.max(0, this._bufferService.buffer.x));
-    this._bufferService.buffer.y = this._terminal.originMode
+    this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
       ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
     this._dirtyRowService.markDirty(this._bufferService.buffer.y);
@@ -637,7 +637,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _setCursor(x: number, y: number): void {
     this._dirtyRowService.markDirty(this._bufferService.buffer.y);
-    if (this._terminal.originMode) {
+    if (this._coreService.decPrivateModes.origin) {
       this._bufferService.buffer.x = x;
       this._bufferService.buffer.y = this._bufferService.buffer.scrollTop + y;
     } else {
@@ -1410,7 +1410,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.reset();
           break;
         case 6:
-          this._terminal.originMode = true;
+          this._coreService.decPrivateModes.origin = true;
           this._setCursor(0, 0);
           break;
         case 7:
@@ -1593,7 +1593,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.reset();
           break;
         case 6:
-          this._terminal.originMode = false;
+          this._coreService.decPrivateModes.origin = false;
           this._setCursor(0, 0);
           break;
         case 7:
@@ -1964,7 +1964,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
-    this._terminal.originMode = false;
     this._terminal.applicationKeypad = false; // ?
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
