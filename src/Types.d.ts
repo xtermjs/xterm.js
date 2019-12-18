@@ -25,7 +25,6 @@ export interface IInputHandlingTerminal {
   options: ITerminalOptions;
   cols: number;
   rows: number;
-  applicationKeypad: boolean;
   insertMode: boolean;
   bracketedPasteMode: boolean;
   curAttrData: IAttributeData;

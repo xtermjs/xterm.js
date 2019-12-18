@@ -112,8 +112,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _soundService: ISoundService;
 
   // modes
-  public applicationKeypad: boolean;
-  public originMode: boolean;
   public insertMode: boolean;
   public bracketedPasteMode: boolean;
 
@@ -250,10 +248,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._customKeyEventHandler = null;
 
     // modes
-    this.applicationKeypad = false;
-    this.originMode = false;
     this.insertMode = false;
-    // this._coreService.decPrivateModes.wraparound = true;
     this.bracketedPasteMode = false;
 
     // charset

@@ -1421,7 +1421,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 66:
           this._logService.debug('Serial port requested application keypad.');
-          this._terminal.applicationKeypad = true;
+          this._coreService.decPrivateModes.applicationKeypad = true;
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
@@ -1604,7 +1604,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 66:
           this._logService.debug('Switching back to normal keypad.');
-          this._terminal.applicationKeypad = false;
+          this._coreService.decPrivateModes.applicationKeypad = false;
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
           }
@@ -1964,7 +1964,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
-    this._terminal.applicationKeypad = false; // ?
+    this._coreService.decPrivateModes.applicationKeypad = false; // ?
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }
@@ -2086,7 +2086,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public keypadApplicationMode(): void {
     this._logService.debug('Serial port requested application keypad.');
-    this._terminal.applicationKeypad = true;
+    this._coreService.decPrivateModes.applicationKeypad = true;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }
@@ -2099,7 +2099,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public keypadNumericMode(): void {
     this._logService.debug('Switching back to normal keypad.');
-    this._terminal.applicationKeypad = false;
+    this._coreService.decPrivateModes.applicationKeypad = false;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }

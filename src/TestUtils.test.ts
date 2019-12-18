@@ -201,9 +201,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   options: ITerminalOptions = {};
   cols: number;
   rows: number;
-  applicationKeypad: boolean;
-  applicationCursor: boolean;
-  originMode: boolean;
   insertMode: boolean;
   bracketedPasteMode: boolean;
   curAttrData = new AttributeData();

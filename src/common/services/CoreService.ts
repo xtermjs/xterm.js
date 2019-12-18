@@ -10,6 +10,7 @@ import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
+  applicationKeypad: false,
   origin: false,
   wraparound: true // defaults: xterm - true, vt100 - false
 });
