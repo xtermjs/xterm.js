@@ -1956,7 +1956,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
-    this._coreService.decPrivateModes.applicationKeypad = false; // ?
     this._terminal.viewport?.syncScrollArea();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
