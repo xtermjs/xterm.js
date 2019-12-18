@@ -38,7 +38,6 @@ export interface IInputHandlingTerminal {
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
 
-  bell(): void;
   focus(): void;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;

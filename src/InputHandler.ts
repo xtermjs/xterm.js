@@ -135,6 +135,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
+  private _onRequestBell = new EventEmitter<void>();
+  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -143,7 +145,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
-    protected _terminal: IInputHandlingTerminal,
+    private _terminal: IInputHandlingTerminal,
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
@@ -543,7 +545,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Bell (Ctrl-G).
    */
   public bell(): void {
-    this._terminal.bell();
+    this._onRequestBell.fire();
   }
 
   /**
