@@ -21,14 +21,9 @@ export type LineData = CharData[];
  * InputHandler cleanly from the ITerminal interface.
  */
 export interface IInputHandlingTerminal {
-  element: HTMLElement;
-  options: ITerminalOptions;
-  cols: number;
-  rows: number;
   insertMode: boolean;
   bracketedPasteMode: boolean;
   savedCols: number;
-  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
 
   buffers: IBufferSet;
@@ -38,7 +33,6 @@ export interface IInputHandlingTerminal {
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
 
-  focus(): void;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
   resize(x: number, y: number): void;
