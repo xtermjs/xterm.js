@@ -7,7 +7,7 @@ import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILink
 import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
@@ -227,10 +227,6 @@ class BufferLineApiView implements IBufferLineApi {
   }
 }
 
-const FG_FLAG_MASK = FgFlags.BOLD | FgFlags.BLINK | FgFlags.INVERSE | FgFlags.INVISIBLE | FgFlags.UNDERLINE;
-const BG_FLAG_MASK = BgFlags.DIM | BgFlags.ITALIC;
-const COLOR_MASK = Attributes.CM_MASK | Attributes.RGB_MASK;
-
 class BufferCellApiView implements IBufferCellApi {
   constructor(public cell: CellData) {}
 
@@ -266,18 +262,6 @@ class BufferCellApiView implements IBufferCellApi {
 
   public getFgColor(): number { return this.cell.getFgColor(); }
   public getBgColor(): number { return this.cell.getBgColor(); }
-
-
-  public equalFlags(other: BufferCellApiView): boolean {
-    return (this.cell.fg & FG_FLAG_MASK) === (other.cell.fg & FG_FLAG_MASK)
-      && (this.cell.bg & BG_FLAG_MASK) === (other.cell.bg & BG_FLAG_MASK);
-  }
-  public equalFg(other: BufferCellApiView): boolean {
-    return (this.cell.fg & COLOR_MASK) === (other.cell.fg & COLOR_MASK);
-  }
-  public equalBg(other: BufferCellApiView): boolean {
-    return (this.cell.bg & COLOR_MASK) === (other.cell.bg & COLOR_MASK);
-  }
 }
 
 class ParserApi implements IParser {

@@ -61,6 +61,26 @@ abstract class BaseSerializeHandler {
   protected _serializeFinished(): string { return ''; }
 }
 
+function equalFg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+  return cell1.getFgColorMode() === cell2.getFgColorMode()
+    && cell1.getFgColor() === cell2.getFgColor();
+}
+
+function equalBg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+  return cell1.getBgColorMode() === cell2.getBgColorMode()
+    && cell1.getBgColor() === cell2.getBgColor();
+}
+
+function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
+  return cell1.isInverse() === cell2.isInverse()
+    && cell1.isBold() === cell2.isBold()
+    && cell1.isUnderline() === cell2.isUnderline()
+    && cell1.isBlink() === cell2.isBlink()
+    && cell1.isInvisible() === cell2.isInvisible()
+    && cell1.isItalic() === cell2.isItalic()
+    && cell1.isDim() === cell2.isDim();
+}
+
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
@@ -83,9 +103,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     const sgrSeq: number[] = [];
-    const fgChanged = !cell.equalFg(oldCell);
-    const bgChanged = !cell.equalBg(oldCell);
-    const flagsChanged = !cell.equalFlags(oldCell);
+    const fgChanged = !equalFg(cell, oldCell);
+    const bgChanged = !equalBg(cell, oldCell);
+    const flagsChanged = !equalFlags(cell, oldCell);
 
     if (fgChanged || bgChanged || flagsChanged) {
       if (cell.isAttributeDefault()) {

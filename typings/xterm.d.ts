@@ -439,7 +439,7 @@ declare module 'xterm' {
      * Currently this is only used for a certain type of mouse reports that
      * happen to be not UTF-8 compatible.
      * The event value is a JS string, pass it to the underlying pty as
-     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`.
      * @returns an `IDisposable` to stop listening.
      */
     onBinary: IEvent<string>;
@@ -1049,10 +1049,6 @@ declare module 'xterm' {
     isAttributeDefault(): boolean;
     isFgDefault(): boolean;
     isBgDefault(): boolean;
-
-    equalFg(cell: IBufferCell): boolean;
-    equalBg(cell: IBufferCell): boolean;
-    equalFlags(cell: IBufferCell): boolean;
   }
 
   /**
