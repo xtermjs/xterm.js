@@ -27,7 +27,6 @@ export interface IInputHandlingTerminal {
   rows: number;
   insertMode: boolean;
   bracketedPasteMode: boolean;
-  curAttrData: IAttributeData;
   savedCols: number;
   mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
@@ -41,8 +40,7 @@ export interface IInputHandlingTerminal {
 
   bell(): void;
   focus(): void;
-  scroll(isWrapped?: boolean): void;
-  eraseAttrData(): IAttributeData;
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
   resize(x: number, y: number): void;
   reset(): void;

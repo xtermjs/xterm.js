@@ -19,6 +19,7 @@ import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
+  get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   keyDown(ev: any): boolean { return this._keyDown(ev); }
   keyPress(ev: any): boolean { return this._keyPress(ev); }
 }

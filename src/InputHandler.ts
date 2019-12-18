@@ -128,6 +128,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
+  private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
+  private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
+
   private _onRequestRefreshRows = new EventEmitter<number, number>();
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onCursorMove = new EventEmitter<void>();
@@ -387,7 +390,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._terminal.insertMode;
-    const curAttr = this._terminal.curAttrData;
+    const curAttr = this._curAttrData;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._dirtyRowService.markDirty(buffer.y);
@@ -442,7 +445,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._terminal.scroll(true);
+            this._terminal.scroll(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
@@ -556,7 +559,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll();
+      this._terminal.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -848,7 +851,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
+      this._bufferService.buffer.getNullCell(this._eraseAttrData())
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -862,7 +865,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _resetBufferLine(y: number): void {
     const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
-    line.fill(this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData()));
+    line.fill(this._bufferService.buffer.getNullCell(this._eraseAttrData()));
     line.isWrapped = false;
   }
 
@@ -977,7 +980,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      buffer.lines.splice(row, 0, buffer.getBlankLine(this._eraseAttrData()));
     }
 
     this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
@@ -1008,7 +1011,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      buffer.lines.splice(j, 0, buffer.getBlankLine(this._eraseAttrData()));
     }
 
     this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
@@ -1026,7 +1029,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1043,7 +1046,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1060,7 +1063,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._eraseAttrData()));
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
   }
@@ -1103,7 +1106,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1131,7 +1134,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.insertCells(0, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1149,7 +1152,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
-      line.insertCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1167,7 +1170,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(buffer.x, param, buffer.getNullCell(this._terminal.eraseAttrData()));
+      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1184,7 +1187,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._bufferService.buffer.x,
         this._bufferService.buffer.x + (params.params[0] || 1),
-        this._bufferService.buffer.getNullCell(this._terminal.eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1465,7 +1468,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          this._bufferService.buffers.activateAltBuffer(this._terminal.eraseAttrData());
+          this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
           this._terminal.viewport?.syncScrollArea();
           this._terminal.showCursor();
@@ -1787,14 +1790,14 @@ export class InputHandler extends Disposable implements IInputHandler {
   public charAttributes(params: IParams): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params.params[0] === 0) {
-      this._terminal.curAttrData.fg = DEFAULT_ATTR_DATA.fg;
-      this._terminal.curAttrData.bg = DEFAULT_ATTR_DATA.bg;
+      this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
+      this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
       return;
     }
 
     const l = params.length;
     let p;
-    const attr = this._terminal.curAttrData;
+    const attr = this._curAttrData;
 
     for (let i = 0; i < l; i++) {
       p = params.params[i];
@@ -1959,7 +1962,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.viewport?.syncScrollArea();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
-    this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
+    this._curAttrData = DEFAULT_ATTR_DATA.clone();
     this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
     this._coreService.reset();
     this._charsetService.reset();
@@ -2024,8 +2027,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public saveCursor(params?: IParams): void {
     this._bufferService.buffer.savedX = this._bufferService.buffer.x;
     this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    this._bufferService.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
-    this._bufferService.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
+    this._bufferService.buffer.savedCurAttrData.fg = this._curAttrData.fg;
+    this._bufferService.buffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._bufferService.buffer.savedCharset = this._charsetService.charset;
   }
 
@@ -2038,8 +2041,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public restoreCursor(params?: IParams): void {
     this._bufferService.buffer.x = this._bufferService.buffer.savedX || 0;
     this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
-    this._terminal.curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
-    this._terminal.curAttrData.bg = this._bufferService.buffer.savedCurAttrData.bg;
+    this._curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
+    this._curAttrData.bg = this._bufferService.buffer.savedCurAttrData.bg;
     this._charsetService.charset = (this as any)._savedCharset;
     if (this._bufferService.buffer.savedCharset) {
       this._charsetService.charset = this._bufferService.buffer.savedCharset;
@@ -2141,7 +2144,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll();
+      this._terminal.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -2175,7 +2178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
       buffer.lines.shiftElements(buffer.y + buffer.ybase, scrollRegionHeight, 1);
-      buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._terminal.eraseAttrData()));
+      buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._eraseAttrData()));
       this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
     } else {
       buffer.y--;
@@ -2191,6 +2194,15 @@ export class InputHandler extends Disposable implements IInputHandler {
   public reset(): void {
     this._parser.reset();
     this._terminal.reset();  // TODO: save to move from terminal?
+  }
+
+  /**
+   * back_color_erase feature for xterm.
+   */
+  private _eraseAttrData(): IAttributeData {
+    this._eraseAttrDataInternal.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
+    this._eraseAttrDataInternal.bg |= this._curAttrData.bg & ~0xFC000000;
+    return this._eraseAttrDataInternal;
   }
 
   /**
@@ -2219,8 +2231,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     // prepare cell data
     const cell = new CellData();
     cell.content = 1 << Content.WIDTH_SHIFT | 'E'.charCodeAt(0);
-    cell.fg = this._terminal.curAttrData.fg;
-    cell.bg = this._terminal.curAttrData.bg;
+    cell.fg = this._curAttrData.fg;
+    cell.bg = this._curAttrData.bg;
 
     const buffer = this._bufferService.buffer;
 

@@ -122,9 +122,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // misc
   public savedCols: number;
 
-  public curAttrData: IAttributeData;
-  private _eraseAttrData: IAttributeData;
-
   public params: (string | number)[];
   public currentParam: string | number;
 
@@ -254,9 +251,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // charset
     this._charsetService.reset();
 
-    this.curAttrData = DEFAULT_ATTR_DATA.clone();
-    this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
-
     this.params = [];
     this.currentParam = 0;
 
@@ -291,15 +285,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   public get buffers(): IBufferSet {
     return this._bufferService.buffers;
-  }
-
-  /**
-   * back_color_erase feature for xterm.
-   */
-  public eraseAttrData(): IAttributeData {
-    this._eraseAttrData.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
-    this._eraseAttrData.bg |= this.curAttrData.bg & ~0xFC000000;
-    return this._eraseAttrData;
   }
 
   /**
@@ -946,10 +931,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(isWrapped: boolean = false): void {
+  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    const eraseAttr = this.eraseAttrData();
     if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
       newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
       this._blankLine = newLine;
