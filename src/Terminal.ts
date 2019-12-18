@@ -115,7 +115,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public applicationKeypad: boolean;
   public originMode: boolean;
   public insertMode: boolean;
-  public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
   public bracketedPasteMode: boolean;
 
   // mouse properties
@@ -254,7 +253,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.applicationKeypad = false;
     this.originMode = false;
     this.insertMode = false;
-    this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
+    // this._coreService.decPrivateModes.wraparound = true;
     this.bracketedPasteMode = false;
 
     // charset

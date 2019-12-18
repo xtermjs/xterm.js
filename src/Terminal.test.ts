@@ -747,7 +747,7 @@ describe('Terminal', () => {
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
-        term.wraparoundMode = true;
+
         term.writeSync('a' + high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
         expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
@@ -761,7 +761,7 @@ describe('Terminal', () => {
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
-        term.wraparoundMode = false;
+        term.writeSync('\x1b[?7l'); // Disable wraparound mode
         const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
         if (width !== 1) {
           continue;
@@ -812,7 +812,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(1);
     });
     it('multiple combined é', () => {
-      term.wraparoundMode = true;
       term.writeSync(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
@@ -826,7 +825,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(1);
     });
     it('multiple surrogate with combined', () => {
-      term.wraparoundMode = true;
       term.writeSync(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
@@ -855,7 +853,6 @@ describe('Terminal', () => {
       expect(term.buffer.x).eql(3);
     });
     it('line of ￥ even', () => {
-      term.wraparoundMode = true;
       term.writeSync(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
@@ -875,7 +872,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ odd', () => {
-      term.wraparoundMode = true;
       term.buffer.x = 1;
       term.writeSync(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
@@ -900,7 +896,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ with combining odd', () => {
-      term.wraparoundMode = true;
       term.buffer.x = 1;
       term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
@@ -925,7 +920,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ with combining even', () => {
-      term.wraparoundMode = true;
       term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
@@ -945,7 +939,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(2);
     });
     it('line of surrogate fullwidth with combining odd', () => {
-      term.wraparoundMode = true;
       term.buffer.x = 1;
       term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
@@ -970,7 +963,6 @@ describe('Terminal', () => {
       expect(cell.getWidth()).eql(2);
     });
     it('line of surrogate fullwidth with combining even', () => {
-      term.wraparoundMode = true;
       term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);

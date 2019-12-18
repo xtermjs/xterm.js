@@ -205,7 +205,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   applicationCursor: boolean;
   originMode: boolean;
   insertMode: boolean;
-  wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttrData = new AttributeData();
   savedCols: number;

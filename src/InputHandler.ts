@@ -385,7 +385,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const charset = this._charsetService.charset;
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
-    const wraparoundMode = this._terminal.wraparoundMode;
+    const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._terminal.insertMode;
     const curAttr = this._terminal.curAttrData;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
@@ -1414,7 +1414,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._setCursor(0, 0);
           break;
         case 7:
-          this._terminal.wraparoundMode = true;
+          this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
           // this.cursorBlink = true;
@@ -1597,7 +1597,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._setCursor(0, 0);
           break;
         case 7:
-          this._terminal.wraparoundMode = false;
+          this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
           // this.cursorBlink = false;
@@ -1965,16 +1965,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
     this._terminal.originMode = false;
-    this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
     this._terminal.applicationKeypad = false; // ?
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }
-    this._coreService.decPrivateModes.applicationCursorKeys = false;
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
     this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
+    this._coreService.reset();
     this._charsetService.reset();
   }
 
