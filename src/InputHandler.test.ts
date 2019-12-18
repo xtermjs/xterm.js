@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
 import { Terminal } from './Terminal';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, IAttributeData } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes } from 'common/buffer/Constants';
@@ -33,6 +33,10 @@ function getLines(term: TestTerminal, limit: number = term.rows): string[] {
   return res;
 }
 
+class TestInputHandler extends InputHandler {
+  get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
+}
+
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
@@ -40,22 +44,22 @@ describe('InputHandler', () => {
     bufferService.buffer.x = 1;
     bufferService.buffer.y = 2;
     bufferService.buffer.ybase = 0;
-    const inputHandler = new InputHandler(terminal, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
-    (inputHandler as any)._curAttrData.fg = 3;
+    const inputHandler = new TestInputHandler(terminal, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+    inputHandler.curAttrData.fg = 3;
     // Save cursor position
     inputHandler.saveCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal((inputHandler as any)._curAttrData.fg, 3);
+    assert.equal(inputHandler.curAttrData.fg, 3);
     // Change cursor position
     bufferService.buffer.x = 10;
     bufferService.buffer.y = 20;
-    (inputHandler as any)._curAttrData.fg = 30;
+    inputHandler.curAttrData.fg = 30;
     // Restore cursor position
     inputHandler.restoreCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal((inputHandler as any)._curAttrData.fg, 3);
+    assert.equal(inputHandler.curAttrData.fg, 3);
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
