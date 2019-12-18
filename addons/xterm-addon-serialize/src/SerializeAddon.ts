@@ -1,14 +1,13 @@
 /**
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
+ *
+ * (EXPERIMENTAL) This Addon is still under development
  */
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
 
-function crop(value: number | undefined, low: number, high: number, initial: number): number {
-  if (value === undefined) {
-    return initial;
-  }
+function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
@@ -22,43 +21,34 @@ abstract class BaseSerializeHandler {
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
-    this._serializeStart(endRow - startRow);
+    this._beforeSerialize(endRow - startRow);
 
     for (let row = startRow; row < endRow; row++) {
       const line = this._buffer.getLine(row);
-
       if (line) {
         for (let col = 0; col < line.length; col++) {
-          const newCell = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
-
-          if (!newCell) {
+          const c = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
+          if (!c) {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
             continue;
           }
-
-          this._nextCell(newCell, oldCell, row, col);
-
-          oldCell = newCell;
+          this._nextCell(c, oldCell, row, col);
+          oldCell = c;
         }
       }
-
       this._rowEnd(row);
     }
 
-    this._serializeEnd();
+    this._afterSerialize();
 
-    return this._serializeFinished();
+    return this._serializeString();
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
-
   protected _rowEnd(row: number): void { }
-
-  protected _serializeStart(rows: number): void { }
-
-  protected _serializeEnd(): void { }
-
-  protected _serializeFinished(): string { return ''; }
+  protected _beforeSerialize(rows: number): void { }
+  protected _afterSerialize(): void { }
+  protected _serializeString(): string { return ''; }
 }
 
 function equalFg(cell1: IBufferCell, cell2: IBufferCell): boolean {
@@ -91,7 +81,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     super(buffer);
   }
 
-  protected _serializeStart(rows: number): void {
+  protected _beforeSerialize(rows: number): void {
     this._allRows = new Array<string>(rows);
   }
 
@@ -153,15 +143,13 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._currentRow += cell.char;
   }
 
-  protected _serializeFinished(): string {
+  protected _serializeString(): string {
     let rowEnd = this._allRows.length;
-
     for (; rowEnd > 0; rowEnd--) {
       if (this._allRows[rowEnd - 1]) {
         break;
       }
     }
-
     return this._allRows.slice(0, rowEnd).join('\r\n');
   }
 }
@@ -186,7 +174,7 @@ export class SerializeAddon implements ITerminalAddon {
     const maxRows = this._terminal.buffer.length;
     const handler = new StringSerializeHandler(this._terminal.buffer);
 
-    rows = crop(rows, 0, maxRows, maxRows);
+    rows = (rows === undefined) ? maxRows : constrain(rows, 0, maxRows);
 
     return handler.serialize(maxRows - rows, maxRows);
   }
