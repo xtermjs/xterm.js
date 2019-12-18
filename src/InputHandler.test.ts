@@ -36,26 +36,26 @@ function getLines(term: TestTerminal, limit: number = term.rows): string[] {
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
-    terminal.curAttrData.fg = 3;
     const bufferService = new MockBufferService(80, 30);
     bufferService.buffer.x = 1;
     bufferService.buffer.y = 2;
     bufferService.buffer.ybase = 0;
     const inputHandler = new InputHandler(terminal, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+    (inputHandler as any)._curAttrData.fg = 3;
     // Save cursor position
     inputHandler.saveCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal(terminal.curAttrData.fg, 3);
+    assert.equal((inputHandler as any)._curAttrData.fg, 3);
     // Change cursor position
     bufferService.buffer.x = 10;
     bufferService.buffer.y = 20;
-    terminal.curAttrData.fg = 30;
+    (inputHandler as any)._curAttrData.fg = 30;
     // Restore cursor position
     inputHandler.restoreCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal(terminal.curAttrData.fg, 3);
+    assert.equal((inputHandler as any)._curAttrData.fg, 3);
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {

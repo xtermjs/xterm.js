@@ -53,7 +53,6 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
@@ -259,6 +258,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // Register input handler and refire/handle events
     this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
     this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
+    this._inputHandler.onRequestReset(() => this.reset());
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);

@@ -43,7 +43,6 @@ export interface IInputHandlingTerminal {
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
   resize(x: number, y: number): void;
-  reset(): void;
   showCursor(): void;
   handleTitle(title: string): void;
 }

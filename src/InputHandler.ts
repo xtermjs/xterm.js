@@ -133,6 +133,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _onRequestRefreshRows = new EventEmitter<number, number>();
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
+  private _onRequestReset = new EventEmitter<void>();
+  public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -1410,7 +1412,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // TODO: move DECCOLM into compat addon
           this._terminal.savedCols = this._bufferService.cols;
           this._terminal.resize(132, this._bufferService.rows);
-          this._terminal.reset();
+          this._onRequestReset.fire();
           break;
         case 6:
           this._coreService.decPrivateModes.origin = true;
@@ -1589,7 +1591,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             this._terminal.resize(this._terminal.savedCols, this._bufferService.rows);
           }
           delete this._terminal.savedCols;
-          this._terminal.reset();
+          this._onRequestReset.fire();
           break;
         case 6:
           this._coreService.decPrivateModes.origin = false;
@@ -2193,7 +2195,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public reset(): void {
     this._parser.reset();
-    this._terminal.reset();  // TODO: save to move from terminal?
+    this._onRequestReset.fire();
   }
 
   /**

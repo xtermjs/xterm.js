@@ -204,7 +204,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   rows: number;
   insertMode: boolean;
   bracketedPasteMode: boolean;
-  curAttrData = new AttributeData();
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -226,11 +225,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   bell(): void {
     throw new Error('Method not implemented.');
   }
-
   updateRange(y: number): void {
     throw new Error('Method not implemented.');
   }
-  scroll(isWrapped?: boolean): void {
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void {
     throw new Error('Method not implemented.');
   }
   nextStop(x?: number): number {
