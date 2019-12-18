@@ -1422,9 +1422,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
-          if (this._terminal.viewport) {
-            this._terminal.viewport.syncScrollArea();
-          }
+          this._terminal.viewport?.syncScrollArea();
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1469,9 +1467,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._terminal.eraseAttrData());
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          if (this._terminal.viewport) {
-            this._terminal.viewport.syncScrollArea();
-          }
+          this._terminal.viewport?.syncScrollArea();
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1605,9 +1601,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
-          if (this._terminal.viewport) {
-            this._terminal.viewport.syncScrollArea();
-          }
+          this._terminal.viewport?.syncScrollArea();
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -1643,9 +1637,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             this.restoreCursor();
           }
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          if (this._terminal.viewport) {
-            this._terminal.viewport.syncScrollArea();
-          }
+          this._terminal.viewport?.syncScrollArea();
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1965,9 +1957,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._coreService.isCursorHidden = false;
     this._terminal.insertMode = false;
     this._coreService.decPrivateModes.applicationKeypad = false; // ?
-    if (this._terminal.viewport) {
-      this._terminal.viewport.syncScrollArea();
-    }
+    this._terminal.viewport?.syncScrollArea();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
@@ -2087,9 +2077,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadApplicationMode(): void {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
-    if (this._terminal.viewport) {
-      this._terminal.viewport.syncScrollArea();
-    }
+    this._terminal.viewport?.syncScrollArea();
   }
 
   /**
@@ -2100,9 +2088,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadNumericMode(): void {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
-    if (this._terminal.viewport) {
-      this._terminal.viewport.syncScrollArea();
-    }
+    this._terminal.viewport?.syncScrollArea();
   }
 
   /**
