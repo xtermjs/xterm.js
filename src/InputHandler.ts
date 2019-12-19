@@ -306,7 +306,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setEscHandler({final: 'M'}, () => this.reverseIndex());
     this._parser.setEscHandler({final: '='}, () => this.keypadApplicationMode());
     this._parser.setEscHandler({final: '>'}, () => this.keypadNumericMode());
-    this._parser.setEscHandler({final: 'c'}, () => this.reset());
+    this._parser.setEscHandler({final: 'c'}, () => this.fullReset());
     this._parser.setEscHandler({final: 'n'}, () => this.setgLevel(2));
     this._parser.setEscHandler({final: 'o'}, () => this.setgLevel(3));
     this._parser.setEscHandler({final: '|'}, () => this.setgLevel(3));
@@ -2195,9 +2195,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
    *   Reset to initial state.
    */
+  public fullReset(): void {
+    this._onRequestReset.fire();
+  }
+
   public reset(): void {
     this._parser.reset();
-    this._onRequestReset.fire();
+    this._curAttrData = DEFAULT_ATTR_DATA.clone();
+    this._eraseAttrDataInternal = DEFAULT_ATTR_DATA.clone();
   }
 
   /**

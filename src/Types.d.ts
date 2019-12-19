@@ -121,7 +121,7 @@ export interface IInputHandler {
   /** ESC D */ index(): void;
   /** ESC H */ tabSet(): void;
   /** ESC M */ reverseIndex(): void;
-  /** ESC c */ reset(): void;
+  /** ESC c */ fullReset(): void;
   /** ESC n
       ESC o
       ESC |

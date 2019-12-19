@@ -255,14 +255,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._userScrolling = false;
 
-    // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
-    this._inputHandler.onRequestBell(() => this.bell());
-    this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
-    this._inputHandler.onRequestReset(() => this.reset());
-    this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
-    this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
-    this.register(this._inputHandler);
+    if (this._inputHandler) {
+      this._inputHandler.reset();
+    } else {
+      // Register input handler and refire/handle events
+      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
+      this._inputHandler.onRequestBell(() => this.bell());
+      this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
+      this._inputHandler.onRequestReset(() => this.reset());
+      this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
+      this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
+      this.register(this._inputHandler);
+    }
 
     this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
 
@@ -1464,7 +1468,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
-    const inputHandler = this._inputHandler;
     const userScrolling = this._userScrolling;
 
     this._setup();
@@ -1475,7 +1478,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
-    this._inputHandler = inputHandler;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh
