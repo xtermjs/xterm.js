@@ -121,9 +121,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // misc
   public savedCols: number;
 
-  public params: (string | number)[];
-  public currentParam: string | number;
-
   // write buffer
   private _writeBuffer: WriteBuffer;
 
@@ -246,9 +243,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // modes
     this.insertMode = false;
     this.bracketedPasteMode = false;
-
-    this.params = [];
-    this.currentParam = 0;
 
     this._userScrolling = false;
 
