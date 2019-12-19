@@ -62,7 +62,7 @@ export interface IKeyboardResult {
 }
 
 export interface ICharset {
-  [key: string]: string;
+  [key: string]: string | undefined;
 }
 
 export type CharData = [number, string, number, number];
@@ -152,6 +152,9 @@ export interface IMarker extends IDisposable {
 
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
+  applicationKeypad: boolean;
+  origin: boolean;
+  wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 
 export interface IRowRange {
