@@ -74,10 +74,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public element: HTMLElement;
   public screenElement: HTMLElement;
 
-  /**
-   * The HTMLElement that the terminal is created in, set by Terminal.open.
-   */
-  private _parent: HTMLElement | null;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
@@ -236,8 +232,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   private _setup(): void {
-    this._parent = document ? document.body : null;
-
     this._customKeyEventHandler = null;
 
     // modes
@@ -456,9 +450,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param parent The element to create the terminal within.
    */
   public open(parent: HTMLElement): void {
-    this._parent = parent || this._parent;
-
-    if (!this._parent) {
+    if (!parent) {
       throw new Error('Terminal requires a parent element.');
     }
 
@@ -466,7 +458,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
     }
 
-    this._document = this._parent.ownerDocument;
+    this._document = parent.ownerDocument;
 
     // Create main element container
     this.element = this._document.createElement('div');
@@ -474,7 +466,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');
-    this._parent.appendChild(this.element);
+    parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
     // viewport and helper elements detached from the DOM
