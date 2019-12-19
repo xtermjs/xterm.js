@@ -16,7 +16,6 @@ const height = 600;
 
 describe('SerializeAddon', () => {
   before(async function (): Promise<any> {
-    this.timeout(8 * 1000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`]
