@@ -247,9 +247,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.insertMode = false;
     this.bracketedPasteMode = false;
 
-    // charset
-    this._charsetService.reset();
-
     this.params = [];
     this.currentParam = 0;
 
@@ -268,7 +265,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this.register(this._inputHandler);
     }
 
-    this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
+    if (!this.linkifier) {
+      this.linkifier = new Linkifier(this._bufferService, this._logService);
+    }
 
     if (this.options.windowsMode) {
       this._enableWindowsMode();
@@ -1472,6 +1471,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     this._setup();
     this._bufferService.reset();
+    this._charsetService.reset();
     this._coreService.reset();
     this._coreMouseService.reset();
     this._selectionService?.reset();
