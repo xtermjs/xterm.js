@@ -2196,11 +2196,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Reset to initial state.
    */
   public fullReset(): void {
+    this._parser.reset();
     this._onRequestReset.fire();
   }
 
   public reset(): void {
-    this._parser.reset();
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
     this._eraseAttrDataInternal = DEFAULT_ATTR_DATA.clone();
   }
