@@ -169,7 +169,7 @@ const HIGH_WIDE = [
 ];
 
 // BMP lookup table, lazy initialized during first addon loading
-let TABLE: Uint8Array;
+let table: Uint8Array;
 
 function bisearch(ucs: number, data: number[][]): boolean {
   let min = 0;
@@ -196,17 +196,17 @@ export class UnicodeV11 implements IUnicodeVersionProvider {
   public version = '11';
 
   constructor() {
-    if (!TABLE) {
-      TABLE = new Uint8Array(65536);
-      fill(TABLE, 1);
-      TABLE[0] = 0;
-      fill(TABLE, 0, 1, 32);
-      fill(TABLE, 0, 0x7f, 0xa0);
+    if (!table) {
+      table = new Uint8Array(65536);
+      fill(table, 1);
+      table[0] = 0;
+      fill(table, 0, 1, 32);
+      fill(table, 0, 0x7f, 0xa0);
       for (let r = 0; r < BMP_COMBINING.length; ++r) {
-        fill(TABLE, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
+        fill(table, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
       }
       for (let r = 0; r < BMP_WIDE.length; ++r) {
-        fill(TABLE, 2, BMP_WIDE[r][0], BMP_WIDE[r][1] + 1);
+        fill(table, 2, BMP_WIDE[r][0], BMP_WIDE[r][1] + 1);
       }
     }
   }
@@ -214,7 +214,7 @@ export class UnicodeV11 implements IUnicodeVersionProvider {
   public wcwidth(num: number): CharWidth {
     if (num < 32) return 0;
     if (num < 127) return 1;
-    if (num < 65536) return TABLE[num] as CharWidth;
+    if (num < 65536) return table[num] as CharWidth;
     if (bisearch(num, HIGH_COMBINING)) return 0;
     if (bisearch(num, HIGH_WIDE)) return 2;
     return 1;

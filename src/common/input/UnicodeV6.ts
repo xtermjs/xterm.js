@@ -61,7 +61,7 @@ const HIGH_COMBINING = [
 ];
 
 // BMP lookup table, lazy initialized during first addon loading
-let TABLE: Uint8Array;
+let table: Uint8Array;
 
 function bisearch(ucs: number, data: number[][]): boolean {
   let min = 0;
@@ -88,28 +88,28 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
 
   constructor() {
     // init lookup table once
-    if (!TABLE) {
-      TABLE = new Uint8Array(65536);
-      fill(TABLE, 1);
-      TABLE[0] = 0;
+    if (!table) {
+      table = new Uint8Array(65536);
+      fill(table, 1);
+      table[0] = 0;
       // control chars
-      fill(TABLE, 0, 1, 32);
-      fill(TABLE, 0, 0x7f, 0xa0);
+      fill(table, 0, 1, 32);
+      fill(table, 0, 0x7f, 0xa0);
 
       // apply wide char rules first
       // wide chars
-      fill(TABLE, 2, 0x1100, 0x1160);
-      TABLE[0x2329] = 2;
-      TABLE[0x232a] = 2;
-      fill(TABLE, 2, 0x2e80, 0xa4d0);
-      TABLE[0x303f] = 1;  // wrongly in last line
+      fill(table, 2, 0x1100, 0x1160);
+      table[0x2329] = 2;
+      table[0x232a] = 2;
+      fill(table, 2, 0x2e80, 0xa4d0);
+      table[0x303f] = 1;  // wrongly in last line
 
-      fill(TABLE, 2, 0xac00, 0xd7a4);
-      fill(TABLE, 2, 0xf900, 0xfb00);
-      fill(TABLE, 2, 0xfe10, 0xfe1a);
-      fill(TABLE, 2, 0xfe30, 0xfe70);
-      fill(TABLE, 2, 0xff00, 0xff61);
-      fill(TABLE, 2, 0xffe0, 0xffe7);
+      fill(table, 2, 0xac00, 0xd7a4);
+      fill(table, 2, 0xf900, 0xfb00);
+      fill(table, 2, 0xfe10, 0xfe1a);
+      fill(table, 2, 0xfe30, 0xfe70);
+      fill(table, 2, 0xff00, 0xff61);
+      fill(table, 2, 0xffe0, 0xffe7);
 
       // apply combining last to ensure we overwrite
       // wrongly wide set chars:
@@ -117,7 +117,7 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
       //    through to wide check so we simply do here the opposite
       // combining 0
       for (let r = 0; r < BMP_COMBINING.length; ++r) {
-        fill(TABLE, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
+        fill(table, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
       }
     }
   }
@@ -125,7 +125,7 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
   public wcwidth(num: number): CharWidth {
     if (num < 32) return 0;
     if (num < 127) return 1;
-    if (num < 65536) return TABLE[num] as CharWidth;
+    if (num < 65536) return table[num] as CharWidth;
     if (bisearch(num, HIGH_COMBINING)) return 0;
     if ((num >= 0x20000 && num <= 0x2fffd) || (num >= 0x30000 && num <= 0x3fffd)) return 2;
     return 1;
