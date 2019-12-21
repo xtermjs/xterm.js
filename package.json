@@ -46,7 +46,7 @@
     "glob": "^7.0.5",
     "jsdom": "^11.11.0",
     "mocha": "^6.1.4",
-    "node-pty": "0.7.6",
+    "node-pty": "^0.9.0",
     "nyc": "13",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",

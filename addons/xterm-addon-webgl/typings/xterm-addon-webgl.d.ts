@@ -10,6 +10,8 @@ declare module 'xterm-addon-webgl' {
    * An xterm.js addon that provides search functionality.
    */
   export class WebglAddon implements ITerminalAddon {
+    public textureAtlas?: HTMLCanvasElement;
+
     constructor(preserveDrawingBuffer?: boolean);
 
     /**

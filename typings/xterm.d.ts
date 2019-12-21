@@ -341,8 +341,8 @@ declare module 'xterm' {
    * An event that can be listened to.
    * @returns an `IDisposable` to stop listening.
    */
-  export interface IEvent<T> {
-    (listener: (e: T) => any): IDisposable;
+  export interface IEvent<T, U = void> {
+    (listener: (arg1: T, arg2: U) => any): IDisposable;
   }
 
   /**
@@ -455,7 +455,7 @@ declare module 'xterm' {
      * Currently this is only used for a certain type of mouse reports that
      * happen to be not UTF-8 compatible.
      * The event value is a JS string, pass it to the underlying pty as
-     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`.
      * @returns an `IDisposable` to stop listening.
      */
     onBinary: IEvent<string>;

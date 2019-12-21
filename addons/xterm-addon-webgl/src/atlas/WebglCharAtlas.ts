@@ -86,9 +86,6 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
-
-    // This is useful for debugging
-    document.body.appendChild(this.cacheCanvas);
   }
 
   public dispose(): void {
@@ -315,6 +312,11 @@ export class WebglCharAtlas implements IDisposable {
 
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
+
+    const invisible = !!this._workAttributeData.isInvisible();
+    if (invisible) {
+      return NULL_RASTERIZED_GLYPH;
+    }
 
     const bold = !!this._workAttributeData.isBold();
     const inverse = !!this._workAttributeData.isInverse();
