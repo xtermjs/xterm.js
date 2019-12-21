@@ -473,7 +473,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr));
+        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr), curAttr);
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
@@ -855,7 +855,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      this._bufferService.buffer.getNullCell(this._eraseAttrData())
+      this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+      this._eraseAttrData()
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1033,7 +1034,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1050,7 +1052,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1110,7 +1113,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()));
+      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1138,7 +1141,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()));
+      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1156,7 +1159,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
-      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
+      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1174,7 +1177,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
+      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1191,7 +1194,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._bufferService.buffer.x,
         this._bufferService.buffer.x + (params.params[0] || 1),
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
