@@ -1150,7 +1150,7 @@ declare module 'xterm' {
     /** String indicating the Unicode version provided. */
     version: string;
     /** Unicode version dependent wcwidth implementation. */
-    wcwidth(ucs: number): 0 | 1 | 2;
+    wcwidth(codepoint: number): 0 | 1 | 2;
   }
 
   /**

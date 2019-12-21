@@ -75,7 +75,7 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
-  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: false }
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true }
 };
 
 const terminalContainer = document.getElementById('terminal-container');

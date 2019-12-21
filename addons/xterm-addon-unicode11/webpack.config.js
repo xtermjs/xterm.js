@@ -21,6 +21,13 @@ module.exports = {
       }
     ]
   },
+  resolve: {
+    modules: ['./node_modules'],
+    extensions: [ '.js' ],
+    alias: {
+      common: path.resolve('../../out/common')
+    }
+  },
   output: {
     filename: mainFile,
     path: path.resolve('./lib'),
