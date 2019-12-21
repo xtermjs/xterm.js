@@ -100,6 +100,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super.dispose();
   }
 
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._charAtlas?.cacheCanvas;
+  }
+
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render

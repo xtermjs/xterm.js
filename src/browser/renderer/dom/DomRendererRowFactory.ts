@@ -101,7 +101,11 @@ export class DomRendererRowFactory {
         charElement.classList.add(UNDERLINE_CLASS);
       }
 
-      charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
+      if (this._workCell.isInvisible()) {
+        charElement.textContent = WHITESPACE_CELL_CHAR;
+      } else {
+        charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
+      }
 
       let fg = this._workCell.getFgColor();
       let fgColorMode = this._workCell.getFgColorMode();
