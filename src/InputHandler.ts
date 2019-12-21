@@ -398,6 +398,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._dirtyRowService.markDirty(buffer.y);
+
+    // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
+    if (buffer.x && bufferRow.getWidth(buffer.x - 1) === 2) {
+      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg);
+    }
+
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -509,6 +515,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._parser.precedingCodepoint = this._workCell.content;
       }
     }
+
+    // handle wide chars: reset cell to the right if is second cell of a wide char
+    if (buffer.x < cols && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
+      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg);
+    }
+
     this._dirtyRowService.markDirty(buffer.y);
   }
 
