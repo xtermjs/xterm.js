@@ -825,6 +825,30 @@ describe('WebGL Renderer Integration Tests', function(): void {
     });
   });
 
+  describe('selection', async () => {
+    before(async () => setupBrowser());
+    after(async () => browser.close());
+    beforeEach(async () => page.evaluate(`window.term.reset()`));
+
+    it.only('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
+      const theme: ITheme = {
+        foreground: '#FF0000',
+        background: '#00FF00',
+        selection: '#0000FF'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await writeSync(` █\\x1b[7m█\\x1b[0m`);
+      await pollFor(page, () => getCellColor(1, 1), [0, 255, 0, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [255, 0, 0, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [0, 255, 0, 255]);
+      await page.evaluate(`window.term.selectAll()`);
+      // Selection only cell needs to be first to ensure renderer has kicked in
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+      await pollFor(page, () => getCellColor(2, 1), [255, 0, 0, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [0, 255, 0, 255]);
+    });
+  });
+
   describe('allowTransparency', async () => {
     before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true}));
     after(async () => browser.close());
