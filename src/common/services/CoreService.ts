@@ -5,11 +5,14 @@
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, ICharset } from 'common/Types';
 import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
-  applicationCursorKeys: false
+  applicationCursorKeys: false,
+  applicationKeypad: false,
+  origin: false,
+  wraparound: true // defaults: xterm - true, vt100 - false
 });
 
 export class CoreService implements ICoreService {

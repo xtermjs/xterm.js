@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -64,6 +64,7 @@ export interface ICoreService {
    */
   isCursorInitialized: boolean;
   isCursorHidden: boolean;
+
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;
@@ -87,6 +88,30 @@ export interface ICoreService {
    * @param data The data that is being emitted.
    */
    triggerBinaryEvent(data: string): void;
+}
+
+export const ICharsetService = createDecorator<ICharsetService>('CharsetService');
+export interface ICharsetService {
+  serviceBrand: any;
+
+  charset: ICharset | undefined;
+  readonly glevel: number;
+  readonly charsets: ReadonlyArray<ICharset>;
+
+  reset(): void;
+
+  /**
+   * Set the G level of the terminal.
+   * @param g
+   */
+   setgLevel(g: number): void;
+
+  /**
+   * Set the charset for the given G level of the terminal.
+   * @param g
+   * @param charset
+   */
+  setgCharset(g: number, charset: ICharset): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
