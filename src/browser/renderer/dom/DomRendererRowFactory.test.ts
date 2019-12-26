@@ -11,7 +11,7 @@ import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockOptionsService } from 'common/TestUtils.test';
-import { fromCss } from 'browser/Color';
+import { css } from 'browser/Color';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -21,27 +21,27 @@ describe('DomRendererRowFactory', () => {
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
     rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }), {
-      background: fromCss('#010101'),
-      foreground: fromCss('#020202'),
+      background: css.toColor('#010101'),
+      foreground: css.toColor('#020202'),
       ansi: [
         // dark:
-        fromCss('#2e3436'),
-        fromCss('#cc0000'),
-        fromCss('#4e9a06'),
-        fromCss('#c4a000'),
-        fromCss('#3465a4'),
-        fromCss('#75507b'),
-        fromCss('#06989a'),
-        fromCss('#d3d7cf'),
+        css.toColor('#2e3436'),
+        css.toColor('#cc0000'),
+        css.toColor('#4e9a06'),
+        css.toColor('#c4a000'),
+        css.toColor('#3465a4'),
+        css.toColor('#75507b'),
+        css.toColor('#06989a'),
+        css.toColor('#d3d7cf'),
         // bright:
-        fromCss('#555753'),
-        fromCss('#ef2929'),
-        fromCss('#8ae234'),
-        fromCss('#fce94f'),
-        fromCss('#729fcf'),
-        fromCss('#ad7fa8'),
-        fromCss('#34e2e2'),
-        fromCss('#eeeeec')
+        css.toColor('#555753'),
+        css.toColor('#ef2929'),
+        css.toColor('#8ae234'),
+        css.toColor('#fce94f'),
+        css.toColor('#729fcf'),
+        css.toColor('#ad7fa8'),
+        css.toColor('#34e2e2'),
+        css.toColor('#eeeeec')
       ]
     } as any);
     lineData = createEmptyLineData(2);

@@ -5,13 +5,13 @@
 
 import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { fromCss, toCss, blend, toRgba, toPaddedHex } from 'browser/Color';
+import { channels, color, css } from 'browser/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 
-const DEFAULT_FOREGROUND = fromCss('#ffffff');
-const DEFAULT_BACKGROUND = fromCss('#000000');
-const DEFAULT_CURSOR = fromCss('#ffffff');
-const DEFAULT_CURSOR_ACCENT = fromCss('#000000');
+const DEFAULT_FOREGROUND = css.toColor('#ffffff');
+const DEFAULT_BACKGROUND = css.toColor('#000000');
+const DEFAULT_CURSOR = css.toColor('#ffffff');
+const DEFAULT_CURSOR_ACCENT = css.toColor('#000000');
 const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
   rgba: 0xFFFFFF4D
@@ -22,23 +22,23 @@ const DEFAULT_SELECTION = {
 export const DEFAULT_ANSI_COLORS = (() => {
   const colors = [
     // dark:
-    fromCss('#2e3436'),
-    fromCss('#cc0000'),
-    fromCss('#4e9a06'),
-    fromCss('#c4a000'),
-    fromCss('#3465a4'),
-    fromCss('#75507b'),
-    fromCss('#06989a'),
-    fromCss('#d3d7cf'),
+    css.toColor('#2e3436'),
+    css.toColor('#cc0000'),
+    css.toColor('#4e9a06'),
+    css.toColor('#c4a000'),
+    css.toColor('#3465a4'),
+    css.toColor('#75507b'),
+    css.toColor('#06989a'),
+    css.toColor('#d3d7cf'),
     // bright:
-    fromCss('#555753'),
-    fromCss('#ef2929'),
-    fromCss('#8ae234'),
-    fromCss('#fce94f'),
-    fromCss('#729fcf'),
-    fromCss('#ad7fa8'),
-    fromCss('#34e2e2'),
-    fromCss('#eeeeec')
+    css.toColor('#555753'),
+    css.toColor('#ef2929'),
+    css.toColor('#8ae234'),
+    css.toColor('#fce94f'),
+    css.toColor('#729fcf'),
+    css.toColor('#ad7fa8'),
+    css.toColor('#34e2e2'),
+    css.toColor('#eeeeec')
   ];
 
   // Fill in the remaining 240 ANSI colors.
@@ -49,8 +49,8 @@ export const DEFAULT_ANSI_COLORS = (() => {
     const g = v[(i / 6) % 6 | 0];
     const b = v[i % 6];
     colors.push({
-      css: toCss(r, g, b),
-      rgba: toRgba(r, g, b)
+      css: channels.toCss(r, g, b),
+      rgba: channels.toRgba(r, g, b)
     });
   }
 
@@ -58,8 +58,8 @@ export const DEFAULT_ANSI_COLORS = (() => {
   for (let i = 0; i < 24; i++) {
     const c = 8 + i * 10;
     colors.push({
-      css: toCss(c, c, c),
-      rgba: toRgba(c, c, c)
+      css: channels.toCss(c, c, c),
+      rgba: channels.toRgba(c, c, c)
     });
   }
 
@@ -93,7 +93,7 @@ export class ColorManager implements IColorManager {
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
-      selectionOpaque: blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
     };
@@ -116,7 +116,7 @@ export class ColorManager implements IColorManager {
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
-    this.colors.selectionOpaque = blend(this.colors.background, this.colors.selection);
+    this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selection);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
@@ -184,35 +184,23 @@ export class ColorManager implements IColorManager {
         );
         return fallback;
       }
-      let r: number;
-      let g: number;
-      let b: number;
-      let a: number;
-      let rgba: number;
-      if (css.length === 5) {
-        const num = parseInt(css.substr(1), 16);
-        r = ((num >> 12) & 0xF) * 16;
-        g = ((num >> 8) & 0xF) * 16;
-        b = ((num >> 4) & 0xF) * 16;
-        a = (num & 0xF) * 16;
-        rgba = toRgba(r, g, b, a);
-      } else {
-        rgba = parseInt(css.substr(1), 16);
-        r = (rgba >> 24) & 0xFF;
-        g = (rgba >> 16) & 0xFF;
-        b = (rgba >>  8) & 0xFF;
-        a = (rgba      ) & 0xFF;
-      }
 
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // the color value has alpha less than 1.0, and the string is the color value in the CSS rgba()
+      const [r, g, b, a] = this._ctx.fillStyle.substring(5, this._ctx.fillStyle.length - 1).split(',').map(component => Number(component));
+      const alpha = Math.round(a * 255);
+      const rgba: number = channels.toRgba(r, g, b, alpha);
       return {
         rgba,
-        css: toCss(r, g, b, a)
+        css: channels.toCss(r, g, b, alpha)
       };
     }
 
     return {
-      css,
-      rgba: toRgba(data[0], data[1], data[2], data[3])
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // if it has alpha equal to 1.0, then the string is a lowercase six-digit hex value, prefixed with a "#" character
+      css: this._ctx.fillStyle,
+      rgba: channels.toRgba(data[0], data[1], data[2], data[3])
     };
   }
 }
