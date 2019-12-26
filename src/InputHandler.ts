@@ -400,7 +400,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._dirtyRowService.markDirty(buffer.y);
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
-    if (buffer.x && bufferRow.getWidth(buffer.x - 1) === 2) {
+    if (buffer.x && end - start > 0 && bufferRow.getWidth(buffer.x - 1) === 2) {
       bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg);
     }
 
@@ -505,7 +505,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // This needs to check whether:
     //  - fullwidth + surrogates: reset
     //  - combining: only base char gets carried on (bug in xterm?)
-    if (end) {
+    if (end - start > 0) {
       bufferRow.loadCell(buffer.x - 1, this._workCell);
       if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
         this._parser.precedingCodepoint = 0;
@@ -516,8 +516,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    // handle wide chars: reset cell to the right if is second cell of a wide char
-    if (buffer.x < cols && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
+    // handle wide chars: reset cell to the right if it is second cell of a wide char
+    if (buffer.x < cols && end - start > 0 && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
       bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg);
     }
 
