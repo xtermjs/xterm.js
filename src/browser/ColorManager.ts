@@ -189,19 +189,33 @@ export class ColorManager implements IColorManager {
       let b: number;
       let a: number;
       let rgba: number;
-      if (css.length === 5) {
-        const num = parseInt(css.substr(1), 16);
-        r = ((num >> 12) & 0xF) * 16;
-        g = ((num >> 8) & 0xF) * 16;
-        b = ((num >> 4) & 0xF) * 16;
-        a = (num & 0xF) * 16;
-        rgba = toRgba(r, g, b, a);
+      if (css.charAt(0) === '#') {
+        if (css.length === 5) {
+          const num = parseInt(css.substr(1), 16);
+          r = ((num >> 12) & 0xF) * 16;
+          g = ((num >>  8) & 0xF) * 16;
+          b = ((num >>  4) & 0xF) * 16;
+          a = ((num      ) & 0xF) * 16;
+          rgba = toRgba(r, g, b, a);
+        } else {
+          rgba = parseInt(css.substr(1), 16);
+          r = (rgba >> 24) & 0xFF;
+          g = (rgba >> 16) & 0xFF;
+          b = (rgba >>  8) & 0xFF;
+          a = (rgba      ) & 0xFF;
+        }
       } else {
-        rgba = parseInt(css.substr(1), 16);
-        r = (rgba >> 24) & 0xFF;
-        g = (rgba >> 16) & 0xFF;
-        b = (rgba >>  8) & 0xFF;
-        a = (rgba      ) & 0xFF;
+        // rgba
+        const matches = css.match(/\((\d+),\s(\d+),\s(\d+)(,\s(\d+.\d+))?/);
+        if (!matches) {
+          console.warn(`Could not parse color ${css}, using fallback ${fallback.css}.`);
+          return fallback;
+        }
+        r = parseInt(matches[1]);
+        g = parseInt(matches[2]);
+        b = parseInt(matches[3]);
+        a = parseFloat(matches[5]) * 255;
+        rgba = toRgba(r, g, b, a);
       }
 
       return {
