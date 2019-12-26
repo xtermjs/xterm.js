@@ -184,34 +184,22 @@ export class ColorManager implements IColorManager {
         );
         return fallback;
       }
-      let r: number;
-      let g: number;
-      let b: number;
-      let a: number;
-      let rgba: number;
-      if (css.length === 5) {
-        const num = parseInt(css.substr(1), 16);
-        r = ((num >> 12) & 0xF) * 16;
-        g = ((num >> 8) & 0xF) * 16;
-        b = ((num >> 4) & 0xF) * 16;
-        a = (num & 0xF) * 16;
-        rgba = channels.toRgba(r, g, b, a);
-      } else {
-        rgba = parseInt(css.substr(1), 16);
-        r = (rgba >> 24) & 0xFF;
-        g = (rgba >> 16) & 0xFF;
-        b = (rgba >>  8) & 0xFF;
-        a = (rgba      ) & 0xFF;
-      }
 
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // the color value has alpha less than 1.0, and the string is the color value in the CSS rgba()
+      const [r, g, b, a] = this._ctx.fillStyle.substring(5, this._ctx.fillStyle.length - 1).split(',').map(component => Number(component));
+      const alpha = Math.round(a * 255);
+      const rgba: number = channels.toRgba(r, g, b, alpha);
       return {
         rgba,
-        css: channels.toCss(r, g, b, a)
+        css: channels.toCss(r, g, b, alpha)
       };
     }
 
     return {
-      css,
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // if it has alpha equal to 1.0, then the string is a lowercase six-digit hex value, prefixed with a "#" character
+      css: this._ctx.fillStyle,
       rgba: channels.toRgba(data[0], data[1], data[2], data[3])
     };
   }
