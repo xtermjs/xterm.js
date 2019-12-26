@@ -366,4 +366,94 @@ describe('BufferLine', function(): void {
       chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     });
   });
+  describe('correct fullwidth handling', () => {
+    function populate(line: BufferLine): void {
+      const cell = CellData.fromCharData([1, '￥', 2, '￥'.charCodeAt(0)]);
+      for (let i = 0; i < line.length; i += 2) {
+        line.setCell(i, cell);
+      }
+    }
+    it('insert - wide char at pos', () => {
+      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.insertCells(9, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), '￥￥￥￥ a');
+      line.insertCells(8, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), '￥￥￥￥a ');
+      line.insertCells(1, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' a ￥￥￥a');
+    });
+    it('insert - wide char at end', () => {
+      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.insertCells(0, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaa￥￥￥ ');
+      line.insertCells(4, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaa a ￥￥');
+      line.insertCells(4, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaa aa ￥ ');
+    });
+    it('delete', () => {
+      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.deleteCells(0, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' ￥￥￥￥a');
+      line.deleteCells(5, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' ￥￥￥aaa');
+      line.deleteCells(0, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' ￥￥aaaaa');
+    });
+    it('replace - start at 0', () => {
+      let line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'a ￥￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aa￥￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaa ￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 8, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaaaaaaa￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 9, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaaaaaaaa ');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(0, 10, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), 'aaaaaaaaaa');
+    });
+    it('replace - start at 1', () => {
+      let line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' a￥￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' aa ￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 4, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' aaa￥￥￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 8, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' aaaaaaa￥');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 9, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' aaaaaaaa ');
+      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      populate(line);
+      line.replaceCells(1, 10, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      chai.assert.equal(line.translateToString(), ' aaaaaaaaa');
+    });
+  });
 });

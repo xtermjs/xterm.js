@@ -623,6 +623,11 @@ declare module 'xterm' {
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      */
+    registerMarker(cursorYOffset: number): IMarker;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addMarker(cursorYOffset: number): IMarker;
 
     /**
@@ -1089,6 +1094,11 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
@@ -1108,6 +1118,11 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
@@ -1120,6 +1135,11 @@ declare module 'xterm' {
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
@@ -1138,6 +1158,11 @@ declare module 'xterm' {
      * a previous handler (set by addOscHandler or setOscHandler).
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
