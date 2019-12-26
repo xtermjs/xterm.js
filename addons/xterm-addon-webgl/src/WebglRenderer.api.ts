@@ -830,7 +830,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
     after(async () => browser.close());
     beforeEach(async () => page.evaluate(`window.term.reset()`));
 
-    it.only('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
+    it('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
         background: '#00FF00',
