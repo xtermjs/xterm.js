@@ -8,7 +8,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
-import { ensureContrastRatio, rgbaToColor } from 'browser/Color';
+import { color, rgba } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
@@ -133,7 +133,7 @@ export class DomRendererRowFactory {
           }
           break;
         case Attributes.CM_RGB:
-          const color = rgbaToColor(
+          const color = rgba.toColor(
             (fg >> 16) & 0xFF,
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
@@ -182,7 +182,7 @@ export class DomRendererRowFactory {
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
+      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
       this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
     }
 
