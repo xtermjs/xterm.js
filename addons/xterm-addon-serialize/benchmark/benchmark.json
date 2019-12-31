@@ -1,0 +1,19 @@
+{
+  "APP_PATH": ".benchmark",
+  "evalConfig": {
+    "tolerance": {
+      "*": [0.75, 1.5],
+      "*.dev": [0.01, 1.5],
+      "*.cv": [0.01, 1.5],
+      "EscapeSequenceParser.benchmark.js.*.averageThroughput.mean": [0.9, 5]
+    },
+    "skip": [
+      "*.median",
+      "*.runs",
+      "*.dev",
+      "*.cv",
+      "EscapeSequenceParser.benchmark.js.*.averageRuntime",
+      "Terminal.benchmark.js.*.averageRuntime"
+    ]
+  } 
+}

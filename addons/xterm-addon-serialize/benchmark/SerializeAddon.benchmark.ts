@@ -8,7 +8,7 @@ import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'public/Terminal';
-import { SerializeAddon } from 'addons/xterm-addon-serialize/src/SerializeAddon';
+import { SerializeAddon } from 'SerializeAddon';
 
 class TestTerminal extends Terminal {
   writeSync(data: string): void {
