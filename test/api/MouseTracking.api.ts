@@ -220,6 +220,7 @@ describe('Mouse Tracking Tests', () => {
     await page.evaluate(`
       window.calls = [];
       window.term.onData(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
+      window.term.onBinary(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
       window.term.setOption('fontSize', ${fontSize});
       window.term.resize(${cols}, ${rows});
     `);
@@ -255,12 +256,17 @@ describe('Mouse Tracking Tests', () => {
       await pollFor(page, () => getReports(encoding), [{col: 51, row: 11, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
-      await pollFor(page, () => getReports(encoding), [{col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+      await pollFor(page, () => getReports(encoding), [{col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}}]);
+
+      // higher than 223 should not report at all
+      await mouseMove(257, rows - 1);
+      await mouseDown('left');
+      await mouseUp('left');
+      await pollFor(page, () => getReports(encoding), []);
 
       // button press/move/release tests
       // left button
@@ -511,14 +517,13 @@ describe('Mouse Tracking Tests', () => {
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       await pollFor(page, () => getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -821,14 +826,13 @@ describe('Mouse Tracking Tests', () => {
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       await pollFor(page, () => getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests
@@ -1142,15 +1146,14 @@ describe('Mouse Tracking Tests', () => {
       ]);
 
       // test at max rows/cols
-      // bug: we are capped at col 95 currently
-      // fix: allow values up to 223, any bigger should drop to 0
-      await mouseMove(cols - 1, rows - 1);
+      // capped at 223 (1-based)
+      await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
       await pollFor(page, () => getReports(encoding), [
-        {col: 95, row: rows, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
-        {col: 95, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
+        {col: 223, row: rows, state: {action: 'move', button: '<none>', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'press', button: 'left', modifier: {control: false, shift: false, meta: false}}},
+        {col: 223, row: rows, state: {action: 'release', button: '<none>', modifier: {control: false, shift: false, meta: false}}}
       ]);
 
       // button press/move/release tests

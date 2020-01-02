@@ -11,10 +11,9 @@ import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, NULL_CELL_CODE, FgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
@@ -38,6 +37,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
+  private _isAttached: boolean;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
   public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
@@ -90,6 +90,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
+
+    this._isAttached = document.body.contains(this._core.screenElement);
   }
 
   public dispose(): void {
@@ -98,9 +100,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super.dispose();
   }
 
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._charAtlas?.cacheCanvas;
+  }
+
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
       l.setColors(this._terminal, this._colors);
@@ -193,6 +198,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    */
   private _refreshCharAtlas(): void {
     if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {
+      // Mark as not attached so char atlas gets refreshed on next render
+      this._isAttached = false;
       return;
     }
 
@@ -218,6 +225,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public renderRows(start: number, end: number): void {
+    if (!this._isAttached) {
+      if (document.body.contains(this._core.screenElement) && (<any>this._core)._charSizeService.width && (<any>this._core)._charSizeService.height) {
+        this._updateDimensions();
+        this._refreshCharAtlas();
+        this._isAttached = true;
+      } else {
+        return;
+      }
+    }
+
     // Update render layers
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
@@ -252,33 +269,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
           this._model.lineLengths[y] = x + 1;
         }
 
-        // Resolve bg and fg
-        let bg = this._workCell.bg;
-        let fg = this._workCell.fg;
-
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workCell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workCell.fg) {
           continue;
-        }
-
-        // If inverse flag is on, the foreground should become the background.
-        if (this._workCell.isInverse()) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
-          if (fg === DEFAULT_COLOR) {
-            fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === DEFAULT_COLOR) {
-            bg = INVERTED_DEFAULT_COLOR;
-          }
-        }
-
-        // Apply drawBoldTextInBrightColors
-        if (terminal.options.drawBoldTextInBrightColors && this._workCell.isBold() && fg & FgFlags.BOLD && this._workCell.getFgColor() < 8) {
-          fg += 8;
         }
 
         // Flag combined chars with a bit mask so they're easily identifiable
@@ -288,10 +283,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workCell.bg, this._workCell.fg, chars);
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);

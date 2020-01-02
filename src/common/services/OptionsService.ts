@@ -20,6 +20,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
+  cursorWidth: 1,
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
@@ -37,6 +38,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
+  minimumContrastRatio: 1,
   disableStdin: false,
   allowTransparency: false,
   tabStopWidth: 8,
@@ -50,7 +52,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenKeys: false,
   cancelEvents: false,
   useFlowControl: false,
-  wordSeparator: ' ()[]{}\',:;"'
+  wordSeparator: ' ()[]{}\',:;"`'
 });
 
 /**
@@ -110,11 +112,17 @@ export class OptionsService implements IOptionsService {
           value = DEFAULT_OPTIONS[key];
         }
         break;
+      case 'cursorWidth':
+        value = Math.floor(value);
+        // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {
           throw new Error(`${key} cannot be less than 1, value: ${value}`);
         }
+        break;
+      case 'minimumContrastRatio':
+        value = Math.max(1, Math.min(21, Math.round(value * 10) / 10));
         break;
       case 'scrollback':
         value = Math.min(value, 4294967295);

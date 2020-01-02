@@ -227,7 +227,11 @@ export class TextRenderLayer extends BaseRenderLayer {
           } else if (cell.isBgRGB()) {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
           } else {
-            this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+            let bg = cell.getBgColor();
+            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+              bg += 8;
+            }
+            this._ctx.fillStyle = this._colors.ansi[bg].css;
           }
         } else {
           if (cell.isFgDefault()) {

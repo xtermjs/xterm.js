@@ -21,22 +21,9 @@ export type LineData = CharData[];
  * InputHandler cleanly from the ITerminal interface.
  */
 export interface IInputHandlingTerminal {
-  element: HTMLElement;
-  options: ITerminalOptions;
-  cols: number;
-  rows: number;
-  charset: ICharset;
-  gcharset: number;
-  glevel: number;
-  charsets: ICharset[];
-  applicationKeypad: boolean;
-  originMode: boolean;
   insertMode: boolean;
-  wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttrData: IAttributeData;
   savedCols: number;
-  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
 
   buffers: IBufferSet;
@@ -46,17 +33,10 @@ export interface IInputHandlingTerminal {
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
 
-  bell(): void;
-  focus(): void;
-  scroll(isWrapped?: boolean): void;
-  setgLevel(g: number): void;
-  eraseAttrData(): IAttributeData;
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
-  setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
-  reset(): void;
   showCursor(): void;
-  refresh(start: number, end: number): void;
   handleTitle(title: string): void;
 }
 
@@ -141,7 +121,7 @@ export interface IInputHandler {
   /** ESC D */ index(): void;
   /** ESC H */ tabSet(): void;
   /** ESC M */ reverseIndex(): void;
-  /** ESC c */ reset(): void;
+  /** ESC c */ fullReset(): void;
   /** ESC n
       ESC o
       ESC |
@@ -180,6 +160,7 @@ export interface IPublicTerminal extends IDisposable {
   markers: IMarker[];
   onCursorMove: IEvent<void>;
   onData: IEvent<string>;
+  onBinary: IEvent<string>;
   onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   onLineFeed: IEvent<void>;
   onScroll: IEvent<number>;

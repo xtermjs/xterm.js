@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, CoreMouseEventType } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
@@ -19,6 +19,7 @@ import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
+  get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   keyDown(ev: any): boolean { return this._keyDown(ev); }
   keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
@@ -32,6 +33,7 @@ export class MockTerminal implements ITerminal {
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;
   onData: IEvent<string>;
+  onBinary: IEvent<string>;
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
@@ -196,110 +198,23 @@ export class MockTerminal implements ITerminal {
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   onA11yCharEmitter: EventEmitter<string>;
   onA11yTabEmitter: EventEmitter<number>;
-  element: HTMLElement;
-  options: ITerminalOptions = {};
-  cols: number;
-  rows: number;
-  charset: { [key: string]: string; };
-  gcharset: number;
-  glevel: number;
-  charsets: { [key: string]: string; }[];
-  applicationKeypad: boolean;
-  applicationCursor: boolean;
-  originMode: boolean;
   insertMode: boolean;
-  wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttrData = new AttributeData();
   savedCols: number;
-  x10Mouse: boolean;
-  vt200Mouse: boolean;
-  normalMouse: boolean;
-  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
-  utfMouse: boolean;
-  sgrMouse: boolean;
-  urxvtMouse: boolean;
-  cursorHidden: boolean;
   buffers: IBufferSet;
   buffer: IBuffer = new MockBuffer();
   viewport: IViewport;
-  selectionService: ISelectionService;
-  focus(): void {
-    throw new Error('Method not implemented.');
-  }
-  convertEol: boolean;
-  bell(): void {
-    throw new Error('Method not implemented.');
-  }
-
-  updateRange(y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  scroll(isWrapped?: boolean): void {
-    throw new Error('Method not implemented.');
-  }
-  nextStop(x?: number): number {
-    throw new Error('Method not implemented.');
-  }
-  setgLevel(g: number): void {
-    throw new Error('Method not implemented.');
-  }
-  eraseAttrData(): IAttributeData {
-    throw new Error('Method not implemented.');
-  }
-  eraseRight(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  eraseLine(y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  eraseLeft(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  prevStop(x?: number): number {
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void {
     throw new Error('Method not implemented.');
   }
   is(term: string): boolean {
     throw new Error('Method not implemented.');
   }
-  setgCharset(g: number, charset: { [key: string]: string; }): void {
-    throw new Error('Method not implemented.');
-  }
   resize(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  log(text: string, data?: any): void {
-    throw new Error('Method not implemented.');
-  }
-  reset(): void {
-    throw new Error('Method not implemented.');
-  }
   showCursor(): void {
-    throw new Error('Method not implemented.');
-  }
-  refresh(start: number, end: number): void {
-    throw new Error('Method not implemented.');
-  }
-  matchColor(r1: number, g1: number, b1: number): number {
-    throw new Error('Method not implemented.');
-  }
-  error(text: string, data?: any): void {
-    throw new Error('Method not implemented.');
-  }
-  setOption(key: string, value: any): void {
-    (<any>this.options)[key] = value;
-  }
-  on(type: string, listener: XtermListener): void {
-    throw new Error('Method not implemented.');
-  }
-  off(type: string, listener: XtermListener): void {
-    throw new Error('Method not implemented.');
-  }
-  emit(type: string, data?: any): void {
-    throw new Error('Method not implemented.');
-  }
-  addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
   handler(data: string): void {
