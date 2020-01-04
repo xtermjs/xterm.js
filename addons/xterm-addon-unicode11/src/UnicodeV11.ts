@@ -193,7 +193,7 @@ function bisearch(ucs: number, data: number[][]): boolean {
 
 
 export class UnicodeV11 implements IUnicodeVersionProvider {
-  public version = '11';
+  public readonly version = '11';
 
   constructor() {
     if (!table) {

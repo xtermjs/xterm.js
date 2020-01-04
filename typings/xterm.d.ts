@@ -217,6 +217,7 @@ declare module 'xterm' {
 
     /**
      * Unicode version to be used for wcwidth. Default is version 6.
+     * New unicode versions can be registered through the `Terminal.unicode.register` API.
      */
     unicodeVersion?: string;
 
@@ -1173,7 +1174,7 @@ declare module 'xterm' {
    */
   export interface IUnicodeVersionProvider {
     /** String indicating the Unicode version provided. */
-    version: string;
+    readonly version: string;
     /** Unicode version dependent wcwidth implementation. */
     wcwidth(codepoint: number): 0 | 1 | 2;
   }
@@ -1189,6 +1190,11 @@ declare module 'xterm' {
     /**
      * Registered Unicode versions.
      */
-    versions: string[];
+    readonly versions: ReadonlyArray<string>;
+    /**
+     * Getter/setter for activate Unicode version.
+     * FIXME: Should we go with this instead of get/SetOption?
+     */
+    activeVersion: string;
   }
 }

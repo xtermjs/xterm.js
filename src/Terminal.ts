@@ -99,7 +99,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
   public optionsService: IOptionsService;
-  private _unicodeService: IUnicodeService;
+  public unicodeService: IUnicodeService;
 
   // browser services
   private _charSizeService: ICharSizeService;
@@ -211,8 +211,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this._unicodeService = this._instantiationService.createInstance(UnicodeService);
-    this._instantiationService.setService(IUnicodeService, this._unicodeService);
+    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
+    this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
@@ -248,7 +248,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this._unicodeService);
+      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
       this._inputHandler.onRequestBell(() => this.bell());
       this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
       this._inputHandler.onRequestReset(() => this.reset());
@@ -258,7 +258,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     if (!this.linkifier) {
-      this.linkifier = new Linkifier(this._bufferService, this._logService, this.optionsService, this._unicodeService);
+      this.linkifier = new Linkifier(this._bufferService, this._logService, this.optionsService, this.unicodeService);
     }
 
     if (this.options.windowsMode) {
@@ -348,8 +348,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           }
           break;
         case 'unicodeVersion':
-          if (this._unicodeService.activeVersion !== this.optionsService.options.unicodeVersion) {
-            this._unicodeService.activeVersion = this.optionsService.options.unicodeVersion;
+          if (this.unicodeService.activeVersion !== this.optionsService.options.unicodeVersion) {
+            this.unicodeService.activeVersion = this.optionsService.options.unicodeVersion;
           }
           break;
       }

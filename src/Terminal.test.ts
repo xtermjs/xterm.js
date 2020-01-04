@@ -1039,7 +1039,7 @@ describe('Terminal', () => {
     // to get the special handling of fullwidth, surrogate and combining chars in the input handler
     beforeEach(() => {
       terminal = new TestTerminal({ cols: 10, rows: 5 });
-      linkifier = new TestLinkifier((terminal as any)._bufferService, (terminal as any)._unicodeService);
+      linkifier = new TestLinkifier((terminal as any)._bufferService, terminal.unicodeService);
       mouseZoneManager = new TestMouseZoneManager();
       linkifier.attachToDom({} as any, mouseZoneManager);
     });

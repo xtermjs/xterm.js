@@ -84,7 +84,7 @@ function bisearch(ucs: number, data: number[][]): boolean {
 }
 
 export class UnicodeV6 implements IUnicodeVersionProvider {
-  public version = '6';
+  public readonly version = '6';
 
   constructor() {
     // init lookup table once

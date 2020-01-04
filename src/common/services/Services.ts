@@ -328,6 +328,6 @@ export interface IUnicodeService {
 }
 
 export interface IUnicodeVersionProvider {
-  version: string;
+  readonly version: string;
   wcwidth(ucs: number): 0 | 1 | 2;
 }
