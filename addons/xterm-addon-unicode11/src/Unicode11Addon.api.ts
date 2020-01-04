@@ -46,7 +46,7 @@ describe('Unicode11Addon', () => {
     await page.evaluate(`window.term.unicode.activeVersion = '11';`);
     assert.deepEqual(await page.evaluate(`window.term.unicode.activeVersion`), '11');
     // v6: 10, V11: 20
-    assert.deepEqual(await page.evaluate(`window.term._core._unicodeService.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣')`), 20);
+    assert.deepEqual(await page.evaluate(`window.term._core.unicodeService.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣')`), 20);
   });
 });
 
