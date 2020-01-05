@@ -1386,4 +1386,63 @@ describe('InputHandler', () => {
       assert.equal((term2 as any)._bufferService.cols, 132);
     });
   });
+  describe('should correctly reset cells taken by wide chars', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 5, scrollback: 1});
+      term.writeSync('￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥');
+    });
+    it('print', () => {
+      term.writeSync('\x1b[H#');
+      assert.deepEqual(getLines(term), ['# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[1;6H######');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '##￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;9H#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥#', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥￥', '']);
+      term.writeSync('\x1b[4;10H#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥ #', '']);
+    });
+    it('EL', () => {
+      term.writeSync('\x1b[1;6H\x1b[K#');
+      assert.deepEqual(getLines(term), ['￥￥ #', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;5H\x1b[1K');
+      assert.deepEqual(getLines(term), ['￥￥ #', '      ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[1K');
+      assert.deepEqual(getLines(term), ['￥￥ #', '      ￥￥', '      ￥￥', '￥￥￥￥￥', '']);
+    });
+    it('ICH', () => {
+      term.writeSync('\x1b[1;6H\x1b[@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;4H\x1b[2@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;4H\x1b[3@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[4;4H\x1b[4@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥      ￥', '']);
+    });
+    it('DCH', () => {
+      term.writeSync('\x1b[1;6H\x1b[P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;6H\x1b[2P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥  ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[3P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥  ￥', '￥￥ ￥', '￥￥￥￥￥', '']);
+    });
+    it('ECH', () => {
+      term.writeSync('\x1b[1;6H\x1b[X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;6H\x1b[2X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[3X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
+    });
+  });
 });

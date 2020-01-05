@@ -442,6 +442,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._dirtyRowService.markDirty(buffer.y);
+
+    // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
+    if (buffer.x && end - start > 0 && bufferRow.getWidth(buffer.x - 1) === 2) {
+      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg);
+    }
+
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -517,7 +523,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr));
+        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr), curAttr);
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
@@ -543,7 +549,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // This needs to check whether:
     //  - fullwidth + surrogates: reset
     //  - combining: only base char gets carried on (bug in xterm?)
-    if (end) {
+    if (end - start > 0) {
       bufferRow.loadCell(buffer.x - 1, this._workCell);
       if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
         this._parser.precedingCodepoint = 0;
@@ -553,6 +559,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._parser.precedingCodepoint = this._workCell.content;
       }
     }
+
+    // handle wide chars: reset cell to the right if it is second cell of a wide char
+    if (buffer.x < cols && end - start > 0 && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
+      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg);
+    }
+
     this._dirtyRowService.markDirty(buffer.y);
   }
 
@@ -908,7 +920,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      this._bufferService.buffer.getNullCell(this._eraseAttrData())
+      this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+      this._eraseAttrData()
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1086,7 +1099,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1103,7 +1117,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._bufferService.buffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
@@ -1163,7 +1178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()));
+      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1191,7 +1206,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()));
+      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1209,7 +1224,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
-      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
+      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1227,7 +1242,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
       const line = buffer.lines.get(buffer.ybase + y);
-      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()));
+      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
@@ -1244,7 +1259,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._bufferService.buffer.x,
         this._bufferService.buffer.x + (params.params[0] || 1),
-        this._bufferService.buffer.getNullCell(this._eraseAttrData())
+        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._eraseAttrData()
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }

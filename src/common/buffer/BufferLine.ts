@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData, IAttributeData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -228,8 +228,14 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public insertCells(pos: number, n: number, fillCellData: ICellData): void {
+  public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
     pos %= this.length;
+
+    // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
+    if (pos && this.getWidth(pos - 1) === 2) {
+      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
+
     if (n < this.length - pos) {
       const cell = new CellData();
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
@@ -243,9 +249,14 @@ export class BufferLine implements IBufferLine {
         this.setCell(i, fillCellData);
       }
     }
+
+    // handle fullwidth at line end: reset last cell if it is first cell of a wide char
+    if (this.getWidth(this.length - 1) === 2) {
+      this.setCellFromCodePoint(this.length - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
   }
 
-  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
+  public deleteCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
     pos %= this.length;
     if (n < this.length - pos) {
       const cell = new CellData();
@@ -260,9 +271,28 @@ export class BufferLine implements IBufferLine {
         this.setCell(i, fillCellData);
       }
     }
+
+    // handle fullwidth at pos:
+    // - reset pos-1 if wide char
+    // - reset pos if width==0 (previous second cell of a wide char)
+    if (pos && this.getWidth(pos - 1) === 2) {
+      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
+    if (this.getWidth(pos) === 0 && !this.hasContent(pos)) {
+      this.setCellFromCodePoint(pos, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
   }
 
-  public replaceCells(start: number, end: number, fillCellData: ICellData): void {
+  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+    // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
+    if (start && this.getWidth(start - 1) === 2) {
+      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
+    // handle fullwidth at last cell + 1: reset to empty cell if it is second part of a wide char
+    if (end < this.length && this.getWidth(end - 1) === 2) {
+      this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0);
+    }
+
     while (start < end  && start < this.length) {
       this.setCell(start++, fillCellData);
     }
