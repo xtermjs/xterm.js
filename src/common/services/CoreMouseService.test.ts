@@ -32,9 +32,9 @@ describe('CoreMouseService', () => {
     const cms = new CoreMouseService(bufferService, coreService);
     assert.deepEqual(Object.keys((cms as any)._protocols), ['NONE', 'X10', 'VT200', 'DRAG', 'ANY']);
   });
-  it('default encodings - DEFAULT, UTF8, SGR, URXVT', () => {
+  it('default encodings - DEFAULT, SGR', () => {
     const cms = new CoreMouseService(bufferService, coreService);
-    assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'UTF8', 'SGR', 'URXVT']);
+    assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'SGR']);
   });
   it('protocol/encoding setter, reset', () => {
     const cms = new CoreMouseService(bufferService, coreService);
@@ -79,6 +79,7 @@ describe('CoreMouseService', () => {
       cms = new CoreMouseService(bufferService, coreService);
       reports = [];
       coreService.triggerDataEvent = (data: string, userInput?: boolean) => reports.push(data);
+      coreService.triggerBinaryEvent = (data: string) => reports.push(data);
     });
     it('NONE', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
@@ -143,20 +144,12 @@ describe('CoreMouseService', () => {
         cms.activeProtocol = 'ANY';
         for (let i = 0; i < bufferService.cols; ++i) {
           assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          // capped at 95
-          if (i < 95) {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
+          if (i > 222) {
+            // supress mouse reports if we are out of addressible range (max. 222)
+            assert.deepEqual(toBytes(reports.pop()), []);
           } else {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, 0x7f, 0x21]);
+            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
           }
-        }
-      });
-      it('UTF8 encoding', () => {
-        cms.activeProtocol = 'ANY';
-        cms.activeEncoding = 'UTF8';
-        for (let i = 0; i < bufferService.cols; ++i) {
-          assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
         }
       });
       it('SGR encoding', () => {
@@ -165,14 +158,6 @@ describe('CoreMouseService', () => {
         for (let i = 0; i < bufferService.cols; ++i) {
           assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
           assert.deepEqual(reports.pop(), `\x1b[<0;${i + 1};1M`);
-        }
-      });
-      it('URXVT', () => {
-        cms.activeProtocol = 'ANY';
-        cms.activeEncoding = 'URXVT';
-        for (let i = 0; i < bufferService.cols; ++i) {
-          assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          assert.deepEqual(reports.pop(), `\x1b[32;${i + 1};1M`);
         }
       });
     });

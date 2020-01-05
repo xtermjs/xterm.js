@@ -3,13 +3,18 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
   caseSensitive?: boolean;
   incremental?: boolean;
+}
+
+export interface ISearchPosition {
+  startCol: number;
+  startRow: number;
 }
 
 export interface ISearchResult {
@@ -59,29 +64,35 @@ export class SearchAddon implements ITerminalAddon {
 
     let startCol = 0;
     let startRow = 0;
-
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
-      const currentSelection = this._terminal.getSelectionPosition()!;
+      currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
     }
 
     this._initLinesCache();
 
+    const searchPosition: ISearchPosition = {
+      startRow,
+      startCol
+    };
+
     // Search startRow
-    let result = this._findInLine(term, startRow, startCol, searchOptions);
+    let result = this._findInLine(term, searchPosition, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
 
       for (let y = startRow + 1; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
-
+        searchPosition.startRow = y;
+        searchPosition.startCol = 0;
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
-        result = this._findInLine(term, y, 0, searchOptions);
+        result = this._findInLine(term, searchPosition, searchOptions);
         if (result) {
           break;
         }
@@ -90,12 +101,17 @@ export class SearchAddon implements ITerminalAddon {
     // If we hit the bottom and didn't search from the very top wrap back up
     if (!result && startRow !== 0) {
       for (let y = 0; y < startRow; y++) {
-        result = this._findInLine(term, y, 0, searchOptions);
+        searchPosition.startRow = y;
+        searchPosition.startCol = 0;
+        result = this._findInLine(term, searchPosition, searchOptions);
         if (result) {
           break;
         }
       }
     }
+
+    // If there is only one result, return true.
+    if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
     return this._selectResult(result);
@@ -121,31 +137,37 @@ export class SearchAddon implements ITerminalAddon {
     const isReverseSearch = true;
     let startRow = this._terminal.buffer.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-    let result: ISearchResult | undefined = undefined;
+    let result: ISearchResult | undefined;
     const incremental = searchOptions ? searchOptions.incremental : false;
+    let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
-      const currentSelection = this._terminal.getSelectionPosition()!;
+      currentSelection = this._terminal.getSelectionPosition()!;
       // Start from selection start if there is a selection
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
     }
 
     this._initLinesCache();
+    const searchPosition: ISearchPosition = {
+      startRow,
+      startCol
+    };
 
     if (incremental) {
-      result = this._findInLine(term, startRow, startCol, searchOptions, false);
+      result = this._findInLine(term, searchPosition, searchOptions, false);
       if (!(result && result.row === startRow && result.col === startCol)) {
-        result = this._findInLine(term, startRow, startCol, searchOptions, true);
+        result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
-      result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
     }
 
     // Search from startRow - 1 to top
     if (!result) {
-      startCol = this._terminal.cols;
+      searchPosition.startCol = Math.max(searchPosition.startCol, this._terminal.cols);
       for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
+        searchPosition.startRow = y;
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -154,12 +176,16 @@ export class SearchAddon implements ITerminalAddon {
     // If we hit the top and didn't search from the very bottom wrap back down
     if (!result && startRow !== (this._terminal.buffer.baseY + this._terminal.rows)) {
       for (let y = (this._terminal.buffer.baseY + this._terminal.rows); y > startRow; y--) {
-        result = this._findInLine(term, y, startCol, searchOptions, isReverseSearch);
+        searchPosition.startRow = y;
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
       }
     }
+
+    // If there is only one result, return true.
+    if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
     return this._selectResult(result);
@@ -213,18 +239,28 @@ export class SearchAddon implements ITerminalAddon {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param row The line to  start the search from.
-   * @param col The column to start the search from.
+   * @param position The position to start the search.
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
+  protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
+    let row = searchPosition.startRow;
+    const col = searchPosition.startCol;
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     const firstLine = terminal.buffer.getLine(row);
     if (firstLine && firstLine.isWrapped) {
-      return;
+      if (isReverseSearch) {
+        searchPosition.startCol += terminal.cols;
+        return;
+      }
+
+      // This will iterate until we find the line start.
+      // When we find it, we will search using the calculated start column.
+      searchPosition.startRow--;
+      searchPosition.startCol += terminal.cols;
+      return this._findInLine(term, searchPosition, searchOptions);
     }
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
@@ -344,7 +380,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     terminal.select(result.col, result.row, result.term.length);
     // If it is not in the viewport then we scroll else it just gets selected
-    if (result.row > (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
+    if (result.row >= (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
       let scroll = result.row - terminal.buffer.viewportY;
       scroll = scroll - Math.floor(terminal.rows / 2);
       terminal.scrollLines(scroll);

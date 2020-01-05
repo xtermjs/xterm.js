@@ -28,7 +28,7 @@ import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
-import { Renderer } from './renderer/Renderer';
+import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
@@ -38,22 +38,21 @@ import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
-import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
+import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { applyWindowsMode } from './WindowsMode';
+import { handleWindowsModeLineFeed } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
@@ -63,6 +62,8 @@ import { DirtyRowService } from 'common/services/DirtyRowService';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { CharsetService } from 'common/services/CharsetService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -73,10 +74,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public element: HTMLElement;
   public screenElement: HTMLElement;
 
-  /**
-   * The HTMLElement that the terminal is created in, set by Terminal.open.
-   */
-  private _parent: HTMLElement;
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
@@ -90,15 +87,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // TODO: We should remove options once components adopt optionsService
   public get options(): ITerminalOptions { return this.optionsService.options; }
 
-  // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
-  public cursorState: number;
-  public cursorHidden: boolean;
-
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // common services
   private _bufferService: IBufferService;
   private _coreService: ICoreService;
+  private _charsetService: ICharsetService;
   private _coreMouseService: ICoreMouseService;
   private _dirtyRowService: IDirtyRowService;
   private _instantiationService: IInstantiationService;
@@ -113,18 +107,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _soundService: ISoundService;
 
   // modes
-  public applicationKeypad: boolean;
-  public originMode: boolean;
   public insertMode: boolean;
-  public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
   public bracketedPasteMode: boolean;
-
-  // charset
-  // The current charset
-  public charset: ICharset;
-  public gcharset: number;
-  public glevel: number;
-  public charsets: ICharset[];
 
   // mouse properties
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
@@ -132,12 +116,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // misc
   public savedCols: number;
-
-  public curAttrData: IAttributeData;
-  private _eraseAttrData: IAttributeData;
-
-  public params: (string | number)[];
-  public currentParam: string | number;
 
   // write buffer
   private _writeBuffer: WriteBuffer;
@@ -172,6 +150,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
+  private _onBinary = new EventEmitter<string>();
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -224,10 +204,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
+    this._coreService.onBinary(e => this._onBinary.fire(e));
     this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._charsetService = this._instantiationService.createInstance(CharsetService);
+    this._instantiationService.setService(ICharsetService, this._charsetService);
 
     this._setupOptionsListeners();
     this._setup();
@@ -240,59 +223,48 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
     super.dispose();
-    if (this._windowsMode) {
-      this._windowsMode.dispose();
-      this._windowsMode = undefined;
-    }
-    if (this._renderService) {
-      this._renderService.dispose();
-    }
+    this._windowsMode?.dispose();
+    this._windowsMode = undefined;
+    this._renderService?.dispose();
     this._customKeyEventHandler = null;
     this.write = () => {};
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
+    this.element?.parentNode?.removeChild(this.element);
   }
 
   private _setup(): void {
-    this._parent = document ? document.body : null;
-
-    this.cursorState = 0;
-    this.cursorHidden = false;
     this._customKeyEventHandler = null;
 
     // modes
-    this.applicationKeypad = false;
-    this.originMode = false;
     this.insertMode = false;
-    this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
     this.bracketedPasteMode = false;
-
-    // charset
-    this.charset = null;
-    this.gcharset = null;
-    this.glevel = 0;
-    // TODO: Can this be just []?
-    this.charsets = [null];
-
-    this.curAttrData = DEFAULT_ATTR_DATA.clone();
-    this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
-
-    this.params = [];
-    this.currentParam = 0;
 
     this._userScrolling = false;
 
-    // Register input handler and refire/handle events
-    this._inputHandler = new InputHandler(this, this._bufferService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
-    this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
-    this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
-    this.register(this._inputHandler);
+    if (this._inputHandler) {
+      this._inputHandler.reset();
+    } else {
+      // Register input handler and refire/handle events
+      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
+      this._inputHandler.onRequestBell(() => this.bell());
+      this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
+      this._inputHandler.onRequestReset(() => this.reset());
+      this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
+      this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
+      this.register(this._inputHandler);
+    }
 
-    this.linkifier = this.linkifier || new Linkifier(this._bufferService, this._logService);
+    if (!this.linkifier) {
+      this.linkifier = new Linkifier(this._bufferService, this._logService);
+    }
 
     if (this.options.windowsMode) {
-      this._windowsMode = applyWindowsMode(this);
+      this._enableWindowsMode();
+    }
+  }
+
+  private _enableWindowsMode(): void {
+    if (!this._windowsMode) {
+      this._windowsMode = this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService));
     }
   }
 
@@ -308,25 +280,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /**
-   * back_color_erase feature for xterm.
-   */
-  public eraseAttrData(): IAttributeData {
-    this._eraseAttrData.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
-    this._eraseAttrData.bg |= this.curAttrData.bg & ~0xFC000000;
-    return this._eraseAttrData;
-  }
-
-  /**
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
   public focus(): void {
     if (this.textarea) {
       this.textarea.focus({ preventScroll: true });
     }
-  }
-
-  public get isFocused(): boolean {
-    return document.activeElement === this.textarea && document.hasFocus();
   }
 
   private _setupOptionsListeners(): void {
@@ -336,18 +295,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
         case 'fontFamily':
         case 'fontSize':
           // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderService) {
-            this._renderService.clear();
-          }
-          if (this._charSizeService) {
-            this._charSizeService.measure();
-          }
+          this._renderService?.clear();
+          this._charSizeService?.measure();
           break;
         case 'drawBoldTextInBrightColors':
         case 'letterSpacing':
         case 'lineHeight':
         case 'fontWeight':
         case 'fontWeightBold':
+        case 'minimumContrastRatio':
           // When the font changes the size of the cells may change which requires a renderer clear
           if (this._renderService) {
             this._renderService.clear();
@@ -363,9 +319,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           break;
         case 'scrollback':
           this.buffers.resize(this.cols, this.rows);
-          if (this.viewport) {
-            this.viewport.syncScrollArea();
-          }
+          this.viewport?.syncScrollArea();
           break;
         case 'screenReaderMode':
           if (this.optionsService.options.screenReaderMode) {
@@ -373,38 +327,20 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
               this._accessibilityManager = new AccessibilityManager(this, this._renderService);
             }
           } else {
-            if (this._accessibilityManager) {
-              this._accessibilityManager.dispose();
-              this._accessibilityManager = null;
-            }
+            this._accessibilityManager?.dispose();
+            this._accessibilityManager = null;
           }
           break;
         case 'tabStopWidth': this.buffers.setupTabStops(); break;
         case 'theme':
           this._setTheme(this.optionsService.options.theme);
           break;
-        case 'scrollback':
-          const newBufferLength = this.rows + this.optionsService.options.scrollback;
-          if (this.buffer.lines.length > newBufferLength) {
-            const amountToTrim = this.buffer.lines.length - newBufferLength;
-            const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
-            this.buffer.lines.trimStart(amountToTrim);
-            this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
-            this.buffer.ydisp = Math.max(this.buffer.ydisp - amountToTrim, 0);
-            if (needsRefresh) {
-              this.refresh(0, this.rows - 1);
-            }
-          }
         case 'windowsMode':
           if (this.optionsService.options.windowsMode) {
-            if (!this._windowsMode) {
-              this._windowsMode = applyWindowsMode(this);
-            }
+            this._enableWindowsMode();
           } else {
-            if (this._windowsMode) {
-              this._windowsMode.dispose();
-              this._windowsMode = undefined;
-            }
+            this._windowsMode?.dispose();
+            this._windowsMode = undefined;
           }
           break;
       }
@@ -514,13 +450,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param parent The element to create the terminal within.
    */
   public open(parent: HTMLElement): void {
-    this._parent = parent || this._parent;
-
-    if (!this._parent) {
+    if (!parent) {
       throw new Error('Terminal requires a parent element.');
     }
 
-    this._document = this._parent.ownerDocument;
+    if (!document.body.contains(parent)) {
+      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
+    }
+
+    this._document = parent.ownerDocument;
 
     // Create main element container
     this.element = this._document.createElement('div');
@@ -528,7 +466,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');
-    this._parent.appendChild(this.element);
+    parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
     // viewport and helper elements detached from the DOM
@@ -561,6 +499,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
+    const coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
+    this._instantiationService.setService(ICoreBrowserService, coreBrowserService);
+
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
@@ -575,6 +516,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._theme = this.options.theme || this._theme;
     this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this.optionsService.onOptionChange(e => this._colorManager.onOptionsChange(e));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
@@ -661,8 +603,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this._colorManager.colors, this, this._bufferService, this._charSizeService, this.optionsService);
-      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService, this.optionsService);
+      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager.colors, this.screenElement, this.linkifier);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -673,15 +615,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    if (this._colorManager) {
-      this._colorManager.setTheme(theme);
-    }
-    if (this._renderService) {
-      this._renderService.setColors(this._colorManager.colors);
-    }
-    if (this.viewport) {
-      this.viewport.onThemeChange(this._colorManager.colors);
-    }
+    this._colorManager?.setTheme(theme);
+    this._renderService?.setColors(this._colorManager.colors);
+    this.viewport?.onThemeChange(this._colorManager.colors);
   }
 
   /**
@@ -948,9 +884,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
-    if (this._renderService) {
-      this._renderService.refreshRows(start, end);
-    }
+    this._renderService?.refreshRows(start, end);
   }
 
   /**
@@ -959,9 +893,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param end The row to end at (between start and this.rows - 1).
    */
   private _queueLinkification(start: number, end: number): void {
-    if (this.linkifier) {
-      this.linkifier.linkifyRows(start, end);
-    }
+    this.linkifier?.linkifyRows(start, end);
   }
 
   /**
@@ -979,8 +911,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Display the cursor element
    */
   public showCursor(): void {
-    if (!this.cursorState) {
-      this.cursorState = 1;
+    if (!this._coreService.isCursorInitialized) {
+      this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
     }
   }
@@ -989,10 +921,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(isWrapped: boolean = false): void {
+  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    const eraseAttr = this.eraseAttrData();
     if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
       newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
       this._blankLine = newLine;
@@ -1241,24 +1172,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Clears the current terminal selection.
    */
   public clearSelection(): void {
-    if (this._selectionService) {
-      this._selectionService.clearSelection();
-    }
+    this._selectionService?.clearSelection();
   }
 
   /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
-    if (this._selectionService) {
-      this._selectionService.selectAll();
-    }
+    this._selectionService?.selectAll();
   }
 
   public selectLines(start: number, end: number): void {
-    if (this._selectionService) {
-      this._selectionService.selectLines(start, end);
-    }
+    this._selectionService?.selectLines(start, end);
   }
 
   /**
@@ -1341,27 +1266,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-  }
-
-  /**
-   * Set the G level of the terminal
-   * @param g
-   */
-  public setgLevel(g: number): void {
-    this.glevel = g;
-    this.charset = this.charsets[g];
-  }
-
-  /**
-   * Set the charset for the given G level of the terminal
-   * @param g
-   * @param charset
-   */
-  public setgCharset(g: number, charset: ICharset): void {
-    this.charsets[g] = charset;
-    if (this.glevel === g) {
-      this.charset = charset;
-    }
   }
 
   protected _keyUp(ev: KeyboardEvent): void {
@@ -1465,9 +1369,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._bufferService.resize(x, y);
     this.buffers.setupTabStops(this.cols);
 
-    if (this._charSizeService) {
-      this._charSizeService.measure();
-    }
+    this._charSizeService?.measure();
+
+    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
+    // invalid location
+    this.viewport.syncScrollArea(true);
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });
@@ -1547,29 +1453,22 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
-    const inputHandler = this._inputHandler;
-    const cursorState = this.cursorState;
     const userScrolling = this._userScrolling;
 
     this._setup();
     this._bufferService.reset();
+    this._charsetService.reset();
     this._coreService.reset();
     this._coreMouseService.reset();
-    if (this._selectionService) {
-      this._selectionService.reset();
-    }
+    this._selectionService?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
-    this._inputHandler = inputHandler;
-    this.cursorState = cursorState;
     this._userScrolling = userScrolling;
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
-    if (this.viewport) {
-      this.viewport.syncScrollArea();
-    }
+    this.viewport?.syncScrollArea();
   }
 
   // TODO: Remove cancel function and cancelEvents option

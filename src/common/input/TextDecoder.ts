@@ -194,7 +194,7 @@ export class Utf8ToUtf32 {
             target[size++] = cp;
           }
         } else {
-          if (codepoint < 0x010000 || codepoint > 0x10FFFF) {
+          if (cp < 0x010000 || cp > 0x10FFFF) {
             // illegal codepoint
           } else {
             target[size++] = cp;

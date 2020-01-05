@@ -49,7 +49,7 @@ declare module 'xterm' {
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
-     * with every new line. This equivalent to sending '\r\n' for each '\n'.
+     * with every new line. This is equivalent to sending '\r\n' for each '\n'.
      * Normally the termios settings of the underlying PTY deals with the
      * translation of '\n' to '\r\n' and this setting should not be used. If you
      * deal with data from a non-PTY related source, this settings might be
@@ -73,6 +73,11 @@ declare module 'xterm' {
     cursorStyle?: 'block' | 'underline' | 'bar';
 
     /**
+     * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
+     */
+    cursorWidth?: number;
+
+    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -81,6 +86,16 @@ declare module 'xterm' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
+
+    /**
+     * The modifier key hold to multiply scroll speed.
+     */
+    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
+
+    /**
+     * The scroll speed multiplier used for fast scrolling.
+     */
+    fastScrollSensitivity?: number;
 
     /**
      * The font size used to render text.
@@ -139,6 +154,18 @@ declare module 'xterm' {
     macOptionClickForcesSelection?: boolean;
 
     /**
+     * The minimum contrast ratio for text in the terminal, setting this will
+     * change the foreground color dynamically depending on whether the contrast
+     * ratio is met. Example values:
+     *
+     * - 1: The default, do nothing.
+     * - 4.5: Minimum for WCAG AA compliance.
+     * - 7: Minimum for WCAG AAA compliance.
+     * - 21: White on black or black on white.
+     */
+    minimumContrastRatio?: number;
+
+    /**
      * The type of renderer to use, this allows using the fallback DOM renderer
      * when canvas is too slow for the environment. The following features do
      * not work when the DOM renderer is used:
@@ -172,6 +199,11 @@ declare module 'xterm' {
      * viewport.
      */
     scrollback?: number;
+
+    /**
+     * The scrolling speed multiplier used for adjusting normal scrolling speed.
+     */
+    scrollSensitivity?: number;
 
     /**
      * The size of tab stops in the terminal.
@@ -269,7 +301,7 @@ declare module 'xterm' {
     /**
      * A callback that fires when the mouse hovers over a link for a moment.
      */
-    tooltipCallback?: (event: MouseEvent, uri: string) => boolean | void;
+    tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
 
     /**
      * A callback that fires when the mouse leaves a link. Note that this can
@@ -304,13 +336,14 @@ declare module 'xterm' {
    * An event that can be listened to.
    * @returns an `IDisposable` to stop listening.
    */
-  export interface IEvent<T> {
-    (listener: (e: T) => any): IDisposable;
+  export interface IEvent<T, U = void> {
+    (listener: (arg1: T, arg2: U) => any): IDisposable;
   }
 
   /**
    * Represents a specific line in the terminal that is tracked when scrollback
-   * is trimmed and lines are added or removed.
+   * is trimmed and lines are added or removed. This is a single line that may
+   * be part of a larger wrapped line.
    */
   export interface IMarker extends IDisposable {
     /**
@@ -324,7 +357,8 @@ declare module 'xterm' {
     readonly isDisposed: boolean;
 
     /**
-     * The actual line index in the buffer at this point in time.
+     * The actual line index in the buffer at this point in time. This is set to
+     * -1 if the marker has been disposed.
      */
     readonly line: number;
   }
@@ -352,12 +386,12 @@ declare module 'xterm' {
     /**
      * The element containing the terminal.
      */
-    readonly element: HTMLElement;
+    readonly element: HTMLElement | undefined;
 
     /**
      * The textarea that accepts input for the terminal.
      */
-    readonly textarea: HTMLTextAreaElement;
+    readonly textarea: HTMLTextAreaElement | undefined;
 
     /**
      * The number of rows in the terminal's viewport. Use
@@ -405,6 +439,17 @@ declare module 'xterm' {
     constructor(options?: ITerminalOptions);
 
     /**
+     * Adds an event listener for when a binary event fires. This is used to
+     * enable non UTF-8 conformant binary messages to be sent to the backend.
+     * Currently this is only used for a certain type of mouse reports that
+     * happen to be not UTF-8 compatible.
+     * The event value is a JS string, pass it to the underlying pty as
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBinary: IEvent<string>;
+
+    /**
      * Adds an event listener for the cursor moves.
      * @returns an `IDisposable` to stop listening.
      */
@@ -420,7 +465,7 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for a key is pressed. The event value contains the
+     * Adds an event listener for when a key is pressed. The event value contains the
      * string that will be sent in the data event as well as the DOM event that
      * triggered it.
      * @returns an `IDisposable` to stop listening.
@@ -434,7 +479,7 @@ declare module 'xterm' {
     onLineFeed: IEvent<void>;
 
     /**
-     * Adds an event listener for when a scroll occurs. The  event value is the
+     * Adds an event listener for when a scroll occurs. The event value is the
      * new position of the viewport.
      * @returns an `IDisposable` to stop listening.
      */
@@ -567,6 +612,11 @@ declare module 'xterm' {
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      */
+    registerMarker(cursorYOffset: number): IMarker;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addMarker(cursorYOffset: number): IMarker;
 
     /**
@@ -592,7 +642,7 @@ declare module 'xterm' {
 
     /**
      * Selects text within the terminal.
-     * @param column The column the selection starts at..
+     * @param column The column the selection starts at.
      * @param row The row the selection starts at.
      * @param length The length of the selection.
      */
@@ -843,6 +893,41 @@ declare module 'xterm' {
   }
 
   /**
+   * An object representing a range within the viewport of the terminal.
+   */
+  export interface IViewportRange {
+    /**
+     * The start of the range.
+     */
+    start: IViewportRangePosition;
+
+    /**
+     * The end of the range.
+     */
+    end: IViewportRangePosition;
+  }
+
+  /**
+   * An object representing a cell position within the viewport of the terminal.
+   */
+  interface IViewportRangePosition {
+    /**
+     * The x position of the cell. This is a 0-based index that refers to the
+     * space in between columns, not the column itself. Index 0 refers to the
+     * left side of the viewport, index `Terminal.cols` refers to the right side
+     * of the viewport. This can be thought of as how a cursor is positioned in
+     * a text editor.
+     */
+    x: number;
+
+    /**
+     * The y position of the cell. This is a 0-based index that refers to a
+     * specific row.
+     */
+    y: number;
+  }
+
+  /**
    * Represents a terminal buffer.
    */
   interface IBuffer {
@@ -866,7 +951,7 @@ declare module 'xterm' {
 
     /**
      * The line within the buffer where the top of the bottom page is (when
-     * fully scrolled down);
+     * fully scrolled down).
      */
     readonly baseY: number;
 
@@ -995,8 +1080,13 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addCsiHandler or setCsiHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
@@ -1014,8 +1104,13 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addDcsHandler or setDcsHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
@@ -1027,8 +1122,13 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
@@ -1045,8 +1145,13 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addOscHandler or setOscHandler).
-     * The most recently-added handler is tried first.
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }

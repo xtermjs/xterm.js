@@ -3,16 +3,18 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet } from 'browser/Types';
+import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
+import { channels, color, css } from 'browser/Color';
+import { ColorContrastCache } from 'browser/ColorContrastCache';
 
-const DEFAULT_FOREGROUND = fromHex('#ffffff');
-const DEFAULT_BACKGROUND = fromHex('#000000');
-const DEFAULT_CURSOR = fromHex('#ffffff');
-const DEFAULT_CURSOR_ACCENT = fromHex('#000000');
+const DEFAULT_FOREGROUND = css.toColor('#ffffff');
+const DEFAULT_BACKGROUND = css.toColor('#000000');
+const DEFAULT_CURSOR = css.toColor('#ffffff');
+const DEFAULT_CURSOR_ACCENT = css.toColor('#000000');
 const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
-  rgba: 0xFFFFFF77
+  rgba: 0xFFFFFF4D
 };
 
 // An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
@@ -20,23 +22,23 @@ const DEFAULT_SELECTION = {
 export const DEFAULT_ANSI_COLORS = (() => {
   const colors = [
     // dark:
-    fromHex('#2e3436'),
-    fromHex('#cc0000'),
-    fromHex('#4e9a06'),
-    fromHex('#c4a000'),
-    fromHex('#3465a4'),
-    fromHex('#75507b'),
-    fromHex('#06989a'),
-    fromHex('#d3d7cf'),
+    css.toColor('#2e3436'),
+    css.toColor('#cc0000'),
+    css.toColor('#4e9a06'),
+    css.toColor('#c4a000'),
+    css.toColor('#3465a4'),
+    css.toColor('#75507b'),
+    css.toColor('#06989a'),
+    css.toColor('#d3d7cf'),
     // bright:
-    fromHex('#555753'),
-    fromHex('#ef2929'),
-    fromHex('#8ae234'),
-    fromHex('#fce94f'),
-    fromHex('#729fcf'),
-    fromHex('#ad7fa8'),
-    fromHex('#34e2e2'),
-    fromHex('#eeeeec')
+    css.toColor('#555753'),
+    css.toColor('#ef2929'),
+    css.toColor('#8ae234'),
+    css.toColor('#fce94f'),
+    css.toColor('#729fcf'),
+    css.toColor('#ad7fa8'),
+    css.toColor('#34e2e2'),
+    css.toColor('#eeeeec')
   ];
 
   // Fill in the remaining 240 ANSI colors.
@@ -47,36 +49,22 @@ export const DEFAULT_ANSI_COLORS = (() => {
     const g = v[(i / 6) % 6 | 0];
     const b = v[i % 6];
     colors.push({
-      css: `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}`,
-      // Use >>> 0 to force a conversion to an unsigned int
-      rgba: ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0
+      css: channels.toCss(r, g, b),
+      rgba: channels.toRgba(r, g, b)
     });
   }
 
   // Generate greys (232-255)
   for (let i = 0; i < 24; i++) {
     const c = 8 + i * 10;
-    const ch = toPaddedHex(c);
     colors.push({
-      css: `#${ch}${ch}${ch}`,
-      rgba: ((c << 24) | (c << 16) | (c << 8) | 0xFF) >>> 0
+      css: channels.toCss(c, c, c),
+      rgba: channels.toRgba(c, c, c)
     });
   }
 
   return colors;
 })();
-
-function fromHex(css: string): IColor {
-  return {
-    css,
-    rgba: parseInt(css.slice(1), 16) << 8 | 0xFF
-  };
-}
-
-function toPaddedHex(c: number): string {
-  const s = c.toString(16);
-  return s.length < 2 ? '0' + s : s;
-}
 
 /**
  * Manages the source of truth for a terminal's colors.
@@ -85,6 +73,7 @@ export class ColorManager implements IColorManager {
   public colors: IColorSet;
   private _ctx: CanvasRenderingContext2D;
   private _litmusColor: CanvasGradient;
+  private _contrastCache: IColorContrastCache;
 
   constructor(document: Document, public allowTransparency: boolean) {
     const canvas = document.createElement('canvas');
@@ -97,14 +86,23 @@ export class ColorManager implements IColorManager {
     this._ctx = ctx;
     this._ctx.globalCompositeOperation = 'copy';
     this._litmusColor = this._ctx.createLinearGradient(0, 0, 1, 1);
+    this._contrastCache = new ColorContrastCache();
     this.colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
-      ansi: DEFAULT_ANSI_COLORS.slice()
+      selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      ansi: DEFAULT_ANSI_COLORS.slice(),
+      contrastCache: this._contrastCache
     };
+  }
+
+  public onOptionsChange(key: string): void {
+    if (key === 'minimumContrastRatio') {
+      this._contrastCache.clear();
+    }
   }
 
   /**
@@ -118,6 +116,7 @@ export class ColorManager implements IColorManager {
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selection);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
@@ -134,6 +133,8 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[13] = this._parseColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
     this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
+    // Clear our the cache
+    this._contrastCache.clear();
   }
 
   private _parseColor(
@@ -158,33 +159,48 @@ export class ColorManager implements IColorManager {
     this._ctx.fillRect(0, 0, 1, 1);
     const data = this._ctx.getImageData(0, 0, 1, 1).data;
 
-    if (!allowTransparency && data[3] !== 0xFF) {
-      // Ideally we'd just ignore the alpha channel, but...
-      //
-      // Browsers may not give back exactly the same RGB values we put in, because most/all
-      // convert the color to a pre-multiplied representation. getImageData converts that back to
-      // a un-premultipled representation, but the precision loss may make the RGB channels unuable
-      // on their own.
-      //
-      // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
-      // into 0x00000000.
-      //
-      // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
-      // pixels that have just been set using putImageData() might be returned to an equivalent
-      // getImageData() as different values."
-      // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
-      //
-      // So let's just use the fallback color in this case instead.
-      console.warn(
-        `Color: ${css} is using transparency, but allowTransparency is false. ` +
-        `Using fallback ${fallback.css}.`
-      );
-      return fallback;
+    // Check if the printed color was transparent
+    if (data[3] !== 0xFF) {
+      if (!allowTransparency) {
+        // Ideally we'd just ignore the alpha channel, but...
+        //
+        // Browsers may not give back exactly the same RGB values we put in, because most/all
+        // convert the color to a pre-multiplied representation. getImageData converts that back to
+        // a un-premultipled representation, but the precision loss may make the RGB channels unuable
+        // on their own.
+        //
+        // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
+        // into 0x00000000.
+        //
+        // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
+        // pixels that have just been set using putImageData() might be returned to an equivalent
+        // getImageData() as different values."
+        // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
+        //
+        // So let's just use the fallback color in this case instead.
+        console.warn(
+          `Color: ${css} is using transparency, but allowTransparency is false. ` +
+          `Using fallback ${fallback.css}.`
+        );
+        return fallback;
+      }
+
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // the color value has alpha less than 1.0, and the string is the color value in the CSS rgba()
+      const [r, g, b, a] = this._ctx.fillStyle.substring(5, this._ctx.fillStyle.length - 1).split(',').map(component => Number(component));
+      const alpha = Math.round(a * 255);
+      const rgba: number = channels.toRgba(r, g, b, alpha);
+      return {
+        rgba,
+        css: channels.toCss(r, g, b, alpha)
+      };
     }
 
     return {
-      css,
-      rgba: (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) >>> 0
+      // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+      // if it has alpha equal to 1.0, then the string is a lowercase six-digit hex value, prefixed with a "#" character
+      css: this._ctx.fillStyle,
+      rgba: channels.toRgba(data[0], data[1], data[2], data[3])
     };
   }
 }

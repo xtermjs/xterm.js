@@ -8,6 +8,7 @@ import { IDisposable } from 'common/Types';
 
 export interface IColorManager {
   colors: IColorSet;
+  onOptionsChange(key: string): void;
 }
 
 export interface IColor {
@@ -21,7 +22,18 @@ export interface IColorSet {
   cursor: IColor;
   cursorAccent: IColor;
   selection: IColor;
+  /** The selection blended on top of background. */
+  selectionOpaque: IColor;
   ansi: IColor[];
+  contrastCache: IColorContrastCache;
+}
+
+export interface IColorContrastCache {
+  clear(): void;
+  setCss(bg: number, fg: number, value: string | null): void;
+  getCss(bg: number, fg: number): string | null | undefined;
+  setColor(bg: number, fg: number, value: IColor | null): void;
+  getColor(bg: number, fg: number): IColor | null | undefined;
 }
 
 export interface IPartialColorSet {
@@ -35,7 +47,7 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  syncScrollArea(): void;
+  syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   onWheel(ev: WheelEvent): boolean;
   onTouchStart(ev: TouchEvent): void;
@@ -43,14 +55,25 @@ export interface IViewport extends IDisposable {
   onThemeChange(colors: IColorSet): void;
 }
 
+export interface IViewportRange {
+  start: IViewportRangePosition;
+  end: IViewportRangePosition;
+}
+
+export interface IViewportRangePosition {
+  x: number;
+  y: number;
+}
+
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
+export type LinkMatcherHoverTooltipCallback = (event: MouseEvent, uri: string, position: IViewportRange) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export interface ILinkMatcher {
   id: number;
   regex: RegExp;
   handler: LinkMatcherHandler;
-  hoverTooltipCallback?: LinkMatcherHandler;
+  hoverTooltipCallback?: LinkMatcherHoverTooltipCallback;
   hoverLeaveCallback?: () => void;
   matchIndex?: number;
   validationCallback?: LinkMatcherValidationCallback;
@@ -96,7 +119,7 @@ export interface ILinkMatcherOptions {
   /**
    * A callback that fires when the mouse hovers over a link.
    */
-  tooltipCallback?: LinkMatcherHandler;
+  tooltipCallback?: LinkMatcherHoverTooltipCallback;
   /**
    * A callback that fires when the mouse leaves a link that was hovered.
    */

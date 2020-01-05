@@ -27,20 +27,21 @@ export class Terminal implements ITerminalApi {
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onData(): IEvent<string> { return this._core.onData; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
-  public get element(): HTMLElement { return this._core.element; }
+  public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
   }
-  public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
+  public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
@@ -73,9 +74,12 @@ export class Terminal implements ITerminalApi {
   public deregisterCharacterJoiner(joinerId: number): void {
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public addMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker {
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
+  }
+  public addMarker(cursorYOffset: number): IMarker {
+    return this.registerMarker(cursorYOffset);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
@@ -178,8 +182,8 @@ export class Terminal implements ITerminalApi {
 
   private _verifyIntegers(...values: number[]): void {
     values.forEach(value => {
-      if (value % 1 !== 0) {
-        throw new Error('This API does not accept floating point numbers');
+      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
+        throw new Error('This API only accepts integers');
       }
     });
   }
@@ -226,16 +230,28 @@ class BufferCellApiView implements IBufferCellApi {
 class ParserApi implements IParser {
   constructor(private _core: ITerminal) {}
 
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
     return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
   }
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this.registerCsiHandler(id, callback);
+  }
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
     return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
   }
-  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this.registerDcsHandler(id, callback);
+  }
+  public registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
     return this._core.addEscHandler(id, handler);
   }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this.registerEscHandler(id, handler);
+  }
+  public registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._core.addOscHandler(ident, callback);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this.registerOscHandler(ident, callback);
   }
 }

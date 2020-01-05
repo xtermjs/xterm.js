@@ -21,24 +21,10 @@ export type LineData = CharData[];
  * InputHandler cleanly from the ITerminal interface.
  */
 export interface IInputHandlingTerminal {
-  element: HTMLElement;
-  options: ITerminalOptions;
-  cols: number;
-  rows: number;
-  charset: ICharset;
-  gcharset: number;
-  glevel: number;
-  charsets: ICharset[];
-  applicationKeypad: boolean;
-  originMode: boolean;
   insertMode: boolean;
-  wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttrData: IAttributeData;
   savedCols: number;
-  mouseEvents: CoreMouseEventType;
   sendFocus: boolean;
-  cursorHidden: boolean;
 
   buffers: IBufferSet;
   buffer: IBuffer;
@@ -47,17 +33,10 @@ export interface IInputHandlingTerminal {
   onA11yCharEmitter: IEventEmitter<string>;
   onA11yTabEmitter: IEventEmitter<number>;
 
-  bell(): void;
-  focus(): void;
-  scroll(isWrapped?: boolean): void;
-  setgLevel(g: number): void;
-  eraseAttrData(): IAttributeData;
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
-  setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
-  reset(): void;
   showCursor(): void;
-  refresh(start: number, end: number): void;
   handleTitle(title: string): void;
 }
 
@@ -85,7 +64,9 @@ export interface IInputHandler {
   /** C0 SI */ shiftIn(): void;
 
   /** CSI @ */ insertChars(params: IParams): void;
+  /** CSI SP @ */ scrollLeft(params: IParams): void;
   /** CSI A */ cursorUp(params: IParams): void;
+  /** CSI SP A */ scrollRight(params: IParams): void;
   /** CSI B */ cursorDown(params: IParams): void;
   /** CSI C */ cursorForward(params: IParams): void;
   /** CSI D */ cursorBackward(params: IParams): void;
@@ -121,6 +102,8 @@ export interface IInputHandler {
   /** CSI r */ setScrollRegion(params: IParams, collect?: string): void;
   /** CSI s */ saveCursor(params: IParams): void;
   /** CSI u */ restoreCursor(params: IParams): void;
+  /** CSI ' } */ insertColumns(params: IParams): void;
+  /** CSI ' ~ */ deleteColumns(params: IParams): void;
   /** OSC 0
       OSC 2 */ setTitle(data: string): void;
   /** ESC E */ nextLine(): void;
@@ -138,7 +121,7 @@ export interface IInputHandler {
   /** ESC D */ index(): void;
   /** ESC H */ tabSet(): void;
   /** ESC M */ reverseIndex(): void;
-  /** ESC c */ reset(): void;
+  /** ESC c */ fullReset(): void;
   /** ESC n
       ESC o
       ESC |
@@ -150,11 +133,8 @@ export interface IInputHandler {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   browser: IBrowser;
-  cursorHidden: boolean;
-  cursorState: number;
   buffer: IBuffer;
   buffers: IBufferSet;
-  isFocused: boolean;
   viewport: IViewport;
   bracketedPasteMode: boolean;
   optionsService: IOptionsService;
@@ -173,13 +153,14 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 
 // Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable {
-  textarea: HTMLTextAreaElement;
+  textarea: HTMLTextAreaElement | undefined;
   rows: number;
   cols: number;
   buffer: IBuffer;
   markers: IMarker[];
   onCursorMove: IEvent<void>;
   onData: IEvent<string>;
+  onBinary: IEvent<string>;
   onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   onLineFeed: IEvent<void>;
   onScroll: IEvent<number>;
@@ -226,7 +207,7 @@ export interface IBufferAccessor {
 }
 
 export interface IElementAccessor {
-  readonly element: HTMLElement;
+  readonly element: HTMLElement | undefined;
 }
 
 export interface ILinkifierAccessor {
