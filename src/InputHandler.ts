@@ -568,7 +568,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * BEL
    * Bell (Ctrl-G).
-   * 
+   *
    * @vt: supported   C0    BEL   "Bell"  "\a"  "Ring the bell."
    * The behavior of the bell is further customizable with `ITerminalOptions.bellStyle`
    * and `ITerminalOptions.bellSound`.
@@ -580,7 +580,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * LF
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
-   * 
+   *
    * @vt: supported   C0    LF   "Line Feed"  "\n"  "Move the cursor one row down, scrolling if needed."
    */
   // @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
@@ -612,7 +612,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CR
    * Carriage Return (Ctrl-M).
-   * 
+   *
    * @vt: supported   C0    CR   "Carriage Return"  "\r"  "Move the cursor to the beginning of the row."
    */
   public carriageReturn(): void {
@@ -622,7 +622,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * BS
    * Backspace (Ctrl-H).
-   * 
+   *
    * @vt: supported   C0    BS   "Backspace"  "\b"  "Move the cursor one position to the left."
    */
   public backspace(): void {
@@ -635,7 +635,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * TAB
    * Horizontal Tab (HT) (Ctrl-I).
-   * 
+   *
    * @vt: supported   C0    HT   "Horizontal Tabulation"  "\t"  "Move the cursor to the next character tab stop."
    */
   public tab(): void {
@@ -653,7 +653,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * SO
    * Shift Out (Ctrl-N) -> Switch to Alternate Character Set.  This invokes the
    * G1 character set.
-   * 
+   *
    * @vt: partly      C0    SO   "Shift Out"  "\x0e"  "Switch to an alternative character set."
    * TODO: document supported native character sets and support limitations ...
    */
@@ -665,7 +665,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * SI
    * Shift In (Ctrl-O) -> Switch to Standard Character Set.  This invokes the G0
    * character set (the default).
-   * 
+   *
    * @vt: supported   C0    SI   "Shift In"   "\x0f"  "Return to regular character set after Shift Out."
    */
   public shiftIn(): void {
@@ -712,7 +712,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
-   * 
+   *
    * @vt: supported CSI CUU   "Cursor Up"   "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
    */
   public cursorUp(params: IParams): void {
@@ -728,7 +728,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
-   * 
+   *
    * @vt: supported CSI CUD   "Cursor Down"   "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
    */
   public cursorDown(params: IParams): void {
@@ -744,7 +744,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
-   * 
+   *
    * @vt: supported CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
    */
   public cursorForward(params: IParams): void {
@@ -754,7 +754,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
-   * 
+   *
    * @vt: supported CSI CUB   "Cursor Backward"   "CSI Ps D"  "Move cursor `Ps` times backward (default=1)."
    */
   public cursorBackward(params: IParams): void {
@@ -765,7 +765,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps E
    * Cursor Next Line Ps Times (default = 1) (CNL).
    * Other than cursorDown (CUD) also set the cursor to first column.
-   * 
+   *
    * @vt: supported CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
    */
   public cursorNextLine(params: IParams): void {
@@ -777,7 +777,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps F
    * Cursor Previous Line Ps Times (default = 1) (CPL).
    * Other than cursorUp (CUU) also set the cursor to first column.
-   * 
+   *
    * @vt: supported CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
    */
   public cursorPrecedingLine(params: IParams): void {
@@ -788,7 +788,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps G
    * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
-   * 
+   *
    * @vt: supported CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
    */
   public cursorCharAbsolute(params: IParams): void {
@@ -798,7 +798,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps ; Ps H
    * Cursor Position [row;column] (default = [1,1]) (CUP).
-   * 
+   *
    * @vt: supported CSI CUP   "Cursor Position"   "CSI Ps ; Ps H"  "Set cursor to position [`Ps`, `Ps`] (default = [1, 1])."
    */
   public cursorPosition(params: IParams): void {
@@ -813,7 +813,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm `  Character Position Absolute
    *   [column] (default = [row,1]) (HPA).
    * Currently same functionality as CHA.
-   * 
+   *
    * @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps `" "Same as CHA."
    */
   public charPosAbsolute(params: IParams): void {
@@ -824,7 +824,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm a  Character Position Relative
    *   [columns] (default = [row,col+1]) (HPR)
    * Currently same functionality as CUF.
-   * 
+   *
    * @vt: supported CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
    */
   public hPositionRelative(params: IParams): void {
@@ -834,7 +834,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm d  Vertical Position Absolute (VPA)
    *   [row] (default = [1,column])
-   * 
+   *
    * @vt: supported CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
    */
   public linePosAbsolute(params: IParams): void {
@@ -845,7 +845,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm e  Vertical Position Relative (VPR)
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
-   * 
+   *
    * @vt: supported CSI VPR   "Vertical Position Relative"    "CSI Ps e"  "Move cursor `Ps` times down (default=1)."
    */
   public vPositionRelative(params: IParams): void {
@@ -857,7 +857,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
    *   Same as CUP.
-   * 
+   *
    * @vt: supported CSI HVP   "Horizontal and Vertical Position" "CSI Ps ; Ps f"  "Same as CUP."
    */
   public hVPosition(params: IParams): void {
@@ -871,7 +871,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Potentially:
    *   Ps = 2  -> Clear Stops on Line.
    *   http://vt100.net/annarbor/aaa-ug/section6.html
-   * 
+   *
    * @vt: supported CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
    */
   public tabClear(params: IParams): void {
@@ -886,7 +886,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps I
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
-   * 
+   *
    * @vt: supported CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
    */
   public cursorForwardTab(params: IParams): void {
@@ -901,7 +901,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
-   * 
+   *
    * @vt: supported CSI CBT   "Cursor Backward Tabulation"  "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
    */
   public cursorBackwardTab(params: IParams): void {
@@ -961,7 +961,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 0  -> Selective Erase Below (default).
    *     Ps = 1  -> Selective Erase Above.
    *     Ps = 2  -> Selective Erase All.
-   * 
+   *
    * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
    * TODO: document different modes...
    */
@@ -1025,7 +1025,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 0  -> Selective Erase to Right (default).
    *     Ps = 1  -> Selective Erase to Left.
    *     Ps = 2  -> Selective Erase All.
-   * 
+   *
    * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
    * TODO: document different modes...
    */
@@ -1049,7 +1049,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps L
    * Insert Ps Line(s) (default = 1) (IL).
-   * 
+   *
    * @vt: supported CSI IL  "Insert Line"   "CSI Ps L"  "Insert `Ps` blank lines at active row (default=1)."
    */
   public insertLines(params: IParams): void {
@@ -1081,7 +1081,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps M
    * Delete Ps Line(s) (default = 1) (DL).
-   * 
+   *
    * @vt: supported CSI DL  "Delete Line"   "CSI Ps M"  "Delete `Ps` lines at active row (default=1)."
    */
   public deleteLines(params: IParams): void {
@@ -1132,7 +1132,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
-   * 
+   *
    * @vt: supported CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters in the active row (default=1)."
    */
   public deleteChars(params: IParams): void {
@@ -1151,7 +1151,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
-   * 
+   *
    * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
    */
   public scrollUp(params: IParams): void {
@@ -1169,7 +1169,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-   * 
+   *
    * @vt: supported CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
    */
   public scrollDown(params: IParams): void {
@@ -1198,7 +1198,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * Supported:
    *   - always left shift (no line orientation setting respected)
-   * 
+   *
    * @vt: supported CSI SL  "Scroll Left" "CSI Ps SP @" "Scroll viewport `Ps` times to the left."
    */
   public scrollLeft(params: IParams): void {
@@ -1228,7 +1228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * Supported:
    *   - always right shift (no line orientation setting respected)
-   * 
+   *
    * @vt: supported CSI SR  "Scroll Right"  "CSI Ps SP A"   "Scroll viewport `Ps` times to the right."
    */
   public scrollRight(params: IParams): void {
@@ -1248,7 +1248,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm ' }
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
-   * 
+   *
    * @vt: supported CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
    */
   public insertColumns(params: IParams): void {
@@ -1268,7 +1268,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm ' ~
    * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
-   * 
+   *
    * @vt: supported CSI DECDC "Delete Columns"  "CSI Ps ' ~"  "Delete `Ps` columns at cursor position."
    */
   public deleteColumns(params: IParams): void {
@@ -1288,7 +1288,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
-   * 
+   *
    * @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to hte right (default=1)."
    */
   public eraseChars(params: IParams): void {
@@ -1326,7 +1326,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * Note: To get reset on a valid sequence working correctly without much runtime penalty,
    * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
-   * 
+   *
    * @vt: supported CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
    * Has no effect if the sequence does not follow a printed character (NOOP for any other sequence in between).
    * TODO: document character limitations due to xterm compliance
@@ -1380,7 +1380,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * More information:
    *   xterm/charproc.c - line 2012, for more information.
    *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
-   * 
+   *
    * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
    * TODO: Describe response...
    */
@@ -1503,7 +1503,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2 0 0 4  -> Set bracketed paste mode.
    * Modes:
    *   http: *vt100.net/docs/vt220-rm/chapter4.html
-   * 
+   *
    * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal attributes."
    * TODO: Describe all supported attributes.
    */
@@ -1692,7 +1692,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 0 6 0  -> Reset legacy keyboard emulation (X11R6).
    *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
    *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
-   * 
+   *
    * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
    * TODO: Describe all supported attributes.
    */
@@ -1923,7 +1923,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps.
    *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
    *     Ps.
-   * 
+   *
    * @vt: partly    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
    * Detailed description goes here...
    */
@@ -2047,7 +2047,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 5 3  -> Report Locator status as
    *   CSI ? 5 3  n  Locator available, if compiled-in, or
    *   CSI ? 5 0  n  No Locator, if not.
-   * 
+   *
    * @vt: supported CSI DSR   "Device Status Report"  "CSI Ps n"  "Request cursor position (CPR) with `Ps` = 6."
    */
   public deviceStatus(params: IParams): void {
@@ -2098,7 +2098,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI ! p   Soft terminal reset (DECSTR).
    * http://vt100.net/docs/vt220-rm/table4-10.html
-   * 
+   *
    * @vt: supported CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
    * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
    * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
@@ -2126,7 +2126,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 4  -> steady underline.
    *   Ps = 5  -> blinking bar (xterm).
    *   Ps = 6  -> steady bar (xterm).
-   * 
+   *
    * @vt: supported CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
    * Supported cursor styles (TODO: add note about `options.cursorBlink`):
    *  - empty, 0 or 1: steady block
@@ -2160,7 +2160,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps ; Ps r
    *   Set Scrolling Region [top;bottom] (default = full size of win-
    *   dow) (DECSTBM).
-   * 
+   *
    * @vt: supported CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
    * TODO: document specialties like dependent cursor commands and scrolling...
    */
@@ -2184,7 +2184,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI s
    * ESC 7
    *   Save cursor (ANSI.SYS).
-   * 
+   *
    * @vt: partly  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
    */
   // @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
@@ -2201,7 +2201,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI u
    * ESC 8
    *   Restore cursor (ANSI.SYS).
-   * 
+   *
    * @vt: partly  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
    */
   // @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
@@ -2222,7 +2222,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * OSC 0; <data> ST (set icon name + window title)
    * OSC 2; <data> ST (set window title)
    *   Proxy to set window title. Icon name is not supported.
-   * 
+   *
    * @vt: partly        OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
    * Icon name is not supported. For Window Title see below.
    */
@@ -2239,7 +2239,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * C1.NEL
    *   DEC mnemonic: NEL (https://vt100.net/docs/vt510-rm/NEL)
    *   Moves cursor to first position on next line.
-   * 
+   *
    * @vt: supported   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
    */
   // @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
@@ -2314,7 +2314,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * C1.IND
    *   DEC mnemonic: IND (https://vt100.net/docs/vt510-rm/IND.html)
    *   Moves the cursor down one line in the same column.
-   * 
+   *
    * @vt: supported   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
    */
   // @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
@@ -2337,7 +2337,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: HTS (https://vt100.net/docs/vt510-rm/HTS.html)
    *   Sets a horizontal tab stop at the column position indicated by
    *   the value of the active column when the terminal receives an HTS.
-   * 
+   *
    * @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
    */
   // @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
@@ -2412,7 +2412,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECALN (https://vt100.net/docs/vt510-rm/DECALN.html)
    *   This control function fills the complete screen area with
    *   a test pattern (E) used for adjusting screen alignment.
-   * 
+   *
    * @vt: supported   ESC   DECALN   "Screen Alignment Pattern"  "ESC # 8"  "Fill viewport with a test pattern (E)."
    */
   public screenAlignmentPattern(): void {
