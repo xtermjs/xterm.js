@@ -129,7 +129,7 @@ class DECRQSS implements IDcsHandler {
  * DCS Ps; Ps| Pt ST
  *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
  *   not supported
- * 
+ *
  * @vt: unsupported  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
  */
 
@@ -137,7 +137,7 @@ class DECRQSS implements IDcsHandler {
  * DCS + q Pt ST (xterm)
  *   Request Terminfo String
  *   not implemented
- * 
+ *
  * @vt: unsupported  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
  */
 
@@ -145,7 +145,7 @@ class DECRQSS implements IDcsHandler {
  * DCS + p Pt ST (xterm)
  *   Set Terminfo Data
  *   not supported
- * 
+ *
  * @vt: unsupported  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
  */
 
@@ -605,9 +605,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
    * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
-   * 
+   *
    * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
-   * 
+   *
    * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
    */
   public lineFeed(): void {
@@ -989,7 +989,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
    * TODO: document different modes...
-   * 
+   *
    * @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
   public eraseInDisplay(params: IParams): void {
@@ -1054,7 +1054,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
    * TODO: document different modes...
-   * 
+   *
    * @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
   public eraseInLine(params: IParams): void {
@@ -2216,7 +2216,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
-   * 
+   *
    * @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
   public saveCursor(params?: IParams): void {
@@ -2234,7 +2234,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
-   * 
+   *
    * @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
   public restoreCursor(params?: IParams): void {
@@ -2257,7 +2257,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly        OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
    * Icon name is not supported. For Window Title see below.
-   * 
+   *
    * @vt: supported     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
    * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
    */
@@ -2272,7 +2272,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves cursor to first position on next line.
    *
    * @vt: supported   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
-   * 
+   *
    * @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
   public nextLine(): void {
@@ -2348,7 +2348,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    *
    * @vt: supported   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
-   * 
+   *
    * @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
    */
   public index(): void {
@@ -2372,7 +2372,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    *
    * @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
-   * 
+   *
    * @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
   public tabSet(): void {
@@ -2385,7 +2385,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: HTS
    *   Moves the cursor up one line in the same column. If the cursor is at the top margin,
    *   the page scrolls down.
-   * 
+   *
    * @vt: supported ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
    */
   public reverseIndex(): void {
