@@ -265,8 +265,7 @@ function initOptions(term: TerminalType): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
-    wordSeparator: null,
-    unicodeVersion: ['6', '11']
+    wordSeparator: null
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];

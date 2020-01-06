@@ -347,11 +347,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
             this._windowsMode = undefined;
           }
           break;
-        case 'unicodeVersion':
-          if (this.unicodeService.activeVersion !== this.optionsService.options.unicodeVersion) {
-            this.unicodeService.activeVersion = this.optionsService.options.unicodeVersion;
-          }
-          break;
       }
     });
   }

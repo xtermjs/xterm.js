@@ -216,12 +216,6 @@ declare module 'xterm' {
     theme?: ITheme;
 
     /**
-     * Unicode version to be used for wcwidth. Default is version 6.
-     * New unicode versions can be registered through the `Terminal.unicode.register` API.
-     */
-    unicodeVersion?: string;
-
-    /**
      * Whether "Windows mode" is enabled. Because Windows backends winpty and
      * conpty operate by doing line wrapping on their side, xterm.js does not
      * have access to wrapped lines. When Windows mode is enabled the following
@@ -1173,9 +1167,14 @@ declare module 'xterm' {
    * Used to register custom Unicode versions with `Terminal.unicode.register`.
    */
   export interface IUnicodeVersionProvider {
-    /** String indicating the Unicode version provided. */
+    /**
+     * String indicating the Unicode version provided.
+     */
     readonly version: string;
-    /** Unicode version dependent wcwidth implementation. */
+    
+    /**
+     * Unicode version dependent wcwidth implementation.
+     */
     wcwidth(codepoint: number): 0 | 1 | 2;
   }
 
@@ -1187,13 +1186,14 @@ declare module 'xterm' {
      * Register a custom Unicode version provider.
      */
     register(provider: IUnicodeVersionProvider): void;
+
     /**
      * Registered Unicode versions.
      */
     readonly versions: ReadonlyArray<string>;
+
     /**
-     * Getter/setter for activate Unicode version.
-     * FIXME: Should we go with this instead of get/SetOption?
+     * Getter/setter for active Unicode version.
      */
     activeVersion: string;
   }
