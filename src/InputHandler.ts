@@ -29,6 +29,22 @@ import { DcsHandler } from 'common/parser/DcsParser';
 const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
 
 /**
+ * VT commands done by the parser - FIXME: move this to the parser?
+ */
+// @vt: supported   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
+// @vt: supported   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
+// @vt: supported   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
+// @vt: supported   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
+// @vt: supported   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
+// @vt: supported   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
+// @vt: supported   C1    CSI   "Control Sequence Introducer"   "\x9b"    "Start of a CSI sequence."
+// @vt: supported   C1    OSC   "Operating System Command"      "\x9d"    "Start of an OSC sequence."
+// @vt: supported   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
+// @vt: supported   C1    ST    "String Terminator"             "\x9c"    "Terminator used for string type sequences."
+// @vt: supported   C1    PM    "Privacy Message"               "\x9e"    "Start of a privacy message."
+// @vt: supported   C1    APC   "Application Program Command"   "\x9f"    "Start of an APC sequence."
+
+/**
  * Document common VT features here that are currently unsupported
  */
 // @vt: unsupported   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
@@ -50,11 +66,13 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  *   Request Status String (DECRQSS), VT420 and up.
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  *
- * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several the terminal settings."
- * Supported:
- * - Graphic Rendition (SGR): `DCS $ q m ST` (always reporting 0m)
- * - Top and Bottom Margins (DECSTBM): `DCS $ q m ST`
- * - Cursor Style (DECSCUSR): `DCS $ q SP q ST`
+ * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+ * Supported requests and responses:
+ * | Type                             | Request           | Response |
+ * | -------------------------------- | ----------------- | -------- |
+ * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | currently broken (reporting `0m`) |
+ * | Top and Bottom Margins (DECSTBM) | `DCS $ q m ST`    | .... |
+ * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | .... |
  */
 class DECRQSS implements IDcsHandler {
   private _data: Uint32Array = new Uint32Array(0);
@@ -111,18 +129,24 @@ class DECRQSS implements IDcsHandler {
  * DCS Ps; Ps| Pt ST
  *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
  *   not supported
+ * 
+ * @vt: unsupported  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
  */
 
 /**
  * DCS + q Pt ST (xterm)
  *   Request Terminfo String
  *   not implemented
+ * 
+ * @vt: unsupported  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
  */
 
 /**
  * DCS + p Pt ST (xterm)
  *   Set Terminfo Data
  *   not supported
+ * 
+ * @vt: unsupported  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
  */
 
 
@@ -315,7 +339,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setEscHandler({final: 'D'}, () => this.index());
     this._parser.setEscHandler({final: 'E'}, () => this.nextLine());
     this._parser.setEscHandler({final: 'H'}, () => this.tabSet());
-    // @vt: supported ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
     this._parser.setEscHandler({final: 'M'}, () => this.reverseIndex());
     this._parser.setEscHandler({final: '='}, () => this.keypadApplicationMode());
     this._parser.setEscHandler({final: '>'}, () => this.keypadNumericMode());
@@ -581,10 +604,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * LF
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
-   * @vt: supported   C0    LF   "Line Feed"  "\n"  "Move the cursor one row down, scrolling if needed."
+   * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
+   * 
+   * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
+   * 
+   * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
    */
-  // @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
-  // @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
   public lineFeed(): void {
     // make buffer local for faster access
     const buffer = this._bufferService.buffer;
@@ -964,8 +989,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
    * TODO: document different modes...
+   * 
+   * @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
-  // @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
   public eraseInDisplay(params: IParams): void {
     this._restrictCursor();
     let j;
@@ -1028,8 +1054,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
    * TODO: document different modes...
+   * 
+   * @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
-  // @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
   public eraseInLine(params: IParams): void {
     this._restrictCursor();
     switch (params.params[0]) {
@@ -1394,6 +1421,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._coreService.triggerDataEvent(C0.ESC + '[?6c');
     }
   }
+
   /**
    * @vt: supported CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
    * TODO: Describe response...
@@ -1519,6 +1547,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
   }
+
   /**
    * @vt: partly    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
    * TODO: Describe all supported attributes.
@@ -1708,6 +1737,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
   }
+
   /**
    * @vt: partly    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
    * TODO: Describe all supported attributes.
@@ -2128,7 +2158,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 6  -> steady bar (xterm).
    *
    * @vt: supported CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
-   * Supported cursor styles (TODO: add note about `options.cursorBlink`):
+   * Supported cursor styles (TODO: add note about `ITerminalOptions.cursorBlink`):
    *  - empty, 0 or 1: steady block
    *  - 2: blink block
    *  - 3: steady underline
@@ -2186,8 +2216,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
+   * 
+   * @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
-  // @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
   public saveCursor(params?: IParams): void {
     this._bufferService.buffer.savedX = this._bufferService.buffer.x;
     this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
@@ -2203,8 +2234,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
+   * 
+   * @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
-  // @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
   public restoreCursor(params?: IParams): void {
     this._bufferService.buffer.x = this._bufferService.buffer.savedX || 0;
     this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
@@ -2225,8 +2257,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly        OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
    * Icon name is not supported. For Window Title see below.
-   */
-  /**
+   * 
    * @vt: supported     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
    * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
    */
@@ -2241,8 +2272,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves cursor to first position on next line.
    *
    * @vt: supported   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
+   * 
+   * @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
-  // @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
   public nextLine(): void {
     this._bufferService.buffer.x = 0;
     this.index();
@@ -2316,8 +2348,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    *
    * @vt: supported   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
+   * 
+   * @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
    */
-  // @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
   public index(): void {
     this._restrictCursor();
     const buffer = this._bufferService.buffer;
@@ -2339,8 +2372,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    *
    * @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
+   * 
+   * @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
-  // @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
   public tabSet(): void {
     this._bufferService.buffer.tabs[this._bufferService.buffer.x] = true;
   }
@@ -2351,6 +2385,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: HTS
    *   Moves the cursor up one line in the same column. If the cursor is at the top margin,
    *   the page scrolls down.
+   * 
+   * @vt: supported ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
    */
   public reverseIndex(): void {
     this._restrictCursor();

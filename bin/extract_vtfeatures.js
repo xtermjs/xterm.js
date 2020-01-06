@@ -33,8 +33,16 @@ const TYPES = [
 ];
 
 const MARKDOWN_TMPL = `
-# Supported VT features by xterm.js
-Version: {{version}}
+
+### TODO
+- improve table sorting:
+  - sort C0/C1 in byte order
+  - sort OSC in numerical order
+  - sort CSI/ESC/DCS in final byte order
+- references
+
+
+xterm.js version: {{version}}
 
 ### Table of Contents
 
@@ -60,7 +68,7 @@ Version: {{version}}
 
 ### General notes
 
-This document lists xterm.js' support of typical VT commands. The commands are grouped by their type:
+This document lists xterm.js' support of terminal sequences. The sequences are grouped by their type:
 
 - C0: single byte command (7bit control characters, byte range \\x00 .. \\x1f)
 - C1: single byte command (8bit control characters, byte range \\x80 .. \\x9f)
@@ -69,18 +77,18 @@ This document lists xterm.js' support of typical VT commands. The commands are g
 - DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\` 8bit)
 - OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9d\` 8bit)
 
-Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are not supported,
-any sequence of these types will be ignored.
+Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
+any sequence of these types will be ignored. They are also not hookable by the API.
 
-Note that the list only contains commands implemented in xterm.js' core codebase. Missing commands are either
-not supported or unstable/experimental. Furthermore addons can provide additional commands.
+Note that the list only contains sequences implemented in xterm.js' core codebase. Missing sequences are either
+not supported or unstable/experimental. Furthermore addons or integrations can provide additional custom sequences.
 
-To denote the sequences the lists use the same abbreviations as xterm does:
+To denote the sequences the following tables use the same abbreviations as xterm does:
 - \`Ps\`: A single (usually optional) numeric parameter, composed of one or more decimal digits.
 - \`Pm\`: A multiple numeric parameter composed of any number of single numeric parameters, separated by ; character(s),
   e.g. \` Ps ; Ps ; ... \`.
 - \`Pt\`: A text parameter composed of printable characters. Note that for most commands with \`Pt\` only
-  ASCII printables are specified to work. Additionally xterm.js will let any character >C1 pass as printable.
+  ASCII printables are specified to work. Additionally the parser will let pass any codepoint greater than C1 as printable.
 
 
 {{#C0.length}}
@@ -219,32 +227,32 @@ To denote the sequences the lists use the same abbreviations as xterm does:
 {{/OSC.hasLongDescriptions}}
 
 {{/OSC.length}}
-
-
-### TODO
-- improve table sorting:
-  - sort C0/C1 in byte order
-  - sort OSC in numerical order
-  - sort CSI/ESC/DCS in final byte order
-- references
 `
 
 function createAnchorSlug(s) {
   return s.toLowerCase().split(' ').join('-');
 }
 
-function parseMultiLine(filename, s) {
+function* parseMultiLineGen(filename, s) {
   if (!~s.indexOf('@vt:')) {
     return;
   }
   const lines = s.split('\n').map(el => el.trim().replace(/[*]/, '').replace(/\s/, ''));
   let grabLine = false;
-  const longDescription = [];
-  let feature;
+  let longDescription = [];
+  let feature = undefined;
   for (const line of lines) {
     if (grabLine) {
       if (!line) {
-        break;
+        if (feature) {
+          feature.longDescription = longDescription;
+          feature.longTarget = createAnchorSlug(feature.name);
+          yield feature;
+        }
+        grabLine = false;
+        longDescription = [];
+        feature = undefined;
+        continue;
       }
       longDescription.push(line);
     }
@@ -252,11 +260,6 @@ function parseMultiLine(filename, s) {
       feature = parseSingleLine(filename, line);
       grabLine = true;
     }
-  }
-  if (feature) {
-    feature.longDescription = longDescription;
-    feature.longTarget = createAnchorSlug(feature.name);
-    return feature;
   }
 }
 
@@ -288,7 +291,7 @@ function postProcessData(features) {
       featureTable[feature.type] = [];
     }
     featureTable[feature.type].push(feature);
-    if (feature.longDescription) {
+    if (feature.longDescription.length) {
       featureTable[feature.type].hasLongDescriptions = true;
     }
   }
@@ -311,11 +314,13 @@ function main(filenames) {
         if (match.index === REX_COMMENTS.lastIndex) {
           REX_COMMENTS.lastIndex++;
         }
-        const feature = match[1]
-          ? parseMultiLine(filename, match[1])
-          : parseSingleLine(filename, match[2]);
-        if (feature) {
-          features.push(feature);
+        if (match[1]) {
+          for (let feature of parseMultiLineGen(filename, match[1])) {
+            if (feature) features.push(feature);
+          }
+        } else {
+          const feature = parseSingleLine(filename, match[2]);
+          if (feature) features.push(feature);
         }
       }
       leftToProcess--;
