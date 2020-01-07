@@ -346,7 +346,15 @@ function initAddons(term: TerminalType): void {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
+        if (name === 'webgl') {
+          setTimeout(() => {
+            document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
+          }, 0);
+        }
       } else {
+        if (name === 'webgl') {
+          document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        }
         addon.instance!.dispose();
         addon.instance = undefined;
       }

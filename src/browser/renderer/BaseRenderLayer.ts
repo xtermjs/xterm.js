@@ -15,7 +15,7 @@ import { IColorSet, IColor } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { toCss, ensureContrastRatioRgba, opaque } from 'browser/Color';
+import { channels, color, rgba } from 'browser/Color';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -171,11 +171,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected _fillLeftLineAtCell(x: number, y: number): void {
+  protected _fillLeftLineAtCell(x: number, y: number, width: number): void {
     this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,
-        window.devicePixelRatio,
+        window.devicePixelRatio * width,
         this._scaledCellHeight);
   }
 
@@ -325,7 +325,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       if (fgOverride) {
         this._ctx.fillStyle = fgOverride.css;
       } else if (cell.isBgDefault()) {
-        this._ctx.fillStyle = opaque(this._colors.background).css;
+        this._ctx.fillStyle = color.opaque(this._colors.background).css;
       } else if (cell.isBgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
@@ -418,7 +418,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
-    const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
 
     if (!result) {
       this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
@@ -426,7 +426,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
 
     const color: IColor = {
-      css: toCss(
+      css: channels.toCss(
         (result >> 24) & 0xFF,
         (result >> 16) & 0xFF,
         (result >> 8) & 0xFF

@@ -73,6 +73,11 @@ declare module 'xterm' {
     cursorStyle?: 'block' | 'underline' | 'bar';
 
     /**
+     * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
+     */
+    cursorWidth?: number;
+
+    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -331,8 +336,8 @@ declare module 'xterm' {
    * An event that can be listened to.
    * @returns an `IDisposable` to stop listening.
    */
-  export interface IEvent<T> {
-    (listener: (e: T) => any): IDisposable;
+  export interface IEvent<T, U = void> {
+    (listener: (arg1: T, arg2: U) => any): IDisposable;
   }
 
   /**
@@ -439,7 +444,7 @@ declare module 'xterm' {
      * Currently this is only used for a certain type of mouse reports that
      * happen to be not UTF-8 compatible.
      * The event value is a JS string, pass it to the underlying pty as
-     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`. 
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`.
      * @returns an `IDisposable` to stop listening.
      */
     onBinary: IEvent<string>;
@@ -606,6 +611,11 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
+     */
+    registerMarker(cursorYOffset: number): IMarker;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addMarker(cursorYOffset: number): IMarker;
 
@@ -1073,6 +1083,11 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
@@ -1092,6 +1107,11 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
@@ -1104,6 +1124,11 @@ declare module 'xterm' {
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
@@ -1122,6 +1147,11 @@ declare module 'xterm' {
      * a previous handler (set by addOscHandler or setOscHandler).
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
+     */
+    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
+    /**
+     * @deprecated use `registerMarker` instead.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
