@@ -264,7 +264,17 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _enableWindowsMode(): void {
     if (!this._windowsMode) {
-      this._windowsMode = this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService));
+      const disposables: IDisposable[] = [];
+      disposables.push(this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService)));
+      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
+        handleWindowsModeLineFeed(this._bufferService);
+        return false;
+      }));
+      this._windowsMode = {
+        dispose: () => {
+          disposables.forEach(d => d.dispose());
+        }
+      };
     }
   }
 
