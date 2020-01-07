@@ -605,9 +605,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
    * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
-   *
    * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
-   *
    * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
    */
   public lineFeed(): void {
@@ -2216,7 +2214,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
-   *
    * @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
   public saveCursor(params?: IParams): void {
@@ -2234,7 +2231,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    *
    * @vt: partly  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
-   *
    * @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
   public restoreCursor(params?: IParams): void {
@@ -2272,7 +2268,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves cursor to first position on next line.
    *
    * @vt: supported   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
-   *
    * @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
   public nextLine(): void {
@@ -2348,7 +2343,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    *
    * @vt: supported   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
-   *
    * @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
    */
   public index(): void {
@@ -2372,7 +2366,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    *
    * @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
-   *
    * @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
   public tabSet(): void {

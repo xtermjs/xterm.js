@@ -252,11 +252,21 @@ function* parseMultiLineGen(filename, s) {
         grabLine = false;
         longDescription = [];
         feature = undefined;
-        continue;
       }
-      longDescription.push(line);
+      else if (line.indexOf('@vt:') === 0) {
+        if (feature) {
+          feature.longDescription = [];
+          feature.longTarget = createAnchorSlug(feature.name);
+          yield feature;
+        }
+        grabLine = true;
+        longDescription = [];
+        feature = undefined;
+      } else {
+        longDescription.push(line);
+      }
     }
-    if (~line.indexOf('@vt:')) {
+    if (line.indexOf('@vt:') === 0) {
       feature = parseSingleLine(filename, line);
       grabLine = true;
     }
