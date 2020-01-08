@@ -43,7 +43,7 @@ import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMo
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { handleWindowsModeLineFeed } from 'common/WindowsMode';
+import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService } from 'common/services/Services';
@@ -261,7 +261,17 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _enableWindowsMode(): void {
     if (!this._windowsMode) {
-      this._windowsMode = this.onLineFeed(handleWindowsModeLineFeed.bind(null, this._bufferService));
+      const disposables: IDisposable[] = [];
+      disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
+      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
+        updateWindowsModeWrappedState(this._bufferService);
+        return false;
+      }));
+      this._windowsMode = {
+        dispose: () => {
+          disposables.forEach(d => d.dispose());
+        }
+      };
     }
   }
 
