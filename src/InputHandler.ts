@@ -68,7 +68,7 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  *
  * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
  * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
- * `ESC P 0 ST` for invalid requests.  
+ * `ESC P 0 ST` for invalid requests.\
  * Supported requests and responses:
  * | Type                             | Request           | Response (`Pt`)    |
  * | -------------------------------- | ----------------- | ------------------ |
@@ -77,7 +77,7 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Pstyle SP q`      |
  * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported) |
  * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
- * 
+ *
  * TODO:
  * - fix SGR report
  * - either implement DECSCA or remove the report
@@ -472,7 +472,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // insert combining char at last cursor position
-      // FIXME: needs handling after cursor jumps
       // buffer.x should never be 0 for a combining char
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
@@ -489,10 +488,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // goto next line if ch would overflow
-      // TODO: needs a global min terminal width of 2
-      // FIXME: additionally ensure chWidth fits into a line
-      //   -->  maybe forbid cols<xy at higher level as it would
-      //        introduce a bad runtime penalty here
+      // NOTE: To avoid costly width checks here,
+      // the terminal does not allow a cols < 2.
       if (buffer.x + chWidth - 1 >= cols) {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
@@ -616,7 +613,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
    * Scrolling is restricted to scroll margins and will only happen on the bottom line.
-   * 
+   *
    * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
    * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
    */
@@ -1224,7 +1221,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
    * TODO: explain behavior...
-   * 
+   *
    * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
    */
   public scrollUp(params: IParams): void {
@@ -2199,7 +2196,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * - scroll margins are reset (default = viewport size)
    * - erase attributes are reset to default
    * - charsets are reset
-   * 
+   *
    * FIXME: there are several more attributes missing (see VT520 manual)
    */
   public softReset(params: IParams): void {
