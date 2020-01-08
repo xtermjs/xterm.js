@@ -1220,7 +1220,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    *
    * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
-   * TODO: explain behavior...
    *
    * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
    */
@@ -1241,7 +1240,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    *
    * @vt: supported CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
-   * TODO: explain behavior...
    */
   public scrollDown(params: IParams): void {
     let param = params.params[0] || 1;
@@ -1448,6 +1446,23 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 5  -> Technical characters.
    *     Ps = 2 2  -> ANSI color, e.g., VT525.
    *     Ps = 2 9  -> ANSI text locator (i.e., DEC Locator mode).
+   *
+   * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
+   *
+   * TODO: fix and cleanup response
+   */
+  public sendDeviceAttributesPrimary(params: IParams): void {
+    if (params.params[0] > 0) {
+      return;
+    }
+    if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
+      this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
+    } else if (this._terminal.is('linux')) {
+      this._coreService.triggerDataEvent(C0.ESC + '[?6c');
+    }
+  }
+
+  /**
    * CSI > Ps c
    *   Send Device Attributes (Secondary DA).
    *     Ps = 0  or omitted -> request the terminal's identification
@@ -1466,23 +1481,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   xterm/charproc.c - line 2012, for more information.
    *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
    *
-   * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
-   * TODO: Describe response...
-   */
-  public sendDeviceAttributesPrimary(params: IParams): void {
-    if (params.params[0] > 0) {
-      return;
-    }
-    if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
-      this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
-    } else if (this._terminal.is('linux')) {
-      this._coreService.triggerDataEvent(C0.ESC + '[?6c');
-    }
-  }
-
-  /**
    * @vt: supported CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
-   * TODO: Describe response...
+   *
+   * TODO: fix and cleanup response
    */
   public sendDeviceAttributesSecondary(params: IParams): void {
     if (params.params[0] > 0) {
@@ -1510,6 +1511,32 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 4  -> Insert Mode (IRM).
    *     Ps = 1 2  -> Send/receive (SRM).
    *     Ps = 2 0  -> Automatic Newline (LNM).
+   *
+   * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal modes."
+   * Supported param values by SM:
+   * | Param | Action                                 | Status      |
+   * | ----- | -------------------------------------- | ----------- |
+   * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
+   * | 4     | Insert Mode (IRM).                     | supported   |
+   * | 12    | Send/receive (SRM). Always off.        | unsupported |
+   * | 20    | Automatic Newline (LNM). Always off.   | unsupported |
+   *
+   * FIXME: why is LNM commented out?
+   */
+  public setMode(params: IParams): void {
+    for (let i = 0; i < params.length; i++) {
+      switch (params.params[i]) {
+        case 4:
+          this._terminal.insertMode = true;
+          break;
+        case 20:
+          // this._t.convertEol = true;
+          break;
+      }
+    }
+  }
+
+  /**
    * CSI ? Pm h
    *   DEC Private Mode Set (DECSET).
    *     Ps = 1  -> Application Cursor Keys (DECCKM).
@@ -1590,25 +1617,34 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Modes:
    *   http: *vt100.net/docs/vt220-rm/chapter4.html
    *
-   * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal attributes."
-   * TODO: Describe all supported attributes.
-   */
-  public setMode(params: IParams): void {
-    for (let i = 0; i < params.length; i++) {
-      switch (params.params[i]) {
-        case 4:
-          this._terminal.insertMode = true;
-          break;
-        case 20:
-          // this._t.convertEol = true;
-          break;
-      }
-    }
-  }
-
-  /**
    * @vt: partly    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
-   * TODO: Describe all supported attributes.
+   * Supported param values by DECSET:
+   * | param | Action                                                  | Status      |
+   * | ----- | ------------------------------------------------------- | ----------- |
+   * | 1     | Application Cursor Keys (DECCKM).                       | supported   |
+   * | 2     | Designate US-ASCII for character sets G0-G3 (DECANM).   | supported   |
+   * | 3     | 132 Column Mode (DECCOLM).                              | supported   |
+   * | 6     | Origin Mode (DECOM).                                    | supported   |
+   * | 7     | Auto-wrap Mode (DECAWM).                                | supported   |
+   * | 8     | Auto-repeat Keys (DECARM). Always on.                   | unsupported |
+   * | 9     | X10 xterm mouse protocol.                               | supported   |
+   * | 12    | Start Blinking Cursor.                                  | supported   |
+   * | 25    | Show Cursor (DECTCEM).                                  | supported   |
+   * | 47    | Use Alternate Screen Buffer.                            | supported   |
+   * | 66    | Application keypad (DECNKM).                            | supported   |
+   * | 1000  | X11 xterm mouse protocol.                               | supported   |
+   * | 1002  | Use Cell Motion Mouse Tracking.                         | supported   |
+   * | 1003  | Use All Motion Mouse Tracking.                          | supported   |
+   * | 1004  | Send FocusIn/FocusOut events                            | supported   |
+   * | 1005  | Enable UTF-8 Mouse Mode.                                | unsupported |
+   * | 1006  | Enable SGR Mouse Mode.                                  | supported   |
+   * | 1015  | Enable urxvt Mouse Mode.                                | unsupported |
+   * | 1047  | Use Alternate Screen Buffer.                            | supported   |
+   * | 1048  | Save cursor as in DECSC.                                | supported   |
+   * | 1049  | Save cursor and switch to alternate buffer clearing it. | partly      |
+   * | 2004  | Set bracketed paste mode.                               | supported   |
+   *
+   * FIXME: implement DECSCNM, 1049 should clear altbuffer
    */
   public setModePrivate(params: IParams): void {
     for (let i = 0; i < params.length; i++) {
@@ -1704,6 +1740,32 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 4  -> Replace Mode (IRM).
    *     Ps = 1 2  -> Send/receive (SRM).
    *     Ps = 2 0  -> Normal Linefeed (LNM).
+   *
+   * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
+   * Supported param values by RM:
+   * | Param | Action                                 | Status      |
+   * | ----- | -------------------------------------- | ----------- |
+   * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
+   * | 4     | Replace Mode (IRM). (default)          | supported   |
+   * | 12    | Send/receive (SRM). Always off.        | unsupported |
+   * | 20    | Normal Linefeed (LNM). Always off.     | unsupported |
+   *
+   * FIXME: why is LNM commented out?
+   */
+  public resetMode(params: IParams): void {
+    for (let i = 0; i < params.length; i++) {
+      switch (params.params[i]) {
+        case 4:
+          this._terminal.insertMode = false;
+          break;
+        case 20:
+          // this._t.convertEol = false;
+          break;
+      }
+    }
+  }
+
+  /**
    * CSI ? Pm l
    *   DEC Private Mode Reset (DECRST).
    *     Ps = 1  -> Normal Cursor Keys (DECCKM).
@@ -1780,25 +1842,34 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
    *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
    *
-   * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
-   * TODO: Describe all supported attributes.
-   */
-  public resetMode(params: IParams): void {
-    for (let i = 0; i < params.length; i++) {
-      switch (params.params[i]) {
-        case 4:
-          this._terminal.insertMode = false;
-          break;
-        case 20:
-          // this._t.convertEol = false;
-          break;
-      }
-    }
-  }
-
-  /**
    * @vt: partly    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
-   * TODO: Describe all supported attributes.
+   * Supported param values by DECRST:
+   * | param | Action                                                  | Status      |
+   * | ----- | ------------------------------------------------------- | ----------- |
+   * | 1     | Normal Cursor Keys (DECCKM).                            | supported   |
+   * | 2     | Designate VT52 mode (DECANM).                           | unsupported |
+   * | 3     | 80 Column Mode (DECCOLM).                               | broken      |
+   * | 6     | Normal Cursor Mode (DECOM).                             | supported   |
+   * | 7     | No Wraparound Mode (DECAWM).                            | supported   |
+   * | 8     | No Auto-repeat Keys (DECARM).                           | unsupported |
+   * | 9     | Don't send Mouse X & Y on button press.                 | supported   |
+   * | 12    | Stop Blinking Cursor.                                   | supported   |
+   * | 25    | Hide Cursor (DECTCEM).                                  | supported   |
+   * | 47    | Use Normal Screen Buffer.                               | supported   |
+   * | 66    | Numeric keypad (DECNKM).                                | supported   |
+   * | 1000  | Don't send Mouse reports.                               | supported   |
+   * | 1002  | Don't use Cell Motion Mouse Tracking.                   | supported   |
+   * | 1003  | Don't use All Motion Mouse Tracking.                    | supported   |
+   * | 1004  | Don't send FocusIn/FocusOut events.                     | supported   |
+   * | 1005  | Disable UTF-8 Mouse Mode.                               | unsupported |
+   * | 1006  | Disable SGR Mouse Mode.                                 | supported   |
+   * | 1015  | Disable urxvt Mouse Mode.                               | unsupported |
+   * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | supported   |
+   * | 1048  | Restore cursor as in DECRC.                             | supported   |
+   * | 1049  | Use Normal Screen Buffer and restore cursor.            | supported   |
+   * | 2004  | Reset bracketed paste mode.                             | supported   |
+   *
+   * FIXME: DECCOLM is currently broken (already fixed in window options PR)
    */
   public resetModePrivate(params: IParams): void {
     for (let i = 0; i < params.length; i++) {
@@ -1949,71 +2020,67 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Pm m  Character Attributes (SGR).
-   *     Ps = 0  -> Normal (default).
-   *     Ps = 1  -> Bold.
-   *     Ps = 2  -> Faint, decreased intensity (ISO 6429).
-   *     Ps = 4  -> Underlined.
-   *     Ps = 5  -> Blink (appears as Bold).
-   *     Ps = 7  -> Inverse.
-   *     Ps = 8  -> Invisible, i.e., hidden (VT300).
-   *     Ps = 2 2  -> Normal (neither bold nor faint).
-   *     Ps = 2 4  -> Not underlined.
-   *     Ps = 2 5  -> Steady (not blinking).
-   *     Ps = 2 7  -> Positive (not inverse).
-   *     Ps = 2 8  -> Visible, i.e., not hidden (VT300).
-   *     Ps = 3 0  -> Set foreground color to Black.
-   *     Ps = 3 1  -> Set foreground color to Red.
-   *     Ps = 3 2  -> Set foreground color to Green.
-   *     Ps = 3 3  -> Set foreground color to Yellow.
-   *     Ps = 3 4  -> Set foreground color to Blue.
-   *     Ps = 3 5  -> Set foreground color to Magenta.
-   *     Ps = 3 6  -> Set foreground color to Cyan.
-   *     Ps = 3 7  -> Set foreground color to White.
-   *     Ps = 3 9  -> Set foreground color to default (original).
-   *     Ps = 4 0  -> Set background color to Black.
-   *     Ps = 4 1  -> Set background color to Red.
-   *     Ps = 4 2  -> Set background color to Green.
-   *     Ps = 4 3  -> Set background color to Yellow.
-   *     Ps = 4 4  -> Set background color to Blue.
-   *     Ps = 4 5  -> Set background color to Magenta.
-   *     Ps = 4 6  -> Set background color to Cyan.
-   *     Ps = 4 7  -> Set background color to White.
-   *     Ps = 4 9  -> Set background color to default (original).
-   *
-   *   If 16-color support is compiled, the following apply.  Assume
-   *   that xterm's resources are set so that the ISO color codes are
-   *   the first 8 of a set of 16.  Then the aixterm colors are the
-   *   bright versions of the ISO colors:
-   *     Ps = 9 0  -> Set foreground color to Black.
-   *     Ps = 9 1  -> Set foreground color to Red.
-   *     Ps = 9 2  -> Set foreground color to Green.
-   *     Ps = 9 3  -> Set foreground color to Yellow.
-   *     Ps = 9 4  -> Set foreground color to Blue.
-   *     Ps = 9 5  -> Set foreground color to Magenta.
-   *     Ps = 9 6  -> Set foreground color to Cyan.
-   *     Ps = 9 7  -> Set foreground color to White.
-   *     Ps = 1 0 0  -> Set background color to Black.
-   *     Ps = 1 0 1  -> Set background color to Red.
-   *     Ps = 1 0 2  -> Set background color to Green.
-   *     Ps = 1 0 3  -> Set background color to Yellow.
-   *     Ps = 1 0 4  -> Set background color to Blue.
-   *     Ps = 1 0 5  -> Set background color to Magenta.
-   *     Ps = 1 0 6  -> Set background color to Cyan.
-   *     Ps = 1 0 7  -> Set background color to White.
-   *
-   *   If xterm is compiled with the 16-color support disabled, it
-   *   supports the following, from rxvt:
-   *     Ps = 1 0 0  -> Set foreground and background color to
-   *     default.
-   *
-   *   If 88- or 256-color support is compiled, the following apply.
-   *     Ps = 3 8  ; 5  ; Ps -> Set foreground color to the second
-   *     Ps.
-   *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
-   *     Ps.
    *
    * @vt: partly    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
-   * Detailed description goes here...
+   * SGR selects one or more character attributes at the same time. Multiple params (up to 32)
+   * are applied from in order from left to right. The changed attributes are applied to all new
+   * characters received. If you move characters in the viewport by scrolling or any other means,
+   * then the attributes move with the characters.
+   * Supported param values by SGR:
+   * | Param     | Meaning                                                  | Status      |
+   * | --------- | -------------------------------------------------------- | ----------- |
+   * | 0         | Normal (default). Resets any other preceding SGR.        | supported   |
+   * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | supported   |
+   * | 2         | Faint, decreased intensity.                              | supported   |
+   * | 3         | Italic.                                                  | supported   |
+   * | 4         | Underlined. (no support for newer underline styles)      | supported   |
+   * | 5         | Slowly blinking.                                         | unsupported |
+   * | 6         | Rapidly blinking.                                        | unsupported |
+   * | 7         | Inverse. Flips foreground and background color.          | supported   |
+   * | 8         | Invisible (hidden).                                      | supported   |
+   * | 9         | Crossed-out characters.                                  | unsupported |
+   * | 21        | Doubly  underlined.                                      | unsupported |
+   * | 22        | Normal (neither bold nor faint).                         | supported   |
+   * | 23        | No italic.                                               | supported   |
+   * | 24        | Not underlined.                                          | supported   |
+   * | 25        | Steady (not blinking).                                   | supported   |
+   * | 27        | Positive (not inverse).                                  | supported   |
+   * | 28        | Visible (not hidden).                                    | supported   |
+   * | 29        | Not Crossed-out.                                         | unsupported |
+   * | 30        | Foreground color: Black.                                 | supported   |
+   * | 31        | Foreground color: Red.                                   | supported   |
+   * | 32        | Foreground color: Green.                                 | supported   |
+   * | 33        | Foreground color: Yellow.                                | supported   |
+   * | 34        | Foreground color: Blue.                                  | supported   |
+   * | 35        | Foreground color: Magenta.                               | supported   |
+   * | 36        | Foreground color: Cyan.                                  | supported   |
+   * | 37        | Foreground color: White.                                 | supported   |
+   * | 38        | Foreground color: Extended color (see below).            | supported   |
+   * | 39        | Foreground color: Default (original).                    | supported   |
+   * | 40        | Background color: Black.                                 | supported   |
+   * | 41        | Background color: Red.                                   | supported   |
+   * | 42        | Background color: Green.                                 | supported   |
+   * | 43        | Background color: Yellow.                                | supported   |
+   * | 44        | Background color: Blue.                                  | supported   |
+   * | 45        | Background color: Magenta.                               | supported   |
+   * | 46        | Background color: Cyan.                                  | supported   |
+   * | 47        | Background color: White.                                 | supported   |
+   * | 48        | Background color: Extended color (see below).            | supported   |
+   * | 49        | Background color: Default (original).                    | supported   |
+   * | 90 - 97   | Bright foreground color (analogous to 30 -37).           | supported   |
+   * | 100 - 107 | Bright background color (analogous to 40 -47).           | supported   |
+   * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
+   * | Ps + 1 | Meaning                                                                 | Status      |
+   * | ------ | ----------------------------------------------------------------------- | ----------- |
+   * | 0      | Implementation defined.                                                 | unsupported |
+   * | 1      | Transparent.                                                            | unsupported |
+   * | 2      | RGB color, in the form `Ps ; 2 ; R ; G ; B` or `Ps : 2 : : R : G : B`.  | supported   |
+   * | 3      | CMY color.                                                              | unsupported |
+   * | 4      | CMYK color.                                                             | unsupported |
+   * | 5      | Indexed (256 colors), in the form `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | supported   |
+   *
+   * FIXME: blinking is implemented in attrs, but not working in renderers?
+   * FIXME: remove dead branch for p=100
    */
   public charAttributes(params: IParams): void {
     // Optimize a single SGR0.
@@ -2101,7 +2168,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 38 || p === 48) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
-      } else if (p === 100) {
+      } else if (p === 100) { // FIXME: dead branch, p=100 already handled above!
         // reset fg/bg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
@@ -2222,7 +2289,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 6  -> steady bar (xterm).
    *
    * @vt: supported CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
-   * Supported cursor styles (TODO: add note about `ITerminalOptions.cursorBlink`):
+   * Supported cursor styles:
    *  - empty, 0 or 1: steady block
    *  - 2: blink block
    *  - 3: steady underline
