@@ -67,12 +67,22 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  *
  * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+ * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
+ * `ESC P 0 ST` for invalid requests.  
  * Supported requests and responses:
- * | Type                             | Request           | Response |
- * | -------------------------------- | ----------------- | -------- |
- * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | currently broken (reporting `0m`) |
- * | Top and Bottom Margins (DECSTBM) | `DCS $ q m ST`    | .... |
- * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | .... |
+ * | Type                             | Request           | Response (`Pt`)    |
+ * | -------------------------------- | ----------------- | ------------------ |
+ * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken) |
+ * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ptop ; Pbottom r` |
+ * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Pstyle SP q`      |
+ * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported) |
+ * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
+ * 
+ * TODO:
+ * - fix SGR report
+ * - either implement DECSCA or remove the report
+ * - either check which conformance is better suited or remove the report completely
+ *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
  */
 class DECRQSS implements IDcsHandler {
   private _data: Uint32Array = new Uint32Array(0);
@@ -104,7 +114,7 @@ class DECRQSS implements IDcsHandler {
       case '"q': // DECSCA
         return this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
       case '"p': // DECSCL
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
+        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
       case 'r': // DECSTBM
         const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
                 ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
@@ -605,6 +615,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
    * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
+   * Scrolling is restricted to scroll margins and will only happen on the bottom line.
+   * 
    * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
    * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
    */
@@ -678,7 +690,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * G1 character set.
    *
    * @vt: partly      C0    SO   "Shift Out"  "\x0e"  "Switch to an alternative character set."
-   * TODO: document supported native character sets and support limitations ...
    */
   public shiftOut(): void {
     this._charsetService.setgLevel(1);
@@ -737,6 +748,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Up Ps Times (default = 1) (CUU).
    *
    * @vt: supported CSI CUU   "Cursor Up"   "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
+   * If the cursor would pass the top scroll margin, it will stop there.
    */
   public cursorUp(params: IParams): void {
     // stop at scrollTop
@@ -753,6 +765,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Down Ps Times (default = 1) (CUD).
    *
    * @vt: supported CSI CUD   "Cursor Down"   "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
+   * If the cursor would pass the bottom scroll margin, it will stop there.
    */
   public cursorDown(params: IParams): void {
     // stop at scrollBottom
@@ -790,6 +803,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorDown (CUD) also set the cursor to first column.
    *
    * @vt: supported CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
+   * Same as CUD, additionally places the cursor at the first column.
    */
   public cursorNextLine(params: IParams): void {
     this.cursorDown(params);
@@ -802,6 +816,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Other than cursorUp (CUU) also set the cursor to first column.
    *
    * @vt: supported CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
+   * Same as CUU, additionally places the cursor at the first column.
    */
   public cursorPrecedingLine(params: IParams): void {
     this.cursorUp(params);
@@ -823,6 +838,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    *
    * @vt: supported CSI CUP   "Cursor Position"   "CSI Ps ; Ps H"  "Set cursor to position [`Ps`, `Ps`] (default = [1, 1])."
+   * If ORIGIN mode is set, places the cursor to the absolute position within the scroll margins.
+   * If ORIGIN mode is not set, places the cursor to the absolute position within the viewport.
+   * Note that the coordinates are 1-based, thus the top left position starts at `1 ; 1`.
    */
   public cursorPosition(params: IParams): void {
     this._setCursor(
@@ -846,7 +864,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm a  Character Position Relative
    *   [columns] (default = [row,col+1]) (HPR)
-   * Currently same functionality as CUF.
    *
    * @vt: supported CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
    */
@@ -896,6 +913,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   http://vt100.net/annarbor/aaa-ug/section6.html
    *
    * @vt: supported CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
+   * Clearing tabstops off the active row (Ps = 2, VT100) is currently not supported.
    */
   public tabClear(params: IParams): void {
     const param = params.params[0];
@@ -986,7 +1004,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    *
    * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
-   * TODO: document different modes...
+   * Supported param values:
+   * | Ps | Effect                                                       |
+   * | -- | ------------------------------------------------------------ |
+   * | 0  | Erase from the cursor through the end of the viewport.       |
+   * | 1  | Erase from the beginning of the viewport through the cursor. |
+   * | 2  | Erase complete viewport.                                     |
+   * | 3  | Erase scrollback.                                            |
    *
    * @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
@@ -1051,7 +1075,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2  -> Selective Erase All.
    *
    * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
-   * TODO: document different modes...
+   * Supported param values:
+   * | Ps | Effect                                                   |
+   * | -- | -------------------------------------------------------- |
+   * | 0  | Erase from the cursor through the end of the row.        |
+   * | 1  | Erase from the beginning of the line through the cursor. |
+   * | 2  | Erase complete line.                                     |
    *
    * @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
@@ -1076,6 +1105,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Line(s) (default = 1) (IL).
    *
    * @vt: supported CSI IL  "Insert Line"   "CSI Ps L"  "Insert `Ps` blank lines at active row (default=1)."
+   * For every inserted line at the scroll top one line at the scroll bottom gets removed.
+   * The cursor is set to the first column.
+   * IL has no effect if the cursor is outside the scroll margins.
    */
   public insertLines(params: IParams): void {
     this._restrictCursor();
@@ -1108,6 +1140,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Line(s) (default = 1) (DL).
    *
    * @vt: supported CSI DL  "Delete Line"   "CSI Ps M"  "Delete `Ps` lines at active row (default=1)."
+   * For every deleted line at the scroll top one blank line at the scroll bottom gets appended.
+   * The cursor is set to the first column.
+   * DL has no effect if the cursor is outside the scroll margins.
    */
   public deleteLines(params: IParams): void {
     this._restrictCursor();
@@ -1139,6 +1174,12 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps @
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   *
+   * @vt: supported CSI ICH  "Insert Characters"   "CSI Ps @"  "Insert `Ps` (blank) characters (default = 1)."
+   * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the blank characters.
+   * Text between the cursor and right margin moves to the right. Characters moved past the right margin are lost.
+   *
+   * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
   public insertChars(params: IParams): void {
     this._restrictCursor();
@@ -1158,7 +1199,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
    *
-   * @vt: supported CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters in the active row (default=1)."
+   * @vt: supported CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters (default=1)."
+   * As characters are deleted, the remaining characters between the cursor and right margin move to the left.
+   * Character attributes move with the characters. The terminal adds blank characters at the right margin.
+   *
+   * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
   public deleteChars(params: IParams): void {
     this._restrictCursor();
@@ -1178,6 +1223,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    *
    * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
+   * TODO: explain behavior...
+   * 
+   * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
    */
   public scrollUp(params: IParams): void {
     let param = params.params[0] || 1;
@@ -1196,6 +1244,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    *
    * @vt: supported CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
+   * TODO: explain behavior...
    */
   public scrollDown(params: IParams): void {
     let param = params.params[0] || 1;
@@ -1225,6 +1274,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   - always left shift (no line orientation setting respected)
    *
    * @vt: supported CSI SL  "Scroll Left" "CSI Ps SP @" "Scroll viewport `Ps` times to the left."
+   * SL moves the content of all lines within the scroll margins `Ps` times to the left.
+   * SL has no effect outside of the scroll margins.
    */
   public scrollLeft(params: IParams): void {
     const buffer = this._bufferService.buffer;
@@ -1255,6 +1306,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   - always right shift (no line orientation setting respected)
    *
    * @vt: supported CSI SR  "Scroll Right"  "CSI Ps SP A"   "Scroll viewport `Ps` times to the right."
+   * SL moves the content of all lines within the scroll margins `Ps` times to the right.
+   * Content at the right margin is lost.
+   * SL has no effect outside of the scroll margins.
    */
   public scrollRight(params: IParams): void {
     const buffer = this._bufferService.buffer;
@@ -1275,6 +1329,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
    *
    * @vt: supported CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
+   * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll margins,
+   * moving content to the right. Content at the right margin is lost.
+   * DECIC has no effect outside the scrolling margins.
    */
   public insertColumns(params: IParams): void {
     const buffer = this._bufferService.buffer;
@@ -1295,6 +1352,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
    *
    * @vt: supported CSI DECDC "Delete Columns"  "CSI Ps ' ~"  "Delete `Ps` columns at cursor position."
+   * DECDC deletes `Ps` times columns at the cursor position for all lines with the scroll margins,
+   * moving content to the left. Blank columns are added at the right margin.
+   * DECDC has no effect outside the scrolling margins.
    */
   public deleteColumns(params: IParams): void {
     const buffer = this._bufferService.buffer;
@@ -1314,7 +1374,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
    *
-   * @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to hte right (default=1)."
+   * @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to the right (default=1)."
+   * ED erases `Ps` characters from current cursor position to the right.
+   * ED works inside or outside the scrolling margins.
    */
   public eraseChars(params: IParams): void {
     this._restrictCursor();
@@ -1353,8 +1415,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    *
    * @vt: supported CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
-   * Has no effect if the sequence does not follow a printed character (NOOP for any other sequence in between).
-   * TODO: document character limitations due to xterm compliance
+   * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is set.
+   * REP no effect if the sequence does not follow a printable ASCII character
+   * (NOOP for any other sequence in between or NON ASCII characters).
    */
   public repeatPrecedingCharacter(params: IParams): void {
     if (!this._parser.precedingCodepoint) {
@@ -2131,7 +2194,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
    * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
    * Attributes reset to default values:
-   * - TODO: list attributes here ...
+   * - cursor is reset (default = visible, home position)
+   * - IRM is reset (dafault = false)
+   * - scroll margins are reset (default = viewport size)
+   * - erase attributes are reset to default
+   * - charsets are reset
+   * 
+   * FIXME: there are several more attributes missing (see VT520 manual)
    */
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
@@ -2190,7 +2259,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   dow) (DECSTBM).
    *
    * @vt: supported CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
-   * TODO: document specialties like dependent cursor commands and scrolling...
    */
   public setScrollRegion(params: IParams): void {
     const top = params.params[0] || 1;
