@@ -857,7 +857,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [column] (default = [row,1]) (HPA).
    * Currently same functionality as CHA.
    *
-   * @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps `" "Same as CHA."
+   * @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
    */
   public charPosAbsolute(params: IParams): void {
     this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);

@@ -35,7 +35,7 @@ const TYPES = [
 const MARKDOWN_TMPL = `
 xterm.js version: {{version}}
 
-### Table of Contents
+## Table of Contents
 
 - [General notes](#general-notes)
 {{#C0.length}}
@@ -57,16 +57,16 @@ xterm.js version: {{version}}
 - [OSC](#osc)
 {{/OSC.length}}
 
-### General notes
+## General notes
 
-This document lists xterm.js' support of terminal sequences. The sequences are grouped by their type:
+This document lists xterm.js' support of terminal sequences. The sequences are grouped by their sequence type:
 
-- C0: single byte command (7bit control characters, byte range \\x00 .. \\x1f)
-- C1: single byte command (8bit control characters, byte range \\x80 .. \\x9f)
-- ESC: sequence starting with \`ESC\` (\`\\x1b\`)
-- CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9b\` 8bit)
+- C0: single byte command (7bit control codes, byte range \\x00 .. \\x1F, \x7F)
+- C1: single byte command (8bit control codes, byte range \\x80 .. \\x9F)
+- ESC: sequence starting with \`ESC\` (\`\\x1B\`)
+- CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9B\` 8bit)
 - DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\` 8bit)
-- OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9d\` 8bit)
+- OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9D\` 8bit)
 
 Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
 any sequence of these types will be ignored. They are also not hookable by the API.
@@ -74,7 +74,7 @@ any sequence of these types will be ignored. They are also not hookable by the A
 Note that the list only contains sequences implemented in xterm.js' core codebase. Missing sequences are either
 not supported or unstable/experimental. Furthermore addons or integrations can provide additional custom sequences.
 
-To denote the sequences the following tables use the same abbreviations as xterm does:
+To denote the sequences the tables use the same abbreviations as xterm does:
 - \`Ps\`: A single (usually optional) numeric parameter, composed of one or more decimal digits.
 - \`Pm\`: A multiple numeric parameter composed of any number of single numeric parameters, separated by ; character(s),
   e.g. \` Ps ; Ps ; ... \`.
@@ -83,7 +83,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#C0.length}}
-### C0
+## C0
 
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
@@ -94,7 +94,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#C0.hasLongDescriptions}}
 {{#C0}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -106,7 +106,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#C1.length}}
-### C1
+## C1
 
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
@@ -117,7 +117,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#C1.hasLongDescriptions}}
 {{#C1}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -129,18 +129,18 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#CSI.length}}
-### CSI
+## CSI
 
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
 {{#CSI}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`\`{{{sequence}}}\`\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
 {{/CSI}}
 
 {{#CSI.hasLongDescriptions}}
 {{#CSI}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -152,7 +152,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#DCS.length}}
-### DCS
+## DCS
 
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
@@ -163,7 +163,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#DCS.hasLongDescriptions}}
 {{#DCS}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -175,7 +175,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#ESC.length}}
-### ESC
+## ESC
 
 | Mnemonic | Name | Sequence | Short Description | Status |
 | -------- | ---- | -------- | ----------------- | ------ |
@@ -186,7 +186,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#ESC.hasLongDescriptions}}
 {{#ESC}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -198,7 +198,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 
 
 {{#OSC.length}}
-### OSC
+## OSC
 
 **Note**: Other than listed in the table, the parser recognizes both ST (ECMA-48) and BEL (xterm) as OSC sequence finalizer.
 
@@ -211,7 +211,7 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#OSC.hasLongDescriptions}}
 {{#OSC}}
 {{#longDescription.length}}
-#### {{name}}
+### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
@@ -315,7 +315,14 @@ function getSorter(entry) {
     case 'CSI':
     case 'ESC':
       // default sort order by final byte
-      return (a, b) => a.sequence.charCodeAt(a.sequence.length - 1) - b.sequence.charCodeAt(b.sequence.length - 1);
+      return (a, b) => {
+        // ugly hack to fix sorting of workaround in HPA sequence "CSI Ps ` "
+        // for HPA compare with length - 2 instead
+        const HPA = 'CSI Ps ` ';
+        const aa = a.sequence === HPA ? a.sequence.slice(0, -1) : a.sequence;
+        const bb = b.sequence === HPA ? b.sequence.slice(0, -1) : b.sequence;
+        return aa.charCodeAt(aa.length - 1) - bb.charCodeAt(bb.length - 1);
+      };
     default:
       return (a, b) => a.sequence > b.sequence;
   }
