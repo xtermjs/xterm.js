@@ -17,7 +17,7 @@ const REX_COMMENTS = /^\s*?[/][*][*]([\s\S]*?)[*][/]|^\s*?\/\/ ([@]vt[:].*?)$/mu
  * regexp to parse the @vt line
  * expected data - "@vt: <status> <kind> <mnemonic> "<name>" "<sequence>" "<short description>"
  */
-const REX_VT_LINE = /^[@]vt\:\s*(\w+)\s*(\w+)\s*(\w+)\s*"(.*?)"\s*"(.*?)"\s*"(.*?)".*$/;
+const REX_VT_LINE = /^[@]vt\:\s*(\w+|#\w+|#\w+\[.*?\])\s*(\w+)\s*(\w+)\s*"(.*?)"\s*"(.*?)"\s*"(.*?)".*$/;
 
 // known vt command types
 const TYPES = [
@@ -61,12 +61,12 @@ xterm.js version: {{version}}
 
 This document lists xterm.js' support of terminal sequences. The sequences are grouped by their sequence type:
 
-- C0: single byte command (7bit control codes, byte range \\x00 .. \\x1F, \x7F)
-- C1: single byte command (8bit control codes, byte range \\x80 .. \\x9F)
+- C0: single byte command (7bit control codes, byte range \`\\x00\` .. \`\\x1F\`, \`\\x7F\`)
+- C1: single byte command (8bit control codes, byte range \`\\x80\` .. \`\\x9F\`)
 - ESC: sequence starting with \`ESC\` (\`\\x1B\`)
-- CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9B\` 8bit)
-- DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\` 8bit)
-- OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9D\` 8bit)
+- CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9B\`, 8bit)
+- DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\`, 8bit)
+- OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9D\`, 8bit)
 
 Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
 any sequence of these types will be ignored. They are also not hookable by the API.
@@ -85,10 +85,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{#C0.length}}
 ## C0
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
 {{#C0}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/C0}}
 
 {{#C0.hasLongDescriptions}}
@@ -108,10 +108,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{#C1.length}}
 ## C1
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
 {{#C1}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/C1}}
 
 {{#C1.hasLongDescriptions}}
@@ -131,10 +131,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{#CSI.length}}
 ## CSI
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
 {{#CSI}}
-| {{mnemonic}} | {{name}} | \`\`{{{sequence}}}\`\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`\`{{{sequence}}}\`\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/CSI}}
 
 {{#CSI.hasLongDescriptions}}
@@ -154,10 +154,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{#DCS.length}}
 ## DCS
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
 {{#DCS}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/DCS}}
 
 {{#DCS.hasLongDescriptions}}
@@ -177,10 +177,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{#ESC.length}}
 ## ESC
 
-| Mnemonic | Name | Sequence | Short Description | Status |
-| -------- | ---- | -------- | ----------------- | ------ |
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
 {{#ESC}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/ESC}}
 
 {{#ESC.hasLongDescriptions}}
@@ -202,10 +202,10 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 
 **Note**: Other than listed in the table, the parser recognizes both ST (ECMA-48) and BEL (xterm) as OSC sequence finalizer.
 
-| Identifier | Sequence | Short Description | Status |
-| ---------- | -------- | ----------------- | ------ |
+| Identifier | Sequence | Short Description | Support |
+| ---------- | -------- | ----------------- | ------- |
 {{#OSC}}
-| {{mnemonic}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{status}} |
+| {{mnemonic}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
 {{/OSC}}
 
 {{#OSC.hasLongDescriptions}}
@@ -221,6 +221,34 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 
 {{/OSC.length}}
 `
+
+// support status marcos
+// applied for:
+// - status field of single @vt line
+// - all lines in long description
+const MACRO = [
+  // #Y - supported
+  [/#Y/g, s => '<span title="supported">✓</span>'],
+  // #N - unsupported
+  [/#N/g, s => '<span title="unsupported">✗</span>'],
+  // #P[reason] - partial support with a reason as title
+  [/#P\[(.*?)\]/g, (s, p1) => `<span title="${p1}">Partial</span>`],
+  // #B[reason] - supported but broken in a certain way, reason in title
+  [/#B\[(.*?)\]/g, (s, p1) => `<span title="${p1}">Broken</span>`]
+];
+
+function applyMacros(s) {
+  for (let i = 0; i < MACRO.length; ++i) {
+    s = s.replace(MACRO[i][0], MACRO[i][1]);
+  }
+  return s;
+}
+
+function replaceStatus(s) {
+  if (s === 'supported') return '<span title="supported">✓</span>';
+  if (s === 'unsupported') return '<span title="unsupported">✗</span>';
+  return s;
+}
 
 function createAnchorSlug(s) {
   return s.toLowerCase().split(' ').join('-');
@@ -264,7 +292,8 @@ function* parseMultiLineGen(filename, s) {
         feature = undefined;
         noLineCount = 0;
       } else {
-        longDescription.push(line);
+        //longDescription.push(line);
+        longDescription.push(applyMacros(line));
         if (line) noLineCount = 0;
       }
     }
@@ -331,6 +360,8 @@ function getSorter(entry) {
 function postProcessData(features) {
   const featureTable = {};
   for (const feature of features) {
+    // feature.status = replaceStatus(feature.status);
+    feature.status = applyMacros(feature.status);
     if (featureTable[feature.type] === undefined) {
       featureTable[feature.type] = [];
     }

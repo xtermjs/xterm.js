@@ -31,26 +31,26 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
  */
-// @vt: supported   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
-// @vt: supported   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
-// @vt: supported   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
-// @vt: supported   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
-// @vt: supported   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
-// @vt: supported   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
-// @vt: supported   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
-// @vt: supported   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
-// @vt: supported   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
-// @vt: supported   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
-// @vt: supported   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
-// @vt: supported   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
-// @vt: supported   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
-// @vt: supported   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
+// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
+// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
+// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
+// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
+// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
+// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
+// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
+// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
+// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
+// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
+// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
+// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
+// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
+// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
  * Document common VT features here that are currently unsupported
  */
-// @vt: unsupported   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
-// @vt: unsupported   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
+// @vt: #N   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
+// @vt: #N   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
 
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
@@ -68,7 +68,7 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  *   Request Status String (DECRQSS), VT420 and up.
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  *
- * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+ * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
  * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
  * `ESC P 0 ST` for invalid requests.
  *
@@ -145,7 +145,7 @@ class DECRQSS implements IDcsHandler {
  *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
  *   not supported
  *
- * @vt: unsupported  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
+ * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
  */
 
 /**
@@ -153,7 +153,7 @@ class DECRQSS implements IDcsHandler {
  *   Request Terminfo String
  *   not implemented
  *
- * @vt: unsupported  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
+ * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
  */
 
 /**
@@ -161,7 +161,7 @@ class DECRQSS implements IDcsHandler {
  *   Set Terminfo Data
  *   not supported
  *
- * @vt: unsupported  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
+ * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
  */
 
 
@@ -604,7 +604,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * BEL
    * Bell (Ctrl-G).
    *
-   * @vt: supported   C0    BEL   "Bell"  "\a, \x07"  "Ring the bell."
+   * @vt: #Y   C0    BEL   "Bell"  "\a, \x07"  "Ring the bell."
    * The behavior of the bell is further customizable with `ITerminalOptions.bellStyle`
    * and `ITerminalOptions.bellSound`.
    */
@@ -616,11 +616,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * LF
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
-   * @vt: supported   C0    LF   "Line Feed"            "\n, \x0A"  "Move the cursor one row down, scrolling if needed."
+   * @vt: #Y   C0    LF   "Line Feed"            "\n, \x0A"  "Move the cursor one row down, scrolling if needed."
    * Scrolling is restricted to scroll margins and will only happen on the bottom line.
    *
-   * @vt: supported   C0    VT   "Vertical Tabulation"  "\v, \x0B"  "Treated as LF."
-   * @vt: supported   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
+   * @vt: #Y   C0    VT   "Vertical Tabulation"  "\v, \x0B"  "Treated as LF."
+   * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): void {
     // make buffer local for faster access
@@ -650,7 +650,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CR
    * Carriage Return (Ctrl-M).
    *
-   * @vt: supported   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
+   * @vt: #Y   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
    */
   public carriageReturn(): void {
     this._bufferService.buffer.x = 0;
@@ -660,7 +660,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * BS
    * Backspace (Ctrl-H).
    *
-   * @vt: supported   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
+   * @vt: #Y   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
    */
   public backspace(): void {
     this._restrictCursor();
@@ -673,7 +673,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * TAB
    * Horizontal Tab (HT) (Ctrl-I).
    *
-   * @vt: supported   C0    HT   "Horizontal Tabulation"  "\t, \x09"  "Move the cursor to the next character tab stop."
+   * @vt: #Y   C0    HT   "Horizontal Tabulation"  "\t, \x09"  "Move the cursor to the next character tab stop."
    */
   public tab(): void {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
@@ -691,7 +691,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift Out (Ctrl-N) -> Switch to Alternate Character Set.  This invokes the
    * G1 character set.
    *
-   * @vt: partly      C0    SO   "Shift Out"  "\x0E"  "Switch to an alternative character set."
+   * @vt: #P[Only limited ISO-2022 charset support.]  C0    SO   "Shift Out"  "\x0E"  "Switch to an alternative character set."
    */
   public shiftOut(): void {
     this._charsetService.setgLevel(1);
@@ -702,7 +702,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift In (Ctrl-O) -> Switch to Standard Character Set.  This invokes the G0
    * character set (the default).
    *
-   * @vt: supported   C0    SI   "Shift In"   "\x0F"  "Return to regular character set after Shift Out."
+   * @vt: #Y   C0    SI   "Shift In"   "\x0F"  "Return to regular character set after Shift Out."
    */
   public shiftIn(): void {
     this._charsetService.setgLevel(0);
@@ -749,7 +749,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
    *
-   * @vt: supported CSI CUU   "Cursor Up"   "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
+   * @vt: #Y CSI CUU   "Cursor Up"   "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
    * If the cursor would pass the top scroll margin, it will stop there.
    */
   public cursorUp(params: IParams): void {
@@ -766,7 +766,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
    *
-   * @vt: supported CSI CUD   "Cursor Down"   "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
+   * @vt: #Y CSI CUD   "Cursor Down"   "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
    * If the cursor would pass the bottom scroll margin, it will stop there.
    */
   public cursorDown(params: IParams): void {
@@ -783,7 +783,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
    *
-   * @vt: supported CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
+   * @vt: #Y CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
    */
   public cursorForward(params: IParams): void {
     this._moveCursor(params.params[0] || 1, 0);
@@ -793,7 +793,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
    *
-   * @vt: supported CSI CUB   "Cursor Backward"   "CSI Ps D"  "Move cursor `Ps` times backward (default=1)."
+   * @vt: #Y CSI CUB   "Cursor Backward"   "CSI Ps D"  "Move cursor `Ps` times backward (default=1)."
    */
   public cursorBackward(params: IParams): void {
     this._moveCursor(-(params.params[0] || 1), 0);
@@ -804,7 +804,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Next Line Ps Times (default = 1) (CNL).
    * Other than cursorDown (CUD) also set the cursor to first column.
    *
-   * @vt: supported CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
+   * @vt: #Y CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
    * Same as CUD, additionally places the cursor at the first column.
    */
   public cursorNextLine(params: IParams): void {
@@ -817,7 +817,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Previous Line Ps Times (default = 1) (CPL).
    * Other than cursorUp (CUU) also set the cursor to first column.
    *
-   * @vt: supported CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
+   * @vt: #Y CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
    * Same as CUU, additionally places the cursor at the first column.
    */
   public cursorPrecedingLine(params: IParams): void {
@@ -829,7 +829,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps G
    * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
    *
-   * @vt: supported CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
+   * @vt: #Y CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
    */
   public cursorCharAbsolute(params: IParams): void {
     this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
@@ -839,7 +839,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps ; Ps H
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    *
-   * @vt: supported CSI CUP   "Cursor Position"   "CSI Ps ; Ps H"  "Set cursor to position [`Ps`, `Ps`] (default = [1, 1])."
+   * @vt: #Y CSI CUP   "Cursor Position"   "CSI Ps ; Ps H"  "Set cursor to position [`Ps`, `Ps`] (default = [1, 1])."
    * If ORIGIN mode is set, places the cursor to the absolute position within the scroll margins.
    * If ORIGIN mode is not set, places the cursor to the absolute position within the viewport.
    * Note that the coordinates are 1-based, thus the top left position starts at `1 ; 1`.
@@ -857,7 +857,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [column] (default = [row,1]) (HPA).
    * Currently same functionality as CHA.
    *
-   * @vt: supported CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
+   * @vt: #Y CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
    */
   public charPosAbsolute(params: IParams): void {
     this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
@@ -867,7 +867,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm a  Character Position Relative
    *   [columns] (default = [row,col+1]) (HPR)
    *
-   * @vt: supported CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
+   * @vt: #Y CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
    */
   public hPositionRelative(params: IParams): void {
     this._moveCursor(params.params[0] || 1, 0);
@@ -877,7 +877,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm d  Vertical Position Absolute (VPA)
    *   [row] (default = [1,column])
    *
-   * @vt: supported CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
+   * @vt: #Y CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
    */
   public linePosAbsolute(params: IParams): void {
     this._setCursor(this._bufferService.buffer.x, (params.params[0] || 1) - 1);
@@ -888,7 +888,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
    *
-   * @vt: supported CSI VPR   "Vertical Position Relative"    "CSI Ps e"  "Move cursor `Ps` times down (default=1)."
+   * @vt: #Y CSI VPR   "Vertical Position Relative"    "CSI Ps e"  "Move cursor `Ps` times down (default=1)."
    */
   public vPositionRelative(params: IParams): void {
     this._moveCursor(0, params.params[0] || 1);
@@ -900,7 +900,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [1,1]) (HVP).
    *   Same as CUP.
    *
-   * @vt: supported CSI HVP   "Horizontal and Vertical Position" "CSI Ps ; Ps f"  "Same as CUP."
+   * @vt: #Y CSI HVP   "Horizontal and Vertical Position" "CSI Ps ; Ps f"  "Same as CUP."
    */
   public hVPosition(params: IParams): void {
     this.cursorPosition(params);
@@ -914,7 +914,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 2  -> Clear Stops on Line.
    *   http://vt100.net/annarbor/aaa-ug/section6.html
    *
-   * @vt: supported CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
+   * @vt: #Y CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
    * Clearing tabstops off the active row (Ps = 2, VT100) is currently not supported.
    */
   public tabClear(params: IParams): void {
@@ -930,7 +930,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps I
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    *
-   * @vt: supported CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
+   * @vt: #Y CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
    */
   public cursorForwardTab(params: IParams): void {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
@@ -945,7 +945,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
    *
-   * @vt: supported CSI CBT   "Cursor Backward Tabulation"  "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
+   * @vt: #Y CSI CBT   "Cursor Backward Tabulation"  "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
    */
   public cursorBackwardTab(params: IParams): void {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
@@ -1005,7 +1005,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1  -> Selective Erase Above.
    *     Ps = 2  -> Selective Erase All.
    *
-   * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
+   * @vt: #Y CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
    * Supported param values:
    *
    * | Ps | Effect                                                       |
@@ -1015,7 +1015,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2  | Erase complete viewport.                                     |
    * | 3  | Erase scrollback.                                            |
    *
-   * @vt: partly CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
+   * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
   public eraseInDisplay(params: IParams): void {
     this._restrictCursor();
@@ -1077,7 +1077,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1  -> Selective Erase to Left.
    *     Ps = 2  -> Selective Erase All.
    *
-   * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
+   * @vt: #Y CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
    * Supported param values:
    *
    * | Ps | Effect                                                   |
@@ -1086,7 +1086,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1  | Erase from the beginning of the line through the cursor. |
    * | 2  | Erase complete line.                                     |
    *
-   * @vt: partly CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
+   * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
   public eraseInLine(params: IParams): void {
     this._restrictCursor();
@@ -1108,7 +1108,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps L
    * Insert Ps Line(s) (default = 1) (IL).
    *
-   * @vt: supported CSI IL  "Insert Line"   "CSI Ps L"  "Insert `Ps` blank lines at active row (default=1)."
+   * @vt: #Y CSI IL  "Insert Line"   "CSI Ps L"  "Insert `Ps` blank lines at active row (default=1)."
    * For every inserted line at the scroll top one line at the scroll bottom gets removed.
    * The cursor is set to the first column.
    * IL has no effect if the cursor is outside the scroll margins.
@@ -1143,7 +1143,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps M
    * Delete Ps Line(s) (default = 1) (DL).
    *
-   * @vt: supported CSI DL  "Delete Line"   "CSI Ps M"  "Delete `Ps` lines at active row (default=1)."
+   * @vt: #Y CSI DL  "Delete Line"   "CSI Ps M"  "Delete `Ps` lines at active row (default=1)."
    * For every deleted line at the scroll top one blank line at the scroll bottom gets appended.
    * The cursor is set to the first column.
    * DL has no effect if the cursor is outside the scroll margins.
@@ -1179,7 +1179,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps @
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    *
-   * @vt: supported CSI ICH  "Insert Characters"   "CSI Ps @"  "Insert `Ps` (blank) characters (default = 1)."
+   * @vt: #Y CSI ICH  "Insert Characters"   "CSI Ps @"  "Insert `Ps` (blank) characters (default = 1)."
    * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the blank characters.
    * Text between the cursor and right margin moves to the right. Characters moved past the right margin are lost.
    *
@@ -1204,7 +1204,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
    *
-   * @vt: supported CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters (default=1)."
+   * @vt: #Y CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters (default=1)."
    * As characters are deleted, the remaining characters between the cursor and right margin move to the left.
    * Character attributes move with the characters. The terminal adds blank characters at the right margin.
    *
@@ -1228,7 +1228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    *
-   * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
+   * @vt: #Y CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
    *
    *
    * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
@@ -1249,7 +1249,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    *
-   * @vt: supported CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
+   * @vt: #Y CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
    */
   public scrollDown(params: IParams): void {
     let param = params.params[0] || 1;
@@ -1278,7 +1278,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Supported:
    *   - always left shift (no line orientation setting respected)
    *
-   * @vt: supported CSI SL  "Scroll Left" "CSI Ps SP @" "Scroll viewport `Ps` times to the left."
+   * @vt: #Y CSI SL  "Scroll Left" "CSI Ps SP @" "Scroll viewport `Ps` times to the left."
    * SL moves the content of all lines within the scroll margins `Ps` times to the left.
    * SL has no effect outside of the scroll margins.
    */
@@ -1310,7 +1310,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Supported:
    *   - always right shift (no line orientation setting respected)
    *
-   * @vt: supported CSI SR  "Scroll Right"  "CSI Ps SP A"   "Scroll viewport `Ps` times to the right."
+   * @vt: #Y CSI SR  "Scroll Right"  "CSI Ps SP A"   "Scroll viewport `Ps` times to the right."
    * SL moves the content of all lines within the scroll margins `Ps` times to the right.
    * Content at the right margin is lost.
    * SL has no effect outside of the scroll margins.
@@ -1333,7 +1333,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm ' }
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
    *
-   * @vt: supported CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
+   * @vt: #Y CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
    * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll margins,
    * moving content to the right. Content at the right margin is lost.
    * DECIC has no effect outside the scrolling margins.
@@ -1356,7 +1356,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Pm ' ~
    * Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
    *
-   * @vt: supported CSI DECDC "Delete Columns"  "CSI Ps ' ~"  "Delete `Ps` columns at cursor position."
+   * @vt: #Y CSI DECDC "Delete Columns"  "CSI Ps ' ~"  "Delete `Ps` columns at cursor position."
    * DECDC deletes `Ps` times columns at the cursor position for all lines with the scroll margins,
    * moving content to the left. Blank columns are added at the right margin.
    * DECDC has no effect outside the scrolling margins.
@@ -1379,7 +1379,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
    *
-   * @vt: supported CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to the right (default=1)."
+   * @vt: #Y CSI ECH   "Erase Character"   "CSI Ps X"  "Erase `Ps` characters from current cursor position to the right (default=1)."
    * ED erases `Ps` characters from current cursor position to the right.
    * ED works inside or outside the scrolling margins.
    */
@@ -1419,7 +1419,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Note: To get reset on a valid sequence working correctly without much runtime penalty,
    * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    *
-   * @vt: supported CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
+   * @vt: #Y CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
    * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is set.
    * REP has no effect if the sequence does not follow a printable ASCII character
    * (NOOP for any other sequence in between or NON ASCII characters).
@@ -1457,7 +1457,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 2 2  -> ANSI color, e.g., VT525.
    *     Ps = 2 9  -> ANSI text locator (i.e., DEC Locator mode).
    *
-   * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
+   * @vt: #Y CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
    *
    *
    * TODO: fix and cleanup response
@@ -1492,7 +1492,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   xterm/charproc.c - line 2012, for more information.
    *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
    *
-   * @vt: supported CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
+   * @vt: #Y CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
    *
    *
    * TODO: fix and cleanup response
@@ -1524,15 +1524,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 2  -> Send/receive (SRM).
    *     Ps = 2 0  -> Automatic Newline (LNM).
    *
-   * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal modes."
+   * @vt: #P[Only IRM is supported.]    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal modes."
    * Supported param values by SM:
    *
-   * | Param | Action                                 | Status      |
-   * | ----- | -------------------------------------- | ----------- |
-   * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
-   * | 4     | Insert Mode (IRM).                     | supported   |
-   * | 12    | Send/receive (SRM). Always off.        | unsupported |
-   * | 20    | Automatic Newline (LNM). Always off.   | unsupported |
+   * | Param | Action                                 | Support |
+   * | ----- | -------------------------------------- | ------- |
+   * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
+   * | 4     | Insert Mode (IRM).                     | #Y      |
+   * | 12    | Send/receive (SRM). Always off.        | #N      |
+   * | 20    | Automatic Newline (LNM). Always off.   | #N      |
    *
    *
    * FIXME: why is LNM commented out?
@@ -1631,33 +1631,33 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Modes:
    *   http: *vt100.net/docs/vt220-rm/chapter4.html
    *
-   * @vt: partly    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
+   * @vt: #P[See below for supported modes.]    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
    * Supported param values by DECSET:
    *
-   * | param | Action                                                  | Status      |
-   * | ----- | ------------------------------------------------------- | ----------- |
-   * | 1     | Application Cursor Keys (DECCKM).                       | supported   |
-   * | 2     | Designate US-ASCII for character sets G0-G3 (DECANM).   | supported   |
-   * | 3     | 132 Column Mode (DECCOLM).                              | supported   |
-   * | 6     | Origin Mode (DECOM).                                    | supported   |
-   * | 7     | Auto-wrap Mode (DECAWM).                                | supported   |
-   * | 8     | Auto-repeat Keys (DECARM). Always on.                   | unsupported |
-   * | 9     | X10 xterm mouse protocol.                               | supported   |
-   * | 12    | Start Blinking Cursor.                                  | supported   |
-   * | 25    | Show Cursor (DECTCEM).                                  | supported   |
-   * | 47    | Use Alternate Screen Buffer.                            | supported   |
-   * | 66    | Application keypad (DECNKM).                            | supported   |
-   * | 1000  | X11 xterm mouse protocol.                               | supported   |
-   * | 1002  | Use Cell Motion Mouse Tracking.                         | supported   |
-   * | 1003  | Use All Motion Mouse Tracking.                          | supported   |
-   * | 1004  | Send FocusIn/FocusOut events                            | supported   |
-   * | 1005  | Enable UTF-8 Mouse Mode.                                | unsupported |
-   * | 1006  | Enable SGR Mouse Mode.                                  | supported   |
-   * | 1015  | Enable urxvt Mouse Mode.                                | unsupported |
-   * | 1047  | Use Alternate Screen Buffer.                            | supported   |
-   * | 1048  | Save cursor as in DECSC.                                | supported   |
-   * | 1049  | Save cursor and switch to alternate buffer clearing it. | partly      |
-   * | 2004  | Set bracketed paste mode.                               | supported   |
+   * | param | Action                                                  | Support |
+   * | ----- | ------------------------------------------------------- | --------|
+   * | 1     | Application Cursor Keys (DECCKM).                       | #Y      |
+   * | 2     | Designate US-ASCII for character sets G0-G3 (DECANM).   | #Y      |
+   * | 3     | 132 Column Mode (DECCOLM).                              | #Y      |
+   * | 6     | Origin Mode (DECOM).                                    | #Y      |
+   * | 7     | Auto-wrap Mode (DECAWM).                                | #Y      |
+   * | 8     | Auto-repeat Keys (DECARM). Always on.                   | #N      |
+   * | 9     | X10 xterm mouse protocol.                               | #Y      |
+   * | 12    | Start Blinking Cursor.                                  | #Y      |
+   * | 25    | Show Cursor (DECTCEM).                                  | #Y      |
+   * | 47    | Use Alternate Screen Buffer.                            | #Y      |
+   * | 66    | Application keypad (DECNKM).                            | #Y      |
+   * | 1000  | X11 xterm mouse protocol.                               | #Y      |
+   * | 1002  | Use Cell Motion Mouse Tracking.                         | #Y      |
+   * | 1003  | Use All Motion Mouse Tracking.                          | #Y      |
+   * | 1004  | Send FocusIn/FocusOut events                            | #Y      |
+   * | 1005  | Enable UTF-8 Mouse Mode.                                | #N      |
+   * | 1006  | Enable SGR Mouse Mode.                                  | #Y      |
+   * | 1015  | Enable urxvt Mouse Mode.                                | #N      |
+   * | 1047  | Use Alternate Screen Buffer.                            | #Y      |
+   * | 1048  | Save cursor as in DECSC.                                | #Y      |
+   * | 1049  | Save cursor and switch to alternate buffer clearing it. | #P[Does not clear the alternate buffer.] |
+   * | 2004  | Set bracketed paste mode.                               | #Y      |
    *
    *
    * FIXME: implement DECSCNM, 1049 should clear altbuffer
@@ -1757,15 +1757,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 2  -> Send/receive (SRM).
    *     Ps = 2 0  -> Normal Linefeed (LNM).
    *
-   * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
+   * @vt: #P[Only IRM is supported.]    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
    * Supported param values by RM:
    *
-   * | Param | Action                                 | Status      |
-   * | ----- | -------------------------------------- | ----------- |
-   * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
-   * | 4     | Replace Mode (IRM). (default)          | supported   |
-   * | 12    | Send/receive (SRM). Always off.        | unsupported |
-   * | 20    | Normal Linefeed (LNM). Always off.     | unsupported |
+   * | Param | Action                                 | Support |
+   * | ----- | -------------------------------------- | ------- |
+   * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
+   * | 4     | Replace Mode (IRM). (default)          | #Y      |
+   * | 12    | Send/receive (SRM). Always off.        | #N      |
+   * | 20    | Normal Linefeed (LNM). Always off.     | #N      |
    *
    *
    * FIXME: why is LNM commented out?
@@ -1860,33 +1860,33 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
    *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
    *
-   * @vt: partly    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
+   * @vt: #P[See below for supported modes.]    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
    * Supported param values by DECRST:
    *
-   * | param | Action                                                  | Status      |
-   * | ----- | ------------------------------------------------------- | ----------- |
-   * | 1     | Normal Cursor Keys (DECCKM).                            | supported   |
-   * | 2     | Designate VT52 mode (DECANM).                           | unsupported |
-   * | 3     | 80 Column Mode (DECCOLM).                               | broken      |
-   * | 6     | Normal Cursor Mode (DECOM).                             | supported   |
-   * | 7     | No Wraparound Mode (DECAWM).                            | supported   |
-   * | 8     | No Auto-repeat Keys (DECARM).                           | unsupported |
-   * | 9     | Don't send Mouse X & Y on button press.                 | supported   |
-   * | 12    | Stop Blinking Cursor.                                   | supported   |
-   * | 25    | Hide Cursor (DECTCEM).                                  | supported   |
-   * | 47    | Use Normal Screen Buffer.                               | supported   |
-   * | 66    | Numeric keypad (DECNKM).                                | supported   |
-   * | 1000  | Don't send Mouse reports.                               | supported   |
-   * | 1002  | Don't use Cell Motion Mouse Tracking.                   | supported   |
-   * | 1003  | Don't use All Motion Mouse Tracking.                    | supported   |
-   * | 1004  | Don't send FocusIn/FocusOut events.                     | supported   |
-   * | 1005  | Disable UTF-8 Mouse Mode.                               | unsupported |
-   * | 1006  | Disable SGR Mouse Mode.                                 | supported   |
-   * | 1015  | Disable urxvt Mouse Mode.                               | unsupported |
-   * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | supported   |
-   * | 1048  | Restore cursor as in DECRC.                             | supported   |
-   * | 1049  | Use Normal Screen Buffer and restore cursor.            | supported   |
-   * | 2004  | Reset bracketed paste mode.                             | supported   |
+   * | param | Action                                                  | Support |
+   * | ----- | ------------------------------------------------------- | ------- |
+   * | 1     | Normal Cursor Keys (DECCKM).                            | #Y      |
+   * | 2     | Designate VT52 mode (DECANM).                           | #N      |
+   * | 3     | 80 Column Mode (DECCOLM).                               | #B[Switches to old column width instead of 80.] |
+   * | 6     | Normal Cursor Mode (DECOM).                             | #Y      |
+   * | 7     | No Wraparound Mode (DECAWM).                            | #Y      |
+   * | 8     | No Auto-repeat Keys (DECARM).                           | #N      |
+   * | 9     | Don't send Mouse X & Y on button press.                 | #Y      |
+   * | 12    | Stop Blinking Cursor.                                   | #Y      |
+   * | 25    | Hide Cursor (DECTCEM).                                  | #Y      |
+   * | 47    | Use Normal Screen Buffer.                               | #Y      |
+   * | 66    | Numeric keypad (DECNKM).                                | #Y      |
+   * | 1000  | Don't send Mouse reports.                               | #Y      |
+   * | 1002  | Don't use Cell Motion Mouse Tracking.                   | #Y      |
+   * | 1003  | Don't use All Motion Mouse Tracking.                    | #Y      |
+   * | 1004  | Don't send FocusIn/FocusOut events.                     | #Y      |
+   * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
+   * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
+   * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
+   * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
+   * | 1048  | Restore cursor as in DECRC.                             | #Y      |
+   * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
+   * | 2004  | Reset bracketed paste mode.                             | #Y      |
    *
    *
    * FIXME: DECCOLM is currently broken (already fixed in window options PR)
@@ -2041,7 +2041,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Pm m  Character Attributes (SGR).
    *
-   * @vt: partly    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
+   * @vt: #P[See below for supported attributes.]    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
    * SGR selects one or more character attributes at the same time. Multiple params (up to 32)
    * are applied from in order from left to right. The changed attributes are applied to all new
    * characters received. If you move characters in the viewport by scrolling or any other means,
@@ -2049,59 +2049,59 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * Supported param values by SGR:
    *
-   * | Param     | Meaning                                                  | Status      |
-   * | --------- | -------------------------------------------------------- | ----------- |
-   * | 0         | Normal (default). Resets any other preceding SGR.        | supported   |
-   * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | supported   |
-   * | 2         | Faint, decreased intensity.                              | supported   |
-   * | 3         | Italic.                                                  | supported   |
-   * | 4         | Underlined. (no support for newer underline styles)      | supported   |
-   * | 5         | Slowly blinking.                                         | unsupported |
-   * | 6         | Rapidly blinking.                                        | unsupported |
-   * | 7         | Inverse. Flips foreground and background color.          | supported   |
-   * | 8         | Invisible (hidden).                                      | supported   |
-   * | 9         | Crossed-out characters.                                  | unsupported |
-   * | 21        | Doubly  underlined.                                      | unsupported |
-   * | 22        | Normal (neither bold nor faint).                         | supported   |
-   * | 23        | No italic.                                               | supported   |
-   * | 24        | Not underlined.                                          | supported   |
-   * | 25        | Steady (not blinking).                                   | supported   |
-   * | 27        | Positive (not inverse).                                  | supported   |
-   * | 28        | Visible (not hidden).                                    | supported   |
-   * | 29        | Not Crossed-out.                                         | unsupported |
-   * | 30        | Foreground color: Black.                                 | supported   |
-   * | 31        | Foreground color: Red.                                   | supported   |
-   * | 32        | Foreground color: Green.                                 | supported   |
-   * | 33        | Foreground color: Yellow.                                | supported   |
-   * | 34        | Foreground color: Blue.                                  | supported   |
-   * | 35        | Foreground color: Magenta.                               | supported   |
-   * | 36        | Foreground color: Cyan.                                  | supported   |
-   * | 37        | Foreground color: White.                                 | supported   |
-   * | 38        | Foreground color: Extended color (see below).            | supported   |
-   * | 39        | Foreground color: Default (original).                    | supported   |
-   * | 40        | Background color: Black.                                 | supported   |
-   * | 41        | Background color: Red.                                   | supported   |
-   * | 42        | Background color: Green.                                 | supported   |
-   * | 43        | Background color: Yellow.                                | supported   |
-   * | 44        | Background color: Blue.                                  | supported   |
-   * | 45        | Background color: Magenta.                               | supported   |
-   * | 46        | Background color: Cyan.                                  | supported   |
-   * | 47        | Background color: White.                                 | supported   |
-   * | 48        | Background color: Extended color (see below).            | supported   |
-   * | 49        | Background color: Default (original).                    | supported   |
-   * | 90 - 97   | Bright foreground color (analogous to 30 -37).           | supported   |
-   * | 100 - 107 | Bright background color (analogous to 40 -47).           | supported   |
+   * | Param     | Meaning                                                  | Support |
+   * | --------- | -------------------------------------------------------- | ------- |
+   * | 0         | Normal (default). Resets any other preceding SGR.        | #Y      |
+   * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | #Y      |
+   * | 2         | Faint, decreased intensity.                              | #Y      |
+   * | 3         | Italic.                                                  | #Y      |
+   * | 4         | Underlined. (no support for newer underline styles)      | #Y      |
+   * | 5         | Slowly blinking.                                         | #N      |
+   * | 6         | Rapidly blinking.                                        | #N      |
+   * | 7         | Inverse. Flips foreground and background color.          | #Y      |
+   * | 8         | Invisible (hidden).                                      | #Y      |
+   * | 9         | Crossed-out characters.                                  | #N      |
+   * | 21        | Doubly  underlined.                                      | #N      |
+   * | 22        | Normal (neither bold nor faint).                         | #Y      |
+   * | 23        | No italic.                                               | #Y      |
+   * | 24        | Not underlined.                                          | #Y      |
+   * | 25        | Steady (not blinking).                                   | #Y      |
+   * | 27        | Positive (not inverse).                                  | #Y      |
+   * | 28        | Visible (not hidden).                                    | #Y      |
+   * | 29        | Not Crossed-out.                                         | #N      |
+   * | 30        | Foreground color: Black.                                 | #Y      |
+   * | 31        | Foreground color: Red.                                   | #Y      |
+   * | 32        | Foreground color: Green.                                 | #Y      |
+   * | 33        | Foreground color: Yellow.                                | #Y      |
+   * | 34        | Foreground color: Blue.                                  | #Y      |
+   * | 35        | Foreground color: Magenta.                               | #Y      |
+   * | 36        | Foreground color: Cyan.                                  | #Y      |
+   * | 37        | Foreground color: White.                                 | #Y      |
+   * | 38        | Foreground color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
+   * | 39        | Foreground color: Default (original).                    | #Y      |
+   * | 40        | Background color: Black.                                 | #Y      |
+   * | 41        | Background color: Red.                                   | #Y      |
+   * | 42        | Background color: Green.                                 | #Y      |
+   * | 43        | Background color: Yellow.                                | #Y      |
+   * | 44        | Background color: Blue.                                  | #Y      |
+   * | 45        | Background color: Magenta.                               | #Y      |
+   * | 46        | Background color: Cyan.                                  | #Y      |
+   * | 47        | Background color: White.                                 | #Y      |
+   * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
+   * | 49        | Background color: Default (original).                    | #Y      |
+   * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
+   * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
    *
    * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
    *
-   * | Ps + 1 | Meaning                                                       | Status      |
-   * | ------ | ------------------------------------------------------------- | ----------- |
-   * | 0      | Implementation defined.                                       | unsupported |
-   * | 1      | Transparent.                                                  | unsupported |
-   * | 2      | RGB color as `Ps ; 2 ; R ; G ; B` or `Ps : 2 : : R : G : B`.  | supported   |
-   * | 3      | CMY color.                                                    | unsupported |
-   * | 4      | CMYK color.                                                   | unsupported |
-   * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | supported   |
+   * | Ps + 1 | Meaning                                                       | Support |
+   * | ------ | ------------------------------------------------------------- | ------- |
+   * | 0      | Implementation defined.                                       | #N      |
+   * | 1      | Transparent.                                                  | #N      |
+   * | 2      | RGB color as `Ps ; 2 ; R ; G ; B` or `Ps : 2 : : R : G : B`.  | #Y      |
+   * | 3      | CMY color.                                                    | #N      |
+   * | 4      | CMYK color.                                                   | #N      |
+   * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | #Y      |
    *
    *
    * FIXME: blinking is implemented in attrs, but not working in renderers?
@@ -2228,7 +2228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   CSI ? 5 3  n  Locator available, if compiled-in, or
    *   CSI ? 5 0  n  No Locator, if not.
    *
-   * @vt: supported CSI DSR   "Device Status Report"  "CSI Ps n"  "Request cursor position (CPR) with `Ps` = 6."
+   * @vt: #Y CSI DSR   "Device Status Report"  "CSI Ps n"  "Request cursor position (CPR) with `Ps` = 6."
    */
   public deviceStatus(params: IParams): void {
     switch (params.params[0]) {
@@ -2245,7 +2245,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-  // @vt: partly  CSI DECDSR  "DEC Device Status Report"  "CSI ? Ps n"  "Only CPR is supported (same as DSR)."
+  // @vt: #P[Only CPR is supported.]  CSI DECDSR  "DEC Device Status Report"  "CSI ? Ps n"  "Only CPR is supported (same as DSR)."
   public deviceStatusPrivate(params: IParams): void {
     // modern xterm doesnt seem to
     // respond to any of these except ?6, 6, and 5
@@ -2279,7 +2279,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI ! p   Soft terminal reset (DECSTR).
    * http://vt100.net/docs/vt220-rm/table4-10.html
    *
-   * @vt: supported CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
+   * @vt: #Y CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
    * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
    * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
    *
@@ -2315,7 +2315,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 5  -> blinking bar (xterm).
    *   Ps = 6  -> steady bar (xterm).
    *
-   * @vt: supported CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
+   * @vt: #Y CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
    * Supported cursor styles:
    *  - empty, 0 or 1: steady block
    *  - 2: blink block
@@ -2349,7 +2349,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Set Scrolling Region [top;bottom] (default = full size of win-
    *   dow) (DECSTBM).
    *
-   * @vt: supported CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
+   * @vt: #Y CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
    */
   public setScrollRegion(params: IParams): void {
     const top = params.params[0] || 1;
@@ -2372,8 +2372,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC 7
    *   Save cursor (ANSI.SYS).
    *
-   * @vt: partly  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
-   * @vt: supported ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
+   * @vt: #P[TODO...]  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
+   * @vt: #Y ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
   public saveCursor(params?: IParams): void {
     this._bufferService.buffer.savedX = this._bufferService.buffer.x;
@@ -2389,8 +2389,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC 8
    *   Restore cursor (ANSI.SYS).
    *
-   * @vt: partly  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
-   * @vt: supported ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
+   * @vt: #P[TODO...]  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
+   * @vt: #Y ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
   public restoreCursor(params?: IParams): void {
     this._bufferService.buffer.x = this._bufferService.buffer.savedX || 0;
@@ -2410,10 +2410,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * OSC 2; <data> ST (set window title)
    *   Proxy to set window title. Icon name is not supported.
    *
-   * @vt: partly        OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
+   * @vt: #P[Icon name is not exposed.]   OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
    * Icon name is not supported. For Window Title see below.
    *
-   * @vt: supported     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
+   * @vt: #Y     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
    * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
    */
   public setTitle(data: string): void {
@@ -2426,8 +2426,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: NEL (https://vt100.net/docs/vt510-rm/NEL)
    *   Moves cursor to first position on next line.
    *
-   * @vt: supported   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
-   * @vt: supported   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
+   * @vt: #Y   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
+   * @vt: #Y   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
   public nextLine(): void {
     this._bufferService.buffer.x = 0;
@@ -2501,8 +2501,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: IND (https://vt100.net/docs/vt510-rm/IND.html)
    *   Moves the cursor down one line in the same column.
    *
-   * @vt: supported   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
-   * @vt: supported   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
+   * @vt: #Y   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
+   * @vt: #Y   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
    */
   public index(): void {
     this._restrictCursor();
@@ -2524,8 +2524,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Sets a horizontal tab stop at the column position indicated by
    *   the value of the active column when the terminal receives an HTS.
    *
-   * @vt: supported   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
-   * @vt: supported   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
+   * @vt: #Y   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
+   * @vt: #Y   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
   public tabSet(): void {
     this._bufferService.buffer.tabs[this._bufferService.buffer.x] = true;
@@ -2538,7 +2538,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor up one line in the same column. If the cursor is at the top margin,
    *   the page scrolls down.
    *
-   * @vt: supported ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
+   * @vt: #Y ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
    */
   public reverseIndex(): void {
     this._restrictCursor();
@@ -2601,7 +2601,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   This control function fills the complete screen area with
    *   a test pattern (E) used for adjusting screen alignment.
    *
-   * @vt: supported   ESC   DECALN   "Screen Alignment Pattern"  "ESC # 8"  "Fill viewport with a test pattern (E)."
+   * @vt: #Y   ESC   DECALN   "Screen Alignment Pattern"  "ESC # 8"  "Fill viewport with a test pattern (E)."
    */
   public screenAlignmentPattern(): void {
     // prepare cell data
