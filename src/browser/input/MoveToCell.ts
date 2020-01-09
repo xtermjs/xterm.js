@@ -30,7 +30,30 @@ export function moveToCellSequence(targetX: number, targetY: number, bufferServi
   }
 
   // Only move horizontally for the normal buffer
-  return moveHorizontallyOnly(startX, startY, targetX, targetY, bufferService, applicationCursor);
+  let direction;
+  if(startY == targetY) {
+    direction = startX > targetX ? Direction.LEFT : Direction.RIGHT;
+    return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
+  } else {
+    direction = startY > targetY ? Direction.LEFT : Direction.RIGHT;
+    return repeat(colsFromRowEnd(startY > targetY ? targetX : startX, bufferService), sequence(direction, applicationCursor))
+    + repeat((Math.abs(wrappedRowsForRow(bufferService, startY) - wrappedRowsForRow(bufferService, targetY))-1)*bufferService.cols, sequence(direction, applicationCursor))
+    + repeat(colsFromRowBeginning(startY > targetY ? startX : targetX, bufferService), sequence(direction, applicationCursor));
+  }
+}
+
+/**
+ * Find the number of cols from a row beginning to a col.
+ */
+function colsFromRowBeginning(currX: number, bufferService: IBufferService): number {
+  return Math.abs(currX);
+}
+
+/**
+ * Find the number of cols from a col to row end.
+ */
+function colsFromRowEnd(currX: number, bufferService: IBufferService): number {
+  return Math.abs(bufferService.cols - currX);
 }
 
 /**
