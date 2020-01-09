@@ -37,12 +37,14 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
 // @vt: supported   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
 // @vt: supported   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
 // @vt: supported   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
-// @vt: supported   C1    CSI   "Control Sequence Introducer"   "\x9b"    "Start of a CSI sequence."
-// @vt: supported   C1    OSC   "Operating System Command"      "\x9d"    "Start of an OSC sequence."
+// @vt: supported   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
+// @vt: supported   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
 // @vt: supported   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
-// @vt: supported   C1    ST    "String Terminator"             "\x9c"    "Terminator used for string type sequences."
-// @vt: supported   C1    PM    "Privacy Message"               "\x9e"    "Start of a privacy message."
-// @vt: supported   C1    APC   "Application Program Command"   "\x9f"    "Start of an APC sequence."
+// @vt: supported   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
+// @vt: supported   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
+// @vt: supported   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
+// @vt: supported   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
+// @vt: supported   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
  * Document common VT features here that are currently unsupported
@@ -602,7 +604,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * BEL
    * Bell (Ctrl-G).
    *
-   * @vt: supported   C0    BEL   "Bell"  "\a"  "Ring the bell."
+   * @vt: supported   C0    BEL   "Bell"  "\a, \x07"  "Ring the bell."
    * The behavior of the bell is further customizable with `ITerminalOptions.bellStyle`
    * and `ITerminalOptions.bellSound`.
    */
@@ -614,11 +616,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * LF
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    *
-   * @vt: supported   C0    LF   "Line Feed"            "\n"  "Move the cursor one row down, scrolling if needed."
+   * @vt: supported   C0    LF   "Line Feed"            "\n, \x0A"  "Move the cursor one row down, scrolling if needed."
    * Scrolling is restricted to scroll margins and will only happen on the bottom line.
    *
-   * @vt: supported   C0    VT   "Vertical Tabulation"  "\v"  "Treated as LF."
-   * @vt: supported   C0    FF   "Form Feed"            "\f"  "Treated as LF."
+   * @vt: supported   C0    VT   "Vertical Tabulation"  "\v, \x0B"  "Treated as LF."
+   * @vt: supported   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): void {
     // make buffer local for faster access
@@ -648,7 +650,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CR
    * Carriage Return (Ctrl-M).
    *
-   * @vt: supported   C0    CR   "Carriage Return"  "\r"  "Move the cursor to the beginning of the row."
+   * @vt: supported   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
    */
   public carriageReturn(): void {
     this._bufferService.buffer.x = 0;
@@ -658,7 +660,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * BS
    * Backspace (Ctrl-H).
    *
-   * @vt: supported   C0    BS   "Backspace"  "\b"  "Move the cursor one position to the left."
+   * @vt: supported   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
    */
   public backspace(): void {
     this._restrictCursor();
@@ -671,7 +673,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * TAB
    * Horizontal Tab (HT) (Ctrl-I).
    *
-   * @vt: supported   C0    HT   "Horizontal Tabulation"  "\t"  "Move the cursor to the next character tab stop."
+   * @vt: supported   C0    HT   "Horizontal Tabulation"  "\t, \x09"  "Move the cursor to the next character tab stop."
    */
   public tab(): void {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
@@ -689,7 +691,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift Out (Ctrl-N) -> Switch to Alternate Character Set.  This invokes the
    * G1 character set.
    *
-   * @vt: partly      C0    SO   "Shift Out"  "\x0e"  "Switch to an alternative character set."
+   * @vt: partly      C0    SO   "Shift Out"  "\x0E"  "Switch to an alternative character set."
    */
   public shiftOut(): void {
     this._charsetService.setgLevel(1);
@@ -700,7 +702,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift In (Ctrl-O) -> Switch to Standard Character Set.  This invokes the G0
    * character set (the default).
    *
-   * @vt: supported   C0    SI   "Shift In"   "\x0f"  "Return to regular character set after Shift Out."
+   * @vt: supported   C0    SI   "Shift In"   "\x0F"  "Return to regular character set after Shift Out."
    */
   public shiftIn(): void {
     this._charsetService.setgLevel(0);

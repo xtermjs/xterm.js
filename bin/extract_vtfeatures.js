@@ -33,15 +33,6 @@ const TYPES = [
 ];
 
 const MARKDOWN_TMPL = `
-
-### TODO
-- improve table sorting:
-  - sort C0/C1 in byte order
-  - sort OSC in numerical order
-  - sort CSI/ESC/DCS in final byte order
-- references
-
-
 xterm.js version: {{version}}
 
 ### Table of Contents
@@ -209,6 +200,8 @@ To denote the sequences the following tables use the same abbreviations as xterm
 {{#OSC.length}}
 ### OSC
 
+**Note**: Other than listed in the table, the parser recognizes both ST (ECMA-48) and BEL (xterm) as OSC sequence finalizer.
+
 | Identifier | Sequence | Short Description | Status |
 | ---------- | -------- | ----------------- | ------ |
 {{#OSC}}
@@ -308,6 +301,26 @@ function parseSingleLine(filename, s) {
   }
 }
 
+function getSorter(entry) {
+  switch (entry) {
+    case 'C0':
+    case 'C1':
+      // NOTE: expects hex value notation at last position in sequence
+      return (a, b) => parseInt(a.sequence.slice(-2), 16) - parseInt(b.sequence.slice(-2), 16);
+    case 'OSC':
+      // NOTE: expects the decimal function identifier in mnemonic
+      return (a, b) => parseInt(a.mnemonic) - parseInt(b.mnemonic);
+    case 'DCS':
+      return (a, b) => a.mnemonic > b.mnemonic;
+    case 'CSI':
+    case 'ESC':
+      // default sort order by final byte
+      return (a, b) => a.sequence.charCodeAt(a.sequence.length - 1) - b.sequence.charCodeAt(b.sequence.length - 1);
+    default:
+      return (a, b) => a.sequence > b.sequence;
+  }
+};
+
 function postProcessData(features) {
   const featureTable = {};
   for (const feature of features) {
@@ -320,7 +333,7 @@ function postProcessData(features) {
     }
   }
   for (const entry in featureTable) {
-    featureTable[entry].sort((a, b) => a.sequence.slice(-1) > b.sequence.slice(-1));
+    featureTable[entry].sort(getSorter(entry));
   }
   // console.error(featureTable);
   featureTable.version = require('../package.json').version;
