@@ -68,15 +68,18 @@ const MAX_PARSEBUFFER_LENGTH = 131072;
  *
  * @vt: partly  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
  * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
- * `ESC P 0 ST` for invalid requests.\
+ * `ESC P 0 ST` for invalid requests.
+ *
  * Supported requests and responses:
- * | Type                             | Request           | Response (`Pt`)    |
- * | -------------------------------- | ----------------- | ------------------ |
- * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken) |
- * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ptop ; Pbottom r` |
- * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Pstyle SP q`      |
- * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported) |
+ *
+ * | Type                             | Request           | Response (`Pt`)                                       |
+ * | -------------------------------- | ----------------- | ----------------------------------------------------- |
+ * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
+ * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
+ * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
+ * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported)      |
  * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
+ *
  *
  * TODO:
  * - fix SGR report
@@ -1002,6 +1005,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI ED  "Erase In Display"  "CSI Ps J"  "Erase various parts of the viewport."
    * Supported param values:
+   *
    * | Ps | Effect                                                       |
    * | -- | ------------------------------------------------------------ |
    * | 0  | Erase from the cursor through the end of the viewport.       |
@@ -1073,6 +1077,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI EL    "Erase In Line"  "CSI Ps K"  "Erase various parts of the active row."
    * Supported param values:
+   *
    * | Ps | Effect                                                   |
    * | -- | -------------------------------------------------------- |
    * | 0  | Erase from the cursor through the end of the row.        |
@@ -1176,6 +1181,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the blank characters.
    * Text between the cursor and right margin moves to the right. Characters moved past the right margin are lost.
    *
+   *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
   public insertChars(params: IParams): void {
@@ -1200,6 +1206,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * As characters are deleted, the remaining characters between the cursor and right margin move to the left.
    * Character attributes move with the characters. The terminal adds blank characters at the right margin.
    *
+   *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
   public deleteChars(params: IParams): void {
@@ -1220,6 +1227,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    *
    * @vt: supported CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
+   *
    *
    * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
    */
@@ -1411,7 +1419,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
    * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is set.
-   * REP no effect if the sequence does not follow a printable ASCII character
+   * REP has no effect if the sequence does not follow a printable ASCII character
    * (NOOP for any other sequence in between or NON ASCII characters).
    */
   public repeatPrecedingCharacter(params: IParams): void {
@@ -1449,6 +1457,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI DA1   "Primary Device Attributes"     "CSI c"  "Send primary device attributes."
    *
+   *
    * TODO: fix and cleanup response
    */
   public sendDeviceAttributesPrimary(params: IParams): void {
@@ -1483,6 +1492,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: supported CSI DA2   "Secondary Device Attributes"   "CSI > c" "Send primary device attributes."
    *
+   *
    * TODO: fix and cleanup response
    */
   public sendDeviceAttributesSecondary(params: IParams): void {
@@ -1514,12 +1524,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly    CSI SM    "Set Mode"  "CSI Pm h"  "Set various terminal modes."
    * Supported param values by SM:
+   *
    * | Param | Action                                 | Status      |
    * | ----- | -------------------------------------- | ----------- |
    * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
    * | 4     | Insert Mode (IRM).                     | supported   |
    * | 12    | Send/receive (SRM). Always off.        | unsupported |
    * | 20    | Automatic Newline (LNM). Always off.   | unsupported |
+   *
    *
    * FIXME: why is LNM commented out?
    */
@@ -1619,6 +1631,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly    CSI DECSET  "DEC Private Set Mode" "CSI ? Pm h"  "Set various terminal attributes."
    * Supported param values by DECSET:
+   *
    * | param | Action                                                  | Status      |
    * | ----- | ------------------------------------------------------- | ----------- |
    * | 1     | Application Cursor Keys (DECCKM).                       | supported   |
@@ -1643,6 +1656,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1048  | Save cursor as in DECSC.                                | supported   |
    * | 1049  | Save cursor and switch to alternate buffer clearing it. | partly      |
    * | 2004  | Set bracketed paste mode.                               | supported   |
+   *
    *
    * FIXME: implement DECSCNM, 1049 should clear altbuffer
    */
@@ -1743,12 +1757,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly    CSI RM    "Reset Mode"  "CSI Pm l"  "Set various terminal attributes."
    * Supported param values by RM:
+   *
    * | Param | Action                                 | Status      |
    * | ----- | -------------------------------------- | ----------- |
    * | 2     | Keyboard Action Mode (KAM). Always on. | unsupported |
    * | 4     | Replace Mode (IRM). (default)          | supported   |
    * | 12    | Send/receive (SRM). Always off.        | unsupported |
    * | 20    | Normal Linefeed (LNM). Always off.     | unsupported |
+   *
    *
    * FIXME: why is LNM commented out?
    */
@@ -1844,6 +1860,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: partly    CSI DECRST  "DEC Private Reset Mode" "CSI ? Pm l"  "Reset various terminal attributes."
    * Supported param values by DECRST:
+   *
    * | param | Action                                                  | Status      |
    * | ----- | ------------------------------------------------------- | ----------- |
    * | 1     | Normal Cursor Keys (DECCKM).                            | supported   |
@@ -1868,6 +1885,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1048  | Restore cursor as in DECRC.                             | supported   |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | supported   |
    * | 2004  | Reset bracketed paste mode.                             | supported   |
+   *
    *
    * FIXME: DECCOLM is currently broken (already fixed in window options PR)
    */
@@ -2026,7 +2044,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * are applied from in order from left to right. The changed attributes are applied to all new
    * characters received. If you move characters in the viewport by scrolling or any other means,
    * then the attributes move with the characters.
+   *
    * Supported param values by SGR:
+   *
    * | Param     | Meaning                                                  | Status      |
    * | --------- | -------------------------------------------------------- | ----------- |
    * | 0         | Normal (default). Resets any other preceding SGR.        | supported   |
@@ -2069,15 +2089,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 49        | Background color: Default (original).                    | supported   |
    * | 90 - 97   | Bright foreground color (analogous to 30 -37).           | supported   |
    * | 100 - 107 | Bright background color (analogous to 40 -47).           | supported   |
+   *
    * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
-   * | Ps + 1 | Meaning                                                                 | Status      |
-   * | ------ | ----------------------------------------------------------------------- | ----------- |
-   * | 0      | Implementation defined.                                                 | unsupported |
-   * | 1      | Transparent.                                                            | unsupported |
-   * | 2      | RGB color, in the form `Ps ; 2 ; R ; G ; B` or `Ps : 2 : : R : G : B`.  | supported   |
-   * | 3      | CMY color.                                                              | unsupported |
-   * | 4      | CMYK color.                                                             | unsupported |
-   * | 5      | Indexed (256 colors), in the form `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | supported   |
+   *
+   * | Ps + 1 | Meaning                                                       | Status      |
+   * | ------ | ------------------------------------------------------------- | ----------- |
+   * | 0      | Implementation defined.                                       | unsupported |
+   * | 1      | Transparent.                                                  | unsupported |
+   * | 2      | RGB color as `Ps ; 2 ; R ; G ; B` or `Ps : 2 : : R : G : B`.  | supported   |
+   * | 3      | CMY color.                                                    | unsupported |
+   * | 4      | CMYK color.                                                   | unsupported |
+   * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | supported   |
+   *
    *
    * FIXME: blinking is implemented in attrs, but not working in renderers?
    * FIXME: remove dead branch for p=100
@@ -2257,12 +2280,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: supported CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
    * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
    * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
-   * Attributes reset to default values:
+   *
+   * The following terminal attributes are reset to default values:
    * - cursor is reset (default = visible, home position)
    * - IRM is reset (dafault = false)
    * - scroll margins are reset (default = viewport size)
    * - erase attributes are reset to default
    * - charsets are reset
+   *
    *
    * FIXME: there are several more attributes missing (see VT520 manual)
    */

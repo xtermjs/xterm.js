@@ -233,6 +233,10 @@ function createAnchorSlug(s) {
   return s.toLowerCase().split(' ').join('-');
 }
 
+function empty(ar) {
+  return !ar.filter(Boolean, ar).length;
+}
+
 function* parseMultiLineGen(filename, s) {
   if (!~s.indexOf('@vt:')) {
     return;
@@ -241,35 +245,45 @@ function* parseMultiLineGen(filename, s) {
   let grabLine = false;
   let longDescription = [];
   let feature = undefined;
+  let noLineCount = 0;
   for (const line of lines) {
     if (grabLine) {
-      if (!line) {
+      if (!line) noLineCount++;
+      if (noLineCount >= 2) {
         if (feature) {
-          feature.longDescription = longDescription;
+          feature.longDescription = empty(longDescription) ? [] : longDescription;
           feature.longTarget = createAnchorSlug(feature.name);
           yield feature;
         }
         grabLine = false;
         longDescription = [];
         feature = undefined;
+        noLineCount = 0;
       }
       else if (line.indexOf('@vt:') === 0) {
         if (feature) {
-          feature.longDescription = [];
+          feature.longDescription = empty(longDescription) ? [] : longDescription;
           feature.longTarget = createAnchorSlug(feature.name);
           yield feature;
         }
         grabLine = true;
         longDescription = [];
         feature = undefined;
+        noLineCount = 0;
       } else {
         longDescription.push(line);
+        if (line) noLineCount = 0;
       }
     }
     if (line.indexOf('@vt:') === 0) {
       feature = parseSingleLine(filename, line);
       grabLine = true;
     }
+  }
+  if (grabLine && feature) {
+    feature.longDescription = empty(longDescription) ? [] : longDescription;
+    feature.longTarget = createAnchorSlug(feature.name);
+    yield feature;
   }
 }
 
