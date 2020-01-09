@@ -126,7 +126,7 @@ describe('SerializeAddon', () => {
     const rows = 32;
     const cols = 10;
     const lines = newArray<string>(
-      (index: number) => digitsString(cols, index, `\x1b[38;5;${index}m`),
+      (index: number) => digitsString(cols, index, `\x1b[38;5;${16 + index}m`),
       rows
     );
     await writeSync(page, lines.join('\\r\\n'));
@@ -256,7 +256,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize tabs correctly', async () =>  {
+  it('serialize tabs correctly', async () => {
     const lines = [
       'a\tb',
       'aa\tc',
@@ -311,9 +311,9 @@ const NORMAL = '0';
 const FG_P16_RED = '31';
 const FG_P16_GREEN = '32';
 const FG_P16_YELLOW = '33';
-const FG_P256_RED = '38;5;1';
-const FG_P256_GREEN = '38;5;2';
-const FG_P256_YELLOW = '38;5;3';
+const FG_P256_RED = '38;5;196';
+const FG_P256_GREEN = '38;5;46';
+const FG_P256_YELLOW = '38;5;226';
 const FG_RGB_RED = '38;2;255;0;0';
 const FG_RGB_GREEN = '38;2;0;255;0';
 const FG_RGB_YELLOW = '38;2;255;255;0';
@@ -323,9 +323,9 @@ const FG_RESET = '39';
 const BG_P16_RED = '41';
 const BG_P16_GREEN = '42';
 const BG_P16_YELLOW = '43';
-const BG_P256_RED = '48;5;1';
-const BG_P256_GREEN = '48;5;2';
-const BG_P256_YELLOW = '48;5;3';
+const BG_P256_RED = '48;5;196';
+const BG_P256_GREEN = '48;5;46';
+const BG_P256_YELLOW = '48;5;226';
 const BG_RGB_RED = '48;2;255;0;0';
 const BG_RGB_GREEN = '48;2;0;255;0';
 const BG_RGB_YELLOW = '48;2;255;255;0';

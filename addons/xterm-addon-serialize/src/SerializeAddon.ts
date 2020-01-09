@@ -104,15 +104,19 @@ class StringSerializeHandler extends BaseSerializeHandler {
         if (fgChanged) {
           const color = cell.getFgColor();
           if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-          else if (cell.isFgPalette256()) { sgrSeq.push(38, 5, color); }
-          else if (cell.isFgPalette16()) { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
+          else if (cell.isFgPalette()) {
+            if (color >= 16) { sgrSeq.push(38, 5, color); }
+            else { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
+          }
           else { sgrSeq.push(39); }
         }
         if (bgChanged) {
           const color = cell.getBgColor();
           if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-          else if (cell.isBgPalette256()) { sgrSeq.push(48, 5, color); }
-          else if (cell.isBgPalette16()) { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
+          else if (cell.isBgPalette()) {
+            if (color >= 16) { sgrSeq.push(48, 5, color); }
+            else { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
+          }
           else { sgrSeq.push(49); }
         }
         if (flagsChanged) {
@@ -133,14 +137,14 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     // Count number of null cells encountered after the last non-null cell and move the cursor
     // if a non-null cell is found (eg. \t or cursor move)
-    if (cell.char === '') {
+    if (cell.getChars() === '') {
       this._nullCellCount++;
     } else if (this._nullCellCount > 0) {
       this._currentRow += `\x1b[${this._nullCellCount}C`;
       this._nullCellCount = 0;
     }
 
-    this._currentRow += cell.char;
+    this._currentRow += cell.getChars();
   }
 
   protected _serializeString(): string {

@@ -47,6 +47,7 @@ export class AttributeData implements IAttributeData {
   public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
   public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
   public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
+  public isAttributeDefault(): boolean { return this.fg === 0 && this.bg === 0; }
 
   // colors
   public getFgColor(): number {

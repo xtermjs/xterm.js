@@ -1007,20 +1007,6 @@ declare module 'xterm' {
    * Represents a single cell in the terminal's buffer.
    */
   interface IBufferCell {
-    /**
-     * The character within the cell.
-     */
-    readonly char: string;
-
-    /**
-     * The width of the character. Some examples:
-     *
-     * - This is `1` for most cells.
-     * - This is `2` for wide character like CJK glyphs.
-     * - This is `0` for cells immediately following cells with a width of `2`.
-     */
-    readonly width: number;
-
     getWidth(): number;
     getChars(): string;
     getCode(): number;
@@ -1042,10 +1028,6 @@ declare module 'xterm' {
     isBgRGB(): boolean;
     isFgPalette(): boolean;
     isBgPalette(): boolean;
-    isFgPalette16(): boolean;
-    isBgPalette16(): boolean;
-    isFgPalette256(): boolean;
-    isBgPalette256(): boolean;
     isAttributeDefault(): boolean;
     isFgDefault(): boolean;
     isBgDefault(): boolean;

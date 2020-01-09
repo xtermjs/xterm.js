@@ -93,6 +93,7 @@ export interface IAttributeData {
   isBgPalette(): boolean;
   isFgDefault(): boolean;
   isBgDefault(): boolean;
+  isAttributeDefault(): boolean;
 
   // colors
   getFgColor(): number;

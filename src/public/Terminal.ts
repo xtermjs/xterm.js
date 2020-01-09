@@ -5,9 +5,8 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
@@ -203,7 +202,7 @@ class BufferApiView implements IBufferApi {
     }
     return new BufferLineApiView(line);
   }
-  public getNullCell(): IBufferCellApi { return new BufferCellApiView(new CellData()); }
+  public getNullCell(): IBufferCellApi { return new CellData(); }
 }
 
 class BufferLineApiView implements IBufferLineApi {
@@ -211,57 +210,20 @@ class BufferLineApiView implements IBufferLineApi {
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public get length(): number { return this._line.length; }
-  public getCell(x: number, cell?: BufferCellApiView): IBufferCellApi | undefined {
+  public getCell(x: number, cell?: IBufferCellApi): IBufferCellApi | undefined {
     if (x < 0 || x >= this._line.length) {
       return undefined;
     }
 
     if (cell) {
-      this._line.loadCell(x, cell.cell);
+      this._line.loadCell(x, <ICellData>cell);
       return cell;
     }
-    return new BufferCellApiView(this._line.loadCell(x, new CellData()));
+    return this._line.loadCell(x, new CellData());
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
-}
-
-class BufferCellApiView implements IBufferCellApi {
-  constructor(public cell: CellData) {}
-
-  public get char(): string { return this.cell.getChars(); }
-  public get width(): number { return this.cell.getWidth(); }
-
-  public getWidth(): number { return this.cell.getWidth(); }
-  public getChars(): string { return this.cell.getChars(); }
-  public getCode(): number { return this.cell.getCode(); }
-
-  public isInverse(): number { return this.cell.isInverse(); }
-  public isBold(): number { return this.cell.isBold(); }
-  public isUnderline(): number { return this.cell.isUnderline(); }
-  public isBlink(): number { return this.cell.isBlink(); }
-  public isInvisible(): number { return this.cell.isInvisible(); }
-  public isItalic(): number { return this.cell.isItalic(); }
-  public isDim(): number { return this.cell.isDim(); }
-
-  public getFgColorMode(): number { return this.cell.getFgColorMode(); }
-  public getBgColorMode(): number { return this.cell.getBgColorMode(); }
-  public isFgRGB(): boolean { return this.cell.isFgRGB(); }
-  public isBgRGB(): boolean { return this.cell.isBgRGB(); }
-  public isFgPalette(): boolean { return this.cell.isFgPalette(); }
-  public isBgPalette(): boolean { return this.cell.isBgPalette(); }
-  public isFgPalette16(): boolean { return this.cell.getFgColorMode() === Attributes.CM_P16; }
-  public isBgPalette16(): boolean { return this.cell.getBgColorMode() === Attributes.CM_P16; }
-  public isFgPalette256(): boolean { return this.cell.getFgColorMode() === Attributes.CM_P256; }
-  public isBgPalette256(): boolean { return this.cell.getBgColorMode() === Attributes.CM_P256; }
-
-  public isAttributeDefault(): boolean { return this.cell.fg === 0 && this.cell.bg === 0; }
-  public isFgDefault(): boolean { return this.cell.isFgDefault(); }
-  public isBgDefault(): boolean { return this.cell.isBgDefault(); }
-
-  public getFgColor(): number { return this.cell.getFgColor(); }
-  public getBgColor(): number { return this.cell.getBgColor(); }
 }
 
 class ParserApi implements IParser {
