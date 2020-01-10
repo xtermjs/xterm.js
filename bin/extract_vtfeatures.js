@@ -33,9 +33,13 @@ const TYPES = [
 ];
 
 const MARKDOWN_TMPL = `
+{::options parse_block_html="true" /}
+
 xterm.js version: {{version}}
 
 ## Table of Contents
+
+<nav>
 
 - [General notes](#general-notes)
 {{#C0.length}}
@@ -56,6 +60,9 @@ xterm.js version: {{version}}
 {{#OSC.length}}
 - [OSC](#osc)
 {{/OSC.length}}
+
+</nav>
+
 
 ## General notes
 
@@ -82,22 +89,27 @@ To denote the sequences the tables use the same abbreviations as xterm does:
   ASCII printables are specified to work. Additionally the parser will let pass any codepoint greater than C1 as printable.
 
 
+
 {{#C0.length}}
 ## C0
 
 | Mnemonic | Name | Sequence | Short Description | Support |
 | -------- | ---- | -------- | ----------------- | ------- |
 {{#C0}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/C0}}
 
 {{#C0.hasLongDescriptions}}
 {{#C0}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/C0}}
 {{/C0.hasLongDescriptions}}
@@ -111,16 +123,20 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Support |
 | -------- | ---- | -------- | ----------------- | ------- |
 {{#C1}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/C1}}
 
 {{#C1.hasLongDescriptions}}
 {{#C1}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/C1}}
 {{/C1.hasLongDescriptions}}
@@ -134,16 +150,20 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Support |
 | -------- | ---- | -------- | ----------------- | ------- |
 {{#CSI}}
-| {{mnemonic}} | {{name}} | \`\`{{{sequence}}}\`\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | {{name}} | \`\`{{{sequence}}}\`\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/CSI}}
 
 {{#CSI.hasLongDescriptions}}
 {{#CSI}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/CSI}}
 {{/CSI.hasLongDescriptions}}
@@ -157,16 +177,20 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Support |
 | -------- | ---- | -------- | ----------------- | ------- |
 {{#DCS}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/DCS}}
 
 {{#DCS.hasLongDescriptions}}
 {{#DCS}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/DCS}}
 {{/DCS.hasLongDescriptions}}
@@ -180,16 +204,20 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 | Mnemonic | Name | Sequence | Short Description | Support |
 | -------- | ---- | -------- | ----------------- | ------- |
 {{#ESC}}
-| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/ESC}}
 
 {{#ESC.hasLongDescriptions}}
 {{#ESC}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/ESC}}
 {{/ESC.hasLongDescriptions}}
@@ -205,21 +233,87 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 | Identifier | Sequence | Short Description | Support |
 | ---------- | -------- | ----------------- | ------- |
 {{#OSC}}
-| {{mnemonic}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}})_{{/longDescription.length}} | {{{status}}} |
+| {{mnemonic}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
 {{/OSC}}
 
 {{#OSC.hasLongDescriptions}}
 {{#OSC}}
 {{#longDescription.length}}
+<section class="sequence-details">
+
 ### {{name}}
 {{#longDescription}}
 {{{.}}}
 {{/longDescription}}
+
+</section>
 {{/longDescription.length}}
 {{/OSC}}
 {{/OSC.hasLongDescriptions}}
 
 {{/OSC.length}}
+
+<script type="text/javascript">
+  const linkStates = {};
+
+  function hideDetailSections() {
+    for (let section of document.getElementsByClassName('sequence-details')) section.style.display = 'none';
+  }
+  
+  function decorateDetailLinks() {
+    for (let link of document.getElementsByClassName('link-details')) {
+      link.addEventListener("click", toggleDetails, false);
+      if (linkStates[link.href] === undefined) {
+        linkStates[link.href] = {open: false, links: [], trElem: null};
+      }
+      linkStates[link.href].links.push(link);
+    }
+  }
+
+  function openDetails(link) {
+    const closestTr = link.closest('tr');
+    if (!closestTr || !closestTr.parentNode) return;
+    const closestSection = document.getElementById(link.href.split('#')[1]).closest('section');
+    if (!closestSection || !closestSection.innerHTML) return;
+    const content = closestSection.innerHTML.split('</h3>')[1];
+
+    const newRow = closestTr.parentNode.insertRow(closestTr.rowIndex);
+    const cell = newRow.insertCell(0);
+    cell.innerHTML = '<div style="font-style: italic">' + content + '</div>';
+    cell.colSpan = closestTr.children.length;
+    const state = linkStates[link.href];
+    state.trElem = newRow;
+    state.open = true;
+    if (link.innerHTML === 'more') link.innerHTML = 'less';
+  }
+
+  function closeDetails(link) {
+    const state = linkStates[link.href];
+    if (state.trElem && state.trElem.rowIndex !== -1) {
+      if (state.trElem.parentNode) state.trElem.parentNode.deleteRow(state.trElem.rowIndex-1); // why -1 here?
+      state.trElem.remove();
+      state.trElem = null;
+    }
+    state.open = false;
+    if (link.innerHTML === 'less') link.innerHTML = 'more';
+  }
+
+  function toggleDetails(ev) {
+    if (!ev.target || !ev.target.href) return;
+    const isOpen = linkStates[ev.target.href].open;
+    if (isOpen === undefined) return;
+    if (isOpen) closeDetails(ev.target);
+    else openDetails(ev.target);
+    ev.preventDefault();
+    return false;
+  }
+
+  function load() {
+    hideDetailSections();
+    decorateDetailLinks();
+  }
+  load(); // we are inlined behind all needed data, thus dont wait for onload (avoids flickering)
+</script>
 `
 
 // support status marcos
@@ -232,9 +326,9 @@ const MACRO = [
   // #N - unsupported
   [/#N/g, s => '<span title="unsupported">✗</span>'],
   // #P[reason] - partial support with a reason as title
-  [/#P\[(.*?)\]/g, (s, p1) => `<span title="${p1}">Partial</span>`],
+  [/#P\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">Partial</span>`],
   // #B[reason] - supported but broken in a certain way, reason in title
-  [/#B\[(.*?)\]/g, (s, p1) => `<span title="${p1}">Broken</span>`]
+  [/#B\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">Broken</span>`]
 ];
 
 function applyMacros(s) {
