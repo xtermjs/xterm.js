@@ -37,7 +37,7 @@ export function moveToCellSequence(targetX: number, targetY: number, bufferServi
   }
     direction = startY > targetY ? Direction.LEFT : Direction.RIGHT;
     return repeat(colsFromRowEnd(startY > targetY ? targetX : startX, bufferService), sequence(direction, applicationCursor))
-    + repeat((Math.abs(wrappedRowsForRow(bufferService, startY) - wrappedRowsForRow(bufferService, targetY)) - 1 ) * bufferService.cols, sequence(direction, applicationCursor))
+    + repeat((Math.abs(startY - targetY) - 1 ) * bufferService.cols, sequence(direction, applicationCursor))
     + repeat(colsFromRowBeginning(startY > targetY ? startX : targetX, bufferService), sequence(direction, applicationCursor));
 }
 

@@ -23,14 +23,14 @@ describe('MoveToCell', () => {
       assert.equal(moveToCellSequence(4, 3, bufferService, false), '\x1b[C');
     });
     it('should ignore the Y value', () => {
-      assert.equal(moveToCellSequence(1, 1, bufferService, false), '\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D');
+      assert.equal(moveToCellSequence(1, 1, bufferService, false), '\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D');
       assert.equal(moveToCellSequence(1, 2, bufferService, false), '\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D');
       assert.equal(moveToCellSequence(1, 3, bufferService, false), '\u001b[D\u001b[D');
       assert.equal(moveToCellSequence(1, 4, bufferService, false), '\u001b[C\u001b[C\u001b[C');
       assert.equal(moveToCellSequence(1, 5, bufferService, false), '\u001b[C\u001b[C\u001b[C');
     });
     it('should use the correct character for application cursor', () => {
-      assert.equal(moveToCellSequence(2, 1, bufferService, false), '\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D');
+      assert.equal(moveToCellSequence(2, 1, bufferService, false), '\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D');
       assert.equal(moveToCellSequence(2, 1, bufferService, true), '\u001bOD\u001bOD\u001bOD\u001bOD\u001bOD\u001bOD');
     });
   });
