@@ -15,6 +15,7 @@ import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/Se
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -24,6 +25,7 @@ import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 // import { SerializeAddon } from 'xterm-addon-serialize';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
+// import { Unicode11Addon } from 'xterm-addon-unicode11';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -38,6 +40,7 @@ export interface IWindowWithTerminal extends Window {
   SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  Unicode11Addon?: typeof Unicode11Addon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -47,7 +50,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'web-links' | 'webgl';
+type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -58,6 +61,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'search' ? typeof SearchAddon :
     T extends 'serialize' ? typeof SerializeAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     typeof WebglAddon;
   instance?:
     T extends 'attach' ? AttachAddon :
@@ -66,6 +70,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'serialize' ? SerializeAddon :
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     never;
 }
 
@@ -75,7 +80,8 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
-  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true }
+  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true }
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -119,9 +125,10 @@ if (document.location.pathname === '/test') {
   window.AttachAddon = AttachAddon;
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
+  window.SerializeAddon = SerializeAddon;
+  window.Unicode11Addon = Unicode11Addon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
-  window.SerializeAddon = SerializeAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
@@ -144,10 +151,11 @@ function createTerminal(): void {
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
-  addons['web-links'].instance = new WebLinksAddon();
+  addons.unicode11.instance = new Unicode11Addon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
+  typedTerm.loadAddon(addons.unicode11.instance);
   typedTerm.loadAddon(addons['web-links'].instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
@@ -249,10 +257,7 @@ function initOptions(term: TerminalType): void {
     // Internal only options
     'cancelEvents',
     'convertEol',
-    'handler',
-    'screenKeys',
     'termName',
-    'useFlowControl',
     // Complex option
     'theme'
   ];

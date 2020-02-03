@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -41,6 +41,9 @@ export class Terminal implements ITerminalApi {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
+  }
+  public get unicode(): IUnicodeHandling {
+    return new UnicodeApi(this._core);
   }
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
@@ -144,10 +147,8 @@ export class Terminal implements ITerminalApi {
     this._core.paste(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
-  public getOption(key: 'colors'): string[];
+  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell'): boolean;
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-  public getOption(key: 'handler'): (data: string) => void;
   public getOption(key: string): any;
   public getOption(key: any): any {
     return this._core.optionsService.getOption(key);
@@ -157,10 +158,8 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;
   public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
   public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
-  public setOption(key: 'colors', value: string[]): void;
+  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell', value: boolean): void;
   public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-  public setOption(key: 'handler', value: (data: string) => void): void;
   public setOption(key: 'theme', value: ITheme): void;
   public setOption(key: 'cols' | 'rows', value: number): void;
   public setOption(key: string, value: any): void;
@@ -255,5 +254,25 @@ class ParserApi implements IParser {
   }
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this.registerOscHandler(ident, callback);
+  }
+}
+
+class UnicodeApi implements IUnicodeHandling {
+  constructor(private _core: ITerminal) {}
+
+  public register(provider: IUnicodeVersionProvider): void {
+    this._core.unicodeService.register(provider);
+  }
+
+  public get versions(): string[] {
+    return this._core.unicodeService.versions;
+  }
+
+  public get activeVersion(): string {
+    return this._core.unicodeService.activeVersion;
+  }
+
+  public set activeVersion(version: string) {
+    this._core.unicodeService.activeVersion = version;
   }
 }

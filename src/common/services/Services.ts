@@ -278,9 +278,7 @@ export interface ITerminalOptions {
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
-  screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
 }
 
 export interface ITheme {
@@ -305,4 +303,27 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
+export interface IUnicodeService {
+  /** Register an Unicode version provider. */
+  register(provider: IUnicodeVersionProvider): void;
+  /** Registered Unicode versions. */
+  readonly versions: string[];
+  /** Currently active version. */
+  activeVersion: string;
+  /** Event triggered, when activate version changed. */
+  readonly onChange: IEvent<string>;
+
+  /**
+   * Unicode version dependent
+   */
+  wcwidth(codepoint: number): number;
+  getStringCellWidth(s: string): number;
+}
+
+export interface IUnicodeVersionProvider {
+  readonly version: string;
+  wcwidth(ucs: number): 0 | 1 | 2;
 }

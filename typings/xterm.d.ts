@@ -427,6 +427,12 @@ declare module 'xterm' {
     readonly parser: IParser;
 
     /**
+     * (EXPERIMENTAL) Get the Unicode handling interface
+     * to register and switch Unicode version.
+     */
+    readonly unicode: IUnicodeHandling;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -742,22 +748,12 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode'): boolean;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'colors'): string[];
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
     getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'handler'): (data: string) => void;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -799,25 +795,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode', value: boolean): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'colors', value: string[]): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
      */
     setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'handler', value: (data: string) => void): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -1174,5 +1158,41 @@ declare module 'xterm' {
      * @deprecated use `registerMarker` instead.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode version provider.
+   * Used to register custom Unicode versions with `Terminal.unicode.register`.
+   */
+  export interface IUnicodeVersionProvider {
+    /**
+     * String indicating the Unicode version provided.
+     */
+    readonly version: string;
+
+    /**
+     * Unicode version dependent wcwidth implementation.
+     */
+    wcwidth(codepoint: number): 0 | 1 | 2;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode handling interface.
+   */
+  export interface IUnicodeHandling {
+    /**
+     * Register a custom Unicode version provider.
+     */
+    register(provider: IUnicodeVersionProvider): void;
+
+    /**
+     * Registered Unicode versions.
+     */
+    readonly versions: ReadonlyArray<string>;
+
+    /**
+     * Getter/setter for active Unicode version.
+     */
+    activeVersion: string;
   }
 }
