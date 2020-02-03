@@ -49,9 +49,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
 
   convertEol: false,
   termName: 'xterm',
-  screenKeys: false,
   cancelEvents: false,
-  useFlowControl: false,
   wordSeparator: ' ()[]{}\',"`'
 });
 

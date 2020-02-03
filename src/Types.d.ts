@@ -220,10 +220,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
   cancelEvents?: boolean;
   convertEol?: boolean;
-  handler?: (data: string) => void;
-  screenKeys?: boolean;
   termName?: string;
-  useFlowControl?: boolean;
 }
 
 export interface IBrowser {
