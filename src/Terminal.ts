@@ -312,6 +312,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           this._renderService?.clear();
           this._charSizeService?.measure();
           break;
+        case 'cursorBlink':
+        case 'cursorStyle':
+          // The DOM renderer needs a row refresh to update the cursor styles
+          this.refresh(this.buffer.y, this.buffer.y);
+          break;
         case 'drawBoldTextInBrightColors':
         case 'letterSpacing':
         case 'lineHeight':
