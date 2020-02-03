@@ -38,7 +38,7 @@ export function moveToCellSequence(targetX: number, targetY: number, bufferServi
   direction = startY > targetY ? Direction.LEFT : Direction.RIGHT;
   const rowDifference = Math.abs(startY - targetY);
   const cellsToMove = colsFromRowEnd(startY > targetY ? targetX : startX, bufferService) +
-    (rowDifference - 1) * bufferService.cols + 1/*wrap around 1 row*/ +
+    (rowDifference - 1) * bufferService.cols + 1 /*wrap around 1 row*/ +
     colsFromRowBeginning(startY > targetY ? startX : targetX, bufferService);
   return repeat(cellsToMove, sequence(direction, applicationCursor));
 }
