@@ -278,9 +278,7 @@ export interface ITerminalOptions {
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
-  screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
 }
 
 export interface ITheme {
