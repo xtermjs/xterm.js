@@ -320,13 +320,13 @@ export class SearchAddon implements ITerminalAddon {
             break;
           }
           // Adjust the searchIndex to normalize emoji into single chars
-          const char = cell.char;
+          const char = cell.getChars();
           if (char.length > 1) {
             resultIndex -= char.length - 1;
           }
           // Adjust the searchIndex for empty characters following wide unicode
           // chars (eg. CJK)
-          const charWidth = cell.width;
+          const charWidth = cell.getWidth();
           if (charWidth === 0) {
             resultIndex++;
           }

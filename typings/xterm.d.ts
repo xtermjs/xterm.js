@@ -971,6 +971,13 @@ declare module 'xterm' {
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
+
+    /**
+     * Creates an empty cell object suitable as a cell reference in
+     * `line.getCell(x, cell)`. Use this to avoid costly recreation of
+     * cell objects when dealing with tons of cells.
+     */
+    getNullCell(): IBufferCell;
   }
 
   /**
@@ -981,6 +988,7 @@ declare module 'xterm' {
      * Whether the line is wrapped from the previous line.
      */
     readonly isWrapped: boolean;
+    readonly length: number;
 
     /**
      * Gets a cell from the line, or undefined if the line index does not exist.
@@ -990,8 +998,9 @@ declare module 'xterm' {
      * behavior.
      *
      * @param x The character index to get.
+     * @param cell Optional cell object to load data into.
      */
-    getCell(x: number): IBufferCell | undefined;
+    getCell(x: number, cell?: IBufferCell): IBufferCell | undefined;
 
     /**
      * Gets the line as a string. Note that this is gets only the string for the
@@ -1008,19 +1017,30 @@ declare module 'xterm' {
    * Represents a single cell in the terminal's buffer.
    */
   interface IBufferCell {
-    /**
-     * The character within the cell.
-     */
-    readonly char: string;
+    getWidth(): number;
+    getChars(): string;
+    getCode(): number;
 
-    /**
-     * The width of the character. Some examples:
-     *
-     * - This is `1` for most cells.
-     * - This is `2` for wide character like CJK glyphs.
-     * - This is `0` for cells immediately following cells with a width of `2`.
-     */
-    readonly width: number;
+    getFgColorMode(): number;
+    getBgColorMode(): number;
+    getFgColor(): number;
+    getBgColor(): number;
+
+    isInverse(): number;
+    isBold(): number;
+    isUnderline(): number;
+    isBlink(): number;
+    isInvisible(): number;
+    isItalic(): number;
+    isDim(): number;
+
+    isFgRGB(): boolean;
+    isBgRGB(): boolean;
+    isFgPalette(): boolean;
+    isBgPalette(): boolean;
+    isAttributeDefault(): boolean;
+    isFgDefault(): boolean;
+    isBgDefault(): boolean;
   }
 
   /**
