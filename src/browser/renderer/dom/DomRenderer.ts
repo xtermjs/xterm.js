@@ -173,13 +173,13 @@ export class DomRenderer extends Disposable implements IRenderer {
         `}`;
     // Blink animation
     styles +=
-        `@keyframes blink_box_shadow {` +
+        `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
         ` 50% {` +
         `  box-shadow: none;` +
         ` }` +
         `}`;
     styles +=
-        `@keyframes blink_block {` +
+        `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
         ` 0% {` +
         `  background-color: ${this._colors.cursor.css};` +
         `  color: ${this._colors.cursorAccent.css};` +
@@ -196,10 +196,10 @@ export class DomRenderer extends Disposable implements IRenderer {
         ` outline-offset: -1px;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
-        ` animation: blink_box_shadow 1s step-end infinite;` +
+        ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` animation: blink_block 1s step-end infinite;` +
+        ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
         ` background-color: ${this._colors.cursor.css};` +

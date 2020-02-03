@@ -46,7 +46,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
@@ -63,6 +63,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -98,6 +99,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
   public optionsService: IOptionsService;
+  public unicodeService: IUnicodeService;
 
   // browser services
   private _charSizeService: ICharSizeService;
@@ -209,6 +211,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
+    this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
@@ -244,7 +248,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService);
+      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
       this._inputHandler.onRequestBell(() => this.bell());
       this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
       this._inputHandler.onRequestReset(() => this.reset());
@@ -254,7 +258,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     if (!this.linkifier) {
-      this.linkifier = new Linkifier(this._bufferService, this._logService);
+      this.linkifier = new Linkifier(this._bufferService, this._logService, this.optionsService, this.unicodeService);
     }
 
     if (this.options.windowsMode) {
@@ -307,6 +311,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           // When the font changes the size of the cells may change which requires a renderer clear
           this._renderService?.clear();
           this._charSizeService?.measure();
+          break;
+        case 'cursorBlink':
+        case 'cursorStyle':
+          // The DOM renderer needs a row refresh to update the cursor styles
+          this.refresh(this.buffer.y, this.buffer.y);
           break;
         case 'drawBoldTextInBrightColors':
         case 'letterSpacing':

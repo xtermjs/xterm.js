@@ -13,7 +13,7 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
@@ -41,6 +41,7 @@ export class MockTerminal implements ITerminal {
   onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
   }
