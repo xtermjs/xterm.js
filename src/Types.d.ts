@@ -7,7 +7,7 @@ import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISele
 import { ICharset, IAttributeData, CharData, CoreMouseEventType } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 
@@ -140,6 +140,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   optionsService: IOptionsService;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
+  unicodeService: IUnicodeService;
 
   onBlur: IEvent<void>;
   onFocus: IEvent<void>;
