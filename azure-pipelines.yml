@@ -27,7 +27,9 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn test-unit-coverage --forbid-only
+      EXIT_CODE=$?
       ./node_modules/.bin/nyc report --reporter=cobertura
+      exit $EXIT_CODE
     displayName: 'Unit tests'
   - script: yarn lint
     displayName: 'Lint'
