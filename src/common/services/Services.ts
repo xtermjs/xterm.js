@@ -309,3 +309,25 @@ export interface ITheme {
   brightWhite?: string;
 }
 
+export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
+export interface IUnicodeService {
+  /** Register an Unicode version provider. */
+  register(provider: IUnicodeVersionProvider): void;
+  /** Registered Unicode versions. */
+  readonly versions: string[];
+  /** Currently active version. */
+  activeVersion: string;
+  /** Event triggered, when activate version changed. */
+  readonly onChange: IEvent<string>;
+
+  /**
+   * Unicode version dependent
+   */
+  wcwidth(codepoint: number): number;
+  getStringCellWidth(s: string): number;
+}
+
+export interface IUnicodeVersionProvider {
+  readonly version: string;
+  wcwidth(ucs: number): 0 | 1 | 2;
+}

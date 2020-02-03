@@ -53,7 +53,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   cancelEvents: false,
   useFlowControl: false,
   windowOptions: {},
-  wordSeparator: ' ()[]{}\',:;"`'
+  wordSeparator: ' ()[]{}\',"`'
 });
 
 /**
