@@ -156,6 +156,9 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**tty-share**](https://tty-share.com): Extremely simple terminal sharing over the Internet.
 - [**Ten Hands**](https://github.com/saisandeepvaddi/ten-hands): One place to run your command-line tasks.
 - [**WebAssembly.sh**](https://webassembly.sh): A WebAssembly WASI browser terminal
+- [**Gus**](https://gus.jp): A shared coding pad where you can run Python with xterm.js
+- [**Linode**](https://linode.com): Linode uses xterm.js to provide users a web console for their Linode instances.
+- [**FluffOS**](https://www.fluffos.info): Active maintained LPMUD driver with websocket support.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 

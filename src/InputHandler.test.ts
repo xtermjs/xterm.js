@@ -7,13 +7,13 @@ import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
 import { Terminal } from './Terminal';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, IAttributeData } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes } from 'common/buffer/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
-import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsService, MockLogService, MockCoreMouseService } from 'common/TestUtils.test';
+import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
@@ -33,34 +33,38 @@ function getLines(term: TestTerminal, limit: number = term.rows): string[] {
   return res;
 }
 
+class TestInputHandler extends InputHandler {
+  get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
+}
+
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
-    terminal.curAttrData.fg = 3;
     const bufferService = new MockBufferService(80, 30);
     bufferService.buffer.x = 1;
     bufferService.buffer.y = 2;
     bufferService.buffer.ybase = 0;
-    const inputHandler = new InputHandler(terminal, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+    const inputHandler = new TestInputHandler(terminal, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+    inputHandler.curAttrData.fg = 3;
     // Save cursor position
     inputHandler.saveCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal(terminal.curAttrData.fg, 3);
+    assert.equal(inputHandler.curAttrData.fg, 3);
     // Change cursor position
     bufferService.buffer.x = 10;
     bufferService.buffer.y = 20;
-    terminal.curAttrData.fg = 30;
+    inputHandler.curAttrData.fg = 30;
     // Restore cursor position
     inputHandler.restoreCursor();
     assert.equal(bufferService.buffer.x, 1);
     assert.equal(bufferService.buffer.y, 2);
-    assert.equal(terminal.curAttrData.fg, 3);
+    assert.equal(inputHandler.curAttrData.fg, 3);
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       const optionsService = new MockOptionsService();
-      const inputHandler = new InputHandler(new MockInputHandlingTerminal(), new MockBufferService(80, 30), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService());
+      const inputHandler = new InputHandler(new MockInputHandlingTerminal(), new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService());
 
       inputHandler.setCursorStyle(Params.fromArray([0]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
@@ -101,7 +105,7 @@ describe('InputHandler', () => {
     it('should toggle Terminal.bracketedPasteMode', () => {
       const terminal = new MockInputHandlingTerminal();
       terminal.bracketedPasteMode = false;
-      const inputHandler = new InputHandler(terminal, new MockBufferService(80, 30), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(terminal, new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
       // Set bracketed paste mode
       inputHandler.setModePrivate(Params.fromArray([2004]));
       assert.equal(terminal.bracketedPasteMode, true);
@@ -120,7 +124,7 @@ describe('InputHandler', () => {
     it('insertChars', function(): void {
       const term = new Terminal();
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(term, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
 
       // insert some data in first and second line
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
@@ -158,7 +162,7 @@ describe('InputHandler', () => {
     it('deleteChars', function(): void {
       const term = new Terminal();
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(term, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
 
       // insert some data in first and second line
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
@@ -199,7 +203,7 @@ describe('InputHandler', () => {
     it('eraseInLine', function(): void {
       const term = new Terminal();
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(term, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
 
       // fill 6 lines to test 3 different states
       inputHandler.parse(Array(bufferService.cols + 1).join('a'));
@@ -228,7 +232,7 @@ describe('InputHandler', () => {
     it('eraseInDisplay', function(): void {
       const term = new Terminal({cols: 80, rows: 7});
       const bufferService = new MockBufferService(80, 7);
-      const inputHandler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(term, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
 
       // fill display with a's
       for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
@@ -363,7 +367,7 @@ describe('InputHandler', () => {
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
       const term = new Terminal();
-      const inputHandler = new InputHandler(term, new MockBufferService(80, 30), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      const inputHandler = new InputHandler(term, new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
       const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
@@ -378,7 +382,7 @@ describe('InputHandler', () => {
     beforeEach(() => {
       term = new Terminal();
       bufferService = new MockBufferService(80, 30);
-      handler = new InputHandler(term, bufferService, new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
+      handler = new InputHandler(term, bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService());
     });
     it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
       handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
@@ -1265,5 +1269,64 @@ describe('InputHandler', () => {
       [131072, 131072], [131072, 200000 - 131072],
       [131072, 131072], [131072, 131072], [131072, 300000 - 131072 - 131072]
     ]);
+  });
+  describe('should correctly reset cells taken by wide chars', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 5, scrollback: 1});
+      term.writeSync('￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥');
+    });
+    it('print', () => {
+      term.writeSync('\x1b[H#');
+      assert.deepEqual(getLines(term), ['# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[1;6H######');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '##￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;9H#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥#', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '￥￥￥￥￥', '']);
+      term.writeSync('#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥￥', '']);
+      term.writeSync('\x1b[4;10H#');
+      assert.deepEqual(getLines(term), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥ #', '']);
+    });
+    it('EL', () => {
+      term.writeSync('\x1b[1;6H\x1b[K#');
+      assert.deepEqual(getLines(term), ['￥￥ #', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;5H\x1b[1K');
+      assert.deepEqual(getLines(term), ['￥￥ #', '      ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[1K');
+      assert.deepEqual(getLines(term), ['￥￥ #', '      ￥￥', '      ￥￥', '￥￥￥￥￥', '']);
+    });
+    it('ICH', () => {
+      term.writeSync('\x1b[1;6H\x1b[@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;4H\x1b[2@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;4H\x1b[3@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[4;4H\x1b[4@');
+      assert.deepEqual(getLines(term), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥      ￥', '']);
+    });
+    it('DCH', () => {
+      term.writeSync('\x1b[1;6H\x1b[P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;6H\x1b[2P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥  ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[3P');
+      assert.deepEqual(getLines(term), ['￥￥ ￥￥', '￥￥  ￥', '￥￥ ￥', '￥￥￥￥￥', '']);
+    });
+    it('ECH', () => {
+      term.writeSync('\x1b[1;6H\x1b[X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[2;6H\x1b[2X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
+      term.writeSync('\x1b[3;6H\x1b[3X');
+      assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
+    });
   });
 });

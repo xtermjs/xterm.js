@@ -6,13 +6,14 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_BG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 interface IVertices {
   attributes: Float32Array;
@@ -254,6 +255,30 @@ export class GlyphRenderer {
     for (let x = startCol; x < endCol; x++) {
       const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
       const code = model.cells[offset];
+      let fg = model.cells[offset + RENDER_MODEL_FG_OFFSET];
+      if (fg & FgFlags.INVERSE) {
+        const workCell = new AttributeData();
+        workCell.fg = fg;
+        workCell.bg = model.cells[offset + RENDER_MODEL_BG_OFFSET];
+        // Get attributes from fg (excluding inverse) and resolve inverse by pullibng rgb colors
+        // from bg. This is needed since the inverse fg color should be based on the original bg
+        // color, not on the selection color
+        fg = (fg & ~(Attributes.CM_MASK | Attributes.RGB_MASK | FgFlags.INVERSE));
+        switch (workCell.getBgColorMode()) {
+          case Attributes.CM_P16:
+          case Attributes.CM_P256:
+            const c = this._getColorFromAnsiIndex(workCell.getBgColor()).rgba;
+            fg |= (c >> 8) & Attributes.RED_MASK | (c >> 8) & Attributes.GREEN_MASK | (c >> 8) & Attributes.BLUE_MASK;
+          case Attributes.CM_RGB:
+            const arr = AttributeData.toColorRGB(workCell.getBgColor());
+            fg |= arr[0] << Attributes.RED_SHIFT | arr[1] << Attributes.GREEN_SHIFT | arr[2] << Attributes.BLUE_SHIFT;
+          case Attributes.CM_DEFAULT:
+          default:
+            const c2 = this._colors.background.rgba;
+            fg |= (c2 >> 8) & Attributes.RED_MASK | (c2 >> 8) & Attributes.GREEN_MASK | (c2 >> 8) & Attributes.BLUE_MASK;
+        }
+        fg |= Attributes.CM_RGB;
+      }
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {
           line = terminal.buffer.getLine(row);
@@ -261,9 +286,16 @@ export class GlyphRenderer {
         const chars = line!.getCell(x)!.getChars();
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, model.cells[offset + RENDER_MODEL_FG_OFFSET], chars);
       } else {
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, model.cells[offset + RENDER_MODEL_FG_OFFSET]);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);
       }
     }
+  }
+
+  private _getColorFromAnsiIndex(idx: number): IColor {
+    if (idx >= this._colors.ansi.length) {
+      throw new Error('No color found for idx ' + idx);
+    }
+    return this._colors.ansi[idx];
   }
 
   public onResize(): void {

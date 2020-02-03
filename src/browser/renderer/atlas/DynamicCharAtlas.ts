@@ -11,7 +11,7 @@ import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'browser/Types';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { opaque } from 'browser/Color';
+import { color } from 'browser/Color';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -223,7 +223,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
 
   private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
     if (glyph.fg === INVERTED_DEFAULT_COLOR) {
-      return opaque(this._config.colors.background);
+      return color.opaque(this._config.colors.background);
     } else if (glyph.fg < 256) {
       // 256 color support
       return this._getColorFromAnsiIndex(glyph.fg);

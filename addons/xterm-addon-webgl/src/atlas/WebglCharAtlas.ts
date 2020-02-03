@@ -11,7 +11,7 @@ import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { toCss, ensureContrastRatioRgba } from 'browser/Color';
+import { channels, rgba } from 'browser/Color';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -86,9 +86,6 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
-
-    // This is useful for debugging
-    document.body.appendChild(this.cacheCanvas);
   }
 
   public dispose(): void {
@@ -224,7 +221,7 @@ export class WebglCharAtlas implements IDisposable {
         return this._getColorFromAnsiIndex(fgColor).css;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(fgColor);
-        return toCss(arr[0], arr[1], arr[2]);
+        return channels.toCss(arr[0], arr[1], arr[2]);
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
@@ -287,14 +284,14 @@ export class WebglCharAtlas implements IDisposable {
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
-    const result = ensureContrastRatioRgba(bgRgba, fgRgba, this._config.minimumContrastRatio);
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio);
 
     if (!result) {
       this._config.colors.contrastCache.setCss(bg, fg, null);
       return undefined;
     }
 
-    const css = toCss(
+    const css = channels.toCss(
       (result >> 24) & 0xFF,
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF
@@ -315,6 +312,11 @@ export class WebglCharAtlas implements IDisposable {
 
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
+
+    const invisible = !!this._workAttributeData.isInvisible();
+    if (invisible) {
+      return NULL_RASTERIZED_GLYPH;
+    }
 
     const bold = !!this._workAttributeData.isBold();
     const inverse = !!this._workAttributeData.isInverse();

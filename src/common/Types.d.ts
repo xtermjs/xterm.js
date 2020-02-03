@@ -62,7 +62,7 @@ export interface IKeyboardResult {
 }
 
 export interface ICharset {
-  [key: string]: string;
+  [key: string]: string | undefined;
 }
 
 export type CharData = [number, string, number, number];
@@ -124,9 +124,9 @@ export interface IBufferLine {
   setCell(index: number, cell: ICellData): void;
   setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
   addCodepointToCell(index: number, codePoint: number): void;
-  insertCells(pos: number, n: number, ch: ICellData): void;
-  deleteCells(pos: number, n: number, fill: ICellData): void;
-  replaceCells(start: number, end: number, fill: ICellData): void;
+  insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
+  deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
+  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData): void;
   resize(cols: number, fill: ICellData): void;
   fill(fillCellData: ICellData): void;
   copyFrom(line: IBufferLine): void;
@@ -153,6 +153,9 @@ export interface IMarker extends IDisposable {
 
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
+  applicationKeypad: boolean;
+  origin: boolean;
+  wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 
 export interface IRowRange {
