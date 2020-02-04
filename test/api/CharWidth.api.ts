@@ -98,8 +98,8 @@ async function sumWidths(start: number, end: number, sentinel: string): Promise<
           if (!cell) {
             break;
           }
-          window.result += cell.width;
-          if (cell.char === '${sentinel}') {
+          window.result += cell.getWidth();
+          if (cell.getChars() === '${sentinel}') {
             return;
           }
         }
