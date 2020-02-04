@@ -5,8 +5,9 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
+import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
@@ -189,7 +190,7 @@ export class Terminal implements ITerminalApi {
 }
 
 class BufferApiView implements IBufferApi {
-  constructor(private _buffer: IBuffer) {}
+  constructor(private _buffer: IBuffer) { }
 
   public get cursorY(): number { return this._buffer.y; }
   public get cursorX(): number { return this._buffer.x; }
@@ -203,27 +204,28 @@ class BufferApiView implements IBufferApi {
     }
     return new BufferLineApiView(line);
   }
+  public getNullCell(): IBufferCellApi { return new CellData(); }
 }
 
 class BufferLineApiView implements IBufferLineApi {
-  constructor(private _line: IBufferLine) {}
+  constructor(private _line: IBufferLine) { }
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
-  public getCell(x: number): IBufferCellApi | undefined {
+  public get length(): number { return this._line.length; }
+  public getCell(x: number, cell?: IBufferCellApi): IBufferCellApi | undefined {
     if (x < 0 || x >= this._line.length) {
       return undefined;
     }
-    return new BufferCellApiView(this._line, x);
+
+    if (cell) {
+      this._line.loadCell(x, <ICellData>cell);
+      return cell;
+    }
+    return this._line.loadCell(x, new CellData());
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
-}
-
-class BufferCellApiView implements IBufferCellApi {
-  constructor(private _line: IBufferLine, private _x: number) {}
-  public get char(): string { return this._line.getString(this._x); }
-  public get width(): number { return this._line.getWidth(this._x); }
 }
 
 class ParserApi implements IParser {

@@ -1117,6 +1117,13 @@ declare module 'xterm' {
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
+
+    /**
+     * Creates an empty cell object suitable as a cell reference in
+     * `line.getCell(x, cell)`. Use this to avoid costly recreation of
+     * cell objects when dealing with tons of cells.
+     */
+    getNullCell(): IBufferCell;
   }
 
   /**
@@ -1129,6 +1136,12 @@ declare module 'xterm' {
     readonly isWrapped: boolean;
 
     /**
+     * The length of the line, all call to getCell beyond the length will result
+     * in `undefined`.
+     */
+    readonly length: number;
+
+    /**
      * Gets a cell from the line, or undefined if the line index does not exist.
      *
      * Note that the result of this function should be used immediately after
@@ -1136,8 +1149,11 @@ declare module 'xterm' {
      * behavior.
      *
      * @param x The character index to get.
+     * @param cell Optional cell object to load data into for performance
+     * reasons. This is mainly useful when every cell in the buffer is being
+     * looped over to avoid creating new objects for every cell.
      */
-    getCell(x: number): IBufferCell | undefined;
+    getCell(x: number, cell?: IBufferCell): IBufferCell | undefined;
 
     /**
      * Gets the line as a string. Note that this is gets only the string for the
@@ -1155,18 +1171,101 @@ declare module 'xterm' {
    */
   interface IBufferCell {
     /**
-     * The character within the cell.
-     */
-    readonly char: string;
-
-    /**
      * The width of the character. Some examples:
      *
-     * - This is `1` for most cells.
-     * - This is `2` for wide character like CJK glyphs.
-     * - This is `0` for cells immediately following cells with a width of `2`.
+     * - `1` for most cells.
+     * - `2` for wide character like CJK glyphs.
+     * - `0` for cells immediately following cells with a width of `2`.
      */
-    readonly width: number;
+    getWidth(): number;
+
+    /**
+     * The character(s) within the cell. Examples of what this can contain:
+     *
+     * - A normal width character
+     * - A wide character (eg. CJK)
+     * - An emoji
+     */
+    getChars(): string;
+
+    /**
+     * Gets the UTF32 codepoint of single characters, if content is a combined
+     * string it returns the codepoint of the last character in the string.
+     */
+    getCode(): number;
+
+    /**
+     * Gets the number representation of the foreground color mode, this can be
+     * used to perform quick comparisons of 2 cells to see if they're the same.
+     * Use `isFgRGB`, `isFgPalette` and `isFgDefault` to check what color mode
+     * a cell is.
+     */
+    getFgColorMode(): number;
+
+    /**
+     * Gets the number representation of the background color mode, this can be
+     * used to perform quick comparisons of 2 cells to see if they're the same.
+     * Use `isBgRGB`, `isBgPalette` and `isBgDefault` to check what color mode
+     * a cell is.
+     */
+    getBgColorMode(): number;
+
+    /**
+     * Gets a cell's foreground color number, this differs depending on what the
+     * color mode of the cell is:
+     *
+     * - Default: This should be 0, representing the default foreground color
+     *   (CSI 39 m).
+     * - Palette: This is a number from 0 to 255 of ANSI colors (CSI 3(0-7) m,
+     *   CSI 9(0-7) m, CSI 38 ; 5 ; 0-255 m).
+     * - RGB: A hex value representing a 'true color': 0xRRGGBB.
+     *   (CSI 3 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
+     */
+    getFgColor(): number;
+
+    /**
+     * Gets a cell's background color number, this differs depending on what the
+     * color mode of the cell is:
+     *
+     * - Default: This should be 0, representing the default background color
+     *   (CSI 49 m).
+     * - Palette: This is a number from 0 to 255 of ANSI colors
+     *   (CSI 4(0-7) m, CSI 10(0-7) m, CSI 48 ; 5 ; 0-255 m).
+     * - RGB: A hex value representing a 'true color': 0xRRGGBB
+     *   (CSI 4 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
+     */
+    getBgColor(): number;
+
+    /** Whether the cell has the bold attribute (CSI 1 m). */
+    isBold(): number;
+    /** Whether the cell has the inverse attribute (CSI 3 m). */
+    isItalic(): number;
+    /** Whether the cell has the inverse attribute (CSI 2 m). */
+    isDim(): number;
+    /** Whether the cell has the underline attribute (CSI 4 m). */
+    isUnderline(): number;
+    /** Whether the cell has the inverse attribute (CSI 5 m). */
+    isBlink(): number;
+    /** Whether the cell has the inverse attribute (CSI 7 m). */
+    isInverse(): number;
+    /** Whether the cell has the inverse attribute (CSI 8 m). */
+    isInvisible(): number;
+
+    /** Whether the cell is using the RGB foreground color mode. */
+    isFgRGB(): boolean;
+    /** Whether the cell is using the RGB background color mode. */
+    isBgRGB(): boolean;
+    /** Whether the cell is using the palette foreground color mode. */
+    isFgPalette(): boolean;
+    /** Whether the cell is using the palette background color mode. */
+    isBgPalette(): boolean;
+    /** Whether the cell is using the default foreground color mode. */
+    isFgDefault(): boolean;
+    /** Whether the cell is using the default background color mode. */
+    isBgDefault(): boolean;
+
+    /** Whether the cell has the default attribute (no color or style). */
+    isAttributeDefault(): boolean;
   }
 
   /**

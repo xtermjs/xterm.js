@@ -9,6 +9,7 @@
       "xterm-addon-attach": ["../addons/xterm-addon-attach"],
       "xterm-addon-fit": ["../addons/xterm-addon-fit"],
       "xterm-addon-search": ["../addons/xterm-addon-search"],
+      "xterm-addon-serialize": ["../addons/xterm-addon-serialize"],
       "xterm-addon-web-links": ["../addons/xterm-addon-web-links"],
       "xterm-addon-webgl": ["../addons/xterm-addon-webgl"]
     }

@@ -283,7 +283,7 @@ export class GlyphRenderer {
         if (!line) {
           line = terminal.buffer.getLine(row);
         }
-        const chars = line!.getCell(x)!.char;
+        const chars = line!.getCell(x)!.getChars();
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
       } else {
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);

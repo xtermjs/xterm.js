@@ -10,6 +10,8 @@
     { "path": "./addons/xterm-addon-search/src" },
     { "path": "./addons/xterm-addon-unicode11/src" },
     { "path": "./addons/xterm-addon-web-links/src" },
-    { "path": "./addons/xterm-addon-webgl/src" }
+    { "path": "./addons/xterm-addon-webgl/src" },
+    { "path": "./addons/xterm-addon-serialize/src" },
+    { "path": "./addons/xterm-addon-serialize/benchmark" }
   ]
 }
