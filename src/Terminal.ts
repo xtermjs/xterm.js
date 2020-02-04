@@ -116,9 +116,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
   public sendFocus: boolean;
 
-  // misc
-  public savedCols: number;
-
   // write buffer
   private _writeBuffer: WriteBuffer;
 
@@ -248,7 +245,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
+      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService, this._instantiationService);
       this._inputHandler.onRequestBell(() => this.bell());
       this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
       this._inputHandler.onRequestReset(() => this.reset());
@@ -1392,7 +1389,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
-    this.viewport.syncScrollArea(true);
+    this.viewport?.syncScrollArea(true);
 
     this.refresh(0, this.rows - 1);
     this._onResize.fire({ cols: x, rows: y });

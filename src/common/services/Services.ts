@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -171,6 +171,7 @@ export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
+  getService<T>(id: IServiceIdentifier<T>): T | undefined;
 
   createInstance<T>(ctor: IConstructorSignature0<T>): T;
   createInstance<A1, T>(ctor: IConstructorSignature1<A1, T>, first: A1): T;
@@ -240,6 +241,7 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
+  windowOptions?: IWindowOptions;
 }
 
 export interface ITerminalOptions {
@@ -273,6 +275,7 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
