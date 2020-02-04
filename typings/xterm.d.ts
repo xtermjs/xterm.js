@@ -972,6 +972,11 @@ declare module 'xterm' {
      * Whether the line is wrapped from the previous line.
      */
     readonly isWrapped: boolean;
+
+    /**
+     * The length of the line, all call to getCell beyond the length will result
+     * in `undefined`.
+     */
     readonly length: number;
 
     /**
