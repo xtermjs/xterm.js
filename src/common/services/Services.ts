@@ -171,6 +171,7 @@ export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
+  getService<T>(id: IServiceIdentifier<T>): T | undefined;
 
   createInstance<T>(ctor: IConstructorSignature0<T>): T;
   createInstance<A1, T>(ctor: IConstructorSignature1<A1, T>, first: A1): T;

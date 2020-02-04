@@ -18,9 +18,10 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IInstantiationService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { IRenderService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -246,6 +247,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
+    private readonly _instantiationService: IInstantiationService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -2459,7 +2461,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
-    const rs = (this._terminal as any)._renderService;  // FIXME: import renderService to get rid of any type here
+    const rs = this._instantiationService.getService(IRenderService);
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
         if (rs && second !== 2) {
