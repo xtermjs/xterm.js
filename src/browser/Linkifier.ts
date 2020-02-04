@@ -298,7 +298,13 @@ export class Linkifier implements ILinkifier {
         if (matcher.handler) {
           return matcher.handler(e, uri);
         }
-        window.open(uri, '_blank');
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.opener = null;
+          newWindow.location.href = uri;
+        } else {
+          console.warn('Opening link blocked as opener could not be cleared');
+        }
       },
       () => {
         this._onLinkHover.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
