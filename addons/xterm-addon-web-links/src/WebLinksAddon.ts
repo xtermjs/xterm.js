@@ -26,7 +26,13 @@ const end = ')($|' + negatedPathCharacterSet + ')';
 const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
 function handleLink(event: MouseEvent, uri: string): void {
-  window.open(uri, '_blank');
+  const newWindow = window.open();
+  if (newWindow) {
+    newWindow.opener = null;
+    newWindow.location.href = uri;
+  } else {
+    console.warn('Opening link blocked as opener could not be cleared');
+  }
 }
 
 export class WebLinksAddon implements ITerminalAddon {
