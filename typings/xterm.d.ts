@@ -1028,7 +1028,7 @@ declare module 'xterm' {
   }
 
   /**
-   * (EXPERIMENTAL) Data type to register a CSI, DCS or ESC callback in the parser
+   * Data type to register a CSI, DCS or ESC callback in the parser
    * in the form:
    *    ESC I..I F
    *    CSI Prefix P..P I..I F
@@ -1072,7 +1072,7 @@ declare module 'xterm' {
   }
 
   /**
-   * (EXPERIMENTAL) Parser interface.
+   * Allows hooking into the parser for custom handling of escape sequences.
    */
   export interface IParser {
     /**
@@ -1088,11 +1088,6 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1114,11 +1109,6 @@ declare module 'xterm' {
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
-
-    /**
      * Adds a handler for ESC escape sequences.
      * @param id Specifies the function identifier under which the callback
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
@@ -1130,11 +1120,6 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1153,11 +1138,6 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
 
   /**
