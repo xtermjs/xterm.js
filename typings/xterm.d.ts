@@ -982,7 +982,9 @@ declare module 'xterm' {
      * behavior.
      *
      * @param x The character index to get.
-     * @param cell Optional cell object to load data into.
+     * @param cell Optional cell object to load data into for performance
+     * reasons. This is mainly useful when every cell in the buffer is being
+     * looped over to avoid creating new objects for every cell.
      */
     getCell(x: number, cell?: IBufferCell): IBufferCell | undefined;
 
