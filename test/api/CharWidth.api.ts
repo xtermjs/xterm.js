@@ -4,8 +4,8 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
+import { pollFor } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -15,12 +15,9 @@ const width = 800;
 const height = 600;
 
 describe('CharWidth Integration Tests', function(): void {
-  this.timeout(20000);
-
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
@@ -41,37 +38,37 @@ describe('CharWidth Integration Tests', function(): void {
     it('ASCII chars', async function(): Promise<void> {
       const input = 'This is just ASCII text.#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(25, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 25);
     });
 
     it('combining chars', async function(): Promise<void> {
       const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(10, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 10);
     });
 
     it('surrogate chars', async function(): Promise<void> {
       const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(28, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 28);
     });
 
     it('surrogate combining chars', async function(): Promise<void> {
       const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(12, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 12);
     });
 
     it('fullwidth chars', async function(): Promise<void> {
       const input = '１２３４５６７８９０#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(21, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 21);
     });
 
     it('fullwidth chars offset 1', async function(): Promise<void> {
       const input = 'a１２３４５６７８９０#';
       await page.evaluate(`window.term.write('${input}')`);
-      assert.equal(22, await sumWidths(0, 1, '#'));
+      await pollFor(page, () => sumWidths(0, 1, '#'), 22);
     });
 
     // TODO: multiline tests once #1685 is resolved
@@ -101,8 +98,8 @@ async function sumWidths(start: number, end: number, sentinel: string): Promise<
           if (!cell) {
             break;
           }
-          window.result += cell.width;
-          if (cell.char === '${sentinel}') {
+          window.result += cell.getWidth();
+          if (cell.getChars() === '${sentinel}') {
             return;
           }
         }

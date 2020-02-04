@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
+import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
@@ -27,6 +28,7 @@ export class Terminal implements ITerminalApi {
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onData(): IEvent<string> { return this._core.onData; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
@@ -39,6 +41,9 @@ export class Terminal implements ITerminalApi {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
+  }
+  public get unicode(): IUnicodeHandling {
+    return new UnicodeApi(this._core);
   }
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
@@ -76,9 +81,12 @@ export class Terminal implements ITerminalApi {
   public deregisterCharacterJoiner(joinerId: number): void {
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public addMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker {
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
+  }
+  public addMarker(cursorYOffset: number): IMarker {
+    return this.registerMarker(cursorYOffset);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
@@ -142,10 +150,8 @@ export class Terminal implements ITerminalApi {
     this._core.paste(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
-  public getOption(key: 'colors'): string[];
+  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell'): boolean;
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-  public getOption(key: 'handler'): (data: string) => void;
   public getOption(key: string): any;
   public getOption(key: any): any {
     return this._core.optionsService.getOption(key);
@@ -155,10 +161,8 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;
   public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
   public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
-  public setOption(key: 'colors', value: string[]): void;
+  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell', value: boolean): void;
   public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-  public setOption(key: 'handler', value: (data: string) => void): void;
   public setOption(key: 'theme', value: ITheme): void;
   public setOption(key: 'cols' | 'rows', value: number): void;
   public setOption(key: string, value: any): void;
@@ -203,42 +207,75 @@ class BufferApiView implements IBufferApi {
     }
     return new BufferLineApiView(line);
   }
+  public getNullCell(): IBufferCellApi { return new CellData(); }
 }
 
 class BufferLineApiView implements IBufferLineApi {
   constructor(private _line: IBufferLine) { }
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
-  public getCell(x: number): IBufferCellApi | undefined {
+  public get length(): number { return this._line.length; }
+  public getCell(x: number, cell?: IBufferCellApi): IBufferCellApi | undefined {
     if (x < 0 || x >= this._line.length) {
       return undefined;
     }
-    return new BufferCellApiView(this._line, x);
+
+    if (cell) {
+      this._line.loadCell(x, <ICellData>cell);
+      return cell;
+    }
+    return this._line.loadCell(x, new CellData());
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
 }
 
-class BufferCellApiView implements IBufferCellApi {
-  constructor(private _line: IBufferLine, private _x: number) { }
-  public get char(): string { return this._line.getString(this._x); }
-  public get width(): number { return this._line.getWidth(this._x); }
-}
-
 class ParserApi implements IParser {
   constructor(private _core: ITerminal) { }
 
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
     return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
   }
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
+    return this.registerCsiHandler(id, callback);
+  }
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
     return this._core.addDcsHandler(id, (data: string, params: IParams) => callback(data, params.toArray()));
   }
-  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable {
+    return this.registerDcsHandler(id, callback);
+  }
+  public registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
     return this._core.addEscHandler(id, handler);
   }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+    return this.registerEscHandler(id, handler);
+  }
+  public registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._core.addOscHandler(ident, callback);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this.registerOscHandler(ident, callback);
+  }
+}
+
+class UnicodeApi implements IUnicodeHandling {
+  constructor(private _core: ITerminal) { }
+
+  public register(provider: IUnicodeVersionProvider): void {
+    this._core.unicodeService.register(provider);
+  }
+
+  public get versions(): string[] {
+    return this._core.unicodeService.versions;
+  }
+
+  public get activeVersion(): string {
+    return this._core.unicodeService.activeVersion;
+  }
+
+  public set activeVersion(version: string) {
+    this._core.unicodeService.activeVersion = version;
   }
 }

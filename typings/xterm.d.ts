@@ -73,6 +73,11 @@ declare module 'xterm' {
     cursorStyle?: 'block' | 'underline' | 'bar';
 
     /**
+     * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
+     */
+    cursorWidth?: number;
+
+    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -149,6 +154,18 @@ declare module 'xterm' {
     macOptionClickForcesSelection?: boolean;
 
     /**
+     * The minimum contrast ratio for text in the terminal, setting this will
+     * change the foreground color dynamically depending on whether the contrast
+     * ratio is met. Example values:
+     *
+     * - 1: The default, do nothing.
+     * - 4.5: Minimum for WCAG AA compliance.
+     * - 7: Minimum for WCAG AAA compliance.
+     * - 21: White on black or black on white.
+     */
+    minimumContrastRatio?: number;
+
+    /**
      * The type of renderer to use, this allows using the fallback DOM renderer
      * when canvas is too slow for the environment. The following features do
      * not work when the DOM renderer is used:
@@ -215,6 +232,12 @@ declare module 'xterm' {
      * double click to select work logic.
     */
     wordSeparator?: string;
+
+    /**
+     * Enable various window manipulation and report features.
+     * All features are disabled by default for security reasons.
+     */
+    windowOptions?: IWindowOptions;
   }
 
   /**
@@ -319,8 +342,8 @@ declare module 'xterm' {
    * An event that can be listened to.
    * @returns an `IDisposable` to stop listening.
    */
-  export interface IEvent<T> {
-    (listener: (e: T) => any): IDisposable;
+  export interface IEvent<T, U = void> {
+    (listener: (arg1: T, arg2: U) => any): IDisposable;
   }
 
   /**
@@ -360,6 +383,162 @@ declare module 'xterm' {
      * being printed to the terminal when `screenReaderMode` is enabled.
      */
     tooMuchOutput: string;
+  }
+
+  /**
+   * Enable various window manipulation and report features (CSI Ps ; Ps ; Ps t).
+   * 
+   * Most settings have no default implementation, as they heavily rely on
+   * the embedding environment.
+   * 
+   * To implement a feature, create a custom CSI hook like this:
+   * ```ts
+   * term.parser.addCsiHandler({final: 't'}, params => {
+   *   const ps = params[0];
+   *   switch (ps) {
+   *     case XY:
+   *       ...            // your implementation for option XY
+   *       return true;   // signal Ps=XY was handled
+   *   }
+   *   return false;      // any Ps that was not handled
+   * });
+   * ```
+   * 
+   * Note on security:  
+   * Most features are meant to deal with some information of the host machine
+   * where the terminal runs on. This is seen as a security risk possibly leaking
+   * sensitive data of the host to the program in the terminal. Therefore all options
+   * (even those without a default implementation) are guarded by the boolean flag
+   * and disabled by default.
+   */
+  export interface IWindowOptions {
+    /**
+     * Ps=1    De-iconify window.  
+     * No default implementation.
+     */
+    restoreWin?: boolean;
+    /**
+     * Ps=2    Iconify window.  
+     * No default implementation.
+     */
+    minimizeWin?: boolean;
+    /**
+     * Ps=3 ; x ; y
+     * Move window to [x, y].  
+     * No default implementation.
+     */
+    setWinPosition?: boolean;
+    /**
+     * Ps = 4 ; height ; width
+     * Resize the window to given `height` and `width` in pixels.
+     * Omitted parameters should reuse the current height or width.
+     * Zero parameters should use the display's height or width.  
+     * No default implementation.
+     */
+    setWinSizePixels?: boolean;
+    /**
+     * Ps=5    Raise the window to the front of the stacking order.  
+     * No default implementation.
+     */
+    raiseWin?: boolean;
+    /**
+     * Ps=6    Lower the xterm window to the bottom of the stacking order.  
+     * No default implementation.
+     */
+    lowerWin?: boolean;
+    /** Ps=7    Refresh the window. */
+    refreshWin?: boolean;
+    /**
+     * Ps = 8 ; height ; width
+     * Resize the text area to given height and width in characters.
+     * Omitted parameters should reuse the current height or width.
+     * Zero parameters use the display's height or width.  
+     * No default implementation.
+     */
+    setWinSizeChars?: boolean;
+    /**
+     * Ps=9 ; 0   Restore maximized window.
+     * Ps=9 ; 1   Maximize window (i.e., resize to screen size).
+     * Ps=9 ; 2   Maximize window vertically.
+     * Ps=9 ; 3   Maximize window horizontally.  
+     * No default implementation.
+     */
+    maximizeWin?: boolean;
+    /**
+     * Ps=10 ; 0  Undo full-screen mode.
+     * Ps=10 ; 1  Change to full-screen.
+     * Ps=10 ; 2  Toggle full-screen.  
+     * No default implementation.
+     */
+    fullscreenWin?: boolean;
+    /** Ps=11   Report xterm window state.
+     * If the xterm window is non-iconified, it returns "CSI 1 t".
+     * If the xterm window is iconified, it returns "CSI 2 t".  
+     * No default implementation.
+     */
+    getWinState?: boolean;
+    /**
+     * Ps=13      Report xterm window position. Result is "CSI 3 ; x ; y t".
+     * Ps=13 ; 2  Report xterm text-area position. Result is "CSI 3 ; x ; y t".  
+     * No default implementation.
+     */
+    getWinPosition?: boolean;
+    /**
+     * Ps=14      Report xterm text area size in pixels. Result is "CSI 4 ; height ; width t".
+     * Ps=14 ; 2  Report xterm window size in pixels. Result is "CSI  4 ; height ; width t".  
+     * Has a default implementation.
+     */
+    getWinSizePixels?: boolean;
+    /**
+     * Ps=15    Report size of the screen in pixels. Result is "CSI 5 ; height ; width t".  
+     * No default implementation.
+     */
+    getScreenSizePixels?: boolean;
+    /**
+     * Ps=16  Report xterm character cell size in pixels. Result is "CSI 6 ; height ; width t".  
+     * Has a default implementation.
+     */
+    getCellSizePixels?: boolean;
+    /**
+     * Ps=18  Report the size of the text area in characters. Result is "CSI 8 ; height ; width t".  
+     * Has a default implementation.
+     */
+    getWinSizeChars?: boolean;
+    /**
+     * Ps=19  Report the size of the screen in characters. Result is "CSI 9 ; height ; width t".  
+     * No default implementation.
+     */
+    getScreenSizeChars?: boolean;
+    /**
+     * Ps=20  Report xterm window's icon label. Result is "OSC L label ST".  
+     * No default implementation.
+     */
+    getIconTitle?: boolean;
+    /**
+     * Ps=21  Report xterm window's title. Result is "OSC l label ST".  
+     * No default implementation.
+     */
+    getWinTitle?: boolean;
+    /**
+     * Ps=22 ; 0  Save xterm icon and window title on stack.
+     * Ps=22 ; 1  Save xterm icon title on stack.
+     * Ps=22 ; 2  Save xterm window title on stack.  
+     * All variants have a default implementation.
+     */
+    pushTitle?: boolean;
+    /**
+     * Ps=23 ; 0  Restore xterm icon and window title from stack.
+     * Ps=23 ; 1  Restore xterm icon title from stack.
+     * Ps=23 ; 2  Restore xterm window title from stack.  
+     * All variants have a default implementation.
+     */
+    popTitle?: boolean;
+    /**
+     * Ps>=24  Resize to Ps lines (DECSLPP).  
+     * DECSLPP is not implemented. This settings is also used to
+     * enable / disable DECCOLM (earlier variant of DECSLPP).
+     */
+    setWinLines?: boolean;
   }
 
   /**
@@ -410,6 +589,12 @@ declare module 'xterm' {
     readonly parser: IParser;
 
     /**
+     * (EXPERIMENTAL) Get the Unicode handling interface
+     * to register and switch Unicode version.
+     */
+    readonly unicode: IUnicodeHandling;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -420,6 +605,17 @@ declare module 'xterm' {
      * @param options An object containing a set of options.
      */
     constructor(options?: ITerminalOptions);
+
+    /**
+     * Adds an event listener for when a binary event fires. This is used to
+     * enable non UTF-8 conformant binary messages to be sent to the backend.
+     * Currently this is only used for a certain type of mouse reports that
+     * happen to be not UTF-8 compatible.
+     * The event value is a JS string, pass it to the underlying pty as
+     * binary data, e.g. `pty.write(Buffer.from(data, 'binary'))`.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBinary: IEvent<string>;
 
     /**
      * Adds an event listener for the cursor moves.
@@ -591,6 +787,11 @@ declare module 'xterm' {
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      */
+    registerMarker(cursorYOffset: number): IMarker;
+
+    /**
+     * @deprecated use `registerMarker` instead.
+     */
     addMarker(cursorYOffset: number): IMarker;
 
     /**
@@ -716,22 +917,12 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode'): boolean;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'colors'): string[];
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
     getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'handler'): (data: string) => void;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -773,25 +964,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode', value: boolean): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'colors', value: string[]): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
      */
     setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'handler', value: (data: string) => void): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -1023,6 +1202,13 @@ declare module 'xterm' {
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
+
+    /**
+     * Creates an empty cell object suitable as a cell reference in
+     * `line.getCell(x, cell)`. Use this to avoid costly recreation of
+     * cell objects when dealing with tons of cells.
+     */
+    getNullCell(): IBufferCell;
   }
 
   /**
@@ -1035,6 +1221,12 @@ declare module 'xterm' {
     readonly isWrapped: boolean;
 
     /**
+     * The length of the line, all call to getCell beyond the length will result
+     * in `undefined`.
+     */
+    readonly length: number;
+
+    /**
      * Gets a cell from the line, or undefined if the line index does not exist.
      *
      * Note that the result of this function should be used immediately after
@@ -1042,8 +1234,11 @@ declare module 'xterm' {
      * behavior.
      *
      * @param x The character index to get.
+     * @param cell Optional cell object to load data into for performance
+     * reasons. This is mainly useful when every cell in the buffer is being
+     * looped over to avoid creating new objects for every cell.
      */
-    getCell(x: number): IBufferCell | undefined;
+    getCell(x: number, cell?: IBufferCell): IBufferCell | undefined;
 
     /**
      * Gets the line as a string. Note that this is gets only the string for the
@@ -1061,22 +1256,105 @@ declare module 'xterm' {
    */
   interface IBufferCell {
     /**
-     * The character within the cell.
-     */
-    readonly char: string;
-
-    /**
      * The width of the character. Some examples:
      *
-     * - This is `1` for most cells.
-     * - This is `2` for wide character like CJK glyphs.
-     * - This is `0` for cells immediately following cells with a width of `2`.
+     * - `1` for most cells.
+     * - `2` for wide character like CJK glyphs.
+     * - `0` for cells immediately following cells with a width of `2`.
      */
-    readonly width: number;
+    getWidth(): number;
+
+    /**
+     * The character(s) within the cell. Examples of what this can contain:
+     *
+     * - A normal width character
+     * - A wide character (eg. CJK)
+     * - An emoji
+     */
+    getChars(): string;
+
+    /**
+     * Gets the UTF32 codepoint of single characters, if content is a combined
+     * string it returns the codepoint of the last character in the string.
+     */
+    getCode(): number;
+
+    /**
+     * Gets the number representation of the foreground color mode, this can be
+     * used to perform quick comparisons of 2 cells to see if they're the same.
+     * Use `isFgRGB`, `isFgPalette` and `isFgDefault` to check what color mode
+     * a cell is.
+     */
+    getFgColorMode(): number;
+
+    /**
+     * Gets the number representation of the background color mode, this can be
+     * used to perform quick comparisons of 2 cells to see if they're the same.
+     * Use `isBgRGB`, `isBgPalette` and `isBgDefault` to check what color mode
+     * a cell is.
+     */
+    getBgColorMode(): number;
+
+    /**
+     * Gets a cell's foreground color number, this differs depending on what the
+     * color mode of the cell is:
+     *
+     * - Default: This should be 0, representing the default foreground color
+     *   (CSI 39 m).
+     * - Palette: This is a number from 0 to 255 of ANSI colors (CSI 3(0-7) m,
+     *   CSI 9(0-7) m, CSI 38 ; 5 ; 0-255 m).
+     * - RGB: A hex value representing a 'true color': 0xRRGGBB.
+     *   (CSI 3 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
+     */
+    getFgColor(): number;
+
+    /**
+     * Gets a cell's background color number, this differs depending on what the
+     * color mode of the cell is:
+     *
+     * - Default: This should be 0, representing the default background color
+     *   (CSI 49 m).
+     * - Palette: This is a number from 0 to 255 of ANSI colors
+     *   (CSI 4(0-7) m, CSI 10(0-7) m, CSI 48 ; 5 ; 0-255 m).
+     * - RGB: A hex value representing a 'true color': 0xRRGGBB
+     *   (CSI 4 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
+     */
+    getBgColor(): number;
+
+    /** Whether the cell has the bold attribute (CSI 1 m). */
+    isBold(): number;
+    /** Whether the cell has the inverse attribute (CSI 3 m). */
+    isItalic(): number;
+    /** Whether the cell has the inverse attribute (CSI 2 m). */
+    isDim(): number;
+    /** Whether the cell has the underline attribute (CSI 4 m). */
+    isUnderline(): number;
+    /** Whether the cell has the inverse attribute (CSI 5 m). */
+    isBlink(): number;
+    /** Whether the cell has the inverse attribute (CSI 7 m). */
+    isInverse(): number;
+    /** Whether the cell has the inverse attribute (CSI 8 m). */
+    isInvisible(): number;
+
+    /** Whether the cell is using the RGB foreground color mode. */
+    isFgRGB(): boolean;
+    /** Whether the cell is using the RGB background color mode. */
+    isBgRGB(): boolean;
+    /** Whether the cell is using the palette foreground color mode. */
+    isFgPalette(): boolean;
+    /** Whether the cell is using the palette background color mode. */
+    isBgPalette(): boolean;
+    /** Whether the cell is using the default foreground color mode. */
+    isFgDefault(): boolean;
+    /** Whether the cell is using the default background color mode. */
+    isBgDefault(): boolean;
+
+    /** Whether the cell has the default attribute (no color or style). */
+    isAttributeDefault(): boolean;
   }
 
   /**
-   * (EXPERIMENTAL) Data type to register a CSI, DCS or ESC callback in the parser
+   * Data type to register a CSI, DCS or ESC callback in the parser
    * in the form:
    *    ESC I..I F
    *    CSI Prefix P..P I..I F
@@ -1120,7 +1398,7 @@ declare module 'xterm' {
   }
 
   /**
-   * (EXPERIMENTAL) Parser interface.
+   * Allows hooking into the parser for custom handling of escape sequences.
    */
   export interface IParser {
     /**
@@ -1135,7 +1413,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1154,7 +1432,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1167,7 +1445,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1185,6 +1463,42 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode version provider.
+   * Used to register custom Unicode versions with `Terminal.unicode.register`.
+   */
+  export interface IUnicodeVersionProvider {
+    /**
+     * String indicating the Unicode version provided.
+     */
+    readonly version: string;
+
+    /**
+     * Unicode version dependent wcwidth implementation.
+     */
+    wcwidth(codepoint: number): 0 | 1 | 2;
+  }
+
+  /**
+   * (EXPERIMENTAL) Unicode handling interface.
+   */
+  export interface IUnicodeHandling {
+    /**
+     * Register a custom Unicode version provider.
+     */
+    register(provider: IUnicodeVersionProvider): void;
+
+    /**
+     * Registered Unicode versions.
+     */
+    readonly versions: ReadonlyArray<string>;
+
+    /**
+     * Getter/setter for active Unicode version.
+     */
+    activeVersion: string;
   }
 }

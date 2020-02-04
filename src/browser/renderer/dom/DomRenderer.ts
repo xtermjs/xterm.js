@@ -11,6 +11,7 @@ import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Typ
 import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { color } from 'browser/Color';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -80,7 +81,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = new DomRendererRowFactory(document, this._optionsService);
+    this._rowFactory = new DomRendererRowFactory(document, this._optionsService, this._colors);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
@@ -176,13 +177,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Blink animation
     styles +=
-      `@keyframes blink_box_shadow {` +
+      `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
       ` 50% {` +
       `  box-shadow: none;` +
       ` }` +
       `}`;
     styles +=
-      `@keyframes blink_block {` +
+      `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
       ` 0% {` +
       `  background-color: ${this._colors.cursor.css};` +
       `  color: ${this._colors.cursorAccent.css};` +
@@ -199,17 +200,17 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` outline-offset: -1px;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
-      ` animation: blink_box_shadow 1s step-end infinite;` +
+      ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` animation: blink_block 1s step-end infinite;` +
+      ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${this._colors.cursor.css};` +
       ` color: ${this._colors.cursorAccent.css};` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-      ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
+      ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
@@ -234,7 +235,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     styles +=
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this._colors.background.css}; }` +
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
@@ -344,7 +345,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();
-    this._onRequestRefreshRows.fire({ start: 0, end: this._bufferService.rows - 1 });
   }
 
   public clear(): void {

@@ -5,11 +5,14 @@
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, ICharset } from 'common/Types';
 import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
-  applicationCursorKeys: false
+  applicationCursorKeys: false,
+  applicationKeypad: false,
+  origin: false,
+  wraparound: true // defaults: xterm - true, vt100 - false
 });
 
 export class CoreService implements ICoreService {
@@ -23,6 +26,8 @@ export class CoreService implements ICoreService {
   public get onData(): IEvent<string> { return this._onData.event; }
   private _onUserInput = new EventEmitter<void>();
   public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
+  private _onBinary = new EventEmitter<string>();
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
 
   constructor(
     // TODO: Move this into a service
@@ -58,5 +63,13 @@ export class CoreService implements ICoreService {
     // Fire onData API
     this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onData.fire(data);
+  }
+
+  public triggerBinaryEvent(data: string): void {
+    if (this._optionsService.options.disableStdin) {
+      return;
+    }
+    this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._onBinary.fire(data);
   }
 }

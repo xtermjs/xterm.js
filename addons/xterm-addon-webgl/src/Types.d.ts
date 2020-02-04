@@ -4,7 +4,7 @@
  */
 
 export interface IRasterizedGlyphSet {
-  [flags: number]: IRasterizedGlyph;
+  [bg: number]: { [fg: number]: IRasterizedGlyph } | undefined;
 }
 
 /**

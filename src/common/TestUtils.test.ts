@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset } from 'common/Types';
+import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
@@ -42,16 +43,33 @@ export class MockCoreMouseService implements ICoreMouseService {
   }
 }
 
+export class MockCharsetService implements ICharsetService {
+  serviceBrand: any;
+  charset: ICharset | undefined;
+  glevel: number = 0;
+  charsets: readonly ICharset[] = [];
+  reset(): void {}
+  setgLevel(g: number): void {}
+  setgCharset(g: number, charset: ICharset): void {}
+}
+
 export class MockCoreService implements ICoreService {
+  serviceBrand: any;
   isCursorInitialized: boolean = false;
   isCursorHidden: boolean = false;
   isFocused: boolean = false;
-  serviceBrand: any;
-  decPrivateModes: IDecPrivateModes = {} as any;
+  decPrivateModes: IDecPrivateModes = {
+    applicationCursorKeys: false,
+    applicationKeypad: false,
+    origin: false,
+    wraparound: true
+  };
   onData: IEvent<string> = new EventEmitter<string>().event;
   onUserInput: IEvent<void> = new EventEmitter<void>().event;
+  onBinary: IEvent<string> = new EventEmitter<string>().event;
   reset(): void {}
   triggerDataEvent(data: string, wasUserInput?: boolean): void {}
+  triggerBinaryEvent(data: string): void {}
 }
 
 export class MockDirtyRowService implements IDirtyRowService {
@@ -85,6 +103,21 @@ export class MockOptionsService implements IOptionsService {
     throw new Error('Method not implemented.');
   }
   getOption<T>(key: string): T {
+    throw new Error('Method not implemented.');
+  }
+}
+
+// defaults to V6 always to keep tests passing
+export class MockUnicodeService implements IUnicodeService {
+  private _provider = new UnicodeV6();
+  register(provider: IUnicodeVersionProvider): void {
+    throw new Error('Method not implemented.');
+  }
+  versions: string[] = [];
+  activeVersion: string = '';
+  onChange: IEvent<string> = new EventEmitter<string>().event;
+  wcwidth = (codepoint: number) => this._provider.wcwidth(codepoint);
+  getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');
   }
 }

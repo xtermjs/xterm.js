@@ -6,6 +6,7 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
+import { pollFor, timeout, writeSync } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -15,54 +16,46 @@ const width = 800;
 const height = 600;
 
 describe('API Integration Tests', function(): void {
-  this.timeout(20000);
-
-  before(async function(): Promise<any> {
+  before(async () => {
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
-      slowMo: 80,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
   });
 
-  after(() => {
-    browser.close();
-  });
+  after(async () => browser.close());
+  beforeEach(async () => page.goto(APP));
 
-  beforeEach(async () => {
-    await page.goto(APP);
-  });
-
-  it('Default options', async function(): Promise<any> {
+  it('Default options', async () => {
     await openTerminal();
     assert.equal(await page.evaluate(`window.term.cols`), 80);
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
-  it('write', async function(): Promise<any> {
+  it('write', async () => {
     await openTerminal();
     await page.evaluate(`
       window.term.write('foo');
       window.term.write('bar');
       window.term.write('文');
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
   });
 
-  it('write with callback', async function(): Promise<any> {
+  it('write with callback', async () => {
     await openTerminal();
     await page.evaluate(`
       window.term.write('foo', () => { window.__x = 'a'; });
       window.term.write('bar', () => { window.__x += 'b'; });
       window.term.write('文', () => { window.__x += 'c'; });
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
-    assert.equal(await page.evaluate(`window.__x`), 'abc');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.__x`, 'abc');
   });
 
-  it('write - bytes (UTF8)', async function(): Promise<any> {
+  it('write - bytes (UTF8)', async () => {
     await openTerminal();
     await page.evaluate(`
       // foo
@@ -72,10 +65,10 @@ describe('API Integration Tests', function(): void {
       // 文
       window.term.write(new Uint8Array([230, 150, 135]));
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
   });
 
-  it('write - bytes (UTF8) with callback', async function(): Promise<any> {
+  it('write - bytes (UTF8) with callback', async () => {
     await openTerminal();
     await page.evaluate(`
       // foo
@@ -85,48 +78,48 @@ describe('API Integration Tests', function(): void {
       // 文
       window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; });
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
-    assert.equal(await page.evaluate(`window.__x`), 'ABC');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.__x`, 'ABC');
   });
 
-  it('writeln', async function(): Promise<any> {
+  it('writeln', async () => {
     await openTerminal();
     await page.evaluate(`
       window.term.writeln('foo');
       window.term.writeln('bar');
       window.term.writeln('文');
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
   });
 
-  it('writeln with callback', async function(): Promise<any> {
+  it('writeln with callback', async () => {
     await openTerminal();
     await page.evaluate(`
       window.term.writeln('foo', () => { window.__x = '1'; });
       window.term.writeln('bar', () => { window.__x += '2'; });
       window.term.writeln('文', () => { window.__x += '3'; });
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
-    assert.equal(await page.evaluate(`window.__x`), '123');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
+    await pollFor(page, `window.__x`, '123');
   });
 
-  it('writeln - bytes (UTF8)', async function(): Promise<any> {
+  it('writeln - bytes (UTF8)', async () => {
     await openTerminal();
     await page.evaluate(`
       window.term.writeln(new Uint8Array([102, 111, 111]));
       window.term.writeln(new Uint8Array([98, 97, 114]));
       window.term.writeln(new Uint8Array([230, 150, 135]));
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
   });
 
-  it('paste', async function(): Promise<any> {
+  it('paste', async () => {
     await openTerminal();
     await page.evaluate(`
       window.calls = [];
@@ -137,26 +130,28 @@ describe('API Integration Tests', function(): void {
         window.term.paste('foo');
       });
     `);
-    assert.deepEqual(await page.evaluate(`window.calls`), ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~']);
+    await pollFor(page, `window.calls`, ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~']);
   });
 
-  it('clear', async function(): Promise<any> {
+  it('clear', async () => {
     await openTerminal({ rows: 5 });
     await page.evaluate(`
       window.term.write('test0');
+      window.parsed = 0;
       for (let i = 1; i < 10; i++) {
-        window.term.write('\\n\\rtest' + i);
+        window.term.write('\\n\\rtest' + i, () => window.parsed++);
       }
     `);
+    await pollFor(page, `window.parsed`, 9);
     await page.evaluate(`window.term.clear()`);
-    assert.equal(await page.evaluate(`window.term.buffer.length`), '5');
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'test9');
+    await pollFor(page, `window.term.buffer.length`, 5);
+    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'test9');
     for (let i = 1; i < 5; i++) {
-      assert.equal(await page.evaluate(`window.term.buffer.getLine(${i}).translateToString(true)`), '');
+      await pollFor(page, `window.term.buffer.getLine(${i}).translateToString(true)`, '');
     }
   });
 
-  it('getOption, setOption', async function(): Promise<any> {
+  it('getOption, setOption', async () => {
     await openTerminal();
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
     await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
@@ -164,9 +159,10 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('renderer', () => {
-    it('foreground', async function(): Promise<any> {
+    it('foreground', async () => {
       await openTerminal({ rendererType: 'dom' });
-      await page.evaluate(`window.term.write('\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7')`);
+      await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
+      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
         [
           document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
@@ -188,9 +184,10 @@ describe('API Integration Tests', function(): void {
       ]);
     });
 
-    it('background', async function(): Promise<any> {
+    it('background', async () => {
       await openTerminal({ rendererType: 'dom' });
-      await page.evaluate(`window.term.write('\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7')`);
+      await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
+      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
         [
           document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
@@ -213,7 +210,7 @@ describe('API Integration Tests', function(): void {
     });
   });
 
-  it('selection', async function(): Promise<any> {
+  it('selection', async () => {
     await openTerminal({ rows: 5, cols: 5 });
     await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
@@ -233,7 +230,7 @@ describe('API Integration Tests', function(): void {
     assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
   });
 
-  it('focus, blur', async function(): Promise<any> {
+  it('focus, blur', async () => {
     await openTerminal();
     assert.equal(await page.evaluate(`document.activeElement.className`), '');
     await page.evaluate(`window.term.focus()`);
@@ -243,7 +240,7 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('loadAddon', () => {
-    it('constructor', async function(): Promise<any> {
+    it('constructor', async () => {
       await openTerminal({ cols: 5 });
       await page.evaluate(`
         window.cols = 0;
@@ -255,7 +252,7 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.cols`), 5);
     });
 
-    it('dispose (addon)', async function(): Promise<any> {
+    it('dispose (addon)', async () => {
       await openTerminal();
       await page.evaluate(`
         window.disposeCalled = false
@@ -270,7 +267,7 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.disposeCalled`), true);
     });
 
-    it('dispose (terminal)', async function(): Promise<any> {
+    it('dispose (terminal)', async () => {
       await openTerminal();
       await page.evaluate(`
         window.disposeCalled = false
@@ -286,19 +283,19 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('Events', () => {
-    it('onCursorMove', async function(): Promise<any> {
+    it('onCursorMove', async () => {
       await openTerminal();
       await page.evaluate(`
         window.callCount = 0;
         window.term.onCursorMove(e => window.callCount++);
         window.term.write('foo');
       `);
-      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await pollFor(page, `window.callCount`, 1);
       await page.evaluate(`window.term.write('bar')`);
-      assert.equal(await page.evaluate(`window.callCount`), 2);
+      await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onData', async function(): Promise<any> {
+    it('onData', async () => {
       await openTerminal();
       await page.evaluate(`
         window.calls = [];
@@ -308,7 +305,7 @@ describe('API Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
-    it('onKey', async function(): Promise<any> {
+    it('onKey', async () => {
       await openTerminal();
       await page.evaluate(`
         window.calls = [];
@@ -318,19 +315,19 @@ describe('API Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
-    it('onLineFeed', async function(): Promise<any> {
+    it('onLineFeed', async () => {
       await openTerminal();
       await page.evaluate(`
         window.callCount = 0;
         window.term.onLineFeed(() => callCount++);
         window.term.writeln('foo');
       `);
-      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await pollFor(page, `window.callCount`, 1);
       await page.evaluate(`window.term.writeln('bar')`);
-      assert.equal(await page.evaluate(`window.callCount`), 2);
+      await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onScroll', async function(): Promise<any> {
+    it('onScroll', async () => {
       await openTerminal({ rows: 5 });
       await page.evaluate(`
         window.calls = [];
@@ -339,94 +336,97 @@ describe('API Integration Tests', function(): void {
           window.term.writeln('foo');
         }
       `);
-      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await pollFor(page, `window.calls`, []);
       await page.evaluate(`window.term.writeln('bar')`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [1]);
+      await pollFor(page, `window.calls`, [1]);
       await page.evaluate(`window.term.writeln('baz')`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [1, 2]);
+      await pollFor(page, `window.calls`, [1, 2]);
     });
 
-    it('onSelectionChange', async function(): Promise<any> {
+    it('onSelectionChange', async () => {
       await openTerminal();
       await page.evaluate(`
         window.callCount = 0;
         window.term.onSelectionChange(() => window.callCount++);
       `);
-      assert.equal(await page.evaluate(`window.callCount`), 0);
+      await pollFor(page, `window.callCount`, 0);
       await page.evaluate(`window.term.selectAll()`);
-      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await pollFor(page, `window.callCount`, 1);
       await page.evaluate(`window.term.clearSelection()`);
-      assert.equal(await page.evaluate(`window.callCount`), 2);
+      await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onRender', async function(): Promise<any> {
+    it('onRender', async function (): Promise<void> {
+      this.retries(3);
       await openTerminal();
+      await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
         window.term.onRender(e => window.calls.push([e.start, e.end]));
       `);
-      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await pollFor(page, `window.calls`, []);
       await page.evaluate(`window.term.write('foo')`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [[0, 0]]);
+      await pollFor(page, `window.calls`, [[0, 0]]);
       await page.evaluate(`window.term.write('bar\\n\\nbaz')`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [[0, 0], [0, 2]]);
+      await pollFor(page, `window.calls`, [[0, 0], [0, 2]]);
     });
 
-    it('onResize', async function(): Promise<any> {
+    it('onResize', async () => {
       await openTerminal();
+      await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
         window.term.onResize(e => window.calls.push([e.cols, e.rows]));
       `);
-      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await pollFor(page, `window.calls`, []);
       await page.evaluate(`window.term.resize(10, 5)`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [[10, 5]]);
+      await pollFor(page, `window.calls`, [[10, 5]]);
       await page.evaluate(`window.term.resize(20, 15)`);
-      assert.deepEqual(await page.evaluate(`window.calls`), [[10, 5], [20, 15]]);
+      await pollFor(page, `window.calls`, [[10, 5], [20, 15]]);
     });
 
-    it('onTitleChange', async function(): Promise<any> {
+    it('onTitleChange', async () => {
       await openTerminal();
       await page.evaluate(`
         window.calls = [];
         window.term.onTitleChange(e => window.calls.push(e));
       `);
-      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await pollFor(page, `window.calls`, []);
       await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
-      assert.deepEqual(await page.evaluate(`window.calls`), ['foo']);
+      await pollFor(page, `window.calls`, ['foo']);
     });
   });
 
   describe('buffer', () => {
-    it('cursorX, cursorY', async function(): Promise<any> {
+    it('cursorX, cursorY', async () => {
       await openTerminal({ rows: 5, cols: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
-      await page.evaluate(`window.term.write('foo')`);
+      await writeSync(page, 'foo');
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
-      await page.evaluate(`window.term.write('\\n')`);
+      await writeSync(page, '\\n');
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
-      await page.evaluate(`window.term.write('\\r')`);
+      await writeSync(page, '\\r');
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
-      await page.evaluate(`window.term.write('abcde')`);
+      await writeSync(page, 'abcde');
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 5);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
-      await page.evaluate(`window.term.write('\\n\\r\\n\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\r\\n\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 4);
     });
 
-    it('viewportY', async function(): Promise<any> {
+    it('viewportY', async () => {
       await openTerminal({ rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
-      await page.evaluate(`window.term.write('\\n')`);
+      await writeSync(page, '\\n');
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 1);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 5);
       await page.evaluate(`window.term.scrollLines(-1)`);
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 4);
@@ -434,14 +434,14 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
     });
 
-    it('baseY', async function(): Promise<any> {
+    it('baseY', async () => {
       await openTerminal({ rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
-      await page.evaluate(`window.term.write('\\n')`);
+      await writeSync(page, '\\n');
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 1);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
       await page.evaluate(`window.term.scrollLines(-1)`);
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
@@ -449,44 +449,44 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
     });
 
-    it('length', async function(): Promise<any> {
+    it('length', async () => {
       await openTerminal({ rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
-      await page.evaluate(`window.term.write('\\n')`);
+      await writeSync(page, '\\n');
       assert.equal(await page.evaluate(`window.term.buffer.length`), 6);
-      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.length`), 10);
     });
 
     describe('getLine', () => {
-      it('invalid index', async function(): Promise<any> {
+      it('invalid index', async () => {
         await openTerminal({ rows: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(-1)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(5)`), undefined);
       });
 
-      it('isWrapped', async function(): Promise<any> {
+      it('isWrapped', async () => {
         await openTerminal({ cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
-        await page.evaluate(`window.term.write('abcde')`);
+        await writeSync(page, 'abcde');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
-        await page.evaluate(`window.term.write('f')`);
+        await writeSync(page, 'f');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), true);
       });
 
-      it('translateToString', async function(): Promise<any> {
+      it('translateToString', async () => {
         await openTerminal({ cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), '     ');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), '');
-        await page.evaluate(`window.term.write('foo')`);
+        await writeSync(page, 'foo');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'foo  ');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-        await page.evaluate(`window.term.write('bar')`);
+        await writeSync(page, 'bar');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'fooba');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'fooba');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'r');
@@ -494,24 +494,24 @@ describe('API Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1, 3)`), 'oo');
       });
 
-      it('getCell', async function(): Promise<any> {
+      it('getCell', async () => {
         await openTerminal({ cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(-1)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(5)`), undefined);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), '');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
-        await page.evaluate(`window.term.write('a文')`);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), 'a');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).char`), '文');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).width`), 2);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).char`), '');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).width`), 0);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getChars()`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getWidth()`), 1);
+        await writeSync(page, 'a文');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getChars()`), 'a');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getWidth()`), 1);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).getChars()`), '文');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).getWidth()`), 2);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).getChars()`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).getWidth()`), 0);
       });
     });
   });
 
-  it('dispose', async function(): Promise<any> {
+  it('dispose', async () => {
     await page.evaluate(`
       window.term = new Terminal();
       window.term.dispose();
@@ -519,7 +519,7 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
 
-  it('dispose (opened)', async function(): Promise<any> {
+  it('dispose (opened)', async () => {
     await openTerminal();
     await page.evaluate(`window.term.dispose()`);
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);

@@ -209,7 +209,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this._fillLeftLineAtCell(x, y);
+    this._fillLeftLineAtCell(x, y, this._optionsService.options.cursorWidth);
     this._ctx.restore();
   }
 

@@ -121,15 +121,17 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
   /**
    * DEFAULT - CSI M Pb Px Py
    * Single byte encoding for coords and event code.
-   * Can encode values up to 223. The Encoding of higher
-   * values is not UTF-8 compatible (and currently limited
-   * to 95 in xterm.js).
+   * Can encode values up to 223 (1-based).
    */
   DEFAULT: (e: ICoreMouseEvent) => {
-    let params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
-    // FIXME: we are currently limited to ASCII range
-    params = params.map(v => (v > 127) ? 127 : v);
-    // FIXED: params = params.map(v => (v > 255) ? 0 : value);
+    const params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
+    // supress mouse report if we exceed addressible range
+    // Note this is handled differently by emulators
+    // - xterm:         sends 0;0 coords instead
+    // - vte, konsole:  no report
+    if (params[0] > 255 || params[1] > 255 || params[2] > 255) {
+      return '';
+    }
     return `\x1b[M${S(params[0])}${S(params[1])}${S(params[2])}`;
   },
   /**
@@ -266,7 +268,14 @@ export class CoreMouseService implements ICoreMouseService {
 
     // encode report and send
     const report = this._encodings[this._activeEncoding](e);
-    this._coreService.triggerDataEvent(report, true);
+    if (report) {
+      // always send DEFAULT as binary data
+      if (this._activeEncoding === 'DEFAULT') {
+        this._coreService.triggerBinaryEvent(report);
+      } else {
+        this._coreService.triggerDataEvent(report, true);
+      }
+    }
 
     this._lastEvent = e;
 

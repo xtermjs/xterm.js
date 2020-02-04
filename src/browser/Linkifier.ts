@@ -5,9 +5,8 @@
 
 import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
-import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ILogService, IBufferService } from 'common/services/Services';
+import { ILogService, IBufferService, IOptionsService, IUnicodeService } from 'common/services/Services';
 
 /**
  * Limit of the unwrapping line expansion (overscan) at the top and bottom
@@ -45,7 +44,9 @@ export class Linkifier implements ILinkifier {
 
   constructor(
     protected readonly _bufferService: IBufferService,
-    private readonly _logService: ILogService
+    private readonly _logService: ILogService,
+    private readonly _optionsService: IOptionsService,
+    private readonly _unicodeService: IUnicodeService
   ) {
     this._rowsToLinkify = {
       start: undefined,
@@ -277,8 +278,8 @@ export class Linkifier implements ILinkifier {
     if (!this._mouseZoneManager || !this._element) {
       return;
     }
-
-    const width = getStringCellWidth(uri);
+    // FIXME: get cell length from buffer to avoid mismatch after Unicode version change
+    const width = this._unicodeService.getStringCellWidth(uri);
     const x1 = x % this._bufferService.cols;
     const y1 = y + Math.floor(x / this._bufferService.cols);
     let x2 = (x1 + width) % this._bufferService.cols;
@@ -297,7 +298,13 @@ export class Linkifier implements ILinkifier {
         if (matcher.handler) {
           return matcher.handler(e, uri);
         }
-        window.open(uri, '_blank');
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.opener = null;
+          newWindow.location.href = uri;
+        } else {
+          console.warn('Opening link blocked as opener could not be cleared');
+        }
       },
       () => {
         this._onLinkHover.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));

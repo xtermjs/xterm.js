@@ -17,12 +17,13 @@ export function addDisposableDomListener(
   useCapture?: boolean
 ): IDisposable {
   node.addEventListener(type, handler, useCapture);
+  let disposed = false;
   return {
     dispose: () => {
-      if (!handler) {
-        // Already disposed
+      if (!disposed) {
         return;
       }
+      disposed = true;
       node.removeEventListener(type, handler, useCapture);
     }
   };

@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "main": "lib/xterm.js",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
@@ -26,10 +26,12 @@
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
-    "clean": "rm -rf lib out addons/*/lib addons/*/out"
+    "clean": "rm -rf lib out addons/*/lib addons/*/out",
+    "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
+    "@types/deep-equal": "^1.0.1",
     "@types/glob": "^5.0.35",
     "@types/jsdom": "11.0.1",
     "@types/mocha": "^2.2.33",
@@ -39,12 +41,14 @@
     "@types/webpack": "^4.4.11",
     "@types/ws": "^6.0.1",
     "chai": "3.5.0",
+    "deep-equal": "^1.1.0",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "glob": "^7.0.5",
     "jsdom": "^11.11.0",
     "mocha": "^6.1.4",
-    "node-pty": "0.7.6",
+    "mustache": "^3.0.1",
+    "node-pty": "^0.9.0",
     "nyc": "13",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",

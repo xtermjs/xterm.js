@@ -1,12 +1,15 @@
 /**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 import { assert } from 'chai';
-import { wcwidth } from 'common/CharWidth';
+import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 it('wcwidth should match all values from the old implementation', function(): void {
+  // new implementation
+  const wcwidthNew = (new UnicodeV6()).wcwidth;
+
   // old implementation
   const wcwidthOld = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
@@ -177,6 +180,6 @@ it('wcwidth should match all values from the old implementation', function(): vo
 
   // test full BMP range old vs new implmenetation
   for (let i = 0; i < 65536; ++i) {
-    assert.equal(wcwidth(i), wcwidthOld(i), `mismatch for i: ${i}`);
+    assert.equal(wcwidthNew(i), wcwidthOld(i), `mismatch for i: ${i}`);
   }
 });

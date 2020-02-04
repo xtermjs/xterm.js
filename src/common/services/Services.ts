@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -64,10 +64,12 @@ export interface ICoreService {
    */
   isCursorInitialized: boolean;
   isCursorHidden: boolean;
+
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
+  readonly onBinary: IEvent<string>;
 
   reset(): void;
 
@@ -78,8 +80,38 @@ export interface ICoreService {
    * resulting from parsing incoming data). When true this will also:
    * - Scroll to the bottom of the buffer.s
    * - Fire the `onUserInput` event (so selection can be cleared).
-    */
+   */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
+
+  /**
+   * Triggers the onBinary event in the public API.
+   * @param data The data that is being emitted.
+   */
+   triggerBinaryEvent(data: string): void;
+}
+
+export const ICharsetService = createDecorator<ICharsetService>('CharsetService');
+export interface ICharsetService {
+  serviceBrand: any;
+
+  charset: ICharset | undefined;
+  readonly glevel: number;
+  readonly charsets: ReadonlyArray<ICharset>;
+
+  reset(): void;
+
+  /**
+   * Set the G level of the terminal.
+   * @param g
+   */
+   setgLevel(g: number): void;
+
+  /**
+   * Set the charset for the given G level of the terminal.
+   * @param g
+   * @param charset
+   */
+  setgCharset(g: number, charset: ICharset): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
@@ -139,6 +171,7 @@ export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
+  getService<T>(id: IServiceIdentifier<T>): T | undefined;
 
   createInstance<T>(ctor: IConstructorSignature0<T>): T;
   createInstance<A1, T>(ctor: IConstructorSignature1<A1, T>, first: A1): T;
@@ -184,6 +217,7 @@ export interface IPartialTerminalOptions {
   cols?: number;
   cursorBlink?: boolean;
   cursorStyle?: 'block' | 'underline' | 'bar';
+  cursorWidth?: number;
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
   fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
@@ -207,6 +241,7 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
+  windowOptions?: IWindowOptions;
 }
 
 export interface ITerminalOptions {
@@ -216,6 +251,7 @@ export interface ITerminalOptions {
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
+  cursorWidth: number;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
@@ -229,6 +265,7 @@ export interface ITerminalOptions {
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
+  minimumContrastRatio: number;
   rendererType: RendererType;
   rightClickSelectsWord: boolean;
   rows: number;
@@ -238,14 +275,13 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
-  screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
 }
 
 export interface ITheme {
@@ -270,4 +306,27 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
+export interface IUnicodeService {
+  /** Register an Unicode version provider. */
+  register(provider: IUnicodeVersionProvider): void;
+  /** Registered Unicode versions. */
+  readonly versions: string[];
+  /** Currently active version. */
+  activeVersion: string;
+  /** Event triggered, when activate version changed. */
+  readonly onChange: IEvent<string>;
+
+  /**
+   * Unicode version dependent
+   */
+  wcwidth(codepoint: number): number;
+  getStringCellWidth(s: string): number;
+}
+
+export interface IUnicodeVersionProvider {
+  readonly version: string;
+  wcwidth(ucs: number): 0 | 1 | 2;
 }

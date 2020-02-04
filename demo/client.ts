@@ -12,16 +12,20 @@ import { Terminal } from '../out/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
+import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
 // import { AttachAddon } from 'xterm-addon-attach';
 // import { FitAddon } from 'xterm-addon-fit';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+// import { SerializeAddon } from 'xterm-addon-serialize';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
+// import { Unicode11Addon } from 'xterm-addon-unicode11';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -33,8 +37,10 @@ export interface IWindowWithTerminal extends Window {
   AttachAddon?: typeof AttachAddon;
   FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
+  SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  Unicode11Addon?: typeof Unicode11Addon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -44,7 +50,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'web-links' | 'webgl';
+type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -53,14 +59,18 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? typeof AttachAddon :
     T extends 'fit' ? typeof FitAddon :
     T extends 'search' ? typeof SearchAddon :
+    T extends 'serialize' ? typeof SerializeAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     typeof WebglAddon;
   instance?:
     T extends 'attach' ? AttachAddon :
     T extends 'fit' ? FitAddon :
     T extends 'search' ? SearchAddon :
+    T extends 'serialize' ? SerializeAddon :
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
+    T extends 'unicode11' ? typeof Unicode11Addon :
     never;
 }
 
@@ -68,8 +78,10 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
+  serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
-  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true }
+  webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true }
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -113,11 +125,14 @@ if (document.location.pathname === '/test') {
   window.AttachAddon = AttachAddon;
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
+  window.SerializeAddon = SerializeAddon;
+  window.Unicode11Addon = Unicode11Addon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+  document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
 }
 
 function createTerminal(): void {
@@ -133,12 +148,16 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as TerminalType;
-  addons['web-links'].instance = new WebLinksAddon();
   addons.search.instance = new SearchAddon();
+  addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
-  typedTerm.loadAddon(addons['web-links'].instance);
-  typedTerm.loadAddon(addons.search.instance);
+  addons.unicode11.instance = new Unicode11Addon();
+  addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
+  typedTerm.loadAddon(addons.search.instance);
+  typedTerm.loadAddon(addons.serialize.instance);
+  typedTerm.loadAddon(addons.unicode11.instance);
+  typedTerm.loadAddon(addons['web-links'].instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -239,12 +258,10 @@ function initOptions(term: TerminalType): void {
     // Internal only options
     'cancelEvents',
     'convertEol',
-    'handler',
-    'screenKeys',
     'termName',
-    'useFlowControl',
     // Complex option
-    'theme'
+    'theme',
+    'windowOptions'
   ];
   const stringOptions = {
     bellSound: null,
@@ -343,7 +360,15 @@ function initAddons(term: TerminalType): void {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
+        if (name === 'webgl') {
+          setTimeout(() => {
+            document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
+          }, 0);
+        }
       } else {
+        if (name === 'webgl') {
+          document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        }
         addon.instance!.dispose();
         addon.instance = undefined;
       }
@@ -376,4 +401,15 @@ function updateTerminalSize(): void {
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   addons.fit.instance.fit();
+}
+
+function serializeButtonHandler(): void {
+  const output = addons.serialize.instance.serialize();
+  const outputString = JSON.stringify(output);
+
+  document.getElementById('serialize-output').innerText = outputString;
+  if ((document.getElementById('write-to-terminal') as HTMLInputElement).checked) {
+    term.reset();
+    term.write(output);
+  }
 }
