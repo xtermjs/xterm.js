@@ -36,7 +36,7 @@ export class ServiceCollection {
     return this._entries.has(id);
   }
 
-  get<T>(id: IServiceIdentifier<T>): T {
+  get<T>(id: IServiceIdentifier<T>): T | undefined {
     return this._entries.get(id);
   }
 }
@@ -50,6 +50,10 @@ export class InstantiationService implements IInstantiationService {
 
   public setService<T>(id: IServiceIdentifier<T>, instance: T): void {
     this._services.set(id, instance);
+  }
+
+  public getService<T>(id: IServiceIdentifier<T>): T | undefined {
+    return this._services.get(id);
   }
 
   public createInstance<T>(ctor: any, ...args: any[]): any {

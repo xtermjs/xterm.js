@@ -17,10 +17,11 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IAttributeData, IDisposable } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
+import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IInstantiationService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { IRenderService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -55,6 +56,44 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
  */
 const MAX_PARSEBUFFER_LENGTH = 131072;
+
+/**
+ * Limit length of title and icon name stacks.
+ */
+const STACK_LIMIT = 10;
+
+// map params to window option
+function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
+  if (n > 24) {
+    return opts.setWinLines || false;
+  }
+  switch (n) {
+    case 1: return !!opts.restoreWin;
+    case 2: return !!opts.minimizeWin;
+    case 3: return !!opts.setWinPosition;
+    case 4: return !!opts.setWinSizePixels;
+    case 5: return !!opts.raiseWin;
+    case 6: return !!opts.lowerWin;
+    case 7: return !!opts.refreshWin;
+    case 8: return !!opts.setWinSizeChars;
+    case 9: return !!opts.maximizeWin;
+    case 10: return !!opts.fullscreenWin;
+    case 11: return !!opts.getWinState;
+    case 13: return !!opts.getWinPosition;
+    case 14: return !!opts.getWinSizePixels;
+    case 15: return !!opts.getScreenSizePixels;
+    case 16: return !!opts.getCellSizePixels;
+    case 18: return !!opts.getWinSizeChars;
+    case 19: return !!opts.getScreenSizeChars;
+    case 20: return !!opts.getIconTitle;
+    case 21: return !!opts.getWinTitle;
+    case 22: return !!opts.pushTitle;
+    case 23: return !!opts.popTitle;
+    case 24: return !!opts.setWinLines;
+  }
+  return false;
+}
+
 
 
 /**
@@ -177,6 +216,10 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
+  private _windowTitle = '';
+  private _iconName = '';
+  private _windowTitleStack: string[] = [];
+  private _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
@@ -204,6 +247,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
+    private readonly _instantiationService: IInstantiationService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -282,6 +326,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
     this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
     this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
+    this._parser.setCsiHandler({final: 't'}, params => this.windowOptions(params));
     this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
     this._parser.setCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
     this._parser.setCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
@@ -308,8 +353,9 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    this._parser.setOscHandler(0, new OscHandler((data: string) => this.setTitle(data)));
+    this._parser.setOscHandler(0, new OscHandler((data: string) => { this.setTitle(data); this.setIconName(data); }));
     //   1 - icon name
+    this._parser.setOscHandler(1, new OscHandler((data: string) => this.setIconName(data)));
     //   2 - title
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
@@ -575,6 +621,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Forward addCsiHandler from parser.
    */
   public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    if (id.final === 't' && !id.prefix && !id.intermediates) {
+      // security: always check whether window option is allowed
+      return this._parser.addCsiHandler(id, params => {
+        if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+          return true;
+        }
+        return callback(params);
+      });
+    }
     return this._parser.addCsiHandler(id, callback);
   }
 
@@ -1674,11 +1729,16 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._charsetService.setgCharset(3, DEFAULT_CHARSET);
           // set VT100 mode here
           break;
-        case 3: // 132 col mode
-          // TODO: move DECCOLM into compat addon
-          this._terminal.savedCols = this._bufferService.cols;
-          this._terminal.resize(132, this._bufferService.rows);
-          this._onRequestReset.fire();
+        case 3:
+          /**
+           * DECCOLM - 132 column mode.
+           * This is only active if 'SetWinLines' (24) is enabled
+           * through `options.windowsOptions`.
+           */
+          if (this._optionsService.options.windowOptions.setWinLines) {
+            this._terminal.resize(132, this._bufferService.rows);
+            this._onRequestReset.fire();
+          }
           break;
         case 6:
           this._coreService.decPrivateModes.origin = true;
@@ -1897,14 +1957,15 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.applicationCursorKeys = false;
           break;
         case 3:
-          // TODO: move DECCOLM into compat addon
-          // Note: This impl currently does not enforce col 80, instead reverts
-          // to previous terminal width before entering DECCOLM 132
-          if (this._bufferService.cols === 132 && this._terminal.savedCols) {
-            this._terminal.resize(this._terminal.savedCols, this._bufferService.rows);
+          /**
+           * DECCOLM - 80 column mode.
+           * This is only active if 'SetWinLines' (24) is enabled
+           * through `options.windowsOptions`.
+           */
+          if (this._optionsService.options.windowOptions.setWinLines) {
+            this._terminal.resize(80, this._bufferService.rows);
+            this._onRequestReset.fire();
           }
-          delete this._terminal.savedCols;
-          this._onRequestReset.fire();
           break;
         case 6:
           this._coreService.decPrivateModes.origin = false;
@@ -2365,6 +2426,92 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  /**
+   * CSI Ps ; Ps ; Ps t - Various window manipulations and reports (xterm)
+   *
+   * Note: Only those listed below are supported. All others are left to integrators and
+   * need special treatment based on the embedding environment.
+   *
+   *    Ps = 1 4                                                          supported
+   *      Report xterm text area size in pixels.
+   *      Result is CSI 4 ; height ; width t
+   *    Ps = 14 ; 2                                                       not implemented
+   *    Ps = 16                                                           supported
+   *      Report xterm character cell size in pixels.
+   *      Result is CSI 6 ; height ; width t
+   *    Ps = 18                                                           supported
+   *      Report the size of the text area in characters.
+   *      Result is CSI 8 ; height ; width t
+   *    Ps = 20                                                           supported
+   *      Report xterm window's icon label.
+   *      Result is OSC L label ST
+   *    Ps = 21                                                           supported
+   *      Report xterm window's title.
+   *      Result is OSC l label ST
+   *    Ps = 22 ; 0  -> Save xterm icon and window title on stack.        supported
+   *    Ps = 22 ; 1  -> Save xterm icon title on stack.                   supported
+   *    Ps = 22 ; 2  -> Save xterm window title on stack.                 supported
+   *    Ps = 23 ; 0  -> Restore xterm icon and window title from stack.   supported
+   *    Ps = 23 ; 1  -> Restore xterm icon title from stack.              supported
+   *    Ps = 23 ; 2  -> Restore xterm window title from stack.            supported
+   *    Ps >= 24                                                          not implemented
+   */
+  public windowOptions(params: IParams): void {
+    if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+      return;
+    }
+    const second = (params.length > 1) ? params.params[1] : 0;
+    const rs = this._instantiationService.getService(IRenderService);
+    switch (params.params[0]) {
+      case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
+        if (rs && second !== 2) {
+          console.log(rs.dimensions);
+          const w = rs.dimensions.scaledCanvasWidth.toFixed(0);
+          const h = rs.dimensions.scaledCanvasHeight.toFixed(0);
+          this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);
+        }
+        break;
+      case 16:  // GetCellSizePixels, returns CSI 6 ; height ; width t
+        if (rs) {
+          const w = rs.dimensions.scaledCellWidth.toFixed(0);
+          const h = rs.dimensions.scaledCellHeight.toFixed(0);
+          this._coreService.triggerDataEvent(`${C0.ESC}[6;${h};${w}t`);
+        }
+        break;
+      case 18:  // GetWinSizeChars, returns CSI 8 ; height ; width t
+        if (this._bufferService) {
+          this._coreService.triggerDataEvent(`${C0.ESC}[8;${this._bufferService.rows};${this._bufferService.cols}t`);
+        }
+        break;
+      case 22:  // PushTitle
+        if (second === 0 || second === 2) {
+          this._windowTitleStack.push(this._windowTitle);
+          if (this._windowTitleStack.length > STACK_LIMIT) {
+            this._windowTitleStack.shift();
+          }
+        }
+        if (second === 0 || second === 1) {
+          this._iconNameStack.push(this._iconName);
+          if (this._iconNameStack.length > STACK_LIMIT) {
+            this._iconNameStack.shift();
+          }
+        }
+        break;
+      case 23:  // PopTitle
+        if (second === 0 || second === 2) {
+          if (this._windowTitleStack.length) {
+            this.setTitle(this._windowTitleStack.pop());
+          }
+        }
+        if (second === 0 || second === 1) {
+          if (this._iconNameStack.length) {
+            this.setIconName(this._iconNameStack.pop());
+          }
+        }
+        break;
+    }
+  }
+
 
   /**
    * CSI s
@@ -2405,9 +2552,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
 
   /**
-   * OSC 0; <data> ST (set icon name + window title)
    * OSC 2; <data> ST (set window title)
-   *   Proxy to set window title. Icon name is not supported.
+   *   Proxy to set window title.
    *
    * @vt: #P[Icon name is not exposed.]   OSC    0   "Set Windows Title and Icon Name"  "OSC 0 ; Pt BEL"  "Set window title and icon name."
    * Icon name is not supported. For Window Title see below.
@@ -2416,7 +2562,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
    */
   public setTitle(data: string): void {
+    this._windowTitle = data;
     this._terminal.handleTitle(data);
+  }
+
+  /**
+   * OSC 1; <data> ST
+   * Note: Icon name is not exposed.
+   */
+  public setIconName(data: string): void {
+    this._iconName = data;
   }
 
   /**

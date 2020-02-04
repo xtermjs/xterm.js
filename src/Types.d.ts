@@ -23,7 +23,6 @@ export type LineData = CharData[];
 export interface IInputHandlingTerminal {
   insertMode: boolean;
   bracketedPasteMode: boolean;
-  savedCols: number;
   sendFocus: boolean;
 
   buffers: IBufferSet;

@@ -201,7 +201,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   onA11yTabEmitter: EventEmitter<number>;
   insertMode: boolean;
   bracketedPasteMode: boolean;
-  savedCols: number;
   sendFocus: boolean;
   buffers: IBufferSet;
   buffer: IBuffer = new MockBuffer();

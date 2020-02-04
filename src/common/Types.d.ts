@@ -258,3 +258,31 @@ export interface ICoreMouseProtocol {
  * (DEFAULT only supports up to 223 1-based as coord value).
  */
 export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
+
+/**
+ * windowOptions
+ */
+export interface IWindowOptions {
+  restoreWin?: boolean;
+  minimizeWin?: boolean;
+  setWinPosition?: boolean;
+  setWinSizePixels?: boolean;
+  raiseWin?: boolean;
+  lowerWin?: boolean;
+  refreshWin?: boolean;
+  setWinSizeChars?: boolean;
+  maximizeWin?: boolean;
+  fullscreenWin?: boolean;
+  getWinState?: boolean;
+  getWinPosition?: boolean;
+  getWinSizePixels?: boolean;
+  getScreenSizePixels?: boolean;
+  getCellSizePixels?: boolean;
+  getWinSizeChars?: boolean;
+  getScreenSizeChars?: boolean;
+  getIconTitle?: boolean;
+  getWinTitle?: boolean;
+  pushTitle?: boolean;
+  popTitle?: boolean;
+  setWinLines?: boolean;
+}

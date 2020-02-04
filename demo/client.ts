@@ -260,7 +260,8 @@ function initOptions(term: TerminalType): void {
     'convertEol',
     'termName',
     // Complex option
-    'theme'
+    'theme',
+    'windowOptions'
   ];
   const stringOptions = {
     bellSound: null,
