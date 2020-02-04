@@ -955,13 +955,6 @@ declare module 'xterm' {
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
-
-    /**
-     * Creates an empty cell object suitable as a cell reference in
-     * `line.getCell(x, cell)`. Use this to avoid costly recreation of
-     * cell objects when dealing with tons of cells.
-     */
-    getNullCell(): IBufferCell;
   }
 
   /**

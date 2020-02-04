@@ -16,9 +16,7 @@ abstract class BaseSerializeHandler {
   constructor(private _buffer: IBuffer) { }
 
   serialize(startRow: number, endRow: number): string {
-    // we need two of them to flip between old and new cell
-    const cell1 = this._buffer.getNullCell();
-    const cell2 = this._buffer.getNullCell();
+    const { cell1, cell2 } = this._getWorkCells();
     let oldCell = cell1;
 
     this._beforeSerialize(endRow - startRow);
@@ -42,6 +40,22 @@ abstract class BaseSerializeHandler {
     this._afterSerialize();
 
     return this._serializeString();
+  }
+
+  private _getWorkCells(): { cell1: IBufferCell, cell2: IBufferCell } {
+    const line = this._buffer.getLine(0);
+    if (!line) {
+      throw new Error('Could not fetch first line for serialization');
+    }
+    const cell1 = line.getCell(0);
+    if (!cell1) {
+      throw new Error('Could not fetch first cell for serialization');
+    }
+    const cell2 = line.getCell(0);
+    if (!cell2) {
+      throw new Error('Could not fetch first cell for serialization');
+    }
+    return { cell1, cell2 };
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }

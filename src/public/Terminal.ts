@@ -204,7 +204,6 @@ class BufferApiView implements IBufferApi {
     }
     return new BufferLineApiView(line);
   }
-  public getNullCell(): IBufferCellApi { return new CellData(); }
 }
 
 class BufferLineApiView implements IBufferLineApi {
