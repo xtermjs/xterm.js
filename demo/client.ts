@@ -248,10 +248,7 @@ function initOptions(term: TerminalType): void {
     // Internal only options
     'cancelEvents',
     'convertEol',
-    'handler',
-    'screenKeys',
     'termName',
-    'useFlowControl',
     // Complex option
     'theme',
     'windowOptions'
