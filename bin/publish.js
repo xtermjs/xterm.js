@@ -29,6 +29,8 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-attach'),
   path.resolve(__dirname, '../addons/xterm-addon-fit'),
   path.resolve(__dirname, '../addons/xterm-addon-search'),
+  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
+  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
   path.resolve(__dirname, '../addons/xterm-addon-web-links'),
   path.resolve(__dirname, '../addons/xterm-addon-webgl')
 ];
