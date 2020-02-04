@@ -274,13 +274,13 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
   termName: string;
-  windowOptions: IWindowOptions;
 }
 
 export interface ITheme {

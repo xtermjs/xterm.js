@@ -45,13 +45,13 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   theme: {},
   rightClickSelectsWord: isMac,
   rendererType: 'canvas',
+  windowOptions: {},
   windowsMode: false,
+  wordSeparator: ' ()[]{}\',"`',
 
   convertEol: false,
   termName: 'xterm',
-  cancelEvents: false,
-  windowOptions: {},
-  wordSeparator: ' ()[]{}\',"`'
+  cancelEvents: false
 });
 
 /**
