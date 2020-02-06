@@ -1,4 +1,5 @@
 node_modules/
+.history/
 *.swp
 .lock-wscript
 lib/

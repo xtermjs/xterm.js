@@ -877,7 +877,7 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
 }
 
 async function writeSync(data: string): Promise<void> {
-  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`);
+  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`) as Promise<void>;
 }
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
@@ -891,7 +891,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
       1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
     );
   `);
-  return await page.evaluate(`Array.from(window.result)`);
+  return await (page.evaluate(`Array.from(window.result)`) as Promise<number[]>);
 }
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
