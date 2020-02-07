@@ -1104,30 +1104,30 @@ declare module 'xterm' {
     range: IBufferRange;
 
     /**
-     * The url of the link.
+     * The text of the link.
      */
-    url: string;
+    text: string;
 
     /**
      * Called when the link's tooltip is ready to show.
      * @param event The mouse event triggering the callback.
-     * @param link
+     * @param text The text of the link.
      */
-    showTooltip?(event: MouseEvent, link: string): void;
+    showTooltip?(event: MouseEvent, teext: string): void;
 
     /**
      * Called when the link's tooltip is ready to hide.
      * @param event The mouse event triggering the callback.
-     * @param link
+     * @param text The text of the link.
      */
-    hideTooltip?(event: MouseEvent, link: string): void;
+    hideTooltip?(event: MouseEvent, text: string): void;
 
     /**
      * Calls when the link is activated.
      * @param event The mouse event triggering the callback.
-     * @param link
+     * @param text The text of the link.
      */
-    handle(event: MouseEvent, link: string): void;
+    handle(event: MouseEvent, text: string): void;
   }
 
   /**

@@ -30,8 +30,8 @@ export class LinkComputer {
     let stringIndex = -1;
 
     while ((match = rex.exec(line)) !== null) {
-      const url = match[1];
-      if (!url) {
+      const text = match[1];
+      if (!text) {
         // something matched but does not comply with the given matchIndex
         // since this is most likely a bug the regex itself we simply do nothing here
         console.log('match found without corresponding matchIndex');
@@ -42,14 +42,14 @@ export class LinkComputer {
       // therefore we cannot use match.index directly, instead we search the position
       // of the match group in text again
       // also correct regex and string search offsets for the next loop run
-      stringIndex = line.indexOf(url, stringIndex + 1);
-      rex.lastIndex = stringIndex + url.length;
+      stringIndex = line.indexOf(text, stringIndex + 1);
+      rex.lastIndex = stringIndex + text.length;
       if (stringIndex < 0) {
         // invalid stringIndex (should not have happened)
         break;
       }
 
-      let endX = stringIndex + url.length + 1;
+      let endX = stringIndex + text.length + 1;
       let endY = startLineIndex + 1;
 
       while (endX > terminal.cols) {
@@ -68,7 +68,7 @@ export class LinkComputer {
         }
       };
 
-      return { range, url, handle };
+      return { range, text, handle };
     }
   }
 

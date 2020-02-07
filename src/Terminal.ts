@@ -685,8 +685,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           } else {
             // according to MDN buttons only reports up to button 5 (AUX2)
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
-              ev.buttons & 4 ? CoreMouseButton.MIDDLE :
-                ev.buttons & 2 ? CoreMouseButton.RIGHT :
+                  ev.buttons & 4 ? CoreMouseButton.MIDDLE :
+                  ev.buttons & 2 ? CoreMouseButton.RIGHT :
                   CoreMouseButton.NONE; // fallback to NONE
           }
           break;

@@ -136,7 +136,7 @@ export class Linkifier2 implements ILinkifier2 {
     }
 
     if (this._linkAtPosition(this._currentLink, position)) {
-      this._currentLink.handle(event, this._currentLink.url);
+      this._currentLink.handle(event, this._currentLink.text);
     }
   }
 
@@ -187,7 +187,7 @@ export class Linkifier2 implements ILinkifier2 {
     element.classList.add('xterm-cursor-pointer');
 
     if (link.showTooltip) {
-      link.showTooltip(event, link.url);
+      link.showTooltip(event, link.text);
     }
   }
 
@@ -199,7 +199,7 @@ export class Linkifier2 implements ILinkifier2 {
     element.classList.remove('xterm-cursor-pointer');
 
     if (link.hideTooltip) {
-      link.hideTooltip(event, link.url);
+      link.hideTooltip(event, link.text);
     }
   }
 
