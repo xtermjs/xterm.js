@@ -19,8 +19,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
     terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
 
-    terminal.linkifier2.onShowTooltip(e => this._onLinkHover(e));
-    terminal.linkifier2.onHideTooltip(e => this._onLinkLeave(e));
+    terminal.linkifier2.onLinkHover(e => this._onLinkHover(e));
+    terminal.linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {

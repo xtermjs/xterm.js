@@ -27,8 +27,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     linkifier.onLinkHover(e => this._onLinkHover(e));
     linkifier.onLinkLeave(e => this._onLinkLeave(e));
 
-    linkifier2.onShowTooltip(e => this._onLinkHover(e));
-    linkifier2.onHideTooltip(e => this._onLinkLeave(e));
+    linkifier2.onLinkHover(e => this._onLinkHover(e));
+    linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public resize(dim: IRenderDimensions): void {

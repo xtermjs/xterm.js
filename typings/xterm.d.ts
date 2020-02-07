@@ -1109,25 +1109,25 @@ declare module 'xterm' {
     text: string;
 
     /**
-     * Called when the link's tooltip is ready to show.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     */
-    showTooltip?(event: MouseEvent, teext: string): void;
-
-    /**
-     * Called when the link's tooltip is ready to hide.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     */
-    hideTooltip?(event: MouseEvent, text: string): void;
-
-    /**
      * Calls when the link is activated.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
      */
     handle(event: MouseEvent, text: string): void;
+
+    /**
+     * Called when the mouse hovers the link.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     */
+    hover?(event: MouseEvent, text: string): void;
+
+    /**
+     * Called when the mouse leaves the link.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     */
+    leave?(event: MouseEvent, text: string): void;
   }
 
   /**

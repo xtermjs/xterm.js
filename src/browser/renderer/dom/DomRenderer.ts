@@ -90,8 +90,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._linkifier.onLinkHover(e => this._onLinkHover(e));
     this._linkifier.onLinkLeave(e => this._onLinkLeave(e));
 
-    this._linkifier2.onShowTooltip(e => this._onLinkHover(e));
-    this._linkifier2.onHideTooltip(e => this._onLinkLeave(e));
+    this._linkifier2.onLinkHover(e => this._onLinkHover(e));
+    this._linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {

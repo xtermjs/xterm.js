@@ -19,10 +19,10 @@ export class Linkifier2 implements ILinkifier2 {
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
 
-  private _onShowTooltip = new EventEmitter<ILinkifierEvent>();
-  public get onShowTooltip(): IEvent<ILinkifierEvent> { return this._onShowTooltip.event; }
-  private _onHideTooltip = new EventEmitter<ILinkifierEvent>();
-  public get onHideTooltip(): IEvent<ILinkifierEvent> { return this._onHideTooltip.event; }
+  private _onLinkHover = new EventEmitter<ILinkifierEvent>();
+  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
+  private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
+  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
 
   constructor(
     private readonly _bufferService: IBufferService
@@ -147,7 +147,7 @@ export class Linkifier2 implements ILinkifier2 {
 
     // If we have a start and end row, check that the link is within it
     if (!startRow || !endRow || (this._currentLink.range.start.y >= startRow && this._currentLink.range.end.y <= endRow)) {
-      this._hideTooltip(this._element, this._currentLink, this._lastMouseEvent);
+      this._linkLeave(this._element, this._currentLink, this._lastMouseEvent);
       this._currentLink = undefined;
       this._linkCacheDisposables.forEach(l => l.dispose());
       this._linkCacheDisposables = [];
@@ -168,7 +168,7 @@ export class Linkifier2 implements ILinkifier2 {
     // Show the tooltip if the we have a link at the position
     if (this._linkAtPosition(link, position)) {
       this._currentLink = link;
-      this._showTooltip(this._element, link, this._lastMouseEvent);
+      this._linkHover(this._element, link, this._lastMouseEvent);
 
       // Add listener for rerendering
       if (this._renderService) {
@@ -179,27 +179,27 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _showTooltip(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  private _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
-    this._onShowTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
+    this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
     element.classList.add('xterm-cursor-pointer');
 
-    if (link.showTooltip) {
-      link.showTooltip(event, link.text);
+    if (link.hover) {
+      link.hover(event, link.text);
     }
   }
 
-  private _hideTooltip(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  private _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
-    this._onHideTooltip.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
+    this._onLinkLeave.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
     element.classList.remove('xterm-cursor-pointer');
 
-    if (link.hideTooltip) {
-      link.hideTooltip(event, link.text);
+    if (link.leave) {
+      link.leave(event, link.text);
     }
   }
 

@@ -107,8 +107,8 @@ export interface ILinkifier {
 }
 
 export interface ILinkifier2 {
-  onShowTooltip: IEvent<ILinkifierEvent>;
-  onHideTooltip: IEvent<ILinkifierEvent>;
+  onLinkHover: IEvent<ILinkifierEvent>;
+  onLinkLeave: IEvent<ILinkifierEvent>;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -172,9 +172,9 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   text: string;
-  showTooltip?(event: MouseEvent, text: string): void;
-  hideTooltip?(event: MouseEvent, text: string): void;
   handle(event: MouseEvent, text: string): void;
+  hover?(event: MouseEvent, text: string): void;
+  leave?(event: MouseEvent, text: string): void;
 }
 
 interface IBufferRange {
