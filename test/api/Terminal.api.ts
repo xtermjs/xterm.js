@@ -524,6 +524,60 @@ describe('API Integration Tests', function(): void {
     await page.evaluate(`window.term.dispose()`);
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
+
+  describe.only('registerLinkProvider', () => {
+    it('should fire provideLink when hovering cells', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            calls.push(position);
+            cb(undefined);
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseToCell(page, dims, 1, 1);
+      await moveMouseToCell(page, dims, 2, 2);
+      await moveMouseToCell(page, dims, 10, 4);
+      await pollFor(page, `window.calls`, [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 10, y: 4 }]);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire hover and leave events on the link', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide');
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover'),
+                leave: () => window.calls.push('leave')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseToCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide', 'match', 'hover']);
+      await moveMouseToCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide']);
+      await moveMouseToCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide', 'provide', 'match', 'hover']);
+      await moveMouseToCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide', 'provide', 'match', 'hover', 'leave', 'provide']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
@@ -534,4 +588,52 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   } else {
     await page.waitForSelector('.xterm-text-layer');
   }
+}
+
+interface IDimensions {
+  top: number;
+  left: number;
+  renderDimensions: IRenderDimensions;
+}
+
+interface IRenderDimensions {
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
+  scaledCharLeft: number;
+  scaledCharTop: number;
+  scaledCanvasWidth: number;
+  scaledCanvasHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  actualCellWidth: number;
+  actualCellHeight: number;
+}
+
+async function getDimensions(): Promise<IDimensions> {
+  return await page.evaluate(`
+    (function() {
+      const rect = document.querySelector('.xterm-rows').getBoundingClientRect();
+      return {
+        top: rect.top,
+        left: rect.left,
+        renderDimensions: window.term._core._renderService.dimensions
+      };
+    })();
+  `);
+}
+
+async function getCellCoordinates(dimensions: IDimensions, col: number, row: number): Promise<{ x: number, y: number }> {
+  return {
+    x: dimensions.left + dimensions.renderDimensions.scaledCellWidth * (col - 0.5),
+    y: dimensions.top + dimensions.renderDimensions.scaledCellHeight * (row - 0.5)
+  };
+}
+
+async function moveMouseToCell(page: puppeteer.Page, dimensions: IDimensions, col: number, row: number) {
+  const coords = await getCellCoordinates(dimensions, col, row);
+  await page.mouse.move(coords.x, coords.y);
+  // Timeout is needed here otherwise the browser may drop events
+  await timeout(0);
 }

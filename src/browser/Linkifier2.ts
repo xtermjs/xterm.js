@@ -117,6 +117,7 @@ export class Linkifier2 implements ILinkifier2 {
             const currentLink = providerReplies.get(j);
             if (currentLink) {
               this._handleNewLink(currentLink);
+              break;
             }
           }
         }
@@ -165,7 +166,7 @@ export class Linkifier2 implements ILinkifier2 {
       return;
     }
 
-    // Show the tooltip if the we have a link at the position
+    // Trigger hover if the we have a link at the position
     if (this._linkAtPosition(link, position)) {
       this._currentLink = link;
       this._linkHover(this._element, link, this._lastMouseEvent);
@@ -215,8 +216,8 @@ export class Linkifier2 implements ILinkifier2 {
 
     // If the start and end have the same y, then the position must be between start and end x
     // If not, then handle each case seperately, depending on which way it wraps
-    return ((sameLine && link.range.start.x <= position.x && link.range.end.x > position.x) ||
-      (wrappedFromLeft && link.range.end.x > position.x) ||
+    return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
+      (wrappedFromLeft && link.range.end.x >= position.x) ||
       (wrappedToRight && link.range.start.x <= position.x) ||
       (wrappedFromLeft && wrappedToRight)) &&
       link.range.start.y <= position.y &&
