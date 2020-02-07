@@ -538,9 +538,9 @@ describe('API Integration Tests', function(): void {
         });
       `);
       const dims = await getDimensions();
-      await moveMouseToCell(page, dims, 1, 1);
-      await moveMouseToCell(page, dims, 2, 2);
-      await moveMouseToCell(page, dims, 10, 4);
+      await moveMouseCell(page, dims, 1, 1);
+      await moveMouseCell(page, dims, 2, 2);
+      await moveMouseCell(page, dims, 10, 4);
       await pollFor(page, `window.calls`, [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 10, y: 4 }]);
       await page.evaluate(`window.disposable.dispose()`);
     });
@@ -548,11 +548,13 @@ describe('API Integration Tests', function(): void {
     it('should fire hover and leave events on the link', async () => {
       await openTerminal({ rendererType: 'dom' });
       await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
           provideLink: (position, cb) => {
-            window.calls.push('provide');
+            window.calls.push('provide ' + position.x + ',' + position.y);
             if (position.x >= 5 && position.x <= 7 && position.y === 1) {
               window.calls.push('match');
               cb({
@@ -567,14 +569,61 @@ describe('API Integration Tests', function(): void {
         });
       `);
       const dims = await getDimensions();
-      await moveMouseToCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide', 'match', 'hover']);
-      await moveMouseToCell(page, dims, 4, 1);
-      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide']);
-      await moveMouseToCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide', 'provide', 'match', 'hover']);
-      await moveMouseToCell(page, dims, 8, 1);
-      await pollFor(page, `window.calls`, ['provide', 'match', 'hover', 'leave', 'provide', 'provide', 'match', 'hover', 'leave', 'provide']);
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover', 'leave', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire activate events when clicking the link', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'a b c');
+
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
+
+      // Focus terminal to avoid a render event clearing the active link
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 5);
+      await page.mouse.down();
+      await page.mouse.up();
+      await timeout(50); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
+
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            cb({
+              range: { start: position, end: position },
+              text: window.term.buffer.getLine(position.y - 1).getCell(position.x - 1).getChars(),
+              activate: (_, text) => window.calls.push('activate ' + text),
+              hover: () => window.calls.push('hover'),
+              leave: () => window.calls.push('leave')
+            });
+          }
+        });
+      `);
+      await moveMouseCell(page, dims, 3, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b']);
+      await moveMouseCell(page, dims, 1, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a']);
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover', 'activate c']);
       await page.evaluate(`window.disposable.dispose()`);
     });
   });
@@ -631,9 +680,7 @@ async function getCellCoordinates(dimensions: IDimensions, col: number, row: num
   };
 }
 
-async function moveMouseToCell(page: puppeteer.Page, dimensions: IDimensions, col: number, row: number) {
+async function moveMouseCell(page: puppeteer.Page, dimensions: IDimensions, col: number, row: number) {
   const coords = await getCellCoordinates(dimensions, col, row);
   await page.mouse.move(coords.x, coords.y);
-  // Timeout is needed here otherwise the browser may drop events
-  await timeout(0);
 }
