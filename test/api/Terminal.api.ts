@@ -525,7 +525,7 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
 
-  describe.only('registerLinkProvider', () => {
+  describe('registerLinkProvider', () => {
     it('should fire provideLink when hovering cells', async () => {
       await openTerminal({ rendererType: 'dom' });
       await page.evaluate(`
@@ -577,6 +577,39 @@ describe('API Integration Tests', function(): void {
       await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover']);
       await moveMouseCell(page, dims, 8, 1);
       await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover', 'leave', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should work fine when hover and leave callbacks are not provided', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match', 'provide 8,1']);
       await page.evaluate(`window.disposable.dispose()`);
     });
 
