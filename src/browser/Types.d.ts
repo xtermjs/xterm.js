@@ -172,7 +172,7 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   text: string;
-  handle(event: MouseEvent, text: string): void;
+  activate(event: MouseEvent, text: string): void;
   hover?(event: MouseEvent, text: string): void;
   leave?(event: MouseEvent, text: string): void;
 }

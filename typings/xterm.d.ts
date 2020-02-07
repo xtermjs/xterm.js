@@ -1113,7 +1113,7 @@ declare module 'xterm' {
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
      */
-    handle(event: MouseEvent, text: string): void;
+    activate(event: MouseEvent, text: string): void;
 
     /**
      * Called when the mouse hovers the link.

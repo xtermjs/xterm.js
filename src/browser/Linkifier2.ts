@@ -136,7 +136,7 @@ export class Linkifier2 implements ILinkifier2 {
     }
 
     if (this._linkAtPosition(this._currentLink, position)) {
-      this._currentLink.handle(event, this._currentLink.text);
+      this._currentLink.activate(event, this._currentLink.text);
     }
   }
 
