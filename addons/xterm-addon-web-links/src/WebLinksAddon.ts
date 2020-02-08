@@ -43,7 +43,8 @@ export class WebLinksAddon implements ITerminalAddon {
 
   constructor(
     private _handler: (event: MouseEvent, uri: string) => void = handleLink,
-    private _options: ILinkMatcherOptions = {}
+    private _options: ILinkMatcherOptions = {},
+    private _useLinkProvider: boolean = false
   ) {
     this._options.matchIndex = 1;
   }
@@ -51,10 +52,12 @@ export class WebLinksAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
 
-    if ('registerLinkProvider' in this._terminal) {
+    if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
+      console.log('link provider');
       this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler));
     } else {
-      // HACK: This is an older version of xterm.js, use registerLinkMatcher
+      console.log('link matcher');
+      // TODO: This should be removed eventually
       this._linkMatcherId = (<Terminal>this._terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
     }
   }
