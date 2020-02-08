@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
 import { ICharset, IAttributeData, CharData, CoreMouseEventType } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
-import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport } from 'browser/Types';
+import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -179,6 +179,7 @@ export interface IPublicTerminal extends IDisposable {
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): void;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
   addMarker(cursorYOffset: number): IMarker;
@@ -212,6 +213,7 @@ export interface IElementAccessor {
 
 export interface ILinkifierAccessor {
   linkifier: ILinkifier;
+  linkifier2: ILinkifier2;
 }
 
 // TODO: The options that are not in the public API should be reviewed

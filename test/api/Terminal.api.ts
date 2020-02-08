@@ -524,6 +524,142 @@ describe('API Integration Tests', function(): void {
     await page.evaluate(`window.term.dispose()`);
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
+
+  describe('registerLinkProvider', () => {
+    it('should fire provideLink when hovering cells', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            calls.push(position);
+            cb(undefined);
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 1, 1);
+      await moveMouseCell(page, dims, 2, 2);
+      await moveMouseCell(page, dims, 10, 4);
+      await pollFor(page, `window.calls`, [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 10, y: 4 }]);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire hover and leave events on the link', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover'),
+                leave: () => window.calls.push('leave')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover', 'leave', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should work fine when hover and leave callbacks are not provided', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire activate events when clicking the link', async () => {
+      await openTerminal({ rendererType: 'dom' });
+      await writeSync(page, 'a b c');
+
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
+
+      // Focus terminal to avoid a render event clearing the active link
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 5);
+      await page.mouse.down();
+      await page.mouse.up();
+      await timeout(50); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
+
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            cb({
+              range: { start: position, end: position },
+              text: window.term.buffer.getLine(position.y - 1).getCell(position.x - 1).getChars(),
+              activate: (_, text) => window.calls.push('activate ' + text),
+              hover: () => window.calls.push('hover'),
+              leave: () => window.calls.push('leave')
+            });
+          }
+        });
+      `);
+      await moveMouseCell(page, dims, 3, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b']);
+      await moveMouseCell(page, dims, 1, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a']);
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover', 'activate c']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
@@ -534,4 +670,50 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   } else {
     await page.waitForSelector('.xterm-text-layer');
   }
+}
+
+interface IDimensions {
+  top: number;
+  left: number;
+  renderDimensions: IRenderDimensions;
+}
+
+interface IRenderDimensions {
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
+  scaledCharLeft: number;
+  scaledCharTop: number;
+  scaledCanvasWidth: number;
+  scaledCanvasHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  actualCellWidth: number;
+  actualCellHeight: number;
+}
+
+async function getDimensions(): Promise<IDimensions> {
+  return await page.evaluate(`
+    (function() {
+      const rect = document.querySelector('.xterm-rows').getBoundingClientRect();
+      return {
+        top: rect.top,
+        left: rect.left,
+        renderDimensions: window.term._core._renderService.dimensions
+      };
+    })();
+  `);
+}
+
+async function getCellCoordinates(dimensions: IDimensions, col: number, row: number): Promise<{ x: number, y: number }> {
+  return {
+    x: dimensions.left + dimensions.renderDimensions.scaledCellWidth * (col - 0.5),
+    y: dimensions.top + dimensions.renderDimensions.scaledCellHeight * (row - 0.5)
+  };
+}
+
+async function moveMouseCell(page: puppeteer.Page, dimensions: IDimensions, col: number, row: number) {
+  const coords = await getCellCoordinates(dimensions, col, row);
+  await page.mouse.move(coords.x, coords.y);
 }

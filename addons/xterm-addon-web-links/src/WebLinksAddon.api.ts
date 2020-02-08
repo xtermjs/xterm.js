@@ -15,7 +15,7 @@ const width = 800;
 const height = 600;
 
 describe('WebLinksAddon', () => {
-  before(async function(): Promise<any> {
+  before(async function (): Promise<any> {
     this.timeout(10000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
@@ -29,29 +29,29 @@ describe('WebLinksAddon', () => {
     await browser.close();
   });
 
-  beforeEach(async function(): Promise<any> {
+  beforeEach(async function (): Promise<any> {
     this.timeout(5000);
     await page.goto(APP);
   });
 
-  it('.com', async function(): Promise<any> {
+  it('.com', async function (): Promise<any> {
     this.timeout(20000);
     await testHostName('foo.com');
   });
 
-  it('.com.au', async function(): Promise<any> {
+  it('.com.au', async function (): Promise<any> {
     this.timeout(20000);
     await testHostName('foo.com.au');
   });
 
-  it('.io', async function(): Promise<any> {
+  it('.io', async function (): Promise<any> {
     this.timeout(20000);
     await testHostName('foo.io');
   });
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal({ rendererType: 'dom' });
+  await openTerminal({ rendererType: 'dom', cols: 40 });
   await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   const data = `  http://${hostname}  \\r\\n` +
     `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +

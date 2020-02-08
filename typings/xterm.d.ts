@@ -387,10 +387,10 @@ declare module 'xterm' {
 
   /**
    * Enable various window manipulation and report features (CSI Ps ; Ps ; Ps t).
-   * 
+   *
    * Most settings have no default implementation, as they heavily rely on
    * the embedding environment.
-   * 
+   *
    * To implement a feature, create a custom CSI hook like this:
    * ```ts
    * term.parser.addCsiHandler({final: 't'}, params => {
@@ -403,8 +403,8 @@ declare module 'xterm' {
    *   return false;      // any Ps that was not handled
    * });
    * ```
-   * 
-   * Note on security:  
+   *
+   * Note on security:
    * Most features are meant to deal with some information of the host machine
    * where the terminal runs on. This is seen as a security risk possibly leaking
    * sensitive data of the host to the program in the terminal. Therefore all options
@@ -413,18 +413,18 @@ declare module 'xterm' {
    */
   export interface IWindowOptions {
     /**
-     * Ps=1    De-iconify window.  
+     * Ps=1    De-iconify window.
      * No default implementation.
      */
     restoreWin?: boolean;
     /**
-     * Ps=2    Iconify window.  
+     * Ps=2    Iconify window.
      * No default implementation.
      */
     minimizeWin?: boolean;
     /**
      * Ps=3 ; x ; y
-     * Move window to [x, y].  
+     * Move window to [x, y].
      * No default implementation.
      */
     setWinPosition?: boolean;
@@ -432,17 +432,17 @@ declare module 'xterm' {
      * Ps = 4 ; height ; width
      * Resize the window to given `height` and `width` in pixels.
      * Omitted parameters should reuse the current height or width.
-     * Zero parameters should use the display's height or width.  
+     * Zero parameters should use the display's height or width.
      * No default implementation.
      */
     setWinSizePixels?: boolean;
     /**
-     * Ps=5    Raise the window to the front of the stacking order.  
+     * Ps=5    Raise the window to the front of the stacking order.
      * No default implementation.
      */
     raiseWin?: boolean;
     /**
-     * Ps=6    Lower the xterm window to the bottom of the stacking order.  
+     * Ps=6    Lower the xterm window to the bottom of the stacking order.
      * No default implementation.
      */
     lowerWin?: boolean;
@@ -452,7 +452,7 @@ declare module 'xterm' {
      * Ps = 8 ; height ; width
      * Resize the text area to given height and width in characters.
      * Omitted parameters should reuse the current height or width.
-     * Zero parameters use the display's height or width.  
+     * Zero parameters use the display's height or width.
      * No default implementation.
      */
     setWinSizeChars?: boolean;
@@ -460,81 +460,81 @@ declare module 'xterm' {
      * Ps=9 ; 0   Restore maximized window.
      * Ps=9 ; 1   Maximize window (i.e., resize to screen size).
      * Ps=9 ; 2   Maximize window vertically.
-     * Ps=9 ; 3   Maximize window horizontally.  
+     * Ps=9 ; 3   Maximize window horizontally.
      * No default implementation.
      */
     maximizeWin?: boolean;
     /**
      * Ps=10 ; 0  Undo full-screen mode.
      * Ps=10 ; 1  Change to full-screen.
-     * Ps=10 ; 2  Toggle full-screen.  
+     * Ps=10 ; 2  Toggle full-screen.
      * No default implementation.
      */
     fullscreenWin?: boolean;
     /** Ps=11   Report xterm window state.
      * If the xterm window is non-iconified, it returns "CSI 1 t".
-     * If the xterm window is iconified, it returns "CSI 2 t".  
+     * If the xterm window is iconified, it returns "CSI 2 t".
      * No default implementation.
      */
     getWinState?: boolean;
     /**
      * Ps=13      Report xterm window position. Result is "CSI 3 ; x ; y t".
-     * Ps=13 ; 2  Report xterm text-area position. Result is "CSI 3 ; x ; y t".  
+     * Ps=13 ; 2  Report xterm text-area position. Result is "CSI 3 ; x ; y t".
      * No default implementation.
      */
     getWinPosition?: boolean;
     /**
      * Ps=14      Report xterm text area size in pixels. Result is "CSI 4 ; height ; width t".
-     * Ps=14 ; 2  Report xterm window size in pixels. Result is "CSI  4 ; height ; width t".  
+     * Ps=14 ; 2  Report xterm window size in pixels. Result is "CSI  4 ; height ; width t".
      * Has a default implementation.
      */
     getWinSizePixels?: boolean;
     /**
-     * Ps=15    Report size of the screen in pixels. Result is "CSI 5 ; height ; width t".  
+     * Ps=15    Report size of the screen in pixels. Result is "CSI 5 ; height ; width t".
      * No default implementation.
      */
     getScreenSizePixels?: boolean;
     /**
-     * Ps=16  Report xterm character cell size in pixels. Result is "CSI 6 ; height ; width t".  
+     * Ps=16  Report xterm character cell size in pixels. Result is "CSI 6 ; height ; width t".
      * Has a default implementation.
      */
     getCellSizePixels?: boolean;
     /**
-     * Ps=18  Report the size of the text area in characters. Result is "CSI 8 ; height ; width t".  
+     * Ps=18  Report the size of the text area in characters. Result is "CSI 8 ; height ; width t".
      * Has a default implementation.
      */
     getWinSizeChars?: boolean;
     /**
-     * Ps=19  Report the size of the screen in characters. Result is "CSI 9 ; height ; width t".  
+     * Ps=19  Report the size of the screen in characters. Result is "CSI 9 ; height ; width t".
      * No default implementation.
      */
     getScreenSizeChars?: boolean;
     /**
-     * Ps=20  Report xterm window's icon label. Result is "OSC L label ST".  
+     * Ps=20  Report xterm window's icon label. Result is "OSC L label ST".
      * No default implementation.
      */
     getIconTitle?: boolean;
     /**
-     * Ps=21  Report xterm window's title. Result is "OSC l label ST".  
+     * Ps=21  Report xterm window's title. Result is "OSC l label ST".
      * No default implementation.
      */
     getWinTitle?: boolean;
     /**
      * Ps=22 ; 0  Save xterm icon and window title on stack.
      * Ps=22 ; 1  Save xterm icon title on stack.
-     * Ps=22 ; 2  Save xterm window title on stack.  
+     * Ps=22 ; 2  Save xterm window title on stack.
      * All variants have a default implementation.
      */
     pushTitle?: boolean;
     /**
      * Ps=23 ; 0  Restore xterm icon and window title from stack.
      * Ps=23 ; 1  Restore xterm icon title from stack.
-     * Ps=23 ; 2  Restore xterm window title from stack.  
+     * Ps=23 ; 2  Restore xterm window title from stack.
      * All variants have a default implementation.
      */
     popTitle?: boolean;
     /**
-     * Ps>=24  Resize to Ps lines (DECSLPP).  
+     * Ps>=24  Resize to Ps lines (DECSLPP).
      * DECSLPP is not implemented. This settings is also used to
      * enable / disable DECCOLM (earlier variant of DECSLPP).
      */
@@ -722,6 +722,8 @@ declare module 'xterm' {
     /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
+     * @deprecated The link matcher API is now deprecated in favor of the link
+     * provider API, see `registerLinkProvider`.
      * @param regex The regular expression to search for, specifically this
      * searches the textContent of the rows. You will want to use \s to match a
      * space ' ' character for example.
@@ -733,9 +735,19 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
+     * @deprecated The link matcher API is now deprecated in favor of the link
+     * provider API, see `registerLinkProvider`.
      * @param matcherId The link matcher's ID (returned after register)
      */
     deregisterLinkMatcher(matcherId: number): void;
+
+    /**
+     * (EXPERIMENTAL) Registers a link provider, allowing a custom parser to
+     * be used to match and handle links. Multiple link providers can be used,
+     * they will be asked in the order in which they are registered.
+     * @param linkProvider The link provider to use to detect links.
+     */
+    registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 
     /**
      * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
@@ -1069,6 +1081,85 @@ declare module 'xterm' {
     /**
      * The y position of the cell. This is a 0-based index that refers to a
      * specific row.
+     */
+    y: number;
+  }
+
+  /**
+   * A custom link provider.
+   */
+  interface ILinkProvider {
+    /**
+     * Provides a link a buffer position
+     * @param position The position of the buffer that is currently active.
+     * @param callback The callback to be fired with the resulting link or
+     * `undefined` when ready.
+     */
+    provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void;
+  }
+
+  /**
+   * A link within the terminal.
+   */
+  interface ILink {
+    /**
+     * The buffer range of the link.
+     */
+    range: IBufferRange;
+
+    /**
+     * The text of the link.
+     */
+    text: string;
+
+    /**
+     * Calls when the link is activated.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     */
+    activate(event: MouseEvent, text: string): void;
+
+    /**
+     * Called when the mouse hovers the link.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     */
+    hover?(event: MouseEvent, text: string): void;
+
+    /**
+     * Called when the mouse leaves the link.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     */
+    leave?(event: MouseEvent, text: string): void;
+  }
+
+  /**
+   * A range within a buffer.
+   */
+  interface IBufferRange {
+    /**
+     * The start position of the range.
+     */
+    start: IBufferCellPosition;
+
+    /**
+     * The end position of the range.
+     */
+    end: IBufferCellPosition;
+  }
+
+  /**
+   * A position within a buffer.
+   */
+  interface IBufferCellPosition {
+    /**
+     * The x position within the buffer.
+     */
+    x: number;
+
+    /**
+     * The y position within the buffer.
      */
     y: number;
   }

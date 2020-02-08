@@ -167,7 +167,7 @@ export class Viewport extends Disposable implements IViewport {
   private _bubbleScroll(ev: Event, amount: number): boolean {
     const scrollPosFromTop = this._viewportElement.scrollTop + this._lastRecordedViewportHeight;
     if ((amount < 0 && this._viewportElement.scrollTop !== 0) ||
-        (amount > 0 &&  scrollPosFromTop < this._lastRecordedBufferHeight)) {
+      (amount > 0 && scrollPosFromTop < this._lastRecordedBufferHeight)) {
       if (ev.cancelable) {
         ev.preventDefault();
       }
@@ -235,8 +235,8 @@ export class Viewport extends Disposable implements IViewport {
     const modifier = this._optionsService.options.fastScrollModifier;
     // Multiply the scroll speed when the modifier is down
     if ((modifier === 'alt' && ev.altKey) ||
-        (modifier === 'ctrl' && ev.ctrlKey) ||
-        (modifier === 'shift' && ev.shiftKey)) {
+      (modifier === 'ctrl' && ev.ctrlKey) ||
+      (modifier === 'shift' && ev.shiftKey)) {
       return amount * this._optionsService.options.fastScrollSensitivity * this._optionsService.options.scrollSensitivity;
     }
 

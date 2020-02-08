@@ -10,7 +10,7 @@ import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICh
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifier } from 'browser/Types';
+import { IColorSet, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
@@ -33,7 +33,8 @@ export class Renderer extends Disposable implements IRenderer {
   constructor(
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
-    private readonly _linkifier: ILinkifier,
+    readonly linkifier: ILinkifier,
+    readonly linkifier2: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -47,7 +48,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._renderLayers = [
       new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
-      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, this._linkifier, this._bufferService, _optionsService),
+      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier, linkifier2, this._bufferService, _optionsService),
       new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService, coreBrowserService)
     ];
     this.dimensions = {

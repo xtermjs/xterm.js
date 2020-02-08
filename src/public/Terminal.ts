@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
@@ -71,6 +71,9 @@ export class Terminal implements ITerminalApi {
   }
   public deregisterLinkMatcher(matcherId: number): void {
     this._core.deregisterLinkMatcher(matcherId);
+  }
+  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     return this._core.registerCharacterJoiner(handler);
@@ -229,7 +232,7 @@ class BufferLineApiView implements IBufferLineApi {
 }
 
 class ParserApi implements IParser {
-  constructor(private _core: ITerminal) {}
+  constructor(private _core: ITerminal) { }
 
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
     return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
@@ -258,7 +261,7 @@ class ParserApi implements IParser {
 }
 
 class UnicodeApi implements IUnicodeHandling {
-  constructor(private _core: ITerminal) {}
+  constructor(private _core: ITerminal) { }
 
   public register(provider: IUnicodeVersionProvider): void {
     this._core.unicodeService.register(provider);
