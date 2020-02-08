@@ -53,10 +53,8 @@ export class WebLinksAddon implements ITerminalAddon {
     this._terminal = terminal;
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
-      console.log('link provider');
       this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler));
     } else {
-      console.log('link matcher');
       // TODO: This should be removed eventually
       this._linkMatcherId = (<Terminal>this._terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
     }
