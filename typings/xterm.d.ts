@@ -722,6 +722,8 @@ declare module 'xterm' {
     /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
+     * @deprecated The link matcher API is now deprecated in favor of the link
+     * provider API, see `registerLinkProvider`.
      * @param regex The regular expression to search for, specifically this
      * searches the textContent of the rows. You will want to use \s to match a
      * space ' ' character for example.
@@ -733,6 +735,8 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
+     * @deprecated The link matcher API is now deprecated in favor of the link
+     * provider API, see `registerLinkProvider`.
      * @param matcherId The link matcher's ID (returned after register)
      */
     deregisterLinkMatcher(matcherId: number): void;
