@@ -12,7 +12,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:
@@ -47,7 +47,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
@@ -69,7 +69,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
@@ -89,7 +89,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:
@@ -109,7 +109,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
@@ -134,7 +134,7 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:
