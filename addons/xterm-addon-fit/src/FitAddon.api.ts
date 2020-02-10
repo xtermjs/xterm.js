@@ -3,25 +3,25 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: playwright.Browser;
+let page: playwright.Page;
 const width = 1024;
 const height = 768;
 
 describe('FitAddon', () => {
-  before(async function(): Promise<any> {
+  before(async function (): Promise<any> {
     this.timeout(20000);
-    browser = await puppeteer.launch({
+    browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
+    page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
     await openTerminal();
@@ -31,7 +31,7 @@ describe('FitAddon', () => {
     await browser.close();
   });
 
-  it('no terminal', async function(): Promise<any> {
+  it('no terminal', async function (): Promise<any> {
     await page.evaluate(`window.fit = new FitAddon();`);
     assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
   });
@@ -41,7 +41,7 @@ describe('FitAddon', () => {
       return unloadFit();
     });
 
-    it('default', async function(): Promise<any> {
+    it('default', async function (): Promise<any> {
       await loadFit();
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 87,
@@ -49,7 +49,7 @@ describe('FitAddon', () => {
       });
     });
 
-    it('width', async function(): Promise<any> {
+    it('width', async function (): Promise<any> {
       await loadFit(1008);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 110,
@@ -57,7 +57,7 @@ describe('FitAddon', () => {
       });
     });
 
-    it('small', async function(): Promise<any> {
+    it('small', async function (): Promise<any> {
       await loadFit(1, 1);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 2,
@@ -71,21 +71,21 @@ describe('FitAddon', () => {
       return unloadFit();
     });
 
-    it('default', async function(): Promise<any> {
+    it('default', async function (): Promise<any> {
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 87);
       assert.equal(await page.evaluate(`window.term.rows`), 26);
     });
 
-    it('width', async function(): Promise<any> {
+    it('width', async function (): Promise<any> {
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 110);
       assert.equal(await page.evaluate(`window.term.rows`), 26);
     });
 
-    it('small', async function(): Promise<any> {
+    it('small', async function (): Promise<any> {
       await loadFit(1, 1);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 2);
@@ -115,4 +115,19 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   } else {
     await page.waitForSelector('.xterm-text-layer');
   }
+}
+
+function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
 }

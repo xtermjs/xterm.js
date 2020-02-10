@@ -3,25 +3,25 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
-import { pollFor, timeout, writeSync } from './TestUtils';
+import { pollFor, timeout, writeSync, getBrowserType } from './TestUtils';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
-describe('API Integration Tests', function(): void {
+describe('API Integration Tests', function (): void {
   before(async () => {
-    browser = await puppeteer.launch({
+    browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
+    page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
   });
 
@@ -713,7 +713,7 @@ async function getCellCoordinates(dimensions: IDimensions, col: number, row: num
   };
 }
 
-async function moveMouseCell(page: puppeteer.Page, dimensions: IDimensions, col: number, row: number) {
+async function moveMouseCell(page: Page, dimensions: IDimensions, col: number, row: number) {
   const coords = await getCellCoordinates(dimensions, col, row);
   await page.mouse.move(coords.x, coords.y);
 }

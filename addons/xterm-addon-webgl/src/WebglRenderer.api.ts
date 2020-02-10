@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
@@ -11,12 +11,12 @@ import deepEqual = require('deep-equal');
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: playwright.Browser;
+let page: playwright.Page;
 const width = 800;
 const height = 600;
 
-describe('WebGL Renderer Integration Tests', function(): void {
+describe('WebGL Renderer Integration Tests', function (): void {
   it('dispose removes renderer canvases', async () => {
     await setupBrowser();
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
@@ -504,7 +504,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color red inverse', async function(): Promise<void> {
+    it('foreground true color red inverse', async function (): Promise<void> {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -522,7 +522,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color red inverse', async function(): Promise<void> {
+    it('background true color red inverse', async function (): Promise<void> {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -850,7 +850,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
   });
 
   describe('allowTransparency', async () => {
-    before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true}));
+    before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true }));
     after(async () => browser.close());
     beforeEach(async () => page.evaluate(`window.term.reset()`));
     it('transparent background inverse', async () => {
@@ -895,11 +895,11 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 }
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
-  browser = await puppeteer.launch({
+  browser = await getBrowserType().launch({
     headless: process.argv.indexOf('--headless') !== -1,
     args: [`--window-size=${width},${height}`, `--no-sandbox`]
   });
-  page = (await browser.pages())[0];
+  page = (await browser.defaultContext().pages())[0];
   await page.setViewport({ width, height });
   await page.goto(APP);
   await openTerminal(options);
@@ -909,7 +909,7 @@ async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' })
   `);
 }
 
-export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
   if (preFn) {
     await preFn();
   }
@@ -938,3 +938,18 @@ const COLORS_16_TO_255 = [
   '#ffd7d7', '#ffd7ff', '#ffff00', '#ffff5f', '#ffff87', '#ffffaf', '#ffffd7', '#ffffff', '#080808', '#121212', '#1c1c1c', '#262626', '#303030', '#3a3a3a', '#444444', '#4e4e4e',
   '#585858', '#626262', '#6c6c6c', '#767676', '#808080', '#8a8a8a', '#949494', '#9e9e9e', '#a8a8a8', '#b2b2b2', '#bcbcbc', '#c6c6c6', '#d0d0d0', '#dadada', '#e4e4e4', '#eeeeee'
 ];
+
+function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
+}

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 import { readFile } from 'fs';
@@ -11,8 +11,8 @@ import { resolve } from 'path';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: playwright.Browser;
+let page: playwright.Page;
 const width = 800;
 const height = 600;
 
@@ -20,11 +20,11 @@ describe('Search Tests', function (): void {
   this.timeout(20000);
 
   before(async function (): Promise<any> {
-    browser = await puppeteer.launch({
+    browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
+    page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
     await openTerminal();
@@ -58,12 +58,12 @@ describe('Search Tests', function (): void {
     assert.deepEqual(await page.evaluate(`window.search.findNext('$^1_3{}test$#')`), true);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '$^1_3{}test$#');
   });
-  it ('Incremental Find Previous', async () => {
+  it('Incremental Find Previous', async () => {
     await page.evaluate(`window.term.writeln('package.jsonc\\n')`);
     await writeSync('package.json pack package.lock');
     await page.evaluate(`window.search.findPrevious('pack', {incremental: true})`);
     let line: string = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
-    let selectionPosition: {startColumn: number, startRow: number, endColumn: number, endRow: number} = await page.evaluate(`window.term.getSelectionPosition()`);
+    let selectionPosition: { startColumn: number, startRow: number, endColumn: number, endRow: number } = await page.evaluate(`window.term.getSelectionPosition()`);
     // We look further ahead in the line to ensure that pack was selected from package.lock
     assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
     await page.evaluate(`window.search.findPrevious('package.j', {incremental: true})`);
@@ -75,12 +75,12 @@ describe('Search Tests', function (): void {
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
     assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
   });
-  it ('Incremental Find Next', async () => {
+  it('Incremental Find Next', async () => {
     await page.evaluate(`window.term.writeln('package.lock pack package.json package.ups\\n')`);
     await writeSync('package.jsonc');
     await page.evaluate(`window.search.findNext('pack', {incremental: true})`);
     let line: string = await page.evaluate(`window.term.buffer.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
-    let selectionPosition: {startColumn: number, startRow: number, endColumn: number, endRow: number} = await page.evaluate(`window.term.getSelectionPosition()`);
+    let selectionPosition: { startColumn: number, startRow: number, endColumn: number, endRow: number } = await page.evaluate(`window.term.getSelectionPosition()`);
     // We look further ahead in the line to ensure that pack was selected from package.lock
     assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
     await page.evaluate(`window.search.findNext('package.j', {incremental: true})`);
@@ -210,4 +210,19 @@ function makeData(length: number): string {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
+}
+
+function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
 }

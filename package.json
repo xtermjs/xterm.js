@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
+    "@types/debug": "^4.1.5",
     "@types/deep-equal": "^1.0.1",
     "@types/glob": "^5.0.35",
     "@types/jsdom": "11.0.1",
@@ -50,6 +51,7 @@
     "mustache": "^3.0.1",
     "node-pty": "^0.9.0",
     "nyc": "13",
+    "playwright": "^0.10.0",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",
     "ts-loader": "^6.0.4",

@@ -3,24 +3,24 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: playwright.Browser;
+let page: playwright.Page;
 const width = 800;
 const height = 600;
 
 describe('SerializeAddon', () => {
   before(async function (): Promise<any> {
-    browser = await puppeteer.launch({
+    browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`]
     });
-    page = (await browser.pages())[0];
+    page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
     await openTerminal({ rows: 10, cols: 10, rendererType: 'dom' });
@@ -349,7 +349,7 @@ const DIM = '2';
 const NO_ITALIC = '23';
 const NO_DIM = '22';
 
-async function writeSync(page: puppeteer.Page, data: string): Promise<void> {
+async function writeSync(page: playwright.Page, data: string): Promise<void> {
   await page.evaluate(`
     window.ready = false;
     window.term.write('${data}', () => window.ready = true);
@@ -357,7 +357,7 @@ async function writeSync(page: puppeteer.Page, data: string): Promise<void> {
   await pollFor(page, 'window.ready', true);
 }
 
-async function pollFor(page: puppeteer.Page, fn: string, val: any, preFn?: () => Promise<void>): Promise<void> {
+async function pollFor(page: playwright.Page, fn: string, val: any, preFn?: () => Promise<void>): Promise<void> {
   if (preFn) {
     await preFn();
   }
@@ -367,4 +367,19 @@ async function pollFor(page: puppeteer.Page, fn: string, val: any, preFn?: () =>
       setTimeout(() => r(pollFor(page, fn, val, preFn)), 10);
     });
   }
+}
+
+function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
 }

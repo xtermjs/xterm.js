@@ -3,25 +3,25 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import { ITerminalOptions } from 'xterm';
 import { assert } from 'chai';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: playwright.Browser;
+let page: playwright.Page;
 const width = 800;
 const height = 600;
 
 describe('Unicode11Addon', () => {
-  before(async function(): Promise<any> {
+  before(async function (): Promise<any> {
     this.timeout(20000);
-    browser = await puppeteer.launch({
+    browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
+    page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
   });
 
@@ -29,7 +29,7 @@ describe('Unicode11Addon', () => {
     await browser.close();
   });
 
-  beforeEach(async function(): Promise<any> {
+  beforeEach(async function (): Promise<any> {
     this.timeout(20000);
     await page.goto(APP);
     await openTerminal();
@@ -58,4 +58,19 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   } else {
     await page.waitForSelector('.xterm-text-layer');
   }
+}
+
+function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
 }
