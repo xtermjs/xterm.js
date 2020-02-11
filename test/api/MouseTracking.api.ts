@@ -90,7 +90,7 @@ async function wheelUp(): Promise<void> {
     y: self._y,
     deltaX: 0,
     deltaY: -10,
-    modifiers: self._keyboard._modifiers
+    modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 async function wheelDown(): Promise<void> {
@@ -101,8 +101,25 @@ async function wheelDown(): Promise<void> {
     y: self._y,
     deltaX: 0,
     deltaY: 10,
-    modifiers: self._keyboard._modifiers
+    modifiers: toModifiersMask(page.keyboard._modifiers())
   });
+}
+
+function toModifiersMask(modifiers: Set<String>): number {
+  let mask = 0;
+  if (modifiers.has('Alt')) {
+    mask |= 1;
+  }
+  if (modifiers.has('Control')) {
+    mask |= 2;
+  }
+  if (modifiers.has('Meta')) {
+    mask |= 4;
+  }
+  if (modifiers.has('Shift')) {
+    mask |= 8;
+  }
+  return mask;
 }
 
 // button definitions
@@ -199,7 +216,7 @@ function parseReport(encoding: string, msg: number[]): { state: any; row: number
  * Mouse tracking tests.
  */
 describe('Mouse Tracking Tests', () => {
-  before(async function (): Promise<void> {
+  before(async function(): Promise<void> {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
