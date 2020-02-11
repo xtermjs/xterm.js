@@ -15,7 +15,7 @@ const width = 1024;
 const height = 768;
 
 describe('FitAddon', () => {
-  before(async function (): Promise<any> {
+  before(async function(): Promise<any> {
     this.timeout(20000);
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
@@ -31,7 +31,7 @@ describe('FitAddon', () => {
     await browser.close();
   });
 
-  it('no terminal', async function (): Promise<any> {
+  it('no terminal', async function(): Promise<any> {
     await page.evaluate(`window.fit = new FitAddon();`);
     assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
   });
@@ -41,7 +41,7 @@ describe('FitAddon', () => {
       return unloadFit();
     });
 
-    it('default', async function (): Promise<any> {
+    it('default', async function(): Promise<any> {
       await loadFit();
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 87,
@@ -49,7 +49,7 @@ describe('FitAddon', () => {
       });
     });
 
-    it('width', async function (): Promise<any> {
+    it('width', async function(): Promise<any> {
       await loadFit(1008);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 110,
@@ -57,7 +57,7 @@ describe('FitAddon', () => {
       });
     });
 
-    it('small', async function (): Promise<any> {
+    it('small', async function(): Promise<any> {
       await loadFit(1, 1);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 2,
@@ -71,21 +71,21 @@ describe('FitAddon', () => {
       return unloadFit();
     });
 
-    it('default', async function (): Promise<any> {
+    it('default', async function(): Promise<any> {
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 87);
       assert.equal(await page.evaluate(`window.term.rows`), 26);
     });
 
-    it('width', async function (): Promise<any> {
+    it('width', async function(): Promise<any> {
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 110);
       assert.equal(await page.evaluate(`window.term.rows`), 26);
     });
 
-    it('small', async function (): Promise<any> {
+    it('small', async function(): Promise<any> {
       await loadFit(1, 1);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 2);
