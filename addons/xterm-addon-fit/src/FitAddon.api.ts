@@ -5,7 +5,7 @@
 
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
+import { openTerminal } from '../../../out-test/api/TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -24,7 +24,7 @@ describe('FitAddon', () => {
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   after(async () => {
@@ -105,14 +105,4 @@ async function loadFit(width: number = 800, height: number = 450): Promise<void>
 
 async function unloadFit(): Promise<void> {
   await page.evaluate(`window.fit.dispose();`);
-}
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
 }

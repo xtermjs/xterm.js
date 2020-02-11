@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es6",
+      "es6"
     ],
     "rootDir": ".",
     "outDir": "../../out-test/api",
@@ -12,6 +12,8 @@
     "sourceMap": true,
     "removeComments": true,
     "pretty": true,
+    "declaration": true,
+    "composite": true,
     "strict": true
   },
   "include": [
