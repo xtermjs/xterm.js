@@ -46,7 +46,7 @@ async function resetMouseModes(): Promise<void> {
 }
 
 async function getReports(encoding: string): Promise<any[]> {
-  const reports: number[][] = await page.evaluate(`window.calls`);
+  const reports: any = await page.evaluate(`window.calls`);
   await page.evaluate(`window.calls = [];`);
   return reports.map((report: number[]) => parseReport(encoding, report));
 }
@@ -84,7 +84,7 @@ async function mouseUp(button: 'left' | 'right' | 'middle' | undefined): Promise
 }
 async function wheelUp(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
+  return await self._raw._client.send('Input.dispatchMouseEvent', {
     type: 'mouseWheel',
     x: self._x,
     y: self._y,
@@ -95,7 +95,7 @@ async function wheelUp(): Promise<void> {
 }
 async function wheelDown(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
+  return await self._raw._client.send('Input.dispatchMouseEvent', {
     type: 'mouseWheel',
     x: self._x,
     y: self._y,
