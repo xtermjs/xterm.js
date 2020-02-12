@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferSet as IBufferSetApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
-import { IBuffer } from 'common/buffer/Types';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
@@ -49,6 +49,7 @@ export class Terminal implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
+  public get buffers(): IBufferSetApi { return new BufferSetApiView(this._core.buffers); }
   public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
   public blur(): void {
     this._core.blur();
@@ -208,6 +209,25 @@ class BufferApiView implements IBufferApi {
     return new BufferLineApiView(line);
   }
   public getNullCell(): IBufferCellApi { return new CellData(); }
+}
+
+class BufferSetApiView implements IBufferSetApi {
+  constructor(private _buffers: IBufferSet) { }
+
+  public get alt(): IBufferApi { return new BufferApiView(this._buffers.alt); }
+  public get active(): IBufferApi { return new BufferApiView(this._buffers.active); }
+  public get normal(): IBufferApi { return new BufferApiView(this._buffers.normal); }
+
+  public get onBufferActivate(): IEvent<{ activeBuffer: IBufferApi, inactiveBuffer: IBufferApi }> {
+    return (listener: (arg1: { activeBuffer: IBufferApi, inactiveBuffer: IBufferApi }, arg2: void) => any) => {
+      return this._buffers.onBufferActivate((innerArg: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }) => {
+        listener({
+          activeBuffer: new BufferApiView(innerArg.activeBuffer),
+          inactiveBuffer: new BufferApiView(innerArg.inactiveBuffer)
+        });
+      });
+    };
+  }
 }
 
 class BufferLineApiView implements IBufferLineApi {

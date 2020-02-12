@@ -577,6 +577,11 @@ declare module 'xterm' {
     readonly buffer: IBuffer;
 
     /**
+     * (EXPERIMENTAL) The terminal's current bufferSet.
+     */
+    readonly buffers: IBufferSet;
+
+    /**
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
      * buffer is active this will always return [].
      */
@@ -1215,6 +1220,14 @@ declare module 'xterm' {
      * cell objects when dealing with tons of cells.
      */
     getNullCell(): IBufferCell;
+  }
+
+  interface IBufferSet {
+    readonly alt: IBuffer;
+    readonly normal: IBuffer;
+    readonly active: IBuffer;
+
+    onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
   }
 
   /**
