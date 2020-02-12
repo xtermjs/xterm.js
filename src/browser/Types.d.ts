@@ -5,6 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IDisposable } from 'common/Types';
+import { IMouseService, IRenderService } from './services/Services';
 
 export interface IColorManager {
   colors: IColorSet;
@@ -105,6 +106,14 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
+export interface ILinkifier2 {
+  onLinkHover: IEvent<ILinkifierEvent>;
+  onLinkLeave: IEvent<ILinkifierEvent>;
+
+  attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+}
+
 export interface ILinkMatcherOptions {
   /**
    * The index of the link from the regex.match(text) call. This defaults to 0
@@ -154,4 +163,26 @@ export interface IMouseZone {
   tooltipCallback: (e: MouseEvent) => any | undefined;
   leaveCallback: () => any | undefined;
   willLinkActivate: (e: MouseEvent) => boolean;
+}
+
+interface ILinkProvider {
+  provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void;
+}
+
+interface ILink {
+  range: IBufferRange;
+  text: string;
+  activate(event: MouseEvent, text: string): void;
+  hover?(event: MouseEvent, text: string): void;
+  leave?(event: MouseEvent, text: string): void;
+}
+
+interface IBufferRange {
+  start: IBufferCellPosition;
+  end: IBufferCellPosition;
+}
+
+interface IBufferCellPosition {
+  x: number;
+  y: number;
 }
