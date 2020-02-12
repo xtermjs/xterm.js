@@ -13,7 +13,6 @@
     "removeComments": true,
     "pretty": true,
     "declaration": true,
-    "composite": true,
     "strict": true
   },
   "include": [
