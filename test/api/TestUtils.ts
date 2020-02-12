@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-// import * as playwright from 'playwright';
 import * as playwright from 'playwright';
 import deepEqual = require('deep-equal');
 

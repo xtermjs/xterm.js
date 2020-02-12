@@ -7,6 +7,7 @@ import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 import { pollFor, getBrowserType } from './TestUtils';
 import { Page, Browser } from 'playwright';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -261,7 +262,7 @@ describe('InputHandler Integration Tests', function(): void {
     describe('SM: Set Mode', () => {
       describe('CSI ? Pm h', () => {
         it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async () => {
-          const coords: any = await page.evaluate(`
+          const coords: { left: number, top: number, bottom: number, right: number } = await page.evaluate(`
           (function() {
             const rect = window.term.element.getBoundingClientRect();
             return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right};
@@ -347,7 +348,7 @@ describe('InputHandler Integration Tests', function(): void {
     });
 
     describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
-      it('should be disabled by default', async function() {
+      it('should be disabled by default', async function(): Promise<any> {
         await page.evaluate(`(() => {
           window._stack = [];
           const _h = window.term.onData(data => window._stack.push(data));
@@ -360,7 +361,7 @@ describe('InputHandler Integration Tests', function(): void {
         })()`);
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
-      it('14 - GetWinSizePixels', async function() {
+      it('14 - GetWinSizePixels', async function(): Promise<any> {
         await page.evaluate(`window.term.setOption('windowOptions', {getWinSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
@@ -371,7 +372,7 @@ describe('InputHandler Integration Tests', function(): void {
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
-      it('16 - GetCellSizePixels', async function() {
+      it('16 - GetCellSizePixels', async function(): Promise<any> {
         await page.evaluate(`window.term.setOption('windowOptions', {getCellSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
@@ -443,7 +444,7 @@ async function getCursor(): Promise<{ col: number, row: number }> {
 }
 
 async function getDimensions(): Promise<any> {
-  const dim: any = await page.evaluate(`term._core._renderService.dimensions`);
+  const dim: IRenderDimensions = await page.evaluate(`term._core._renderService.dimensions`);
   return {
     cellWidth: dim.actualCellWidth.toFixed(0),
     cellHeight: dim.actualCellHeight.toFixed(0),

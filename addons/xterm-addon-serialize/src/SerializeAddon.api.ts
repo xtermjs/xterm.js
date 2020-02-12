@@ -15,7 +15,7 @@ const width = 800;
 const height = 600;
 
 describe('SerializeAddon', () => {
-  before(async function (): Promise<any> {
+  before(async function(): Promise<any> {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`]
@@ -33,13 +33,13 @@ describe('SerializeAddon', () => {
   after(async () => await browser.close());
   beforeEach(async () => await page.evaluate(`window.term.reset()`));
 
-  it('empty content', async function (): Promise<any> {
+  it('empty content', async function(): Promise<any> {
     const rows = 10;
     const cols = 10;
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
   });
 
-  it('trim last empty lines', async function (): Promise<any> {
+  it('trim last empty lines', async function(): Promise<any> {
     const cols = 10;
     const lines = [
       '',
@@ -58,7 +58,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.slice(0, 8).join('\r\n'));
   });
 
-  it('digits content', async function (): Promise<any> {
+  it('digits content', async function(): Promise<any> {
     const rows = 10;
     const cols = 10;
     const digitsLine = digitsString(cols);
@@ -67,7 +67,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize half rows of content', async function (): Promise<any> {
+  it('serialize half rows of content', async function(): Promise<any> {
     const rows = 10;
     const halfRows = rows >> 1;
     const cols = 10;
@@ -76,7 +76,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(halfRows, 2 * halfRows).join('\r\n'));
   });
 
-  it('serialize 0 rows of content', async function (): Promise<any> {
+  it('serialize 0 rows of content', async function(): Promise<any> {
     const rows = 10;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
@@ -84,7 +84,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), '');
   });
 
-  it('serialize all rows of content with color16', async function (): Promise<any> {
+  it('serialize all rows of content with color16', async function(): Promise<any> {
     const cols = 10;
     const color16 = [
       30, 31, 32, 33, 34, 35, 36, 37, // Set foreground color
@@ -101,7 +101,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with fg/bg flags', async function (): Promise<any> {
+  it('serialize all rows of content with fg/bg flags', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -122,7 +122,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256', async function (): Promise<any> {
+  it('serialize all rows of content with color256', async function(): Promise<any> {
     const rows = 32;
     const cols = 10;
     const lines = newArray<string>(
@@ -133,7 +133,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color16 and style separately', async function (): Promise<any> {
+  it('serialize all rows of content with color16 and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -152,7 +152,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color16 and style together', async function (): Promise<any> {
+  it('serialize all rows of content with color16 and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -174,7 +174,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256 and style separately', async function (): Promise<any> {
+  it('serialize all rows of content with color256 and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -193,7 +193,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256 and style together', async function (): Promise<any> {
+  it('serialize all rows of content with color256 and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -215,7 +215,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with colorRGB and style separately', async function (): Promise<any> {
+  it('serialize all rows of content with colorRGB and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -234,7 +234,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with colorRGB and style together', async function (): Promise<any> {
+  it('serialize all rows of content with colorRGB and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [

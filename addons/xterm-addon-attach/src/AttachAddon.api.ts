@@ -16,7 +16,7 @@ const width = 800;
 const height = 600;
 
 describe('AttachAddon', () => {
-  before(async function (): Promise<any> {
+  before(async function(): Promise<any> {
     this.timeout(20000);
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
@@ -30,12 +30,12 @@ describe('AttachAddon', () => {
     await browser.close();
   });
 
-  beforeEach(async function (): Promise<any> {
+  beforeEach(async function(): Promise<any> {
     this.timeout(20000);
     await page.goto(APP);
   });
 
-  it('string', async function (): Promise<any> {
+  it('string', async function(): Promise<any> {
     this.timeout(20000);
     await openTerminal({ rendererType: 'dom' });
     const port = 8080;
@@ -46,7 +46,7 @@ describe('AttachAddon', () => {
     server.close();
   });
 
-  it('utf8', async function (): Promise<any> {
+  it('utf8', async function(): Promise<any> {
     this.timeout(20000);
     await openTerminal({ rendererType: 'dom' });
     const port = 8080;

@@ -16,10 +16,10 @@ let page: playwright.Page;
 const width = 800;
 const height = 600;
 
-describe('Search Tests', function (): void {
+describe('Search Tests', function(): void {
   this.timeout(20000);
 
-  before(async function (): Promise<any> {
+  before(async function(): Promise<any> {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
