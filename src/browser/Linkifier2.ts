@@ -6,7 +6,7 @@
 import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent } from './Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
-import { IBufferService, ICoreService } from 'common/services/Services';
+import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 export class Linkifier2 implements ILinkifier2 {
@@ -180,7 +180,7 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
@@ -192,7 +192,7 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
