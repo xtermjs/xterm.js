@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferSet as IBufferSetApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
@@ -48,8 +48,7 @@ export class Terminal implements ITerminalApi {
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
-  public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
-  public get buffers(): IBufferSetApi { return new BufferSetApiView(this._core.buffers); }
+  public get buffer(): IBufferNamespaceApi { return new BufferNamespaceApi(this._core.buffers); }
   public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
   public blur(): void {
     this._core.blur();
@@ -194,8 +193,13 @@ export class Terminal implements ITerminalApi {
 }
 
 class BufferApiView implements IBufferApi {
-  constructor(private _buffer: IBuffer) { }
+  constructor(private _buffer: IBuffer, private _buffers: IBufferSet) { }
 
+  public get type(): 'normal' | 'alternate' {
+    if (this._buffers.normal === this._buffer) { return 'normal'; }
+    else if (this._buffers.alt === this._buffer) { return 'alternate'; }
+    throw new Error('Unknown buffer type');
+  }
   public get cursorY(): number { return this._buffer.y; }
   public get cursorX(): number { return this._buffer.x; }
   public get viewportY(): number { return this._buffer.ydisp; }
@@ -211,20 +215,17 @@ class BufferApiView implements IBufferApi {
   public getNullCell(): IBufferCellApi { return new CellData(); }
 }
 
-class BufferSetApiView implements IBufferSetApi {
+class BufferNamespaceApi implements IBufferNamespaceApi {
   constructor(private _buffers: IBufferSet) { }
 
-  public get alt(): IBufferApi { return new BufferApiView(this._buffers.alt); }
-  public get active(): IBufferApi { return new BufferApiView(this._buffers.active); }
-  public get normal(): IBufferApi { return new BufferApiView(this._buffers.normal); }
+  public get alternate(): IBufferApi { return new BufferApiView(this._buffers.alt, this._buffers); }
+  public get active(): IBufferApi { return new BufferApiView(this._buffers.active, this._buffers); }
+  public get normal(): IBufferApi { return new BufferApiView(this._buffers.normal, this._buffers); }
 
-  public get onBufferActivate(): IEvent<{ activeBuffer: IBufferApi, inactiveBuffer: IBufferApi }> {
-    return (listener: (arg1: { activeBuffer: IBufferApi, inactiveBuffer: IBufferApi }, arg2: void) => any) => {
-      return this._buffers.onBufferActivate((innerArg: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }) => {
-        listener({
-          activeBuffer: new BufferApiView(innerArg.activeBuffer),
-          inactiveBuffer: new BufferApiView(innerArg.inactiveBuffer)
-        });
+  public get onBufferChange(): IEvent<IBufferApi> {
+    return (listener: (buffer: IBufferApi, unused: void) => any): IDisposable => {
+      return this._buffers.onBufferActivate((arg1: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }) => {
+        listener(new BufferApiView(arg1.activeBuffer, this._buffers));
       });
     };
   }

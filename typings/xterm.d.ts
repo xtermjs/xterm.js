@@ -574,12 +574,7 @@ declare module 'xterm' {
      * normal buffer or the alt buffer depending on what's running in the
      * terminal.
      */
-    readonly buffer: IBuffer;
-
-    /**
-     * (EXPERIMENTAL) The terminal's current bufferSet.
-     */
-    readonly buffers: IBufferSet;
+    readonly buffer: IBufferNamespace;
 
     /**
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
@@ -1174,6 +1169,10 @@ declare module 'xterm' {
    */
   interface IBuffer {
     /**
+     * The type of the buffer.
+     */
+    readonly type: 'normal' | 'alternate';
+    /**
      * The y position of the cursor. This ranges between `0` (when the
      * cursor is at baseY) and `Terminal.rows - 1` (when the cursor is on the
      * last row).
@@ -1222,12 +1221,12 @@ declare module 'xterm' {
     getNullCell(): IBufferCell;
   }
 
-  interface IBufferSet {
-    readonly alt: IBuffer;
+  interface IBufferNamespace {
+    readonly alternate: IBuffer;
     readonly normal: IBuffer;
     readonly active: IBuffer;
 
-    onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
+    onBufferChange: IEvent<IBuffer>;
   }
 
   /**
