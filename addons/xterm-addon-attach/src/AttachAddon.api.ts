@@ -4,9 +4,8 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
 import WebSocket = require('ws');
+import { openTerminal, pollFor } from '../../../out-test/api/TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -37,7 +36,7 @@ describe('AttachAddon', () => {
 
   it('string', async function(): Promise<any> {
     this.timeout(20000);
-    await openTerminal({ rendererType: 'dom' });
+    await openTerminal(page, { rendererType: 'dom' });
     const port = 8080;
     const server = new WebSocket.Server({ port });
     server.on('connection', socket => socket.send('foo'));
@@ -48,7 +47,7 @@ describe('AttachAddon', () => {
 
   it('utf8', async function(): Promise<any> {
     this.timeout(20000);
-    await openTerminal({ rendererType: 'dom' });
+    await openTerminal(page, { rendererType: 'dom' });
     const port = 8080;
     const server = new WebSocket.Server({ port });
     const data = new Uint8Array([102, 111, 111]);
@@ -58,22 +57,3 @@ describe('AttachAddon', () => {
     server.close();
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
-
-async function pollFor(page: puppeteer.Page, fn: string, val: any): Promise<void> {
-  const result = await page.evaluate(fn);
-  if (result !== val) {
-    return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, fn, val)), 10);
-    });
-  }
-}
