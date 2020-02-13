@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions } from 'xterm';
-import { pollFor, getBrowserType } from './TestUtils';
+import { pollFor, getBrowserType, openTerminal } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -23,7 +22,7 @@ describe('CharWidth Integration Tests', function(): void {
     page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
-    await openTerminal({ rows: 5, cols: 30 });
+    await openTerminal(page, { rows: 5, cols: 30 });
   });
 
   after(() => {
@@ -74,16 +73,6 @@ describe('CharWidth Integration Tests', function(): void {
     // TODO: multiline tests once #1685 is resolved
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
 
 async function sumWidths(start: number, end: number, sentinel: string): Promise<number> {
   await page.evaluate(`

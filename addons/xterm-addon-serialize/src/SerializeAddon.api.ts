@@ -5,7 +5,7 @@
 
 import * as playwright from 'playwright';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
+import { openTerminal, writeSync } from '../../../out-test/api/TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -23,7 +23,7 @@ describe('SerializeAddon', () => {
     page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
-    await openTerminal({ rows: 10, cols: 10, rendererType: 'dom' });
+    await openTerminal(page, { rows: 10, cols: 10, rendererType: 'dom' });
     await page.evaluate(`
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
@@ -272,16 +272,6 @@ describe('SerializeAddon', () => {
   });
 });
 
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
-
 function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
   const array: T[] = new Array<T>(count);
   for (let i = 0; i < array.length; i++) {
@@ -348,38 +338,3 @@ const DIM = '2';
 
 const NO_ITALIC = '23';
 const NO_DIM = '22';
-
-async function writeSync(page: playwright.Page, data: string): Promise<void> {
-  await page.evaluate(`
-    window.ready = false;
-    window.term.write('${data}', () => window.ready = true);
-  `);
-  await pollFor(page, 'window.ready', true);
-}
-
-async function pollFor(page: playwright.Page, fn: string, val: any, preFn?: () => Promise<void>): Promise<void> {
-  if (preFn) {
-    await preFn();
-  }
-  const result = await page.evaluate(fn);
-  if (result !== val) {
-    return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, fn, val, preFn)), 10);
-    });
-  }
-}
-
-function getBrowserType(): playwright.BrowserType {
-  // Default to chromium
-  let browserType: playwright.BrowserType = playwright['chromium'];
-
-  const index = process.argv.indexOf('--browser');
-  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
-    const string = process.argv[index + 1];
-    if (string === 'firefox' || string === 'webkit') {
-      browserType = playwright[string];
-    }
-  }
-
-  return browserType;
-}

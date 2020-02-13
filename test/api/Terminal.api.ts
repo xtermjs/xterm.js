@@ -4,8 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
-import { pollFor, timeout, writeSync, getBrowserType } from './TestUtils';
+import { pollFor, timeout, writeSync, openTerminal, getBrowserType } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -15,7 +14,7 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-describe('API Integration Tests', function (): void {
+describe('API Integration Tests', function(): void {
   before(async () => {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
@@ -29,13 +28,13 @@ describe('API Integration Tests', function (): void {
   beforeEach(async () => page.goto(APP));
 
   it('Default options', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`window.term.cols`), 80);
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
   it('write', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.write('foo');
       window.term.write('bar');
@@ -45,7 +44,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('write with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.write('foo', () => { window.__x = 'a'; });
       window.term.write('bar', () => { window.__x += 'b'; });
@@ -56,7 +55,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('write - bytes (UTF8)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       // foo
       window.term.write(new Uint8Array([102, 111, 111]));
@@ -69,7 +68,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('write - bytes (UTF8) with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       // foo
       window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; });
@@ -83,7 +82,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('writeln', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln('foo');
       window.term.writeln('bar');
@@ -95,7 +94,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('writeln with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln('foo', () => { window.__x = '1'; });
       window.term.writeln('bar', () => { window.__x += '2'; });
@@ -108,7 +107,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('writeln - bytes (UTF8)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln(new Uint8Array([102, 111, 111]));
       window.term.writeln(new Uint8Array([98, 97, 114]));
@@ -120,7 +119,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('paste', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.calls = [];
       window.term.onData(e => calls.push(e));
@@ -134,7 +133,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('clear', async () => {
-    await openTerminal({ rows: 5 });
+    await openTerminal(page, { rows: 5 });
     await page.evaluate(`
       window.term.write('test0');
       window.parsed = 0;
@@ -152,7 +151,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('getOption, setOption', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
     await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
@@ -160,7 +159,7 @@ describe('API Integration Tests', function (): void {
 
   describe('renderer', () => {
     it('foreground', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -185,7 +184,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('background', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -211,7 +210,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('selection', async () => {
-    await openTerminal({ rows: 5, cols: 5 });
+    await openTerminal(page, { rows: 5, cols: 5 });
     await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
@@ -231,7 +230,7 @@ describe('API Integration Tests', function (): void {
   });
 
   it('focus, blur', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`document.activeElement.className`), '');
     await page.evaluate(`window.term.focus()`);
     assert.equal(await page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
@@ -241,7 +240,7 @@ describe('API Integration Tests', function (): void {
 
   describe('loadAddon', () => {
     it('constructor', async () => {
-      await openTerminal({ cols: 5 });
+      await openTerminal(page, { cols: 5 });
       await page.evaluate(`
         window.cols = 0;
         window.term.loadAddon({
@@ -253,7 +252,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('dispose (addon)', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.disposeCalled = false
         window.addon = {
@@ -268,7 +267,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('dispose (terminal)', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.disposeCalled = false
         window.term.loadAddon({
@@ -284,7 +283,7 @@ describe('API Integration Tests', function (): void {
 
   describe('Events', () => {
     it('onCursorMove', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onCursorMove(e => window.callCount++);
@@ -296,7 +295,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onData', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onData(e => calls.push(e));
@@ -306,7 +305,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onKey', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onKey(e => calls.push(e.key));
@@ -316,7 +315,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onLineFeed', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onLineFeed(() => callCount++);
@@ -328,7 +327,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onScroll', async () => {
-      await openTerminal({ rows: 5 });
+      await openTerminal(page, { rows: 5 });
       await page.evaluate(`
         window.calls = [];
         window.term.onScroll(e => window.calls.push(e));
@@ -344,7 +343,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onSelectionChange', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onSelectionChange(() => window.callCount++);
@@ -356,9 +355,9 @@ describe('API Integration Tests', function (): void {
       await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onRender', async function (): Promise<void> {
+    it('onRender', async function(): Promise<void> {
       this.retries(3);
-      await openTerminal();
+      await openTerminal(page);
       await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
@@ -372,7 +371,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onResize', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
@@ -386,7 +385,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('onTitleChange', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onTitleChange(e => window.calls.push(e));
@@ -399,7 +398,7 @@ describe('API Integration Tests', function (): void {
 
   describe('buffer', () => {
     it('cursorX, cursorY', async () => {
-      await openTerminal({ rows: 5, cols: 5 });
+      await openTerminal(page, { rows: 5, cols: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
       assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
       await writeSync(page, 'foo');
@@ -420,7 +419,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('viewportY', async () => {
-      await openTerminal({ rows: 5 });
+      await openTerminal(page, { rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
       await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
@@ -435,7 +434,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('baseY', async () => {
-      await openTerminal({ rows: 5 });
+      await openTerminal(page, { rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
       await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
@@ -450,7 +449,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('length', async () => {
-      await openTerminal({ rows: 5 });
+      await openTerminal(page, { rows: 5 });
       assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
       await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
@@ -462,13 +461,13 @@ describe('API Integration Tests', function (): void {
 
     describe('getLine', () => {
       it('invalid index', async () => {
-        await openTerminal({ rows: 5 });
+        await openTerminal(page, { rows: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(-1)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(5)`), undefined);
       });
 
       it('isWrapped', async () => {
-        await openTerminal({ cols: 5 });
+        await openTerminal(page, { cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
         await writeSync(page, 'abcde');
@@ -480,7 +479,7 @@ describe('API Integration Tests', function (): void {
       });
 
       it('translateToString', async () => {
-        await openTerminal({ cols: 5 });
+        await openTerminal(page, { cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), '     ');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), '');
         await writeSync(page, 'foo');
@@ -495,7 +494,7 @@ describe('API Integration Tests', function (): void {
       });
 
       it('getCell', async () => {
-        await openTerminal({ cols: 5 });
+        await openTerminal(page, { cols: 5 });
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(-1)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(5)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getChars()`), '');
@@ -520,14 +519,14 @@ describe('API Integration Tests', function (): void {
   });
 
   it('dispose (opened)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`window.term.dispose()`);
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
 
   describe('registerLinkProvider', () => {
     it('should fire provideLink when hovering cells', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -546,7 +545,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('should fire hover and leave events on the link', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -581,7 +580,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('should work fine when hover and leave callbacks are not provided', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -614,7 +613,7 @@ describe('API Integration Tests', function (): void {
     });
 
     it('should fire activate events when clicking the link', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, 'a b c');
 
       // Wait for renderer to catch up as links are cleared on render
@@ -662,16 +661,6 @@ describe('API Integration Tests', function (): void {
   });
 });
 
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
-
 interface IDimensions {
   top: number;
   left: number;
@@ -713,7 +702,7 @@ async function getCellCoordinates(dimensions: IDimensions, col: number, row: num
   };
 }
 
-async function moveMouseCell(page: Page, dimensions: IDimensions, col: number, row: number) {
+async function moveMouseCell(page: Page, dimensions: IDimensions, col: number, row: number): Promise<void> {
   const coords = await getCellCoordinates(dimensions, col, row);
   await page.mouse.move(coords.x, coords.y);
 }

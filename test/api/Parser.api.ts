@@ -4,8 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
-import { writeSync, getBrowserType } from './TestUtils';
+import { writeSync, openTerminal, getBrowserType } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -15,8 +14,8 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-describe('Parser Integration Tests', function (): void {
-  before(async function (): Promise<any> {
+describe('Parser Integration Tests', function(): void {
+  before(async function(): Promise<any> {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
@@ -24,7 +23,7 @@ describe('Parser Integration Tests', function (): void {
     page = (await browser.defaultContext().pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   after(async () => browser.close());
@@ -110,13 +109,3 @@ describe('Parser Integration Tests', function (): void {
     });
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}

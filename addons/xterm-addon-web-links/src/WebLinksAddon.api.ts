@@ -5,7 +5,7 @@
 
 import * as playwright from 'playwright';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
+import { openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -51,7 +51,7 @@ describe('WebLinksAddon', () => {
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal({ rendererType: 'dom', cols: 40 });
+  await openTerminal(page, { rendererType: 'dom', cols: 40 });
   await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   const data = `  http://${hostname}  \\r\\n` +
     `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +
@@ -70,55 +70,10 @@ async function testHostName(hostname: string): Promise<void> {
   await pollForLinkAtCell(1, 7, `http://${hostname}/subpath/+/id`);
 }
 
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
-
 async function pollForLinkAtCell(col: number, row: number, value: string): Promise<void> {
   const rowSelector = `.xterm-rows > :nth-child(${row})`;
   // Ensure the hover element exists before trying to hover it
   await pollFor(page, `!!document.querySelector('${rowSelector} > :nth-child(${col})')`, true);
   await pollFor(page, `document.querySelectorAll('${rowSelector} > span[style]').length >= ${value.length}`, true, async () => page.hover(`${rowSelector} > :nth-child(${col})`));
   assert.equal(await page.evaluate(`Array.prototype.reduce.call(document.querySelectorAll('${rowSelector} > span[style]'), (a, b) => a + b.textContent, '');`), value);
-}
-
-async function pollFor(page: playwright.Page, fn: string, val: any, preFn?: () => Promise<void>): Promise<void> {
-  if (preFn) {
-    await preFn();
-  }
-  const result = await page.evaluate(fn);
-  if (result !== val) {
-    return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, fn, val, preFn)), 10);
-    });
-  }
-}
-
-async function writeSync(page: playwright.Page, data: string): Promise<void> {
-  await page.evaluate(`
-    window.ready = false;
-    window.term.write('${data}', () => window.ready = true);
-  `);
-  await pollFor(page, 'window.ready', true);
-}
-
-function getBrowserType(): playwright.BrowserType {
-  // Default to chromium
-  let browserType: playwright.BrowserType = playwright['chromium'];
-
-  const index = process.argv.indexOf('--browser');
-  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
-    const string = process.argv[index + 1];
-    if (string === 'firefox' || string === 'webkit') {
-      browserType = playwright[string];
-    }
-  }
-
-  return browserType;
 }

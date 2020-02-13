@@ -160,7 +160,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
       ` color: ${this._colors.foreground.css};` +
-      ` background-color: ${this._colors.background.css};` +
       ` font-family: ${this._optionsService.options.fontFamily};` +
       ` font-size: ${this._optionsService.options.fontSize}px;` +
       `}`;
