@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
 import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { openTerminal, writeSync } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: playwright.Browser;
-let page: playwright.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
@@ -196,19 +196,4 @@ function makeData(length: number): string {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
-}
-
-function getBrowserType(): playwright.BrowserType {
-  // Default to chromium
-  let browserType: playwright.BrowserType = playwright['chromium'];
-
-  const index = process.argv.indexOf('--browser');
-  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
-    const string = process.argv[index + 1];
-    if (string === 'firefox' || string === 'webkit') {
-      browserType = playwright[string];
-    }
-  }
-
-  return browserType;
 }

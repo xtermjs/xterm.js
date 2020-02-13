@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
 import { assert } from 'chai';
-import { openTerminal, writeSync } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: playwright.Browser;
-let page: playwright.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 

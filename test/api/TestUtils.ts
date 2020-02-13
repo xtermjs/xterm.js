@@ -31,7 +31,7 @@ export async function timeout(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
 }
 
-export async function openTerminal(page: puppeteer.Page, options: ITerminalOptions = {}): Promise<void> {
+export async function openTerminal(page: playwright.Page, options: ITerminalOptions = {}): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
   if (options.rendererType === 'dom') {

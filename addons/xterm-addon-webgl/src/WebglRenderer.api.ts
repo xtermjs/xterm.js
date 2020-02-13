@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
-import { openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: playwright.Browser;
-let page: playwright.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
@@ -912,18 +912,3 @@ const COLORS_16_TO_255 = [
   '#ffd7d7', '#ffd7ff', '#ffff00', '#ffff5f', '#ffff87', '#ffffaf', '#ffffd7', '#ffffff', '#080808', '#121212', '#1c1c1c', '#262626', '#303030', '#3a3a3a', '#444444', '#4e4e4e',
   '#585858', '#626262', '#6c6c6c', '#767676', '#808080', '#8a8a8a', '#949494', '#9e9e9e', '#a8a8a8', '#b2b2b2', '#bcbcbc', '#c6c6c6', '#d0d0d0', '#dadada', '#e4e4e4', '#eeeeee'
 ];
-
-function getBrowserType(): playwright.BrowserType {
-  // Default to chromium
-  let browserType: playwright.BrowserType = playwright['chromium'];
-
-  const index = process.argv.indexOf('--browser');
-  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
-    const string = process.argv[index + 1];
-    if (string === 'firefox' || string === 'webkit') {
-      browserType = playwright[string];
-    }
-  }
-
-  return browserType;
-}

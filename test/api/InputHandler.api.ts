@@ -4,9 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
 import { pollFor, openTerminal, getBrowserType } from './TestUtils';
-import { Page, Browser } from 'playwright';
+import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 const APP = 'http://127.0.0.1:3000/test';
