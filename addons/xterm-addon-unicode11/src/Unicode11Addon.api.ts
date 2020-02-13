@@ -4,8 +4,8 @@
  */
 
 import * as puppeteer from 'puppeteer';
-import { ITerminalOptions } from 'xterm';
 import { assert } from 'chai';
+import { openTerminal } from '../../../out-test/api/TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -32,7 +32,7 @@ describe('Unicode11Addon', () => {
   beforeEach(async function(): Promise<any> {
     this.timeout(20000);
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   it('wcwidth V11 emoji test', async () => {
@@ -49,13 +49,3 @@ describe('Unicode11Addon', () => {
     assert.deepEqual(await page.evaluate(`window.term._core.unicodeService.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣')`), 20);
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}

@@ -5,8 +5,7 @@
 
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
-import { pollFor } from './TestUtils';
+import { pollFor, openTerminal } from './TestUtils';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -24,7 +23,7 @@ describe('InputHandler Integration Tests', function(): void {
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   after(() => {
@@ -260,7 +259,7 @@ describe('InputHandler Integration Tests', function(): void {
 
     describe('SM: Set Mode', () => {
       describe('CSI ? Pm h', () => {
-        it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async() => {
+        it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async () => {
           const coords = await page.evaluate(`
           (function() {
             const rect = window.term.element.getBoundingClientRect();
@@ -309,7 +308,7 @@ describe('InputHandler Integration Tests', function(): void {
         window.term.write('#\x1b[5b');
       `);
       await pollFor(page, () => getLinesAsArray(4), ['##', '##', '##', '######']);
-      await pollFor(page, () => getCursor(), {col: 6, row: 3});
+      await pollFor(page, () => getCursor(), { col: 6, row: 3 });
       // should not repeat on fullwidth chars
       await page.evaluate(`
         window.term.reset();
@@ -347,7 +346,7 @@ describe('InputHandler Integration Tests', function(): void {
     });
 
     describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
-      it('should be disabled by default', async function() {
+      it('should be disabled by default', async function(): Promise<void> {
         await page.evaluate(`(() => {
           window._stack = [];
           const _h = window.term.onData(data => window._stack.push(data));
@@ -360,7 +359,7 @@ describe('InputHandler Integration Tests', function(): void {
         })()`);
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
-      it('14 - GetWinSizePixels', async function() {
+      it('14 - GetWinSizePixels', async function(): Promise<void> {
         await page.evaluate(`window.term.setOption('windowOptions', {getWinSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
@@ -371,7 +370,7 @@ describe('InputHandler Integration Tests', function(): void {
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
-      it('16 - GetCellSizePixels', async function() {
+      it('16 - GetCellSizePixels', async function(): Promise<void> {
         await page.evaluate(`window.term.setOption('windowOptions', {getCellSizePixels: true});`);
         await page.evaluate(`(() => {
           window._stack = [];
@@ -397,21 +396,11 @@ describe('InputHandler Integration Tests', function(): void {
           window.term.resize(10, 4);
           window.term.write('\\x1b[?47l\\x1b8');
         `);
-        await pollFor(page, () => getCursor(), {col: 1, row: 3});
+        await pollFor(page, () => getCursor(), { col: 1, row: 3 });
       });
     });
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
 
 async function getLinesAsArray(count: number, start: number = 0): Promise<string[]> {
   let text = '';
@@ -434,7 +423,7 @@ async function simulatePaste(text: string): Promise<string> {
   return await page.evaluate(`window.result_${id}`);
 }
 
-async function getCursor(): Promise<{col: number, row: number}> {
+async function getCursor(): Promise<{ col: number, row: number }> {
   return page.evaluate(`
   (function() {
     return {col: term.buffer.cursorX, row: term.buffer.cursorY};

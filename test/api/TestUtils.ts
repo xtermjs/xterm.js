@@ -5,6 +5,7 @@
 
 import * as puppeteer from 'puppeteer';
 import deepEqual = require('deep-equal');
+import { ITerminalOptions } from 'xterm';
 
 export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
   if (preFn) {
@@ -28,4 +29,14 @@ export async function writeSync(page: puppeteer.Page, data: string): Promise<voi
 
 export async function timeout(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
+}
+
+export async function openTerminal(page: puppeteer.Page, options: ITerminalOptions = {}): Promise<void> {
+  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
+  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+  if (options.rendererType === 'dom') {
+    await page.waitForSelector('.xterm-rows');
+  } else {
+    await page.waitForSelector('.xterm-text-layer');
+  }
 }
