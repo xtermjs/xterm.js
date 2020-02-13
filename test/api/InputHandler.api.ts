@@ -369,7 +369,7 @@ describe('InputHandler Integration Tests', function(): void {
             return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
           })()`);
         const d = await getDimensions();
-        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4; ${d.height}; ${d.width} t`]);
+        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
       it('16 - GetCellSizePixels', async function(): Promise<any> {
         await page.evaluate(`window.term.setOption('windowOptions', { getCellSizePixels: true }); `);
@@ -380,7 +380,7 @@ describe('InputHandler Integration Tests', function(): void {
             return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
           })()`);
         const d = await getDimensions();
-        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6; ${d.cellHeight}; ${d.cellWidth} t`]);
+        await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
     });
   });
