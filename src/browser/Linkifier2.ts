@@ -6,7 +6,7 @@
 import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent } from './Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
-import { IBufferService, ICoreService } from 'common/services/Services';
+import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 export class Linkifier2 implements ILinkifier2 {
@@ -180,11 +180,11 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
-    this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
+    this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
     element.classList.add('xterm-cursor-pointer');
 
     if (link.hover) {
@@ -192,11 +192,11 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  private _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
-    this._onLinkLeave.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x - 1, range.end.y - scrollOffset - 1, undefined));
+    this._onLinkLeave.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
     element.classList.remove('xterm-cursor-pointer');
 
     if (link.leave) {
