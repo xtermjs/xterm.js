@@ -37,6 +37,7 @@ const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
 
 export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
+  altEnterMode: boolean,
   applicationCursorMode: boolean,
   isMac: boolean,
   macOptionIsMeta: boolean
@@ -103,7 +104,12 @@ export function evaluateKeyboardEvent(
       break;
     case 13:
       // return/enter
-      result.key = C0.CR;
+      if (altEnterMode && modifiers === 2) {
+        result.key = C0.ESC + C0.CR;
+      }
+      else {
+        result.key = C0.CR;
+      }
       result.cancel = true;
       break;
     case 27:

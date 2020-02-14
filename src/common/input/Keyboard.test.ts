@@ -16,6 +16,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
   key?: string;
   type?: string;
 }, partialOptions: {
+  altEnterMode?: boolean;
   applicationCursorMode?: boolean;
   isMac?: boolean;
   macOptionIsMeta?: boolean;
@@ -30,11 +31,12 @@ function testEvaluateKeyboardEvent(partialEvent: {
     type: partialEvent.type || ''
   };
   const options = {
+    altEnterMode: partialOptions.altEnterMode || true,
     applicationCursorMode: partialOptions.applicationCursorMode || false,
     isMac: partialOptions.isMac || false,
     macOptionIsMeta: partialOptions.macOptionIsMeta || false
   };
-  return evaluateKeyboardEvent(event, options.applicationCursorMode, options.isMac, options.macOptionIsMeta);
+  return evaluateKeyboardEvent(event, options.altEnterMode, options.applicationCursorMode, options.isMac, options.macOptionIsMeta);
 }
 
 describe('Keyboard', () => {
@@ -85,6 +87,9 @@ describe('Keyboard', () => {
     });
     it('should return \\x1b[3;3~ for alt+delete', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 46 }).key, '\x1b[3;3~');
+    });
+    it('should return \\x1b\\r for alt+enter', () => {
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 13 }).key, '\x1b\r');
     });
     it('should return \\x1b[5D for ctrl+left', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
