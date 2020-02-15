@@ -6,7 +6,7 @@
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
   - task: NodeTool@0
     inputs:
@@ -79,8 +79,12 @@ jobs:
 
 - job: Linux_IntegrationTests
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
+  - script: |
+      sudo apt update
+      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libevent-2.1-6 libnotify4 libxslt1.1
+    displayName: Install required packages
   - task: NodeTool@0
     inputs:
       versionSpec: '10.x'
@@ -100,10 +104,6 @@ jobs:
       yarn start &
       sleep 10
     displayName: 'Start test server'
-  - script: |
-      sudo apt update
-      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libevent-2.1-6 libnotify4 libxslt1.1
-    displayName: install required packages
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
