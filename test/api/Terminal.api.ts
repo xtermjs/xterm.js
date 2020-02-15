@@ -509,6 +509,38 @@ describe('API Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
       });
     });
+
+    it('active, normal, alternate', async () => {
+      await openTerminal(page, { cols: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      await writeSync(page, 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
+
+      await writeSync(page, '\\x1b[?47h\\r'); // use alternate screen buffer
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'alternate');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
+      await writeSync(page, 'alt  ');
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'alt  ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0).translateToString()`), 'alt  ');
+
+      await writeSync(page, '\\x1b[?47l\\r'); // use normal screen buffer
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
+    })
   });
 
   it('dispose', async () => {

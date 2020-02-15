@@ -195,6 +195,12 @@ export class Terminal implements ITerminalApi {
 class BufferApiView implements IBufferApi {
   constructor(private _buffer: IBuffer, private _buffers: IBufferSet) { }
 
+  init(buffer: IBuffer, buffers: IBufferSet): BufferApiView {
+    this._buffer = buffer;
+    this._buffers = buffers;
+    return this;
+  }
+
   public get type(): 'normal' | 'alternate' {
     if (this._buffers.normal === this._buffer) { return 'normal'; }
     else if (this._buffers.alt === this._buffer) { return 'alternate'; }
@@ -216,17 +222,25 @@ class BufferApiView implements IBufferApi {
 }
 
 class BufferNamespaceApi implements IBufferNamespaceApi {
-  constructor(private _buffers: IBufferSet) { }
+  private _normal: BufferApiView;
+  private _alternate: BufferApiView;
 
-  public get alternate(): IBufferApi { return new BufferApiView(this._buffers.alt, this._buffers); }
-  public get active(): IBufferApi { return new BufferApiView(this._buffers.active, this._buffers); }
-  public get normal(): IBufferApi { return new BufferApiView(this._buffers.normal, this._buffers); }
+  constructor(private _buffers: IBufferSet) {
+    this._normal = new BufferApiView(this._buffers.normal, this._buffers);
+    this._alternate = new BufferApiView(this._buffers.alt, this._buffers);
+  }
+
+  public get active(): IBufferApi {
+    if (this._buffers.active === this._buffers.normal) { return this.normal; }
+    else if (this._buffers.active === this._buffers.alt) { return this.alternate; }
+    throw new Error('Active Buffer is neither normal nor alternate');
+  }
+  public get normal(): IBufferApi { return this._normal.init(this._buffers.normal, this._buffers); }
+  public get alternate(): IBufferApi { return this._alternate.init(this._buffers.alt, this._buffers); }
 
   public get onBufferChange(): IEvent<IBufferApi> {
     return (listener: (buffer: IBufferApi, unused: void) => any): IDisposable => {
-      return this._buffers.onBufferActivate((arg1: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }) => {
-        listener(new BufferApiView(arg1.activeBuffer, this._buffers));
-      });
+      return this._buffers.onBufferActivate(() => listener(this.active));
     };
   }
 }
