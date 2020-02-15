@@ -49,7 +49,7 @@ export class LinkComputer {
         break;
       }
 
-      let endX = stringIndex + text.length + 1;
+      let endX = stringIndex + text.length;
       let endY = startLineIndex + 1;
 
       while (endX > terminal.cols) {
