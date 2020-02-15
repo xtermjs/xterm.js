@@ -100,8 +100,20 @@ jobs:
       yarn start &
       sleep 10
     displayName: 'Start test server'
+  - name: install required packages
+    run: |
+      sudo apt update
+      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libevent-2.1-6 libnotify4 libxslt1.1
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
+  - run: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
+    displayName: 'Integration tests (Firefox)'
+    env:
+      DEBUG: "*"
+  - run: xvfb-run --auto-servernum -- bash -c "yarn test-api-webkit --headless --forbid-only"
+    displayName: 'Integration tests (Webkit)'
+    env:
+      DEBUG: "*"
 
 - job: macOS_IntegrationTests
   pool:
