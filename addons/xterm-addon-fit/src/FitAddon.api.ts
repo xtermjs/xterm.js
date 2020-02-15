@@ -58,7 +58,7 @@ describe('FitAddon', () => {
       await loadFit(1008);
       assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
         cols: 110,
-        rows: isFirefox? 28 : 26
+        rows: isFirefox ? 28 : 26
       });
     });
 
@@ -80,14 +80,14 @@ describe('FitAddon', () => {
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 87);
-      assert.equal(await page.evaluate(`window.term.rows`), isFirefox? 28 : 26);
+      assert.equal(await page.evaluate(`window.term.rows`), isFirefox ? 28 : 26);
     });
 
     it('width', async function(): Promise<any> {
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
       assert.equal(await page.evaluate(`window.term.cols`), 110);
-      assert.equal(await page.evaluate(`window.term.rows`), isFirefox? 28 : 26);
+      assert.equal(await page.evaluate(`window.term.rows`), isFirefox ? 28 : 26);
     });
 
     it('small', async function(): Promise<any> {
