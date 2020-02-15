@@ -21,6 +21,10 @@ const fontSize = 6;
 const cols = 260;
 const rows = 50;
 
+// Wheel events are hacked using private API that is only available in Chromium
+const isChromium = getBrowserType().name() === 'chromium';
+const itMouse = isChromium ? it : it.skip;
+
 // for some reason shift gets not caught by selection manager on macos
 const noShift = process.platform === 'darwin' ? false : true;
 
@@ -240,7 +244,7 @@ describe('Mouse Tracking Tests', () => {
      *  - no move
      *  - no modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -367,7 +371,7 @@ describe('Mouse Tracking Tests', () => {
       // await page.keyboard.up('Shift');
       await pollFor(page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -494,7 +498,7 @@ describe('Mouse Tracking Tests', () => {
      *  - no move
      *  - all modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -645,7 +649,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -803,7 +807,7 @@ describe('Mouse Tracking Tests', () => {
      *  - all modifiers
      * Note: tmux runs this with SGR encoding.
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -959,7 +963,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -1121,7 +1125,7 @@ describe('Mouse Tracking Tests', () => {
      *  - all events (press, release, wheel, move)
      *  - all modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -1281,7 +1285,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
