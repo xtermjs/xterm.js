@@ -97,21 +97,11 @@ jobs:
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
-      sudo apt-get update
-      sudo apt-get install -y libgtk-3-0 libdbus-glib-1-2 xvfb
-      sudo cp build/azure-pipelines/linux/xvfb.init /etc/init.d/xvfb
-      sudo chmod +x /etc/init.d/xvfb
-      sudo update-rc.d xvfb defaults
-      sudo service xvfb start
-    displayName: Install firefox dependencies
-  - script: |
       yarn start &
       sleep 10
     displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firefox --headless --forbid-only
-    displayName: 'Integration tests (Firefox)'
   - script: yarn test-api-webkit --headless --forbid-only
     displayName: 'Integration tests (Webkit)'
 
