@@ -19,7 +19,7 @@ const height = 600;
 let itWebgl: (expectation: string, callback?: (this: Mocha.ITestCallbackContext, done: MochaDone) => any) => Mocha.ITest | void;
 
 describe('WebGL Renderer Integration Tests', async () => {
-  const browserType = await getBrowserType();
+  const browserType = getBrowserType();
   const isHeadless = process.argv.indexOf('--headless') !== -1;
   // Firefox works only in non-headless mode https://github.com/microsoft/playwright/issues/1032
   const areTestsEnabled = browserType.name() === 'chromium' || (browserType.name() === 'firefox' && !isHeadless);
@@ -898,7 +898,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 }
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
-  const browserType = await getBrowserType();
+  const browserType = getBrowserType();
   browser = await browserType.launch({
     headless: process.argv.indexOf('--headless') !== -1,
     args: [`--window-size=${width},${height}`, `--no-sandbox`]

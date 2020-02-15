@@ -18,7 +18,7 @@ let isFirefox = false;
 
 describe('FitAddon', () => {
   before(async function(): Promise<any> {
-    const browserType = await getBrowserType();
+    const browserType = getBrowserType();
     browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]

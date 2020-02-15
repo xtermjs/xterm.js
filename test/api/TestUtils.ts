@@ -41,7 +41,7 @@ export async function openTerminal(page: playwright.Page, options: ITerminalOpti
   }
 }
 
-export async function getBrowserType(): Promise<playwright.BrowserType> {
+export function getBrowserType(): playwright.BrowserType {
   // Default to chromium
   let browserType: playwright.BrowserType = playwright['chromium'];
 
@@ -52,8 +52,6 @@ export async function getBrowserType(): Promise<playwright.BrowserType> {
       browserType = playwright[string];
     }
   }
-
-  await browserType.downloadBrowserIfNeeded();
 
   return browserType;
 }

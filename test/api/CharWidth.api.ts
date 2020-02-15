@@ -15,7 +15,7 @@ const height = 600;
 
 describe('CharWidth Integration Tests', function(): void {
   before(async function(): Promise<any> {
-    const browserType = await getBrowserType();
+    const browserType = getBrowserType();
     browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]

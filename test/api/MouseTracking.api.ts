@@ -208,7 +208,7 @@ function parseReport(encoding: string, msg: number[]): { state: any; row: number
  * Mouse tracking tests.
  */
 describe('Mouse Tracking Tests', async () => {
-  const browserType = await getBrowserType();
+  const browserType = getBrowserType();
   browserType.name() === 'chromium';
   const itMouse = isChromium ? it : it.skip;
 
