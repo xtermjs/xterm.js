@@ -129,7 +129,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**electerm**](http://electerm.html5beta.com): electerm is a terminal/ssh/sftp client(mac, win, linux) based on electron/node-pty/xterm.
 - [**Kubebox**](https://github.com/astefanutti/kubebox): Terminal console for Kubernetes clusters.
 - [**Azure Cloud Shell**](https://shell.azure.com): Azure Cloud Shell is a Microsoft-managed admin machine built on Azure, for Azure.
-- [**atom-xterm**](https://atom.io/packages/atom-xterm): Atom plugin for providing terminals inside your Atom workspace.
+- [**x-terminal**](https://atom.io/packages/x-terminal): Atom plugin for providing terminals inside your Atom workspace.
 - [**rtty**](https://github.com/zhaojh329/rtty): Access your terminals from anywhere via the web.
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS.
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
