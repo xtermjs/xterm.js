@@ -100,8 +100,18 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'Linux Integration tests'
+      yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: |
+      yarn start &
+      sleep 10
+      yarn test-api-firefox --headless --forbid-only
+    displayName: 'Integration tests (Firefox)'
+  - script: |
+      yarn start &
+      sleep 10
+      yarn test-api-webkit --headless --forbid-only
+    displayName: 'Integration tests (Webkit)'
 
 - job: macOS_IntegrationTests
   pool:
@@ -116,8 +126,19 @@ jobs:
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'MacOS Integration tests'
+      yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: |
+      yarn start &
+      sleep 10
+      yarn test-api-firfox --headless --forbid-only
+    continueOnError: true,
+    displayName: 'Integration tests (Firefox)'
+  - script: |
+      yarn start &
+      sleep 10
+      yarn test-api-webkit --headless --forbid-only
+    displayName: 'Integration tests (Webkit)'
 
 - job: Release
   dependsOn:
