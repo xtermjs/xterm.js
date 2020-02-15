@@ -17,8 +17,6 @@ const width = 800;
 const height = 600;
 
 describe('Search Tests', function(): void {
-  this.timeout(20000);
-
   before(async function(): Promise<any> {
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,

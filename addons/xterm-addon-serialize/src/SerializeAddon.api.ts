@@ -16,7 +16,6 @@ const height = 600;
 
 describe('SerializeAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(20000);
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`]

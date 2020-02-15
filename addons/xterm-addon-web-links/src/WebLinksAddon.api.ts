@@ -16,7 +16,6 @@ const height = 600;
 
 describe('WebLinksAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(10000);
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
@@ -25,27 +24,18 @@ describe('WebLinksAddon', () => {
     await page.setViewport({ width, height });
   });
 
-  after(async () => {
-    await browser.close();
-  });
-
-  beforeEach(async function(): Promise<any> {
-    this.timeout(5000);
-    await page.goto(APP);
-  });
+  after(async () => await browser.close());
+  beforeEach(async () => await page.goto(APP));
 
   it('.com', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.com');
   });
 
   it('.com.au', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.com.au');
   });
 
   it('.io', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.io');
   });
 });

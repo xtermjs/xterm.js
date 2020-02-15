@@ -17,8 +17,6 @@ const width = 800;
 const height = 600;
 
 describe('WebGL Renderer Integration Tests', function(): void {
-  this.timeout(20000);
-
   const browserType = getBrowserType();
   const isHeadless = process.argv.indexOf('--headless') !== -1;
   const areTestsEnabled = browserType.name() === 'chromium' || (browserType.name() === 'firefox' && !isHeadless);

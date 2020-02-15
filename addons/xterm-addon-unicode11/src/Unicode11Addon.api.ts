@@ -16,7 +16,6 @@ const height = 600;
 
 describe('Unicode11Addon', () => {
   before(async function(): Promise<any> {
-    this.timeout(20000);
     browser = await getBrowserType().launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
@@ -30,7 +29,6 @@ describe('Unicode11Addon', () => {
   });
 
   beforeEach(async function(): Promise<any> {
-    this.timeout(20000);
     await page.goto(APP);
     await openTerminal(page);
   });
