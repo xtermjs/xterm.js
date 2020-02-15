@@ -102,8 +102,6 @@ jobs:
     displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-webkit --headless --forbid-only
-    displayName: 'Integration tests (Webkit)'
 
 - job: macOS_IntegrationTests
   pool:
