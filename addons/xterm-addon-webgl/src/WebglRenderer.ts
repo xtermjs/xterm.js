@@ -81,7 +81,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
-        throw new Error('WebGL2 not supported');
+        throw new Error('WebGL2 not supported ' + this._gl);
     }
     this._core.screenElement.appendChild(this._canvas);
 

@@ -7,7 +7,7 @@ import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
 import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page, BrowserType } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -17,7 +17,18 @@ const width = 800;
 const height = 600;
 
 describe('WebGL Renderer Integration Tests', function(): void {
-  it('dispose removes renderer canvases', async () => {
+  this.timeout(20000);
+
+  const browserType = getBrowserType();
+  const isHeadless = process.argv.indexOf('--headless') !== -1;
+  const areTestsEnabled = browserType.name() === 'chromium' || (browserType.name() === 'firefox' && !isHeadless);
+  if (!areTestsEnabled) {
+    // Firefox work only in non-headless mode https://github.com/microsoft/playwright/issues/1032
+    console.log(`WebGL Renderer tests are disabled browser "${browserType.name()}" and headless mode "${isHeadless}"`);
+    return;
+  }
+
+  it('dispose removes renderer canvases', async function(): Promise<void> {
     await setupBrowser();
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
     await page.evaluate(`addon.dispose()`);
