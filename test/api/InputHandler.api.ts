@@ -15,9 +15,13 @@ let page: Page;
 const width = 800;
 const height = 600;
 
+let isChromium = false;
+
 describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
-    browser = await getBrowserType().launch({
+    const browserType = getBrowserType();
+    isChromium = browserType.name() === 'chromium';
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
@@ -286,9 +290,9 @@ describe('InputHandler Integration Tests', function(): void {
           await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
           await page.mouse.up();
         });
-        it('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
+        (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           await pollFor(page, () => simulatePaste('foo'), 'foo');
-          await page.evaluate(`window.term.write('\x1b[?2004h')`);
+          await page.evaluate(`window.term.write('\x1b[?2004h')`)
           await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
           await page.evaluate(`window.term.write('\x1b[?2004l')`);
           await pollFor(page, () => simulatePaste('baz'), 'baz');
@@ -415,7 +419,7 @@ async function simulatePaste(text: string): Promise<string> {
   const id = Math.floor(Math.random() * 1000000);
   await page.evaluate(`
             (function() {
-              window.term.onData(e => window.result_${ id} = e);
+              window.term.onData(e => window.result_${id} = e);
               const clipboardData = new DataTransfer();
               clipboardData.setData('text/plain', '${text}');
               window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
