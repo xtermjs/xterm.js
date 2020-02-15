@@ -132,7 +132,6 @@ jobs:
       yarn start &
       sleep 10
       yarn test-api-firfox --headless --forbid-only
-    continueOnError: true,
     displayName: 'Integration tests (Firefox)'
   - script: |
       yarn start &
