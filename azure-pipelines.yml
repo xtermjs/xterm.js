@@ -7,8 +7,6 @@ jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -42,8 +40,6 @@ jobs:
 - job: macOS
   pool:
     vmImage: 'xcode9-macos10.13'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -64,8 +60,6 @@ jobs:
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
@@ -139,8 +133,6 @@ jobs:
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:

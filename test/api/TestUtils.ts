@@ -46,7 +46,7 @@ export async function getBrowserType(): Promise<playwright.BrowserType> {
   let browserType: playwright.BrowserType = playwright['chromium'];
 
   const index = process.argv.indexOf('--browser');
-  if (index !== -1 && process.argv.length > index + 2 && typeof process.argv[index + 1] === 'string') {
+  if (index !== -1 && process.argv.length > index + 1 && typeof process.argv[index + 1] === 'string') {
     const string = process.argv[index + 1];
     if (string === 'firefox' || string === 'webkit') {
       browserType = playwright[string];
