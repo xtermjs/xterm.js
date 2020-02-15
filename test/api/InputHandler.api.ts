@@ -3,25 +3,30 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { pollFor, openTerminal } from './TestUtils';
+import { pollFor, openTerminal, getBrowserType } from './TestUtils';
+import { Browser, Page } from 'playwright-core';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
+let isChromium = false;
+
 describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
-    browser = await puppeteer.launch({
+    const browserType = getBrowserType();
+    isChromium = browserType.name() === 'chromium';
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
     await page.goto(APP);
     await openTerminal(page);
   });
@@ -260,17 +265,17 @@ describe('InputHandler Integration Tests', function(): void {
     describe('SM: Set Mode', () => {
       describe('CSI ? Pm h', () => {
         it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async () => {
-          const coords = await page.evaluate(`
-          (function() {
-            const rect = window.term.element.getBoundingClientRect();
-            return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right};
-          })();
+          const coords: { left: number, top: number, bottom: number, right: number } = await page.evaluate(`
+            (function() {
+              const rect = window.term.element.getBoundingClientRect();
+              return { left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right };
+            })();
           `);
           // Click and drag and ensure there is a selection
           await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
           await page.mouse.down();
           await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
-          assert.ok(await page.evaluate(`window.term.getSelection().length`) > 0, 'mouse events are off so there should be a selection');
+          assert.ok(await page.evaluate(`window.term.getSelection().length`) as number > 0, 'mouse events are off so there should be a selection');
           await page.mouse.up();
           // Clear selection
           await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
@@ -285,9 +290,9 @@ describe('InputHandler Integration Tests', function(): void {
           await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
           await page.mouse.up();
         });
-        it('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
+        (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           await pollFor(page, () => simulatePaste('foo'), 'foo');
-          await page.evaluate(`window.term.write('\x1b[?2004h')`);
+          await page.evaluate(`window.term.write('\x1b[?2004h')`)
           await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
           await page.evaluate(`window.term.write('\x1b[?2004l')`);
           await pollFor(page, () => simulatePaste('baz'), 'baz');
@@ -298,86 +303,86 @@ describe('InputHandler Integration Tests', function(): void {
     it('REP: Repeat preceding character, ECMA48 - CSI Ps b', async function(): Promise<any> {
       // default to 1
       await page.evaluate(`
-        window.term.resize(10, 10);
-        window.term.write('#\x1b[b');
-        window.term.writeln('');
-        window.term.write('#\x1b[0b');
-        window.term.writeln('');
-        window.term.write('#\x1b[1b');
-        window.term.writeln('');
-        window.term.write('#\x1b[5b');
-      `);
+          window.term.resize(10, 10);
+          window.term.write('#\x1b[b');
+          window.term.writeln('');
+          window.term.write('#\x1b[0b');
+          window.term.writeln('');
+          window.term.write('#\x1b[1b');
+          window.term.writeln('');
+          window.term.write('#\x1b[5b');
+          `);
       await pollFor(page, () => getLinesAsArray(4), ['##', '##', '##', '######']);
       await pollFor(page, () => getCursor(), { col: 6, row: 3 });
       // should not repeat on fullwidth chars
       await page.evaluate(`
-        window.term.reset();
-        window.term.write('￥\x1b[10b');
-      `);
+          window.term.reset();
+          window.term.write('￥\x1b[10b');
+          `);
       await pollFor(page, () => getLinesAsArray(1), ['￥']);
       // should repeat only base char of combining
       await page.evaluate(`
-        window.term.reset();
-        window.term.write('e\u0301\x1b[5b');
-      `);
+          window.term.reset();
+          window.term.write('e\u0301\x1b[5b');
+          `);
       await pollFor(page, () => getLinesAsArray(1), ['e\u0301eeeee']);
       // should wrap correctly
       await page.evaluate(`
-        window.term.reset();
-        window.term.write('#\x1b[15b');
-      `);
+          window.term.reset();
+          window.term.write('#\x1b[15b');
+          `);
       await pollFor(page, () => getLinesAsArray(2), ['##########', '######']);
       await page.evaluate(`
-        window.term.reset();
-        window.term.write('\x1b[?7l');  // disable wrap around
-        window.term.write('#\x1b[15b');
-      `);
+          window.term.reset();
+          window.term.write('\x1b[?7l');  // disable wrap around
+          window.term.write('#\x1b[15b');
+          `);
       await pollFor(page, () => getLinesAsArray(2), ['##########', '']);
       // any successful sequence should reset REP
       await page.evaluate(`
-        window.term.reset();
-        window.term.write('\x1b[?7h');  // re-enable wrap around
-        window.term.write('#\\n\x1b[3b');
-        window.term.write('#\\r\x1b[3b');
-        window.term.writeln('');
-        window.term.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
-      `);
+          window.term.reset();
+          window.term.write('\x1b[?7h');  // re-enable wrap around
+          window.term.write('#\\n\x1b[3b');
+          window.term.write('#\\r\x1b[3b');
+          window.term.writeln('');
+          window.term.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
+          `);
       await pollFor(page, () => getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
 
     describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
-      it('should be disabled by default', async function(): Promise<void> {
+      it('should be disabled by default', async function(): Promise<any> {
         await page.evaluate(`(() => {
-          window._stack = [];
-          const _h = window.term.onData(data => window._stack.push(data));
-          window.term.write('\x1b[14t');
-          window.term.write('\x1b[16t');
-          window.term.write('\x1b[18t');
-          window.term.write('\x1b[20t');
-          window.term.write('\x1b[21t');
-          return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-        })()`);
+            window._stack = [];
+            const _h = window.term.onData(data => window._stack.push(data));
+            window.term.write('\x1b[14t');
+            window.term.write('\x1b[16t');
+            window.term.write('\x1b[18t');
+            window.term.write('\x1b[20t');
+            window.term.write('\x1b[21t');
+            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
+          })()`);
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
-      it('14 - GetWinSizePixels', async function(): Promise<void> {
-        await page.evaluate(`window.term.setOption('windowOptions', {getWinSizePixels: true});`);
+      it('14 - GetWinSizePixels', async function(): Promise<any> {
+        await page.evaluate(`window.term.setOption('windowOptions', { getWinSizePixels: true }); `);
         await page.evaluate(`(() => {
-          window._stack = [];
-          const _h = window.term.onData(data => window._stack.push(data));
-          window.term.write('\x1b[14t');
-          return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-        })()`);
+            window._stack = [];
+            const _h = window.term.onData(data => window._stack.push(data));
+            window.term.write('\x1b[14t');
+            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
+          })()`);
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
-      it('16 - GetCellSizePixels', async function(): Promise<void> {
-        await page.evaluate(`window.term.setOption('windowOptions', {getCellSizePixels: true});`);
+      it('16 - GetCellSizePixels', async function(): Promise<any> {
+        await page.evaluate(`window.term.setOption('windowOptions', { getCellSizePixels: true }); `);
         await page.evaluate(`(() => {
-          window._stack = [];
-          const _h = window.term.onData(data => window._stack.push(data));
-          window.term.write('\x1b[16t');
-          return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-        })()`);
+            window._stack = [];
+            const _h = window.term.onData(data => window._stack.push(data));
+            window.term.write('\x1b[16t');
+            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
+          })()`);
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
@@ -391,11 +396,11 @@ describe('InputHandler Integration Tests', function(): void {
           window.term.resize(10, 2);
           window.term.write('1\\n\\r2\\n\\r3\\n\\r4\\n\\r5');
           window.term.write('\\x1b7\\x1b[?47h');
-        `);
+          `);
         await page.evaluate(`
           window.term.resize(10, 4);
           window.term.write('\\x1b[?47l\\x1b8');
-        `);
+          `);
         await pollFor(page, () => getCursor(), { col: 1, row: 3 });
       });
     });
@@ -405,7 +410,7 @@ describe('InputHandler Integration Tests', function(): void {
 async function getLinesAsArray(count: number, start: number = 0): Promise<string[]> {
   let text = '';
   for (let i = start; i < start + count; i++) {
-    text += `window.term.buffer.getLine(${i}).translateToString(true),`;
+    text += `window.term.buffer.getLine(${i}).translateToString(true), `;
   }
   return await page.evaluate(`[${text}]`);
 }
@@ -413,26 +418,26 @@ async function getLinesAsArray(count: number, start: number = 0): Promise<string
 async function simulatePaste(text: string): Promise<string> {
   const id = Math.floor(Math.random() * 1000000);
   await page.evaluate(`
-    (function () {
-      window.term.onData(e => window.result_${id} = e);
-      const clipboardData = new DataTransfer();
-      clipboardData.setData('text/plain', '${text}');
-      window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
-    })();
-  `);
-  return await page.evaluate(`window.result_${id}`);
+            (function() {
+              window.term.onData(e => window.result_${id} = e);
+              const clipboardData = new DataTransfer();
+              clipboardData.setData('text/plain', '${text}');
+              window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
+            })();
+          `);
+  return await page.evaluate(`window.result_${id} `);
 }
 
 async function getCursor(): Promise<{ col: number, row: number }> {
   return page.evaluate(`
-  (function() {
-    return {col: term.buffer.cursorX, row: term.buffer.cursorY};
-  })();
-  `);
+            (function() {
+              return { col: term.buffer.cursorX, row: term.buffer.cursorY };
+            })();
+          `);
 }
 
 async function getDimensions(): Promise<any> {
-  const dim = await page.evaluate(`term._core._renderService.dimensions`);
+  const dim: IRenderDimensions = await page.evaluate(`term._core._renderService.dimensions`);
   return {
     cellWidth: dim.actualCellWidth.toFixed(0),
     cellHeight: dim.actualCellHeight.toFixed(0),

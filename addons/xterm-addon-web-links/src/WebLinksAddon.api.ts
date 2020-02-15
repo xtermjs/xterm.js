@@ -3,49 +3,40 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
 describe('WebLinksAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(10000);
-    browser = await puppeteer.launch({
+    const browserType = getBrowserType();
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
   });
 
-  after(async () => {
-    await browser.close();
-  });
-
-  beforeEach(async function(): Promise<any> {
-    this.timeout(5000);
-    await page.goto(APP);
-  });
+  after(async () => await browser.close());
+  beforeEach(async () => await page.goto(APP));
 
   it('.com', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.com');
   });
 
   it('.com.au', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.com.au');
   });
 
   it('.io', async function(): Promise<any> {
-    this.timeout(20000);
     await testHostName('foo.io');
   });
 });

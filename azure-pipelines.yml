@@ -7,12 +7,10 @@ jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:
@@ -42,12 +40,10 @@ jobs:
 - job: macOS
   pool:
     vmImage: 'xcode9-macos10.13'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
@@ -64,12 +60,10 @@ jobs:
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: CacheBeta@1
     inputs:
@@ -89,35 +83,51 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'Linux Integration tests'
+    displayName: 'Start test server'
+  - script: yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
 
 - job: macOS_IntegrationTests
   pool:
-    vmImage: 'xcode9-macos10.13'
+    vmImage: 'macOS-10.15'
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'MacOS Integration tests'
+    displayName: 'Start test server'
+  - script: yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: yarn test-api-firefox --headless --forbid-only
+    displayName: 'Integration tests (Firefox)'
+  - script: yarn test-api-webkit --headless --forbid-only
+    displayName: 'Integration tests (Webkit)'
 
 - job: Release
   dependsOn:
@@ -129,12 +139,10 @@ jobs:
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
-  variables:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
   - task: YarnInstaller@3
     inputs:

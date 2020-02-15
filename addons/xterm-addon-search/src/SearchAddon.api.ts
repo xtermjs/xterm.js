@@ -3,29 +3,28 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { openTerminal, writeSync } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
 describe('Search Tests', function(): void {
-  this.timeout(20000);
-
   before(async function(): Promise<any> {
-    browser = await puppeteer.launch({
+    const browserType = getBrowserType();
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
     await page.goto(APP);
     await openTerminal(page);
     await page.evaluate(`window.search = new SearchAddon();`);

@@ -3,39 +3,35 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import WebSocket = require('ws');
-import { openTerminal, pollFor } from '../../../out-test/api/TestUtils';
+import { openTerminal, pollFor, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
 describe('AttachAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(20000);
-    browser = await puppeteer.launch({
+    const browserType = getBrowserType();
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
   });
 
   after(async () => {
     await browser.close();
   });
 
-  beforeEach(async function(): Promise<any> {
-    this.timeout(20000);
-    await page.goto(APP);
-  });
+  beforeEach(async () => await page.goto(APP));
 
   it('string', async function(): Promise<any> {
-    this.timeout(20000);
     await openTerminal(page, { rendererType: 'dom' });
     const port = 8080;
     const server = new WebSocket.Server({ port });
@@ -46,7 +42,6 @@ describe('AttachAddon', () => {
   });
 
   it('utf8', async function(): Promise<any> {
-    this.timeout(20000);
     await openTerminal(page, { rendererType: 'dom' });
     const port = 8080;
     const server = new WebSocket.Server({ port });

@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
-import { pollFor, writeSync, openTerminal } from './TestUtils';
+import { pollFor, writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 // adjusted to work inside devcontainer
 // see https://github.com/xtermjs/xterm.js/issues/2379
 const width = 1280;
@@ -20,6 +20,9 @@ const height = 960;
 const fontSize = 6;
 const cols = 260;
 const rows = 50;
+
+// Wheel events are hacked using private API that is only available in Chromium
+const isChromium = false
 
 // for some reason shift gets not caught by selection manager on macos
 const noShift = process.platform === 'darwin' ? false : true;
@@ -35,7 +38,7 @@ async function resetMouseModes(): Promise<void> {
 }
 
 async function getReports(encoding: string): Promise<any[]> {
-  const reports = await page.evaluate(`window.calls`);
+  const reports: any = await page.evaluate(`window.calls`);
   await page.evaluate(`window.calls = [];`);
   return reports.map((report: number[]) => parseReport(encoding, report));
 }
@@ -44,7 +47,7 @@ async function getReports(encoding: string): Promise<any[]> {
 // always adds +2 in each direction so we dont end up in the wrong cell
 // due to rounding issues
 async function cellPos(col: number, row: number): Promise<number[]> {
-  const coords = await page.evaluate(`
+  const coords: any = await page.evaluate(`
     (function() {
       const rect = window.term.element.getBoundingClientRect();
       const dim = term._core._renderService.dimensions;
@@ -55,7 +58,7 @@ async function cellPos(col: number, row: number): Promise<number[]> {
 }
 
 /**
- * Patched puppeteer functions.
+ * Patched playwright functions.
  * This is needed to:
  *  - translate cell positions into pixel positions
  *  - allow modifiers to be set
@@ -73,25 +76,42 @@ async function mouseUp(button: 'left' | 'right' | 'middle' | undefined): Promise
 }
 async function wheelUp(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
+  return await self._raw._client.send('Input.dispatchMouseEvent', {
     type: 'mouseWheel',
     x: self._x,
     y: self._y,
     deltaX: 0,
     deltaY: -10,
-    modifiers: self._keyboard._modifiers
+    modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 async function wheelDown(): Promise<void> {
   const self = (page.mouse as any);
-  return await self._client.send('Input.dispatchMouseEvent', {
+  return await self._raw._client.send('Input.dispatchMouseEvent', {
     type: 'mouseWheel',
     x: self._x,
     y: self._y,
     deltaX: 0,
     deltaY: 10,
-    modifiers: self._keyboard._modifiers
+    modifiers: toModifiersMask(page.keyboard._modifiers())
   });
+}
+
+function toModifiersMask(modifiers: Set<String>): number {
+  let mask = 0;
+  if (modifiers.has('Alt')) {
+    mask |= 1;
+  }
+  if (modifiers.has('Control')) {
+    mask |= 2;
+  }
+  if (modifiers.has('Meta')) {
+    mask |= 4;
+  }
+  if (modifiers.has('Shift')) {
+    mask |= 8;
+  }
+  return mask;
 }
 
 // button definitions
@@ -187,14 +207,18 @@ function parseReport(encoding: string, msg: number[]): { state: any; row: number
 /**
  * Mouse tracking tests.
  */
-describe('Mouse Tracking Tests', () => {
+describe('Mouse Tracking Tests', async () => {
+  const browserType = getBrowserType();
+  browserType.name() === 'chromium';
+  const itMouse = isChromium ? it : it.skip;
+
   before(async function(): Promise<void> {
-    browser = await puppeteer.launch({
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
   });
 
   after(async () => browser.close());
@@ -223,7 +247,7 @@ describe('Mouse Tracking Tests', () => {
      *  - no move
      *  - no modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -350,7 +374,7 @@ describe('Mouse Tracking Tests', () => {
       // await page.keyboard.up('Shift');
       await pollFor(page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -477,7 +501,7 @@ describe('Mouse Tracking Tests', () => {
      *  - no move
      *  - all modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -628,7 +652,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -786,7 +810,7 @@ describe('Mouse Tracking Tests', () => {
      *  - all modifiers
      * Note: tmux runs this with SGR encoding.
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -942,7 +966,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -1104,7 +1128,7 @@ describe('Mouse Tracking Tests', () => {
      *  - all events (press, release, wheel, move)
      *  - all modifiers
      */
-    it('default encoding', async () => {
+    itMouse('default encoding', async () => {
       const encoding = 'DEFAULT';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -1264,7 +1288,7 @@ describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: true, shift: false, meta: true } } }
       ]);
     });
-    it('SGR encoding', async () => {
+    itMouse('SGR encoding', async () => {
       const encoding = 'SGR';
       await resetMouseModes();
       await mouseMove(0, 0);
@@ -1428,7 +1452,7 @@ describe('Mouse Tracking Tests', () => {
   });
   /**
    * move tests with multiple buttons pressed:
-   * currently not possible due to a limitation of the puppeteer mouse interface
+   * currently not possible due to a limitation of the playwright mouse interface
    * (saves only the last one pressed)
    */
 });
