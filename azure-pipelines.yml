@@ -124,7 +124,7 @@ jobs:
     displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firfox --headless --forbid-only
+  - script: yarn test-api-firefox --headless --forbid-only
     displayName: 'Integration tests (Firefox)'
   - script: yarn test-api-webkit --headless --forbid-only
     displayName: 'Integration tests (Webkit)'
