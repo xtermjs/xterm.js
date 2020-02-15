@@ -108,12 +108,8 @@ jobs:
     displayName: 'Integration tests (Chromium)'
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
     displayName: 'Integration tests (Firefox)'
-    env:
-      DEBUG: "*"
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-webkit --headless --forbid-only"
     displayName: 'Integration tests (Webkit)'
-    env:
-      DEBUG: "*"
 
 - job: macOS_IntegrationTests
   pool:
