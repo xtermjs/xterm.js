@@ -5,7 +5,7 @@
 
 import WebSocket = require('ws');
 import { openTerminal, pollFor, getBrowserType } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -16,7 +16,8 @@ const height = 600;
 
 describe('AttachAddon', () => {
   before(async function(): Promise<any> {
-    browser = await getBrowserType().launch({
+    const browserType = await getBrowserType();
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });

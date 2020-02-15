@@ -4026,7 +4026,7 @@ pkg-dir@^3.0.0:
   dependencies:
     find-up "^3.0.0"
 
-playwright-core@=0.11.1:
+playwright-core@^0.11.1:
   version "0.11.1"
   resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-0.11.1.tgz#b488ad17015a4d0f54db5a5fb6a9d380afea6d5a"
   integrity sha512-9xsSkXlglvHIAofyNInA1p3beOAOBMWHZgiuH99gX1R8VL6fTXgfWD7pIvt+rJhVMJWMDAyMXRo4TYtYtdspIg==
@@ -4041,13 +4041,6 @@ playwright-core@=0.11.1:
     rimraf "^3.0.2"
     uuid "^3.4.0"
     ws "^6.1.0"
-
-playwright@0.11.1:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-0.11.1.tgz#e35a2a67d87fdc497a3f706596ea40822f373e82"
-  integrity sha512-Sx/WCb88u6Q73klQKGjGY2PJSbUl7JAHIie3mFGTpXPPo79cmMzVJl2e07v/qO3VGFd13bF4z8vMt2UVPc/ygQ==
-  dependencies:
-    playwright-core "=0.11.1"
 
 pn@^1.1.0:
   version "1.1.0"

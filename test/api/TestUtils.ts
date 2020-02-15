@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
+import * as playwright from 'playwright-core';
 import deepEqual = require('deep-equal');
 import { ITerminalOptions } from 'xterm';
 
@@ -41,7 +41,7 @@ export async function openTerminal(page: playwright.Page, options: ITerminalOpti
   }
 }
 
-export function getBrowserType(): playwright.BrowserType {
+export async function getBrowserType(): Promise<playwright.BrowserType> {
   // Default to chromium
   let browserType: playwright.BrowserType = playwright['chromium'];
 
@@ -52,6 +52,8 @@ export function getBrowserType(): playwright.BrowserType {
       browserType = playwright[string];
     }
   }
+
+  await browserType.downloadBrowserIfNeeded();
 
   return browserType;
 }

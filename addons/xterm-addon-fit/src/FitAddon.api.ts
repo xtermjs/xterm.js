@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -18,7 +18,8 @@ let isFirefox = false;
 
 describe('FitAddon', () => {
   before(async function(): Promise<any> {
-    browser = await getBrowserType().launch({
+    const browserType = await getBrowserType();
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });

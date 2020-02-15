@@ -4,7 +4,7 @@
  */
 
 import { pollFor, writeSync, openTerminal, getBrowserType } from './TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -22,8 +22,7 @@ const cols = 260;
 const rows = 50;
 
 // Wheel events are hacked using private API that is only available in Chromium
-const isChromium = getBrowserType().name() === 'chromium';
-const itMouse = isChromium ? it : it.skip;
+const isChromium = false
 
 // for some reason shift gets not caught by selection manager on macos
 const noShift = process.platform === 'darwin' ? false : true;
@@ -208,9 +207,13 @@ function parseReport(encoding: string, msg: number[]): { state: any; row: number
 /**
  * Mouse tracking tests.
  */
-describe('Mouse Tracking Tests', () => {
+describe('Mouse Tracking Tests', async () => {
+  const browserType = await getBrowserType();
+  browserType.name() === 'chromium';
+  const itMouse = isChromium ? it : it.skip;
+
   before(async function(): Promise<void> {
-    browser = await getBrowserType().launch({
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });

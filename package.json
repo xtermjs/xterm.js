@@ -53,7 +53,6 @@
     "mustache": "^3.0.1",
     "node-pty": "^0.9.0",
     "nyc": "13",
-    "playwright": "0.11.1",
     "source-map-loader": "^0.2.4",
     "ts-loader": "^6.0.4",
     "tslint": "^5.18.0",
@@ -64,5 +63,8 @@
     "webpack-cli": "^3.1.0",
     "ws": "^7.0.0",
     "xterm-benchmark": "^0.1.3"
+  },
+  "dependencies": {
+    "playwright-core": "^0.11.1"
   }
 }
