@@ -119,8 +119,10 @@ jobs:
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
-      yarn start &
-      sleep 10
+      Start-Job -ScriptBlock {
+        & yarn start
+      }
+      Start-Sleep -s 10
     displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
