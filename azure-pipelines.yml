@@ -109,7 +109,7 @@ jobs:
 
 - job: macOS_IntegrationTests
   pool:
-    vmImage: 'xcode9-macos10.13'
+    vmImage: 'macOS-10.15'
   steps:
   - task: NodeTool@0
     inputs:
