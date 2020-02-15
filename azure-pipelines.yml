@@ -103,34 +103,6 @@ jobs:
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
 
-- job: Windows_IntegrationTests
-  pool:
-    vmImage: 'vs2017-win2016'
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '10.x'
-    displayName: 'Install Node.js'
-  - task: CacheBeta@1
-    inputs:
-      key: yarn2 | $(Agent.OS) | yarn.lock
-      path: node_modules
-    displayName: Cache node modules
-  - script: yarn --frozen-lockfile
-    displayName: 'Install dependencies and build'
-  - pwsh: |
-      Start-Job -ScriptBlock {
-        & yarn start
-      }
-      Start-Sleep -s 10
-    displayName: 'Start test server'
-  - script: yarn test-api-chromium --headless --forbid-only
-    displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firefox --headless --forbid-only
-    displayName: 'Integration tests (Firefox)'
-  - script: yarn test-api-webkit --headless --forbid-only
-    displayName: 'Integration tests (Webkit)'
-
 - job: macOS_IntegrationTests
   pool:
     vmImage: 'macOS-10.15'
