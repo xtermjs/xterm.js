@@ -726,6 +726,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (buffer.x === 0 && buffer.y && buffer.lines.get(buffer.y + buffer.ybase).isWrapped) {
           buffer.y--;
           buffer.x = this._bufferService.cols - 1;
+          // TODO: skip last col if it is empty after wide char
         }
     }
     if (buffer.x >= this._bufferService.cols) {
