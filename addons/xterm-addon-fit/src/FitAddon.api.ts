@@ -14,8 +14,6 @@ let page: Page;
 const width = 1024;
 const height = 768;
 
-let isFirefox = false;
-
 describe('FitAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
@@ -27,10 +25,6 @@ describe('FitAddon', () => {
     await page.setViewportSize({ width, height });
     await page.goto(APP);
     await openTerminal(page);
-    // This is used to do conditional assertions since cell height is 1 pixel higher with the
-    // default font on Firefox. Minor differences in font rendering/sizing is expected so this is
-    // fine.
-    isFirefox = await page.evaluate(`navigator.userAgent.toLowerCase().indexOf('firefox') > -1`);
   });
 
   after(async () => {
@@ -49,18 +43,18 @@ describe('FitAddon', () => {
 
     it('default', async function(): Promise<any> {
       await loadFit();
-      assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
-        cols: 87,
-        rows: isFirefox ? 28 : 26
-      });
+      const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
+      assert.equal(dimensions.cols, 87);
+      assert.isAbove(dimensions.rows, 24);
+      assert.isBelow(dimensions.rows, 29);
     });
 
     it('width', async function(): Promise<any> {
       await loadFit(1008);
-      assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
-        cols: 110,
-        rows: isFirefox ? 28 : 26
-      });
+      const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
+      assert.equal(dimensions.cols, 110);
+      assert.isAbove(dimensions.rows, 24);
+      assert.isBelow(dimensions.rows, 29);
     });
 
     it('small', async function(): Promise<any> {
@@ -80,15 +74,21 @@ describe('FitAddon', () => {
     it('default', async function(): Promise<any> {
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
-      assert.equal(await page.evaluate(`window.term.cols`), 87);
-      assert.equal(await page.evaluate(`window.term.rows`), isFirefox ? 28 : 26);
+      const cols: number = await page.evaluate(`window.term.cols`);
+      const rows: number = await page.evaluate(`window.term.rows`);
+      assert.equal(cols, 87);
+      assert.isAbove(rows, 24);
+      assert.isBelow(rows, 29);
     });
 
     it('width', async function(): Promise<any> {
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
-      assert.equal(await page.evaluate(`window.term.cols`), 110);
-      assert.equal(await page.evaluate(`window.term.rows`), isFirefox ? 28 : 26);
+      const cols: number = await page.evaluate(`window.term.cols`);
+      const rows: number = await page.evaluate(`window.term.rows`);
+      assert.equal(cols, 110);
+      assert.isAbove(rows, 24);
+      assert.isBelow(rows, 29);
     });
 
     it('small', async function(): Promise<any> {
