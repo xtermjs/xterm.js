@@ -717,9 +717,19 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
    */
   public backspace(): void {
-    this._restrictCursor();
-    if (this._bufferService.buffer.x > 0) {
-      this._bufferService.buffer.x--;
+    //this._restrictCursor();
+    const buffer = this._bufferService.buffer;
+    if (buffer.x > 0) {
+      buffer.x--;
+    } else {
+      // reverse wraparound
+      if (buffer.x === 0 && buffer.y && buffer.lines.get(buffer.y + buffer.ybase).isWrapped) {
+          buffer.y--;
+          buffer.x = this._bufferService.cols - 1;
+        }
+    }
+    if (buffer.x >= this._bufferService.cols) {
+      buffer.x = this._bufferService.cols - 1;
     }
   }
 
