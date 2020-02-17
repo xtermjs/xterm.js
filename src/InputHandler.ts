@@ -544,6 +544,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
+          // clear left over cells to the right
+          while (buffer.x < cols) {
+            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg);
+          }
           buffer.x = 0;
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
@@ -717,21 +721,48 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
    */
   public backspace(): void {
-    //this._restrictCursor();
+    // xterm allows deleting of the last col if reverseWraparound is set
+    // otherwise the last cell cannot be deleted by BS
+    if (!this._coreService.decPrivateModes.reverseWraparound) {
+      this._restrictCursor();
+    } else {
+      // we still clamp the cursor to sane values here, but have to allow x=cols as well
+      this._bufferService.buffer.x = Math.min(this._bufferService.cols, Math.max(0, this._bufferService.buffer.x));
+      this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
+        ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
+        : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
+      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    }
     const buffer = this._bufferService.buffer;
     if (buffer.x > 0) {
       buffer.x--;
     } else {
       // reverse wraparound
-      if (buffer.x === 0 && buffer.y && buffer.lines.get(buffer.y + buffer.ybase).isWrapped) {
-          buffer.y--;
-          buffer.x = this._bufferService.cols - 1;
-          // TODO: skip last col if it is empty after wide char
+      // TODO: test in xterm - should we peek/unshift from scrollback if y == 0?
+      if (this._coreService.decPrivateModes.reverseWraparound
+          && buffer.x === 0
+          && buffer.y > 0
+          && buffer.lines.get(buffer.y + buffer.ybase).isWrapped)
+      {
+        // unset isWrapped
+        buffer.lines.get(buffer.y + buffer.ybase).isWrapped = false;
+        buffer.y--;
+        buffer.x = this._bufferService.cols - 1;
+        // find last taken cell - last cell can have 3 different states:
+        // - hasContent(true) + hasWidth(1): narrow char - we are done
+        // - hasWidth(0): second part of wide char - we are done
+        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
+        const line = buffer.lines.get(buffer.y + buffer.ybase);
+        if (line.hasWidth(buffer.x) && !line.hasContent(buffer.x)) {
+          buffer.x--;
+          // We do this only once, since width=1 + hasContent=false currently happens only once before
+          // early wrapping of a wide char.
+          // This needs to be fixed once we support graphemes taking more than 2 cells.
         }
+      }
     }
-    if (buffer.x >= this._bufferService.cols) {
-      buffer.x = this._bufferService.cols - 1;
-    }
+    // should we use _restrictCursor() here? FIXME: how about origin mode / scroll margins?
+    buffer.x = Math.max(Math.min(buffer.x, this._bufferService.cols - 1), 0);
   }
 
   /**
@@ -1710,6 +1741,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 9     | X10 xterm mouse protocol.                               | #Y      |
    * | 12    | Start Blinking Cursor.                                  | #Y      |
    * | 25    | Show Cursor (DECTCEM).                                  | #Y      |
+   * | 45    | Reverse wrap-around.                                    | #Y      |
    * | 47    | Use Alternate Screen Buffer.                            | #Y      |
    * | 66    | Application keypad (DECNKM).                            | #Y      |
    * | 1000  | X11 xterm mouse protocol.                               | #Y      |
@@ -1760,6 +1792,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 12:
           // this.cursorBlink = true;
+          break;
+        case 45:
+          this._coreService.decPrivateModes.reverseWraparound = true;
           break;
         case 66:
           this._logService.debug('Serial port requested application keypad.');
@@ -1944,6 +1979,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 9     | Don't send Mouse X & Y on button press.                 | #Y      |
    * | 12    | Stop Blinking Cursor.                                   | #Y      |
    * | 25    | Hide Cursor (DECTCEM).                                  | #Y      |
+   * | 45    | No reverse wrap-around.                                 | #Y      |
    * | 47    | Use Normal Screen Buffer.                               | #Y      |
    * | 66    | Numeric keypad (DECNKM).                                | #Y      |
    * | 1000  | Don't send Mouse reports.                               | #Y      |
@@ -1987,6 +2023,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 12:
           // this.cursorBlink = false;
+          break;
+        case 45:
+          this._coreService.decPrivateModes.reverseWraparound = false;
           break;
         case 66:
           this._logService.debug('Switching back to normal keypad.');

@@ -62,6 +62,7 @@ export class MockCoreService implements ICoreService {
     applicationCursorKeys: false,
     applicationKeypad: false,
     origin: false,
+    reverseWraparound: false,
     wraparound: true
   };
   onData: IEvent<string> = new EventEmitter<string>().event;

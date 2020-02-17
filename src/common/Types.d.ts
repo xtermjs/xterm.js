@@ -155,6 +155,7 @@ export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
   origin: boolean;
+  reverseWraparound: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 

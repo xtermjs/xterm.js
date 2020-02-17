@@ -12,6 +12,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
   applicationKeypad: false,
   origin: false,
+  reverseWraparound: false,
   wraparound: true // defaults: xterm - true, vt100 - false
 });
 

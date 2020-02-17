@@ -1445,4 +1445,61 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
     });
   });
+  describe('BS with reverseWraparound set/unset', () => {
+    const ttyBS = '\x08 \x08';  // tty ICANON sends <BS SP BS> on pressing BS
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
+    });
+    describe('reverseWraparound unset (default)', () => {
+      it('cannot delete last cell', () => {
+        term.writeSync('12345');
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 1), ['123 5']);
+        term.writeSync(ttyBS.repeat(10));
+        assert.deepEqual(getLines(term, 1), ['    5']);
+      });
+      it('cannot access prev line', () => {
+        term.writeSync('12345'.repeat(2));
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['12345', '123 5']);
+        term.writeSync(ttyBS.repeat(10));
+        assert.deepEqual(getLines(term, 2), ['12345', '    5']);
+      });
+    });
+    describe('reverseWraparound set', () => {
+      it('can delete last cell', () => {
+        term.writeSync('\x1b[?45h');
+        term.writeSync('12345');
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 1), ['1234 ']);
+        term.writeSync(ttyBS.repeat(7));
+        assert.deepEqual(getLines(term, 1), ['     ']);
+      });
+      it('can access prev line if wrapped', () => {
+        term.writeSync('\x1b[?45h');
+        term.writeSync('12345'.repeat(2));
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['12345', '1234 ']);
+        term.writeSync(ttyBS.repeat(7));
+        assert.deepEqual(getLines(term, 2), ['12   ', '     ']);
+      });
+      it('should lift isWrapped', () => {
+        term.writeSync('\x1b[?45h');
+        term.writeSync('12345'.repeat(2));
+        assert.equal(term.buffer.lines.get(1).isWrapped, true);
+        term.writeSync(ttyBS.repeat(7));
+        assert.equal(term.buffer.lines.get(1).isWrapped, false);
+      });
+      it('stops at hard NLs', () => {
+        term.writeSync('\x1b[?45h');
+        term.writeSync('12345\r\n');
+        term.writeSync('12345'.repeat(2));
+        term.writeSync(ttyBS.repeat(50));
+        assert.deepEqual(getLines(term, 3), ['12345', '     ', '     ']);
+        assert.equal(term.buffer.x, 0);
+        assert.equal(term.buffer.y, 1);
+      });
+    });
+  });
 });
