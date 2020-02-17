@@ -372,6 +372,13 @@ describe('InputHandler', () => {
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
     });
+    it('should clear cells to the right on early wrap-around', () => {
+      const term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
+      term.writeSync('12345');
+      term.buffer.x = 0;
+      term.writeSync('￥￥￥');
+      assert.deepEqual(getLines(term, 2), ['￥￥', '￥']);
+    });
   });
 
   describe('alt screen', () => {
