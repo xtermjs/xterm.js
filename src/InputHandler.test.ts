@@ -1507,6 +1507,29 @@ describe('InputHandler', () => {
         assert.equal(term.buffer.x, 0);
         assert.equal(term.buffer.y, 1);
       });
+      it('handles wide chars correctly', () => {
+        term.writeSync('\x1b[?45h');
+        term.writeSync('￥￥￥');
+        assert.deepEqual(getLines(term, 2), ['￥￥', '￥']);
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['￥￥', '  ']);
+        assert.equal(term.buffer.x, 1);
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['￥￥', '  ']);
+        assert.equal(term.buffer.x, 0);
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['￥  ', '  ']);
+        assert.equal(term.buffer.x, 3);  // x=4 skipped due to early wrap-around
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['￥  ', '  ']);
+        assert.equal(term.buffer.x, 2);
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['    ', '  ']);
+        assert.equal(term.buffer.x, 1);
+        term.writeSync(ttyBS);
+        assert.deepEqual(getLines(term, 2), ['    ', '  ']);
+        assert.equal(term.buffer.x, 0);
+      });
     });
   });
 });
