@@ -213,7 +213,7 @@ describe('Mouse Tracking Tests', async () => {
   const itMouse = isChromium ? it : it.skip;
 
   before(async function(): Promise<void> {
-    browser = await browserType.launch({
+    browser = await browserType.launch({ dumpio: true,
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });

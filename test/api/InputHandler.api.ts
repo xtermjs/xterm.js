@@ -21,7 +21,7 @@ describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
-    browser = await browserType.launch({
+    browser = await browserType.launch({ dumpio: true,
       headless: process.argv.indexOf('--headless') !== -1,
       args: [`--window-size=${width},${height}`, `--no-sandbox`]
     });
