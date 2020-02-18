@@ -82,8 +82,13 @@ jobs:
     vmImage: 'ubuntu-18.04'
   steps:
   - script: |
+      # source: https://github.com/microsoft/playwright/issues/1041
       sudo apt update
-      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libevent-2.1-6 libnotify4 libxslt1.1
+      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libnotify4 libxslt1.1 libevent-2.1-6 libgles2 libgl1 libegl1 libvpx5
+      # for chromium
+      sudo apt install libnss3 libxss1 libasound2
+      # for firefox
+      sudo apt install libdbus-glib-1-2 libxt6
     displayName: Install required packages
   - task: NodeTool@0
     inputs:
@@ -108,6 +113,8 @@ jobs:
     displayName: 'Integration tests (Chromium)'
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
     displayName: 'Integration tests (Firefox)'
+  - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-webkit --headless --forbid-only"
+    displayName: 'Integration tests (Webkit)'
 
 - job: macOS_IntegrationTests
   pool:
