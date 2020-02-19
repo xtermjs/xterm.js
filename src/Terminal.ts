@@ -1222,7 +1222,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return false;
     }
 
-    const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.altEnterMode, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = evaluateKeyboardEvent(event, this._coreService.decPrivateModes.altEscMode, this._coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
 

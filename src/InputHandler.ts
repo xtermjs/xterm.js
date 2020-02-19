@@ -1789,7 +1789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.isCursorHidden = false;
           break;
         case 1039:
-          this._coreService.decPrivateModes.altEnterMode = true;
+          this._coreService.decPrivateModes.altEscMode = true;
           break;
         case 1048: // alt screen cursor
           this.saveCursor();
@@ -2007,7 +2007,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.isCursorHidden = true;
           break;
         case 1039:
-          this._coreService.decPrivateModes.altEnterMode = false;
+          this._coreService.decPrivateModes.altEscMode = false;
           break;
         case 1048: // alt screen cursor
           this.restoreCursor();
