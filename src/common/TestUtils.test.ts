@@ -59,7 +59,6 @@ export class MockCoreService implements ICoreService {
   isCursorHidden: boolean = false;
   isFocused: boolean = false;
   decPrivateModes: IDecPrivateModes = {
-    altEscMode: true,
     applicationCursorKeys: false,
     applicationKeypad: false,
     origin: false,

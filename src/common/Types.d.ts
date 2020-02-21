@@ -152,7 +152,6 @@ export interface IMarker extends IDisposable {
 }
 
 export interface IDecPrivateModes {
-  altEscMode: boolean;
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
   origin: boolean;

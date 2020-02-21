@@ -1788,9 +1788,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
           break;
-        case 1039:
-          this._coreService.decPrivateModes.altEscMode = true;
-          break;
         case 1048: // alt screen cursor
           this.saveCursor();
           break;
@@ -2005,9 +2002,6 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
-          break;
-        case 1039:
-          this._coreService.decPrivateModes.altEscMode = false;
           break;
         case 1048: // alt screen cursor
           this.restoreCursor();
