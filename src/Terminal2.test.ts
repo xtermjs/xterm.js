@@ -19,7 +19,7 @@ const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__
 const SKIP_FILES = [
   't0084-CBT.in',
   't0101-NLM.in',
-  't0103-reverse_wrap.in',
+  't0103-reverse_wrap.in',  // not comparable, we deviate from xterm reverse wrap on purpose
   't0504-vim.in'
 ];
 if (os.platform() === 'darwin') {

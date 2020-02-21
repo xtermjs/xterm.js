@@ -1530,6 +1530,43 @@ describe('InputHandler', () => {
         assert.deepEqual(getLines(term, 2), ['    ', '  ']);
         assert.equal(term.buffer.x, 0);
       });
+      it('should not reverse outside of scroll margins', () => {
+        // prepare buffer content
+        term.writeSync('#####abcdefghijklmnopqrstuvwxy');
+        assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
+        assert.equal(term.buffer.ydisp, 1);
+        assert.equal(term.buffer.x, 5);
+        assert.equal(term.buffer.y, 4);
+        term.writeSync(ttyBS.repeat(100));
+        assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
+
+        term.writeSync('\x1b[?45h');
+        term.writeSync('uvwxy');
+
+        // set top/bottom to 1/3 (0-based)
+        term.writeSync('\x1b[2;4r');
+        // place cursor below scroll bottom
+        term.buffer.x = 5;
+        term.buffer.y = 4;
+        term.writeSync(ttyBS.repeat(100));
+        assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
+
+        term.writeSync('uvwxy');
+        // place cursor within scroll margins
+        term.buffer.x = 5;
+        term.buffer.y = 3;
+        term.writeSync(ttyBS.repeat(100));
+        assert.deepEqual(getLines(term, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
+        assert.equal(term.buffer.x, 0);
+        assert.equal(term.buffer.y, term.buffer.scrollTop);  // stops at 0, scrollTop
+
+        term.writeSync('fghijklmnopqrst');
+        // place cursor above scroll top
+        term.buffer.x = 5;
+        term.buffer.y = 0;
+        term.writeSync(ttyBS.repeat(100));
+        assert.deepEqual(getLines(term, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
+      });
     });
   });
 });

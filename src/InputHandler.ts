@@ -719,32 +719,46 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    *
    * @vt: #Y   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
+   * By default it is not possible to move the cursor past the leftmost position.
+   * If `reverse wrap-around` (`CSI ? 45 h`) is set, a previous soft line wrap (DECAWM)
+   * can be undone with BS within the scroll margins. In that case the cursor will wrap back
+   * to the end of the previous row. Note that it is not possible to peek back into the scrollbuffer
+   * with the cursor, thus at the home position (top-leftmost cell) this has no effect.
    */
   public backspace(): void {
-    // xterm allows deleting of the last col if reverseWraparound is set
-    // otherwise the last cell cannot be deleted by BS
+    const buffer = this._bufferService.buffer;
+
+    // by default (resverse wrap-around not set) we restrict the cursor to 0 .. rows/cols - 1
+    // thus the last cell of a row cannot be accessed by BS
     if (!this._coreService.decPrivateModes.reverseWraparound) {
       this._restrictCursor();
     } else {
-      // we still clamp the cursor to sane values here, but have to allow x=cols as well
-      this._bufferService.buffer.x = Math.min(this._bufferService.cols, Math.max(0, this._bufferService.buffer.x));
-      this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
-        ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
-        : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
-      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+      // copy of _restrictCursor(), but with x=cols as allowed max cursor position
+      // to make last cell accessible by BS
+      buffer.x = Math.min(this._bufferService.cols, Math.max(0, this._bufferService.buffer.x));
+      buffer.y = this._coreService.decPrivateModes.origin
+        ? Math.min(buffer.scrollBottom, Math.max(buffer.scrollTop, buffer.y))
+        : Math.min(this._bufferService.rows - 1, Math.max(0, buffer.y));
+      this._dirtyRowService.markDirty(buffer.y);
     }
-    const buffer = this._bufferService.buffer;
+
     if (buffer.x > 0) {
       buffer.x--;
     } else {
-      // reverse wraparound
-      // TODO: test in xterm - should we peek/unshift from scrollback if y == 0?
+      /**
+       * reverse wrap-around:
+       * Our implementation deviates from xterm on purpose. Details:
+       * - only previous soft NLs can be reversed (isWrapped=true)
+       * - only works within scrollborders (top/bottom, left/right not yet supported)
+       * - cannot peek into scrollbuffer
+       * - any cursor movement sequence keeps working as expected
+       */
       if (this._coreService.decPrivateModes.reverseWraparound
           && buffer.x === 0
-          && buffer.y > 0
+          && buffer.y > buffer.scrollTop
+          && buffer.y <= buffer.scrollBottom
           && buffer.lines.get(buffer.y + buffer.ybase).isWrapped)
       {
-        // unset isWrapped
         buffer.lines.get(buffer.y + buffer.ybase).isWrapped = false;
         buffer.y--;
         buffer.x = this._bufferService.cols - 1;
@@ -761,8 +775,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
     }
-    // should we use _restrictCursor() here? FIXME: how about origin mode / scroll margins?
-    buffer.x = Math.max(Math.min(buffer.x, this._bufferService.cols - 1), 0);
+    this._restrictCursor();
   }
 
   /**
