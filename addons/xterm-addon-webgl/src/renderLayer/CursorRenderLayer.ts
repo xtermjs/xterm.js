@@ -128,6 +128,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     const cursorY = terminal.buffer.baseY + terminal.buffer.cursorY;
     const viewportRelativeCursorY = cursorY - terminal.buffer.viewportY;
 
+    // in case cursor.x == cols adjust visual cursor to cols - 1
+    const correctedX = Math.min(terminal.buffer.cursorX, terminal.cols - 1);
+
     // Don't draw the cursor if it's off-screen
     if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= terminal.rows) {
       this._clearCursor();
@@ -135,7 +138,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     // TODO: Need fast buffer API for loading cell
-    (terminal as any)._core.buffer.lines.get(cursorY).loadCell(terminal.buffer.cursorX, this._cell);
+    (terminal as any)._core.buffer.lines.get(cursorY).loadCell(correctedX, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
@@ -146,12 +149,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this._colors.cursor.css;
       const cursorStyle = terminal.getOption('cursorStyle');
       if (cursorStyle && cursorStyle !== 'block') {
-        this._cursorRenderers[cursorStyle](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+        this._cursorRenderers[cursorStyle](terminal, correctedX, viewportRelativeCursorY, this._cell);
       } else {
-        this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+        this._renderBlurCursor(terminal, correctedX, viewportRelativeCursorY, this._cell);
       }
       this._ctx.restore();
-      this._state.x = terminal.buffer.cursorX;
+      this._state.x = correctedX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
       this._state.style = cursorStyle;
@@ -167,7 +170,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state.x === terminal.buffer.cursorX &&
+      if (this._state.x === correctedX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === isTerminalFocused(terminal) &&
           this._state.style === terminal.getOption('cursorStyle') &&
@@ -178,10 +181,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[terminal.getOption('cursorStyle') || 'block'](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[terminal.getOption('cursorStyle') || 'block'](terminal, correctedX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
-    this._state.x = terminal.buffer.cursorX;
+    this._state.x = correctedX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
     this._state.style = terminal.getOption('cursorStyle');
