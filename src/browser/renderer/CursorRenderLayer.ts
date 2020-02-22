@@ -141,8 +141,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     // in case cursor.x == cols adjust visual cursor to cols - 1
-    const xCorrected = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
-    this._bufferService.buffer.lines.get(cursorY)!.loadCell(xCorrected, this._cell);
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+    this._bufferService.buffer.lines.get(cursorY)!.loadCell(cursorX, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
@@ -153,12 +153,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this._colors.cursor.css;
       const cursorStyle = this._optionsService.options.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
-        this._cursorRenderers[cursorStyle](xCorrected, viewportRelativeCursorY, this._cell);
+        this._cursorRenderers[cursorStyle](cursorX, viewportRelativeCursorY, this._cell);
       } else {
-        this._renderBlurCursor(xCorrected, viewportRelativeCursorY, this._cell);
+        this._renderBlurCursor(cursorX, viewportRelativeCursorY, this._cell);
       }
       this._ctx.restore();
-      this._state.x = xCorrected;
+      this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
       this._state.style = cursorStyle;
@@ -174,7 +174,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state.x === xCorrected &&
+      if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === this._coreBrowserService.isFocused &&
           this._state.style === this._optionsService.options.cursorStyle &&
@@ -185,10 +185,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](xCorrected, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](cursorX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
-    this._state.x = xCorrected;
+    this._state.x = cursorX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
     this._state.style = this._optionsService.options.cursorStyle;
