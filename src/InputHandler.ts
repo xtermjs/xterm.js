@@ -2344,11 +2344,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
    *
    * The following terminal attributes are reset to default values:
-   * - cursor is reset (default = visible, home position)
    * - IRM is reset (dafault = false)
    * - scroll margins are reset (default = viewport size)
    * - erase attributes are reset to default
    * - charsets are reset
+   * - DECSC data is reset to initial values
+   * - DECOM is reset to absolute mode
    *
    *
    * FIXME: there are several more attributes missing (see VT520 manual)
@@ -2360,9 +2361,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
-    this._bufferService.buffer.x = this._bufferService.buffer.y = 0; // ?
     this._coreService.reset();
     this._charsetService.reset();
+
+    // reset DECSC data
+    this._bufferService.buffer.savedX = 0;
+    this._bufferService.buffer.savedY = this._bufferService.buffer.ybase;
+    this._bufferService.buffer.savedCurAttrData.fg = this._curAttrData.fg;
+    this._bufferService.buffer.savedCurAttrData.bg = this._curAttrData.bg;
+    this._bufferService.buffer.savedCharset = this._charsetService.charset;
+
+    // reset DECOM
+    this._coreService.decPrivateModes.origin = false;
   }
 
   /**
