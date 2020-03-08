@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IAttributeData, IColorRGB } from 'common/Types';
-import { Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { IAttributeData, IColorRGB, IExtendedAttrs } from 'common/Types';
+import { Attributes, FgFlags, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
 
 export class AttributeData implements IAttributeData {
   static toColorRGB(value: number): IColorRGB {
@@ -22,12 +22,14 @@ export class AttributeData implements IAttributeData {
     const newObj = new AttributeData();
     newObj.fg = this.fg;
     newObj.bg = this.bg;
+    newObj.extended = this.extended.clone();
     return newObj;
   }
 
   // data
-  public fg: number = 0;
-  public bg: number = 0;
+  public fg = 0;
+  public bg = 0;
+  public extended = new ExtendedAttrs();
 
   // flags
   public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
@@ -65,5 +67,48 @@ export class AttributeData implements IAttributeData {
       case Attributes.CM_RGB:   return this.bg & Attributes.RGB_MASK;
       default:                  return -1;  // CM_DEFAULT defaults to -1
     }
+  }
+
+  // extended attrs
+  public hasExtendedAttrs(): number {
+    return this.bg & BgFlags.HAS_EXTENDED;
+  }
+  public getUnderlineColor(): number {
+    if ((this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor) {
+      return this.extended.underlineColor;
+    }
+    return this.getFgColor();
+  }
+  public getUnderlineStyle(): UnderlineStyle {
+    return this.fg & FgFlags.UNDERLINE
+      ? (this.bg & BgFlags.HAS_EXTENDED ? this.extended.underlineStyle : UnderlineStyle.SINGLE)
+      : UnderlineStyle.NONE;
+  }
+}
+
+
+/**
+ * Extended attributes for a cell.
+ * Holds information about different underline styles and color.
+ */
+export class ExtendedAttrs implements IExtendedAttrs {
+  constructor(
+    // underline style, NONE is empty
+    public underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
+    // underline color, -1 is empty (same as FG)
+    public underlineColor: number = -1
+  ) {}
+
+  public clone(): IExtendedAttrs {
+    return new ExtendedAttrs(this.underlineStyle, this.underlineColor);
+  }
+
+  /**
+   * Convenient method to indicate whether the object holds no additional information
+   * and can be removed from the global attr object.
+   */
+  public isEmpty(): boolean {
+    // needs to test for every single attribute stored
+    return !(this.underlineStyle !== UnderlineStyle.NONE || ~this.underlineColor);
   }
 }

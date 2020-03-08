@@ -497,7 +497,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (buffer.x && end - start > 0 && bufferRow.getWidth(buffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
     for (let pos = start; pos < end; ++pos) {
@@ -577,12 +577,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
         if (bufferRow.getWidth(cols - 1) === 2) {
-          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg, curAttr.extended);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -590,7 +590,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
         }
       }
     }
@@ -611,7 +611,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (buffer.x < cols && end - start > 0 && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
-      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
     this._dirtyRowService.markDirty(buffer.y);
@@ -2099,6 +2099,40 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * SGR 4 subparams:
+   *    4:0   -   equal to SGR 24 (turn off all underline)
+   *    4:1   -   equal to SGR 4 (single underline)
+   *    4:2   -   equal to SGR 21 (double underline)
+   *    4:3   -   curly underline
+   *    4:4   -   dotted underline
+   *    4:5   -   dashed underline
+   */
+  private _processUnderline(subparams: Int32Array, attr: IAttributeData): void {
+    // treat extended attrs as immutable, thus always clone from old one
+    // this is needed since the buffer only holds references to it
+    attr.extended = attr.extended.clone();
+    let style = subparams[0];
+
+    // default to 1 == single underline
+    if (!~style || style > 5) {
+      style = 1;
+    }
+    attr.extended.underlineStyle = style;
+
+    // 0 deactivates underline
+    if (style === 0) {
+      attr.fg &= ~FgFlags.UNDERLINE;
+    }
+
+    // update HAS_EXTENDED in BG
+    if (attr.extended.isEmpty()) {
+      attr.bg &= ~BgFlags.HAS_EXTENDED;
+    } else {
+      attr.bg |= BgFlags.HAS_EXTENDED;
+    }
+  }
+
+  /**
    * CSI Pm m  Character Attributes (SGR).
    *
    * @vt: #P[See below for supported attributes.]    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
@@ -2210,6 +2244,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 4) {
         // underlined text
         attr.fg |= FgFlags.UNDERLINE;
+        if (params.hasSubParams(i)) {
+          this._processUnderline(params.getSubParams(i), attr);
+        }
       } else if (p === 5) {
         // blink
         attr.fg |= FgFlags.BLINK;
