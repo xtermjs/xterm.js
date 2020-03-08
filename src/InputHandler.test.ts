@@ -10,7 +10,7 @@ import { Terminal } from './Terminal';
 import { IBufferLine, IAttributeData } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes } from 'common/buffer/Constants';
+import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService } from 'common/TestUtils.test';
@@ -1443,6 +1443,80 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
       term.writeSync('\x1b[3;6H\x1b[3X');
       assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
+    });
+  });
+  describe('extended SGR 4 support', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 5});
+    });
+    it('4 | 24', () => {
+      term.writeSync('\x1b[4m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('21 | 24', () => {
+      term.writeSync('\x1b[21m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:1 | 4:0', () => {
+      term.writeSync('\x1b[4:1m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+      term.writeSync('\x1b[4:1m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:2 | 4:0', () => {
+      term.writeSync('\x1b[4:2m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+      term.writeSync('\x1b[4:2m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:3 | 4:0', () => {
+      term.writeSync('\x1b[4:3m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.CURLY);
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+      term.writeSync('\x1b[4:3m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.CURLY);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:4 | 4:0', () => {
+      term.writeSync('\x1b[4:4m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DOTTED);
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+      term.writeSync('\x1b[4:4m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DOTTED);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:5 | 4:0', () => {
+      term.writeSync('\x1b[4:5m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+      term.writeSync('\x1b[4:5m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
+      term.writeSync('\x1b[24m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
+    });
+    it('4:x --> 4 should revert to single underline', () => {
+      term.writeSync('\x1b[4:5m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
+      term.writeSync('\x1b[4m');
+      assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
     });
   });
 });

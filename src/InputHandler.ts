@@ -14,7 +14,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from '
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
@@ -2107,17 +2107,17 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    4:4   -   dotted underline
    *    4:5   -   dashed underline
    */
-  private _processUnderline(subparams: Int32Array, attr: IAttributeData): void {
+  private _processUnderline(style: number, attr: IAttributeData): void {
     // treat extended attrs as immutable, thus always clone from old one
     // this is needed since the buffer only holds references to it
     attr.extended = attr.extended.clone();
-    let style = subparams[0];
 
     // default to 1 == single underline
     if (!~style || style > 5) {
       style = 1;
     }
     attr.extended.underlineStyle = style;
+    attr.fg |= FgFlags.UNDERLINE;
 
     // 0 deactivates underline
     if (style === 0) {
@@ -2244,9 +2244,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 4) {
         // underlined text
         attr.fg |= FgFlags.UNDERLINE;
-        if (params.hasSubParams(i)) {
-          this._processUnderline(params.getSubParams(i), attr);
-        }
+        this._processUnderline(params.hasSubParams(i) ? params.getSubParams(i)[0] : UnderlineStyle.SINGLE, attr);
       } else if (p === 5) {
         // blink
         attr.fg |= FgFlags.BLINK;
@@ -2260,6 +2258,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
+      } else if (p === 21) {
+        // double underline
+        this._processUnderline(UnderlineStyle.DOUBLE, attr);
       } else if (p === 22) {
         // not bold nor faint
         attr.fg &= ~FgFlags.BOLD;
