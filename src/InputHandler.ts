@@ -2137,7 +2137,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #P[See below for supported attributes.]    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
    * SGR selects one or more character attributes at the same time. Multiple params (up to 32)
-   * are applied from in order from left to right. The changed attributes are applied to all new
+   * are applied in order from left to right. The changed attributes are applied to all new
    * characters received. If you move characters in the viewport by scrolling or any other means,
    * then the attributes move with the characters.
    *
@@ -2149,13 +2149,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | #Y      |
    * | 2         | Faint, decreased intensity.                              | #Y      |
    * | 3         | Italic.                                                  | #Y      |
-   * | 4         | Underlined. (no support for newer underline styles)      | #Y      |
+   * | 4         | Underlined (see below for style support).                | #Y      |
    * | 5         | Slowly blinking.                                         | #N      |
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters.                                  | #N      |
-   * | 21        | Doubly  underlined.                                      | #N      |
+   * | 21        | Doubly  underlined.                                      | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
@@ -2185,6 +2185,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 49        | Background color: Default (original).                    | #Y      |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
+   *
+   * Underline supports subparams to denote the style in the form `4 : x`:
+   *
+   * | x      | Meaning                                                       | Support |
+   * | ------ | ------------------------------------------------------------- | ------- |
+   * | 0      | No underline. Same as `SGR 24 m`.                             | #Y      |
+   * | 1      | Single underline. Same as `SGR 4 m`.                          | #Y      |
+   * | 2      | Double underline.                                             | #P[Currently outputs a single underline.] |
+   * | 3      | Curly underline.                                              | #P[Currently outputs a single underline.] |
+   * | 4      | Dotted underline.                                             | #P[Currently outputs a single underline.] |
+   * | 5      | Dashed underline.                                             | #P[Currently outputs a single underline.] |
+   * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
    * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
    *
