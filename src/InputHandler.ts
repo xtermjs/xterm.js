@@ -2027,6 +2027,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Helper to write color information packed with color mode.
+   */
+  private _updateColor(color: number, mode: number, c1: number, c2: number, c3: number): number {
+    if (mode === 2) {
+      color |= Attributes.CM_RGB;
+      color &= ~Attributes.RGB_MASK;
+      color |= AttributeData.fromColorRGB([c1, c2, c3]);
+    } else if (mode === 5) {
+      color &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+      color |= Attributes.CM_P256 | (c1 & 0xff);
+    }
+    return color;
+  }
+
+  /**
    * Helper to extract and apply color params/subparams.
    * Returns advance for params index.
    */
@@ -2075,24 +2090,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // apply colors
-    if (accu[0] === 38) {
-      if (accu[1] === 2) {
-        attr.fg |= Attributes.CM_RGB;
-        attr.fg &= ~Attributes.RGB_MASK;
-        attr.fg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
-      } else if (accu[1] === 5) {
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-        attr.fg |= Attributes.CM_P256 | (accu[3] & 0xff);
-      }
-    } else if (accu[0] === 48) {
-      if (accu[1] === 2) {
-        attr.bg |= Attributes.CM_RGB;
-        attr.bg &= ~Attributes.RGB_MASK;
-        attr.bg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
-      } else if (accu[1] === 5) {
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-        attr.bg |= Attributes.CM_P256 | (accu[3] & 0xff);
-      }
+    switch (accu[0]) {
+      case 38:
+        attr.fg = this._updateColor(attr.fg, accu[1], accu[3], accu[4], accu[5]);
+        break;
+      case 48:
+        attr.bg = this._updateColor(attr.bg, accu[1], accu[3], accu[4], accu[5]);
+        break;
+      case 58:
+        attr.extended = attr.extended.clone();
+        attr.extended.underlineColor = this._updateColor(attr.extended.underlineColor, accu[1], accu[3], accu[4], accu[5]);
     }
 
     return advance;
@@ -2125,11 +2132,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // update HAS_EXTENDED in BG
-    if (attr.extended.isEmpty()) {
-      attr.bg &= ~BgFlags.HAS_EXTENDED;
-    } else {
-      attr.bg |= BgFlags.HAS_EXTENDED;
-    }
+    attr.updateExtended();
   }
 
   /**
@@ -2300,9 +2303,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
-      } else if (p === 38 || p === 48) {
+      } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 59) {
+        attr.extended = attr.extended.clone();
+        attr.extended.underlineColor = -1;
+        attr.updateExtended();
       } else if (p === 100) { // FIXME: dead branch, p=100 already handled above!
         // reset fg/bg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);

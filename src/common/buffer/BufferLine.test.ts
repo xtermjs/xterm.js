@@ -32,9 +32,27 @@ describe('AttributeData', () => {
       attrs.bg |= BgFlags.HAS_EXTENDED;
       assert.equal(!!attrs.hasExtendedAttrs(), true);
     });
-    it('getUnderlineColor', () => {
+    it('getUnderlineColor - P256', () => {
       const attrs = new AttributeData();
-      attrs.extended.underlineColor = (1 << 16) | (2 << 8) | 3;
+      // set a P256 color
+      attrs.extended.underlineColor = Attributes.CM_P256 | 45;
+
+      // should use FG color if BgFlags.HAS_EXTENDED is not set
+      assert.equal(attrs.getUnderlineColor(), -1);
+
+      // should use underlineColor if BgFlags.HAS_EXTENDED is set and underlineColor holds a value
+      attrs.bg |= BgFlags.HAS_EXTENDED;
+      assert.equal(attrs.getUnderlineColor(), 45);
+
+      // should use FG color if underlineColor holds no value
+      attrs.extended.underlineColor = -1;
+      attrs.fg |= Attributes.CM_P256 | 123;
+      assert.equal(attrs.getUnderlineColor(), 123);
+    });
+    it('getUnderlineColor - RGB', () => {
+      const attrs = new AttributeData();
+      // set a P256 color
+      attrs.extended.underlineColor = Attributes.CM_RGB | (1 << 16) | (2 << 8) | 3;
 
       // should use FG color if BgFlags.HAS_EXTENDED is not set
       assert.equal(attrs.getUnderlineColor(), -1);
@@ -47,6 +65,37 @@ describe('AttributeData', () => {
       attrs.extended.underlineColor = -1;
       attrs.fg |= Attributes.CM_P256 | 123;
       assert.equal(attrs.getUnderlineColor(), 123);
+    });
+    it('getUnderlineColorMode / isUnderlineColorRGB / isUnderlineColorPalette / isUnderlineColorDefault', () => {
+      const attrs = new AttributeData();
+
+      // should always return color mode of fg
+      for (const mode of [Attributes.CM_DEFAULT, Attributes.CM_P16, Attributes.CM_P256, Attributes.CM_RGB]) {
+        attrs.extended.underlineColor = mode;
+        assert.equal(attrs.getUnderlineColorMode(), attrs.getFgColorMode());
+        assert.equal(attrs.isUnderlineColorDefault(), true);
+      }
+      attrs.fg = Attributes.CM_RGB;
+      for (const mode of [Attributes.CM_DEFAULT, Attributes.CM_P16, Attributes.CM_P256, Attributes.CM_RGB]) {
+        attrs.extended.underlineColor = mode;
+        assert.equal(attrs.getUnderlineColorMode(), attrs.getFgColorMode());
+        assert.equal(attrs.isUnderlineColorDefault(), false);
+        assert.equal(attrs.isUnderlineColorRGB(), true);
+      }
+
+      // should return own mode
+      attrs.bg |= BgFlags.HAS_EXTENDED;
+      attrs.extended.underlineColor = Attributes.CM_DEFAULT;
+      assert.equal(attrs.getUnderlineColorMode(), Attributes.CM_DEFAULT);
+      attrs.extended.underlineColor = Attributes.CM_P16;
+      assert.equal(attrs.getUnderlineColorMode(), Attributes.CM_P16);
+      assert.equal(attrs.isUnderlineColorPalette(), true);
+      attrs.extended.underlineColor = Attributes.CM_P256;
+      assert.equal(attrs.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(attrs.isUnderlineColorPalette(), true);
+      attrs.extended.underlineColor = Attributes.CM_RGB;
+      assert.equal(attrs.getUnderlineColorMode(), Attributes.CM_RGB);
+      assert.equal(attrs.isUnderlineColorRGB(), true);
     });
     it('getUnderlineStyle', () => {
       const attrs = new AttributeData();

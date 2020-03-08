@@ -1445,7 +1445,7 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(term), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
     });
   });
-  describe('extended SGR 4 support', () => {
+  describe('extended underline style support (SGR 4)', () => {
     let term: TestTerminal;
     beforeEach(() => {
       term = new TestTerminal({cols: 10, rows: 5});
@@ -1517,6 +1517,109 @@ describe('InputHandler', () => {
       assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
       term.writeSync('\x1b[4m');
       assert.equal(term.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
+    });
+  });
+  describe('underline colors (SGR 58 & SGR 59)', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 5});
+    });
+    it('defaults to FG color', () => {
+      for (const s of ['', '\x1b[30m', '\x1b[38;510m', '\x1b[38;2;1;2;3m']) {
+        term.writeSync(s);
+        assert.equal(term.curAttrData.getUnderlineColor(), term.curAttrData.getFgColor());
+        assert.equal(term.curAttrData.getUnderlineColorMode(), term.curAttrData.getFgColorMode());
+        assert.equal(term.curAttrData.isUnderlineColorRGB(), term.curAttrData.isFgRGB());
+        assert.equal(term.curAttrData.isUnderlineColorPalette(), term.curAttrData.isFgPalette());
+        assert.equal(term.curAttrData.isUnderlineColorDefault(), term.curAttrData.isFgDefault());
+      }
+    });
+    it('correctly sets P256/RGB colors', () => {
+      term.writeSync('\x1b[4m');
+      term.writeSync('\x1b[58;5;123m');
+      assert.equal(term.curAttrData.getUnderlineColor(), 123);
+      assert.equal(term.curAttrData.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.isUnderlineColorRGB(), false);
+      assert.equal(term.curAttrData.isUnderlineColorPalette(), true);
+      assert.equal(term.curAttrData.isUnderlineColorDefault(), false);
+      term.writeSync('\x1b[58;2::1:2:3m');
+      assert.equal(term.curAttrData.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
+      assert.equal(term.curAttrData.getUnderlineColorMode(), Attributes.CM_RGB);
+      assert.equal(term.curAttrData.isUnderlineColorRGB(), true);
+      assert.equal(term.curAttrData.isUnderlineColorPalette(), false);
+      assert.equal(term.curAttrData.isUnderlineColorDefault(), false);
+    });
+    it('P256/RGB persistence', () => {
+      const cell = new CellData();
+      term.writeSync('\x1b[4m');
+      term.writeSync('\x1b[58;5;123m');
+      assert.equal(term.curAttrData.getUnderlineColor(), 123);
+      assert.equal(term.curAttrData.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.isUnderlineColorRGB(), false);
+      assert.equal(term.curAttrData.isUnderlineColorPalette(), true);
+      assert.equal(term.curAttrData.isUnderlineColorDefault(), false);
+      term.writeSync('ab');
+      (term as any)._bufferService.buffers.active.lines.get(0).loadCell(1, cell);
+      assert.equal(cell.getUnderlineColor(), 123);
+      assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(cell.isUnderlineColorRGB(), false);
+      assert.equal(cell.isUnderlineColorPalette(), true);
+      assert.equal(cell.isUnderlineColorDefault(), false);
+
+      term.writeSync('\x1b[4:0m');
+      assert.equal(term.curAttrData.getUnderlineColor(), term.curAttrData.getFgColor());
+      assert.equal(term.curAttrData.getUnderlineColorMode(), term.curAttrData.getFgColorMode());
+      assert.equal(term.curAttrData.isUnderlineColorRGB(), term.curAttrData.isFgRGB());
+      assert.equal(term.curAttrData.isUnderlineColorPalette(), term.curAttrData.isFgPalette());
+      assert.equal(term.curAttrData.isUnderlineColorDefault(), term.curAttrData.isFgDefault());
+      term.writeSync('a');
+      (term as any)._bufferService.buffers.active.lines.get(0).loadCell(1, cell);
+      assert.equal(cell.getUnderlineColor(), 123);
+      assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(cell.isUnderlineColorRGB(), false);
+      assert.equal(cell.isUnderlineColorPalette(), true);
+      assert.equal(cell.isUnderlineColorDefault(), false);
+      (term as any)._bufferService.buffers.active.lines.get(0).loadCell(2, cell);
+      assert.equal(cell.getUnderlineColor(), term.curAttrData.getFgColor());
+      assert.equal(cell.getUnderlineColorMode(), term.curAttrData.getFgColorMode());
+      assert.equal(cell.isUnderlineColorRGB(), term.curAttrData.isFgRGB());
+      assert.equal(cell.isUnderlineColorPalette(), term.curAttrData.isFgPalette());
+      assert.equal(cell.isUnderlineColorDefault(), term.curAttrData.isFgDefault());
+
+      term.writeSync('\x1b[4m');
+      term.writeSync('\x1b[58;2::1:2:3m');
+      assert.equal(term.curAttrData.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
+      assert.equal(term.curAttrData.getUnderlineColorMode(), Attributes.CM_RGB);
+      assert.equal(term.curAttrData.isUnderlineColorRGB(), true);
+      assert.equal(term.curAttrData.isUnderlineColorPalette(), false);
+      assert.equal(term.curAttrData.isUnderlineColorDefault(), false);
+      term.writeSync('a');
+      term.writeSync('\x1b[24m');
+      (term as any)._bufferService.buffers.active.lines.get(0).loadCell(1, cell);
+      assert.equal(cell.getUnderlineColor(), 123);
+      assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
+      assert.equal(cell.isUnderlineColorRGB(), false);
+      assert.equal(cell.isUnderlineColorPalette(), true);
+      assert.equal(cell.isUnderlineColorDefault(), false);
+      (term as any)._bufferService.buffers.active.lines.get(0).loadCell(3, cell);
+      assert.equal(cell.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
+      assert.equal(cell.getUnderlineColorMode(), Attributes.CM_RGB);
+      assert.equal(cell.isUnderlineColorRGB(), true);
+      assert.equal(cell.isUnderlineColorPalette(), false);
+      assert.equal(cell.isUnderlineColorDefault(), false);
+
+      // eAttrs in buffer pos 0 and 1 should be the same object
+      assert.equal(
+        (term as any)._bufferService.buffers.active.lines.get(0)._extendedAttrs[0],
+        (term as any)._bufferService.buffers.active.lines.get(0)._extendedAttrs[1]
+      );
+      // should not have written eAttr for pos 2 in the buffer
+      assert.equal((term as any)._bufferService.buffers.active.lines.get(0)._extendedAttrs[2], undefined);
+      // eAttrs in buffer pos 1 and pos 3 must be different objs
+      assert.notEqual(
+        (term as any)._bufferService.buffers.active.lines.get(0)._extendedAttrs[1],
+        (term as any)._bufferService.buffers.active.lines.get(0)._extendedAttrs[3]
+      );
     });
   });
 });

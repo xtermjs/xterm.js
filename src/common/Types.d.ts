@@ -109,7 +109,12 @@ export interface IAttributeData {
 
   // extended attrs
   hasExtendedAttrs(): number;
+  updateExtended(): void;
   getUnderlineColor(): number;
+  getUnderlineColorMode(): number;
+  isUnderlineColorRGB(): boolean;
+  isUnderlineColorPalette(): boolean;
+  isUnderlineColorDefault(): boolean;
   getUnderlineStyle(): number;
 }
 

@@ -73,11 +73,44 @@ export class AttributeData implements IAttributeData {
   public hasExtendedAttrs(): number {
     return this.bg & BgFlags.HAS_EXTENDED;
   }
+  public updateExtended(): void {
+    if (this.extended.isEmpty()) {
+      this.bg &= ~BgFlags.HAS_EXTENDED;
+    } else {
+      this.bg |= BgFlags.HAS_EXTENDED;
+    }
+  }
   public getUnderlineColor(): number {
     if ((this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor) {
-      return this.extended.underlineColor;
+      switch (this.extended.underlineColor & Attributes.CM_MASK) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:  return this.extended.underlineColor & Attributes.PCOLOR_MASK;
+        case Attributes.CM_RGB:   return this.extended.underlineColor & Attributes.RGB_MASK;
+        default:                  return this.getFgColor();
+      }
     }
     return this.getFgColor();
+  }
+  public getUnderlineColorMode(): number {
+    return (this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor
+      ? this.extended.underlineColor & Attributes.CM_MASK
+      : this.getFgColorMode();
+  }
+  public isUnderlineColorRGB(): boolean {
+    return (this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor
+      ? (this.extended.underlineColor & Attributes.CM_MASK) === Attributes.CM_RGB
+      : this.isFgRGB();
+  }
+  public isUnderlineColorPalette(): boolean {
+    return (this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor
+      ? (this.extended.underlineColor & Attributes.CM_MASK) === Attributes.CM_P16
+          || (this.extended.underlineColor & Attributes.CM_MASK) === Attributes.CM_P256
+      : this.isFgPalette();
+  }
+  public isUnderlineColorDefault(): boolean {
+    return (this.bg & BgFlags.HAS_EXTENDED) && ~this.extended.underlineColor
+      ? (this.extended.underlineColor & Attributes.CM_MASK) === 0
+      : this.isFgDefault();
   }
   public getUnderlineStyle(): UnderlineStyle {
     return this.fg & FgFlags.UNDERLINE
@@ -104,11 +137,10 @@ export class ExtendedAttrs implements IExtendedAttrs {
   }
 
   /**
-   * Convenient method to indicate whether the object holds no additional information
-   * and can be removed from the global attr object.
+   * Convenient method to indicate whether the object holds no additional information,
+   * that needs to be persistant in the buffer.
    */
   public isEmpty(): boolean {
-    // needs to test for every single attribute stored
-    return !(this.underlineStyle !== UnderlineStyle.NONE || ~this.underlineColor);
+    return this.underlineStyle === UnderlineStyle.NONE;
   }
 }
