@@ -32,8 +32,7 @@ const TYPES = [
   'SOS'
 ];
 
-const MARKDOWN_TMPL = `
----
+const MARKDOWN_TMPL = `---
 title: Supported Terminal Sequences
 category: API
 ---
