@@ -1177,7 +1177,7 @@ declare module 'xterm' {
 
     /**
      * The x position of the cursor. This ranges between `0` (left side) and
-     * `Terminal.cols` (behind last cell of the row).
+     * `Terminal.cols` (after last cell of the row).
      */
     readonly cursorX: number;
 
