@@ -101,7 +101,6 @@ Note that some APIs are marked *experimental*, these are added to enable experim
 Xterm.js is used in several world-class applications to provide great terminal experiences.
 
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
-- [**CoCalc**](https://cocalc.com/): Lots of free software pre-installed, to chat, collaborate, develop, program, publish, research, share, teach, in C++, HTML, Julia, Jupyter, LaTeX, Markdown, Python, R, SageMath, Scala, ...
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js.
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js.
 - [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
@@ -161,6 +160,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Linode**](https://linode.com): Linode uses xterm.js to provide users a web console for their Linode instances.
 - [**FluffOS**](https://www.fluffos.info): Active maintained LPMUD driver with websocket support.
 - [**x-terminal**](https://atom.io/packages/x-terminal): Atom plugin for providing terminals inside your Atom workspace.
+- [**CoCalc**](https://cocalc.com/): Lots of free software pre-installed, to chat, collaborate, develop, program, publish, research, share, teach, in C++, HTML, Julia, Jupyter, LaTeX, Markdown, Python, R, SageMath, Scala, ...
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
