@@ -2,6 +2,11 @@
 <html>
   <head>
     <title>xterm.js demo</title>
+    <!--
+      WARNING: This demo is a barebones implementation designed for development and evaluation
+      purposes only. It is definitely NOT production ready and does not aim to be so. Exposing the
+      demo to the public as is would introduce security risks for the host.
+    -->
     <link rel="shortcut icon" type="image/png" href="/logo.png">
     <link rel="stylesheet" href="/xterm.css" />
     <link rel="stylesheet" href="/style.css" />
@@ -44,7 +49,6 @@
       </div>
     </div>
     <hr/>
-    <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for the development and evaluation of xterm.js only. Exposing the demo to the public as is would introduce security risks for the host.</p>
     <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
     <script src="dist/client-bundle.js" defer ></script>
   </body>
