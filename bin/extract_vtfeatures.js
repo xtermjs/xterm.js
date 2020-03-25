@@ -32,8 +32,14 @@ const TYPES = [
   'SOS'
 ];
 
-const MARKDOWN_TMPL = `
+const MARKDOWN_TMPL = `---
+title: Supported Terminal Sequences
+category: API
+---
+
 {::options parse_block_html="true" /}
+
+# Supported Terminal Sequences
 
 xterm.js version: {{version}}
 
