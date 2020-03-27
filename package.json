@@ -47,7 +47,7 @@
     "@types/webpack": "^4.4.11",
     "@types/ws": "^6.0.1",
     "chai": "3.5.0",
-    "deep-equal": "^1.1.0",
+    "deep-equal": "^2.0.1",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "glob": "^7.0.5",
