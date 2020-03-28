@@ -6,6 +6,8 @@ import { IBufferService, ICoreService, ICoreMouseService } from 'common/services
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 /**
  * Supported default protocols.
  */
@@ -284,11 +286,11 @@ export class CoreMouseService implements ICoreMouseService {
 
   public explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
     return {
-      DOWN: !!(events & CoreMouseEventType.DOWN),
-      UP: !!(events & CoreMouseEventType.UP),
-      DRAG: !!(events & CoreMouseEventType.DRAG),
-      MOVE: !!(events & CoreMouseEventType.MOVE),
-      WHEEL: !!(events & CoreMouseEventType.WHEEL)
+      down: !!(events & CoreMouseEventType.DOWN),
+      up: !!(events & CoreMouseEventType.UP),
+      drag: !!(events & CoreMouseEventType.DRAG),
+      move: !!(events & CoreMouseEventType.MOVE),
+      wheel: !!(events & CoreMouseEventType.WHEEL)
     };
   }
 
