@@ -419,7 +419,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 

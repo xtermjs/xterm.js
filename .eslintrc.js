@@ -134,15 +134,16 @@ module.exports = {
           { "selector": "typeLike", "format": ["PascalCase"] },
           { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] },
         ],
+        "@typescript-eslint/explicit-function-return-type": [
+          "error",
+          {
+            "allowExpressions": true
+          }
+        ],
         "@typescript-eslint/tslint/config": [
             "error",
             {
                 "rules": {
-                    "typedef": [
-                        true,
-                        "call-signature",
-                        "parameter"
-                    ],
                     "whitespace": [
                         true,
                         "check-branch",

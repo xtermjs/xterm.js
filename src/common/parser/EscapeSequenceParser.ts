@@ -82,7 +82,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   // range macro for byte
   const BYTE_VALUES = 256;
   const blueprint = Array.apply(null, Array(BYTE_VALUES)).map((unused: any, i: number) => i);
-  const r = (start: number, end: number) => blueprint.slice(start, end);
+  const r = (start: number, end: number): number[] => blueprint.slice(start, end);
 
   // Default definitions.
   const PRINTABLES = r(0x20, 0x7f); // 0x20 (SP) included, 0x7F (DEL) excluded
