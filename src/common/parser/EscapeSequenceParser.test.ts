@@ -58,6 +58,9 @@ const oscPutParser = new MockOscPutParser();
 
 // derived parser with access to internal states
 class TestEscapeSequenceParser extends EscapeSequenceParser {
+  public get transitions(): TransitionTable {
+    return this._transitions;
+  }
   public get osc(): string {
     return (this._oscParser as MockOscPutParser).data;
   }
@@ -192,13 +195,13 @@ describe('EscapeSequenceParser', function (): void {
   const parser = testParser;
   describe('Parser init and methods', function (): void {
     it('constructor', function (): void {
-      let p: EscapeSequenceParser = new EscapeSequenceParser();
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
-      p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
+      let p = new TestEscapeSequenceParser();
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+      p = new TestEscapeSequenceParser(VT500_TRANSITION_TABLE);
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
       const tansitions: TransitionTable = new TransitionTable(10);
-      p = new EscapeSequenceParser(tansitions);
-      chai.expect(p.TRANSITIONS).equal(tansitions);
+      p = new TestEscapeSequenceParser(tansitions);
+      chai.expect(p.transitions).equal(tansitions);
     });
     it('inital states', function (): void {
       chai.expect(parser.initialState).equal(ParserState.GROUND);
