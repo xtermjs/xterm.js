@@ -45,7 +45,7 @@ declare module 'xterm' {
     /**
      * The type of the bell notification the terminal will use.
      */
-    bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+    bellStyle?: 'none' | 'sound';
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
