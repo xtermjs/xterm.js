@@ -87,6 +87,7 @@ module.exports = {
             "error",
             "always"
         ],
+        "keyword-spacing": "error",
         "new-parens": "error",
         "no-duplicate-imports": "error",
         "no-else-return": [
@@ -104,6 +105,7 @@ module.exports = {
                 ]
             }
         ],
+        "no-irregular-whitespace": "error",
         "no-trailing-spaces": "error",
         "no-unsafe-finally": "error",
         "no-var": "error",
@@ -134,6 +136,7 @@ module.exports = {
           { "selector": "typeLike", "format": ["PascalCase"] },
           { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] },
         ],
+        "@typescript-eslint/type-annotation-spacing": "error",
         "@typescript-eslint/explicit-function-return-type": [
           "error",
           {

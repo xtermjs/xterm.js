@@ -93,7 +93,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const oldCanvas = this._canvas;
     this._alpha = alpha;
     // Cloning preserves properties
-    this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
+    this._canvas = this._canvas.cloneNode() as HTMLCanvasElement;
     this._initCanvas();
     this._container.replaceChild(this._canvas, oldCanvas);
 
