@@ -835,12 +835,12 @@ export class SelectionService implements ISelectionService {
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
     let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
-        endIndex // The index of the selection's end char in the line string
-        - startIndex // The index of the selection's start char in the line string
-        + leftWideCharCount // The number of wide chars left of the initial char
-        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
-        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
-        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+      endIndex // The index of the selection's end char in the line string
+      - startIndex // The index of the selection's start char in the line string
+      + leftWideCharCount // The number of wide chars left of the initial char
+      + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+      - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return undefined;
@@ -848,9 +848,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse upwards if the line is wrapped and the word wraps to the above line
     if (followWrappedLinesAbove) {
-      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /*' '*/) {
+      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /* ' ' */) {
         const previousBufferLine = buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
           const previousLineWordPosition = this._getWordAt([this._bufferService.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
             const offset = this._bufferService.cols - previousLineWordPosition.start;
@@ -863,9 +863,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse downwards if the line is wrapped and the word wraps to the next line
     if (followWrappedLinesBelow) {
-      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
         const nextBufferLine = buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /*' '*/) {
+        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /* ' ' */) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;

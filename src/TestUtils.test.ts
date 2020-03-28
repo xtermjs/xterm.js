@@ -36,9 +36,9 @@ export class MockTerminal implements ITerminal {
   onBinary: IEvent<string>;
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
-  onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
-  onResize: IEvent<{ cols: number; rows: number; }>;
+  onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+  onRender: IEvent<{ start: number, end: number }>;
+  onResize: IEvent<{ cols: number, rows: number }>;
   markers: IMarker[];
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
@@ -251,7 +251,7 @@ export class MockBuffer implements IBuffer {
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
-  getWrappedRangeForLine(y: number): { first: number; last: number; } {
+  getWrappedRangeForLine(y: number): { first: number, last: number } {
     return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments);
   }
   nextStop(x?: number): number {
@@ -282,8 +282,8 @@ export class MockBuffer implements IBuffer {
 
 export class MockRenderer implements IRenderer {
   onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
-  onCanvasResize: IEvent<{ width: number; height: number; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
+  onCanvasResize: IEvent<{ width: number, height: number }>;
+  onRender: IEvent<{ start: number, end: number }>;
   dispose(): void {
     throw new Error('Method not implemented.');
   }

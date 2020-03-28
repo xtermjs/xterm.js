@@ -663,10 +663,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
-      let pos;
-
       // get mouse coordinates
-      pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) {
         return false;
       }
@@ -685,8 +683,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           } else {
             // according to MDN buttons only reports up to button 5 (AUX2)
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
-                  ev.buttons & 4 ? CoreMouseButton.MIDDLE :
-                  ev.buttons & 2 ? CoreMouseButton.RIGHT :
+              ev.buttons & 4 ? CoreMouseButton.MIDDLE :
+                ev.buttons & 2 ? CoreMouseButton.RIGHT :
                   CoreMouseButton.NONE; // fallback to NONE
           }
           break;
@@ -987,7 +985,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     } else {
       // scrollTop is non-zero which means no line will be going to the
       // scrollback, instead we can just shift them in-place.
-      const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
+      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
       this.buffer.lines.set(bottomRow, newLine.clone());
     }
