@@ -120,76 +120,24 @@ module.exports = {
             "exceptions": ["-"]
           }
         ],
+        "@typescript-eslint/naming-convention": [
+          "error",
+          { "selector": "default", "format": ["camelCase"] },
+          // variableLike
+          { "selector": "variable", "format": ["camelCase", "UPPER_CASE"] },
+          { "selector": "variable", "filter": "^I.+Service$", "format": ["PascalCase"], "prefix": ["I"] },
+          // memberLike
+          { "selector": "memberLike", "modifiers": ["private"], "format": ["camelCase"], "leadingUnderscore": "require" },
+          { "selector": "memberLike", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require" },
+          { "selector": "enumMember", "format": ["UPPER_CASE"] },
+          // typeLike
+          { "selector": "typeLike", "format": ["PascalCase"] },
+          { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] },
+        ],
         "@typescript-eslint/tslint/config": [
             "error",
             {
                 "rules": {
-                    // "naming-convention": [
-                    //     true,
-                    //     {
-                    //         "type": "default",
-                    //         "format": "camelCase",
-                    //         "leadingUnderscore": "forbid"
-                    //     },
-                    //     {
-                    //         "type": "type",
-                    //         "format": "PascalCase"
-                    //     },
-                    //     {
-                    //         "type": "class",
-                    //         "format": "PascalCase"
-                    //     },
-                    //     {
-                    //         "type": "property",
-                    //         "modifiers": [
-                    //             "const"
-                    //         ],
-                    //         "format": [
-                    //             "camelCase",
-                    //             "UPPER_CASE"
-                    //         ]
-                    //     },
-                    //     {
-                    //         "type": "member",
-                    //         "modifiers": [
-                    //             "protected"
-                    //         ],
-                    //         "format": "camelCase",
-                    //         "leadingUnderscore": "require"
-                    //     },
-                    //     {
-                    //         "type": "member",
-                    //         "modifiers": [
-                    //             "private"
-                    //         ],
-                    //         "format": "camelCase",
-                    //         "leadingUnderscore": "require"
-                    //     },
-                    //     {
-                    //         "type": "variable",
-                    //         "modifiers": [
-                    //             "const"
-                    //         ],
-                    //         "format": [
-                    //             "camelCase",
-                    //             "UPPER_CASE"
-                    //         ]
-                    //     },
-                    //     {
-                    //         "type": "variable",
-                    //         "modifiers": [
-                    //             "const",
-                    //             "export"
-                    //         ],
-                    //         "filter": "^I.+Service$",
-                    //         "format": "PascalCase",
-                    //         "prefix": "I"
-                    //     },
-                    //     {
-                    //         "type": "interface",
-                    //         "prefix": "I"
-                    //     }
-                    // ],
                     "typedef": [
                         true,
                         "call-signature",
