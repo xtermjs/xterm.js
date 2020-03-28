@@ -25,8 +25,7 @@ module.exports = {
     },
     "ignorePatterns": "**/typings/*.d.ts",
     "plugins": [
-        "@typescript-eslint",
-        "@typescript-eslint/tslint"
+        "@typescript-eslint"
     ],
     "rules": {
         "@typescript-eslint/array-type": [
@@ -142,25 +141,6 @@ module.exports = {
           {
             "allowExpressions": true
           }
-        ],
-        "@typescript-eslint/tslint/config": [
-            "error",
-            {
-                "rules": {
-                    "whitespace": [
-                        true,
-                        "check-branch",
-                        "check-decl",
-                        "check-module",
-                        "check-operator",
-                        "check-rest-spread",
-                        "check-separator",
-                        "check-type",
-                        "check-type-operator",
-                        "check-preblock"
-                    ]
-                }
-            }
         ]
     }
 };
