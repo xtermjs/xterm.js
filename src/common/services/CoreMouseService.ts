@@ -12,7 +12,7 @@ import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventT
 /**
  * Supported default protocols.
  */
-const DEFAULT_PROTOCOLS: { [name: string]: ICoreMouseProtocol } = {
+const DEFAULT_PROTOCOLS: { [name: string]: ICoreMouseProtocol | undefined } = {
   /**
    * NONE
    * Events: none
@@ -120,7 +120,7 @@ const S = String.fromCharCode;
 /**
  * Supported default encodings.
  */
-const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
+const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding | undefined } = {
   /**
    * DEFAULT - CSI M Pb Px Py
    * Single byte encoding for coords and event code.
