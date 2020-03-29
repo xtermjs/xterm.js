@@ -12,7 +12,7 @@ import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventT
 /**
  * Supported default protocols.
  */
-const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
+const DEFAULT_PROTOCOLS: { [name: string]: ICoreMouseProtocol } = {
   /**
    * NONE
    * Events: none
@@ -165,8 +165,8 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
  * To send a mouse event call `triggerMouseEvent`.
  */
 export class CoreMouseService implements ICoreMouseService {
-  private _protocols: {[name: string]: ICoreMouseProtocol} = {};
-  private _encodings: {[name: string]: CoreMouseEncoding} = {};
+  private _protocols: {[name: string]: ICoreMouseProtocol } = {};
+  private _encodings: {[name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
@@ -177,18 +177,22 @@ export class CoreMouseService implements ICoreMouseService {
     @ICoreService private readonly _coreService: ICoreService
   ) {
     // register default protocols and encodings
-    Object.keys(DEFAULT_PROTOCOLS).forEach(name => this.addProtocol(name, DEFAULT_PROTOCOLS[name]));
-    Object.keys(DEFAULT_ENCODINGS).forEach(name => this.addEncoding(name, DEFAULT_ENCODINGS[name]));
+    Object.keys(DEFAULT_PROTOCOLS).forEach(name => this._addProtocol(name, DEFAULT_PROTOCOLS[name]));
+    Object.keys(DEFAULT_ENCODINGS).forEach(name => this._addEncoding(name, DEFAULT_ENCODINGS[name]));
     // call reset to set defaults
     this.reset();
   }
 
-  public addProtocol(name: string, protocol: ICoreMouseProtocol): void {
-    this._protocols[name] = protocol;
+  protected _addProtocol(name: string, protocol: ICoreMouseProtocol | undefined ): void {
+    if (protocol) {
+      this._protocols[name] = protocol;
+    }
   }
 
-  public addEncoding(name: string, encoding: CoreMouseEncoding): void {
-    this._encodings[name] = encoding;
+  protected _addEncoding(name: string, encoding: CoreMouseEncoding | undefined ): void {
+    if (encoding) {
+      this._encodings[name] = encoding;
+    }
   }
 
   public get activeProtocol(): string {
@@ -196,11 +200,12 @@ export class CoreMouseService implements ICoreMouseService {
   }
 
   public set activeProtocol(name: string) {
-    if (!this._protocols[name]) {
+    const protocol = this._protocols[name];
+    if (!protocol) {
       throw new Error(`unknown protocol "${name}"`);
     }
     this._activeProtocol = name;
-    this._onProtocolChange.fire(this._protocols[name].events);
+    this._onProtocolChange.fire(protocol.events);
   }
 
   public get activeEncoding(): string {

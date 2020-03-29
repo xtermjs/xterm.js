@@ -27,8 +27,6 @@ export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseSe
 export interface ICoreMouseService {
   activeProtocol: string;
   activeEncoding: string;
-  addProtocol(name: string, protocol: ICoreMouseProtocol): void;
-  addEncoding(name: string, encoding: CoreMouseEncoding): void;
   reset(): void;
 
   /**

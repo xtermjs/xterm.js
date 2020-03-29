@@ -5,7 +5,7 @@
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { MockCoreService, MockBufferService } from 'common/TestUtils.test';
 import { assert } from 'chai';
-import { ICoreMouseEvent, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { ICoreMouseEvent, CoreMouseEventType, CoreMouseButton, CoreMouseAction, CoreMouseEncoding, ICoreMouseProtocol } from 'common/Types';
 
 // needed mock services
 const bufferService = new MockBufferService(300, 100);
@@ -20,6 +20,11 @@ function toBytes(s: string | undefined): number[] {
     res.push(s.charCodeAt(i));
   }
   return res;
+}
+
+class TestCoreMouseService extends CoreMouseService {
+  addProtocol(name: string, encoding: ICoreMouseProtocol | undefined): void { return this._addProtocol(name, encoding); }
+  addEncoding(name: string, encoding: CoreMouseEncoding | undefined): void { return this._addEncoding(name, encoding); }
 }
 
 describe('CoreMouseService', () => {
@@ -49,13 +54,13 @@ describe('CoreMouseService', () => {
     assert.throws(() => { cms.activeProtocol = 'xyz'; }, 'unknown protocol "xyz"');
   });
   it('addEncoding', () => {
-    const cms = new CoreMouseService(bufferService, coreService);
+    const cms = new TestCoreMouseService(bufferService, coreService);
     cms.addEncoding('XYZ', (e: ICoreMouseEvent) => '');
     cms.activeEncoding = 'XYZ';
     assert.equal(cms.activeEncoding, 'XYZ');
   });
   it('addProtocol', () => {
-    const cms = new CoreMouseService(bufferService, coreService);
+    const cms = new TestCoreMouseService(bufferService, coreService);
     cms.addProtocol('XYZ', { events: CoreMouseEventType.NONE, restrict: (e: ICoreMouseEvent) => false });
     cms.activeProtocol = 'XYZ';
     assert.equal(cms.activeProtocol, 'XYZ');
