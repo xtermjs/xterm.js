@@ -6,9 +6,6 @@ import { IBufferService, ICoreService, ICoreMouseService } from 'common/services
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 
-// Disable naming convention as this file uses non-standard naming and it might be dangerous to change it
-/* eslint-disable @typescript-eslint/naming-convention */
-
 /**
  * Supported default protocols.
  */

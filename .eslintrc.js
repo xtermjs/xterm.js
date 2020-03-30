@@ -74,6 +74,9 @@ module.exports = {
       { "selector": "memberLike", "modifiers": ["private"], "format": ["camelCase"], "leadingUnderscore": "require" },
       { "selector": "memberLike", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require" },
       { "selector": "enumMember", "format": ["UPPER_CASE"] },
+      // memberLike - Allow enum-like objects to use UPPER_CASE
+      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
+      { "selector": "method", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
       // typeLike
       { "selector": "typeLike", "format": ["PascalCase"] },
       { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] },
