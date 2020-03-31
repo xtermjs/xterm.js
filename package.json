@@ -45,7 +45,7 @@
     "@types/node": "^10.17.17",
     "@types/utf8": "^2.1.6",
     "@types/webpack": "^4.41.10",
-    "@types/ws": "^6.0.1",
+    "@types/ws": "^7.2.3",
     "@typescript-eslint/eslint-plugin": "^2.25.0",
     "@typescript-eslint/parser": "^2.25.0",
     "chai": "3.5.0",
