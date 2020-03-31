@@ -39,7 +39,7 @@
     "@types/chai": "^3.4.34",
     "@types/debug": "^4.1.5",
     "@types/deep-equal": "^1.0.1",
-    "@types/glob": "^5.0.35",
+    "@types/glob": "^7.1.1",
     "@types/jsdom": "11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "^10.17.17",
