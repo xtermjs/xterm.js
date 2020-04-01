@@ -56,7 +56,7 @@
     "glob": "^7.0.5",
     "jsdom": "^16.2.2",
     "mocha": "^7.1.1",
-    "mustache": "^3.0.1",
+    "mustache": "^4.0.1",
     "node-pty": "^0.9.0",
     "nyc": "^15.0.0",
     "playwright-core": "^0.11.1",
