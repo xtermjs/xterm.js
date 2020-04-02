@@ -4336,10 +4336,10 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
-playwright-core@^0.11.1:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-0.11.1.tgz#b488ad17015a4d0f54db5a5fb6a9d380afea6d5a"
-  integrity sha512-9xsSkXlglvHIAofyNInA1p3beOAOBMWHZgiuH99gX1R8VL6fTXgfWD7pIvt+rJhVMJWMDAyMXRo4TYtYtdspIg==
+playwright-core@^0.12.1:
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-0.12.1.tgz#07581d1cbe84bb1e438ecdb188de3ed6d5e81ee0"
+  integrity sha512-NZ8Qe/kqsgAmFBxWZnUeE+MoZ04UzNI0DHOKA+I1p/5rbpaWhe1Vx5zVNa05A1iEvOtnKV1PdIEe4IPumG2y2w==
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
@@ -4347,9 +4347,8 @@ playwright-core@^0.11.1:
     jpeg-js "^0.3.6"
     pngjs "^3.4.0"
     progress "^2.0.3"
-    proxy-from-env "^1.0.0"
+    proxy-from-env "^1.1.0"
     rimraf "^3.0.2"
-    uuid "^3.4.0"
     ws "^6.1.0"
 
 pngjs@^3.4.0:
@@ -4402,7 +4401,7 @@ proxy-addr@~2.0.5:
     forwarded "~0.1.2"
     ipaddr.js "1.9.1"
 
-proxy-from-env@^1.0.0:
+proxy-from-env@^1.0.0, proxy-from-env@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/proxy-from-env/-/proxy-from-env-1.1.0.tgz#e102f16ca355424865755d2c9e8ea4f24d58c3e2"
   integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
@@ -5656,7 +5655,7 @@ utils-merge@1.0.1:
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=
 
-uuid@^3.3.2, uuid@^3.3.3, uuid@^3.4.0:
+uuid@^3.3.2, uuid@^3.3.3:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
