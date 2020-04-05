@@ -203,7 +203,7 @@ class BufferApiView implements IBufferApi {
 
   public get type(): 'normal' | 'alternate' {
     if (this._buffers.normal === this._buffer) { return 'normal'; }
-    else if (this._buffers.alt === this._buffer) { return 'alternate'; }
+    if (this._buffers.alt === this._buffer) { return 'alternate'; }
     throw new Error('Unknown buffer type');
   }
   public get cursorY(): number { return this._buffer.y; }
@@ -232,8 +232,8 @@ class BufferNamespaceApi implements IBufferNamespaceApi {
 
   public get active(): IBufferApi {
     if (this._buffers.active === this._buffers.normal) { return this.normal; }
-    else if (this._buffers.active === this._buffers.alt) { return this.alternate; }
-    throw new Error('Active Buffer is neither normal nor alternate');
+    if (this._buffers.active === this._buffers.alt) { return this.alternate; }
+    throw new Error('Active buffer is neither normal nor alternate');
   }
   public get normal(): IBufferApi { return this._normal.init(this._buffers.normal, this._buffers); }
   public get alternate(): IBufferApi { return this._alternate.init(this._buffers.alt, this._buffers); }
