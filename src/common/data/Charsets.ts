@@ -246,6 +246,7 @@ CHARSETS['='] = {
   '\\': 'ç',
   ']': 'ê',
   '^': 'î',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   '_': 'è',
   '`': 'ô',
   '{': 'ä',

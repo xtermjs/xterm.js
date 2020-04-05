@@ -5,9 +5,7 @@
 import { assert } from 'chai';
 import { sliceFallback } from './TypedArray';
 
-type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
-  | Int8Array | Int16Array | Int32Array
-  | Float32Array | Float64Array;
+type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array;
 
 function deepEquals(a: TypedArray, b: TypedArray): void {
   assert.equal(a.length, b.length);
@@ -40,19 +38,19 @@ describe('polyfill conformance tests', function(): void {
         deepEquals(sliceFallback(u321, -1), u322.slice(-1));
       });
       it('Int8Array', () => {
-          const i81 = new Int8Array(5);
-          const i82 = new Int8Array(5);
-          deepEquals(sliceFallback(i81, 2), i82.slice(2));
-          deepEquals(sliceFallback(i81, 65537), i82.slice(65537));
-          deepEquals(sliceFallback(i81, -1), i82.slice(-1));
-        });
+        const i81 = new Int8Array(5);
+        const i82 = new Int8Array(5);
+        deepEquals(sliceFallback(i81, 2), i82.slice(2));
+        deepEquals(sliceFallback(i81, 65537), i82.slice(65537));
+        deepEquals(sliceFallback(i81, -1), i82.slice(-1));
+      });
       it('Int16Array', () => {
-          const i161 = new Int16Array(5);
-          const i162 = new Int16Array(5);
-          deepEquals(sliceFallback(i161, 2), i162.slice(2));
-          deepEquals(sliceFallback(i161, 65535), i162.slice(65535));
-          deepEquals(sliceFallback(i161, -1), i162.slice(-1));
-        });
+        const i161 = new Int16Array(5);
+        const i162 = new Int16Array(5);
+        deepEquals(sliceFallback(i161, 2), i162.slice(2));
+        deepEquals(sliceFallback(i161, 65535), i162.slice(65535));
+        deepEquals(sliceFallback(i161, -1), i162.slice(-1));
+      });
       it('Int32Array', () => {
         const i321 = new Int32Array(5);
         const i322 = new Int32Array(5);

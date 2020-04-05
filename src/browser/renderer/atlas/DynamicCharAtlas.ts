@@ -140,7 +140,8 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     if (cacheValue !== null && cacheValue !== undefined) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else if (this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
+    }
+    if (this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
       let index;
       if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
@@ -213,9 +214,11 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (glyph.bg === INVERTED_DEFAULT_COLOR) {
+    }
+    if (glyph.bg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.foreground;
-    } else if (glyph.bg < 256) {
+    }
+    if (glyph.bg < 256) {
       return this._getColorFromAnsiIndex(glyph.bg);
     }
     return this._config.colors.background;
@@ -224,7 +227,8 @@ export class DynamicCharAtlas extends BaseCharAtlas {
   private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
     if (glyph.fg === INVERTED_DEFAULT_COLOR) {
       return color.opaque(this._config.colors.background);
-    } else if (glyph.fg < 256) {
+    }
+    if (glyph.fg < 256) {
       // 256 color support
       return this._getColorFromAnsiIndex(glyph.fg);
     }
