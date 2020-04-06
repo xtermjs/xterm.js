@@ -306,7 +306,7 @@ class CursorBlinkStateManager {
     // the regular interval is setup in order to support restarting the blink
     // animation in a lightweight way (without thrashing clearInterval and
     // setInterval).
-    this._blinkStartTimeout = <number><any>setTimeout(() => {
+    this._blinkStartTimeout = window.setTimeout(() => {
       // Check if another animation restart was requested while this was being
       // started
       if (this._animationTimeRestarted) {
@@ -326,7 +326,7 @@ class CursorBlinkStateManager {
       });
 
       // Setup the blink interval
-      this._blinkInterval = <number><any>setInterval(() => {
+      this._blinkInterval = window.setInterval(() => {
         // Adjust the animation time if it was restarted
         if (this._animationTimeRestarted) {
           // calc time diff
