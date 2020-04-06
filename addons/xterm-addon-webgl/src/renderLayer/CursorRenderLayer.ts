@@ -360,6 +360,9 @@ class CursorBlinkStateManager {
   }
 
   public resume(terminal: Terminal): void {
+    // Clear out any existing timers just in case
+    this.pause();
+
     this._animationTimeRestarted = undefined;
     this._restartInterval();
     this.restartBlinkAnimation(terminal);
