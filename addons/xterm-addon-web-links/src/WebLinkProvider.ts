@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkProvider, IBufferCellPosition, ILink, Terminal, IBuffer } from 'xterm';
+import { ILinkProvider, IBufferCellPosition, ILink, Terminal } from 'xterm';
 
 export class WebLinkProvider implements ILinkProvider {
 

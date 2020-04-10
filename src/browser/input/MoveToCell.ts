@@ -105,11 +105,6 @@ function moveToRequestedCol(startX: number, startY: number, targetX: number, tar
   ).length, sequence(direction, applicationCursor));
 }
 
-function moveHorizontallyOnly(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-  const direction = horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
-  return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
-}
-
 /**
  * Utility functions
  */

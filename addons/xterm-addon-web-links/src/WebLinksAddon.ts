@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, ILinkProvider, IDisposable } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
 import { WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
