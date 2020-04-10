@@ -250,7 +250,7 @@ export class GlyphRenderer {
 
   private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number): void {
     const terminal = this._terminal;
-    const row = y + terminal.buffer.viewportY;
+    const row = y + terminal.buffer.active.viewportY;
     let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
       const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
@@ -281,7 +281,7 @@ export class GlyphRenderer {
       }
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {
-          line = terminal.buffer.getLine(row);
+          line = terminal.buffer.active.getLine(row);
         }
         const chars = line!.getCell(x)!.getChars();
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
