@@ -16,9 +16,8 @@ const height = 600;
 describe('CharWidth Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
@@ -79,7 +78,7 @@ async function sumWidths(start: number, end: number, sentinel: string): Promise<
   await page.evaluate(`
     (function() {
       window.result = 0;
-      const buffer = window.term.buffer;
+      const buffer = window.term.buffer.active;
       for (let i = ${start}; i < ${end}; i++) {
         const line = buffer.getLine(i);
         let j = 0;

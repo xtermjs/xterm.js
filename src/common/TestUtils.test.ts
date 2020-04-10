@@ -47,7 +47,7 @@ export class MockCharsetService implements ICharsetService {
   serviceBrand: any;
   charset: ICharset | undefined;
   glevel: number = 0;
-  charsets: readonly ICharset[] = [];
+  charsets: ReadonlyArray<ICharset> = [];
   reset(): void {}
   setgLevel(g: number): void {}
   setgCharset(g: number, charset: ICharset): void {}
@@ -117,7 +117,7 @@ export class MockUnicodeService implements IUnicodeService {
   versions: string[] = [];
   activeVersion: string = '';
   onChange: IEvent<string> = new EventEmitter<string>().event;
-  wcwidth = (codepoint: number) => this._provider.wcwidth(codepoint);
+  wcwidth = (codepoint: number): number => this._provider.wcwidth(codepoint);
   getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');
   }

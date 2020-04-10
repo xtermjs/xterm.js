@@ -352,7 +352,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    const cursorX = this._bufferService.buffer.x;
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.options.cursorBlink;
 
     for (let y = start; y <= end; y++) {
