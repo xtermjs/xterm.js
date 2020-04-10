@@ -9,7 +9,6 @@ import { IDecPrivateModes, ICharset } from 'common/Types';
 import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
-  altEscMode: true,
   applicationCursorKeys: false,
   applicationKeypad: false,
   origin: false,
