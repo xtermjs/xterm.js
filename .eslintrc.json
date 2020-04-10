@@ -1,4 +1,4 @@
-module.exports = {
+{
   "env": {
     "browser": true,
     "es6": true,
@@ -23,7 +23,9 @@ module.exports = {
     ],
     "sourceType": "module"
   },
-  "ignorePatterns": "**/typings/*.d.ts",
+  "ignorePatterns": [
+    "**/typings/*.d.ts"
+  ],
   "plugins": [
     "@typescript-eslint"
   ],
@@ -79,7 +81,7 @@ module.exports = {
       { "selector": "method", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
       // typeLike
       { "selector": "typeLike", "format": ["PascalCase"] },
-      { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] },
+      { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }
     ],
     "@typescript-eslint/prefer-namespace-keyword": "error",
     "@typescript-eslint/type-annotation-spacing": "error",
@@ -92,7 +94,6 @@ module.exports = {
       "error",
       "always"
     ],
-    "@typescript-eslint/type-annotation-spacing": "error",
     "comma-dangle": [
       "error",
       {
@@ -116,7 +117,7 @@ module.exports = {
     "no-else-return": [
       "error",
       {
-        allowElseIf: false
+        "allowElseIf": false
       }
     ],
     "no-eval": "error",
@@ -146,4 +147,4 @@ module.exports = {
       }
     ]
   }
-};
+}
