@@ -1172,6 +1172,7 @@ declare module 'xterm' {
      * The type of the buffer.
      */
     readonly type: 'normal' | 'alternate';
+
     /**
      * The y position of the cursor. This ranges between `0` (when the
      * cursor is at baseY) and `Terminal.rows - 1` (when the cursor is on the
