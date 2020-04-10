@@ -1998,7 +1998,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
-        this._logService.debug('DECRST 1015 not supported (see #2507)');
+          this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
@@ -2007,7 +2007,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this.restoreCursor();
           break;
         case 1049: // alt screen buffer cursor
-           // FALL-THROUGH
+          // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer

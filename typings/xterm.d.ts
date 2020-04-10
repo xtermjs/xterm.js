@@ -45,7 +45,7 @@ declare module 'xterm' {
     /**
      * The type of the bell notification the terminal will use.
      */
-    bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+    bellStyle?: 'none' | 'sound';
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
@@ -1177,7 +1177,7 @@ declare module 'xterm' {
 
     /**
      * The x position of the cursor. This ranges between `0` (left side) and
-     * `Terminal.cols - 1` (right side).
+     * `Terminal.cols` (after last cell of the row).
      */
     readonly cursorX: number;
 
