@@ -1222,11 +1222,30 @@ declare module 'xterm' {
     getNullCell(): IBufferCell;
   }
 
+  /**
+   * Represents the terminal's set of buffers.
+   */
   interface IBufferNamespace {
-    readonly alternate: IBuffer;
-    readonly normal: IBuffer;
+    /**
+     * The active buffer, this will either be the normal or alternate buffers.
+     */
     readonly active: IBuffer;
 
+    /**
+     * The normal buffer.
+     */
+    readonly normal: IBuffer;
+
+    /**
+     * The alternate buffer, this becomes the active buffer when an application
+     * enters this mode via DECSET (`CSI ? 4 7 h`)
+     */
+    readonly alternate: IBuffer;
+
+    /**
+     * Adds an event listener for when the active buffer changes.
+     * @returns an `IDisposable` to stop listening.
+     */
     onBufferChange: IEvent<IBuffer>;
   }
 
