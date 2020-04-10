@@ -476,7 +476,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     if (!document.body.contains(parent)) {
-      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
+      this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
     this._document = parent.ownerDocument;

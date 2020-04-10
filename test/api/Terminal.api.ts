@@ -17,9 +17,8 @@ const height = 600;
 describe('API Integration Tests', function(): void {
   before(async () => {
     const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
