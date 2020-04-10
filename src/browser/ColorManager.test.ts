@@ -11,7 +11,7 @@ describe('ColorManager', () => {
   let cm: ColorManager;
   let dom: jsdom.JSDOM;
   let document: Document;
-  let window: Window;
+  let window: jsdom.DOMWindow;
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');

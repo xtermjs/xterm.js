@@ -15,8 +15,12 @@ declare module 'xterm-addon-web-links' {
      * Creates a new web links addon.
      * @param handler The callback when the link is called.
      * @param options Options for the link matcher.
+     * @param useLinkProvider Whether to use the new link provider API to create
+     * the links. This is an option because use of both link matcher (old) and
+     * link provider (new) may cause issues. Link provider will eventually be
+     * the default and only option.
      */
-    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions);
+    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions, useLinkProvider?: boolean);
 
     /**
      * Activates the addon

@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData } from 'common/Types';
-import { IBuffer } from 'common/buffer/Types';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
-import { IEvent } from 'common/EventEmitter';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
 
@@ -48,7 +48,7 @@ export class Terminal implements ITerminalApi {
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
-  public get buffer(): IBufferApi { return new BufferApiView(this._core.buffer); }
+  public get buffer(): IBufferNamespaceApi { return new BufferNamespaceApi(this._core.buffers); }
   public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
   public blur(): void {
     this._core.blur();
@@ -71,6 +71,9 @@ export class Terminal implements ITerminalApi {
   }
   public deregisterLinkMatcher(matcherId: number): void {
     this._core.deregisterLinkMatcher(matcherId);
+  }
+  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     return this._core.registerCharacterJoiner(handler);
@@ -190,7 +193,15 @@ export class Terminal implements ITerminalApi {
 }
 
 class BufferApiView implements IBufferApi {
-  constructor(private _buffer: IBuffer) { }
+  constructor(
+    private _buffer: IBuffer,
+    public readonly type: 'normal' | 'alternate'
+  ) { }
+
+  public init(buffer: IBuffer): BufferApiView {
+    this._buffer = buffer;
+    return this;
+  }
 
   public get cursorY(): number { return this._buffer.y; }
   public get cursorX(): number { return this._buffer.x; }
@@ -205,6 +216,30 @@ class BufferApiView implements IBufferApi {
     return new BufferLineApiView(line);
   }
   public getNullCell(): IBufferCellApi { return new CellData(); }
+}
+
+class BufferNamespaceApi implements IBufferNamespaceApi {
+  private _normal: BufferApiView;
+  private _alternate: BufferApiView;
+  private _onBufferChange = new EventEmitter<IBufferApi>();
+  public get onBufferChange(): IEvent<IBufferApi> { return this._onBufferChange.event; }
+
+  constructor(private _buffers: IBufferSet) {
+    this._normal = new BufferApiView(this._buffers.normal, 'normal');
+    this._alternate = new BufferApiView(this._buffers.alt, 'alternate');
+    this._buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
+  }
+  public get active(): IBufferApi {
+    if (this._buffers.active === this._buffers.normal) { return this.normal; }
+    if (this._buffers.active === this._buffers.alt) { return this.alternate; }
+    throw new Error('Active buffer is neither normal nor alternate');
+  }
+  public get normal(): IBufferApi {
+    return this._normal.init(this._buffers.normal);
+  }
+  public get alternate(): IBufferApi {
+    return this._alternate.init(this._buffers.alt);
+  }
 }
 
 class BufferLineApiView implements IBufferLineApi {
@@ -229,7 +264,7 @@ class BufferLineApiView implements IBufferLineApi {
 }
 
 class ParserApi implements IParser {
-  constructor(private _core: ITerminal) {}
+  constructor(private _core: ITerminal) { }
 
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable {
     return this._core.addCsiHandler(id, (params: IParams) => callback(params.toArray()));
@@ -258,7 +293,7 @@ class ParserApi implements IParser {
 }
 
 class UnicodeApi implements IUnicodeHandling {
-  constructor(private _core: ITerminal) {}
+  constructor(private _core: ITerminal) { }
 
   public register(provider: IUnicodeVersionProvider): void {
     this._core.unicodeService.register(provider);

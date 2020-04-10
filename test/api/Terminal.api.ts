@@ -3,60 +3,59 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
-import { pollFor, timeout, writeSync } from './TestUtils';
+import { pollFor, timeout, writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
 describe('API Integration Tests', function(): void {
   before(async () => {
-    browser = await puppeteer.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    const browserType = getBrowserType();
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
   });
 
   after(async () => browser.close());
   beforeEach(async () => page.goto(APP));
 
   it('Default options', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`window.term.cols`), 80);
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
   it('write', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.write('foo');
       window.term.write('bar');
       window.term.write('文');
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
   });
 
   it('write with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.write('foo', () => { window.__x = 'a'; });
       window.term.write('bar', () => { window.__x += 'b'; });
       window.term.write('文', () => { window.__x += 'c'; });
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
     await pollFor(page, `window.__x`, 'abc');
   });
 
   it('write - bytes (UTF8)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       // foo
       window.term.write(new Uint8Array([102, 111, 111]));
@@ -65,11 +64,11 @@ describe('API Integration Tests', function(): void {
       // 文
       window.term.write(new Uint8Array([230, 150, 135]));
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
   });
 
   it('write - bytes (UTF8) with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       // foo
       window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; });
@@ -78,49 +77,49 @@ describe('API Integration Tests', function(): void {
       // 文
       window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; });
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foobar文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
     await pollFor(page, `window.__x`, 'ABC');
   });
 
   it('writeln', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln('foo');
       window.term.writeln('bar');
       window.term.writeln('文');
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
-    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
-    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.active.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.active.getLine(2).translateToString(true)`, '文');
   });
 
   it('writeln with callback', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln('foo', () => { window.__x = '1'; });
       window.term.writeln('bar', () => { window.__x += '2'; });
       window.term.writeln('文', () => { window.__x += '3'; });
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
-    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
-    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.active.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.active.getLine(2).translateToString(true)`, '文');
     await pollFor(page, `window.__x`, '123');
   });
 
   it('writeln - bytes (UTF8)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.term.writeln(new Uint8Array([102, 111, 111]));
       window.term.writeln(new Uint8Array([98, 97, 114]));
       window.term.writeln(new Uint8Array([230, 150, 135]));
     `);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'foo');
-    await pollFor(page, `window.term.buffer.getLine(1).translateToString(true)`, 'bar');
-    await pollFor(page, `window.term.buffer.getLine(2).translateToString(true)`, '文');
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foo');
+    await pollFor(page, `window.term.buffer.active.getLine(1).translateToString(true)`, 'bar');
+    await pollFor(page, `window.term.buffer.active.getLine(2).translateToString(true)`, '文');
   });
 
   it('paste', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`
       window.calls = [];
       window.term.onData(e => calls.push(e));
@@ -134,7 +133,7 @@ describe('API Integration Tests', function(): void {
   });
 
   it('clear', async () => {
-    await openTerminal({ rows: 5 });
+    await openTerminal(page, { rows: 5 });
     await page.evaluate(`
       window.term.write('test0');
       window.parsed = 0;
@@ -144,15 +143,15 @@ describe('API Integration Tests', function(): void {
     `);
     await pollFor(page, `window.parsed`, 9);
     await page.evaluate(`window.term.clear()`);
-    await pollFor(page, `window.term.buffer.length`, 5);
-    await pollFor(page, `window.term.buffer.getLine(0).translateToString(true)`, 'test9');
+    await pollFor(page, `window.term.buffer.active.length`, 5);
+    await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'test9');
     for (let i = 1; i < 5; i++) {
-      await pollFor(page, `window.term.buffer.getLine(${i}).translateToString(true)`, '');
+      await pollFor(page, `window.term.buffer.active.getLine(${i}).translateToString(true)`, '');
     }
   });
 
   it('getOption, setOption', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
     await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
@@ -160,7 +159,7 @@ describe('API Integration Tests', function(): void {
 
   describe('renderer', () => {
     it('foreground', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -185,7 +184,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('background', async () => {
-      await openTerminal({ rendererType: 'dom' });
+      await openTerminal(page, { rendererType: 'dom' });
       await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -211,7 +210,7 @@ describe('API Integration Tests', function(): void {
   });
 
   it('selection', async () => {
-    await openTerminal({ rows: 5, cols: 5 });
+    await openTerminal(page, { rows: 5, cols: 5 });
     await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
@@ -231,7 +230,7 @@ describe('API Integration Tests', function(): void {
   });
 
   it('focus, blur', async () => {
-    await openTerminal();
+    await openTerminal(page);
     assert.equal(await page.evaluate(`document.activeElement.className`), '');
     await page.evaluate(`window.term.focus()`);
     assert.equal(await page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
@@ -241,7 +240,7 @@ describe('API Integration Tests', function(): void {
 
   describe('loadAddon', () => {
     it('constructor', async () => {
-      await openTerminal({ cols: 5 });
+      await openTerminal(page, { cols: 5 });
       await page.evaluate(`
         window.cols = 0;
         window.term.loadAddon({
@@ -253,7 +252,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('dispose (addon)', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.disposeCalled = false
         window.addon = {
@@ -268,7 +267,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('dispose (terminal)', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.disposeCalled = false
         window.term.loadAddon({
@@ -284,7 +283,7 @@ describe('API Integration Tests', function(): void {
 
   describe('Events', () => {
     it('onCursorMove', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onCursorMove(e => window.callCount++);
@@ -296,7 +295,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onData', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onData(e => calls.push(e));
@@ -306,7 +305,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onKey', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onKey(e => calls.push(e.key));
@@ -316,7 +315,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onLineFeed', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onLineFeed(() => callCount++);
@@ -328,7 +327,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onScroll', async () => {
-      await openTerminal({ rows: 5 });
+      await openTerminal(page, { rows: 5 });
       await page.evaluate(`
         window.calls = [];
         window.term.onScroll(e => window.calls.push(e));
@@ -344,7 +343,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onSelectionChange', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.callCount = 0;
         window.term.onSelectionChange(() => window.callCount++);
@@ -356,9 +355,9 @@ describe('API Integration Tests', function(): void {
       await pollFor(page, `window.callCount`, 2);
     });
 
-    it('onRender', async function (): Promise<void> {
+    it('onRender', async function(): Promise<void> {
       this.retries(3);
-      await openTerminal();
+      await openTerminal(page);
       await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
@@ -372,7 +371,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onResize', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await timeout(20); // Ensure all init events are fired
       await page.evaluate(`
         window.calls = [];
@@ -386,7 +385,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('onTitleChange', async () => {
-      await openTerminal();
+      await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
         window.term.onTitleChange(e => window.calls.push(e));
@@ -399,116 +398,148 @@ describe('API Integration Tests', function(): void {
 
   describe('buffer', () => {
     it('cursorX, cursorY', async () => {
-      await openTerminal({ rows: 5, cols: 5 });
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
+      await openTerminal(page, { rows: 5, cols: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 0);
       await writeSync(page, 'foo');
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 3);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 0);
       await writeSync(page, '\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 3);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
       await writeSync(page, '\\r');
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
       await writeSync(page, 'abcde');
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 5);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
       await writeSync(page, '\\n\\r\\n\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
-      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 4);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 4);
     });
 
     it('viewportY', async () => {
-      await openTerminal({ rows: 5 });
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+      await openTerminal(page, { rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
       await writeSync(page, '\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 1);
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 1);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 5);
       await page.evaluate(`window.term.scrollLines(-1)`);
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 4);
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 4);
       await page.evaluate(`window.term.scrollToTop()`);
-      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
     });
 
     it('baseY', async () => {
-      await openTerminal({ rows: 5 });
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
+      await openTerminal(page, { rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 0);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 0);
       await writeSync(page, '\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 1);
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 1);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
       await page.evaluate(`window.term.scrollLines(-1)`);
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
       await page.evaluate(`window.term.scrollToTop()`);
-      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
     });
 
     it('length', async () => {
-      await openTerminal({ rows: 5 });
-      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      await openTerminal(page, { rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 5);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 5);
       await writeSync(page, '\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.length`), 6);
+      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 6);
       await writeSync(page, '\\n\\n\\n\\n');
-      assert.equal(await page.evaluate(`window.term.buffer.length`), 10);
+      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 10);
     });
 
     describe('getLine', () => {
       it('invalid index', async () => {
-        await openTerminal({ rows: 5 });
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(-1)`), undefined);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(5)`), undefined);
+        await openTerminal(page, { rows: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(5)`), undefined);
       });
 
       it('isWrapped', async () => {
-        await openTerminal({ cols: 5 });
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        await openTerminal(page, { cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
         await writeSync(page, 'abcde');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
         await writeSync(page, 'f');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), true);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), true);
       });
 
       it('translateToString', async () => {
-        await openTerminal({ cols: 5 });
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), '     ');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), '');
+        await openTerminal(page, { cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), '');
         await writeSync(page, 'foo');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'foo  ');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'foo  ');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'foo');
         await writeSync(page, 'bar');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'fooba');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'fooba');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'r');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1)`), 'ooba');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1, 3)`), 'oo');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).translateToString(true)`), 'r');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1)`), 'ooba');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1, 3)`), 'oo');
       });
 
       it('getCell', async () => {
-        await openTerminal({ cols: 5 });
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(-1)`), undefined);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(5)`), undefined);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getChars()`), '');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getWidth()`), 1);
+        await openTerminal(page, { cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(5)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
         await writeSync(page, 'a文');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getChars()`), 'a');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).getWidth()`), 1);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).getChars()`), '文');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).getWidth()`), 2);
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).getChars()`), '');
-        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).getWidth()`), 0);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), 'a');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getChars()`), '文');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getWidth()`), 2);
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getChars()`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
       });
     });
+
+    it('active, normal, alternate', async () => {
+      await openTerminal(page, { cols: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      await writeSync(page, 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
+
+      await writeSync(page, '\\x1b[?47h\\r'); // use alternate screen buffer
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'alternate');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
+      await writeSync(page, 'alt  ');
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'alt  ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0).translateToString()`), 'alt  ');
+
+      await writeSync(page, '\\x1b[?47l\\r'); // use normal screen buffer
+      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+
+      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
+      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
+    })
   });
 
   it('dispose', async () => {
@@ -520,18 +551,190 @@ describe('API Integration Tests', function(): void {
   });
 
   it('dispose (opened)', async () => {
-    await openTerminal();
+    await openTerminal(page);
     await page.evaluate(`window.term.dispose()`);
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
+
+  describe('registerLinkProvider', () => {
+    it('should fire provideLink when hovering cells', async () => {
+      await openTerminal(page, { rendererType: 'dom' });
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            calls.push(position);
+            cb(undefined);
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 1, 1);
+      await moveMouseCell(page, dims, 2, 2);
+      await moveMouseCell(page, dims, 10, 4);
+      await pollFor(page, `window.calls`, [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 10, y: 4 }]);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire hover and leave events on the link', async () => {
+      await openTerminal(page, { rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover'),
+                leave: () => window.calls.push('leave')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover', 'leave', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should work fine when hover and leave callbacks are not provided', async () => {
+      await openTerminal(page, { rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+              window.calls.push('match');
+              cb({
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              });
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match']);
+      await moveMouseCell(page, dims, 4, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1']);
+      await moveMouseCell(page, dims, 7, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match']);
+      await moveMouseCell(page, dims, 8, 1);
+      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match', 'provide 8,1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should fire activate events when clicking the link', async () => {
+      await openTerminal(page, { rendererType: 'dom' });
+      await writeSync(page, 'a b c');
+
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
+
+      // Focus terminal to avoid a render event clearing the active link
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 5, 5);
+      await page.mouse.down();
+      await page.mouse.up();
+      await timeout(50); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
+
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLink: (position, cb) => {
+            window.calls.push('provide ' + position.x + ',' + position.y);
+            cb({
+              range: { start: position, end: position },
+              text: window.term.buffer.active.getLine(position.y - 1).getCell(position.x - 1).getChars(),
+              activate: (_, text) => window.calls.push('activate ' + text),
+              hover: () => window.calls.push('hover'),
+              leave: () => window.calls.push('leave')
+            });
+          }
+        });
+      `);
+      await moveMouseCell(page, dims, 3, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b']);
+      await moveMouseCell(page, dims, 1, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a']);
+      await moveMouseCell(page, dims, 5, 1);
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover']);
+      await page.mouse.down();
+      await page.mouse.up();
+      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover', 'activate c']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+  });
 });
 
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
+interface IDimensions {
+  top: number;
+  left: number;
+  renderDimensions: IRenderDimensions;
+}
+
+interface IRenderDimensions {
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
+  scaledCharLeft: number;
+  scaledCharTop: number;
+  scaledCanvasWidth: number;
+  scaledCanvasHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  actualCellWidth: number;
+  actualCellHeight: number;
+}
+
+async function getDimensions(): Promise<IDimensions> {
+  return await page.evaluate(`
+    (function() {
+      const rect = document.querySelector('.xterm-rows').getBoundingClientRect();
+      return {
+        top: rect.top,
+        left: rect.left,
+        renderDimensions: window.term._core._renderService.dimensions
+      };
+    })();
+  `);
+}
+
+async function getCellCoordinates(dimensions: IDimensions, col: number, row: number): Promise<{ x: number, y: number }> {
+  return {
+    x: dimensions.left + dimensions.renderDimensions.scaledCellWidth * (col - 0.5),
+    y: dimensions.top + dimensions.renderDimensions.scaledCellHeight * (row - 0.5)
+  };
+}
+
+async function moveMouseCell(page: Page, dimensions: IDimensions, col: number, row: number): Promise<void> {
+  const coords = await getCellCoordinates(dimensions, col, row);
+  await page.mouse.move(coords.x, coords.y);
 }

@@ -56,7 +56,7 @@ export class InstantiationService implements IInstantiationService {
     return this._services.get(id);
   }
 
-  public createInstance<T>(ctor: any, ...args: any[]): any {
+  public createInstance<T>(ctor: any, ...args: any[]): T {
     const serviceDependencies = getServiceDependencies(ctor).sort((a, b) => a.index - b.index);
 
     const serviceArgs: any[] = [];
@@ -76,6 +76,6 @@ export class InstantiationService implements IInstantiationService {
     }
 
     // now create the instance
-    return <T>new ctor(...[...args, ...serviceArgs]);
+    return new ctor(...[...args, ...serviceArgs]);
   }
 }

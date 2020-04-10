@@ -12,7 +12,7 @@ import { SerializeAddon } from 'SerializeAddon';
 
 class TestTerminal extends Terminal {
   writeSync(data: string): void {
-    (<any>this)._core.writeSync(data);
+    (this as any)._core.writeSync(data);
   }
 }
 

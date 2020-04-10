@@ -3,28 +3,27 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
-import { writeSync } from './TestUtils';
+import { writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
 describe('Parser Integration Tests', function(): void {
   before(async function(): Promise<any> {
-    browser = await puppeteer.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    const browserType = getBrowserType();
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   after(async () => browser.close());
@@ -110,13 +109,3 @@ describe('Parser Integration Tests', function(): void {
     });
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
