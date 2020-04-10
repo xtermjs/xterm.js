@@ -21,9 +21,8 @@ describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
@@ -292,7 +291,7 @@ describe('InputHandler Integration Tests', function(): void {
         });
         (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           await pollFor(page, () => simulatePaste('foo'), 'foo');
-          await page.evaluate(`window.term.write('\x1b[?2004h')`)
+          await page.evaluate(`window.term.write('\x1b[?2004h')`);
           await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
           await page.evaluate(`window.term.write('\x1b[?2004l')`);
           await pollFor(page, () => simulatePaste('baz'), 'baz');

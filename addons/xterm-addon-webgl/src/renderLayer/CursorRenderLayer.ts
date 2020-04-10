@@ -128,6 +128,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     const cursorY = terminal.buffer.baseY + terminal.buffer.cursorY;
     const viewportRelativeCursorY = cursorY - terminal.buffer.viewportY;
 
+    // in case cursor.x == cols adjust visual cursor to cols - 1
+    const cursorX = Math.min(terminal.buffer.cursorX, terminal.cols - 1);
+
     // Don't draw the cursor if it's off-screen
     if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= terminal.rows) {
       this._clearCursor();
@@ -135,7 +138,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     // TODO: Need fast buffer API for loading cell
-    (terminal as any)._core.buffer.lines.get(cursorY).loadCell(terminal.buffer.cursorX, this._cell);
+    (terminal as any)._core.buffer.lines.get(cursorY).loadCell(cursorX, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
@@ -146,12 +149,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this._colors.cursor.css;
       const cursorStyle = terminal.getOption('cursorStyle');
       if (cursorStyle && cursorStyle !== 'block') {
-        this._cursorRenderers[cursorStyle](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+        this._cursorRenderers[cursorStyle](terminal, cursorX, viewportRelativeCursorY, this._cell);
       } else {
-        this._renderBlurCursor(terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+        this._renderBlurCursor(terminal, cursorX, viewportRelativeCursorY, this._cell);
       }
       this._ctx.restore();
-      this._state.x = terminal.buffer.cursorX;
+      this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
       this._state.style = cursorStyle;
@@ -167,7 +170,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state.x === terminal.buffer.cursorX &&
+      if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === isTerminalFocused(terminal) &&
           this._state.style === terminal.getOption('cursorStyle') &&
@@ -178,10 +181,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[terminal.getOption('cursorStyle') || 'block'](terminal, terminal.buffer.cursorX, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[terminal.getOption('cursorStyle') || 'block'](terminal, cursorX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
-    this._state.x = terminal.buffer.cursorX;
+    this._state.x = cursorX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
     this._state.style = terminal.getOption('cursorStyle');
@@ -299,7 +302,7 @@ class CursorBlinkStateManager {
     // the regular interval is setup in order to support restarting the blink
     // animation in a lightweight way (without thrashing clearInterval and
     // setInterval).
-    this._blinkStartTimeout = <number><any>setTimeout(() => {
+    this._blinkStartTimeout = window.setTimeout(() => {
       // Check if another animation restart was requested while this was being
       // started
       if (this._animationTimeRestarted) {
@@ -319,7 +322,7 @@ class CursorBlinkStateManager {
       });
 
       // Setup the blink interval
-      this._blinkInterval = <number><any>setInterval(() => {
+      this._blinkInterval = window.setInterval(() => {
         // Adjust the animation time if it was restarted
         if (this._animationTimeRestarted) {
           // calc time diff
@@ -357,6 +360,9 @@ class CursorBlinkStateManager {
   }
 
   public resume(terminal: Terminal): void {
+    // Clear out any existing timers just in case
+    this.pause();
+
     this._animationTimeRestarted = undefined;
     this._restartInterval();
     this.restartBlinkAnimation(terminal);

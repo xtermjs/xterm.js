@@ -21,7 +21,7 @@ export class WebglAddon implements ITerminalAddon {
       throw new Error('Cannot activate WebglAddon before Terminal.open');
     }
     this._terminal = terminal;
-    const renderService: IRenderService =  (<any>terminal)._core._renderService;
+    const renderService: IRenderService = (<any>terminal)._core._renderService;
     const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
     this._renderer = new WebglRenderer(terminal, colors, this._preserveDrawingBuffer);
     renderService.setRenderer(this._renderer);
@@ -31,8 +31,8 @@ export class WebglAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot dispose WebglAddon because it is activated');
     }
-    const renderService: IRenderService = (<any>this._terminal)._core._renderService;
-    renderService.setRenderer((<any>this._terminal)._core._createRenderer());
+    const renderService: IRenderService = (this._terminal as any)._core._renderService;
+    renderService.setRenderer((this._terminal as any)._core._createRenderer());
     renderService.onResize(this._terminal.cols, this._terminal.rows);
     this._renderer = undefined;
   }

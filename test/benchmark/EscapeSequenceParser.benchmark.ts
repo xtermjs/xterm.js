@@ -19,16 +19,16 @@ function toUtf32(s: string): Uint32Array {
 }
 
 class DcsHandler implements IDcsHandler {
-  hook(params: IParams) : void {}
-  put(data: Uint32Array, start: number, end: number) : void {}
-  unhook() :void {}
+  hook(params: IParams): void {}
+  put(data: Uint32Array, start: number, end: number): void {}
+  unhook(): void {}
 }
 
 
 perfContext('Parser throughput - 50MB data', () => {
   let parsed: Uint32Array;
   let parser: EscapeSequenceParser;
-  
+
   beforeEach(() => {
     parser = new EscapeSequenceParser();
     parser.setPrintHandler((data, start, end) => {});

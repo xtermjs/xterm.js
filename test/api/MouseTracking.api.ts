@@ -22,7 +22,7 @@ const cols = 260;
 const rows = 50;
 
 // Wheel events are hacked using private API that is only available in Chromium
-const isChromium = false
+const isChromium = false;
 
 // for some reason shift gets not caught by selection manager on macos
 const noShift = process.platform === 'darwin' ? false : true;
@@ -169,7 +169,7 @@ function evalButtonCode(code: number): any {
 }
 
 // parse a single mouse report
-function parseReport(encoding: string, msg: number[]): { state: any; row: number; col: number; } | string {
+function parseReport(encoding: string, msg: number[]): { state: any, row: number, col: number } | string {
   let sReport: string;
   let buttonCode: number;
   let row: number;
@@ -213,9 +213,8 @@ describe('Mouse Tracking Tests', async () => {
   const itMouse = isChromium ? it : it.skip;
 
   before(async function(): Promise<void> {
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });

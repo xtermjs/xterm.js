@@ -1,3 +1,9 @@
+/**
+ * WARNING: This demo is a barebones implementation designed for development and evaluation
+ * purposes only. It is definitely NOT production ready and does not aim to be so. Exposing the
+ * demo to the public as is would introduce security risks for the host.
+ **/
+
 var express = require('express');
 var expressWs = require('express-ws');
 var os = require('os');
