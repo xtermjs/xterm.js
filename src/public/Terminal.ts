@@ -10,7 +10,7 @@ import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
-import { IEvent } from 'common/EventEmitter';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
 
@@ -224,10 +224,13 @@ class BufferApiView implements IBufferApi {
 class BufferNamespaceApi implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
+  private _onBufferChange = new EventEmitter<IBufferApi>();
+  public get onBufferChange(): IEvent<IBufferApi> { return this._onBufferChange.event; }
 
   constructor(private _buffers: IBufferSet) {
     this._normal = new BufferApiView(this._buffers.normal, this._buffers);
     this._alternate = new BufferApiView(this._buffers.alt, this._buffers);
+    this._buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
   }
 
   public get active(): IBufferApi {
@@ -237,12 +240,6 @@ class BufferNamespaceApi implements IBufferNamespaceApi {
   }
   public get normal(): IBufferApi { return this._normal.init(this._buffers.normal, this._buffers); }
   public get alternate(): IBufferApi { return this._alternate.init(this._buffers.alt, this._buffers); }
-
-  public get onBufferChange(): IEvent<IBufferApi> {
-    return (listener: (buffer: IBufferApi, unused: void) => any): IDisposable => {
-      return this._buffers.onBufferActivate(() => listener(this.active));
-    };
-  }
 }
 
 class BufferLineApiView implements IBufferLineApi {
