@@ -173,7 +173,7 @@ export class Linkifier2 implements ILinkifier2 {
 
       // Add listener for rerendering
       if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRender(e => {
+        this._linkCacheDisposables.push(this._renderService.onRenderedBufferChange(e => {
           this._clearCurrentLink(e.start + 1 + this._bufferService.buffer.ydisp, e.end + 1 + this._bufferService.buffer.ydisp);
         }));
       }
