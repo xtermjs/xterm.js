@@ -14,7 +14,7 @@
     "lint": "tslint 'src/**/*.ts' 'addons/*/src/**/*.ts'",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
-    "test-api": "mocha \"**/*.api.js\"",
+    "test-api": "node ./bin/test_api.js",
     "test-unit": "node ./bin/test.js",
     "test-unit-coverage": "node ./bin/test.js --coverage",
     "build": "tsc -b ./tsconfig.all.json",
