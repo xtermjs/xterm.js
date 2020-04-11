@@ -130,6 +130,7 @@ declare module 'xterm' {
     /**
      * The duration in milliseconds before link tooltip events fire when
      * hovering on a link.
+     * @deprecated This will be removed when the link matcher API is removed.
      */
     linkTooltipHoverDuration?: number;
 
