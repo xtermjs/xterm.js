@@ -21,13 +21,14 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
+  private _isNextRenderRedrawOnly: boolean = true;
   private _canvasWidth: number = 0;
   private _canvasHeight: number = 0;
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
 
@@ -52,7 +53,7 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
-    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
+    this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
@@ -75,17 +76,23 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number): void {
+  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
+    }
+    if (!isRedrawOnly) {
+      this._isNextRenderRedrawOnly = false;
     }
     this._renderDebouncer.refresh(start, end, this._rowCount);
   }
 
   private _renderRows(start: number, end: number): void {
     this._renderer.renderRows(start, end);
-    this._onRender.fire({ start, end });
+    if (!this._isNextRenderRedrawOnly) {
+      this._onRender.fire({ start, end });
+    }
+    this._isNextRenderRedrawOnly = true;
   }
 
   public resize(cols: number, rows: number): void {
@@ -116,7 +123,7 @@ export class RenderService extends Disposable implements IRenderService {
     // TODO: RenderService should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
-    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
+    this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
     this.refreshRows(0, this._rowCount - 1);
   }
 

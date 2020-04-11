@@ -16,7 +16,7 @@ import { Disposable } from 'common/Lifecycle';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
@@ -39,8 +39,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
 
-  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -53,7 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRefreshRows)
+      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -178,7 +178,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
     this._glyphRenderer.updateSelection(this._model, columnSelectMode);
 
-    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {

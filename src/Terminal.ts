@@ -543,7 +543,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const renderer = this._createRenderer();
     this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
     this._instantiationService.setService(IRenderService, this._renderService);
-    this._renderService.onRender(e => this._onRender.fire(e));
+    this._renderService.onRenderedBufferChange(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
     this._soundService = this._instantiationService.createInstance(SoundService);
