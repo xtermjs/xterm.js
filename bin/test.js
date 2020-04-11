@@ -51,16 +51,6 @@ if (checkCoverage) {
   process.exit(run.status);
 }
 
-const checkDebug = flagArgs.indexOf('--debug') >= 0;
-
-if (checkDebug) {
-  env.DEBUG = 'debug';
-}
-
-if (env.DEBUG) {
-  console.log('poll result', result);
-}
-
 const run = cp.spawnSync(
   npmBinScript('mocha'),
   [...testFiles, ...flagArgs],
