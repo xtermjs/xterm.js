@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
@@ -281,7 +281,7 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
-  onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
+  onRequestRedraw: IEvent<IRequestRedrawEvent>;
   onCanvasResize: IEvent<{ width: number, height: number }>;
   onRender: IEvent<{ start: number, end: number }>;
   dispose(): void {

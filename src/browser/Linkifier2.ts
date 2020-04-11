@@ -50,7 +50,7 @@ export class Linkifier2 implements ILinkifier2 {
     this._renderService = renderService;
 
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
-    this._element.addEventListener('click', this._onMouseDown.bind(this));
+    this._element.addEventListener('click', this._onClick.bind(this));
   }
 
   private _onMouseMove(event: MouseEvent): void {
@@ -125,7 +125,7 @@ export class Linkifier2 implements ILinkifier2 {
     });
   }
 
-  private _onMouseDown(event: MouseEvent): void {
+  private _onClick(event: MouseEvent): void {
     if (!this._element || !this._mouseService || !this._currentLink) {
       return;
     }

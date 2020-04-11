@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -36,7 +36,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>,
+    private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     readonly bufferService: IBufferService,
     readonly optionsService: IOptionsService,
     private readonly _coreService: ICoreService,
@@ -83,14 +83,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onFocus(): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume();
     } else {
-      this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+      this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
     }
   }
 
@@ -107,7 +107,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
-    this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onCursorMove(): void {
