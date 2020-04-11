@@ -21,7 +21,8 @@ let flagArgs = [];
 
 if (process.argv.length > 2) {
   const args = process.argv.slice(2);
-  flagArgs = args.filter(e => e.startsWith('--'));
+  flagArgs = args.filter(e => e.startsWith('--')).flatMap(arg => arg.split('='));
+  console.info(flagArgs);
   // ability to inject particular test files via
   // yarn test [testFileA testFileB ...]
   files = args.filter(e => !e.startsWith('--'));
@@ -29,6 +30,8 @@ if (process.argv.length > 2) {
     testFiles = files;
   }
 }
+
+
 
 env.DEBUG = flagArgs.indexOf('--debug') >= 0 ? 'debug' : '';
 
