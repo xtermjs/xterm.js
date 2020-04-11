@@ -58,6 +58,9 @@ const oscPutParser = new MockOscPutParser();
 
 // derived parser with access to internal states
 class TestEscapeSequenceParser extends EscapeSequenceParser {
+  public get transitions(): TransitionTable {
+    return this._transitions;
+  }
   public get osc(): string {
     return (this._oscParser as MockOscPutParser).data;
   }
@@ -192,13 +195,13 @@ describe('EscapeSequenceParser', function (): void {
   const parser = testParser;
   describe('Parser init and methods', function (): void {
     it('constructor', function (): void {
-      let p: EscapeSequenceParser = new EscapeSequenceParser();
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
-      p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
+      let p = new TestEscapeSequenceParser();
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+      p = new TestEscapeSequenceParser(VT500_TRANSITION_TABLE);
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
       const tansitions: TransitionTable = new TransitionTable(10);
-      p = new EscapeSequenceParser(tansitions);
-      chai.expect(p.TRANSITIONS).equal(tansitions);
+      p = new TestEscapeSequenceParser(tansitions);
+      chai.expect(p.transitions).equal(tansitions);
     });
     it('inital states', function (): void {
       chai.expect(parser.initialState).equal(ParserState.GROUND);
@@ -735,7 +738,7 @@ describe('EscapeSequenceParser', function (): void {
     it('state OSC_STRING ignore rules', function (): void {
       parser.reset();
       const ignored = [
-        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', /*'\x07',*/ '\x08',
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', /* '\x07', */ '\x08',
         '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
         '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f'];
       for (let i = 0; i < ignored.length; ++i) {

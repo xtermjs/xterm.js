@@ -3,28 +3,27 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-import { ITerminalOptions } from 'xterm';
+import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 1024;
 const height = 768;
 
 describe('FitAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(20000);
-    browser = await puppeteer.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    const browserType = getBrowserType();
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
-    page = (await browser.pages())[0];
-    await page.setViewport({ width, height });
+    page = await (await browser.newContext()).newPage();
+    await page.setViewportSize({ width, height });
     await page.goto(APP);
-    await openTerminal();
+    await openTerminal(page);
   });
 
   after(async () => {
@@ -43,18 +42,18 @@ describe('FitAddon', () => {
 
     it('default', async function(): Promise<any> {
       await loadFit();
-      assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
-        cols: 87,
-        rows: 26
-      });
+      const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
+      assert.equal(dimensions.cols, 87);
+      assert.isAbove(dimensions.rows, 24);
+      assert.isBelow(dimensions.rows, 29);
     });
 
     it('width', async function(): Promise<any> {
       await loadFit(1008);
-      assert.deepEqual(await page.evaluate(`window.fit.proposeDimensions()`), {
-        cols: 110,
-        rows: 26
-      });
+      const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
+      assert.equal(dimensions.cols, 110);
+      assert.isAbove(dimensions.rows, 24);
+      assert.isBelow(dimensions.rows, 29);
     });
 
     it('small', async function(): Promise<any> {
@@ -74,15 +73,21 @@ describe('FitAddon', () => {
     it('default', async function(): Promise<any> {
       await loadFit();
       await page.evaluate(`window.fit.fit()`);
-      assert.equal(await page.evaluate(`window.term.cols`), 87);
-      assert.equal(await page.evaluate(`window.term.rows`), 26);
+      const cols: number = await page.evaluate(`window.term.cols`);
+      const rows: number = await page.evaluate(`window.term.rows`);
+      assert.equal(cols, 87);
+      assert.isAbove(rows, 24);
+      assert.isBelow(rows, 29);
     });
 
     it('width', async function(): Promise<any> {
       await loadFit(1008);
       await page.evaluate(`window.fit.fit()`);
-      assert.equal(await page.evaluate(`window.term.cols`), 110);
-      assert.equal(await page.evaluate(`window.term.rows`), 26);
+      const cols: number = await page.evaluate(`window.term.cols`);
+      const rows: number = await page.evaluate(`window.term.rows`);
+      assert.equal(cols, 110);
+      assert.isAbove(rows, 24);
+      assert.isBelow(rows, 29);
     });
 
     it('small', async function(): Promise<any> {
@@ -105,14 +110,4 @@ async function loadFit(width: number = 800, height: number = 450): Promise<void>
 
 async function unloadFit(): Promise<void> {
   await page.evaluate(`window.fit.dispose();`);
-}
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
 }

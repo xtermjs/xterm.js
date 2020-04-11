@@ -10,7 +10,7 @@ import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, ISelectionService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -116,11 +116,11 @@ export class SelectionService implements ISelectionService {
     private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     // Init listeners
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
@@ -374,7 +374,7 @@ export class SelectionService implements ISelectionService {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
-    const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
+    const terminalHeight = this._renderService.dimensions.canvasHeight;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -835,12 +835,12 @@ export class SelectionService implements ISelectionService {
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
     let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
-        endIndex // The index of the selection's end char in the line string
-        - startIndex // The index of the selection's start char in the line string
-        + leftWideCharCount // The number of wide chars left of the initial char
-        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
-        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
-        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+      endIndex // The index of the selection's end char in the line string
+      - startIndex // The index of the selection's start char in the line string
+      + leftWideCharCount // The number of wide chars left of the initial char
+      + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+      - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return undefined;
@@ -848,9 +848,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse upwards if the line is wrapped and the word wraps to the above line
     if (followWrappedLinesAbove) {
-      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /*' '*/) {
+      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /* ' ' */) {
         const previousBufferLine = buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
           const previousLineWordPosition = this._getWordAt([this._bufferService.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
             const offset = this._bufferService.cols - previousLineWordPosition.start;
@@ -863,9 +863,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse downwards if the line is wrapped and the word wraps to the next line
     if (followWrappedLinesBelow) {
-      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
         const nextBufferLine = buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /*' '*/) {
+        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /* ' ' */) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;

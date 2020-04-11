@@ -10,16 +10,18 @@ import { IBufferLine } from 'common/Types';
 import { MockBufferService, MockOptionsService, MockCoreService } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
+import { MockMouseService, MockRenderService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
+import { IRenderService } from 'browser/services/Services';
 
 class TestSelectionService extends SelectionService {
   constructor(
     bufferService: IBufferService,
-    optionsService: IOptionsService
+    optionsService: IOptionsService,
+    renderService: IRenderService
   ) {
-    super(() => {}, null!, null!, new MockCharSizeService(10, 10), bufferService, new MockCoreService(), new MockMouseService(), optionsService);
+    super(() => {}, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -46,7 +48,10 @@ describe('SelectionService', () => {
     optionsService = new MockOptionsService();
     bufferService = new MockBufferService(20, 20, optionsService);
     buffer = bufferService.buffer;
-    selectionService = new TestSelectionService(bufferService, optionsService);
+    const renderService = new MockRenderService();
+    renderService.dimensions.canvasHeight = 10 * 20;
+    renderService.dimensions.canvasWidth = 10 * 20;
+    selectionService = new TestSelectionService(bufferService, optionsService, renderService);
   });
 
   function stringToRow(text: string): IBufferLine {

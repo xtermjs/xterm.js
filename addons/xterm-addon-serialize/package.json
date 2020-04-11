@@ -1,6 +1,6 @@
 {
   "name": "xterm-addon-serialize",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
@@ -18,6 +18,6 @@
     "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --eval out-benchmark/addons/xterm-addon-serialize/benchmark/*benchmark.js"
   },
   "peerDependencies": {
-    "xterm": "^3.14.0"
+    "xterm": "^4.0.0"
   }
 }

@@ -3,21 +3,29 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
 import { ITerminalOptions } from '../../../src/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
-import deepEqual = require('deep-equal');
+import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { Browser, Page } from 'playwright-core';
 
 const APP = 'http://127.0.0.1:3000/test';
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 const width = 800;
 const height = 600;
 
-describe('WebGL Renderer Integration Tests', function(): void {
-  it('dispose removes renderer canvases', async () => {
+let itWebgl: (expectation: string, callback?: (this: Mocha.ITestCallbackContext, done: MochaDone) => any) => Mocha.ITest | void;
+
+describe('WebGL Renderer Integration Tests', async () => {
+  const browserType = getBrowserType();
+  const isHeadless = process.argv.indexOf('--headless') !== -1;
+  // Firefox works only in non-headless mode https://github.com/microsoft/playwright/issues/1032
+  const areTestsEnabled = browserType.name() === 'chromium' || (browserType.name() === 'firefox' && !isHeadless);
+  itWebgl = areTestsEnabled ? it : it.skip;
+
+  itWebgl('dispose removes renderer canvases', async function(): Promise<void> {
     await setupBrowser();
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
     await page.evaluate(`addon.dispose()`);
@@ -26,11 +34,13 @@ describe('WebGL Renderer Integration Tests', function(): void {
   });
 
   describe('colors', () => {
-    before(async () => setupBrowser());
-    after(async () => browser.close());
-    beforeEach(async () => page.evaluate(`window.term.reset()`));
+    if (areTestsEnabled) {
+      before(async () => setupBrowser());
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
 
-    it('foreground 0-15', async () => {
+    itWebgl('foreground 0-15', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -42,7 +52,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
+      await writeSync(page, `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -53,7 +63,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground 0-7 drawBoldTextInBrightColors', async () => {
+    itWebgl('foreground 0-7 drawBoldTextInBrightColors', async () => {
       const theme: ITheme = {
         brightBlack: '#010203',
         brightRed: '#040506',
@@ -68,7 +78,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         window.term.setOption('theme', ${JSON.stringify(theme)});
         window.term.setOption('drawBoldTextInBrightColors', true);
       `);
-      await writeSync(`\\x1b[1;30m█\\x1b[1;31m█\\x1b[1;32m█\\x1b[1;33m█\\x1b[1;34m█\\x1b[1;35m█\\x1b[1;36m█\\x1b[1;37m█`);
+      await writeSync(page, `\\x1b[1;30m█\\x1b[1;31m█\\x1b[1;32m█\\x1b[1;33m█\\x1b[1;34m█\\x1b[1;35m█\\x1b[1;36m█\\x1b[1;37m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -79,7 +89,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background 0-15', async () => {
+    itWebgl('background 0-15', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -91,7 +101,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
+      await writeSync(page, `\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -102,7 +112,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground 0-15 inverse', async () => {
+    itWebgl('foreground 0-15 inverse', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -114,7 +124,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[7;30m \\x1b[7;31m \\x1b[7;32m \\x1b[7;33m \\x1b[7;34m \\x1b[7;35m \\x1b[7;36m \\x1b[7;37m `);
+      await writeSync(page, `\\x1b[7;30m \\x1b[7;31m \\x1b[7;32m \\x1b[7;33m \\x1b[7;34m \\x1b[7;35m \\x1b[7;36m \\x1b[7;37m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -125,7 +135,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background 0-15 inverse', async () => {
+    itWebgl('background 0-15 inverse', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -137,7 +147,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[7;40m█\\x1b[7;41m█\\x1b[7;42m█\\x1b[7;43m█\\x1b[7;44m█\\x1b[7;45m█\\x1b[7;46m█\\x1b[7;47m█`);
+      await writeSync(page, `\\x1b[7;40m█\\x1b[7;41m█\\x1b[7;42m█\\x1b[7;43m█\\x1b[7;44m█\\x1b[7;45m█\\x1b[7;46m█\\x1b[7;47m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -148,7 +158,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground 0-15 inivisible', async () => {
+    itWebgl('foreground 0-15 inivisible', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -160,7 +170,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[8;30m \\x1b[8;31m \\x1b[8;32m \\x1b[8;33m \\x1b[8;34m \\x1b[8;35m \\x1b[8;36m \\x1b[8;37m `);
+      await writeSync(page, `\\x1b[8;30m \\x1b[8;31m \\x1b[8;32m \\x1b[8;33m \\x1b[8;34m \\x1b[8;35m \\x1b[8;36m \\x1b[8;37m `);
       await pollFor(page, () => getCellColor(1, 1), [0, 0, 0, 255]);
       await pollFor(page, () => getCellColor(2, 1), [0, 0, 0, 255]);
       await pollFor(page, () => getCellColor(3, 1), [0, 0, 0, 255]);
@@ -171,7 +181,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [0, 0, 0, 255]);
     });
 
-    it('background 0-15 inivisible', async () => {
+    itWebgl('background 0-15 inivisible', async () => {
       const theme: ITheme = {
         black: '#010203',
         red: '#040506',
@@ -183,7 +193,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         white: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[8;40m█\\x1b[8;41m█\\x1b[8;42m█\\x1b[8;43m█\\x1b[8;44m█\\x1b[8;45m█\\x1b[8;46m█\\x1b[8;47m█`);
+      await writeSync(page, `\\x1b[8;40m█\\x1b[8;41m█\\x1b[8;42m█\\x1b[8;43m█\\x1b[8;44m█\\x1b[8;45m█\\x1b[8;46m█\\x1b[8;47m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -194,7 +204,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground 0-15 bright', async () => {
+    itWebgl('foreground 0-15 bright', async () => {
       const theme: ITheme = {
         brightBlack: '#010203',
         brightRed: '#040506',
@@ -206,7 +216,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         brightWhite: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
+      await writeSync(page, `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -217,7 +227,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('background 0-15 bright', async () => {
+    itWebgl('background 0-15 bright', async () => {
       const theme: ITheme = {
         brightBlack: '#010203',
         brightRed: '#040506',
@@ -229,7 +239,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         brightWhite: '#161718'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(`\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
+      await writeSync(page, `\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
       await pollFor(page, () => getCellColor(3, 1), [7, 8, 9, 255]);
@@ -240,7 +250,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 1), [22, 23, 24, 255]);
     });
 
-    it('foreground 16-255', async () => {
+    itWebgl('foreground 16-255', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -248,7 +258,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -260,7 +270,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background 16-255', async () => {
+    itWebgl('background 16-255', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -268,7 +278,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -280,7 +290,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground 16-255 inverse', async () => {
+    itWebgl('foreground 16-255 inverse', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -288,7 +298,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -300,7 +310,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background 16-255 inverse', async () => {
+    itWebgl('background 16-255 inverse', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -308,7 +318,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -320,7 +330,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground 16-255 invisible', async () => {
+    itWebgl('foreground 16-255 invisible', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -328,19 +338,15 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [0, 0, 0, 255]);
         }
       }
     });
 
-    it('background 16-255 invisible', async () => {
+    itWebgl('background 16-255 invisible', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -348,7 +354,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -360,7 +366,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color red', async () => {
+    itWebgl('foreground true color red', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -369,7 +375,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -378,7 +384,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color red', async () => {
+    itWebgl('background true color red', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -387,7 +393,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -396,7 +402,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color green', async () => {
+    itWebgl('foreground true color green', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -405,7 +411,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -414,7 +420,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color green', async () => {
+    itWebgl('background true color green', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -423,7 +429,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -432,7 +438,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color blue', async () => {
+    itWebgl('foreground true color blue', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -441,7 +447,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -450,7 +456,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color blue', async () => {
+    itWebgl('background true color blue', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -459,7 +465,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -468,7 +474,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color grey', async () => {
+    itWebgl('foreground true color grey', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -477,7 +483,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -486,7 +492,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color grey', async () => {
+    itWebgl('background true color grey', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -495,7 +501,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -504,7 +510,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color red inverse', async function(): Promise<void> {
+    itWebgl('foreground true color red inverse', async function(): Promise<void> {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -513,7 +519,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -522,7 +528,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color red inverse', async function(): Promise<void> {
+    itWebgl('background true color red inverse', async function(): Promise<void> {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -531,7 +537,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -540,7 +546,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color green inverse', async () => {
+    itWebgl('foreground true color green inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -549,7 +555,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -558,7 +564,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color green inverse', async () => {
+    itWebgl('background true color green inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -567,7 +573,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -576,7 +582,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color blue inverse', async () => {
+    itWebgl('foreground true color blue inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -585,7 +591,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -594,7 +600,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color blue inverse', async () => {
+    itWebgl('background true color blue inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -603,7 +609,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -612,7 +618,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color grey inverse', async () => {
+    itWebgl('foreground true color grey inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -621,7 +627,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -630,7 +636,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('background true color grey inverse', async () => {
+    itWebgl('background true color grey inverse', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -639,7 +645,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -648,7 +654,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       }
     });
 
-    it('foreground true color grey invisible', async () => {
+    itWebgl('foreground true color grey invisible', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -657,16 +663,15 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
-          const i = y * 16 + x;
           await pollFor(page, () => getCellColor(x + 1, y + 1), [0, 0, 0, 255]);
         }
       }
     });
 
-    it('background true color grey invisible', async () => {
+    itWebgl('background true color grey invisible', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
@@ -675,7 +680,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         }
         data += '\\r\\n';
       }
-      await writeSync(data);
+      await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
@@ -686,11 +691,13 @@ describe('WebGL Renderer Integration Tests', function(): void {
   });
 
   describe('minimumContrastRatio', async () => {
-    before(async () => setupBrowser());
-    after(async () => browser.close());
-    beforeEach(async () => page.evaluate(`window.term.reset()`));
+    if (areTestsEnabled) {
+      before(async () => setupBrowser());
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
 
-    it('should adjust 0-15 colors on black background', async () => {
+    itWebgl('should adjust 0-15 colors on black background', async () => {
       const theme: ITheme = {
         black: '#2e3436',
         red: '#cc0000',
@@ -713,7 +720,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         window.term.setOption('theme', ${JSON.stringify(theme)});
         window.term.setOption('minimumContrastRatio', 1);
       `);
-      await writeSync(
+      await writeSync(page,
         `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
         `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
       );
@@ -757,7 +764,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
       await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
     });
 
-    it('should adjust 0-15 colors on white background', async () => {
+    itWebgl('should adjust 0-15 colors on white background', async () => {
       const theme: ITheme = {
         background: '#ffffff',
         black: '#2e3436',
@@ -781,7 +788,7 @@ describe('WebGL Renderer Integration Tests', function(): void {
         window.term.setOption('theme', ${JSON.stringify(theme)});
         window.term.setOption('minimumContrastRatio', 1);
       `);
-      await writeSync(
+      await writeSync(page,
         `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
         `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
       );
@@ -826,18 +833,20 @@ describe('WebGL Renderer Integration Tests', function(): void {
   });
 
   describe('selection', async () => {
-    before(async () => setupBrowser());
-    after(async () => browser.close());
-    beforeEach(async () => page.evaluate(`window.term.reset()`));
+    if (areTestsEnabled) {
+      before(async () => setupBrowser());
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
 
-    it('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
+    itWebgl('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
         background: '#00FF00',
         selection: '#0000FF'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      await writeSync(` █\\x1b[7m█\\x1b[0m`);
+      await writeSync(page, ` █\\x1b[7m█\\x1b[0m`);
       await pollFor(page, () => getCellColor(1, 1), [0, 255, 0, 255]);
       await pollFor(page, () => getCellColor(2, 1), [255, 0, 0, 255]);
       await pollFor(page, () => getCellColor(3, 1), [0, 255, 0, 255]);
@@ -850,35 +859,24 @@ describe('WebGL Renderer Integration Tests', function(): void {
   });
 
   describe('allowTransparency', async () => {
-    before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true}));
-    after(async () => browser.close());
-    beforeEach(async () => page.evaluate(`window.term.reset()`));
-    it('transparent background inverse', async () => {
+    if (areTestsEnabled) {
+      before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true }));
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
+
+    itWebgl('transparent background inverse', async () => {
       const theme: ITheme = {
         background: '#ff000080'
       };
       await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       const data = `\\x1b[7m█\x1b[0m`;
-      await writeSync(data);
+      await writeSync(page, data);
       // Inverse background should be opaque
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
     });
   });
 });
-
-async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
-}
-
-async function writeSync(data: string): Promise<void> {
-  return page.evaluate(`new Promise(resolve => window.term.write('${data}', resolve))`);
-}
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
@@ -895,30 +893,18 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 }
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
-  browser = await puppeteer.launch({
-    headless: process.argv.indexOf('--headless') !== -1,
-    args: [`--window-size=${width},${height}`, `--no-sandbox`]
+  const browserType = getBrowserType();
+  browser = await browserType.launch({ dumpio: true,
+    headless: process.argv.indexOf('--headless') !== -1
   });
-  page = (await browser.pages())[0];
-  await page.setViewport({ width, height });
+  page = await (await browser.newContext()).newPage();
+  await page.setViewportSize({ width, height });
   await page.goto(APP);
-  await openTerminal(options);
+  await openTerminal(page, options);
   await page.evaluate(`
     window.addon = new WebglAddon(true);
     window.term.loadAddon(window.addon);
   `);
-}
-
-export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
-  if (preFn) {
-    await preFn();
-  }
-  const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
-  if (!deepEqual(result, val)) {
-    return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 1);
-    });
-  }
 }
 
 const COLORS_16_TO_255 = [

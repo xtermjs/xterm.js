@@ -9,10 +9,10 @@ import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types'
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
-import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
+import { IDisposable, IMarker, IEvent, ISelectionPosition, ILinkProvider } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport } from 'browser/Types';
+import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -36,9 +36,9 @@ export class MockTerminal implements ITerminal {
   onBinary: IEvent<string>;
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
-  onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
-  onResize: IEvent<{ cols: number; rows: number; }>;
+  onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+  onRender: IEvent<{ start: number, end: number }>;
+  onResize: IEvent<{ cols: number, rows: number }>;
   markers: IMarker[];
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
@@ -94,6 +94,9 @@ export class MockTerminal implements ITerminal {
   deregisterLinkMatcher(matcherId: number): void {
     throw new Error('Method not implemented.');
   }
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    throw new Error('Method not implemented.');
+  }
   hasSelection(): boolean {
     throw new Error('Method not implemented.');
   }
@@ -136,6 +139,7 @@ export class MockTerminal implements ITerminal {
   bracketedPasteMode: boolean;
   renderer: IRenderer;
   linkifier: ILinkifier;
+  linkifier2: ILinkifier2;
   isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;
@@ -247,7 +251,7 @@ export class MockBuffer implements IBuffer {
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
-  getWrappedRangeForLine(y: number): { first: number; last: number; } {
+  getWrappedRangeForLine(y: number): { first: number, last: number } {
     return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments);
   }
   nextStop(x?: number): number {
@@ -278,8 +282,8 @@ export class MockBuffer implements IBuffer {
 
 export class MockRenderer implements IRenderer {
   onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
-  onCanvasResize: IEvent<{ width: number; height: number; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
+  onCanvasResize: IEvent<{ width: number, height: number }>;
+  onRender: IEvent<{ start: number, end: number }>;
   dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -300,16 +304,16 @@ export class MockRenderer implements IRenderer {
   setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  onResize(cols: number, rows: number): void {}
-  onCharSizeChanged(): void {}
-  onBlur(): void {}
-  onFocus(): void {}
-  onSelectionChanged(start: [number, number], end: [number, number]): void {}
-  onCursorMove(): void {}
-  onOptionsChanged(): void {}
-  onDevicePixelRatioChange(): void {}
-  clear(): void {}
-  renderRows(start: number, end: number): void {}
+  onResize(cols: number, rows: number): void { }
+  onCharSizeChanged(): void { }
+  onBlur(): void { }
+  onFocus(): void { }
+  onSelectionChanged(start: [number, number], end: [number, number]): void { }
+  onCursorMove(): void { }
+  onOptionsChanged(): void { }
+  onDevicePixelRatioChange(): void { }
+  clear(): void { }
+  renderRows(start: number, end: number): void { }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(): boolean { return true; }
 }

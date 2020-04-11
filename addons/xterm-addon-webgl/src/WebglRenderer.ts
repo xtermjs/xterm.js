@@ -49,7 +49,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this._core = (<any>this._terminal)._core;
+    this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
@@ -81,7 +81,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
-        throw new Error('WebGL2 not supported');
+      throw new Error('WebGL2 not supported ' + this._gl);
     }
     this._core.screenElement.appendChild(this._canvas);
 
@@ -226,7 +226,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (document.body.contains(this._core.screenElement) && (<any>this._core)._charSizeService.width && (<any>this._core)._charSizeService.height) {
+      if (document.body.contains(this._core.screenElement) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
@@ -302,8 +302,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.viewportY;
+    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
+    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
@@ -329,7 +329,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // TODO: Acquire CharSizeService properly
 
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!(<any>this._core)._charSizeService.width || !(<any>this._core)._charSizeService.height) {
+    if (!(this._core as any)._charSizeService.width || !(this._core as any)._charSizeService.height) {
       return;
     }
 
@@ -340,12 +340,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there

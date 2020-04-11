@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright-core';
 import deepEqual = require('deep-equal');
+import { ITerminalOptions } from 'xterm';
 
-export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
   if (preFn) {
     await preFn();
   }
@@ -23,7 +24,7 @@ export async function pollFor<T>(page: puppeteer.Page, evalOrFn: string | (() =>
   }
 }
 
-export async function writeSync(page: puppeteer.Page, data: string): Promise<void> {
+export async function writeSync(page: playwright.Page, data: string): Promise<void> {
   await page.evaluate(`
     window.ready = false;
     window.term.write('${data}', () => window.ready = true);
@@ -33,4 +34,29 @@ export async function writeSync(page: puppeteer.Page, data: string): Promise<voi
 
 export async function timeout(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
+}
+
+export async function openTerminal(page: playwright.Page, options: ITerminalOptions = {}): Promise<void> {
+  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
+  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+  if (options.rendererType === 'dom') {
+    await page.waitForSelector('.xterm-rows');
+  } else {
+    await page.waitForSelector('.xterm-text-layer');
+  }
+}
+
+export function getBrowserType(): playwright.BrowserType {
+  // Default to chromium
+  let browserType: playwright.BrowserType = playwright['chromium'];
+
+  const index = process.argv.indexOf('--browser');
+  if (index !== -1 && process.argv.length > index + 1 && typeof process.argv[index + 1] === 'string') {
+    const string = process.argv[index + 1];
+    if (string === 'firefox' || string === 'webkit') {
+      browserType = playwright[string];
+    }
+  }
+
+  return browserType;
 }

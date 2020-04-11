@@ -7,7 +7,7 @@ import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRo
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent, ILinkifier } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -48,6 +48,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
     private readonly _linkifier: ILinkifier,
+    private readonly _linkifier2: ILinkifier2,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService
@@ -88,6 +89,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._linkifier.onLinkHover(e => this._onLinkHover(e));
     this._linkifier.onLinkLeave(e => this._onLinkLeave(e));
+
+    this._linkifier2.onLinkHover(e => this._onLinkHover(e));
+    this._linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -127,12 +131,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     const styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-        ` display: inline-block;` +
-        ` height: 100%;` +
-        ` vertical-align: top;` +
-        ` width: ${this.dimensions.actualCellWidth}px` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      ` display: inline-block;` +
+      ` height: 100%;` +
+      ` vertical-align: top;` +
+      ` width: ${this.dimensions.actualCellWidth}px` +
+      `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
 
@@ -154,85 +158,84 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     // Base CSS
     let styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
-        ` color: ${this._colors.foreground.css};` +
-        ` background-color: ${this._colors.background.css};` +
-        ` font-family: ${this._optionsService.options.fontFamily};` +
-        ` font-size: ${this._optionsService.options.fontSize}px;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      ` color: ${this._colors.foreground.css};` +
+      ` font-family: ${this._optionsService.options.fontFamily};` +
+      ` font-size: ${this._optionsService.options.fontSize}px;` +
+      `}`;
     // Text styles
     styles +=
-        `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-        ` font-weight: ${this._optionsService.options.fontWeight};` +
-        `}` +
-        `${this._terminalSelector} span.${BOLD_CLASS} {` +
-        ` font-weight: ${this._optionsService.options.fontWeightBold};` +
-        `}` +
-        `${this._terminalSelector} span.${ITALIC_CLASS} {` +
-        ` font-style: italic;` +
-        `}`;
+      `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
+      ` font-weight: ${this._optionsService.options.fontWeight};` +
+      `}` +
+      `${this._terminalSelector} span.${BOLD_CLASS} {` +
+      ` font-weight: ${this._optionsService.options.fontWeightBold};` +
+      `}` +
+      `${this._terminalSelector} span.${ITALIC_CLASS} {` +
+      ` font-style: italic;` +
+      `}`;
     // Blink animation
     styles +=
-        `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
-        ` 50% {` +
-        `  box-shadow: none;` +
-        ` }` +
-        `}`;
+      `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
+      ` 50% {` +
+      `  box-shadow: none;` +
+      ` }` +
+      `}`;
     styles +=
-        `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
-        ` 0% {` +
-        `  background-color: ${this._colors.cursor.css};` +
-        `  color: ${this._colors.cursorAccent.css};` +
-        ` }` +
-        ` 50% {` +
-        `  background-color: ${this._colors.cursorAccent.css};` +
-        `  color: ${this._colors.cursor.css};` +
-        ` }` +
-        `}`;
+      `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
+      ` 0% {` +
+      `  background-color: ${this._colors.cursor.css};` +
+      `  color: ${this._colors.cursorAccent.css};` +
+      ` }` +
+      ` 50% {` +
+      `  background-color: ${this._colors.cursorAccent.css};` +
+      `  color: ${this._colors.cursor.css};` +
+      ` }` +
+      `}`;
     // Cursor
     styles +=
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` outline: 1px solid ${this._colors.cursor.css};` +
-        ` outline-offset: -1px;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
-        ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` background-color: ${this._colors.cursor.css};` +
-        ` color: ${this._colors.cursorAccent.css};` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-        ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-        ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` outline: 1px solid ${this._colors.cursor.css};` +
+      ` outline-offset: -1px;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
+      ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` background-color: ${this._colors.cursor.css};` +
+      ` color: ${this._colors.cursorAccent.css};` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+      ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
+      `}`;
     // Selection
     styles +=
-        `${this._terminalSelector} .${SELECTION_CLASS} {` +
-        ` position: absolute;` +
-        ` top: 0;` +
-        ` left: 0;` +
-        ` z-index: 1;` +
-        ` pointer-events: none;` +
-        `}` +
-        `${this._terminalSelector} .${SELECTION_CLASS} div {` +
-        ` position: absolute;` +
-        ` background-color: ${this._colors.selection.css};` +
-        `}`;
+      `${this._terminalSelector} .${SELECTION_CLASS} {` +
+      ` position: absolute;` +
+      ` top: 0;` +
+      ` left: 0;` +
+      ` z-index: 1;` +
+      ` pointer-events: none;` +
+      `}` +
+      `${this._terminalSelector} .${SELECTION_CLASS} div {` +
+      ` position: absolute;` +
+      ` background-color: ${this._colors.selection.css};` +
+      `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {
       styles +=
-          `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-          `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
-        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
+      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
   }
@@ -349,7 +352,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    const cursorX = this._bufferService.buffer.x;
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.options.cursorBlink;
 
     for (let y = start; y <= end; y++) {

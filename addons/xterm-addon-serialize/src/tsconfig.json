@@ -12,15 +12,23 @@
     "removeComments": true,
     "baseUrl": ".",
     "paths": {
-      "common/*": [ "../../../src/common/*" ]
+      "common/*": [
+        "../../../src/common/*"
+      ]
     },
-    "strict": true
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha",
+      "../../../out-test/api/TestUtils"
+    ]
   },
   "include": [
     "./**/*",
     "../../../typings/xterm.d.ts"
   ],
   "references": [
-    { "path": "../../../src/common" }
+    {
+      "path": "../../../src/common"
+    }
   ]
 }

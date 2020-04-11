@@ -159,6 +159,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Gus**](https://gus.jp): A shared coding pad where you can run Python with xterm.js
 - [**Linode**](https://linode.com): Linode uses xterm.js to provide users a web console for their Linode instances.
 - [**FluffOS**](https://www.fluffos.info): Active maintained LPMUD driver with websocket support.
+- [**x-terminal**](https://atom.io/packages/x-terminal): Atom plugin for providing terminals inside your Atom workspace.
+- [**CoCalc**](https://cocalc.com/): Lots of free software pre-installed, to chat, collaborate, develop, program, publish, research, share, teach, in C++, HTML, Julia, Jupyter, LaTeX, Markdown, Python, R, SageMath, Scala, ...
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
