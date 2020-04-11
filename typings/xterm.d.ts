@@ -118,7 +118,7 @@ declare module 'xterm' {
     fontWeightBold?: FontWeight;
 
     /**
-     * The spacing in whole pixels between characters..
+     * The spacing in whole pixels between characters.
      */
     letterSpacing?: number;
 
@@ -126,6 +126,13 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * The duration in milliseconds before link tooltip events fire when
+     * hovering on a link.
+     * @deprecated This will be removed when the link matcher API is removed.
+     */
+    linkTooltipHoverDuration?: number;
 
     /**
      * What log level to use, this will log for all levels below and including
@@ -305,7 +312,8 @@ declare module 'xterm' {
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
     /**
-     * A callback that fires when the mouse hovers over a link for a moment.
+     * A callback that fires when the mouse hovers over a link for a period of
+     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
      */
     tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
 
