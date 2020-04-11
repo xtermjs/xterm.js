@@ -10,7 +10,7 @@ import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, ISelectionService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -116,11 +116,11 @@ export class SelectionService implements ISelectionService {
     private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     // Init listeners
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
@@ -374,7 +374,7 @@ export class SelectionService implements ISelectionService {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
-    const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
+    const terminalHeight = this._renderService.dimensions.canvasHeight;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
