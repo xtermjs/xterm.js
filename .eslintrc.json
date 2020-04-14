@@ -45,6 +45,15 @@
         "allowExpressions": true
       }
     ],
+    "@typescript-eslint/explicit-member-accessibility": [
+      "error",
+      {
+        "accessibility": "explicit",
+        "overrides": {
+          "constructors": "off"
+        }
+      }
+    ],
     "@typescript-eslint/indent": [
       "error",
       2
