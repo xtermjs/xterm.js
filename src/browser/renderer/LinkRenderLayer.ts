@@ -20,8 +20,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     rendererId: number,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService);
     linkifier.onLinkHover(e => this._onLinkHover(e));

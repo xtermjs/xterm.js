@@ -15,7 +15,7 @@ export class WebLinkProvider implements ILinkProvider {
 
   }
 
-  provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
+  public provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
     callback(LinkComputer.computeLink(position, this._regex, this._terminal, this._handler));
   }
 }

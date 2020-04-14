@@ -34,7 +34,7 @@ function getLines(term: TestTerminal, limit: number = term.rows): string[] {
 }
 
 class TestInputHandler extends InputHandler {
-  get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
+  public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
 }
 
 describe('InputHandler', () => {

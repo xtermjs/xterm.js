@@ -61,7 +61,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class OptionsService implements IOptionsService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   public options: ITerminalOptions;
 

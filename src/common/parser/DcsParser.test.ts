@@ -55,13 +55,13 @@ function identifier(id: IFunctionIdentifier): number {
 
 class TestHandler implements IDcsHandler {
   constructor(public output: any[], public msg: string, public returnFalse: boolean = false) {}
-  hook(params: IParams): void {
+  public hook(params: IParams): void {
     this.output.push([this.msg, 'HOOK', params.toArray()]);
   }
-  put(data: Uint32Array, start: number, end: number): void {
+  public put(data: Uint32Array, start: number, end: number): void {
     this.output.push([this.msg, 'PUT', utf32ToString(data, start, end)]);
   }
-  unhook(success: boolean): void | boolean {
+  public unhook(success: boolean): void | boolean {
     this.output.push([this.msg, 'UNHOOK', success]);
     if (this.returnFalse) {
       return false;

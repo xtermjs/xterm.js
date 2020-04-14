@@ -24,14 +24,14 @@ class TestLinkifier extends Linkifier {
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
-  dispose(): void {
+  public dispose(): void {
   }
   public clears: number = 0;
   public zones: IMouseZone[] = [];
-  add(zone: IMouseZone): void {
+  public add(zone: IMouseZone): void {
     this.zones.push(zone);
   }
-  clearAll(): void {
+  public clearAll(): void {
     this.clears++;
   }
 }
