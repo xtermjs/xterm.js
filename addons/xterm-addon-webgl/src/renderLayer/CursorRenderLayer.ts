@@ -8,7 +8,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IEventEmitter } from 'common/EventEmitter';
 
 interface ICursorState {
@@ -34,7 +34,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>
+    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>
   ) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {

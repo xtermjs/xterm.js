@@ -30,7 +30,7 @@ export class MockMouseService implements IMouseService {
 export class MockRenderService implements IRenderService {
   public serviceBrand: any;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,
