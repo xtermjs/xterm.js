@@ -33,13 +33,13 @@ export class Renderer extends Disposable implements IRenderer {
   constructor(
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
-    readonly linkifier: ILinkifier,
-    readonly linkifier2: ILinkifier2,
+    linkifier: ILinkifier,
+    linkifier2: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService readonly coreService: ICoreService,
-    @ICoreBrowserService readonly coreBrowserService: ICoreBrowserService
+    @ICoreService coreService: ICoreService,
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;

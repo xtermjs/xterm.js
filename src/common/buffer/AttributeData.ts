@@ -14,6 +14,7 @@ export class AttributeData implements IAttributeData {
       value & 255
     ];
   }
+  
   static fromColorRGB(value: IColorRGB): number {
     return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
   }
