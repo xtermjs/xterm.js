@@ -9,15 +9,15 @@ import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/re
 import { IColorSet } from 'browser/Types';
 
 export class MockCharSizeService implements ICharSizeService {
-  serviceBrand: any;
-  get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
+  public serviceBrand: any;
+  public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
+  public onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
   constructor(public width: number, public height: number) {}
-  measure(): void {}
+  public measure(): void {}
 }
 
 export class MockMouseService implements IMouseService {
-  serviceBrand: any;
+  public serviceBrand: any;
   public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     throw new Error('Not implemented');
   }
@@ -28,11 +28,11 @@ export class MockMouseService implements IMouseService {
 }
 
 export class MockRenderService implements IRenderService {
-  serviceBrand: any;
-  onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
-  dimensions: IRenderDimensions = {
+  public serviceBrand: any;
+  public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
+  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,
     scaledCharHeight: 0,
     scaledCellWidth: 0,
@@ -46,52 +46,52 @@ export class MockRenderService implements IRenderService {
     actualCellWidth: 0,
     actualCellHeight: 0
   };
-  refreshRows(start: number, end: number): void {
+  public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  resize(cols: number, rows: number): void {
+  public resize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  changeOptions(): void {
+  public changeOptions(): void {
     throw new Error('Method not implemented.');
   }
-  setRenderer(renderer: IRenderer): void {
+  public setRenderer(renderer: IRenderer): void {
     throw new Error('Method not implemented.');
   }
-  setColors(colors: IColorSet): void {
+  public setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  onDevicePixelRatioChange(): void {
+  public onDevicePixelRatioChange(): void {
     throw new Error('Method not implemented.');
   }
-  onResize(cols: number, rows: number): void {
+  public onResize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  onCharSizeChanged(): void {
+  public onCharSizeChanged(): void {
     throw new Error('Method not implemented.');
   }
-  onBlur(): void {
+  public onBlur(): void {
     throw new Error('Method not implemented.');
   }
-  onFocus(): void {
+  public onFocus(): void {
     throw new Error('Method not implemented.');
   }
-  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     throw new Error('Method not implemented.');
   }
-  onCursorMove(): void {
+  public onCursorMove(): void {
     throw new Error('Method not implemented.');
   }
-  clear(): void {
+  public clear(): void {
     throw new Error('Method not implemented.');
   }
-  registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     throw new Error('Method not implemented.');
   }
-  deregisterCharacterJoiner(joinerId: number): boolean {
+  public deregisterCharacterJoiner(joinerId: number): boolean {
     throw new Error('Method not implemented.');
   }
-  dispose(): void {
+  public dispose(): void {
     throw new Error('Method not implemented.');
   }
 }

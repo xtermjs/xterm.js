@@ -7,15 +7,15 @@ import { IAttributeData, IColorRGB } from 'common/Types';
 import { Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 
 export class AttributeData implements IAttributeData {
-  static toColorRGB(value: number): IColorRGB {
+  public static toColorRGB(value: number): IColorRGB {
     return [
       value >>> Attributes.RED_SHIFT & 255,
       value >>> Attributes.GREEN_SHIFT & 255,
       value & 255
     ];
   }
-  
-  static fromColorRGB(value: IColorRGB): number {
+
+  public static fromColorRGB(value: IColorRGB): number {
     return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
   }
 

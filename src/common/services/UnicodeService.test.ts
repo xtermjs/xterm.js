@@ -8,8 +8,8 @@ import { UnicodeService } from 'common/services/UnicodeService';
 import { IUnicodeVersionProvider } from 'common/services/Services';
 
 class DummyProvider implements IUnicodeVersionProvider {
-  version = '123';
-  wcwidth(n: number): 0 | 1 | 2 {
+  public version = '123';
+  public wcwidth(n: number): 0 | 1 | 2 {
     return 2;
   }
 }

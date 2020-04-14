@@ -15,7 +15,7 @@ function constrain(value: number, low: number, high: number): number {
 abstract class BaseSerializeHandler {
   constructor(private _buffer: IBuffer) { }
 
-  serialize(startRow: number, endRow: number): string {
+  public serialize(startRow: number, endRow: number): string {
     // we need two of them to flip between old and new cell
     const cell1 = this._buffer.getNullCell();
     const cell2 = this._buffer.getNullCell();

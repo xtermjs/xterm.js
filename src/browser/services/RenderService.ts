@@ -14,7 +14,7 @@ import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 export class RenderService extends Disposable implements IRenderService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;

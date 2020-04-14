@@ -6,7 +6,7 @@
 import { ICoreBrowserService } from './Services';
 
 export class CoreBrowserService implements ICoreBrowserService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   constructor(
     private _textarea: HTMLTextAreaElement
