@@ -36,8 +36,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     characterJoinerRegistry: ICharacterJoinerRegistry,
     alpha: boolean,
     rendererId: number,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
     this._state = new GridCache<CharData>();

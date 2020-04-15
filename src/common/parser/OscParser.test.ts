@@ -17,13 +17,13 @@ function toUtf32(s: string): Uint32Array {
 
 class TestHandler implements IOscHandler {
   constructor(public id: number, public output: any[], public msg: string, public returnFalse: boolean = false) {}
-  start(): void {
+  public start(): void {
     this.output.push([this.msg, this.id, 'START']);
   }
-  put(data: Uint32Array, start: number, end: number): void {
+  public put(data: Uint32Array, start: number, end: number): void {
     this.output.push([this.msg, this.id, 'PUT', utf32ToString(data, start, end)]);
   }
-  end(success: boolean): void | boolean {
+  public end(success: boolean): void | boolean {
     this.output.push([this.msg, this.id, 'END', success]);
     if (this.returnFalse) {
       return false;

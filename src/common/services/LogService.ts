@@ -39,7 +39,7 @@ const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
 const LOG_PREFIX = 'xterm.js: ';
 
 export class LogService implements ILogService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   private _logLevel!: LogLevel;
 
@@ -71,25 +71,25 @@ export class LogService implements ILogService {
     type.call(console, LOG_PREFIX + message, ...optionalParams);
   }
 
-  debug(message: string, ...optionalParams: any[]): void {
+  public debug(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.DEBUG) {
       this._log(console.log, message, optionalParams);
     }
   }
 
-  info(message: string, ...optionalParams: any[]): void {
+  public info(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.INFO) {
       this._log(console.info, message, optionalParams);
     }
   }
 
-  warn(message: string, ...optionalParams: any[]): void {
+  public warn(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.WARN) {
       this._log(console.warn, message, optionalParams);
     }
   }
 
-  error(message: string, ...optionalParams: any[]): void {
+  public error(message: string, ...optionalParams: any[]): void {
     if (this._logLevel <= LogLevel.ERROR) {
       this._log(console.error, message, optionalParams);
     }

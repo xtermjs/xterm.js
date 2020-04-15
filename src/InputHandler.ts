@@ -137,15 +137,15 @@ class DECRQSS implements IDcsHandler {
     private _optionsService: IOptionsService
   ) { }
 
-  hook(params: IParams): void {
+  public hook(params: IParams): void {
     this._data = new Uint32Array(0);
   }
 
-  put(data: Uint32Array, start: number, end: number): void {
+  public put(data: Uint32Array, start: number, end: number): void {
     this._data = concat(this._data, data.subarray(start, end));
   }
 
-  unhook(success: boolean): void {
+  public unhook(success: boolean): void {
     if (!success) {
       this._data = new Uint32Array(0);
       return;

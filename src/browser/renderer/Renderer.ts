@@ -6,7 +6,7 @@
 import { TextRenderLayer } from 'browser/renderer/TextRenderLayer';
 import { SelectionRenderLayer } from 'browser/renderer/SelectionRenderLayer';
 import { CursorRenderLayer } from 'browser/renderer/CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
@@ -27,19 +27,19 @@ export class Renderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
   constructor(
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
-    readonly linkifier: ILinkifier,
-    readonly linkifier2: ILinkifier2,
+    linkifier: ILinkifier,
+    linkifier2: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService readonly coreService: ICoreService,
-    @ICoreBrowserService readonly coreBrowserService: ICoreBrowserService
+    @ICoreService coreService: ICoreService,
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
@@ -49,7 +49,7 @@ export class Renderer extends Disposable implements IRenderer {
       new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
       new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier, linkifier2, this._bufferService, _optionsService),
-      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRefreshRows, this._bufferService, _optionsService, coreService, coreBrowserService)
+      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, _optionsService, coreService, coreBrowserService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,

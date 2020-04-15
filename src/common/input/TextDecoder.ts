@@ -64,7 +64,7 @@ export class StringToUtf32 {
    * the provided input data does not exceed the size of `target`.
    * Returns the number of written codepoints in `target`.
    */
-  decode(input: string, target: Uint32Array): number {
+  public decode(input: string, target: Uint32Array): number {
     const length = input.length;
 
     if (!length) {
@@ -132,7 +132,7 @@ export class Utf8ToUtf32 {
    * the provided data chunk does not exceed the size of `target`.
    * Returns the number of written codepoints in `target`.
    */
-  decode(input: Uint8Array, target: Uint32Array): number {
+  public decode(input: Uint8Array, target: Uint32Array): number {
     const length = input.length;
 
     if (!length) {

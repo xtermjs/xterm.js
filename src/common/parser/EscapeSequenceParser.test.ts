@@ -41,16 +41,16 @@ class MockOscPutParser implements IOscParser {
       this._fallback(id, 'END', this.data.slice(this.data.indexOf(';') + 1));
     }
   }
-  addHandler(ident: number, handler: IOscHandler): IDisposable {
+  public addHandler(ident: number, handler: IOscHandler): IDisposable {
     throw new Error('not implemented');
   }
-  setHandler(ident: number, handler: IOscHandler): void {
+  public setHandler(ident: number, handler: IOscHandler): void {
     throw new Error('not implemented');
   }
-  clearHandler(ident: number): void {
+  public clearHandler(ident: number): void {
     throw new Error('not implemented');
   }
-  setHandlerFallback(handler: OscFallbackHandlerType): void {
+  public setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._fallback = handler;
   }
 }

@@ -24,7 +24,7 @@ export interface IRenderDimensions {
   actualCellHeight: number;
 }
 
-export interface IRequestRefreshRowsEvent {
+export interface IRequestRedrawEvent {
   start: number;
   end: number;
 }
@@ -36,7 +36,11 @@ export interface IRequestRefreshRowsEvent {
 export interface IRenderer extends IDisposable {
   readonly dimensions: IRenderDimensions;
 
-  readonly onRequestRefreshRows: IEvent<IRequestRefreshRowsEvent>;
+  /**
+   * Fires when the renderer is requesting to be redrawn on the next animation
+   * frame but is _not_ a result of content changing (eg. selection changes).
+   */
+  readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
   dispose(): void;
   setColors(colors: IColorSet): void;

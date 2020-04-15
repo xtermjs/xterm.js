@@ -50,7 +50,7 @@ export class Linkifier2 implements ILinkifier2 {
     this._renderService = renderService;
 
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
-    this._element.addEventListener('click', this._onMouseDown.bind(this));
+    this._element.addEventListener('click', this._onClick.bind(this));
   }
 
   private _onMouseMove(event: MouseEvent): void {
@@ -125,7 +125,7 @@ export class Linkifier2 implements ILinkifier2 {
     });
   }
 
-  private _onMouseDown(event: MouseEvent): void {
+  private _onClick(event: MouseEvent): void {
     if (!this._element || !this._mouseService || !this._currentLink) {
       return;
     }
@@ -173,7 +173,7 @@ export class Linkifier2 implements ILinkifier2 {
 
       // Add listener for rerendering
       if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRender(e => {
+        this._linkCacheDisposables.push(this._renderService.onRenderedBufferChange(e => {
           this._clearCurrentLink(e.start + 1 + this._bufferService.buffer.ydisp, e.end + 1 + this._bufferService.buffer.ydisp);
         }));
       }

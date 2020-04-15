@@ -7,9 +7,7 @@ import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IMouseService, ISelectionService } from 'browser/services/Services';
 import { IMouseZoneManager, IMouseZone } from 'browser/Types';
-import { IBufferService } from 'common/services/Services';
-
-const HOVER_DURATION = 500;
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 /**
  * The MouseZoneManager allows components to register zones within the terminal
@@ -37,7 +35,8 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IMouseService private readonly _mouseService: IMouseService,
-    @ISelectionService private readonly _selectionService: ISelectionService
+    @ISelectionService private readonly _selectionService: ISelectionService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
 
@@ -151,7 +150,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     }
 
     // Restart the tooltip timeout
-    this._tooltipTimeout = <number><any>setTimeout(() => this._onTooltip(e), HOVER_DURATION);
+    this._tooltipTimeout = window.setTimeout(() => this._onTooltip(e), this._optionsService.options.linkTooltipHoverDuration);
   }
 
   private _onTooltip(e: MouseEvent): void {

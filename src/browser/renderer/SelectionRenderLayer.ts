@@ -23,8 +23,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._clearState();
