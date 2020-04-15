@@ -61,7 +61,7 @@
     "nyc": "^15.0.1",
     "playwright-core": "^0.11.1",
     "source-map-loader": "^0.2.4",
-    "ts-loader": "^6.0.4",
+    "ts-loader": "^7.0.0",
     "typescript": "3.8",
     "utf8": "^3.0.0",
     "webpack": "^4.35.3",
