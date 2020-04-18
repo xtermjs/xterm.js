@@ -1121,6 +1121,11 @@ declare module 'xterm' {
     text: string;
 
     /**
+     * Whether to hide the link's underline.
+     */
+    hideUnderline?: boolean;
+
+    /**
      * Calls when the link is activated.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
