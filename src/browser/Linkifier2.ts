@@ -9,20 +9,25 @@ import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
+interface ILinkState {
+  isHovered: boolean;
+}
+
 export class Linkifier2 implements ILinkifier2 {
   private _element: HTMLElement | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _linkProviders: ILinkProvider[] = [];
   private _currentLink: ILink | undefined;
+  private _currentLinkState: ILinkState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
 
-  private _onLinkHover = new EventEmitter<ILinkifierEvent>();
-  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
-  private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
-  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
+  private _onShowLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
+  private _onHideLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
 
   constructor(
     private readonly _bufferService: IBufferService
@@ -151,6 +156,7 @@ export class Linkifier2 implements ILinkifier2 {
     if (!startRow || !endRow || (this._currentLink.range.start.y >= startRow && this._currentLink.range.end.y <= endRow)) {
       this._linkLeave(this._element, this._currentLink, this._lastMouseEvent);
       this._currentLink = undefined;
+      this._currentLinkState = undefined;
       this._linkCacheDisposables.forEach(l => l.dispose());
       this._linkCacheDisposables = [];
     }
@@ -170,7 +176,24 @@ export class Linkifier2 implements ILinkifier2 {
     // Trigger hover if the we have a link at the position
     if (this._linkAtPosition(link, position)) {
       this._currentLink = link;
+      this._currentLinkState = { isHovered: true };
       this._linkHover(this._element, link, this._lastMouseEvent);
+
+      // Add listener for tracking hideUnderline changes
+      let hideUnderlineValue = link.hideUnderline || false;
+      Object.defineProperties(link, {
+        hideUnderline: {
+          get: () => hideUnderlineValue,
+          set: v => {
+            if (hideUnderlineValue !== v) {
+              hideUnderlineValue = v;
+              if (this._currentLinkState?.isHovered) {
+                this._fireUnderlineEvent(link, !v);
+              }
+            }
+          }
+        }
+      });
 
       // Add listener for rerendering
       if (this._renderService) {
@@ -182,11 +205,11 @@ export class Linkifier2 implements ILinkifier2 {
   }
 
   protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
-    const range = link.range;
-    const scrollOffset = this._bufferService.buffer.ydisp;
-
     if (!link.hideUnderline) {
-      this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
+      this._fireUnderlineEvent(link, true);
+    }
+    if (this._currentLinkState) {
+      this._currentLinkState.isHovered = true;
     }
     element.classList.add('xterm-cursor-pointer');
 
@@ -195,11 +218,21 @@ export class Linkifier2 implements ILinkifier2 {
     }
   }
 
-  protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  private _fireUnderlineEvent(link: ILink, showEvent: boolean): void {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
+    const event = this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined);
+    const emitter = showEvent ? this._onShowLinkUnderline : this._onHideLinkUnderline;
+    emitter.fire(event);
+  }
 
-    this._onLinkLeave.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
+  protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
+    if (!link.hideUnderline) {
+      this._fireUnderlineEvent(link, false);
+    }
+    if (this._currentLinkState) {
+      this._currentLinkState.isHovered = false;
+    }
     element.classList.remove('xterm-cursor-pointer');
 
     if (link.leave) {

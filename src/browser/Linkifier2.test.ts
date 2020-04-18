@@ -48,7 +48,7 @@ describe('Linkifier2', () => {
   };
 
   it('onLinkHover event range is correct', done => {
-    linkifier.onLinkHover(e => {
+    linkifier.onShowLinkUnderline(e => {
       assert.equal(link.range.start.x - 1, e.x1);
       assert.equal(link.range.start.y - 1, e.y1);
       assert.equal(link.range.end.x, e.x2);
@@ -61,7 +61,7 @@ describe('Linkifier2', () => {
   });
 
   it('onLinkLeave event range is correct', done => {
-    linkifier.onLinkLeave(e => {
+    linkifier.onHideLinkUnderline(e => {
       assert.equal(link.range.start.x - 1, e.x1);
       assert.equal(link.range.start.y - 1, e.y1);
       assert.equal(link.range.end.x, e.x2);

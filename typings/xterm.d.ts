@@ -1121,7 +1121,8 @@ declare module 'xterm' {
     text: string;
 
     /**
-     * Whether to hide the link's underline.
+     * Whether to hide the underline, this property is tracked and changes after the link is
+     * provided will trigger changes.
      */
     hideUnderline?: boolean;
 
