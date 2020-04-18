@@ -73,6 +73,20 @@ export class Linkifier2 implements ILinkifier2 {
       return;
     }
 
+    // Ignore the event if it's an embedder created hover widget
+    const composedPath = event.composedPath() as HTMLElement[];
+    for (let i = 0; i < composedPath.length; i++) {
+      const target = composedPath[i];
+      // Hit Terminal.element, break and continue
+      if (target.classList.contains('xterm')) {
+        break;
+      }
+      // It's a hover, don't respect hover event
+      if (target.classList.contains('xterm-hover')) {
+        return;
+      }
+    }
+
     if (!this._lastBufferCell || (position.x !== this._lastBufferCell.x || position.y !== this._lastBufferCell.y)) {
       this._onHover(position);
       this._lastBufferCell = position;
