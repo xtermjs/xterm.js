@@ -49,6 +49,7 @@ export class Linkifier2 implements ILinkifier2 {
     this._mouseService = mouseService;
     this._renderService = renderService;
 
+    this._element.addEventListener('mouseleave', () => this._clearCurrentLink());
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
     this._element.addEventListener('click', this._onClick.bind(this));
   }
