@@ -184,7 +184,9 @@ export class Linkifier2 implements ILinkifier2 {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
 
-    this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
+    if (!link.hideUnderline) {
+      this._onLinkHover.fire(this._createLinkHoverEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined));
+    }
     element.classList.add('xterm-cursor-pointer');
 
     if (link.hover) {
