@@ -86,11 +86,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this._linkifier.onLinkHover(e => this._onLinkHover(e));
-    this._linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e));
+    this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e));
 
-    this._linkifier2.onLinkHover(e => this._onLinkHover(e));
-    this._linkifier2.onLinkLeave(e => this._onLinkLeave(e));
+    this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e));
+    this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {

@@ -1121,9 +1121,10 @@ declare module 'xterm' {
     text: string;
 
     /**
-     * Whether to hide the link's underline.
+     * Whether to hide the underline and cursor styles, this property is tracked and changes made
+     * after the link is provided will trigger changes.
      */
-    hideUnderline?: boolean;
+    hideDecorations?: boolean;
 
     /**
      * Calls when the link is activated.
@@ -1133,7 +1134,9 @@ declare module 'xterm' {
     activate(event: MouseEvent, text: string): void;
 
     /**
-     * Called when the mouse hovers the link.
+     * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
+     * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
+     * that will cause mouse events to not fall through and activate other links.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
      */

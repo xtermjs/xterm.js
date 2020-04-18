@@ -96,8 +96,8 @@ export interface ILinkifierEvent {
 }
 
 export interface ILinkifier {
-  onLinkHover: IEvent<ILinkifierEvent>;
-  onLinkLeave: IEvent<ILinkifierEvent>;
+  onShowLinkUnderline: IEvent<ILinkifierEvent>;
+  onHideLinkUnderline: IEvent<ILinkifierEvent>;
   onLinkTooltip: IEvent<ILinkifierEvent>;
 
   attachToDom(element: HTMLElement, mouseZoneManager: IMouseZoneManager): void;
@@ -107,8 +107,8 @@ export interface ILinkifier {
 }
 
 export interface ILinkifier2 {
-  onLinkHover: IEvent<ILinkifierEvent>;
-  onLinkLeave: IEvent<ILinkifierEvent>;
+  onShowLinkUnderline: IEvent<ILinkifierEvent>;
+  onHideLinkUnderline: IEvent<ILinkifierEvent>;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -172,7 +172,7 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   text: string;
-  hideUnderline?: boolean;
+  hideDecorations?: boolean;
   activate(event: MouseEvent, text: string): void;
   hover?(event: MouseEvent, text: string): void;
   leave?(event: MouseEvent, text: string): void;
