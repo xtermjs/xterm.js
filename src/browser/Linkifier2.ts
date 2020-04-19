@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent } from './Types';
+import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations } from './Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 interface ILinkState {
-  hideDecorations: boolean;
+  decorations: ILinkDecorations;
   isHovered: boolean;
 }
 
@@ -199,21 +199,35 @@ export class Linkifier2 implements ILinkifier2 {
     if (this._linkAtPosition(link, position)) {
       this._currentLink = link;
       this._currentLinkState = {
-        hideDecorations: link.hideDecorations || false,
+        decorations: {
+          underline: link.decorations?.underline || true,
+          pointerCursor: link.decorations?.pointerCursor || true
+        },
         isHovered: true
       };
       this._linkHover(this._element, link, this._lastMouseEvent);
 
-      // Add listener for tracking hideDecorations changes
-      Object.defineProperties(link, {
-        hideDecorations: {
-          get: () => this._currentLinkState?.hideDecorations,
+      // Add listener for tracking decorations changes
+      link.decorations = {} as ILinkDecorations;
+      Object.defineProperties(link.decorations, {
+        pointerCursor: {
+          get: () => this._currentLinkState?.decorations.pointerCursor,
           set: v => {
-            if (this._currentLinkState && this._currentLinkState.hideDecorations !== v) {
-              this._currentLinkState.hideDecorations = v;
-              if (this._currentLinkState?.isHovered) {
-                this._fireUnderlineEvent(link, !v);
-                this._element?.classList.toggle('xterm-cursor-pointer', !v);
+            if (this._currentLinkState && this._currentLinkState?.decorations.pointerCursor !== v) {
+              this._currentLinkState.decorations.pointerCursor = v;
+              if (this._currentLinkState.isHovered) {
+                this._element?.classList.toggle('xterm-cursor-pointer', v);
+              }
+            }
+          }
+        },
+        underline: {
+          get: () => this._currentLinkState?.decorations.underline,
+          set: v => {
+            if (this._currentLinkState && this._currentLinkState?.decorations.underline !== v) {
+              this._currentLinkState.decorations.underline = v;
+              if (this._currentLinkState.isHovered) {
+                this._fireUnderlineEvent(link, v);
               }
             }
           }
@@ -230,12 +244,14 @@ export class Linkifier2 implements ILinkifier2 {
   }
 
   protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
-    if (!link.hideDecorations) {
-      this._fireUnderlineEvent(link, true);
-      element.classList.add('xterm-cursor-pointer');
-    }
     if (this._currentLinkState) {
       this._currentLinkState.isHovered = true;
+      if (this._currentLinkState.decorations.underline) {
+        this._fireUnderlineEvent(link, true);
+      }
+      if (this._currentLinkState.decorations.pointerCursor) {
+        element.classList.add('xterm-cursor-pointer');
+      }
     }
 
     if (link.hover) {
@@ -252,12 +268,14 @@ export class Linkifier2 implements ILinkifier2 {
   }
 
   protected _linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
-    if (!link.hideDecorations) {
-      this._fireUnderlineEvent(link, false);
-      element.classList.remove('xterm-cursor-pointer');
-    }
     if (this._currentLinkState) {
       this._currentLinkState.isHovered = false;
+      if (this._currentLinkState.decorations.underline) {
+        this._fireUnderlineEvent(link, false);
+      }
+      if (this._currentLinkState.decorations.pointerCursor) {
+        element.classList.remove('xterm-cursor-pointer');
+      }
     }
 
     if (link.leave) {

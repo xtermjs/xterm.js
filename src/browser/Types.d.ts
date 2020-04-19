@@ -172,10 +172,15 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   text: string;
-  hideDecorations?: boolean;
+  decorations?: ILinkDecorations;
   activate(event: MouseEvent, text: string): void;
   hover?(event: MouseEvent, text: string): void;
   leave?(event: MouseEvent, text: string): void;
+}
+
+interface ILinkDecorations {
+  pointerCursor: boolean;
+  underline: boolean;
 }
 
 interface IBufferRange {
