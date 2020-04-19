@@ -24,6 +24,7 @@ export class Linkifier2 implements ILinkifier2 {
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
+  private _isMouseOut: boolean = true;
 
   private _onShowLinkUnderline = new EventEmitter<ILinkifierEvent>();
   public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
@@ -55,7 +56,10 @@ export class Linkifier2 implements ILinkifier2 {
     this._mouseService = mouseService;
     this._renderService = renderService;
 
-    this._element.addEventListener('mouseleave', () => this._clearCurrentLink());
+    this._element.addEventListener('mouseleave', () => {
+      this._isMouseOut = true;
+      this._clearCurrentLink();
+    });
     this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
     this._element.addEventListener('click', this._onClick.bind(this));
   }
@@ -68,10 +72,10 @@ export class Linkifier2 implements ILinkifier2 {
     }
 
     const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
-
     if (!position) {
       return;
     }
+    this._isMouseOut = false;
 
     // Ignore the event if it's an embedder created hover widget
     const composedPath = event.composedPath() as HTMLElement[];
@@ -115,6 +119,9 @@ export class Linkifier2 implements ILinkifier2 {
     // There is no link cached, so ask for one
     this._linkProviders.forEach((linkProvider, i) => {
       linkProvider.provideLink(position, (link: ILink | undefined) => {
+        if (this._isMouseOut) {
+          return;
+        }
         providerReplies.set(i, link);
 
         // Check if every provider before this one has come back undefined
