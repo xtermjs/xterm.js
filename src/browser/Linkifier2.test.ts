@@ -10,6 +10,14 @@ import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
 
 class TestLinkifier2 extends Linkifier2 {
+  protected _currentLinkState = {
+    decorations: {
+      underline: true,
+      pointerCursor: true
+    },
+    isHovered: true
+  };
+
   constructor(bufferService: IBufferService) {
     super(bufferService);
   }
@@ -47,7 +55,7 @@ describe('Linkifier2', () => {
     activate: () => { }
   };
 
-  it('onLinkHover event range is correct', done => {
+  it('onShowLinkUnderline event range is correct', done => {
     linkifier.onShowLinkUnderline(e => {
       assert.equal(link.range.start.x - 1, e.x1);
       assert.equal(link.range.start.y - 1, e.y1);
@@ -60,7 +68,7 @@ describe('Linkifier2', () => {
     linkifier.linkHover({ classList: { add: () => { } } } as any, link, {} as any);
   });
 
-  it('onLinkLeave event range is correct', done => {
+  it('onHideLinkUnderline event range is correct', done => {
     linkifier.onHideLinkUnderline(e => {
       assert.equal(link.range.start.x - 1, e.x1);
       assert.equal(link.range.start.y - 1, e.y1);

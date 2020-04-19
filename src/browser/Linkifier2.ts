@@ -20,7 +20,7 @@ export class Linkifier2 implements ILinkifier2 {
   private _renderService: IRenderService | undefined;
   private _linkProviders: ILinkProvider[] = [];
   private _currentLink: ILink | undefined;
-  private _currentLinkState: ILinkState | undefined;
+  protected _currentLinkState: ILinkState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
@@ -200,8 +200,8 @@ export class Linkifier2 implements ILinkifier2 {
       this._currentLink = link;
       this._currentLinkState = {
         decorations: {
-          underline: link.decorations?.underline || true,
-          pointerCursor: link.decorations?.pointerCursor || true
+          underline: link.decorations === undefined ? true : link.decorations.underline,
+          pointerCursor: link.decorations === undefined ? true : link.decorations.pointerCursor
         },
         isHovered: true
       };
