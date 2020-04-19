@@ -1121,10 +1121,11 @@ declare module 'xterm' {
     text: string;
 
     /**
-     * Whether to hide the underline and cursor styles, this property is tracked and changes made
-     * after the link is provided will trigger changes.
+     * What link decorations to show when hovering the link, this property is tracked and changes
+     * made after the link is provided will trigger changes. If not set, all decroations will be
+     * enabled.
      */
-    hideDecorations?: boolean;
+    decorations?: ILinkDecorations;
 
     /**
      * Calls when the link is activated.
@@ -1148,6 +1149,21 @@ declare module 'xterm' {
      * @param text The text of the link.
      */
     leave?(event: MouseEvent, text: string): void;
+  }
+
+  /**
+   * A set of decorations that can be applied to links.
+   */
+  interface ILinkDecorations {
+    /**
+     * Whether the cursor is set to pointer.
+     */
+    pointerCursor: boolean;
+
+    /**
+     * Whether the underline is visible
+     */
+    underline: boolean;
   }
 
   /**
