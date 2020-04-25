@@ -3,11 +3,20 @@
  * @license MIT
  */
 
+import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 
 export interface IDisposable {
   dispose(): void;
+}
+
+// TODO: The options that are not in the public API should be reviewed
+export interface ITerminalOptions extends IPublicTerminalOptions {
+  [key: string]: any;
+  cancelEvents?: boolean;
+  convertEol?: boolean;
+  termName?: string;
 }
 
 export type XtermListener = (...args: any[]) => void;

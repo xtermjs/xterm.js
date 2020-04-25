@@ -10,7 +10,7 @@ import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly cols: number;
   readonly rows: number;
@@ -51,12 +51,12 @@ export interface ICoreMouseService {
   /**
    * Human readable version of mouse events.
    */
-  explainEvents(events: CoreMouseEventType): {[event: string]: boolean};
+  explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
 export interface ICoreService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   /**
    * Initially the cursor will not be visible until the first time the terminal
@@ -92,7 +92,7 @@ export interface ICoreService {
 
 export const ICharsetService = createDecorator<ICharsetService>('CharsetService');
 export interface ICharsetService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   charset: ICharset | undefined;
   readonly glevel: number;
@@ -116,7 +116,7 @@ export interface ICharsetService {
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
 export interface IDirtyRowService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly start: number;
   readonly end: number;
@@ -132,61 +132,32 @@ export interface IServiceIdentifier<T> {
   type: T;
 }
 
-export interface IConstructorSignature0<T> {
-  new(...services: { serviceBrand: any }[]): T;
-}
+export interface IBrandedService {
+  serviceBrand: undefined;
+};
 
-export interface IConstructorSignature1<A1, T> {
-  new(first: A1, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature2<A1, A2, T> {
-  new(first: A1, second: A2, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature3<A1, A2, A3, T> {
-  new(first: A1, second: A2, third: A3, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature4<A1, A2, A3, A4, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature5<A1, A2, A3, A4, A5, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature6<A1, A2, A3, A4, A5, A6, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature7<A1, A2, A3, A4, A5, A6, A7, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, ...services: { serviceBrand: any }[]): T;
-}
-
-export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8, ...services: { serviceBrand: any }[]): T;
-}
+type GetLeadingNonServiceArgs<Args> =
+  Args extends [...IBrandedService[]] ? []
+    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
+      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
+        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
+          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
+            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
+              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
+                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
+                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
+                    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
   getService<T>(id: IServiceIdentifier<T>): T | undefined;
-
-  createInstance<T>(ctor: IConstructorSignature0<T>): T;
-  createInstance<A1, T>(ctor: IConstructorSignature1<A1, T>, first: A1): T;
-  createInstance<A1, A2, T>(ctor: IConstructorSignature2<A1, A2, T>, first: A1, second: A2): T;
-  createInstance<A1, A2, A3, T>(ctor: IConstructorSignature3<A1, A2, A3, T>, first: A1, second: A2, third: A3): T;
-  createInstance<A1, A2, A3, A4, T>(ctor: IConstructorSignature4<A1, A2, A3, A4, T>, first: A1, second: A2, third: A3, fourth: A4): T;
-  createInstance<A1, A2, A3, A4, A5, T>(ctor: IConstructorSignature5<A1, A2, A3, A4, A5, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5): T;
-  createInstance<A1, A2, A3, A4, A5, A6, T>(ctor: IConstructorSignature6<A1, A2, A3, A4, A5, A6, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6): T;
-  createInstance<A1, A2, A3, A4, A5, A6, A7, T>(ctor: IConstructorSignature7<A1, A2, A3, A4, A5, A6, A7, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7): T;
-  createInstance<A1, A2, A3, A4, A5, A6, A7, A8, T>(ctor: IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8): T;
+  createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
 }
 
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -196,7 +167,7 @@ export interface ILogService {
 
 export const IOptionsService = createDecorator<IOptionsService>('OptionsService');
 export interface IOptionsService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly options: ITerminalOptions;
 
@@ -311,7 +282,7 @@ export interface ITheme {
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
-  serviceBrand: any;
+  serviceBrand: undefined;
   /** Register an Unicode version provider. */
   register(provider: IUnicodeVersionProvider): void;
   /** Registered Unicode versions. */

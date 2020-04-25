@@ -4,7 +4,7 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
-import { ICharset, IAttributeData, CharData, CoreMouseEventType } from 'common/Types';
+import { ICharset, IAttributeData, CharData, CoreMouseEventType, ITerminalOptions } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
@@ -214,14 +214,6 @@ export interface IElementAccessor {
 export interface ILinkifierAccessor {
   linkifier: ILinkifier;
   linkifier2: ILinkifier2;
-}
-
-// TODO: The options that are not in the public API should be reviewed
-export interface ITerminalOptions extends IPublicTerminalOptions {
-  [key: string]: any;
-  cancelEvents?: boolean;
-  convertEol?: boolean;
-  termName?: string;
 }
 
 export interface IBrowser {

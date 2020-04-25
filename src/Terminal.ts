@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
+import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -39,39 +39,36 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService, IUnicodeService } from 'common/services/Services';
-import { OptionsService } from 'common/services/OptionsService';
+import { ICoreMouseService, ICoreService, IDirtyRowService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
-import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
-import { Disposable } from 'common/Lifecycle';
+import { MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
-import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { DirtyRowService } from 'common/services/DirtyRowService';
-import { InstantiationService } from 'common/services/InstantiationService';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
+import { CoreTerminal } from 'common/CoreTerminal';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 
-export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
+export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public screenElement: HTMLElement;
@@ -92,14 +89,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // common services
-  private _bufferService: IBufferService;
   private _coreService: ICoreService;
   private _charsetService: ICharsetService;
   private _coreMouseService: ICoreMouseService;
   private _dirtyRowService: IDirtyRowService;
-  private _instantiationService: IInstantiationService;
-  private _logService: ILogService;
-  public optionsService: IOptionsService;
   public unicodeService: IUnicodeService;
 
   // browser services
@@ -192,16 +185,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   constructor(
     options: ITerminalOptions = {}
   ) {
-    super();
+    super(options);
 
+    // TODO: Move these to CoreTerminal.ts
     // Setup and initialize common services
-    this._instantiationService = new InstantiationService();
-    this.optionsService = new OptionsService(options);
-    this._instantiationService.setService(IOptionsService, this.optionsService);
-    this._bufferService = this._instantiationService.createInstance(BufferService);
-    this._instantiationService.setService(IBufferService, this._bufferService);
-    this._logService = this._instantiationService.createInstance(LogService);
-    this._instantiationService.setService(ILogService, this._logService);
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreService.onData(e => this._onData.fire(e));
