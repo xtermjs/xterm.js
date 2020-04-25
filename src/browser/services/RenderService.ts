@@ -13,6 +13,12 @@ import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
+interface ISelectionState {
+  start: [number, number] | undefined;
+  end: [number, number] | undefined;
+  columnSelectMode: boolean;
+}
+
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: any;
 
@@ -22,8 +28,14 @@ export class RenderService extends Disposable implements IRenderService {
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
   private _isNextRenderRedrawOnly: boolean = true;
+  private _needsSelectionRefresh: boolean = false;
   private _canvasWidth: number = 0;
   private _canvasHeight: number = 0;
+  private _selectionState: ISelectionState = {
+    start: undefined,
+    end: undefined,
+    columnSelectMode: false
+  };
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
@@ -89,6 +101,14 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderRows(start: number, end: number): void {
     this._renderer.renderRows(start, end);
+
+    // Update selection if needed
+    if (this._needsSelectionRefresh) {
+      this._renderer.onSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
+      this._needsSelectionRefresh = false;
+    }
+
+    // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {
       this._onRender.fire({ start, end });
     }
@@ -124,7 +144,10 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.dispose();
     this._renderer = renderer;
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
-    this.refreshRows(0, this._rowCount - 1);
+
+    // Force a refresh
+    this._needsSelectionRefresh = true;
+    this._fullRefresh();
   }
 
   private _fullRefresh(): void {
@@ -164,6 +187,9 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    this._selectionState.start = start;
+    this._selectionState.end = end;
+    this._selectionState.columnSelectMode = columnSelectMode;
     this._renderer.onSelectionChanged(start, end, columnSelectMode);
   }
 
