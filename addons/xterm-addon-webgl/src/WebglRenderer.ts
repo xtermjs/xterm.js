@@ -117,6 +117,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
+
     // Force a full refresh
     this._model.clear();
   }
@@ -173,10 +176,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
-    this._updateSelectionModel(start, end);
+    this._updateSelectionModel(start, end, columnSelectMode);
 
-    this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
-    this._glyphRenderer.updateSelection(this._model, columnSelectMode);
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
@@ -292,7 +295,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     // Selection does not exist
@@ -314,6 +317,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._model.selection.hasSelection = true;
+    this._model.selection.columnSelectMode = columnSelectMode;
     this._model.selection.viewportStartRow = viewportStartRow;
     this._model.selection.viewportEndRow = viewportEndRow;
     this._model.selection.viewportCappedStartRow = viewportCappedStartRow;
