@@ -23,9 +23,6 @@ export type LineData = CharData[];
 export interface IInputHandlingTerminal {
   viewport: IViewport;
 
-  onA11yCharEmitter: IEventEmitter<string>;
-  onA11yTabEmitter: IEventEmitter<number>;
-
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
   resize(x: number, y: number): void;

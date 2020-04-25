@@ -63,3 +63,7 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
     this._disposed = true;
   }
 }
+
+export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): void {
+  from(e => to.fire(e));
+}

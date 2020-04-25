@@ -41,7 +41,7 @@ import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
@@ -133,10 +133,10 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   public get onFocus(): IEvent<void> { return this._onFocus.event; }
   private _onBlur = new EventEmitter<void>();
   public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  public onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
-  public onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
+  private _onA11yCharEmitter = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  private _onA11yTabEmitter = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -180,9 +180,11 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this._inputHandler.onRequestBell(() => this.bell());
       this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
       this._inputHandler.onRequestReset(() => this.reset());
-      this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
-      this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
-      this._inputHandler.onTitleChange(title => this._onTitleChange.fire(title));
+      forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove);
+      forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed);
+      forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange);
+      forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter);
+      forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter);
       this.register(this._inputHandler);
     }
 

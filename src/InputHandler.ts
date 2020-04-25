@@ -238,6 +238,10 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  private _onA11yChar = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
+  private _onA11yTab = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
 
   constructor(
     private _terminal: IInputHandlingTerminal,
@@ -520,7 +524,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._terminal.onA11yCharEmitter.fire(stringFromCodePoint(code));
+        this._onA11yChar.fire(stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -738,7 +742,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._bufferService.buffer.x;
     this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
     if (this._optionsService.options.screenReaderMode) {
-      this._terminal.onA11yTabEmitter.fire(this._bufferService.buffer.x - originalX);
+      this._onA11yTab.fire(this._bufferService.buffer.x - originalX);
     }
   }
 
