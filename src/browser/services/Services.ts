@@ -63,7 +63,7 @@ export interface IRenderService extends IDisposable {
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
-  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
+  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   onCursorMove(): void;
   clear(): void;
   registerCharacterJoiner(handler: CharacterJoinerHandler): number;

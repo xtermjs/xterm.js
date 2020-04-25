@@ -163,7 +163,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.onFocus();
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderer.onSelectionChanged(start, end, columnSelectMode);
   }
 

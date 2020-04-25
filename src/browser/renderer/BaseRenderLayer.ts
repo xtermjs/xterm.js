@@ -77,7 +77,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onFocus(): void {}
   public onCursorMove(): void {}
   public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
 
   public setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
