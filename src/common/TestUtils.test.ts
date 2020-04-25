@@ -66,6 +66,7 @@ export class MockCoreService implements ICoreService {
     applicationKeypad: false,
     bracketedPasteMode: false,
     origin: false,
+    sendFocus: false,
     wraparound: true
   };
   public onData: IEvent<string> = new EventEmitter<string>().event;

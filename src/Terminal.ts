@@ -90,7 +90,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
 
   // mouse properties
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
-  public sendFocus: boolean;
 
   // write buffer
   private _writeBuffer: WriteBuffer;
@@ -277,7 +276,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
    * Binds the desired focus behavior on a given terminal object.
    */
   private _onTextAreaFocus(ev: KeyboardEvent): void {
-    if (this.sendFocus) {
+    if (this._coreService.decPrivateModes.sendFocus) {
       this._coreService.triggerDataEvent(C0.ESC + '[I');
     }
     this.updateCursorStyle(ev);
@@ -302,7 +301,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     // screen readers reading it out.
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
-    if (this.sendFocus) {
+    if (this._coreService.decPrivateModes.sendFocus) {
       this._coreService.triggerDataEvent(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');

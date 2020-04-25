@@ -1771,7 +1771,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
           // focusout: ^[[O
-          this._terminal.sendFocus = true;
+          this._coreService.decPrivateModes.sendFocus = true;
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1005 not supported (see #2507)');
@@ -1986,7 +1986,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreMouseService.activeProtocol = 'NONE';
           break;
         case 1004: // send focusin/focusout events
-          this._terminal.sendFocus = false;
+          this._coreService.decPrivateModes.sendFocus = false;
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1005 not supported (see #2507)');

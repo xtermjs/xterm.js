@@ -168,6 +168,7 @@ export interface IDecPrivateModes {
   applicationKeypad: boolean;
   bracketedPasteMode: boolean;
   origin: boolean;
+  sendFocus: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 
