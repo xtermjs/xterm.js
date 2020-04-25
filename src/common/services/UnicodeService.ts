@@ -8,6 +8,8 @@ import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 
 export class UnicodeService implements IUnicodeService {
+  public serviceBrand: any;
+
   private _providers: {[key: string]: IUnicodeVersionProvider} = Object.create(null);
   private _active: string = '';
   private _activeProvider: IUnicodeVersionProvider;
