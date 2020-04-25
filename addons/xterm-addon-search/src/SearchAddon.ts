@@ -110,7 +110,6 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
-    if (!result && currentSelection) return true;
     // If there is only one result, wrap back and return selection if exists.
     if (!result && currentSelection) {
       searchPosition.startRow = currentSelection.startRow;
