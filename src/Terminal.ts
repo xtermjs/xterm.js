@@ -46,22 +46,16 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { ICoreMouseService, ICoreService, IDirtyRowService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { CoreService } from 'common/services/CoreService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
-import { DirtyRowService } from 'common/services/DirtyRowService';
-import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { CharsetService } from 'common/services/CharsetService';
 import { CoreTerminal } from 'common/CoreTerminal';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -87,13 +81,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   public get options(): ITerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler;
-
-  // common services
-  private _coreService: ICoreService;
-  private _charsetService: ICharsetService;
-  private _coreMouseService: ICoreMouseService;
-  private _dirtyRowService: IDirtyRowService;
-  public unicodeService: IUnicodeService;
 
   // browser services
   private _charSizeService: ICharSizeService;
@@ -137,15 +124,8 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
 
-  public get cols(): number { return this._bufferService.cols; }
-  public get rows(): number { return this._bufferService.rows; }
-
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
-  private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
@@ -186,21 +166,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     options: ITerminalOptions = {}
   ) {
     super(options);
-
-    // TODO: Move these to CoreTerminal.ts
-    // Setup and initialize common services
-    this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
-    this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreService.onData(e => this._onData.fire(e));
-    this._coreService.onBinary(e => this._onBinary.fire(e));
-    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
-    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
-    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
-    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
-    this._instantiationService.setService(IUnicodeService, this.unicodeService);
-    this._charsetService = this._instantiationService.createInstance(CharsetService);
-    this._instantiationService.setService(ICharsetService, this._charsetService);
 
     this._setupOptionsListeners();
     this._setup();

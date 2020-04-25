@@ -22,19 +22,35 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { ITerminalOptions } from './Types';
+import { CoreService } from 'common/services/CoreService';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { CoreMouseService } from 'common/services/CoreMouseService';
+import { DirtyRowService } from 'common/services/DirtyRowService';
+import { UnicodeService } from 'common/services/UnicodeService';
+import { CharsetService } from 'common/services/CharsetService';
 
-export class CoreTerminal extends Disposable {
+export abstract class CoreTerminal extends Disposable {
   protected readonly _instantiationService: IInstantiationService;
   protected readonly _bufferService: IBufferService;
   protected readonly _logService: ILogService;
+  protected readonly _coreService: ICoreService;
+  protected readonly _charsetService: ICharsetService;
+  protected readonly _coreMouseService: ICoreMouseService;
+  protected readonly _dirtyRowService: IDirtyRowService;
 
+  public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
+
+  private _onData = new EventEmitter<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
+  private _onBinary = new EventEmitter<string>();
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
 
   constructor(
     options: ITerminalOptions
@@ -49,8 +65,22 @@ export class CoreTerminal extends Disposable {
     this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._instantiationService.createInstance(LogService);
     this._instantiationService.setService(ILogService, this._logService);
+    this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
+    this._instantiationService.setService(ICoreService, this._coreService);
+    this._coreService.onData(e => this._onData.fire(e));
+    this._coreService.onBinary(e => this._onBinary.fire(e));
+    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
+    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
+    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
+    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
+    this._instantiationService.setService(IUnicodeService, this.unicodeService);
+    this._charsetService = this._instantiationService.createInstance(CharsetService);
+    this._instantiationService.setService(ICharsetService, this._charsetService);
   }
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
+
+  public abstract scrollToBottom(): void;
 }
