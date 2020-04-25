@@ -1794,9 +1794,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
+          this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
           this._terminal.viewport?.syncScrollArea();
-          this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
@@ -2012,9 +2012,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (params.params[i] === 1049) {
             this.restoreCursor();
           }
+          this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
           this._terminal.viewport?.syncScrollArea();
-          this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;

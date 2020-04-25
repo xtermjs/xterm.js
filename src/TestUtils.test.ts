@@ -190,9 +190,6 @@ export class MockTerminal implements ITerminal {
   public reset(): void {
     throw new Error('Method not implemented.');
   }
-  public showCursor(): void {
-    throw new Error('Method not implemented.');
-  }
   public refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
@@ -213,9 +210,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   public resize(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  public showCursor(): void {
     throw new Error('Method not implemented.');
   }
   public handler(data: string): void {

@@ -278,7 +278,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }
     this.updateCursorStyle(ev);
     this.element.classList.add('focus');
-    this.showCursor();
+    this._showCursor();
     this._onFocus.fire();
   }
 
@@ -830,7 +830,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   /**
    * Display the cursor element
    */
-  public showCursor(): void {
+  private _showCursor(): void {
     if (!this._coreService.isCursorInitialized) {
       this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
@@ -1165,7 +1165,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }
 
     this._onKey.fire({ key: result.key, domEvent: event });
-    this.showCursor();
+    this._showCursor();
     this._coreService.triggerDataEvent(result.key, true);
 
     // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
@@ -1242,7 +1242,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     key = String.fromCharCode(key);
 
     this._onKey.fire({ key, domEvent: ev });
-    this.showCursor();
+    this._showCursor();
     this._coreService.triggerDataEvent(key, true);
 
     return true;

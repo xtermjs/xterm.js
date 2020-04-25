@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 export class RenderService extends Disposable implements IRenderService {
@@ -39,7 +39,9 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
-    @ICharSizeService charSizeService: ICharSizeService
+    @ICharSizeService charSizeService: ICharSizeService,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreService private readonly _coreService: ICoreService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));

@@ -140,7 +140,6 @@ describe('Terminal', () => {
     };
 
     beforeEach(() => {
-      term.showCursor = () => { };
       term.clearSelection = () => { };
     });
 
@@ -531,7 +530,6 @@ describe('Terminal', () => {
     let evKeyPress: any;
 
     beforeEach(() => {
-      term.showCursor = () => { };
       term.clearSelection = () => { };
       // term.compositionHelper = {
       //   isComposing: false,

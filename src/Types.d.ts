@@ -21,8 +21,6 @@ export type LineData = CharData[];
  * InputHandler cleanly from the ITerminal interface.
  */
 export interface IInputHandlingTerminal {
-  buffers: IBufferSet;
-  buffer: IBuffer;
   viewport: IViewport;
 
   onA11yCharEmitter: IEventEmitter<string>;
@@ -31,7 +29,6 @@ export interface IInputHandlingTerminal {
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   is(term: string): boolean;
   resize(x: number, y: number): void;
-  showCursor(): void;
   handleTitle(title: string): void;
 }
 
@@ -143,7 +140,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
-  showCursor(): void;
 }
 
 // Portions of the public API that are required by the internal Terminal
