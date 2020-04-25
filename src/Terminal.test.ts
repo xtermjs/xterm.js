@@ -121,7 +121,7 @@ describe('Terminal', () => {
         assert.equal(e, 'title');
         done();
       });
-      term.handleTitle('title');
+      term.write('\x1b]2;title\x07');
     });
   });
 

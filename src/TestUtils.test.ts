@@ -215,9 +215,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   public handler(data: string): void {
     throw new Error('Method not implemented.');
   }
-  public handleTitle(title: string): void {
-    throw new Error('Method not implemented.');
-  }
 }
 
 export class MockBuffer implements IBuffer {

@@ -182,6 +182,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this._inputHandler.onRequestReset(() => this.reset());
       this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
       this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
+      this._inputHandler.onTitleChange(title => this._onTitleChange.fire(title));
       this.register(this._inputHandler);
     }
 
@@ -1352,14 +1353,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   //   }
   //   this._onData.fire(data);
   // }
-
-  /**
-   * Emit the 'title' event and populate the given title.
-   * @param title The title to populate in the event.
-   */
-  public handleTitle(title: string): void {
-    this._onTitleChange.fire(title);
-  }
 
   /**
    * Reset terminal.

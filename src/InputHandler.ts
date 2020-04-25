@@ -236,6 +236,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onTitleChange = new EventEmitter<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
   constructor(
     private _terminal: IInputHandlingTerminal,
@@ -2569,7 +2571,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setTitle(data: string): void {
     this._windowTitle = data;
-    this._terminal.handleTitle(data);
+    this._onTitleChange.fire(data);
   }
 
   /**
