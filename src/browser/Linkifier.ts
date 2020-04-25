@@ -43,10 +43,9 @@ export class Linkifier implements ILinkifier {
   public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(
-    protected readonly _bufferService: IBufferService,
-    private readonly _logService: ILogService,
-    private readonly _optionsService: IOptionsService,
-    private readonly _unicodeService: IUnicodeService
+    @IBufferService protected readonly _bufferService: IBufferService,
+    @ILogService private readonly _logService: ILogService,
+    @IUnicodeService private readonly _unicodeService: IUnicodeService
   ) {
     this._rowsToLinkify = {
       start: undefined,

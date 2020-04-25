@@ -109,6 +109,7 @@ export class MockOptionsService implements IOptionsService {
 
 // defaults to V6 always to keep tests passing
 export class MockUnicodeService implements IUnicodeService {
+  public serviceBrand: any;
   private _provider = new UnicodeV6();
   public register(provider: IUnicodeVersionProvider): void {
     throw new Error('Method not implemented.');
