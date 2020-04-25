@@ -119,7 +119,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._runOperation(l => l.onFocus());
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
   }
 

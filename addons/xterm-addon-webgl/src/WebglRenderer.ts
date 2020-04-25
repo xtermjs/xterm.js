@@ -173,7 +173,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end, columnSelectMode);
@@ -295,7 +295,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
-  private _updateSelectionModel(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     // Selection does not exist
