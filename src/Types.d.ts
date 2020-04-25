@@ -21,7 +21,6 @@ export type LineData = CharData[];
  * InputHandler cleanly from the ITerminal interface.
  */
 export interface IInputHandlingTerminal {
-  insertMode: boolean;
   sendFocus: boolean;
 
   buffers: IBufferSet;

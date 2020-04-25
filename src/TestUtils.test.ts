@@ -203,8 +203,6 @@ export class MockTerminal implements ITerminal {
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   public onA11yCharEmitter: EventEmitter<string>;
   public onA11yTabEmitter: EventEmitter<number>;
-  public insertMode: boolean;
-  public bracketedPasteMode: boolean;
   public sendFocus: boolean;
   public buffers: IBufferSet;
   public buffer: IBuffer = new MockBuffer();

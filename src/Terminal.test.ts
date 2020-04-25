@@ -991,7 +991,7 @@ describe('Terminal', () => {
       term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('abcde');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
@@ -1003,7 +1003,7 @@ describe('Terminal', () => {
       term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('￥￥￥');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('￥');
@@ -1016,7 +1016,7 @@ describe('Terminal', () => {
       term.writeSync(Array(41).join('￥'));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('a');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
       expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');

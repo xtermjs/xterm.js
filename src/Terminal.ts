@@ -88,9 +88,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   private _selectionService: ISelectionService;
   private _soundService: ISoundService;
 
-  // modes
-  public insertMode: boolean;
-
   // mouse properties
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
   public sendFocus: boolean;
@@ -179,15 +176,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   }
 
   protected _setup(): void {
-    super._setup();
-
-    this._customKeyEventHandler = null;
-
-    // modes
-    this.insertMode = false;
-
-    this._userScrolling = false;
-
     if (this._inputHandler) {
       this._inputHandler.reset();
     } else {
@@ -201,6 +189,11 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this.register(this._inputHandler);
     }
 
+    super._setup();
+
+    this._customKeyEventHandler = null;
+
+    this._userScrolling = false;
     if (!this.linkifier) {
       this.linkifier = this._instantiationService.createInstance(Linkifier);
     }

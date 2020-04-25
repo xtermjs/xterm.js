@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -65,6 +65,7 @@ export interface ICoreService {
   isCursorInitialized: boolean;
   isCursorHidden: boolean;
 
+  readonly modes: IModes;
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;

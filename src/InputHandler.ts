@@ -489,7 +489,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
-    const insertMode = this._terminal.insertMode;
+    const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
@@ -1587,15 +1587,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 4     | Insert Mode (IRM).                     | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
    * | 20    | Automatic Newline (LNM). Always off.   | #N      |
-   *
-   *
-   * FIXME: why is LNM commented out?
    */
   public setMode(params: IParams): void {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
-          this._terminal.insertMode = true;
+          this._coreService.modes.insertMode = true;
           break;
         case 20:
           // this._t.convertEol = true;
@@ -1833,7 +1830,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
-          this._terminal.insertMode = false;
+          this._coreService.modes.insertMode = false;
           break;
         case 20:
           // this._t.convertEol = false;
@@ -2356,7 +2353,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
-    this._terminal.insertMode = false;
     this._terminal.viewport?.syncScrollArea();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;

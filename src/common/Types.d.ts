@@ -159,6 +159,9 @@ export interface IMarker extends IDisposable {
   readonly isDisposed: boolean;
   readonly line: number;
 }
+export interface IModes {
+  insertMode: boolean;
+}
 
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;

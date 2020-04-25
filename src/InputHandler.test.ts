@@ -102,16 +102,16 @@ describe('InputHandler', () => {
     });
   });
   describe('setMode', () => {
-    it('should toggle Terminal.bracketedPasteMode', () => {
+    it('should toggle bracketedPasteMode', () => {
       const terminal = new MockInputHandlingTerminal();
-      terminal.bracketedPasteMode = false;
-      const inputHandler = new InputHandler(terminal, new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService(), {} as any);
+      const coreService = new MockCoreService();
+      const inputHandler = new InputHandler(terminal, new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService(), {} as any);
       // Set bracketed paste mode
       inputHandler.setModePrivate(Params.fromArray([2004]));
-      assert.equal(terminal.bracketedPasteMode, true);
+      assert.equal(coreService.decPrivateModes.bracketedPasteMode, true);
       // Reset bracketed paste mode
       inputHandler.resetModePrivate(Params.fromArray([2004]));
-      assert.equal(terminal.bracketedPasteMode, false);
+      assert.equal(coreService.decPrivateModes.bracketedPasteMode, false);
     });
   });
   describe('regression tests', function(): void {
@@ -1453,9 +1453,9 @@ describe('InputHandler', () => {
     });
     it('should reset IRM', () => {
       term.writeSync('\x1b[4h');
-      assert.equal(term.insertMode, true);
+      assert.equal((term as any)._coreService.modes.insertMode, true);
       term.writeSync('\x1b[!p');
-      assert.equal(term.insertMode, false);
+      assert.equal((term as any)._coreService.modes.insertMode, false);
     });
     it('should reset cursor visibility', () => {
       term.writeSync('\x1b[?25l');

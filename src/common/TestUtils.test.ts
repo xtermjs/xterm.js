@@ -9,7 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
@@ -58,6 +58,9 @@ export class MockCoreService implements ICoreService {
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;
   public isFocused: boolean = false;
+  public modes: IModes = {
+    insertMode: false
+  };
   public decPrivateModes: IDecPrivateModes = {
     applicationCursorKeys: false,
     applicationKeypad: false,
