@@ -56,6 +56,7 @@ export interface IRenderModel {
 
 export interface ISelectionRenderModel {
   hasSelection: boolean;
+  columnSelectMode: boolean;
   viewportStartRow: number;
   viewportEndRow: number;
   viewportCappedStartRow: number;
