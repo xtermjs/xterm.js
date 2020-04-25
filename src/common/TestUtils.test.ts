@@ -31,6 +31,7 @@ export class MockBufferService implements IBufferService {
 }
 
 export class MockCoreMouseService implements ICoreMouseService {
+  public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';
   public activeProtocol: string = '';
   public addEncoding(name: string): void {}

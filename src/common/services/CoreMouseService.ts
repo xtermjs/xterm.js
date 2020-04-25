@@ -192,6 +192,10 @@ export class CoreMouseService implements ICoreMouseService {
     return this._activeProtocol;
   }
 
+  public get areMouseEventsActive(): boolean {
+    return this._protocols[this._activeProtocol].events !== 0;
+  }
+
   public set activeProtocol(name: string) {
     if (!this._protocols[name]) {
       throw new Error(`unknown protocol "${name}"`);

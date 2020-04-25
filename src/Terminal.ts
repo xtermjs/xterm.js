@@ -88,9 +88,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   private _selectionService: ISelectionService;
   private _soundService: ISoundService;
 
-  // mouse properties
-  public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
-
   // write buffer
   private _writeBuffer: WriteBuffer;
 
@@ -500,7 +497,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.mouseEvents) {
+    if (this._coreMouseService.areMouseEventsActive) {
       this._selectionService.disable();
       this.element.classList.add('enable-mouse-events');
     } else {
@@ -675,7 +672,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     };
     this._coreMouseService.onProtocolChange(events => {
       // apply global changes on events
-      this.mouseEvents = events;
       if (events) {
         if (this.optionsService.options.logLevel === 'debug') {
           this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
@@ -733,7 +729,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       // Don't send the mouse button to the pty if mouse events are disabled or
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
-      if (!this.mouseEvents || this._selectionService.shouldForceSelection(ev)) {
+      if (!this._coreMouseService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
         return;
       }
 
@@ -787,13 +783,13 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this._coreMouseService.areMouseEventsActive) return;
       this.viewport.onTouchStart(ev);
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this._coreMouseService.areMouseEventsActive) return;
       if (!this.viewport.onTouchMove(ev)) {
         return this.cancel(ev);
       }
