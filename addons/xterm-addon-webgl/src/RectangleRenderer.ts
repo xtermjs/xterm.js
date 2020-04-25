@@ -171,7 +171,7 @@ export class RectangleRenderer {
     );
   }
 
-  public updateSelection(model: ISelectionRenderModel, columnSelectMode: boolean): void {
+  public updateSelection(model: ISelectionRenderModel): void {
     const terminal = this._terminal;
 
     if (!model.hasSelection) {
@@ -179,7 +179,7 @@ export class RectangleRenderer {
       return;
     }
 
-    if (columnSelectMode) {
+    if (model.columnSelectMode) {
       const startCol = model.startCol;
       const width = model.endCol - startCol;
       const height = model.viewportCappedEndRow - model.viewportCappedStartRow + 1;

@@ -22,6 +22,7 @@ export class RenderModel implements IRenderModel {
     this.lineLengths = new Uint32Array(0);
     this.selection = {
       hasSelection: false,
+      columnSelectMode: false,
       viewportStartRow: 0,
       viewportEndRow: 0,
       viewportCappedStartRow: 0,
