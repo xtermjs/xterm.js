@@ -50,7 +50,7 @@ export abstract class CoreTerminal extends Disposable {
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
 
-  protected _windowsMode: IDisposable | undefined;
+  private _windowsMode: IDisposable | undefined;
 
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
@@ -91,6 +91,21 @@ export abstract class CoreTerminal extends Disposable {
     this._coreService.onData(e => this._onData.fire(e));
     this._coreService.onBinary(e => this._onBinary.fire(e));
     this.optionsService.onOptionChange(key => this._updateOptions(key));
+  }
+
+  public dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    super.dispose();
+    this._windowsMode?.dispose();
+    this._windowsMode = undefined;
+  }
+
+  protected _setup(): void {
+    if (this.optionsService.options.windowsMode) {
+      this._enableWindowsMode();
+    }
   }
 
   protected _updateOptions(key: string): void {

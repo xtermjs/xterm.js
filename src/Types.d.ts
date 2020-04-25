@@ -22,7 +22,6 @@ export type LineData = CharData[];
  */
 export interface IInputHandlingTerminal {
   insertMode: boolean;
-  bracketedPasteMode: boolean;
   sendFocus: boolean;
 
   buffers: IBufferSet;
@@ -135,7 +134,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   buffer: IBuffer;
   buffers: IBufferSet;
   viewport: IViewport;
-  bracketedPasteMode: boolean;
   optionsService: IOptionsService;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;

@@ -1802,7 +1802,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
-          this._terminal.bracketedPasteMode = true;
+          this._coreService.decPrivateModes.bracketedPasteMode = true;
           break;
       }
     }
@@ -2020,7 +2020,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
-          this._terminal.bracketedPasteMode = false;
+          this._coreService.decPrivateModes.bracketedPasteMode = false;
           break;
       }
     }

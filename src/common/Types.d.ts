@@ -163,6 +163,7 @@ export interface IMarker extends IDisposable {
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
+  bracketedPasteMode: boolean;
   origin: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }

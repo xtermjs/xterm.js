@@ -90,7 +90,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
 
   // modes
   public insertMode: boolean;
-  public bracketedPasteMode: boolean;
 
   // mouse properties
   public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
@@ -173,20 +172,19 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       return;
     }
     super.dispose();
-    this._windowsMode?.dispose();
-    this._windowsMode = undefined;
     this._renderService?.dispose();
     this._customKeyEventHandler = null;
     this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
   }
 
-  private _setup(): void {
+  protected _setup(): void {
+    super._setup();
+
     this._customKeyEventHandler = null;
 
     // modes
     this.insertMode = false;
-    this.bracketedPasteMode = false;
 
     this._userScrolling = false;
 
@@ -208,10 +206,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }
     if (!this.linkifier2) {
       this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
-    }
-
-    if (this.options.windowsMode) {
-      this._enableWindowsMode();
     }
   }
 
@@ -337,7 +331,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this._coreService);
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -982,7 +976,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   }
 
   public paste(data: string): void {
-    paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
+    paste(data, this.textarea, this._coreService);
   }
 
   /**
