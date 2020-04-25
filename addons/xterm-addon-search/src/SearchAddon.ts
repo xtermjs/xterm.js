@@ -110,8 +110,16 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
-    // If there is only one result, return true.
     if (!result && currentSelection) return true;
+    // If there is only one result, wrap back and return selection if exists.
+    if (!result && currentSelection) {
+      searchPosition.startRow = currentSelection.startRow;
+      searchPosition.startCol = 0;
+      result = this._findInLine(term, searchPosition, searchOptions);
+      if (result) {
+        return this._selectResult(result);
+      }
+    }
 
     // Set selection and scroll if a result was found
     return this._selectResult(result);
