@@ -32,7 +32,7 @@ export class Linkifier2 implements ILinkifier2 {
   public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
 
   constructor(
-    private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
 
   }
