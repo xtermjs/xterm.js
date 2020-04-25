@@ -43,13 +43,12 @@ import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMo
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
@@ -119,7 +118,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
   private _theme: ITheme;
-  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
@@ -128,8 +126,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
-  private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
@@ -167,7 +163,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   ) {
     super(options);
 
-    this._setupOptionsListeners();
     this._setup();
 
     this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
@@ -220,31 +215,11 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }
   }
 
-  private _enableWindowsMode(): void {
-    if (!this._windowsMode) {
-      const disposables: IDisposable[] = [];
-      disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
-      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
-        updateWindowsModeWrappedState(this._bufferService);
-        return false;
-      }));
-      this._windowsMode = {
-        dispose: () => {
-          disposables.forEach(d => d.dispose());
-        }
-      };
-    }
-  }
-
   /**
    * Convenience property to active buffer.
    */
   public get buffer(): IBuffer {
     return this.buffers.active;
-  }
-
-  public get buffers(): IBufferSet {
-    return this._bufferService.buffers;
   }
 
   /**
@@ -256,68 +231,59 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     }
   }
 
-  private _setupOptionsListeners(): void {
+  protected _updateOptions(key: string): void {
+    super._updateOptions(key);
+
     // TODO: These listeners should be owned by individual components
-    this.optionsService.onOptionChange(key => {
-      switch (key) {
-        case 'fontFamily':
-        case 'fontSize':
-          // When the font changes the size of the cells may change which requires a renderer clear
-          this._renderService?.clear();
-          this._charSizeService?.measure();
-          break;
-        case 'cursorBlink':
-        case 'cursorStyle':
-          // The DOM renderer needs a row refresh to update the cursor styles
-          this.refresh(this.buffer.y, this.buffer.y);
-          break;
-        case 'drawBoldTextInBrightColors':
-        case 'letterSpacing':
-        case 'lineHeight':
-        case 'fontWeight':
-        case 'fontWeightBold':
-        case 'minimumContrastRatio':
-          // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderService) {
-            this._renderService.clear();
-            this._renderService.onResize(this.cols, this.rows);
-            this.refresh(0, this.rows - 1);
+    switch (key) {
+      case 'fontFamily':
+      case 'fontSize':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this._renderService?.clear();
+        this._charSizeService?.measure();
+        break;
+      case 'cursorBlink':
+      case 'cursorStyle':
+        // The DOM renderer needs a row refresh to update the cursor styles
+        this.refresh(this.buffer.y, this.buffer.y);
+        break;
+      case 'drawBoldTextInBrightColors':
+      case 'letterSpacing':
+      case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+      case 'minimumContrastRatio':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        if (this._renderService) {
+          this._renderService.clear();
+          this._renderService.onResize(this.cols, this.rows);
+          this.refresh(0, this.rows - 1);
+        }
+        break;
+      case 'rendererType':
+        if (this._renderService) {
+          this._renderService.setRenderer(this._createRenderer());
+          this._renderService.onResize(this.cols, this.rows);
+        }
+        break;
+      case 'scrollback':
+        this.viewport?.syncScrollArea();
+        break;
+      case 'screenReaderMode':
+        if (this.optionsService.options.screenReaderMode) {
+          if (!this._accessibilityManager && this._renderService) {
+            this._accessibilityManager = new AccessibilityManager(this, this._renderService);
           }
-          break;
-        case 'rendererType':
-          if (this._renderService) {
-            this._renderService.setRenderer(this._createRenderer());
-            this._renderService.onResize(this.cols, this.rows);
-          }
-          break;
-        case 'scrollback':
-          this.buffers.resize(this.cols, this.rows);
-          this.viewport?.syncScrollArea();
-          break;
-        case 'screenReaderMode':
-          if (this.optionsService.options.screenReaderMode) {
-            if (!this._accessibilityManager && this._renderService) {
-              this._accessibilityManager = new AccessibilityManager(this, this._renderService);
-            }
-          } else {
-            this._accessibilityManager?.dispose();
-            this._accessibilityManager = null;
-          }
-          break;
-        case 'tabStopWidth': this.buffers.setupTabStops(); break;
-        case 'theme':
-          this._setTheme(this.optionsService.options.theme);
-          break;
-        case 'windowsMode':
-          if (this.optionsService.options.windowsMode) {
-            this._enableWindowsMode();
-          } else {
-            this._windowsMode?.dispose();
-            this._windowsMode = undefined;
-          }
-          break;
-      }
-    });
+        } else {
+          this._accessibilityManager?.dispose();
+          this._accessibilityManager = null;
+        }
+        break;
+      case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'theme':
+        this._setTheme(this.optionsService.options.theme);
+        break;
+    }
   }
 
   /**

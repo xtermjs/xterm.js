@@ -27,13 +27,16 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions } from './Types';
+import { ITerminalOptions, IDisposable } from './Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
+import { updateWindowsModeWrappedState } from 'common/WindowsMode';
+import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+import { IBufferSet } from 'common/buffer/Types';
 
 export abstract class CoreTerminal extends Disposable {
   protected readonly _instantiationService: IInstantiationService;
@@ -47,10 +50,18 @@ export abstract class CoreTerminal extends Disposable {
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
 
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  protected _windowsMode: IDisposable | undefined;
+
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  private _onData = new EventEmitter<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
+  protected _onLineFeed = new EventEmitter<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+
+  public get cols(): number { return this._bufferService.cols; }
+  public get rows(): number { return this._bufferService.rows; }
+  public get buffers(): IBufferSet { return this._bufferService.buffers; }
 
   constructor(
     options: ITerminalOptions
@@ -67,8 +78,6 @@ export abstract class CoreTerminal extends Disposable {
     this._instantiationService.setService(ILogService, this._logService);
     this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
     this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreService.onData(e => this._onData.fire(e));
-    this._coreService.onBinary(e => this._onBinary.fire(e));
     this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
@@ -77,10 +86,46 @@ export abstract class CoreTerminal extends Disposable {
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
+
+    // Setup listeners
+    this._coreService.onData(e => this._onData.fire(e));
+    this._coreService.onBinary(e => this._onBinary.fire(e));
+    this.optionsService.onOptionChange(key => this._updateOptions(key));
   }
 
-  public get cols(): number { return this._bufferService.cols; }
-  public get rows(): number { return this._bufferService.rows; }
+  protected _updateOptions(key: string): void {
+    // TODO: These listeners should be owned by individual components
+    switch (key) {
+      case 'scrollback':
+        this.buffers.resize(this.cols, this.rows);
+        break;
+      case 'windowsMode':
+        if (this.optionsService.options.windowsMode) {
+          this._enableWindowsMode();
+        } else {
+          this._windowsMode?.dispose();
+          this._windowsMode = undefined;
+        }
+        break;
+    }
+  }
+
+  protected _enableWindowsMode(): void {
+    if (!this._windowsMode) {
+      const disposables: IDisposable[] = [];
+      disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
+      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
+        updateWindowsModeWrappedState(this._bufferService);
+        return false;
+      }));
+      this._windowsMode = {
+        dispose: () => {
+          disposables.forEach(d => d.dispose());
+        }
+      };
+    }
+  }
 
   public abstract scrollToBottom(): void;
+  public abstract addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
 }
