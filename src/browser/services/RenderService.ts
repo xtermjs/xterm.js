@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 interface ISelectionState {
@@ -20,7 +20,7 @@ interface ISelectionState {
 }
 
 export class RenderService extends Disposable implements IRenderService {
-  public serviceBrand: any;
+  public serviceBrand: undefined;
 
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -51,7 +51,8 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
-    @ICharSizeService charSizeService: ICharSizeService
+    @ICharSizeService charSizeService: ICharSizeService,
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -61,6 +62,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
+    this.register(this._bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 

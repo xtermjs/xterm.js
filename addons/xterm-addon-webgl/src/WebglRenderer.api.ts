@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions } from '../../../src/Types';
+import { ITerminalOptions } from '../../../src/common/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
 import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';

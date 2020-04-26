@@ -4,9 +4,9 @@
  */
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, ITerminalOptions } from './Types';
+import { ICompositionHelper, ITerminal, IBrowser } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition, ILinkProvider } from 'xterm';
@@ -14,7 +14,6 @@ import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
@@ -190,43 +189,11 @@ export class MockTerminal implements ITerminal {
   public reset(): void {
     throw new Error('Method not implemented.');
   }
-  public showCursor(): void {
-    throw new Error('Method not implemented.');
-  }
   public refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   public deregisterCharacterJoiner(joinerId: number): void { }
-}
-
-export class MockInputHandlingTerminal implements IInputHandlingTerminal {
-  public onA11yCharEmitter: EventEmitter<string>;
-  public onA11yTabEmitter: EventEmitter<number>;
-  public insertMode: boolean;
-  public bracketedPasteMode: boolean;
-  public sendFocus: boolean;
-  public buffers: IBufferSet;
-  public buffer: IBuffer = new MockBuffer();
-  public viewport: IViewport;
-  public scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void {
-    throw new Error('Method not implemented.');
-  }
-  public is(term: string): boolean {
-    throw new Error('Method not implemented.');
-  }
-  public resize(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  public showCursor(): void {
-    throw new Error('Method not implemented.');
-  }
-  public handler(data: string): void {
-    throw new Error('Method not implemented.');
-  }
-  public handleTitle(title: string): void {
-    throw new Error('Method not implemented.');
-  }
 }
 
 export class MockBuffer implements IBuffer {

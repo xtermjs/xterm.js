@@ -9,7 +9,7 @@ import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/re
 import { IColorSet } from 'browser/Types';
 
 export class MockCharSizeService implements ICharSizeService {
-  public serviceBrand: any;
+  public serviceBrand: undefined;
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
   public onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
   constructor(public width: number, public height: number) {}
@@ -17,7 +17,7 @@ export class MockCharSizeService implements ICharSizeService {
 }
 
 export class MockMouseService implements IMouseService {
-  public serviceBrand: any;
+  public serviceBrand: undefined;
   public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     throw new Error('Not implemented');
   }
@@ -28,7 +28,7 @@ export class MockMouseService implements IMouseService {
 }
 
 export class MockRenderService implements IRenderService {
-  public serviceBrand: any;
+  public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
   public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;

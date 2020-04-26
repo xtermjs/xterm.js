@@ -539,7 +539,7 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
       assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
       assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
-    })
+    });
   });
 
   it('dispose', async () => {

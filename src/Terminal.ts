@@ -21,13 +21,13 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
-import { InputHandler } from './InputHandler';
+import { InputHandler, WindowsOptionsReportType } from './common/InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
@@ -39,39 +39,28 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { IOptionsService, IBufferService, ICoreMouseService, ICoreService, ILogService, IDirtyRowService, IInstantiationService, ICharsetService, IUnicodeService } from 'common/services/Services';
-import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
-import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
-import { Disposable } from 'common/Lifecycle';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { CoreService } from 'common/services/CoreService';
-import { LogService } from 'common/services/LogService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
-import { DirtyRowService } from 'common/services/DirtyRowService';
-import { InstantiationService } from 'common/services/InstantiationService';
-import { CoreMouseService } from 'common/services/CoreMouseService';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { CharsetService } from 'common/services/CharsetService';
+import { CoreTerminal } from 'common/CoreTerminal';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 
-export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
+export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public screenElement: HTMLElement;
@@ -91,31 +80,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
-  // common services
-  private _bufferService: IBufferService;
-  private _coreService: ICoreService;
-  private _charsetService: ICharsetService;
-  private _coreMouseService: ICoreMouseService;
-  private _dirtyRowService: IDirtyRowService;
-  private _instantiationService: IInstantiationService;
-  private _logService: ILogService;
-  public optionsService: IOptionsService;
-  public unicodeService: IUnicodeService;
-
   // browser services
   private _charSizeService: ICharSizeService;
   private _mouseService: IMouseService;
   private _renderService: IRenderService;
   private _selectionService: ISelectionService;
   private _soundService: ISoundService;
-
-  // modes
-  public insertMode: boolean;
-  public bracketedPasteMode: boolean;
-
-  // mouse properties
-  public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
-  public sendFocus: boolean;
 
   // write buffer
   private _writeBuffer: WriteBuffer;
@@ -139,28 +109,16 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
   private _theme: ITheme;
-  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
 
-  public get cols(): number { return this._bufferService.cols; }
-  public get rows(): number { return this._bufferService.rows; }
-
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
-  private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
-  private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
@@ -172,10 +130,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get onFocus(): IEvent<void> { return this._onFocus.event; }
   private _onBlur = new EventEmitter<void>();
   public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  public onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
-  public onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
+  private _onA11yCharEmitter = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  private _onA11yTabEmitter = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -192,31 +150,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   constructor(
     options: ITerminalOptions = {}
   ) {
-    super();
+    super(options);
 
-    // Setup and initialize common services
-    this._instantiationService = new InstantiationService();
-    this.optionsService = new OptionsService(options);
-    this._instantiationService.setService(IOptionsService, this.optionsService);
-    this._bufferService = this._instantiationService.createInstance(BufferService);
-    this._instantiationService.setService(IBufferService, this._bufferService);
-    this._logService = this._instantiationService.createInstance(LogService);
-    this._instantiationService.setService(ILogService, this._logService);
-    this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
-    this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreService.onData(e => this._onData.fire(e));
-    this._coreService.onBinary(e => this._onBinary.fire(e));
-    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
-    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
-    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
-    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
-    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
-    this._instantiationService.setService(IUnicodeService, this.unicodeService);
-    this._charsetService = this._instantiationService.createInstance(CharsetService);
-    this._instantiationService.setService(ICharsetService, this._charsetService);
-
-    this._setupOptionsListeners();
     this._setup();
+
+    // Setup listeners
+    this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
 
     this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
@@ -226,61 +165,41 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
     super.dispose();
-    this._windowsMode?.dispose();
-    this._windowsMode = undefined;
     this._renderService?.dispose();
     this._customKeyEventHandler = null;
     this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
   }
 
-  private _setup(): void {
-    this._customKeyEventHandler = null;
-
-    // modes
-    this.insertMode = false;
-    this.bracketedPasteMode = false;
-
-    this._userScrolling = false;
-
+  protected _setup(): void {
     if (this._inputHandler) {
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService, this._instantiationService);
-      this._inputHandler.onRequestBell(() => this.bell());
-      this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
-      this._inputHandler.onRequestReset(() => this.reset());
-      this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
-      this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
+      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
+      this.register(this._inputHandler.onRequestBell(() => this.bell()));
+      this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+      this.register(this._inputHandler.onRequestReset(() => this.reset()));
+      this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
+      this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
+      this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
+      this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
+      this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
+      this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+      this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
       this.register(this._inputHandler);
     }
 
+    super._setup();
+
+    this._customKeyEventHandler = null;
+
+    this._userScrolling = false;
     if (!this.linkifier) {
       this.linkifier = this._instantiationService.createInstance(Linkifier);
     }
     if (!this.linkifier2) {
       this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
-    }
-
-    if (this.options.windowsMode) {
-      this._enableWindowsMode();
-    }
-  }
-
-  private _enableWindowsMode(): void {
-    if (!this._windowsMode) {
-      const disposables: IDisposable[] = [];
-      disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
-      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
-        updateWindowsModeWrappedState(this._bufferService);
-        return false;
-      }));
-      this._windowsMode = {
-        dispose: () => {
-          disposables.forEach(d => d.dispose());
-        }
-      };
     }
   }
 
@@ -289,10 +208,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   public get buffer(): IBuffer {
     return this.buffers.active;
-  }
-
-  public get buffers(): IBufferSet {
-    return this._bufferService.buffers;
   }
 
   /**
@@ -304,80 +219,71 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
   }
 
-  private _setupOptionsListeners(): void {
+  protected _updateOptions(key: string): void {
+    super._updateOptions(key);
+
     // TODO: These listeners should be owned by individual components
-    this.optionsService.onOptionChange(key => {
-      switch (key) {
-        case 'fontFamily':
-        case 'fontSize':
-          // When the font changes the size of the cells may change which requires a renderer clear
-          this._renderService?.clear();
-          this._charSizeService?.measure();
-          break;
-        case 'cursorBlink':
-        case 'cursorStyle':
-          // The DOM renderer needs a row refresh to update the cursor styles
-          this.refresh(this.buffer.y, this.buffer.y);
-          break;
-        case 'drawBoldTextInBrightColors':
-        case 'letterSpacing':
-        case 'lineHeight':
-        case 'fontWeight':
-        case 'fontWeightBold':
-        case 'minimumContrastRatio':
-          // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderService) {
-            this._renderService.clear();
-            this._renderService.onResize(this.cols, this.rows);
-            this.refresh(0, this.rows - 1);
+    switch (key) {
+      case 'fontFamily':
+      case 'fontSize':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this._renderService?.clear();
+        this._charSizeService?.measure();
+        break;
+      case 'cursorBlink':
+      case 'cursorStyle':
+        // The DOM renderer needs a row refresh to update the cursor styles
+        this.refresh(this.buffer.y, this.buffer.y);
+        break;
+      case 'drawBoldTextInBrightColors':
+      case 'letterSpacing':
+      case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+      case 'minimumContrastRatio':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        if (this._renderService) {
+          this._renderService.clear();
+          this._renderService.onResize(this.cols, this.rows);
+          this.refresh(0, this.rows - 1);
+        }
+        break;
+      case 'rendererType':
+        if (this._renderService) {
+          this._renderService.setRenderer(this._createRenderer());
+          this._renderService.onResize(this.cols, this.rows);
+        }
+        break;
+      case 'scrollback':
+        this.viewport?.syncScrollArea();
+        break;
+      case 'screenReaderMode':
+        if (this.optionsService.options.screenReaderMode) {
+          if (!this._accessibilityManager && this._renderService) {
+            this._accessibilityManager = new AccessibilityManager(this, this._renderService);
           }
-          break;
-        case 'rendererType':
-          if (this._renderService) {
-            this._renderService.setRenderer(this._createRenderer());
-            this._renderService.onResize(this.cols, this.rows);
-          }
-          break;
-        case 'scrollback':
-          this.buffers.resize(this.cols, this.rows);
-          this.viewport?.syncScrollArea();
-          break;
-        case 'screenReaderMode':
-          if (this.optionsService.options.screenReaderMode) {
-            if (!this._accessibilityManager && this._renderService) {
-              this._accessibilityManager = new AccessibilityManager(this, this._renderService);
-            }
-          } else {
-            this._accessibilityManager?.dispose();
-            this._accessibilityManager = null;
-          }
-          break;
-        case 'tabStopWidth': this.buffers.setupTabStops(); break;
-        case 'theme':
-          this._setTheme(this.optionsService.options.theme);
-          break;
-        case 'windowsMode':
-          if (this.optionsService.options.windowsMode) {
-            this._enableWindowsMode();
-          } else {
-            this._windowsMode?.dispose();
-            this._windowsMode = undefined;
-          }
-          break;
-      }
-    });
+        } else {
+          this._accessibilityManager?.dispose();
+          this._accessibilityManager = null;
+        }
+        break;
+      case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'theme':
+        this._setTheme(this.optionsService.options.theme);
+        break;
+    }
   }
 
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
   private _onTextAreaFocus(ev: KeyboardEvent): void {
-    if (this.sendFocus) {
+    if (this._coreService.decPrivateModes.sendFocus) {
       this._coreService.triggerDataEvent(C0.ESC + '[I');
     }
     this.updateCursorStyle(ev);
     this.element.classList.add('focus');
-    this.showCursor();
+    this._showCursor();
     this._onFocus.fire();
   }
 
@@ -397,7 +303,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // screen readers reading it out.
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
-    if (this.sendFocus) {
+    if (this._coreService.decPrivateModes.sendFocus) {
       this._coreService.triggerDataEvent(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
@@ -419,7 +325,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this._coreService);
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -557,6 +463,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
+    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport.syncScrollArea()));
     this.register(this.viewport);
 
     this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
@@ -596,7 +503,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.mouseEvents) {
+    if (this._coreMouseService.areMouseEventsActive) {
       this._selectionService.disable();
       this.element.classList.add('enable-mouse-events');
     } else {
@@ -771,7 +678,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     };
     this._coreMouseService.onProtocolChange(events => {
       // apply global changes on events
-      this.mouseEvents = events;
       if (events) {
         if (this.optionsService.options.logLevel === 'debug') {
           this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
@@ -829,7 +735,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // Don't send the mouse button to the pty if mouse events are disabled or
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
-      if (!this.mouseEvents || this._selectionService.shouldForceSelection(ev)) {
+      if (!this._coreMouseService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
         return;
       }
 
@@ -883,13 +789,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this._coreMouseService.areMouseEventsActive) return;
       this.viewport.onTouchStart(ev);
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-      if (this.mouseEvents) return;
+      if (this._coreMouseService.areMouseEventsActive) return;
       if (!this.viewport.onTouchMove(ev)) {
         return this.cancel(ev);
       }
@@ -930,7 +836,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Display the cursor element
    */
-  public showCursor(): void {
+  private _showCursor(): void {
     if (!this._coreService.isCursorInitialized) {
       this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
@@ -1064,7 +970,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   public paste(data: string): void {
-    paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
+    paste(data, this.textarea, this._coreService);
   }
 
   /**
@@ -1265,7 +1171,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     this._onKey.fire({ key: result.key, domEvent: event });
-    this.showCursor();
+    this._showCursor();
     this._coreService.triggerDataEvent(result.key, true);
 
     // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
@@ -1342,7 +1248,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     key = String.fromCharCode(key);
 
     this._onKey.fire({ key, domEvent: ev });
-    this.showCursor();
+    this._showCursor();
     this._coreService.triggerDataEvent(key, true);
 
     return true;
@@ -1373,10 +1279,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param y The number of rows to resize to.
    */
   public resize(x: number, y: number): void {
-    if (isNaN(x) || isNaN(y)) {
-      return;
-    }
-
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
       if (this._charSizeService && !this._charSizeService.hasValidSize) {
@@ -1385,22 +1287,15 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       return;
     }
 
-    if (x < MINIMUM_COLS) x = MINIMUM_COLS;
-    if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
+    super.resize(x, y);
+  }
 
-    this.buffers.resize(x, y);
-
-    this._bufferService.resize(x, y);
-    this.buffers.setupTabStops(this.cols);
-
+  private _afterResize(x: number, y: number): void {
     this._charSizeService?.measure();
 
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
     this.viewport?.syncScrollArea(true);
-
-    this.refresh(0, this.rows - 1);
-    this._onResize.fire({ cols: x, rows: y });
   }
 
   /**
@@ -1421,44 +1316,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
     this.refresh(0, this.rows - 1);
     this._onScroll.fire(this.buffer.ydisp);
-  }
-
-  /**
-   * Evaluate if the current terminal is the given argument.
-   * @param term The terminal name to evaluate
-   */
-  public is(term: string): boolean {
-    return (this.options.termName + '').indexOf(term) === 0;
-  }
-
-  /**
-   * Emit the data event and populate the given data.
-   * @param data The data to populate in the event.
-   */
-  // public handler(data: string): void {
-  //   // Prevents all events to pty process if stdin is disabled
-  //   if (this.options.disableStdin) {
-  //     return;
-  //   }
-
-  //   // Clear the selection if the selection manager is available and has an active selection
-  //   if (this.selectionService && this.selectionService.hasSelection) {
-  //     this.selectionService.clearSelection();
-  //   }
-
-  //   // Input is being sent to the terminal, the terminal should focus the prompt.
-  //   if (this.buffer.ybase !== this.buffer.ydisp) {
-  //     this.scrollToBottom();
-  //   }
-  //   this._onData.fire(data);
-  // }
-
-  /**
-   * Emit the 'title' event and populate the given title.
-   * @param title The title to populate in the event.
-   */
-  public handleTitle(title: string): void {
-    this._onTitleChange.fire(title);
   }
 
   /**
@@ -1493,6 +1350,25 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
     this.viewport?.syncScrollArea();
+  }
+
+  private _reportWindowsOptions(type: WindowsOptionsReportType): void {
+    if (!this._renderService) {
+      return;
+    }
+
+    switch (type) {
+      case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
+        const canvasWidth = this._renderService.dimensions.scaledCanvasWidth.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.scaledCanvasHeight.toFixed(0);
+        this._coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
+        break;
+      case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
+        const cellWidth = this._renderService.dimensions.scaledCellWidth.toFixed(0);
+        const cellHeight = this._renderService.dimensions.scaledCellHeight.toFixed(0);
+        this._coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
+        break;
+    }
   }
 
   // TODO: Remove cancel function and cancelEvents option

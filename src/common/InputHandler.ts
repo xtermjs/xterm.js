@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IInputHandlingTerminal } from './Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,11 +17,9 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IInstantiationService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
-import { IRenderService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -94,7 +92,10 @@ function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
   return false;
 }
 
-
+export enum WindowsOptionsReportType {
+  GET_WIN_SIZE_PIXELS = 0,
+  GET_CELL_SIZE_PIXELS = 1
+}
 
 /**
  * DCS subparser implementations
@@ -218,27 +219,39 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
-  private _windowTitleStack: string[] = [];
-  private _iconNameStack: string[] = [];
+  protected _windowTitleStack: string[] = [];
+  protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
+  private _onRequestBell = new EventEmitter<void>();
+  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
   private _onRequestRefreshRows = new EventEmitter<number, number>();
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestBell = new EventEmitter<void>();
-  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
+  private _onRequestScroll = new EventEmitter<IAttributeData, boolean | void>();
+  public get onRequestScroll(): IEvent<IAttributeData, boolean | void> { return this._onRequestScroll.event; }
+  private _onRequestSyncScrollBar = new EventEmitter<void>();
+  public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
+  private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
+  public get onRequestWindowsOptionsReport(): IEvent<WindowsOptionsReportType> { return this._onRequestWindowsOptionsReport.event; }
+
+  private _onA11yChar = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
+  private _onA11yTab = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onTitleChange = new EventEmitter<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
   constructor(
-    private _terminal: IInputHandlingTerminal,
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
@@ -247,9 +260,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
-    private readonly _instantiationService: IInstantiationService,
-    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
-  {
+    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
+  ) {
     super();
     this.register(this._parser);
 
@@ -489,9 +501,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
-    const insertMode = this._terminal.insertMode;
+    const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
-    let bufferRow = buffer.lines.get(buffer.ybase + buffer.y);
+    let bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
 
     this._dirtyRowService.markDirty(buffer.y);
 
@@ -518,7 +530,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._terminal.onA11yCharEmitter.fire(stringFromCodePoint(code));
+        this._onA11yChar.fire(stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -548,17 +560,17 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._terminal.scroll(this._eraseAttrData(), true);
+            this._onRequestScroll.fire(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            buffer.lines.get(buffer.ybase + buffer.y).isWrapped = true;
+            buffer.lines.get(buffer.ybase + buffer.y)!.isWrapped = true;
           }
           // row changed, get it again
-          bufferRow = buffer.lines.get(buffer.ybase + buffer.y);
+          bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
         } else {
           buffer.x = cols - 1;
           if (chWidth === 2) {
@@ -687,7 +699,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll(this._eraseAttrData());
+      this._onRequestScroll.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -736,7 +748,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._bufferService.buffer.x;
     this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
     if (this._optionsService.options.screenReaderMode) {
-      this._terminal.onA11yTabEmitter.fire(this._bufferService.buffer.x - originalX);
+      this._onA11yTab.fire(this._bufferService.buffer.x - originalX);
     }
   }
 
@@ -1024,7 +1036,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
@@ -1042,7 +1054,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
     line.fill(this._bufferService.buffer.getNullCell(this._eraseAttrData()));
     line.isWrapped = false;
   }
@@ -1091,7 +1103,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._bufferService.buffer.x + 1, true);
         if (this._bufferService.buffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          this._bufferService.buffer.lines.get(j + 1).isWrapped = false;
+          this._bufferService.buffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
           this._resetBufferLine(j);
@@ -1343,7 +1355,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1376,7 +1388,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1399,7 +1411,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
+      const line = this._bufferService.buffer.lines.get(buffer.ybase + y)!;
       line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1422,7 +1434,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1520,9 +1532,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (params.params[0] > 0) {
       return;
     }
-    if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
+    if (this._is('xterm') || this._is('rxvt-unicode') || this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
-    } else if (this._terminal.is('linux')) {
+    } else if (this._is('linux')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?6c');
     }
   }
@@ -1558,17 +1570,25 @@ export class InputHandler extends Disposable implements IInputHandler {
     // xterm and urxvt
     // seem to spit this
     // out around ~370 times (?).
-    if (this._terminal.is('xterm')) {
+    if (this._is('xterm')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>0;276;0c');
-    } else if (this._terminal.is('rxvt-unicode')) {
+    } else if (this._is('rxvt-unicode')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>85;95;0c');
-    } else if (this._terminal.is('linux')) {
+    } else if (this._is('linux')) {
       // not supported by linux console.
       // linux console echoes parameters.
       this._coreService.triggerDataEvent(params.params[0] + 'c');
-    } else if (this._terminal.is('screen')) {
+    } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
     }
+  }
+
+  /**
+   * Evaluate if the current terminal is the given argument.
+   * @param term The terminal name to evaluate
+   */
+  private _is(term: string): boolean {
+    return (this._optionsService.options.termName + '').indexOf(term) === 0;
   }
 
   /**
@@ -1587,15 +1607,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 4     | Insert Mode (IRM).                     | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
    * | 20    | Automatic Newline (LNM). Always off.   | #N      |
-   *
-   *
-   * FIXME: why is LNM commented out?
    */
   public setMode(params: IParams): void {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
-          this._terminal.insertMode = true;
+          this._coreService.modes.insertMode = true;
           break;
         case 20:
           // this._t.convertEol = true;
@@ -1736,7 +1753,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * through `options.windowsOptions`.
            */
           if (this._optionsService.options.windowOptions.setWinLines) {
-            this._terminal.resize(132, this._bufferService.rows);
+            this._bufferService.resize(132, this._bufferService.rows);
             this._onRequestReset.fire();
           }
           break;
@@ -1753,7 +1770,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
-          this._terminal.viewport?.syncScrollArea();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1774,7 +1791,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
           // focusout: ^[[O
-          this._terminal.sendFocus = true;
+          this._coreService.decPrivateModes.sendFocus = true;
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1005 not supported (see #2507)');
@@ -1797,12 +1814,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
+          this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._terminal.viewport?.syncScrollArea();
-          this._terminal.showCursor();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
-          this._terminal.bracketedPasteMode = true;
+          this._coreService.decPrivateModes.bracketedPasteMode = true;
           break;
       }
     }
@@ -1833,7 +1850,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
-          this._terminal.insertMode = false;
+          this._coreService.modes.insertMode = false;
           break;
         case 20:
           // this._t.convertEol = false;
@@ -1963,7 +1980,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * through `options.windowsOptions`.
            */
           if (this._optionsService.options.windowOptions.setWinLines) {
-            this._terminal.resize(80, this._bufferService.rows);
+            this._bufferService.resize(80, this._bufferService.rows);
             this._onRequestReset.fire();
           }
           break;
@@ -1980,7 +1997,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
-          this._terminal.viewport?.syncScrollArea();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -1989,7 +2006,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreMouseService.activeProtocol = 'NONE';
           break;
         case 1004: // send focusin/focusout events
-          this._terminal.sendFocus = false;
+          this._coreService.decPrivateModes.sendFocus = false;
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1005 not supported (see #2507)');
@@ -2015,12 +2032,12 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (params.params[i] === 1049) {
             this.restoreCursor();
           }
+          this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._terminal.viewport?.syncScrollArea();
-          this._terminal.showCursor();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
-          this._terminal.bracketedPasteMode = false;
+          this._coreService.decPrivateModes.bracketedPasteMode = false;
           break;
       }
     }
@@ -2046,7 +2063,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     do {
       accu[advance + cSpace] = params.params[pos + advance];
       if (params.hasSubParams(pos + advance)) {
-        const subparams = params.getSubParams(pos + advance);
+        const subparams = params.getSubParams(pos + advance)!;
         let i = 0;
         do {
           if (accu[1] === 5) {
@@ -2356,8 +2373,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
-    this._terminal.insertMode = false;
-    this._terminal.viewport?.syncScrollArea();
+    this._onRequestSyncScrollBar.fire();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
@@ -2471,22 +2487,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
-    const rs = this._instantiationService.getService(IRenderService);
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
-        if (rs && second !== 2) {
-          console.log(rs.dimensions);
-          const w = rs.dimensions.scaledCanvasWidth.toFixed(0);
-          const h = rs.dimensions.scaledCanvasHeight.toFixed(0);
-          this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);
+        if (second !== 2) {
+          this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_WIN_SIZE_PIXELS);
         }
         break;
       case 16:  // GetCellSizePixels, returns CSI 6 ; height ; width t
-        if (rs) {
-          const w = rs.dimensions.scaledCellWidth.toFixed(0);
-          const h = rs.dimensions.scaledCellHeight.toFixed(0);
-          this._coreService.triggerDataEvent(`${C0.ESC}[6;${h};${w}t`);
-        }
+        this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_CELL_SIZE_PIXELS);
         break;
       case 18:  // GetWinSizeChars, returns CSI 8 ; height ; width t
         if (this._bufferService) {
@@ -2510,12 +2518,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 23:  // PopTitle
         if (second === 0 || second === 2) {
           if (this._windowTitleStack.length) {
-            this.setTitle(this._windowTitleStack.pop());
+            this.setTitle(this._windowTitleStack.pop()!);
           }
         }
         if (second === 0 || second === 1) {
           if (this._iconNameStack.length) {
-            this.setIconName(this._iconNameStack.pop());
+            this.setIconName(this._iconNameStack.pop()!);
           }
         }
         break;
@@ -2573,7 +2581,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setTitle(data: string): void {
     this._windowTitle = data;
-    this._terminal.handleTitle(data);
+    this._onTitleChange.fire(data);
   }
 
   /**
@@ -2606,7 +2614,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadApplicationMode(): void {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
-    this._terminal.viewport?.syncScrollArea();
+    this._onRequestSyncScrollBar.fire();
   }
 
   /**
@@ -2617,7 +2625,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadNumericMode(): void {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
-    this._terminal.viewport?.syncScrollArea();
+    this._onRequestSyncScrollBar.fire();
   }
 
   /**
@@ -2674,7 +2682,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll(this._eraseAttrData());
+      this._onRequestScroll.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -2779,8 +2787,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._setCursor(0, 0);
     for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
       const row = buffer.ybase + buffer.y + yOffset;
-      buffer.lines.get(row).fill(cell);
-      buffer.lines.get(row).isWrapped = false;
+      const line = buffer.lines.get(row);
+      if (line) {
+        line.fill(cell);
+        line.isWrapped = false;
+      }
     }
     this._dirtyRowService.markAllDirty();
     this._setCursor(0, 0);

@@ -10,5 +10,8 @@
     ],
     "baseUrl": ".."
   },
-  "include": [ "./**/*" ]
+  "include": [
+    "./**/*",
+    "../../typings/xterm.d.ts"
+  ]
 }

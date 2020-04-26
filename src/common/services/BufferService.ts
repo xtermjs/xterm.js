@@ -6,6 +6,7 @@
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -16,6 +17,9 @@ export class BufferService implements IBufferService {
   public cols: number;
   public rows: number;
   public buffers: IBufferSet;
+
+  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
 
   public get buffer(): IBuffer { return this.buffers.active; }
 
@@ -30,6 +34,9 @@ export class BufferService implements IBufferService {
   public resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;
+    this.buffers.resize(cols, rows);
+    this.buffers.setupTabStops(this.cols);
+    this._onResize.fire({ cols, rows });
   }
 
   public reset(): void {
