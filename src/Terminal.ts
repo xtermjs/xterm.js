@@ -1317,14 +1317,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Evaluate if the current terminal is the given argument.
-   * @param term The terminal name to evaluate
-   */
-  public is(term: string): boolean {
-    return (this.options.termName + '').indexOf(term) === 0;
-  }
-
-  /**
    * Emit the data event and populate the given data.
    * @param data The data to populate in the event.
    */

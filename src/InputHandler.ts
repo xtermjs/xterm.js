@@ -1528,9 +1528,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (params.params[0] > 0) {
       return;
     }
-    if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
+    if (this._is('xterm') || this._is('rxvt-unicode') || this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
-    } else if (this._terminal.is('linux')) {
+    } else if (this._is('linux')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?6c');
     }
   }
@@ -1566,17 +1566,25 @@ export class InputHandler extends Disposable implements IInputHandler {
     // xterm and urxvt
     // seem to spit this
     // out around ~370 times (?).
-    if (this._terminal.is('xterm')) {
+    if (this._is('xterm')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>0;276;0c');
-    } else if (this._terminal.is('rxvt-unicode')) {
+    } else if (this._is('rxvt-unicode')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>85;95;0c');
-    } else if (this._terminal.is('linux')) {
+    } else if (this._is('linux')) {
       // not supported by linux console.
       // linux console echoes parameters.
       this._coreService.triggerDataEvent(params.params[0] + 'c');
-    } else if (this._terminal.is('screen')) {
+    } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
     }
+  }
+
+  /**
+   * Evaluate if the current terminal is the given argument.
+   * @param term The terminal name to evaluate
+   */
+  private _is(term: string): boolean {
+    return (this._optionsService.options.termName + '').indexOf(term) === 0;
   }
 
   /**

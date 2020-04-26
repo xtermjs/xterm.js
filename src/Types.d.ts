@@ -22,8 +22,6 @@ export type LineData = CharData[];
  */
 export interface IInputHandlingTerminal {
   viewport: IViewport;
-
-  is(term: string): boolean;
 }
 
 export interface ICompositionHelper {
