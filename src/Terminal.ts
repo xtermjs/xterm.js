@@ -120,8 +120,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
@@ -1289,19 +1287,22 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       return;
     }
 
-    if (x < MINIMUM_COLS) x = MINIMUM_COLS;
-    if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
+    x = Math.max(x, MINIMUM_COLS);
+    y = Math.max(y, MINIMUM_ROWS);
 
     this._bufferService.resize(x, y);
 
+    // TODO: Have charsize, viewport and renderservice depend on IBufferService.onResize?
+
     this._charSizeService?.measure();
 
+    // TODO: Call on resize event?
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
     this.viewport?.syncScrollArea(true);
 
+    // TODO: Move to renderservice
     this.refresh(0, this.rows - 1);
-    this._onResize.fire({ cols: x, rows: y });
   }
 
   /**

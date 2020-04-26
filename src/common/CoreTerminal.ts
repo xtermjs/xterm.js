@@ -29,7 +29,7 @@ import { BufferService } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { ITerminalOptions, IDisposable } from './Types';
 import { CoreService } from 'common/services/CoreService';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { DirtyRowService } from 'common/services/DirtyRowService';
 import { UnicodeService } from 'common/services/UnicodeService';
@@ -58,6 +58,8 @@ export abstract class CoreTerminal extends Disposable {
   public get onData(): IEvent<string> { return this._onData.event; }
   protected _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
@@ -88,8 +90,9 @@ export abstract class CoreTerminal extends Disposable {
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
     // Setup listeners
-    this._coreService.onData(e => this._onData.fire(e));
-    this._coreService.onBinary(e => this._onBinary.fire(e));
+    forwardEvent(this._bufferService.onResize, this._onResize);
+    forwardEvent(this._coreService.onData, this._onData);
+    forwardEvent(this._coreService.onBinary, this._onBinary);
     this.optionsService.onOptionChange(key => this._updateOptions(key));
   }
 

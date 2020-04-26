@@ -17,7 +17,7 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
 
-  // TODO: Move resize event here
+  onResize: IEvent<{ cols: number, rows: number }>;
 
   resize(cols: number, rows: number): void;
   reset(): void;
