@@ -27,7 +27,7 @@ import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
-import { InputHandler } from './InputHandler';
+import { InputHandler, WindowsOptionsReportType } from './InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
@@ -176,11 +176,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService, this._instantiationService);
+      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
       this.register(this._inputHandler.onRequestBell(() => this.bell()));
       this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
       this.register(this._inputHandler.onRequestReset(() => this.reset()));
-      this.register(this._inputHandler.onScrollRequest((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
+      this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
+      this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
       this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
       this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
       this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
@@ -462,7 +463,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
-    this.register(this._inputHandler.onSyncScrollBarRequest(() => this.viewport.syncScrollArea()));
+    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport.syncScrollArea()));
     this.register(this.viewport);
 
     this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
@@ -1349,6 +1350,25 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
     this.viewport?.syncScrollArea();
+  }
+
+  private _reportWindowsOptions(type: WindowsOptionsReportType): void {
+    if (!this._renderService) {
+      return;
+    }
+
+    switch (type) {
+      case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
+        const canvasWidth = this._renderService.dimensions.scaledCanvasWidth.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.scaledCanvasHeight.toFixed(0);
+        this._coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
+        break;
+      case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
+        const cellWidth = this._renderService.dimensions.scaledCellWidth.toFixed(0);
+        const cellHeight = this._renderService.dimensions.scaledCellHeight.toFixed(0);
+        this._coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
+        break;
+    }
   }
 
   // TODO: Remove cancel function and cancelEvents option

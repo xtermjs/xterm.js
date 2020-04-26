@@ -18,10 +18,9 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content 
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IInstantiationService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
-import { IRenderService } from 'browser/services/Services';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -94,7 +93,10 @@ function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
   return false;
 }
 
-
+export enum WindowsOptionsReportType {
+  GET_WIN_SIZE_PIXELS = 0,
+  GET_CELL_SIZE_PIXELS = 1
+}
 
 /**
  * DCS subparser implementations
@@ -224,28 +226,31 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
+  private _onRequestBell = new EventEmitter<void>();
+  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
   private _onRequestRefreshRows = new EventEmitter<number, number>();
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestBell = new EventEmitter<void>();
-  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
+  private _onRequestScroll = new EventEmitter<IAttributeData, boolean | void>();
+  public get onRequestScroll(): IEvent<IAttributeData, boolean | void> { return this._onRequestScroll.event; }
+  private _onRequestSyncScrollBar = new EventEmitter<void>();
+  public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
+  private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
+  public get onRequestWindowsOptionsReport(): IEvent<WindowsOptionsReportType> { return this._onRequestWindowsOptionsReport.event; }
+
+  private _onA11yChar = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
+  private _onA11yTab = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
-  private _onScrollRequest = new EventEmitter<IAttributeData, boolean | void>();
-  public get onScrollRequest(): IEvent<IAttributeData, boolean | void> { return this._onScrollRequest.event; }
-  private _onSyncScrollBarRequest = new EventEmitter<void>();
-  public get onSyncScrollBarRequest(): IEvent<void> { return this._onSyncScrollBarRequest.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onA11yChar = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
-  private _onA11yTab = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -256,7 +261,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
-    private readonly _instantiationService: IInstantiationService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
@@ -557,7 +561,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._onScrollRequest.fire(this._eraseAttrData(), true);
+            this._onRequestScroll.fire(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
@@ -696,7 +700,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onScrollRequest.fire(this._eraseAttrData());
+      this._onRequestScroll.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -1767,7 +1771,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
-          this._onSyncScrollBarRequest.fire();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1813,7 +1817,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._onSyncScrollBarRequest.fire();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
@@ -1994,7 +1998,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
-          this._onSyncScrollBarRequest.fire();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -2031,7 +2035,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._onSyncScrollBarRequest.fire();
+          this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
@@ -2370,7 +2374,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
-    this._onSyncScrollBarRequest.fire();
+    this._onRequestSyncScrollBar.fire();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
@@ -2484,21 +2488,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
-    const rs = this._instantiationService.getService(IRenderService);
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
-        if (rs && second !== 2) {
-          const w = rs.dimensions.scaledCanvasWidth.toFixed(0);
-          const h = rs.dimensions.scaledCanvasHeight.toFixed(0);
-          this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);
+        if (second !== 2) {
+          this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_WIN_SIZE_PIXELS);
         }
         break;
       case 16:  // GetCellSizePixels, returns CSI 6 ; height ; width t
-        if (rs) {
-          const w = rs.dimensions.scaledCellWidth.toFixed(0);
-          const h = rs.dimensions.scaledCellHeight.toFixed(0);
-          this._coreService.triggerDataEvent(`${C0.ESC}[6;${h};${w}t`);
-        }
+        this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_CELL_SIZE_PIXELS);
         break;
       case 18:  // GetWinSizeChars, returns CSI 8 ; height ; width t
         if (this._bufferService) {
@@ -2618,7 +2615,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadApplicationMode(): void {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
-    this._onSyncScrollBarRequest.fire();
+    this._onRequestSyncScrollBar.fire();
   }
 
   /**
@@ -2629,7 +2626,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadNumericMode(): void {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
-    this._onSyncScrollBarRequest.fire();
+    this._onRequestSyncScrollBar.fire();
   }
 
   /**
@@ -2686,7 +2683,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onScrollRequest.fire(this._eraseAttrData());
+      this._onRequestScroll.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }

@@ -28,7 +28,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   onTitleChange: IEvent<string>;
-  onScrollRequest: IEvent<IAttributeData, boolean | void>;
+  onRequestScroll: IEvent<IAttributeData, boolean | void>;
 
   parse(data: string | Uint8Array): void;
   print(data: Uint32Array, start: number, end: number): void;
