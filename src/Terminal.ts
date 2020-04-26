@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -100,9 +100,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
   private _theme: ITheme;
-
-  // bufferline to clone/copy from for new blank lines
-  private _blankLine: IBufferLine = null;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -819,71 +816,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
     }
-  }
-
-  /**
-   * Scroll the terminal down 1 row, creating a blank line.
-   * @param isWrapped Whether the new line is wrapped from the previous line.
-   */
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
-    let newLine: IBufferLine;
-    newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
-      newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
-      this._blankLine = newLine;
-    }
-    newLine.isWrapped = isWrapped;
-
-    const topRow = this.buffer.ybase + this.buffer.scrollTop;
-    const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
-
-    if (this.buffer.scrollTop === 0) {
-      // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.isFull;
-
-      // Insert the line using the fastest method
-      if (bottomRow === this.buffer.lines.length - 1) {
-        if (willBufferBeTrimmed) {
-          this.buffer.lines.recycle().copyFrom(newLine);
-        } else {
-          this.buffer.lines.push(newLine.clone());
-        }
-      } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, newLine.clone());
-      }
-
-      // Only adjust ybase and ydisp when the buffer is not trimmed
-      if (!willBufferBeTrimmed) {
-        this.buffer.ybase++;
-        // Only scroll the ydisp with ybase if the user has not scrolled up
-        if (!this._bufferService.isUserScrolling) {
-          this.buffer.ydisp++;
-        }
-      } else {
-        // When the buffer is full and the user has scrolled up, keep the text
-        // stable unless ydisp is right at the top
-        if (this._bufferService.isUserScrolling) {
-          this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
-        }
-      }
-    } else {
-      // scrollTop is non-zero which means no line will be going to the
-      // scrollback, instead we can just shift them in-place.
-      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
-      this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, newLine.clone());
-    }
-
-    // Move the viewport to the bottom of the buffer unless the user is
-    // scrolling.
-    if (!this._bufferService.isUserScrolling) {
-      this.buffer.ydisp = this.buffer.ybase;
-    }
-
-    // Flag rows that need updating
-    this._dirtyRowService.markRangeDirty(this.buffer.scrollTop, this.buffer.scrollBottom);
-
-    this._onScroll.fire(this.buffer.ydisp);
   }
 
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {

@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions, IDisposable } from 'common/Types';
+import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -55,6 +55,8 @@ export abstract class CoreTerminal extends Disposable {
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
+  /** An IBufferline to clone/copy from for new blank lines */
+  private _cachedBlankLine: IBufferLine | undefined;
 
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
@@ -136,6 +138,73 @@ export abstract class CoreTerminal extends Disposable {
     y = Math.max(y, MINIMUM_ROWS);
 
     this._bufferService.resize(x, y);
+  }
+
+  /**
+   * Scroll the terminal down 1 row, creating a blank line.
+   * @param isWrapped Whether the new line is wrapped from the previous line.
+   */
+  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
+    const buffer = this._bufferService.buffer;
+
+    let newLine: IBufferLine | undefined;
+    newLine = this._cachedBlankLine;
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
+      newLine = buffer.getBlankLine(eraseAttr, isWrapped);
+      this._cachedBlankLine = newLine;
+    }
+    newLine.isWrapped = isWrapped;
+
+    const topRow = buffer.ybase + buffer.scrollTop;
+    const bottomRow = buffer.ybase + buffer.scrollBottom;
+
+    if (buffer.scrollTop === 0) {
+      // Determine whether the buffer is going to be trimmed after insertion.
+      const willBufferBeTrimmed = buffer.lines.isFull;
+
+      // Insert the line using the fastest method
+      if (bottomRow === buffer.lines.length - 1) {
+        if (willBufferBeTrimmed) {
+          buffer.lines.recycle().copyFrom(newLine);
+        } else {
+          buffer.lines.push(newLine.clone());
+        }
+      } else {
+        buffer.lines.splice(bottomRow + 1, 0, newLine.clone());
+      }
+
+      // Only adjust ybase and ydisp when the buffer is not trimmed
+      if (!willBufferBeTrimmed) {
+        buffer.ybase++;
+        // Only scroll the ydisp with ybase if the user has not scrolled up
+        if (!this._bufferService.isUserScrolling) {
+          buffer.ydisp++;
+        }
+      } else {
+        // When the buffer is full and the user has scrolled up, keep the text
+        // stable unless ydisp is right at the top
+        if (this._bufferService.isUserScrolling) {
+          buffer.ydisp = Math.max(buffer.ydisp - 1, 0);
+        }
+      }
+    } else {
+      // scrollTop is non-zero which means no line will be going to the
+      // scrollback, instead we can just shift them in-place.
+      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
+      buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
+      buffer.lines.set(bottomRow, newLine.clone());
+    }
+
+    // Move the viewport to the bottom of the buffer unless the user is
+    // scrolling.
+    if (!this._bufferService.isUserScrolling) {
+      buffer.ydisp = buffer.ybase;
+    }
+
+    // Flag rows that need updating
+    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+
+    this._onScroll.fire(buffer.ydisp);
   }
 
   /**
