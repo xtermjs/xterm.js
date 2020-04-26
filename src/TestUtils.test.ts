@@ -171,7 +171,7 @@ export class MockTerminal implements ITerminal {
   public addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public scrollLines(disp: number, suppressScrollEvent: boolean): void {
+  public scrollLines(disp: number): void {
     throw new Error('Method not implemented.');
   }
   public scrollToRow(absoluteRow: number): number {

@@ -3,18 +3,18 @@
  * @license MIT
  */
 
-import { ILinkifierAccessor } from '../../../../src/Types';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
-import { IColorSet, ILinkifierEvent } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { ITerminal } from '../../../../src/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
     super(container, 'link', zIndex, true, colors);
     terminal.linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
     terminal.linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));

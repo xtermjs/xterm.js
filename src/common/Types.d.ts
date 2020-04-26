@@ -7,6 +7,12 @@ import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
+import { IOptionsService, IUnicodeService } from 'common/services/Services';
+
+export interface ICoreTerminal {
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
+}
 
 export interface IDisposable {
   dispose(): void;

@@ -4,12 +4,14 @@
  */
 
 import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
-import { IAttributeData, CharData, ITerminalOptions } from 'common/Types';
+import { IAttributeData, CharData, ITerminalOptions, ICoreTerminal } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 import { ILinkifier, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
+import { Linkifier } from 'browser/Linkifier';
+import { Linkifier2 } from 'browser/Linkifier2';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -23,23 +25,23 @@ export interface ICompositionHelper {
   keydown(ev: KeyboardEvent): boolean;
 }
 
-export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+export interface ITerminal extends IPublicTerminal, ICoreTerminal {
+  element: HTMLElement | undefined;
   screenElement: HTMLElement;
   browser: IBrowser;
   buffer: IBuffer;
   buffers: IBufferSet;
   viewport: IViewport;
-  optionsService: IOptionsService;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
-  unicodeService: IUnicodeService;
+  linkifier: ILinkifier;
+  linkifier2: ILinkifier2;
 
   onBlur: IEvent<void>;
   onFocus: IEvent<void>;
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
 
-  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
 }
 
@@ -93,19 +95,6 @@ export interface IPublicTerminal extends IDisposable {
   paste(data: string): void;
   refresh(start: number, end: number): void;
   reset(): void;
-}
-
-export interface IBufferAccessor {
-  buffer: IBuffer;
-}
-
-export interface IElementAccessor {
-  readonly element: HTMLElement | undefined;
-}
-
-export interface ILinkifierAccessor {
-  linkifier: ILinkifier;
-  linkifier2: ILinkifier2;
 }
 
 export interface IBrowser {

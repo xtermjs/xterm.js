@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData } from 'common/Types';
+import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData, ICoreTerminal } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -40,7 +40,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 
-export abstract class CoreTerminal extends Disposable {
+export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
   protected readonly _bufferService: IBufferService;
   protected readonly _logService: ILogService;
