@@ -219,8 +219,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
-  private _windowTitleStack: string[] = [];
-  private _iconNameStack: string[] = [];
+  protected _windowTitleStack: string[] = [];
+  protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();

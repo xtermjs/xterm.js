@@ -1401,6 +1401,90 @@ describe('Terminal', () => {
       assert.equal(windowsModeTerminal.buffer.lines.get(2).isWrapped, false);
     });
   });
+  it('convertEol setting', function(): void {
+    // not converting
+    const termNotConverting = new TestTerminal({cols: 15, rows: 10});
+    termNotConverting.writeSync('Hello\nWorld');
+    expect(termNotConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
+    expect(termNotConverting.buffer.lines.get(1).translateToString(false)).equals('     World     ');
+    expect(termNotConverting.buffer.lines.get(0).translateToString(true)).equals('Hello');
+    expect(termNotConverting.buffer.lines.get(1).translateToString(true)).equals('     World');
+
+    // converting
+    const termConverting = new TestTerminal({cols: 15, rows: 10, convertEol: true});
+    termConverting.writeSync('Hello\nWorld');
+    expect(termConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
+    expect(termConverting.buffer.lines.get(1).translateToString(false)).equals('World          ');
+    expect(termConverting.buffer.lines.get(0).translateToString(true)).equals('Hello');
+    expect(termConverting.buffer.lines.get(1).translateToString(true)).equals('World');
+  });
+  describe('Terminal InputHandler integration', () => {
+    function getLines(term: TestTerminal, limit: number = term.rows): string[] {
+      const res: string[] = [];
+      for (let i = 0; i < limit; ++i) {
+        res.push(term.buffer.lines.get(i).translateToString(true));
+      }
+      return res;
+    }
+
+    // This suite cannot live in InputHandler unless Terminal.scroll moved into IBufferService
+    describe('SL/SR/DECIC/DECDC', () => {
+      let term: TestTerminal;
+      beforeEach(() => {
+        term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
+      });
+      it('SL (scrollLeft)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[ @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '2345', '2345', '2345', '2345', '2345']);
+        term.writeSync('\x1b[0 @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '345', '345', '345', '345', '345']);
+        term.writeSync('\x1b[2 @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '5', '5', '5', '5', '5']);
+      });
+      it('SR (scrollRight)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[ A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
+        term.writeSync('\x1b[0 A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '  123', '  123', '  123', '  123', '  123']);
+        term.writeSync('\x1b[2 A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '    1', '    1', '    1', '    1', '    1']);
+      });
+      it('insertColumns (DECIC)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[1\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[2\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
+      });
+      it('deleteColumns (DECDC)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[1\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[2\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
+      });
+    });
+  });
 });
 
 class TestLinkifier extends Linkifier {
