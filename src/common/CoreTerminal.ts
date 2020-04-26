@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions, IDisposable } from './Types';
+import { ITerminalOptions, IDisposable } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -37,6 +37,7 @@ import { CharsetService } from 'common/services/CharsetService';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
+import { InputHandler } from 'common/InputHandler';
 
 export abstract class CoreTerminal extends Disposable {
   protected readonly _instantiationService: IInstantiationService;
@@ -50,6 +51,7 @@ export abstract class CoreTerminal extends Disposable {
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
 
+  protected _inputHandler: InputHandler;
   private _windowsMode: IDisposable | undefined;
 
   private _onBinary = new EventEmitter<string>();
@@ -94,6 +96,11 @@ export abstract class CoreTerminal extends Disposable {
     this.register(forwardEvent(this._coreService.onData, this._onData));
     this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
+
+    // Register input handler and handle/forward events
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
+    this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
+    this.register(this._inputHandler);
   }
 
   public dispose(): void {
@@ -114,6 +121,26 @@ export abstract class CoreTerminal extends Disposable {
     y = Math.max(y, MINIMUM_ROWS);
 
     this._bufferService.resize(x, y);
+  }
+
+  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
+  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+    return this._inputHandler.addEscHandler(id, callback);
+  }
+
+  /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
+  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+    return this._inputHandler.addDcsHandler(id, callback);
+  }
+
+  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
+  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(id, callback);
+  }
+
+  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._inputHandler.addOscHandler(ident, callback);
   }
 
   protected _setup(): void {
@@ -156,5 +183,4 @@ export abstract class CoreTerminal extends Disposable {
   }
 
   public abstract scrollToBottom(): void;
-  public abstract addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
 }

@@ -27,7 +27,7 @@ import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
-import { InputHandler, WindowsOptionsReportType } from './common/InputHandler';
+import { WindowsOptionsReportType } from './common/InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
@@ -49,7 +49,6 @@ import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISo
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
-import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
@@ -100,7 +99,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _keyDownHandled: boolean = false;
 
-  private _inputHandler: InputHandler;
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport;
@@ -154,6 +152,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
+    this.register(this._inputHandler.onRequestBell(() => this.bell()));
+    this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestReset(() => this.reset()));
+    this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
+    this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
+    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+
     // Setup listeners
     this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
 
@@ -172,24 +180,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   protected _setup(): void {
-    if (this._inputHandler) {
-      this._inputHandler.reset();
-    } else {
-      // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
-      this.register(this._inputHandler.onRequestBell(() => this.bell()));
-      this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
-      this.register(this._inputHandler.onRequestReset(() => this.reset()));
-      this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
-      this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
-      this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-      this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
-      this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-      this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-      this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
-      this.register(this._inputHandler);
-    }
-
     super._setup();
 
     this._customKeyEventHandler = null;
@@ -986,25 +976,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
-  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
-    return this._inputHandler.addEscHandler(id, callback);
-  }
-
-  /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._inputHandler.addDcsHandler(id, callback);
-  }
-
-  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(id, callback);
-  }
-  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._inputHandler.addOscHandler(ident, callback);
-  }
-
   /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
@@ -1337,6 +1308,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     const userScrolling = this._userScrolling;
 
     this._setup();
+    this._inputHandler.reset();
     this._bufferService.reset();
     this._charsetService.reset();
     this._coreService.reset();
