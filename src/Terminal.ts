@@ -85,9 +85,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _selectionService: ISelectionService;
   private _soundService: ISoundService;
 
-  // Store if user went browsing history in scrollback
-  private _userScrolling: boolean;
-
   /**
    * Records whether the keydown event has already been handled and triggered a data event, if so
    * the keypress event should not trigger a data event but should still print to the textarea so
@@ -113,8 +110,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -178,7 +173,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._customKeyEventHandler = null;
 
-    this._userScrolling = false;
     if (!this.linkifier) {
       this.linkifier = this._instantiationService.createInstance(Linkifier);
     }
@@ -862,13 +856,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!willBufferBeTrimmed) {
         this.buffer.ybase++;
         // Only scroll the ydisp with ybase if the user has not scrolled up
-        if (!this._userScrolling) {
+        if (!this._bufferService.isUserScrolling) {
           this.buffer.ydisp++;
         }
       } else {
         // When the buffer is full and the user has scrolled up, keep the text
         // stable unless ydisp is right at the top
-        if (this._userScrolling) {
+        if (this._bufferService.isUserScrolling) {
           this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
         }
       }
@@ -882,7 +876,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Move the viewport to the bottom of the buffer unless the user is
     // scrolling.
-    if (!this._userScrolling) {
+    if (!this._bufferService.isUserScrolling) {
       this.buffer.ydisp = this.buffer.ybase;
     }
 
@@ -892,65 +886,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._onScroll.fire(this.buffer.ydisp);
   }
 
-  /**
-   * Scroll the display of the terminal
-   * @param disp The number of lines to scroll down (negative scroll up).
-   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
-   * to avoid unwanted events being handled by the viewport when the event was triggered from the
-   * viewport originally.
-   */
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    if (disp < 0) {
-      if (this.buffer.ydisp === 0) {
-        return;
-      }
-      this._userScrolling = true;
-    } else if (disp + this.buffer.ydisp >= this.buffer.ybase) {
-      this._userScrolling = false;
-    }
-
-    const oldYdisp = this.buffer.ydisp;
-    this.buffer.ydisp = Math.max(Math.min(this.buffer.ydisp + disp, this.buffer.ybase), 0);
-
-    // No change occurred, don't trigger scroll/refresh
-    if (oldYdisp === this.buffer.ydisp) {
-      return;
-    }
-
-    if (!suppressScrollEvent) {
-      this._onScroll.fire(this.buffer.ydisp);
-    }
-
+    super.scrollLines(disp, suppressScrollEvent);
     this.refresh(0, this.rows - 1);
-  }
-
-  /**
-   * Scroll the display of the terminal by a number of pages.
-   * @param pageCount The number of pages to scroll (negative scrolls up).
-   */
-  public scrollPages(pageCount: number): void {
-    this.scrollLines(pageCount * (this.rows - 1));
-  }
-
-  /**
-   * Scrolls the display of the terminal to the top.
-   */
-  public scrollToTop(): void {
-    this.scrollLines(-this.buffer.ydisp);
-  }
-
-  /**
-   * Scrolls the display of the terminal to the bottom.
-   */
-  public scrollToBottom(): void {
-    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
-  }
-
-  public scrollToLine(line: number): void {
-    const scrollAmount = line - this.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this.scrollLines(scrollAmount);
-    }
   }
 
   public paste(data: string): void {
@@ -1299,19 +1237,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
-    const userScrolling = this._userScrolling;
 
     this._setup();
-    this._inputHandler.reset();
-    this._bufferService.reset();
-    this._charsetService.reset();
-    this._coreService.reset();
-    this._coreMouseService.reset();
+    super.reset();
     this._selectionService?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
-    this._userScrolling = userScrolling;
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);

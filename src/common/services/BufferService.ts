@@ -17,6 +17,8 @@ export class BufferService implements IBufferService {
   public cols: number;
   public rows: number;
   public buffers: IBufferSet;
+  /** Whether the user is scrolling (locks the scroll position) */
+  public isUserScrolling: boolean = false;
 
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
@@ -41,5 +43,6 @@ export class BufferService implements IBufferService {
 
   public reset(): void {
     this.buffers = new BufferSet(this._optionsService, this);
+    this.isUserScrolling = false;
   }
 }

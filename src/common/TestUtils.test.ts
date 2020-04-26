@@ -17,6 +17,7 @@ export class MockBufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
+  public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
     public rows: number,

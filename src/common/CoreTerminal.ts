@@ -64,6 +64,8 @@ export abstract class CoreTerminal extends Disposable {
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  protected _onScroll = new EventEmitter<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
@@ -136,6 +138,66 @@ export abstract class CoreTerminal extends Disposable {
     this._bufferService.resize(x, y);
   }
 
+  /**
+   * Scroll the display of the terminal
+   * @param disp The number of lines to scroll down (negative scroll up).
+   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
+   * to avoid unwanted events being handled by the viewport when the event was triggered from the
+   * viewport originally.
+   */
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+    const buffer = this._bufferService.buffer;
+    if (disp < 0) {
+      if (buffer.ydisp === 0) {
+        return;
+      }
+      this._bufferService.isUserScrolling = true;
+    } else if (disp + buffer.ydisp >= buffer.ybase) {
+      this._bufferService.isUserScrolling = false;
+    }
+
+    const oldYdisp = buffer.ydisp;
+    buffer.ydisp = Math.max(Math.min(buffer.ydisp + disp, buffer.ybase), 0);
+
+    // No change occurred, don't trigger scroll/refresh
+    if (oldYdisp === buffer.ydisp) {
+      return;
+    }
+
+    if (!suppressScrollEvent) {
+      this._onScroll.fire(buffer.ydisp);
+    }
+  }
+
+  /**
+   * Scroll the display of the terminal by a number of pages.
+   * @param pageCount The number of pages to scroll (negative scrolls up).
+   */
+  public scrollPages(pageCount: number): void {
+    this.scrollLines(pageCount * (this.rows - 1));
+  }
+
+  /**
+   * Scrolls the display of the terminal to the top.
+   */
+  public scrollToTop(): void {
+    this.scrollLines(-this._bufferService.buffer.ydisp);
+  }
+
+  /**
+   * Scrolls the display of the terminal to the bottom.
+   */
+  public scrollToBottom(): void {
+    this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+  }
+
+  public scrollToLine(line: number): void {
+    const scrollAmount = line - this._bufferService.buffer.ydisp;
+    if (scrollAmount !== 0) {
+      this.scrollLines(scrollAmount);
+    }
+  }
+
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
   public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
     return this._inputHandler.addEscHandler(id, callback);
@@ -160,6 +222,14 @@ export abstract class CoreTerminal extends Disposable {
     if (this.optionsService.options.windowsMode) {
       this._enableWindowsMode();
     }
+  }
+
+  public reset(): void {
+    this._inputHandler.reset();
+    this._bufferService.reset();
+    this._charsetService.reset();
+    this._coreService.reset();
+    this._coreMouseService.reset();
   }
 
   protected _updateOptions(key: string): void {
@@ -194,6 +264,4 @@ export abstract class CoreTerminal extends Disposable {
       };
     }
   }
-
-  public abstract scrollToBottom(): void;
 }
