@@ -90,10 +90,10 @@ export abstract class CoreTerminal extends Disposable {
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
     // Setup listeners
-    forwardEvent(this._bufferService.onResize, this._onResize);
-    forwardEvent(this._coreService.onData, this._onData);
-    forwardEvent(this._coreService.onBinary, this._onBinary);
-    this.optionsService.onOptionChange(key => this._updateOptions(key));
+    this.register(forwardEvent(this._bufferService.onResize, this._onResize));
+    this.register(forwardEvent(this._coreService.onData, this._onData));
+    this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
+    this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
   }
 
   public dispose(): void {
