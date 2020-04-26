@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser } from './Types';
+import { ICompositionHelper, ITerminal, IBrowser } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -194,16 +194,6 @@ export class MockTerminal implements ITerminal {
   }
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   public deregisterCharacterJoiner(joinerId: number): void { }
-}
-
-export class MockInputHandlingTerminal implements IInputHandlingTerminal {
-  public viewport: IViewport;
-  public is(term: string): boolean {
-    throw new Error('Method not implemented.');
-  }
-  public resize(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
 }
 
 export class MockBuffer implements IBuffer {

@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IInputHandlingTerminal } from './Types';
+import { IInputHandler } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -238,6 +238,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onScrollRequest = new EventEmitter<IAttributeData, boolean | void>();
   public get onScrollRequest(): IEvent<IAttributeData, boolean | void> { return this._onScrollRequest.event; }
+  private _onSyncScrollBarRequest = new EventEmitter<void>();
+  public get onSyncScrollBarRequest(): IEvent<void> { return this._onSyncScrollBarRequest.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onA11yChar = new EventEmitter<string>();
@@ -246,7 +248,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
 
   constructor(
-    private _terminal: IInputHandlingTerminal,
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
@@ -256,8 +257,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _instantiationService: IInstantiationService,
-    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser())
-  {
+    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
+  ) {
     super();
     this.register(this._parser);
 
@@ -1766,7 +1767,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
-          this._terminal.viewport?.syncScrollArea();
+          this._onSyncScrollBarRequest.fire();
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1812,7 +1813,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._terminal.viewport?.syncScrollArea();
+          this._onSyncScrollBarRequest.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
@@ -1993,7 +1994,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
-          this._terminal.viewport?.syncScrollArea();
+          this._onSyncScrollBarRequest.fire();
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -2030,7 +2031,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._terminal.viewport?.syncScrollArea();
+          this._onSyncScrollBarRequest.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
@@ -2369,7 +2370,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public softReset(params: IParams): void {
     this._coreService.isCursorHidden = false;
-    this._terminal.viewport?.syncScrollArea();
+    this._onSyncScrollBarRequest.fire();
     this._bufferService.buffer.scrollTop = 0;
     this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
@@ -2617,7 +2618,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadApplicationMode(): void {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
-    this._terminal.viewport?.syncScrollArea();
+    this._onSyncScrollBarRequest.fire();
   }
 
   /**
@@ -2628,7 +2629,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadNumericMode(): void {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
-    this._terminal.viewport?.syncScrollArea();
+    this._onSyncScrollBarRequest.fire();
   }
 
   /**

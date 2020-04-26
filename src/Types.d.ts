@@ -15,15 +15,6 @@ export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
 export type LineData = CharData[];
 
-/**
- * This interface encapsulates everything needed from the Terminal by the
- * InputHandler. This cleanly separates the large amount of methods needed by
- * InputHandler cleanly from the ITerminal interface.
- */
-export interface IInputHandlingTerminal {
-  viewport: IViewport;
-}
-
 export interface ICompositionHelper {
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;

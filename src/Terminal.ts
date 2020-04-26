@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -60,7 +60,7 @@ import { CoreTerminal } from 'common/CoreTerminal';
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 
-export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingTerminal {
+export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public screenElement: HTMLElement;
@@ -176,7 +176,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this._inputHandler.reset();
     } else {
       // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this, this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService, this._instantiationService);
+      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService, this._instantiationService);
       this.register(this._inputHandler.onRequestBell(() => this.bell()));
       this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
       this.register(this._inputHandler.onRequestReset(() => this.reset()));
@@ -462,6 +462,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
+    this.register(this._inputHandler.onSyncScrollBarRequest(() => this.viewport.syncScrollArea()));
     this.register(this.viewport);
 
     this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
@@ -1315,28 +1316,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     this.refresh(0, this.rows - 1);
     this._onScroll.fire(this.buffer.ydisp);
   }
-
-  /**
-   * Emit the data event and populate the given data.
-   * @param data The data to populate in the event.
-   */
-  // public handler(data: string): void {
-  //   // Prevents all events to pty process if stdin is disabled
-  //   if (this.options.disableStdin) {
-  //     return;
-  //   }
-
-  //   // Clear the selection if the selection manager is available and has an active selection
-  //   if (this.selectionService && this.selectionService.hasSelection) {
-  //     this.selectionService.clearSelection();
-  //   }
-
-  //   // Input is being sent to the terminal, the terminal should focus the prompt.
-  //   if (this.buffer.ybase !== this.buffer.ydisp) {
-  //     this.scrollToBottom();
-  //   }
-  //   this._onData.fire(data);
-  // }
 
   /**
    * Reset terminal.
