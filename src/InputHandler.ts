@@ -728,45 +728,44 @@ export class InputHandler extends Disposable implements IInputHandler {
   public backspace(): void {
     const buffer = this._bufferService.buffer;
 
-    // by default (resverse wrap-around not set) we restrict the cursor to 0 .. rows/cols - 1
-    // thus the last cell of a row cannot be accessed by BS
+    // reverse wrap-around is disabled
     if (!this._coreService.decPrivateModes.reverseWraparound) {
       this._restrictCursor();
-    } else {
-      // copy of _restrictCursor(), but with x=cols as allowed max cursor position
-      // to make last cell accessible by BS
-      buffer.x = Math.min(this._bufferService.cols, Math.max(0, this._bufferService.buffer.x));
-      buffer.y = this._coreService.decPrivateModes.origin
-        ? Math.min(buffer.scrollBottom, Math.max(buffer.scrollTop, buffer.y))
-        : Math.min(this._bufferService.rows - 1, Math.max(0, buffer.y));
-      this._dirtyRowService.markDirty(buffer.y);
+      if (buffer.x > 0) {
+        buffer.x--;
+      }
+      return;
     }
+
+    // reverse wrap-around is enabled
+    // other than for normal operation mode, reverse wrap-around allows the cursor
+    // to be at x=cols to be able to address the last cell of a row by BS
+    this._restrictCursor(this._bufferService.cols);
 
     if (buffer.x > 0) {
       buffer.x--;
     } else {
       /**
-       * reverse wrap-around:
+       * reverse wrap-around handling:
        * Our implementation deviates from xterm on purpose. Details:
        * - only previous soft NLs can be reversed (isWrapped=true)
        * - only works within scrollborders (top/bottom, left/right not yet supported)
        * - cannot peek into scrollbuffer
        * - any cursor movement sequence keeps working as expected
        */
-      if (this._coreService.decPrivateModes.reverseWraparound
-          && buffer.x === 0
+      if (buffer.x === 0
           && buffer.y > buffer.scrollTop
           && buffer.y <= buffer.scrollBottom
-          && buffer.lines.get(buffer.y + buffer.ybase).isWrapped)
+          && buffer.lines.get(buffer.ybase + buffer.y).isWrapped)
       {
-        buffer.lines.get(buffer.y + buffer.ybase).isWrapped = false;
+        buffer.lines.get(buffer.ybase + buffer.y).isWrapped = false;
         buffer.y--;
         buffer.x = this._bufferService.cols - 1;
         // find last taken cell - last cell can have 3 different states:
         // - hasContent(true) + hasWidth(1): narrow char - we are done
         // - hasWidth(0): second part of wide char - we are done
         // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
-        const line = buffer.lines.get(buffer.y + buffer.ybase);
+        const line = buffer.lines.get(buffer.ybase + buffer.y);
         if (line.hasWidth(buffer.x) && !line.hasContent(buffer.x)) {
           buffer.x--;
           // We do this only once, since width=1 + hasContent=false currently happens only once before
@@ -820,8 +819,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
-  private _restrictCursor(): void {
-    this._bufferService.buffer.x = Math.min(this._bufferService.cols - 1, Math.max(0, this._bufferService.buffer.x));
+  private _restrictCursor(maxCol: number = this._bufferService.cols - 1): void {
+    this._bufferService.buffer.x = Math.min(maxCol, Math.max(0, this._bufferService.buffer.x));
     this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
       ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
