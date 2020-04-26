@@ -236,6 +236,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onScrollRequest = new EventEmitter<IAttributeData, boolean | void>();
+  public get onScrollRequest(): IEvent<IAttributeData, boolean | void> { return this._onScrollRequest.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onA11yChar = new EventEmitter<string>();
@@ -554,7 +556,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._terminal.scroll(this._eraseAttrData(), true);
+            this._onScrollRequest.fire(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
@@ -693,7 +695,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll(this._eraseAttrData());
+      this._onScrollRequest.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -2676,7 +2678,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._terminal.scroll(this._eraseAttrData());
+      this._onScrollRequest.fire(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }

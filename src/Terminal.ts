@@ -180,6 +180,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       this._inputHandler.onRequestBell(() => this.bell());
       this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end));
       this._inputHandler.onRequestReset(() => this.reset());
+      this._inputHandler.onScrollRequest((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined));
       forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove);
       forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed);
       forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange);

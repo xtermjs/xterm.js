@@ -14,7 +14,6 @@ import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { ISelectionService } from 'browser/services/Services';
 
@@ -198,21 +197,11 @@ export class MockTerminal implements ITerminal {
 }
 
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
-  public onA11yCharEmitter: EventEmitter<string>;
-  public onA11yTabEmitter: EventEmitter<number>;
-  public buffers: IBufferSet;
-  public buffer: IBuffer = new MockBuffer();
   public viewport: IViewport;
-  public scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void {
-    throw new Error('Method not implemented.');
-  }
   public is(term: string): boolean {
     throw new Error('Method not implemented.');
   }
   public resize(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  public handler(data: string): void {
     throw new Error('Method not implemented.');
   }
 }
