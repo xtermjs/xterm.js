@@ -2479,7 +2479,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
         if (rs && second !== 2) {
-          console.log(rs.dimensions);
           const w = rs.dimensions.scaledCanvasWidth.toFixed(0);
           const h = rs.dimensions.scaledCanvasHeight.toFixed(0);
           this._coreService.triggerDataEvent(`${C0.ESC}[4;${h};${w}t`);

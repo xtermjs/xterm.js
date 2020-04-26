@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
-import { ICharset, IAttributeData, CharData, CoreMouseEventType, ITerminalOptions } from 'common/Types';
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
-import { IColorSet, ILinkifier, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
+import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
+import { IAttributeData, CharData, ITerminalOptions } from 'common/Types';
+import { IEvent } from 'common/EventEmitter';
+import { ILinkifier, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
