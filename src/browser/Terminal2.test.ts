@@ -8,14 +8,14 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
-import { Terminal } from './browser/Terminal';
+import { Terminal } from 'browser/Terminal';
 import { IDisposable } from 'xterm';
 
 // all test files expect terminal in 80x25
 const COLS = 80;
 const ROWS = 25;
 
-const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
+const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '../..')});
 const SKIP_FILES = [
   't0084-CBT.in',
   't0101-NLM.in',
@@ -124,7 +124,7 @@ function terminalToString(term: Terminal): string {
   let result = '';
   let lineText = '';
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
-    lineText = term.buffer.lines.get(line).translateToString(true);
+    lineText = term.buffer.lines.get(line)!.translateToString(true);
     // rtrim empty cells as xterm does
     lineText = lineText.replace(/\s+$/, '');
     result += lineText;
