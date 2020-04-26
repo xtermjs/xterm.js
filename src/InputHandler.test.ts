@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { InputHandler } from './InputHandler';
+import { InputHandler } from './common/InputHandler';
 import { TestTerminal } from './TestUtils.test';
 import { Terminal } from './Terminal';
 import { IBufferLine, IAttributeData } from 'common/Types';

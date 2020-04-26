@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler } from './Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,7 +17,6 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
@@ -504,7 +503,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
-    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase)!;
 
     this._dirtyRowService.markDirty(buffer.y);
 
@@ -568,10 +567,10 @@ export class InputHandler extends Disposable implements IInputHandler {
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            buffer.lines.get(buffer.y).isWrapped = true;
+            buffer.lines.get(buffer.y)!.isWrapped = true;
           }
           // row changed, get it again
-          bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+          bufferRow = buffer.lines.get(buffer.y + buffer.ybase)!;
         } else {
           buffer.x = cols - 1;
           if (chWidth === 2) {
@@ -1037,7 +1036,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
@@ -1055,7 +1054,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
     line.fill(this._bufferService.buffer.getNullCell(this._eraseAttrData()));
     line.isWrapped = false;
   }
@@ -1104,7 +1103,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._bufferService.buffer.x + 1, true);
         if (this._bufferService.buffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          this._bufferService.buffer.lines.get(j + 1).isWrapped = false;
+          this._bufferService.buffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
           this._resetBufferLine(j);
@@ -1356,7 +1355,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1389,7 +1388,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1412,7 +1411,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = this._bufferService.buffer.lines.get(buffer.ybase + y);
+      const line = this._bufferService.buffer.lines.get(buffer.ybase + y)!;
       line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -1435,7 +1434,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y);
+      const line = buffer.lines.get(buffer.ybase + y)!;
       line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
@@ -2064,7 +2063,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     do {
       accu[advance + cSpace] = params.params[pos + advance];
       if (params.hasSubParams(pos + advance)) {
-        const subparams = params.getSubParams(pos + advance);
+        const subparams = params.getSubParams(pos + advance)!;
         let i = 0;
         do {
           if (accu[1] === 5) {
@@ -2519,12 +2518,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 23:  // PopTitle
         if (second === 0 || second === 2) {
           if (this._windowTitleStack.length) {
-            this.setTitle(this._windowTitleStack.pop());
+            this.setTitle(this._windowTitleStack.pop()!);
           }
         }
         if (second === 0 || second === 1) {
           if (this._iconNameStack.length) {
-            this.setIconName(this._iconNameStack.pop());
+            this.setIconName(this._iconNameStack.pop()!);
           }
         }
         break;
@@ -2788,8 +2787,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._setCursor(0, 0);
     for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
       const row = buffer.y + buffer.ybase + yOffset;
-      buffer.lines.get(row).fill(cell);
-      buffer.lines.get(row).isWrapped = false;
+      const line = buffer.lines.get(row);
+      if (line) {
+        line.fill(cell);
+        line.isWrapped = false;
+      }
     }
     this._dirtyRowService.markAllDirty();
     this._setCursor(0, 0);

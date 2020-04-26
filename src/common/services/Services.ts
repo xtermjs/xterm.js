@@ -98,7 +98,6 @@ export interface ICharsetService {
 
   charset: ICharset | undefined;
   readonly glevel: number;
-  readonly charsets: ReadonlyArray<ICharset>;
 
   reset(): void;
 
@@ -113,7 +112,7 @@ export interface ICharsetService {
    * @param g
    * @param charset
    */
-  setgCharset(g: number, charset: ICharset): void;
+  setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');

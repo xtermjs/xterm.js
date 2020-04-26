@@ -49,7 +49,6 @@ export class MockCharsetService implements ICharsetService {
   public serviceBrand: any;
   public charset: ICharset | undefined;
   public glevel: number = 0;
-  public charsets: ReadonlyArray<ICharset> = [];
   public reset(): void {}
   public setgLevel(g: number): void {}
   public setgCharset(g: number, charset: ICharset): void {}
