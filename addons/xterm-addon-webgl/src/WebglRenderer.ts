@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../../src/Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -17,7 +16,7 @@ import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 
@@ -52,8 +51,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRedraw)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
+      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -83,7 +82,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
-    this._core.screenElement.appendChild(this._canvas);
+    this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
     this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
@@ -91,12 +90,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
 
-    this._isAttached = document.body.contains(this._core.screenElement);
+    this._isAttached = document.body.contains(this._core.screenElement!);
   }
 
   public dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
-    this._core.screenElement.removeChild(this._canvas);
+    this._core.screenElement!.removeChild(this._canvas);
     super.dispose();
   }
 
@@ -150,8 +149,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._canvas.style.height = `${this.dimensions.canvasHeight}px`;
 
     // Resize the screen
-    this._core.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._core.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
+    this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -229,7 +228,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (document.body.contains(this._core.screenElement) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+      if (document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;

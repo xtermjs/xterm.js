@@ -5,13 +5,19 @@
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes } from 'common/Types';
+import { IDecPrivateModes, IModes } from 'common/Types';
 import { clone } from 'common/Clone';
+
+const DEFAULT_MODES: IModes = Object.freeze({
+  insertMode: false
+});
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
   applicationKeypad: false,
+  bracketedPasteMode: false,
   origin: false,
+  sendFocus: false,
   wraparound: true // defaults: xterm - true, vt100 - false
 });
 
@@ -20,6 +26,7 @@ export class CoreService implements ICoreService {
 
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;
+  public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();
@@ -36,10 +43,12 @@ export class CoreService implements ICoreService {
     @ILogService private readonly _logService: ILogService,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
+    this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
   public reset(): void {
+    this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 

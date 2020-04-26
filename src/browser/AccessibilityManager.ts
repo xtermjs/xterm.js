@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import * as Strings from './browser/LocalizableStrings';
-import { ITerminal } from './Types';
+import * as Strings from 'browser/LocalizableStrings';
+import { ITerminal } from 'browser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
@@ -79,6 +79,9 @@ export class AccessibilityManager extends Disposable {
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityTreeRoot.appendChild(this._liveRegion);
 
+    if (!this._terminal.element) {
+      throw new Error('Cannot enable accessibility before Terminal.open');
+    }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this.register(this._renderRowsDebouncer);
@@ -103,7 +106,7 @@ export class AccessibilityManager extends Disposable {
 
   public dispose(): void {
     super.dispose();
-    this._terminal.element.removeChild(this._accessibilityTreeRoot);
+    this._terminal.element?.removeChild(this._accessibilityTreeRoot);
     this._rowElements.length = 0;
   }
 

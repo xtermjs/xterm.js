@@ -2,7 +2,7 @@
   "files": [],
   "include": [],
   "references": [
-    { "path": "./src" },
+    { "path": "./src/browser" },
     { "path": "./test/api" },
     { "path": "./test/benchmark" },
     { "path": "./addons/xterm-addon-attach/src" },

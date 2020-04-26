@@ -12,7 +12,7 @@ import { IDisposable } from 'common/Types';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly width: number;
   readonly height: number;
@@ -25,14 +25,14 @@ export interface ICharSizeService {
 
 export const ICoreBrowserService = createDecorator<ICoreBrowserService>('CoreBrowserService');
 export interface ICoreBrowserService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly isFocused: boolean;
 }
 
 export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
@@ -40,7 +40,7 @@ export interface IMouseService {
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
 export interface IRenderService extends IDisposable {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   onDimensionsChange: IEvent<IRenderDimensions>;
   /**
@@ -72,7 +72,7 @@ export interface IRenderService extends IDisposable {
 
 export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
 export interface ISelectionService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly selectionText: string;
   readonly hasSelection: boolean;
@@ -100,7 +100,7 @@ export interface ISelectionService {
 
 export const ISoundService = createDecorator<ISoundService>('SoundService');
 export interface ISoundService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   playBellSound(): void;
 }
