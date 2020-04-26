@@ -8,8 +8,8 @@ import { ITerminal } from 'browser/Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
-import { Terminal as TerminalCore } from '../browser/Terminal';
-import * as Strings from '../browser/LocalizableStrings';
+import { Terminal as TerminalCore } from '../Terminal';
+import * as Strings from '../LocalizableStrings';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
@@ -17,7 +17,7 @@ import { IParams } from 'common/parser/Types';
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
-  private _parser: IParser;
+  private _parser: IParser | undefined;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
@@ -81,11 +81,11 @@ export class Terminal implements ITerminalApi {
   public deregisterCharacterJoiner(joinerId: number): void {
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker | undefined {
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }
-  public addMarker(cursorYOffset: number): IMarker {
+  public addMarker(cursorYOffset: number): IMarker | undefined {
     return this.registerMarker(cursorYOffset);
   }
   public hasSelection(): boolean {

@@ -12,7 +12,7 @@ const path = require('path');
  * output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
  */
 module.exports = {
-  entry: './out/public/Terminal.js',
+  entry: './out/browser/public/Terminal.js',
   devtool: 'source-map',
   module: {
     rules: [
