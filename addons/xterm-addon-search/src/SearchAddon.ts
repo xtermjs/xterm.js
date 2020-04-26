@@ -110,14 +110,11 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
-    // If there is only one result, wrap back and return selection if exists.
+    // If there is only one result, wrap back and return selection if it exists.
     if (!result && currentSelection) {
       searchPosition.startRow = currentSelection.startRow;
       searchPosition.startCol = 0;
       result = this._findInLine(term, searchPosition, searchOptions);
-      if (result) {
-        return this._selectResult(result);
-      }
     }
 
     // Set selection and scroll if a result was found
@@ -182,7 +179,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     // If we hit the top and didn't search from the very bottom wrap back down
     if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
-      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y > startRow; y--) {
+      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
         searchPosition.startRow = y;
         result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
