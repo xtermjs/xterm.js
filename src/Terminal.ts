@@ -47,7 +47,6 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
-import { MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -154,6 +153,9 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     super(options);
 
     this._setup();
+
+    // Setup listeners
+    this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
 
     this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
@@ -1275,10 +1277,6 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
    * @param y The number of rows to resize to.
    */
   public resize(x: number, y: number): void {
-    if (isNaN(x) || isNaN(y)) {
-      return;
-    }
-
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
       if (this._charSizeService && !this._charSizeService.hasValidSize) {
@@ -1287,22 +1285,15 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
       return;
     }
 
-    x = Math.max(x, MINIMUM_COLS);
-    y = Math.max(y, MINIMUM_ROWS);
+    super.resize(x, y);
+  }
 
-    this._bufferService.resize(x, y);
-
-    // TODO: Have charsize, viewport and renderservice depend on IBufferService.onResize?
-
+  private _afterResize(x: number, y: number): void {
     this._charSizeService?.measure();
 
-    // TODO: Call on resize event?
     // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
     // invalid location
     this.viewport?.syncScrollArea(true);
-
-    // TODO: Move to renderservice
-    this.refresh(0, this.rows - 1);
   }
 
   /**

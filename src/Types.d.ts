@@ -24,7 +24,6 @@ export interface IInputHandlingTerminal {
   viewport: IViewport;
 
   is(term: string): boolean;
-  resize(x: number, y: number): void;
 }
 
 export interface ICompositionHelper {

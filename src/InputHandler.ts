@@ -1741,7 +1741,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * through `options.windowsOptions`.
            */
           if (this._optionsService.options.windowOptions.setWinLines) {
-            this._terminal.resize(132, this._bufferService.rows);
+            this._bufferService.resize(132, this._bufferService.rows);
             this._onRequestReset.fire();
           }
           break;
@@ -1968,7 +1968,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * through `options.windowsOptions`.
            */
           if (this._optionsService.options.windowOptions.setWinLines) {
-            this._terminal.resize(80, this._bufferService.rows);
+            this._bufferService.resize(80, this._bufferService.rows);
             this._onRequestReset.fire();
           }
           break;

@@ -25,7 +25,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
-import { BufferService } from 'common/services/BufferService';
+import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { ITerminalOptions, IDisposable } from './Types';
 import { CoreService } from 'common/services/CoreService';
@@ -103,6 +103,17 @@ export abstract class CoreTerminal extends Disposable {
     super.dispose();
     this._windowsMode?.dispose();
     this._windowsMode = undefined;
+  }
+
+  public resize(x: number, y: number): void {
+    if (isNaN(x) || isNaN(y)) {
+      return;
+    }
+
+    x = Math.max(x, MINIMUM_COLS);
+    y = Math.max(y, MINIMUM_ROWS);
+
+    this._bufferService.resize(x, y);
   }
 
   protected _setup(): void {
