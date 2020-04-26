@@ -38,6 +38,7 @@ import { updateWindowsModeWrappedState } from 'common/WindowsMode';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
+import { WriteBuffer } from 'common/input/WriteBuffer';
 
 export abstract class CoreTerminal extends Disposable {
   protected readonly _instantiationService: IInstantiationService;
@@ -52,6 +53,7 @@ export abstract class CoreTerminal extends Disposable {
   public readonly optionsService: IOptionsService;
 
   protected _inputHandler: InputHandler;
+  private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
   private _onBinary = new EventEmitter<string>();
@@ -91,16 +93,19 @@ export abstract class CoreTerminal extends Disposable {
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
+    // Register input handler and handle/forward events
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
+    this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
+    this.register(this._inputHandler);
+
     // Setup listeners
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
     this.register(forwardEvent(this._coreService.onData, this._onData));
     this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
 
-    // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
-    this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
-    this.register(this._inputHandler);
+    // Setup WriteBuffer
+    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -110,6 +115,14 @@ export abstract class CoreTerminal extends Disposable {
     super.dispose();
     this._windowsMode?.dispose();
     this._windowsMode = undefined;
+  }
+
+  public write(data: string | Uint8Array, callback?: () => void): void {
+    this._writeBuffer.write(data, callback);
+  }
+
+  public writeSync(data: string | Uint8Array): void {
+    this._writeBuffer.writeSync(data);
   }
 
   public resize(x: number, y: number): void {

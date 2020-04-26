@@ -50,7 +50,6 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
 import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
-import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
@@ -85,9 +84,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _renderService: IRenderService;
   private _selectionService: ISelectionService;
   private _soundService: ISoundService;
-
-  // write buffer
-  private _writeBuffer: WriteBuffer;
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
@@ -164,8 +160,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Setup listeners
     this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
-
-    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -1363,14 +1357,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
-  }
-
-  public write(data: string | Uint8Array, callback?: () => void): void {
-    this._writeBuffer.write(data, callback);
-  }
-
-  public writeSync(data: string | Uint8Array): void {
-    this._writeBuffer.writeSync(data);
   }
 }
 
