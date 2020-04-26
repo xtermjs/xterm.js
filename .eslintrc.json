@@ -9,7 +9,6 @@
     "project": [
       "src/browser/tsconfig.json",
       "src/common/tsconfig.json",
-      "src/tsconfig.json",
       "test/api/tsconfig.json",
       "test/benchmark/tsconfig.json",
       "addons/xterm-addon-attach/src/tsconfig.json",

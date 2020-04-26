@@ -67,7 +67,7 @@ export const enum SelectionMode {
  * when the selection is ready to be redrawn (on an animation frame).
  */
 export class SelectionService implements ISelectionService {
-  public serviceBrand: any;
+  public serviceBrand: undefined;
 
   protected _model: SelectionModel;
 

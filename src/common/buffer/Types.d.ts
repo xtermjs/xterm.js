@@ -31,7 +31,7 @@ export interface IBuffer {
   hasScrollback: boolean;
   savedY: number;
   savedX: number;
-  savedCharset: ICharset | null;
+  savedCharset: ICharset | undefined;
   savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   markers: IMarker[];
