@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { InputHandler } from './common/InputHandler';
+import { InputHandler } from 'common/InputHandler';
 import { IBufferLine, IAttributeData } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
@@ -28,7 +28,7 @@ function getCursor(bufferService: IBufferService): number[] {
 function getLines(bufferService: IBufferService, limit: number = bufferService.rows): string[] {
   const res: string[] = [];
   for (let i = 0; i < limit; ++i) {
-    res.push(bufferService.buffer.lines.get(i).translateToString(true));
+    res.push(bufferService.buffer.lines.get(i)!.translateToString(true));
   }
   return res;
 }
@@ -126,7 +126,7 @@ describe('InputHandler', () => {
   describe('regression tests', function(): void {
     function termContent(bufferService: IBufferService, trim: boolean): string[] {
       const result = [];
-      for (let i = 0; i < bufferService.rows; ++i) result.push(bufferService.buffer.lines.get(i).translateToString(trim));
+      for (let i = 0; i < bufferService.rows; ++i) result.push(bufferService.buffer.lines.get(i)!.translateToString(trim));
       return result;
     }
 
@@ -139,7 +139,7 @@ describe('InputHandler', () => {
       inputHandler.parse('1234567890');
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      const line1: IBufferLine = bufferService.buffer.lines.get(0);
+      const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
       expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // insert one char from params = [0]
@@ -176,7 +176,7 @@ describe('InputHandler', () => {
       inputHandler.parse('1234567890');
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      const line1: IBufferLine = bufferService.buffer.lines.get(0);
+      const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
       expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // delete one char from params = [0]
@@ -220,19 +220,19 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([0]));
-      expect(bufferService.buffer.lines.get(0).translateToString(false)).equals(Array(71).join('a') + '          ');
+      expect(bufferService.buffer.lines.get(0)!.translateToString(false)).equals(Array(71).join('a') + '          ');
 
       // params[1] - left erase
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(1).translateToString(false)).equals(Array(71).join(' ') + ' aaaaaaaaa');
+      expect(bufferService.buffer.lines.get(1)!.translateToString(false)).equals(Array(71).join(' ') + ' aaaaaaaaa');
 
       // params[1] - left erase
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([2]));
-      expect(bufferService.buffer.lines.get(2).translateToString(false)).equals(Array(bufferService.cols + 1).join(' '));
+      expect(bufferService.buffer.lines.get(2)!.translateToString(false)).equals(Array(bufferService.cols + 1).join(' '));
 
     });
     it('eraseInDisplay', function(): void {
@@ -330,11 +330,11 @@ describe('InputHandler', () => {
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2).isWrapped).true;
+      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2).isWrapped).false;
+      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
 
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
@@ -345,11 +345,11 @@ describe('InputHandler', () => {
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2).isWrapped).true;
+      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 90; // Cursor is beyond last column
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2).isWrapped).false;
+      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
     });
   });
   describe('print', () => {
@@ -374,45 +374,45 @@ describe('InputHandler', () => {
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
       handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
       handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
       // Text color of 'JUNK' should be red
-      expect((bufferService.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
     });
     it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
       expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
       handler.parse('\x1b[?1049h\x1b[uTEST');
       expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
       handler.parse('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(bufferService.buffer.lines.get(20).loadCell(10, new CellData()).getBgColor()).to.equal(2);
+      expect(bufferService.buffer.lines.get(20)!.loadCell(10, new CellData()).getBgColor()).to.equal(2);
     });
   });
 
@@ -1045,7 +1045,7 @@ describe('InputHandler', () => {
       });
       it('DCH - should delete last cell', () => {
         inputHandler.parse('0123456789\x1b[P');
-        assert.equal(bufferService.buffer.lines.get(0).translateToString(false), '012345678 ');
+        assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
       it('ECH', () => {
         bufferService.buffer.x = 10000;
@@ -1059,7 +1059,7 @@ describe('InputHandler', () => {
       });
       it('ECH - should delete last cell', () => {
         inputHandler.parse('0123456789\x1b[X');
-        assert.equal(bufferService.buffer.lines.get(0).translateToString(false), '012345678 ');
+        assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
       it('ICH', () => {
         bufferService.buffer.x = 10000;
@@ -1073,7 +1073,7 @@ describe('InputHandler', () => {
       });
       it('ICH - should delete last cell', () => {
         inputHandler.parse('0123456789\x1b[@');
-        assert.equal(bufferService.buffer.lines.get(0).translateToString(false), '012345678 ');
+        assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
     });
   });
