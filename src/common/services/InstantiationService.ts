@@ -22,21 +22,21 @@ export class ServiceCollection {
     }
   }
 
-  set<T>(id: IServiceIdentifier<T>, instance: T): T {
+  public set<T>(id: IServiceIdentifier<T>, instance: T): T {
     const result = this._entries.get(id);
     this._entries.set(id, instance);
     return result;
   }
 
-  forEach(callback: (id: IServiceIdentifier<any>, instance: any) => any): void {
+  public forEach(callback: (id: IServiceIdentifier<any>, instance: any) => any): void {
     this._entries.forEach((value, key) => callback(key, value));
   }
 
-  has(id: IServiceIdentifier<any>): boolean {
+  public has(id: IServiceIdentifier<any>): boolean {
     return this._entries.has(id);
   }
 
-  get<T>(id: IServiceIdentifier<T>): T | undefined {
+  public get<T>(id: IServiceIdentifier<T>): T | undefined {
     return this._entries.get(id);
   }
 }
@@ -56,7 +56,7 @@ export class InstantiationService implements IInstantiationService {
     return this._services.get(id);
   }
 
-  public createInstance<T>(ctor: any, ...args: any[]): any {
+  public createInstance<T>(ctor: any, ...args: any[]): T {
     const serviceDependencies = getServiceDependencies(ctor).sort((a, b) => a.index - b.index);
 
     const serviceArgs: any[] = [];
@@ -76,6 +76,6 @@ export class InstantiationService implements IInstantiationService {
     }
 
     // now create the instance
-    return <T>new ctor(...[...args, ...serviceArgs]);
+    return new ctor(...[...args, ...serviceArgs]);
   }
 }

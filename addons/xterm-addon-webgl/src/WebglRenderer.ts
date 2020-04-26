@@ -16,7 +16,7 @@ import { Disposable } from 'common/Lifecycle';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
@@ -39,8 +39,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
 
-  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -49,11 +49,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this._core = (<any>this._terminal)._core;
+    this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRefreshRows)
+      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -81,7 +81,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
-        throw new Error('WebGL2 not supported ' + this._gl);
+      throw new Error('WebGL2 not supported ' + this._gl);
     }
     this._core.screenElement.appendChild(this._canvas);
 
@@ -116,6 +116,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
+
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
     // Force a full refresh
     this._model.clear();
@@ -170,15 +173,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
-    this._updateSelectionModel(start, end);
+    this._updateSelectionModel(start, end, columnSelectMode);
 
-    this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
-    this._glyphRenderer.updateSelection(this._model, columnSelectMode);
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
-    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {
@@ -226,7 +229,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (document.body.contains(this._core.screenElement) && (<any>this._core)._charSizeService.width && (<any>this._core)._charSizeService.height) {
+      if (document.body.contains(this._core.screenElement) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
@@ -292,7 +295,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
-  private _updateSelectionModel(start: [number, number], end: [number, number]): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     // Selection does not exist
@@ -302,8 +305,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.viewportY;
+    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
+    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
@@ -314,6 +317,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._model.selection.hasSelection = true;
+    this._model.selection.columnSelectMode = columnSelectMode;
     this._model.selection.viewportStartRow = viewportStartRow;
     this._model.selection.viewportEndRow = viewportEndRow;
     this._model.selection.viewportCappedStartRow = viewportCappedStartRow;
@@ -329,7 +333,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // TODO: Acquire CharSizeService properly
 
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!(<any>this._core)._charSizeService.width || !(<any>this._core)._charSizeService.height) {
+    if (!(this._core as any)._charSizeService.width || !(this._core as any)._charSizeService.height) {
       return;
     }
 
@@ -340,12 +344,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there

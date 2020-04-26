@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
@@ -39,8 +39,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return new EventEmitter<IRequestRedrawEvent>().event; }
 
   constructor(
     private _colors: IColorSet,
@@ -87,11 +86,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this._linkifier.onLinkHover(e => this._onLinkHover(e));
-    this._linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e));
+    this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e));
 
-    this._linkifier2.onLinkHover(e => this._onLinkHover(e));
-    this._linkifier2.onLinkLeave(e => this._onLinkLeave(e));
+    this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e));
+    this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -274,7 +273,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
@@ -352,7 +351,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    const cursorX = this._bufferService.buffer.x;
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.options.cursorBlink;
 
     for (let y = start; y <= end; y++) {

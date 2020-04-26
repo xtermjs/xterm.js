@@ -16,11 +16,11 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
     super(container, 'link', zIndex, true, colors);
-    terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
-    terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    terminal.linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    terminal.linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
 
-    terminal.linkifier2.onLinkHover(e => this._onLinkHover(e));
-    terminal.linkifier2.onLinkLeave(e => this._onLinkLeave(e));
+    terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -45,7 +45,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onLinkHover(e: ILinkifierEvent): void {
+  private _onShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
     } else if (e.fg !== undefined && is256Color(e.fg)) {
@@ -69,7 +69,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     this._state = e;
   }
 
-  private _onLinkLeave(e: ILinkifierEvent): void {
+  private _onHideLinkUnderline(e: ILinkifierEvent): void {
     this._clearCurrentLink();
   }
 }

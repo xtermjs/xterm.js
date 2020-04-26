@@ -11,8 +11,8 @@ import { Terminal } from 'public/Terminal';
 import { SerializeAddon } from 'SerializeAddon';
 
 class TestTerminal extends Terminal {
-  writeSync(data: string): void {
-    (<any>this)._core.writeSync(data);
+  public writeSync(data: string): void {
+    (this as any)._core.writeSync(data);
   }
 }
 

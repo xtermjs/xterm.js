@@ -5,7 +5,7 @@
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes, ICharset } from 'common/Types';
+import { IDecPrivateModes } from 'common/Types';
 import { clone } from 'common/Clone';
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
@@ -17,7 +17,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 });
 
 export class CoreService implements ICoreService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;

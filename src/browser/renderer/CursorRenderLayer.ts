@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -36,9 +36,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService,
+    private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
+    bufferService: IBufferService,
+    optionsService: IOptionsService,
     private readonly _coreService: ICoreService,
     private readonly _coreBrowserService: ICoreBrowserService
   ) {
@@ -83,14 +83,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onFocus(): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume();
     } else {
-      this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+      this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
     }
   }
 
@@ -107,7 +107,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
-    this._onRequestRefreshRowsEvent.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
+    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onCursorMove(): void {
@@ -140,7 +140,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    this._bufferService.buffer.lines.get(cursorY)!.loadCell(this._bufferService.buffer.x, this._cell);
+    // in case cursor.x == cols adjust visual cursor to cols - 1
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+    this._bufferService.buffer.lines.get(cursorY)!.loadCell(cursorX, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
@@ -151,12 +153,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this._colors.cursor.css;
       const cursorStyle = this._optionsService.options.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
-        this._cursorRenderers[cursorStyle](this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+        this._cursorRenderers[cursorStyle](cursorX, viewportRelativeCursorY, this._cell);
       } else {
-        this._renderBlurCursor(this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+        this._renderBlurCursor(cursorX, viewportRelativeCursorY, this._cell);
       }
       this._ctx.restore();
-      this._state.x = this._bufferService.buffer.x;
+      this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
       this._state.style = cursorStyle;
@@ -172,7 +174,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state.x === this._bufferService.buffer.x &&
+      if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === this._coreBrowserService.isFocused &&
           this._state.style === this._optionsService.options.cursorStyle &&
@@ -183,10 +185,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](this._bufferService.buffer.x, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](cursorX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
-    this._state.x = this._bufferService.buffer.x;
+    this._state.x = cursorX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
     this._state.style = this._optionsService.options.cursorStyle;
@@ -304,7 +306,7 @@ class CursorBlinkStateManager {
     // the regular interval is setup in order to support restarting the blink
     // animation in a lightweight way (without thrashing clearInterval and
     // setInterval).
-    this._blinkStartTimeout = <number><any>setTimeout(() => {
+    this._blinkStartTimeout = window.setTimeout(() => {
       // Check if another animation restart was requested while this was being
       // started
       if (this._animationTimeRestarted) {
@@ -324,7 +326,7 @@ class CursorBlinkStateManager {
       });
 
       // Setup the blink interval
-      this._blinkInterval = <number><any>setInterval(() => {
+      this._blinkInterval = window.setInterval(() => {
         // Adjust the animation time if it was restarted
         if (this._animationTimeRestarted) {
           // calc time diff
@@ -362,6 +364,9 @@ class CursorBlinkStateManager {
   }
 
   public resume(): void {
+    // Clear out any existing timers just in case
+    this.pause();
+
     this._animationTimeRestarted = undefined;
     this._restartInterval();
     this.restartBlinkAnimation();

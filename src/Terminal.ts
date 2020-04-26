@@ -257,10 +257,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     if (!this.linkifier) {
-      this.linkifier = new Linkifier(this._bufferService, this._logService, this.optionsService, this.unicodeService);
+      this.linkifier = this._instantiationService.createInstance(Linkifier);
     }
     if (!this.linkifier2) {
-      this.linkifier2 = new Linkifier2(this._bufferService);
+      this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
     }
 
     if (this.options.windowsMode) {
@@ -419,7 +419,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       }
       copyHandler(event, this._selectionService);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this.bracketedPasteMode, this._coreService);
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -476,7 +476,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }
 
     if (!document.body.contains(parent)) {
-      this._logService.warn('Terminal.open was called on an element that was not attached to the DOM');
+      this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
     this._document = parent.ownerDocument;
@@ -543,7 +543,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     const renderer = this._createRenderer();
     this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
     this._instantiationService.setService(IRenderService, this._renderService);
-    this._renderService.onRender(e => this._onRender.fire(e));
+    this._renderService.onRenderedBufferChange(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
     this._soundService = this._instantiationService.createInstance(SoundService);
@@ -663,10 +663,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
-      let pos;
-
       // get mouse coordinates
-      pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) {
         return false;
       }
@@ -685,8 +683,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           } else {
             // according to MDN buttons only reports up to button 5 (AUX2)
             but = ev.buttons & 1 ? CoreMouseButton.LEFT :
-                  ev.buttons & 4 ? CoreMouseButton.MIDDLE :
-                  ev.buttons & 2 ? CoreMouseButton.RIGHT :
+              ev.buttons & 4 ? CoreMouseButton.MIDDLE :
+                ev.buttons & 2 ? CoreMouseButton.RIGHT :
                   CoreMouseButton.NONE; // fallback to NONE
           }
           break;
@@ -987,7 +985,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     } else {
       // scrollTop is non-zero which means no line will be going to the
       // scrollback, instead we can just shift them in-place.
-      const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
+      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
       this.buffer.lines.set(bottomRow, newLine.clone());
     }

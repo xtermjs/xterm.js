@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
- * 
+ *
  * Script to extract vt features documented in docstrings.
  */
 const fs = require('fs');
@@ -32,8 +32,14 @@ const TYPES = [
   'SOS'
 ];
 
-const MARKDOWN_TMPL = `
+const MARKDOWN_TMPL = `---
+title: Supported Terminal Sequences
+category: API
+---
+
 {::options parse_block_html="true" /}
+
+# Supported Terminal Sequences
 
 xterm.js version: {{version}}
 
@@ -259,7 +265,7 @@ To denote the sequences the tables use the same abbreviations as xterm does:
   function hideDetailSections() {
     for (let section of document.getElementsByClassName('sequence-details')) section.style.display = 'none';
   }
-  
+
   function decorateDetailLinks() {
     for (let link of document.getElementsByClassName('link-details')) {
       link.addEventListener("click", toggleDetails, false);
@@ -338,11 +344,11 @@ function applyMacros(s) {
   return s;
 }
 
-function replaceStatus(s) {
-  if (s === 'supported') return '<span title="supported">✓</span>';
-  if (s === 'unsupported') return '<span title="unsupported">✗</span>';
-  return s;
-}
+// function replaceStatus(s) {
+//   if (s === 'supported') return '<span title="supported">✓</span>';
+//   if (s === 'unsupported') return '<span title="unsupported">✗</span>';
+//   return s;
+// }
 
 function createAnchorSlug(s) {
   return s.toLowerCase().split(' ').join('-');

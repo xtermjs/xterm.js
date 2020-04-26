@@ -23,8 +23,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._clearState();
@@ -52,7 +52,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;
@@ -110,7 +110,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.ydisp = this._bufferService.buffer.ydisp;
   }
 
-  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {
+  private _didStateChange(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean, ydisp: number): boolean {
     return !this._areCoordinatesEqual(start, this._state.start) ||
       !this._areCoordinatesEqual(end, this._state.end) ||
       columnSelectMode !== this._state.columnSelectMode ||

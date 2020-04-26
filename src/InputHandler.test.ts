@@ -34,7 +34,7 @@ function getLines(term: TestTerminal, limit: number = term.rows): string[] {
 }
 
 class TestInputHandler extends InputHandler {
-  get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
+  public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
 }
 
 describe('InputHandler', () => {
@@ -1567,6 +1567,55 @@ describe('InputHandler', () => {
         term.writeSync(ttyBS.repeat(100));
         assert.deepEqual(getLines(term, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
       });
+    });
+  });
+  describe('DECSTR', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({cols: 10, rows: 5, scrollback: 1});
+      term.writeSync('01234567890123');
+    });
+    it('should reset IRM', () => {
+      term.writeSync('\x1b[4h');
+      assert.equal(term.insertMode, true);
+      term.writeSync('\x1b[!p');
+      assert.equal(term.insertMode, false);
+    });
+    it('should reset cursor visibility', () => {
+      term.writeSync('\x1b[?25l');
+      assert.equal((term as any)._coreService.isCursorHidden, true);
+      term.writeSync('\x1b[!p');
+      assert.equal((term as any)._coreService.isCursorHidden, false);
+    });
+    it('should reset scroll margins', () => {
+      term.writeSync('\x1b[2;4r');
+      assert.equal((term as any)._bufferService.buffer.scrollTop, 1);
+      assert.equal((term as any)._bufferService.buffer.scrollBottom, 3);
+      term.writeSync('\x1b[!p');
+      assert.equal((term as any)._bufferService.buffer.scrollTop, 0);
+      assert.equal((term as any)._bufferService.buffer.scrollBottom, term.rows - 1);
+    });
+    it('should reset text attributes', () => {
+      term.writeSync('\x1b[1;2;32;43m');
+      assert.equal(!!term.curAttrData.isBold(), true);
+      term.writeSync('\x1b[!p');
+      assert.equal(!!term.curAttrData.isBold(), false);
+      assert.equal(term.curAttrData.fg, 0);
+      assert.equal(term.curAttrData.bg, 0);
+    });
+    it('should reset DECSC data', () => {
+      term.writeSync('\x1b7');
+      assert.equal((term as any)._bufferService.buffer.savedX, 4);
+      assert.equal((term as any)._bufferService.buffer.savedY, 1);
+      term.writeSync('\x1b[!p');
+      assert.equal((term as any)._bufferService.buffer.savedX, 0);
+      assert.equal((term as any)._bufferService.buffer.savedY, 0);
+    });
+    it('should reset DECOM', () => {
+      term.writeSync('\x1b[?6h');
+      assert.equal((term as any)._coreService.decPrivateModes.origin, true);
+      term.writeSync('\x1b[!p');
+      assert.equal((term as any)._coreService.decPrivateModes.origin, false);
     });
   });
 });

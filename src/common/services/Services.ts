@@ -87,7 +87,7 @@ export interface ICoreService {
    * Triggers the onBinary event in the public API.
    * @param data The data that is being emitted.
    */
-   triggerBinaryEvent(data: string): void;
+  triggerBinaryEvent(data: string): void;
 }
 
 export const ICharsetService = createDecorator<ICharsetService>('CharsetService');
@@ -104,7 +104,7 @@ export interface ICharsetService {
    * Set the G level of the terminal.
    * @param g
    */
-   setgLevel(g: number): void;
+  setgLevel(g: number): void;
 
   /**
    * Set the charset for the given G level of the terminal.
@@ -133,39 +133,39 @@ export interface IServiceIdentifier<T> {
 }
 
 export interface IConstructorSignature0<T> {
-  new(...services: { serviceBrand: any; }[]): T;
+  new(...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature1<A1, T> {
-  new(first: A1, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature2<A1, A2, T> {
-  new(first: A1, second: A2, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature3<A1, A2, A3, T> {
-  new(first: A1, second: A2, third: A3, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature4<A1, A2, A3, A4, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, fourth: A4, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature5<A1, A2, A3, A4, A5, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature6<A1, A2, A3, A4, A5, A6, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature7<A1, A2, A3, A4, A5, A6, A7, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, ...services: { serviceBrand: any }[]): T;
 }
 
 export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8, ...services: { serviceBrand: any; }[]): T;
+  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8, ...services: { serviceBrand: any }[]): T;
 }
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
@@ -213,7 +213,7 @@ export type RendererType = 'dom' | 'canvas';
 export interface IPartialTerminalOptions {
   allowTransparency?: boolean;
   bellSound?: string;
-  bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+  bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols?: number;
   cursorBlink?: boolean;
   cursorStyle?: 'block' | 'underline' | 'bar';
@@ -247,7 +247,7 @@ export interface IPartialTerminalOptions {
 export interface ITerminalOptions {
   allowTransparency: boolean;
   bellSound: string;
-  bellStyle: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
@@ -262,6 +262,7 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
+  linkTooltipHoverDuration: number;
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
@@ -310,6 +311,7 @@ export interface ITheme {
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
+  serviceBrand: any;
   /** Register an Unicode version provider. */
   register(provider: IUnicodeVersionProvider): void;
   /** Registered Unicode versions. */

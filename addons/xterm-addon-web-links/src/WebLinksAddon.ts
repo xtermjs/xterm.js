@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, ILinkProvider, IDisposable } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
 import { WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
@@ -56,7 +56,7 @@ export class WebLinksAddon implements ITerminalAddon {
       this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler));
     } else {
       // TODO: This should be removed eventually
-      this._linkMatcherId = (<Terminal>this._terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
+      this._linkMatcherId = (this._terminal as Terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
     }
   }
 

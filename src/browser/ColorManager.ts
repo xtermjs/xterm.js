@@ -192,7 +192,7 @@ export class ColorManager implements IColorManager {
       const rgba: number = channels.toRgba(r, g, b, alpha);
       return {
         rgba,
-        css: channels.toCss(r, g, b, alpha)
+        css
       };
     }
 

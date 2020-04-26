@@ -9,13 +9,13 @@ import { IBufferLine } from 'common/Types';
 import { Linkifier } from 'browser/Linkifier';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { MockLogService, MockBufferService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 
 class TestLinkifier extends Linkifier {
   constructor(bufferService: IBufferService) {
-    super(bufferService, new MockLogService(), new MockOptionsService(), new UnicodeService());
+    super(bufferService, new MockLogService(), new UnicodeService());
     Linkifier._timeBeforeLatency = 0;
   }
 
@@ -24,14 +24,14 @@ class TestLinkifier extends Linkifier {
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
-  dispose(): void {
+  public dispose(): void {
   }
   public clears: number = 0;
   public zones: IMouseZone[] = [];
-  add(zone: IMouseZone): void {
+  public add(zone: IMouseZone): void {
     this.zones.push(zone);
   }
-  clearAll(): void {
+  public clearAll(): void {
     this.clears++;
   }
 }

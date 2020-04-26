@@ -49,15 +49,15 @@ export class RenderDebouncer implements IDisposable {
     }
 
     // Clamp values
-    this._rowStart = Math.max(this._rowStart, 0);
-    this._rowEnd = Math.min(this._rowEnd, this._rowCount - 1);
+    const start = Math.max(this._rowStart, 0);
+    const end = Math.min(this._rowEnd, this._rowCount - 1);
 
-    // Run render callback
-    this._renderCallback(this._rowStart, this._rowEnd);
-
-    // Reset debouncer
+    // Reset debouncer (this happens before render callback as the render could trigger it again)
     this._rowStart = undefined;
     this._rowEnd = undefined;
     this._animationFrame = undefined;
+
+    // Run render callback
+    this._renderCallback(start, end);
   }
 }

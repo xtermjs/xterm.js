@@ -9,7 +9,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IUnicodeService } from 'common/services/Services';
 import { Linkifier } from 'browser/Linkifier';
-import { MockLogService, MockOptionsService, MockUnicodeService } from 'common/TestUtils.test';
+import { MockLogService, MockUnicodeService } from 'common/TestUtils.test';
 import { IRegisteredLinkMatcher, IMouseZoneManager, IMouseZone } from 'browser/Types';
 
 const INIT_COLS = 80;
@@ -1407,7 +1407,7 @@ describe('Terminal', () => {
 
 class TestLinkifier extends Linkifier {
   constructor(bufferService: IBufferService, unicodeService: IUnicodeService) {
-    super(bufferService, new MockLogService(), new MockOptionsService(), unicodeService);
+    super(bufferService, new MockLogService(), unicodeService);
     Linkifier._timeBeforeLatency = 0;
   }
 
@@ -1416,14 +1416,14 @@ class TestLinkifier extends Linkifier {
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
-  dispose(): void {
+  public dispose(): void {
   }
   public clears: number = 0;
   public zones: IMouseZone[] = [];
-  add(zone: IMouseZone): void {
+  public add(zone: IMouseZone): void {
     this.zones.push(zone);
   }
-  clearAll(): void {
+  public clearAll(): void {
     this.clears++;
   }
 }

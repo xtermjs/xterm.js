@@ -341,10 +341,6 @@ describe('WebGL Renderer Integration Tests', async () => {
       await writeSync(page, data);
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [0, 0, 0, 255]);
         }
       }
@@ -670,7 +666,6 @@ describe('WebGL Renderer Integration Tests', async () => {
       await writeSync(page, data);
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
-          const i = y * 16 + x;
           await pollFor(page, () => getCellColor(x + 1, y + 1), [0, 0, 0, 255]);
         }
       }
@@ -899,9 +894,8 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
   const browserType = getBrowserType();
-  browser = await browserType.launch({
-    headless: process.argv.indexOf('--headless') !== -1,
-    args: [`--window-size=${width},${height}`, `--no-sandbox`]
+  browser = await browserType.launch({ dumpio: true,
+    headless: process.argv.indexOf('--headless') !== -1
   });
   page = await (await browser.newContext()).newPage();
   await page.setViewportSize({ width, height });

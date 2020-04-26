@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { WriteBuffer } from './WriteBuffer';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 declare let Buffer: any;
 
 function toBytes(s: string): Uint8Array {

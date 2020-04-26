@@ -21,9 +21,8 @@ describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1,
-      args: [`--window-size=${width},${height}`, `--no-sandbox`]
+    browser = await browserType.launch({ dumpio: true,
+      headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
@@ -165,7 +164,7 @@ describe('InputHandler Integration Tests', function(): void {
         window.term.reset()
         window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[3J')
       `);
-      await pollFor(page, () => page.evaluate(`window.term.buffer.length`), 5);
+      await pollFor(page, () => page.evaluate(`window.term.buffer.active.length`), 5);
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
@@ -194,7 +193,7 @@ describe('InputHandler Integration Tests', function(): void {
         window.term.reset()
         window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[?3J')
       `);
-      await pollFor(page, () => page.evaluate(`window.term.buffer.length`), 5);
+      await pollFor(page, () => page.evaluate(`window.term.buffer.active.length`), 5);
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
@@ -240,7 +239,7 @@ describe('InputHandler Integration Tests', function(): void {
       it('Report Cursor Position (CPR) - CSI 6 n', async function(): Promise<any> {
         await page.evaluate(`window.term.write('\\n\\nfoo')`);
         await pollFor(page, () => page.evaluate(`
-          [window.term.buffer.cursorY, window.term.buffer.cursorX]
+          [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
         `), [2, 3]);
         await page.evaluate(`
           window.term.onData(e => window.result = e);
@@ -252,7 +251,7 @@ describe('InputHandler Integration Tests', function(): void {
       it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
         await page.evaluate(`window.term.write('\\n\\nfoo')`);
         await pollFor(page, () => page.evaluate(`
-          [window.term.buffer.cursorY, window.term.buffer.cursorX]
+          [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
         `), [2, 3]);
         await page.evaluate(`
           window.term.onData(e => window.result = e);
@@ -292,7 +291,7 @@ describe('InputHandler Integration Tests', function(): void {
         });
         (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           await pollFor(page, () => simulatePaste('foo'), 'foo');
-          await page.evaluate(`window.term.write('\x1b[?2004h')`)
+          await page.evaluate(`window.term.write('\x1b[?2004h')`);
           await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
           await page.evaluate(`window.term.write('\x1b[?2004l')`);
           await pollFor(page, () => simulatePaste('baz'), 'baz');
@@ -410,7 +409,7 @@ describe('InputHandler Integration Tests', function(): void {
 async function getLinesAsArray(count: number, start: number = 0): Promise<string[]> {
   let text = '';
   for (let i = start; i < start + count; i++) {
-    text += `window.term.buffer.getLine(${i}).translateToString(true), `;
+    text += `window.term.buffer.active.getLine(${i}).translateToString(true),`;
   }
   return await page.evaluate(`[${text}]`);
 }
@@ -430,10 +429,10 @@ async function simulatePaste(text: string): Promise<string> {
 
 async function getCursor(): Promise<{ col: number, row: number }> {
   return page.evaluate(`
-            (function() {
-              return { col: term.buffer.cursorX, row: term.buffer.cursorY };
-            })();
-          `);
+  (function() {
+    return {col: term.buffer.active.cursorX, row: term.buffer.active.cursorY};
+  })();
+  `);
 }
 
 async function getDimensions(): Promise<any> {

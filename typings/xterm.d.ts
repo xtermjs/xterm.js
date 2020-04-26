@@ -45,7 +45,7 @@ declare module 'xterm' {
     /**
      * The type of the bell notification the terminal will use.
      */
-    bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+    bellStyle?: 'none' | 'sound';
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
@@ -118,7 +118,7 @@ declare module 'xterm' {
     fontWeightBold?: FontWeight;
 
     /**
-     * The spacing in whole pixels between characters..
+     * The spacing in whole pixels between characters.
      */
     letterSpacing?: number;
 
@@ -126,6 +126,13 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * The duration in milliseconds before link tooltip events fire when
+     * hovering on a link.
+     * @deprecated This will be removed when the link matcher API is removed.
+     */
+    linkTooltipHoverDuration?: number;
 
     /**
      * What log level to use, this will log for all levels below and including
@@ -305,7 +312,8 @@ declare module 'xterm' {
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
     /**
-     * A callback that fires when the mouse hovers over a link for a moment.
+     * A callback that fires when the mouse hovers over a link for a period of
+     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
      */
     tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
 
@@ -574,7 +582,7 @@ declare module 'xterm' {
      * normal buffer or the alt buffer depending on what's running in the
      * terminal.
      */
-    readonly buffer: IBuffer;
+    readonly buffer: IBufferNamespace;
 
     /**
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
@@ -1113,6 +1121,13 @@ declare module 'xterm' {
     text: string;
 
     /**
+     * What link decorations to show when hovering the link, this property is tracked and changes
+     * made after the link is provided will trigger changes. If not set, all decroations will be
+     * enabled.
+     */
+    decorations?: ILinkDecorations;
+
+    /**
      * Calls when the link is activated.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
@@ -1120,7 +1135,9 @@ declare module 'xterm' {
     activate(event: MouseEvent, text: string): void;
 
     /**
-     * Called when the mouse hovers the link.
+     * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
+     * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
+     * that will cause mouse events to not fall through and activate other links.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
      */
@@ -1132,6 +1149,21 @@ declare module 'xterm' {
      * @param text The text of the link.
      */
     leave?(event: MouseEvent, text: string): void;
+  }
+
+  /**
+   * A set of decorations that can be applied to links.
+   */
+  interface ILinkDecorations {
+    /**
+     * Whether the cursor is set to pointer.
+     */
+    pointerCursor: boolean;
+
+    /**
+     * Whether the underline is visible
+     */
+    underline: boolean;
   }
 
   /**
@@ -1169,6 +1201,11 @@ declare module 'xterm' {
    */
   interface IBuffer {
     /**
+     * The type of the buffer.
+     */
+    readonly type: 'normal' | 'alternate';
+
+    /**
      * The y position of the cursor. This ranges between `0` (when the
      * cursor is at baseY) and `Terminal.rows - 1` (when the cursor is on the
      * last row).
@@ -1177,7 +1214,7 @@ declare module 'xterm' {
 
     /**
      * The x position of the cursor. This ranges between `0` (left side) and
-     * `Terminal.cols - 1` (right side).
+     * `Terminal.cols` (after last cell of the row).
      */
     readonly cursorX: number;
 
@@ -1215,6 +1252,33 @@ declare module 'xterm' {
      * cell objects when dealing with tons of cells.
      */
     getNullCell(): IBufferCell;
+  }
+
+  /**
+   * Represents the terminal's set of buffers.
+   */
+  interface IBufferNamespace {
+    /**
+     * The active buffer, this will either be the normal or alternate buffers.
+     */
+    readonly active: IBuffer;
+
+    /**
+     * The normal buffer.
+     */
+    readonly normal: IBuffer;
+
+    /**
+     * The alternate buffer, this becomes the active buffer when an application
+     * enters this mode via DECSET (`CSI ? 4 7 h`)
+     */
+    readonly alternate: IBuffer;
+
+    /**
+     * Adds an event listener for when the active buffer changes.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBufferChange: IEvent<IBuffer>;
   }
 
   /**
