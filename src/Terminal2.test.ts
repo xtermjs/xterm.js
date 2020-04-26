@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
-import { Terminal } from './Terminal';
+import { Terminal } from './browser/Terminal';
 import { IDisposable } from 'xterm';
 
 // all test files expect terminal in 80x25

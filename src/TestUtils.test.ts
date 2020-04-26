@@ -10,7 +10,7 @@ import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, I
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition, ILinkProvider } from 'xterm';
-import { Terminal } from './Terminal';
+import { Terminal } from './browser/Terminal';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, ILinkMatcherOptions, ILinkifier, IViewport, ILinkifier2 } from 'browser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';

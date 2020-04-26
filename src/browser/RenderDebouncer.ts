@@ -26,7 +26,7 @@ export class RenderDebouncer implements IDisposable {
     }
   }
 
-  public refresh(rowStart: number, rowEnd: number, rowCount: number): void {
+  public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
     // Get the min/max row start/end for the arg values
     rowStart = rowStart !== undefined ? rowStart : 0;
