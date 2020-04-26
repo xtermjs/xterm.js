@@ -1292,10 +1292,7 @@ export class Terminal extends CoreTerminal implements ITerminal, IInputHandlingT
     if (x < MINIMUM_COLS) x = MINIMUM_COLS;
     if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
 
-    this.buffers.resize(x, y);
-
     this._bufferService.resize(x, y);
-    this.buffers.setupTabStops(this.cols);
 
     this._charSizeService?.measure();
 

@@ -30,6 +30,8 @@ export class BufferService implements IBufferService {
   public resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;
+    this.buffers.resize(cols, rows);
+    this.buffers.setupTabStops(this.cols);
   }
 
   public reset(): void {
