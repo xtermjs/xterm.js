@@ -42,9 +42,9 @@ describe('AddonManager', () => {
         public activate(): void {}
         public dispose(): void { called++; }
       }
-      manager.loadAddon(null, new Addon());
-      manager.loadAddon(null, new Addon());
-      manager.loadAddon(null, new Addon());
+      manager.loadAddon(null!, new Addon());
+      manager.loadAddon(null!, new Addon());
+      manager.loadAddon(null!, new Addon());
       assert.equal(manager.addons.length, 3);
       manager.dispose();
       assert.equal(called, 3);

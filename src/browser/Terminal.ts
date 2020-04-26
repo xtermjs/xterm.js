@@ -21,13 +21,13 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler } from './Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
-import { InputHandler, WindowsOptionsReportType } from './common/InputHandler';
+import { WindowsOptionsReportType } from '../common/InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, IBufferLine, IAttributeData, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -49,49 +49,40 @@ import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISo
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
-import { IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2 } from 'browser/Types';
-import { WriteBuffer } from 'common/input/WriteBuffer';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
+import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 
 // Let it work inside Node.js for automated testing purposes.
-const document = (typeof window !== 'undefined') ? window.document : null;
-
+const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
 
 export class Terminal extends CoreTerminal implements ITerminal {
-  public textarea: HTMLTextAreaElement;
-  public element: HTMLElement;
-  public screenElement: HTMLElement;
+  public textarea: HTMLTextAreaElement | undefined;
+  public element: HTMLElement | undefined;
+  public screenElement: HTMLElement | undefined;
 
-  private _document: Document;
-  private _viewportScrollArea: HTMLElement;
-  private _viewportElement: HTMLElement;
-  private _helperContainer: HTMLElement;
-  private _compositionView: HTMLElement;
+  private _document: Document | undefined;
+  private _viewportScrollArea: HTMLElement | undefined;
+  private _viewportElement: HTMLElement | undefined;
+  private _helperContainer: HTMLElement | undefined;
+  private _compositionView: HTMLElement | undefined;
 
-  private _visualBellTimer: number;
+  // private _visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
 
   // TODO: We should remove options once components adopt optionsService
-  public get options(): ITerminalOptions { return this.optionsService.options; }
+  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
-  private _customKeyEventHandler: CustomKeyEventHandler;
+  private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
   // browser services
-  private _charSizeService: ICharSizeService;
-  private _mouseService: IMouseService;
-  private _renderService: IRenderService;
-  private _selectionService: ISelectionService;
-  private _soundService: ISoundService;
-
-  // write buffer
-  private _writeBuffer: WriteBuffer;
-
-  // Store if user went browsing history in scrollback
-  private _userScrolling: boolean;
+  private _charSizeService: ICharSizeService | undefined;
+  private _mouseService: IMouseService | undefined;
+  private _renderService: IRenderService | undefined;
+  private _selectionService: ISelectionService | undefined;
+  private _soundService: ISoundService | undefined;
 
   /**
    * Records whether the keydown event has already been handled and triggered a data event, if so
@@ -100,18 +91,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _keyDownHandled: boolean = false;
 
-  private _inputHandler: InputHandler;
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
-  public viewport: IViewport;
-  private _compositionHelper: ICompositionHelper;
-  private _mouseZoneManager: IMouseZoneManager;
-  private _accessibilityManager: AccessibilityManager;
-  private _colorManager: ColorManager;
-  private _theme: ITheme;
-
-  // bufferline to clone/copy from for new blank lines
-  private _blankLine: IBufferLine = null;
+  public viewport: IViewport | undefined;
+  private _compositionHelper: ICompositionHelper | undefined;
+  private _mouseZoneManager: IMouseZoneManager | undefined;
+  private _accessibilityManager: AccessibilityManager | undefined;
+  private _colorManager: ColorManager | undefined;
+  private _theme: ITheme | undefined;
 
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -119,8 +106,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -154,10 +139,22 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
+    this.linkifier = this._instantiationService.createInstance(Linkifier);
+    this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
+
+    // Setup InputHandler listeners
+    this.register(this._inputHandler.onRequestBell(() => this.bell()));
+    this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestReset(() => this.reset()));
+    this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
+    this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
+    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+
     // Setup listeners
     this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
-
-    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
   public dispose(): void {
@@ -166,41 +163,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
     super.dispose();
     this._renderService?.dispose();
-    this._customKeyEventHandler = null;
+    this._customKeyEventHandler = undefined;
     this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
   }
 
   protected _setup(): void {
-    if (this._inputHandler) {
-      this._inputHandler.reset();
-    } else {
-      // Register input handler and refire/handle events
-      this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
-      this.register(this._inputHandler.onRequestBell(() => this.bell()));
-      this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
-      this.register(this._inputHandler.onRequestReset(() => this.reset()));
-      this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
-      this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
-      this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-      this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
-      this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-      this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-      this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
-      this.register(this._inputHandler);
-    }
-
     super._setup();
 
-    this._customKeyEventHandler = null;
-
-    this._userScrolling = false;
-    if (!this.linkifier) {
-      this.linkifier = this._instantiationService.createInstance(Linkifier);
-    }
-    if (!this.linkifier2) {
-      this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
-    }
+    this._customKeyEventHandler = undefined;
   }
 
   /**
@@ -264,7 +235,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
           }
         } else {
           this._accessibilityManager?.dispose();
-          this._accessibilityManager = null;
+          this._accessibilityManager = undefined;
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
@@ -282,7 +253,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._coreService.triggerDataEvent(C0.ESC + '[I');
     }
     this.updateCursorStyle(ev);
-    this.element.classList.add('focus');
+    this.element!.classList.add('focus');
     this._showCursor();
     this._onFocus.fire();
   }
@@ -292,7 +263,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * textarea.
    */
   public blur(): void {
-    return this.textarea.blur();
+    return this.textarea?.blur();
   }
 
   /**
@@ -301,12 +272,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _onTextAreaBlur(): void {
     // Text can safely be removed on blur. Doing it earlier could interfere with
     // screen readers reading it out.
-    this.textarea.value = '';
+    this.textarea!.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this._coreService.decPrivateModes.sendFocus) {
       this._coreService.triggerDataEvent(C0.ESC + '[O');
     }
-    this.element.classList.remove('focus');
+    this.element!.classList.remove('focus');
     this._onBlur.fire();
   }
 
@@ -317,29 +288,29 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._bindKeys();
 
     // Bind clipboard functionality
-    this.register(addDisposableDomListener(this.element, 'copy', (event: ClipboardEvent) => {
+    this.register(addDisposableDomListener(this.element!, 'copy', (event: ClipboardEvent) => {
       // If mouse events are active it means the selection manager is disabled and
       // copy should be handled by the host program.
       if (!this.hasSelection()) {
         return;
       }
-      copyHandler(event, this._selectionService);
+      copyHandler(event, this._selectionService!);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea, this._coreService);
-    this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
-    this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this._coreService);
+    this.register(addDisposableDomListener(this.textarea!, 'paste', pasteHandlerWrapper));
+    this.register(addDisposableDomListener(this.element!, 'paste', pasteHandlerWrapper));
 
     // Handle right click context menus
     if (Browser.isFirefox) {
       // Firefox doesn't appear to fire the contextmenu event on right click
-      this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
+      this.register(addDisposableDomListener(this.element!, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.screenElement, this._selectionService, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
         }
       }));
     } else {
-      this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.screenElement, this._selectionService, this.options.rightClickSelectsWord);
+      this.register(addDisposableDomListener(this.element!, 'contextmenu', (event: MouseEvent) => {
+        rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -349,9 +320,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (Browser.isLinux) {
       // Use auxclick event over mousedown the latter doesn't seem to work. Note
       // that the regular click event doesn't fire for the middle mouse button.
-      this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
+      this.register(addDisposableDomListener(this.element!, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this.textarea, this.screenElement);
+          moveTextAreaUnderMouseCursor(event, this.textarea!, this.screenElement!);
         }
       }));
     }
@@ -361,13 +332,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * Apply key handling to the terminal
    */
   private _bindKeys(): void {
-    this.register(addDisposableDomListener(this.textarea, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
-    this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
-    this.register(addDisposableDomListener(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
-    this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
-    this.register(addDisposableDomListener(this.textarea, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper.compositionupdate(e)));
-    this.register(addDisposableDomListener(this.textarea, 'compositionend', () => this._compositionHelper.compositionend()));
-    this.register(this.onRender(() => this._compositionHelper.updateCompositionElements()));
+    this.register(addDisposableDomListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
+    this.register(addDisposableDomListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
+    this.register(addDisposableDomListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
+    this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
+    this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
+    this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
     this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
@@ -385,7 +356,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
-    this._document = parent.ownerDocument;
+    this._document = parent.ownerDocument!;
 
     // Create main element container
     this.element = this._document.createElement('div');
@@ -441,16 +412,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.element.appendChild(fragment);
 
     this._theme = this.options.theme || this._theme;
-    this.options.theme = undefined;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
-    this.optionsService.onOptionChange(e => this._colorManager.onOptionsChange(e));
+    this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
     this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
     this._instantiationService.setService(IRenderService, this._renderService);
     this._renderService.onRenderedBufferChange(e => this._onRender.fire(e));
-    this.onResize(e => this._renderService.resize(e.cols, e.rows));
+    this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._soundService = this._instantiationService.createInstance(SoundService);
     this._instantiationService.setService(ISoundService, this._soundService);
@@ -463,14 +433,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._viewportScrollArea
     );
     this.viewport.onThemeChange(this._colorManager.colors);
-    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport.syncScrollArea()));
+    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
-    this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
-    this.register(this.onResize(() => this._renderService.onResize(this.cols, this.rows)));
-    this.register(this.onBlur(() => this._renderService.onBlur()));
-    this.register(this.onFocus(() => this._renderService.onFocus()));
-    this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
+    this.register(this.onCursorMove(() => this._renderService!.onCursorMove()));
+    this.register(this.onResize(() => this._renderService!.onResize(this.cols, this.rows)));
+    this.register(this.onBlur(() => this._renderService!.onBlur()));
+    this.register(this.onFocus(() => this._renderService!.onFocus()));
+    this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
 
     this._selectionService = this._instantiationService.createInstance(SelectionService,
       (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
@@ -478,29 +448,29 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.screenElement);
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(this._selectionService.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this._selectionService.onRedrawRequest(e => this._renderService!.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.
-      this.textarea.value = text;
-      this.textarea.focus();
-      this.textarea.select();
+      this.textarea!.value = text;
+      this.textarea!.focus();
+      this.textarea!.select();
     }));
     this.register(this.onScroll(() => {
-      this.viewport.syncScrollArea();
-      this._selectionService.refresh();
+      this.viewport!.syncScrollArea();
+      this._selectionService!.refresh();
     }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService.refresh()));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
 
     this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
-    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
+    this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.element, this._mouseService, this._renderService);
 
     // This event listener must be registered aftre MouseZoneManager is created
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService.onMouseDown(e)));
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
     if (this._coreMouseService.areMouseEventsActive) {
@@ -532,8 +502,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager.colors, this.screenElement, this.linkifier, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager.colors, this.element, this.screenElement, this._viewportElement, this.linkifier, this.linkifier2);
+      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier, this.linkifier2);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -545,8 +515,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
     this._colorManager?.setTheme(theme);
-    this._renderService?.setColors(this._colorManager.colors);
-    this.viewport?.onThemeChange(this._colorManager.colors);
+    this._renderService?.setColors(this._colorManager!.colors);
+    this.viewport?.onThemeChange(this._colorManager!.colors);
   }
 
   /**
@@ -566,18 +536,18 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public bindMouse(): void {
     const self = this;
-    const el = this.element;
+    const el = this.element!;
 
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
       // get mouse coordinates
-      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      const pos = self._mouseService!.getRawByteCoords(ev, self.screenElement!, self.cols, self.rows);
       if (!pos) {
         return false;
       }
 
       let but: CoreMouseButton;
-      let action: CoreMouseAction;
+      let action: CoreMouseAction | undefined;
       switch ((<any>ev).overrideType || ev.type) {
         case 'mousemove':
           action = CoreMouseAction.MOVE;
@@ -646,14 +616,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
       mousedrag: null,
       mousemove: null
     };
-    const eventListeners: { [key: string]: (ev: Event) => void } = {
+    const eventListeners: { [key: string]: (ev: any) => void | boolean } = {
       mouseup: (ev: MouseEvent) => {
         sendEvent(ev);
         if (!ev.buttons) {
           // if no other button is held remove global handlers
-          this._document.removeEventListener('mouseup', requestedEvents.mouseup);
+          this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
           if (requestedEvents.mousedrag) {
-            this._document.removeEventListener('mousemove', requestedEvents.mousedrag);
+            this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
           }
         }
         return this.cancel(ev);
@@ -682,18 +652,18 @@ export class Terminal extends CoreTerminal implements ITerminal {
         if (this.optionsService.options.logLevel === 'debug') {
           this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
         }
-        this.element.classList.add('enable-mouse-events');
-        this._selectionService.disable();
+        this.element!.classList.add('enable-mouse-events');
+        this._selectionService!.disable();
       } else {
         this._logService.debug('Unbinding from mouse events.');
-        this.element.classList.remove('enable-mouse-events');
-        this._selectionService.enable();
+        this.element!.classList.remove('enable-mouse-events');
+        this._selectionService!.enable();
       }
 
       // add/remove handlers from requestedEvents
 
       if (!(events & CoreMouseEventType.MOVE)) {
-        el.removeEventListener('mousemove', requestedEvents.mousemove);
+        el.removeEventListener('mousemove', requestedEvents.mousemove!);
         requestedEvents.mousemove = null;
       } else if (!requestedEvents.mousemove) {
         el.addEventListener('mousemove', eventListeners.mousemove);
@@ -701,7 +671,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
 
       if (!(events & CoreMouseEventType.WHEEL)) {
-        el.removeEventListener('wheel', requestedEvents.wheel);
+        el.removeEventListener('wheel', requestedEvents.wheel!);
         requestedEvents.wheel = null;
       } else if (!requestedEvents.wheel) {
         el.addEventListener('wheel', eventListeners.wheel);
@@ -709,14 +679,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
 
       if (!(events & CoreMouseEventType.UP)) {
-        this._document.removeEventListener('mouseup', requestedEvents.mouseup);
+        this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
       } else if (!requestedEvents.mouseup) {
         requestedEvents.mouseup = eventListeners.mouseup;
       }
 
       if (!(events & CoreMouseEventType.DRAG)) {
-        this._document.removeEventListener('mousemove', requestedEvents.mousedrag);
+        this._document!.removeEventListener('mousemove', requestedEvents.mousedrag!);
         requestedEvents.mousedrag = null;
       } else if (!requestedEvents.mousedrag) {
         requestedEvents.mousedrag = eventListeners.mousedrag;
@@ -735,7 +705,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // Don't send the mouse button to the pty if mouse events are disabled or
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
-      if (!this._coreMouseService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
+      if (!this._coreMouseService.areMouseEventsActive || this._selectionService!.shouldForceSelection(ev)) {
         return;
       }
 
@@ -746,10 +716,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // Note: Other emulators also do this for 'mousedown' while a button
       // is held, we currently limit 'mousedown' to the terminal only.
       if (requestedEvents.mouseup) {
-        this._document.addEventListener('mouseup', requestedEvents.mouseup);
+        this._document!.addEventListener('mouseup', requestedEvents.mouseup);
       }
       if (requestedEvents.mousedrag) {
-        this._document.addEventListener('mousemove', requestedEvents.mousedrag);
+        this._document!.addEventListener('mousemove', requestedEvents.mousedrag);
       }
 
       return this.cancel(ev);
@@ -760,7 +730,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
         if (!this.buffer.hasScrollback) {
-          const amount = this.viewport.getLinesScrolled(ev);
+          const amount = this.viewport!.getLinesScrolled(ev);
 
           // Do nothing if there's no vertical scroll
           if (amount === 0) {
@@ -783,20 +753,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // the shell for example
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
       if (requestedEvents.wheel) return;
-      if (!this.viewport.onWheel(ev)) {
+      if (!this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
     }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
       if (this._coreMouseService.areMouseEventsActive) return;
-      this.viewport.onTouchStart(ev);
+      this.viewport!.onTouchStart(ev);
       return this.cancel(ev);
     }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
       if (this._coreMouseService.areMouseEventsActive) return;
-      if (!this.viewport.onTouchMove(ev)) {
+      if (!this.viewport!.onTouchMove(ev)) {
         return this.cancel(ev);
       }
     }));
@@ -827,9 +797,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
     if (this._selectionService && this._selectionService.shouldColumnSelect(ev)) {
-      this.element.classList.add('column-select');
+      this.element!.classList.add('column-select');
     } else {
-      this.element.classList.remove('column-select');
+      this.element!.classList.remove('column-select');
     }
   }
 
@@ -843,134 +813,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  /**
-   * Scroll the terminal down 1 row, creating a blank line.
-   * @param isWrapped Whether the new line is wrapped from the previous line.
-   */
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
-    let newLine: IBufferLine;
-    newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
-      newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
-      this._blankLine = newLine;
-    }
-    newLine.isWrapped = isWrapped;
-
-    const topRow = this.buffer.ybase + this.buffer.scrollTop;
-    const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
-
-    if (this.buffer.scrollTop === 0) {
-      // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.isFull;
-
-      // Insert the line using the fastest method
-      if (bottomRow === this.buffer.lines.length - 1) {
-        if (willBufferBeTrimmed) {
-          this.buffer.lines.recycle().copyFrom(newLine);
-        } else {
-          this.buffer.lines.push(newLine.clone());
-        }
-      } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, newLine.clone());
-      }
-
-      // Only adjust ybase and ydisp when the buffer is not trimmed
-      if (!willBufferBeTrimmed) {
-        this.buffer.ybase++;
-        // Only scroll the ydisp with ybase if the user has not scrolled up
-        if (!this._userScrolling) {
-          this.buffer.ydisp++;
-        }
-      } else {
-        // When the buffer is full and the user has scrolled up, keep the text
-        // stable unless ydisp is right at the top
-        if (this._userScrolling) {
-          this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
-        }
-      }
-    } else {
-      // scrollTop is non-zero which means no line will be going to the
-      // scrollback, instead we can just shift them in-place.
-      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
-      this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, newLine.clone());
-    }
-
-    // Move the viewport to the bottom of the buffer unless the user is
-    // scrolling.
-    if (!this._userScrolling) {
-      this.buffer.ydisp = this.buffer.ybase;
-    }
-
-    // Flag rows that need updating
-    this._dirtyRowService.markRangeDirty(this.buffer.scrollTop, this.buffer.scrollBottom);
-
-    this._onScroll.fire(this.buffer.ydisp);
-  }
-
-  /**
-   * Scroll the display of the terminal
-   * @param disp The number of lines to scroll down (negative scroll up).
-   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
-   * to avoid unwanted events being handled by the viewport when the event was triggered from the
-   * viewport originally.
-   */
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    if (disp < 0) {
-      if (this.buffer.ydisp === 0) {
-        return;
-      }
-      this._userScrolling = true;
-    } else if (disp + this.buffer.ydisp >= this.buffer.ybase) {
-      this._userScrolling = false;
-    }
-
-    const oldYdisp = this.buffer.ydisp;
-    this.buffer.ydisp = Math.max(Math.min(this.buffer.ydisp + disp, this.buffer.ybase), 0);
-
-    // No change occurred, don't trigger scroll/refresh
-    if (oldYdisp === this.buffer.ydisp) {
-      return;
-    }
-
-    if (!suppressScrollEvent) {
-      this._onScroll.fire(this.buffer.ydisp);
-    }
-
+    super.scrollLines(disp, suppressScrollEvent);
     this.refresh(0, this.rows - 1);
   }
 
-  /**
-   * Scroll the display of the terminal by a number of pages.
-   * @param pageCount The number of pages to scroll (negative scrolls up).
-   */
-  public scrollPages(pageCount: number): void {
-    this.scrollLines(pageCount * (this.rows - 1));
-  }
-
-  /**
-   * Scrolls the display of the terminal to the top.
-   */
-  public scrollToTop(): void {
-    this.scrollLines(-this.buffer.ydisp);
-  }
-
-  /**
-   * Scrolls the display of the terminal to the bottom.
-   */
-  public scrollToBottom(): void {
-    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
-  }
-
-  public scrollToLine(line: number): void {
-    const scrollAmount = line - this.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this.scrollLines(scrollAmount);
-    }
-  }
-
   public paste(data: string): void {
-    paste(data, this.textarea, this._coreService);
+    paste(data, this.textarea!, this._coreService);
   }
 
   /**
@@ -984,25 +833,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
-  }
-
-  /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
-    return this._inputHandler.addEscHandler(id, callback);
-  }
-
-  /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._inputHandler.addDcsHandler(id, callback);
-  }
-
-  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(id, callback);
-  }
-  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._inputHandler.addOscHandler(ident, callback);
   }
 
   /**
@@ -1036,13 +866,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    const joinerId = this._renderService.registerCharacterJoiner(handler);
+    const joinerId = this._renderService!.registerCharacterJoiner(handler);
     this.refresh(0, this.rows - 1);
     return joinerId;
   }
 
   public deregisterCharacterJoiner(joinerId: number): void {
-    if (this._renderService.deregisterCharacterJoiner(joinerId)) {
+    if (this._renderService!.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }
@@ -1051,7 +881,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker {
+  public addMarker(cursorYOffset: number): IMarker | undefined {
     // Disallow markers on the alt buffer
     if (this.buffer !== this.buffers.normal) {
       return;
@@ -1074,7 +904,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param length The length of the selection.
    */
   public select(column: number, row: number, length: number): void {
-    this._selectionService.setSelection(column, row, length);
+    this._selectionService!.setSelection(column, row, length);
   }
 
   /**
@@ -1086,15 +916,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public getSelectionPosition(): ISelectionPosition | undefined {
-    if (!this._selectionService.hasSelection) {
+    if (!this._selectionService || !this._selectionService.hasSelection) {
       return undefined;
     }
 
     return {
-      startColumn: this._selectionService.selectionStart[0],
-      startRow: this._selectionService.selectionStart[1],
-      endColumn: this._selectionService.selectionEnd[0],
-      endRow: this._selectionService.selectionEnd[1]
+      startColumn: this._selectionService.selectionStart![0],
+      startRow: this._selectionService.selectionStart![1],
+      endColumn: this._selectionService.selectionEnd![0],
+      endRow: this._selectionService.selectionEnd![1]
     };
   }
 
@@ -1122,14 +952,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param ev The keydown event to be handled.
    */
-  protected _keyDown(event: KeyboardEvent): boolean {
+  protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
 
-    if (!this._compositionHelper.keydown(event)) {
+    if (!this._compositionHelper!.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
       }
@@ -1167,7 +997,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // will announce deleted characters. This will not work 100% of the time but it should cover
     // most scenarios.
     if (result.key === C0.ETX || result.key === C0.CR) {
-      this.textarea.value = '';
+      this.textarea!.value = '';
     }
 
     this._onKey.fire({ key: result.key, domEvent: event });
@@ -1260,16 +1090,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public bell(): void {
     if (this._soundBell()) {
-      this._soundService.playBellSound();
+      this._soundService!.playBellSound();
     }
 
-    if (this._visualBell()) {
-      this.element.classList.add('visual-bell-active');
-      clearTimeout(this._visualBellTimer);
-      this._visualBellTimer = window.setTimeout(() => {
-        this.element.classList.remove('visual-bell-active');
-      }, 200);
-    }
+    // if (this._visualBell()) {
+    //   this.element.classList.add('visual-bell-active');
+    //   clearTimeout(this._visualBellTimer);
+    //   this._visualBellTimer = window.setTimeout(() => {
+    //     this.element.classList.remove('visual-bell-active');
+    //   }, 200);
+    // }
   }
 
   /**
@@ -1306,7 +1136,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // Don't clear if it's already clear
       return;
     }
-    this.buffer.lines.set(0, this.buffer.lines.get(this.buffer.ybase + this.buffer.y));
+    this.buffer.lines.set(0, this.buffer.lines.get(this.buffer.ybase + this.buffer.y)!);
     this.buffer.lines.length = 1;
     this.buffer.ydisp = 0;
     this.buffer.ybase = 0;
@@ -1334,18 +1164,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
-    const userScrolling = this._userScrolling;
 
     this._setup();
-    this._bufferService.reset();
-    this._charsetService.reset();
-    this._coreService.reset();
-    this._coreMouseService.reset();
+    super.reset();
     this._selectionService?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
-    this._userScrolling = userScrolling;
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
@@ -1372,7 +1197,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   // TODO: Remove cancel function and cancelEvents option
-  public cancel(ev: Event, force?: boolean): boolean {
+  public cancel(ev: Event, force?: boolean): boolean | undefined {
     if (!this.options.cancelEvents && !force) {
       return;
     }
@@ -1391,14 +1216,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
-  }
-
-  public write(data: string | Uint8Array, callback?: () => void): void {
-    this._writeBuffer.write(data, callback);
-  }
-
-  public writeSync(data: string | Uint8Array): void {
-    this._writeBuffer.writeSync(data);
   }
 }
 

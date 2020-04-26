@@ -7,6 +7,12 @@ import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
+import { IOptionsService, IUnicodeService } from 'common/services/Services';
+
+export interface ICoreTerminal {
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
+}
 
 export interface IDisposable {
   dispose(): void;
@@ -51,7 +57,7 @@ export interface ICircularList<T> {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  recycle(): T | undefined;
+  recycle(): T;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;

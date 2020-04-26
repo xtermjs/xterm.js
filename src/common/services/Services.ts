@@ -16,6 +16,7 @@ export interface IBufferService {
   readonly rows: number;
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
+  isUserScrolling: boolean;
 
   onResize: IEvent<{ cols: number, rows: number }>;
 
