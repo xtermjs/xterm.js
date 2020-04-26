@@ -1,5 +1,4 @@
 {
     "typescript.preferences.importModuleSpecifier": "non-relative",
-    "typescript.preferences.quoteStyle": "single",
-    "eslint.enable": true
+    "typescript.preferences.quoteStyle": "single"
 }
