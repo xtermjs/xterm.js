@@ -4,7 +4,7 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, IParser, IFunctionIdentifier, ILinkProvider, IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
-import { ITerminal } from '../Types';
+import { ITerminal } from 'browser/Types';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';

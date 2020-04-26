@@ -8,14 +8,15 @@ import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 
 export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   element: HTMLElement | undefined;
-  screenElement: HTMLElement;
+  screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
   buffers: IBufferSet;
-  viewport: IViewport;
+  viewport: IViewport | undefined;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
   linkifier: ILinkifier;
@@ -51,16 +52,16 @@ export interface IPublicTerminal extends IDisposable {
   resize(columns: number, rows: number): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-  // addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
-  // addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
-  // addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
-  // addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
+  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
-  addMarker(cursorYOffset: number): IMarker;
+  addMarker(cursorYOffset: number): IMarker | undefined;
   hasSelection(): boolean;
   getSelection(): string;
   getSelectionPosition(): ISelectionPosition | undefined;

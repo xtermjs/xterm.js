@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { IOptionsService, IBufferService, ICoreService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 interface ISelectionState {

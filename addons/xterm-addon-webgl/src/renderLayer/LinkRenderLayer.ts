@@ -7,9 +7,8 @@ import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
-import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
+import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { ITerminal } from '../../../../src/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;

@@ -805,7 +805,7 @@ declare module 'xterm' {
     /**
      * @deprecated use `registerMarker` instead.
      */
-    addMarker(cursorYOffset: number): IMarker;
+    addMarker(cursorYOffset: number): IMarker | undefined;
 
     /**
      * Gets whether the terminal has an active selection.

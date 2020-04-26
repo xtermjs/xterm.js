@@ -106,7 +106,7 @@ export class AccessibilityManager extends Disposable {
 
   public dispose(): void {
     super.dispose();
-    this._terminal.element.removeChild(this._accessibilityTreeRoot);
+    this._terminal.element?.removeChild(this._accessibilityTreeRoot);
     this._rowElements.length = 0;
   }
 
