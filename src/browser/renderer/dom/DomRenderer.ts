@@ -273,7 +273,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);

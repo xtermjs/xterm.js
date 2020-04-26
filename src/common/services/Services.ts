@@ -311,6 +311,7 @@ export interface ITheme {
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
+  serviceBrand: any;
   /** Register an Unicode version provider. */
   register(provider: IUnicodeVersionProvider): void;
   /** Registered Unicode versions. */

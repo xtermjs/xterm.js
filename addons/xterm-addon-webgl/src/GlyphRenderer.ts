@@ -213,14 +213,14 @@ export class GlyphRenderer {
     // a_cellpos only changes on resize
   }
 
-  public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
+  public updateSelection(model: IRenderModel): void {
     const terminal = this._terminal;
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
     const bg = (this._colors.selectionOpaque.rgba >>> 8) | Attributes.CM_RGB;
 
-    if (columnSelectMode) {
+    if (model.selection.columnSelectMode) {
       const startCol = model.selection.startCol;
       const width = model.selection.endCol - startCol;
       const height = model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow + 1;
