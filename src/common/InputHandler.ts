@@ -503,7 +503,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
-    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase)!;
+    let bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
 
     this._dirtyRowService.markDirty(buffer.y);
 
@@ -567,10 +567,10 @@ export class InputHandler extends Disposable implements IInputHandler {
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            buffer.lines.get(buffer.y)!.isWrapped = true;
+            buffer.lines.get(buffer.ybase + buffer.y)!.isWrapped = true;
           }
           // row changed, get it again
-          bufferRow = buffer.lines.get(buffer.y + buffer.ybase)!;
+          bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
         } else {
           buffer.x = cols - 1;
           if (chWidth === 2) {
@@ -1190,7 +1190,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
 
-    const row: number = buffer.y + buffer.ybase;
+    const row: number = buffer.ybase + buffer.y;
 
     const scrollBottomRowsOffset = this._bufferService.rows - 1 - buffer.scrollBottom;
     const scrollBottomAbsolute = this._bufferService.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
@@ -1225,7 +1225,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
 
-    const row: number = buffer.y + buffer.ybase;
+    const row: number = buffer.ybase + buffer.y;
 
     let j: number;
     j = this._bufferService.rows - 1 - buffer.scrollBottom;
@@ -1254,7 +1254,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public insertChars(params: IParams): void {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.y + this._bufferService.buffer.ybase);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
       line.insertCells(
         this._bufferService.buffer.x,
@@ -1279,7 +1279,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public deleteChars(params: IParams): void {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.y + this._bufferService.buffer.ybase);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
       line.deleteCells(
         this._bufferService.buffer.x,
@@ -1451,7 +1451,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public eraseChars(params: IParams): void {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.y + this._bufferService.buffer.ybase);
+    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
       line.replaceCells(
         this._bufferService.buffer.x,
@@ -2720,8 +2720,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
-      buffer.lines.shiftElements(buffer.y + buffer.ybase, scrollRegionHeight, 1);
-      buffer.lines.set(buffer.y + buffer.ybase, buffer.getBlankLine(this._eraseAttrData()));
+      buffer.lines.shiftElements(buffer.ybase + buffer.y, scrollRegionHeight, 1);
+      buffer.lines.set(buffer.ybase + buffer.y, buffer.getBlankLine(this._eraseAttrData()));
       this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
     } else {
       buffer.y--;
@@ -2786,7 +2786,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._setCursor(0, 0);
     for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
-      const row = buffer.y + buffer.ybase + yOffset;
+      const row = buffer.ybase + buffer.y + yOffset;
       const line = buffer.lines.get(row);
       if (line) {
         line.fill(cell);
