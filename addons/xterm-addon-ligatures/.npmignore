@@ -6,6 +6,12 @@
 !*.js
 !*.json
 
+# Whitelist - lib/
+!lib/**/*.d.ts
+
+!lib/**/*.js
+!lib/**/*.js.map
+
 # Whitelist - out/
 !out/**/*.d.ts
 
@@ -34,3 +40,9 @@ docs/
 coverage/
 .nyc_output/
 fonts/
+
+**/*.api.js
+**/*.api.ts
+tsconfig.json
+.yarnrc
+webpack.config.js

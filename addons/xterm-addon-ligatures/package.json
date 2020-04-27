@@ -13,16 +13,18 @@
   "engines": {
     "node": ">8.0.0"
   },
-  "main": "out/LigaturesAddon.js",
+  "main": "lib/xterm-addon-ligatures.js",
   "types": "typings/xterm-addon-ligatures.d.ts",
   "scripts": {
     "prepare": "node bin/download-fonts.js",
-    "build": "tsc -p src",
-    "watch": "tsc -w -p src",
+    "build": "../../node_modules/.bin/tsc -p src",
+    "watch": "../../node_modules/.bin/tsc -w -p src",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "prepublish": "npm run build"
+    "prepublish": "npm run package"
   },
   "keywords": [
     "font",
