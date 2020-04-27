@@ -17,10 +17,10 @@
   "types": "typings/xterm-addon-ligatures.d.ts",
   "scripts": {
     "prepare": "node bin/download-fonts.js",
-    "build": "../../node_modules/.bin/tsc -p src",
-    "watch": "../../node_modules/.bin/tsc -w -p src",
+    "build": "tsc -p src",
+    "watch": "tsc -w -p src",
     "prepackage": "npm run build",
-    "package": "../../node_modules/.bin/webpack",
+    "package": "webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
