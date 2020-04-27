@@ -8,7 +8,7 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 // Use tsc version (yarn watch)
-import { Terminal } from '../out/public/Terminal';
+import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';

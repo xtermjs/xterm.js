@@ -9,13 +9,15 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
+  public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
+  public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
     public rows: number,
@@ -31,6 +33,7 @@ export class MockBufferService implements IBufferService {
 }
 
 export class MockCoreMouseService implements ICoreMouseService {
+  public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';
   public activeProtocol: string = '';
   public addEncoding(name: string): void {}
@@ -47,7 +50,6 @@ export class MockCharsetService implements ICharsetService {
   public serviceBrand: any;
   public charset: ICharset | undefined;
   public glevel: number = 0;
-  public charsets: ReadonlyArray<ICharset> = [];
   public reset(): void {}
   public setgLevel(g: number): void {}
   public setgCharset(g: number, charset: ICharset): void {}
@@ -58,11 +60,16 @@ export class MockCoreService implements ICoreService {
   public isCursorInitialized: boolean = false;
   public isCursorHidden: boolean = false;
   public isFocused: boolean = false;
+  public modes: IModes = {
+    insertMode: false
+  };
   public decPrivateModes: IDecPrivateModes = {
     applicationCursorKeys: false,
     applicationKeypad: false,
+    bracketedPasteMode: false,
     origin: false,
     reverseWraparound: false,
+    sendFocus: false,
     wraparound: true
   };
   public onData: IEvent<string> = new EventEmitter<string>().event;

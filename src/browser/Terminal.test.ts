@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from './TestUtils.test';
+import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 'browser/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IUnicodeService } from 'common/services/Services';
@@ -121,7 +121,7 @@ describe('Terminal', () => {
         assert.equal(e, 'title');
         done();
       });
-      term.handleTitle('title');
+      term.write('\x1b]2;title\x07');
     });
   });
 
@@ -140,7 +140,6 @@ describe('Terminal', () => {
     };
 
     beforeEach(() => {
-      term.showCursor = () => { };
       term.clearSelection = () => { };
     });
 
@@ -396,62 +395,62 @@ describe('Terminal', () => {
     describe('scroll() function', () => {
       describe('when scrollback > 0', () => {
         it('should create a new line and scroll', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(INIT_ROWS - 1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getChars(), 'b');
-          assert.equal(term.buffer.lines.get(INIT_ROWS).loadCell(0, new CellData()).getChars(), '');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)!.loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(INIT_ROWS)!.loadCell(0, new CellData()).getChars(), '');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3).setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4).setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
+          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a', '\'a\' should be pushed to the scrollback');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'b');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'c');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), 'd');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(5).loadCell(0, new CellData()).getChars(), 'e');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a', '\'a\' should be pushed to the scrollback');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(2)!.loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(3)!.loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(4)!.loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(5)!.loadCell(0, new CellData()).getChars(), 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3).setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4).setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
+          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2)!.loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3)!.loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)!.loadCell(0, new CellData()).getChars(), 'e');
         });
       });
 
@@ -462,65 +461,65 @@ describe('Terminal', () => {
         });
 
         it('should create a new line and shift everything up', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(INIT_ROWS - 1).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           // 'a' gets pushed out of buffer
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'b');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), '');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 2).loadCell(0, new CellData()).getChars(), 'c');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getChars(), '');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), '');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 2)!.loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)!.loadCell(0, new CellData()).getChars(), '');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3).setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4).setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
+          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'b');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(2)!.loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3)!.loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)!.loadCell(0, new CellData()).getChars(), 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0).setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1).setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2).setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3).setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4).setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
+          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
+          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
+          assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2)!.loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3)!.loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)!.loadCell(0, new CellData()).getChars(), 'e');
         });
       });
     });
@@ -531,7 +530,6 @@ describe('Terminal', () => {
     let evKeyPress: any;
 
     beforeEach(() => {
-      term.showCursor = () => { };
       term.clearSelection = () => { };
       // term.compositionHelper = {
       //   isComposing: false,
@@ -724,11 +722,11 @@ describe('Terminal', () => {
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.writeSync(high + String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0).loadCell(0, cell);
+        const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
         expect(tchar.getWidth()).eql(1);
-        expect(term.buffer.lines.get(0).loadCell(1, cell).getChars()).eql('');
+        expect(term.buffer.lines.get(0)!.loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -738,9 +736,9 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.writeSync(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql('');
+        expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
+        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -751,10 +749,10 @@ describe('Terminal', () => {
         term.buffer.x = term.cols - 1;
 
         term.writeSync('a' + high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
-        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1).loadCell(1, cell).getChars()).eql('');
+        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql('a');
+        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length).eql(2);
+        expect(term.buffer.lines.get(1)!.loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -770,9 +768,9 @@ describe('Terminal', () => {
         }
         term.writeSync('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1).loadCell(1, cell).getChars()).eql('');
+        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length).eql(2);
+        expect(term.buffer.lines.get(1)!.loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -782,11 +780,11 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.writeSync(high);
         term.writeSync(String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0).loadCell(0, cell);
+        const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
         expect(tchar.getWidth()).eql(1);
-        expect(term.buffer.lines.get(0).loadCell(1, cell).getChars()).eql('');
+        expect(term.buffer.lines.get(0)!.loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -796,7 +794,7 @@ describe('Terminal', () => {
     const cell = new CellData();
     it('café', () => {
       term.writeSync('cafe\u0301');
-      term.buffer.lines.get(0).loadCell(3, cell);
+      term.buffer.lines.get(0)!.loadCell(3, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(1);
@@ -804,11 +802,11 @@ describe('Terminal', () => {
     it('café - end of line', () => {
       term.buffer.x = term.cols - 1 - 3;
       term.writeSync('cafe\u0301');
-      term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
+      term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(1);
-      term.buffer.lines.get(0).loadCell(1, cell);
+      term.buffer.lines.get(0)!.loadCell(1, cell);
       expect(cell.getChars()).eql('');
       expect(cell.getChars().length).eql(0);
       expect(cell.getWidth()).eql(1);
@@ -816,12 +814,12 @@ describe('Terminal', () => {
     it('multiple combined é', () => {
       term.writeSync(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         expect(cell.getChars()).eql('e\u0301');
         expect(cell.getChars().length).eql(2);
         expect(cell.getWidth()).eql(1);
       }
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(1);
@@ -829,12 +827,12 @@ describe('Terminal', () => {
     it('multiple surrogate with combined', () => {
       term.writeSync(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         expect(cell.getChars()).eql('\uD800\uDC00\u0301');
         expect(cell.getChars().length).eql(3);
         expect(cell.getWidth()).eql(1);
       }
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('\uD800\uDC00\u0301');
       expect(cell.getChars().length).eql(3);
       expect(cell.getWidth()).eql(1);
@@ -857,7 +855,7 @@ describe('Terminal', () => {
     it('line of ￥ even', () => {
       term.writeSync(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -868,7 +866,7 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('￥');
       expect(cell.getChars().length).eql(1);
       expect(cell.getWidth()).eql(2);
@@ -877,7 +875,7 @@ describe('Terminal', () => {
       term.buffer.x = 1;
       term.writeSync(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -888,11 +886,11 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
+      term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('');
       expect(cell.getChars().length).eql(0);
       expect(cell.getWidth()).eql(1);
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('￥');
       expect(cell.getChars().length).eql(1);
       expect(cell.getWidth()).eql(2);
@@ -901,7 +899,7 @@ describe('Terminal', () => {
       term.buffer.x = 1;
       term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -912,11 +910,11 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
+      term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('');
       expect(cell.getChars().length).eql(0);
       expect(cell.getWidth()).eql(1);
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('￥\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(2);
@@ -924,7 +922,7 @@ describe('Terminal', () => {
     it('line of ￥ with combining even', () => {
       term.writeSync(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -935,7 +933,7 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('￥\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(2);
@@ -944,7 +942,7 @@ describe('Terminal', () => {
       term.buffer.x = 1;
       term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -955,11 +953,11 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
+      term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('');
       expect(cell.getChars().length).eql(0);
       expect(cell.getWidth()).eql(1);
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('\ud843\ude6d\u0301');
       expect(cell.getChars().length).eql(3);
       expect(cell.getWidth()).eql(2);
@@ -967,7 +965,7 @@ describe('Terminal', () => {
     it('line of surrogate fullwidth with combining even', () => {
       term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        term.buffer.lines.get(0).loadCell(i, cell);
+        term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
           expect(cell.getChars()).eql('');
           expect(cell.getChars().length).eql(0);
@@ -978,7 +976,7 @@ describe('Terminal', () => {
           expect(cell.getWidth()).eql(2);
         }
       }
-      term.buffer.lines.get(1).loadCell(0, cell);
+      term.buffer.lines.get(1)!.loadCell(0, cell);
       expect(cell.getChars()).eql('\ud843\ude6d\u0301');
       expect(cell.getChars().length).eql(3);
       expect(cell.getWidth()).eql(2);
@@ -991,42 +989,42 @@ describe('Terminal', () => {
       term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('abcde');
-      expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
-      expect(term.buffer.lines.get(0).loadCell(14, cell).getChars()).eql('e');
-      expect(term.buffer.lines.get(0).loadCell(15, cell).getChars()).eql('0');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('4');
+      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
+      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
+      expect(term.buffer.lines.get(0)!.loadCell(14, cell).getChars()).eql('e');
+      expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('0');
+      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('4');
     });
     it('fullwidth - insert', () => {
       term.writeSync(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('￥￥￥');
-      expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('');
-      expect(term.buffer.lines.get(0).loadCell(14, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(15, cell).getChars()).eql('');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('3');
+      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
+      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('');
+      expect(term.buffer.lines.get(0)!.loadCell(14, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('');
+      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('3');
     });
     it('fullwidth - right border', () => {
       term.writeSync(Array(41).join('￥'));
       term.buffer.x = 10;
       term.buffer.y = 0;
-      term.insertMode = true;
+      term.write('\x1b[4h');
       term.writeSync('a');
-      expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
-      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
+      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
+      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
+      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
       term.writeSync('b');
-      expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('b');
-      expect(term.buffer.lines.get(0).loadCell(12, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // empty cell after fullwidth
+      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
+      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('b');
+      expect(term.buffer.lines.get(0)!.loadCell(12, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('');  // empty cell after fullwidth
     });
   });
 
@@ -1271,9 +1269,9 @@ describe('Terminal', () => {
       terminal.writeSync(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
-      const stringIndex = s.match(/😃/).index;
+      const stringIndex = s.match(/😃/)!.index!;
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
-      assert(terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
+      assert(terminal.buffer.lines.get(bufferIndex[0])!.loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
     });
 
     it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
@@ -1300,7 +1298,7 @@ describe('Terminal', () => {
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
-        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
+        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0])!.loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 
@@ -1318,7 +1316,7 @@ describe('Terminal', () => {
             : (i % 3 === 1)
               ? input.substr(i, 2)
               : input.substr(i - 1, 2),
-          terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
+          terminal.buffer.lines.get(bufferIndex[0])!.loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 
@@ -1372,15 +1370,15 @@ describe('Terminal', () => {
 
       const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
       normalTerminal.writeSync(data.join(''));
-      assert.equal(normalTerminal.buffer.lines.get(0).isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(1).isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(2).isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
       const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
       windowsModeTerminal.writeSync(data.join(''));
-      assert.equal(windowsModeTerminal.buffer.lines.get(0).isWrapped, false);
-      assert.equal(windowsModeTerminal.buffer.lines.get(1).isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
-      assert.equal(windowsModeTerminal.buffer.lines.get(2).isWrapped, false);
+      assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
+      assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
+      assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
     });
 
     it('should mark lines as wrapped when the line ends in a non-null character after a CUP', () => {
@@ -1392,15 +1390,99 @@ describe('Terminal', () => {
 
       const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
       normalTerminal.writeSync(data.join(''));
-      assert.equal(normalTerminal.buffer.lines.get(0).isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(1).isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(2).isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
+      assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
       const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
       windowsModeTerminal.writeSync(data.join(''));
-      assert.equal(windowsModeTerminal.buffer.lines.get(0).isWrapped, false);
-      assert.equal(windowsModeTerminal.buffer.lines.get(1).isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
-      assert.equal(windowsModeTerminal.buffer.lines.get(2).isWrapped, false);
+      assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
+      assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
+      assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
+    });
+  });
+  it('convertEol setting', function(): void {
+    // not converting
+    const termNotConverting = new TestTerminal({cols: 15, rows: 10});
+    termNotConverting.writeSync('Hello\nWorld');
+    expect(termNotConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
+    expect(termNotConverting.buffer.lines.get(1)!.translateToString(false)).equals('     World     ');
+    expect(termNotConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
+    expect(termNotConverting.buffer.lines.get(1)!.translateToString(true)).equals('     World');
+
+    // converting
+    const termConverting = new TestTerminal({cols: 15, rows: 10, convertEol: true});
+    termConverting.writeSync('Hello\nWorld');
+    expect(termConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
+    expect(termConverting.buffer.lines.get(1)!.translateToString(false)).equals('World          ');
+    expect(termConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
+    expect(termConverting.buffer.lines.get(1)!.translateToString(true)).equals('World');
+  });
+  describe('Terminal InputHandler integration', () => {
+    function getLines(term: TestTerminal, limit: number = term.rows): string[] {
+      const res: string[] = [];
+      for (let i = 0; i < limit; ++i) {
+        res.push(term.buffer.lines.get(i)!.translateToString(true));
+      }
+      return res;
+    }
+
+    // This suite cannot live in InputHandler unless Terminal.scroll moved into IBufferService
+    describe('SL/SR/DECIC/DECDC', () => {
+      let term: TestTerminal;
+      beforeEach(() => {
+        term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
+      });
+      it('SL (scrollLeft)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[ @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '2345', '2345', '2345', '2345', '2345']);
+        term.writeSync('\x1b[0 @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '345', '345', '345', '345', '345']);
+        term.writeSync('\x1b[2 @');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '5', '5', '5', '5', '5']);
+      });
+      it('SR (scrollRight)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[ A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
+        term.writeSync('\x1b[0 A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '  123', '  123', '  123', '  123', '  123']);
+        term.writeSync('\x1b[2 A');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '    1', '    1', '    1', '    1', '    1']);
+      });
+      it('insertColumns (DECIC)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[1\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[2\'}');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
+      });
+      it('deleteColumns (DECDC)', () => {
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[1\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
+        term.reset();
+        term.writeSync('12345'.repeat(6));
+        term.writeSync('\x1b[3;3H');
+        term.writeSync('\x1b[2\'~');
+        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
+      });
     });
   });
 });

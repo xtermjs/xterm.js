@@ -14,7 +14,10 @@
       "common/*": [ "./common/*" ]
     }
   },
-  "include": [ "./**/*" ],
+  "include": [
+    "./**/*",
+    "../../typings/xterm.d.ts"
+  ],
   "references": [
     { "path": "../common" }
   ]
