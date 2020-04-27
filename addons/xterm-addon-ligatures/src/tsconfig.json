@@ -3,13 +3,14 @@
         "target": "es2017",
         "module": "commonjs",
         "sourceMap": true,
-        "outDir": "lib",
-        "rootDir": "src",
+        "outDir": "../out",
+        "rootDir": ".",
         "strict": true,
         "noUnusedLocals": true,
         "preserveWatchOutput": true
     },
     "include": [
-        "src"
+        "./**/*",
+        "../../../typings/xterm.d.ts"
     ]
 }

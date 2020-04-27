@@ -6,11 +6,11 @@
 !*.js
 !*.json
 
-# Whitelist - lib/
-!lib/**/*.d.ts
+# Whitelist - out/
+!out/**/*.d.ts
 
-!lib/**/*.js
-!lib/**/*.js.map
+!out/**/*.js
+!out/**/*.js.map
 
 # Whitelist - src/
 !src/**/*.ts

@@ -13,16 +13,14 @@
   "engines": {
     "node": ">8.0.0"
   },
-  "main": "lib/LigaturesAddon.js",
+  "main": "out/LigaturesAddon.js",
   "types": "typings/xterm-addon-ligatures.d.ts",
   "scripts": {
     "prepare": "node bin/download-fonts.js",
-    "lint": "tslint --project tsconfig.json --fix",
-    "prebuild": "npm run lint",
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "tsc -p src",
+    "watch": "tsc -w -p src",
     "pretest": "npm run build",
-    "test": "nyc mocha lib/**/*.test.js",
+    "test": "nyc mocha out/**/*.test.js",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "prepublish": "npm run build"
   },
@@ -67,13 +65,13 @@
       "json"
     ],
     "include": [
-      "lib/**/*.js"
+      "out/**/*.js"
     ],
     "exclude": [
-      "lib/**/*.test.*",
-      "lib/**/*.integration.*",
-      "lib/**/*.d.ts",
-      "lib/**/*.map*"
+      "out/**/*.test.*",
+      "out/**/*.integration.*",
+      "out/**/*.d.ts",
+      "out/**/*.map*"
     ]
   }
 }
