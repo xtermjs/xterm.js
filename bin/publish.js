@@ -28,6 +28,7 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-attach'),
   path.resolve(__dirname, '../addons/xterm-addon-fit'),
+  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
   path.resolve(__dirname, '../addons/xterm-addon-search'),
   path.resolve(__dirname, '../addons/xterm-addon-serialize'),
   path.resolve(__dirname, '../addons/xterm-addon-unicode11'),

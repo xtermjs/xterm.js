@@ -18,12 +18,14 @@
       "addons/xterm-addon-web-links/src/tsconfig.json",
       "addons/xterm-addon-webgl/src/tsconfig.json",
       "addons/xterm-addon-serialize/src/tsconfig.json",
-      "addons/xterm-addon-serialize/benchmark/tsconfig.json"
+      "addons/xterm-addon-serialize/benchmark/tsconfig.json",
+      "addons/xterm-addon-ligatures/src/tsconfig.json"
     ],
     "sourceType": "module"
   },
   "ignorePatterns": [
-    "**/typings/*.d.ts"
+    "**/typings/*.d.ts",
+    "**/node_modules"
   ],
   "plugins": [
     "@typescript-eslint"
