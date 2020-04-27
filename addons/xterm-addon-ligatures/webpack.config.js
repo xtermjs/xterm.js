@@ -28,5 +28,9 @@ module.exports = {
     library: addonName,
     libraryTarget: 'umd'
   },
-  mode: 'production'
+  mode: 'production',
+  externals: {
+    'font-finder':'font-finder',
+    'font-ligatures':'font-ligatures'
+  }
 };
