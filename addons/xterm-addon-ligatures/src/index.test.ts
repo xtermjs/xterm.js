@@ -16,18 +16,21 @@ describe('xterm-addon-ligatures', () => {
 
   before(() => {
     sinon.stub(fontFinder, 'list').returns(Promise.resolve({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Fira Code': [{
         path: path.join(__dirname, '../fonts/firaCode.otf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Iosevka': [{
         path: path.join(__dirname, '../fonts/iosevka.ttf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Nonexistant Font': [{
         path: path.join(__dirname, '../fonts/nonexistant.ttf'),
         style: fontFinder.Style.Regular,
@@ -185,32 +188,32 @@ describe('xterm-addon-ligatures', () => {
 });
 
 class MockTerminal {
-  static applyAddon(addon: any): void {
+  public static applyAddon(addon: any): void {
     addon.apply(MockTerminal);
   }
 
-  private _options: { [name: string]: string | number; } = {
+  private _options: { [name: string]: string | number } = {
     fontFamily: 'Fira Code, monospace',
     rows: 50
   };
-  joiner?: (text: string) => [number, number][];
-  refresh: (start: number, end: number) => void;
+  public joiner?: (text: string) => [number, number][];
+  public refresh: (start: number, end: number) => void;
 
   constructor(onRefresh: (start: number, end: number) => void) {
     this.refresh = onRefresh;
   }
 
-  registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     this.joiner = handler;
     return 1;
   }
-  deregisterCharacterJoiner(id: number): void {
+  public deregisterCharacterJoiner(id: number): void {
     this.joiner = undefined;
   }
-  setOption(name: string, value: string | number): void {
+  public setOption(name: string, value: string | number): void {
     this._options[name] = value;
   }
-  getOption(name: string): string | number {
+  public getOption(name: string): string | number {
     return this._options[name];
   }
 }

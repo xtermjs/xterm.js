@@ -150,7 +150,8 @@ function parseUnicode(context: IParseContext): string {
       // The first whitespace character after a unicode escape indicates the end
       // of the escape and is swallowed.
       return unicodeToString(str);
-    } else if (str.length >= 6 || !/[0-9a-fA-F]/.test(char)) {
+    }
+    if (str.length >= 6 || !/[0-9a-fA-F]/.test(char)) {
       // If the next character is not a valid hex digit or we have reached the
       // maximum of 6 digits in the escape, terminate the escape.
       context.offset--;

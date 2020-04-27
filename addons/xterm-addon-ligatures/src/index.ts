@@ -70,7 +70,8 @@ export function enableLigatures(term: Terminal): void {
       return font.findLigatureRanges(text).map<[number, number]>(
         range => [range[0], range[1]]
       );
-    } else if (loadingState === LoadingState.FAILED) {
+    }
+    if (loadingState === LoadingState.FAILED) {
       throw loadError || new Error('Failure while loading font');
     }
 
