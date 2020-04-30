@@ -148,6 +148,13 @@ export class RectangleRenderer {
     this._updateViewportRectangle();
   }
 
+  public clearSelection(model: ISelectionRenderModel): void{
+    if (model.hasSelection){
+      this._clearSelection();
+    }
+    return;
+  }
+
   public setColors(): void {
     this._updateCachedColors();
     this._updateViewportRectangle();
@@ -171,11 +178,17 @@ export class RectangleRenderer {
     );
   }
 
+  private _clearSelection(): void{
+    // clear selection
+    fill(this._vertices.selection, 0, 0);
+    return;
+  }
+
   public updateSelection(model: ISelectionRenderModel): void {
     const terminal = this._terminal;
 
     if (!model.hasSelection) {
-      fill(this._vertices.selection, 0, 0);
+      this._clearSelection();
       return;
     }
 

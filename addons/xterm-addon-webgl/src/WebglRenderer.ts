@@ -138,6 +138,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
     this._rectangleRenderer.onResize();
+    this._rectangleRenderer.clearSelection(this._model.selection);
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));

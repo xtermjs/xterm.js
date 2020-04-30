@@ -275,9 +275,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
-    while (this._selectionContainer.children.length) {
-      this._selectionContainer.removeChild(this._selectionContainer.children[0]);
-    }
+    this._clearSelectionElements();
 
     // Selection does not exist
     if (!start || !end) {
@@ -347,6 +345,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public clear(): void {
     this._rowElements.forEach(e => e.innerHTML = '');
+    this._clearSelectionElements();
   }
 
   public renderRows(start: number, end: number): void {
@@ -395,5 +394,16 @@ export class DomRenderer extends Disposable implements IRenderer {
         y++;
       }
     }
+  }
+
+  /**
+   * Clears all the selection element within the DOM
+   */
+  private _clearSelectionElements(): void{
+    // Remove all selections
+    while (this._selectionContainer.children.length) {
+      this._selectionContainer.removeChild(this._selectionContainer.children[0]);
+    }
+    return;
   }
 }
