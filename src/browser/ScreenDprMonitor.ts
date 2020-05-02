@@ -44,12 +44,14 @@ export class ScreenDprMonitor extends Disposable {
   }
 
   private _updateDpr(): void {
-    if (!this._resolutionMediaMatchList || !this._outerListener) {
+    if (!this._outerListener) {
       return;
     }
 
     // Clear listeners for old DPR
-    this._resolutionMediaMatchList.removeListener(this._outerListener);
+    if (this._resolutionMediaMatchList) {
+      this._resolutionMediaMatchList.removeListener(this._outerListener);
+    }
 
     // Add listeners for new DPR
     this._currentDevicePixelRatio = window.devicePixelRatio;
