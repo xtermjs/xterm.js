@@ -47,3 +47,18 @@ export abstract class Disposable implements IDisposable {
     }
   }
 }
+
+/**
+ * Dispose of all disposables in an array and set its length to 0.
+ */
+export function disposeArray(disposables: IDisposable[]): void {
+  disposables.forEach(d => d.dispose());
+  disposables.length = 0;
+}
+
+/**
+ * Creates a disposable that will dispose of an array of disposables when disposed.
+ */
+export function getDisposeArrayDisposable(array: IDisposable[]): IDisposable {
+  return { dispose: () => disposeArray(array) };
+}

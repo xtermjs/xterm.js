@@ -8,7 +8,8 @@ import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable } from 'common/Lifecycle';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 
 interface ILinkState {
   decorations: ILinkDecorations;
@@ -36,6 +37,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
+    this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -57,12 +59,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this._mouseService = mouseService;
     this._renderService = renderService;
 
-    this._element.addEventListener('mouseleave', () => {
+    this.register(addDisposableDomListener(this._element, 'mouseleave', () => {
       this._isMouseOut = true;
       this._clearCurrentLink();
-    });
-    this._element.addEventListener('mousemove', this._onMouseMove.bind(this));
-    this._element.addEventListener('click', this._onClick.bind(this));
+    }));
+    this.register(addDisposableDomListener(this._element, 'mousemove', this._onMouseMove.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'click', this._onClick.bind(this)));
   }
 
   private _onMouseMove(event: MouseEvent): void {

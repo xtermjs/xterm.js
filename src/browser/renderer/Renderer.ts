@@ -71,8 +71,8 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   public dispose(): void {
-    super.dispose();
     this._renderLayers.forEach(l => l.dispose());
+    super.dispose();
     removeTerminalFromCache(this._id);
   }
 

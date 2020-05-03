@@ -8,18 +8,19 @@ import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IOptionsService, IBufferService } from 'common/services/Services';
+import { Disposable } from 'common/Lifecycle';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
  * provides also utilities for working with them.
  */
-export class BufferSet implements IBufferSet {
+export class BufferSet extends Disposable implements IBufferSet {
   private _normal: Buffer;
   private _alt: Buffer;
   private _activeBuffer: Buffer;
 
 
-  private _onBufferActivate = new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>();
+  private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
   public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
 
   /**
@@ -30,6 +31,8 @@ export class BufferSet implements IBufferSet {
     optionsService: IOptionsService,
     bufferService: IBufferService
   ) {
+    super();
+
     this._normal = new Buffer(true, optionsService, bufferService);
     this._normal.fillViewportRows();
 
