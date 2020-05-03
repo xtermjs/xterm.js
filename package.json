@@ -11,7 +11,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "start": "node demo/start",
-    "lint": "eslint -c .eslintrc.json --ext .ts src/ addons/",
+    "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "test-api": "npm run test-api-chromium",
