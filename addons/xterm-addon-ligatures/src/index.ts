@@ -83,16 +83,3 @@ export function enableLigatures(term: Terminal): void {
     return [];
   });
 }
-
-/**
- * Add capabilities to the provided terminal class for enabling ligature
- * support. After calling this function, an `enableLigatures()` method is
- * available on the terminal class, which will enable ligature support when
- * called.
- * @param terminalConstructor Terminal class from xterm.js
- */
-export function apply(terminalConstructor: typeof Terminal): void {
-  (<any>terminalConstructor.prototype).enableLigatures = function (): void {
-    enableLigatures(this);
-  };
-}
