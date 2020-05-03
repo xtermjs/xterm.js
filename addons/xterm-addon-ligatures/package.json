@@ -20,7 +20,6 @@
     "package": "webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "prepublish": "npm run package"
   },
   "keywords": [
@@ -38,29 +37,11 @@
   "devDependencies": {
     "@types/sinon": "^5.0.1",
     "axios": "^0.18.0",
-    "coveralls": "^3.0.2",
     "mkdirp": "^0.5.1",
     "sinon": "^6.1.3",
     "yauzl": "^2.10.0"
   },
   "peerDependencies": {
     "xterm": "^4.0.0"
-  },
-  "nyc": {
-    "sourceMap": true,
-    "reporter": [
-      "text",
-      "html",
-      "json"
-    ],
-    "include": [
-      "out/**/*.js"
-    ],
-    "exclude": [
-      "out/**/*.test.*",
-      "out/**/*.integration.*",
-      "out/**/*.d.ts",
-      "out/**/*.map*"
-    ]
   }
 }
