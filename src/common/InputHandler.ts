@@ -2108,7 +2108,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Helper to write color information packed with color mode.
    */
-  private _updateColor(color: number, mode: number, c1: number, c2: number, c3: number): number {
+  private _updateAttrColor(color: number, mode: number, c1: number, c2: number, c3: number): number {
     if (mode === 2) {
       color |= Attributes.CM_RGB;
       color &= ~Attributes.RGB_MASK;
@@ -2171,14 +2171,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     // apply colors
     switch (accu[0]) {
       case 38:
-        attr.fg = this._updateColor(attr.fg, accu[1], accu[3], accu[4], accu[5]);
+        attr.fg = this._updateAttrColor(attr.fg, accu[1], accu[3], accu[4], accu[5]);
         break;
       case 48:
-        attr.bg = this._updateColor(attr.bg, accu[1], accu[3], accu[4], accu[5]);
+        attr.bg = this._updateAttrColor(attr.bg, accu[1], accu[3], accu[4], accu[5]);
         break;
       case 58:
         attr.extended = attr.extended.clone();
-        attr.extended.underlineColor = this._updateColor(attr.extended.underlineColor, accu[1], accu[3], accu[4], accu[5]);
+        attr.extended.underlineColor = this._updateAttrColor(attr.extended.underlineColor, accu[1], accu[3], accu[4], accu[5]);
     }
 
     return advance;
@@ -2237,7 +2237,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters.                                  | #N      |
-   * | 21        | Doubly  underlined.                                      | #P[Currently outputs a single underline.] |
+   * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
