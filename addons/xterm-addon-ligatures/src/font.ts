@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import * as fontFinder from 'font-finder';
 import * as fontLigatures from 'font-ligatures';
 

@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import * as path from 'path';
 import * as sinon from 'sinon';
 import { assert } from 'chai';

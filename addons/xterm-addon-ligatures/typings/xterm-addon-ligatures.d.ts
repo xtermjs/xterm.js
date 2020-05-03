@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  *
  * This contains the type declarations for the xterm-addon-ligatures library.
@@ -7,7 +8,7 @@
  * which is intended to be stable and consumed by external programs.
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-ligatures' {
   /**
