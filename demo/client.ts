@@ -112,9 +112,15 @@ const disposeRecreateButtonHandler = () => {
     term = null;
     window.term = null;
     socket = null;
+    addons.attach.instance = undefined;
+    addons.fit.instance = undefined;
+    addons.search.instance = undefined;
+    addons.serialize.instance = undefined;
+    addons.unicode11.instance = undefined;
+    addons['web-links'].instance = undefined;
+    addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
-  }
-  else {
+  } else {
     createTerminal();
     document.getElementById('dispose').innerHTML = 'Dispose terminal';
   }
@@ -357,7 +363,7 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    checkbox.addEventListener('change', () => {
+    addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);

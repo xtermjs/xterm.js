@@ -28,9 +28,11 @@ export abstract class Disposable implements IDisposable {
   /**
    * Registers a disposable object.
    * @param d The disposable to register.
+   * @returns The disposable.
    */
-  public register<T extends IDisposable>(d: T): void {
+  public register<T extends IDisposable>(d: T): T {
     this._disposables.push(d);
+    return d;
   }
 
   /**
@@ -44,4 +46,19 @@ export abstract class Disposable implements IDisposable {
       this._disposables.splice(index, 1);
     }
   }
+}
+
+/**
+ * Dispose of all disposables in an array and set its length to 0.
+ */
+export function disposeArray(disposables: IDisposable[]): void {
+  disposables.forEach(d => d.dispose());
+  disposables.length = 0;
+}
+
+/**
+ * Creates a disposable that will dispose of an array of disposables when disposed.
+ */
+export function getDisposeArrayDisposable(array: IDisposable[]): IDisposable {
+  return { dispose: () => disposeArray(array) };
 }

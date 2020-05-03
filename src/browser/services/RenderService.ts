@@ -52,7 +52,7 @@ export class RenderService extends Disposable implements IRenderService {
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
     @ICharSizeService charSizeService: ICharSizeService,
-    @IBufferService private readonly _bufferService: IBufferService
+    @IBufferService bufferService: IBufferService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -62,7 +62,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
-    this.register(this._bufferService.onResize(e => this._fullRefresh()));
+    this.register(bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 

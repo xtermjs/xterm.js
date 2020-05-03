@@ -7,11 +7,12 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
 
-export class BufferService implements IBufferService {
+export class BufferService extends Disposable implements IBufferService {
   public serviceBrand: any;
 
   public cols: number;
@@ -28,9 +29,15 @@ export class BufferService implements IBufferService {
   constructor(
     @IOptionsService private _optionsService: IOptionsService
   ) {
+    super();
     this.cols = Math.max(_optionsService.options.cols, MINIMUM_COLS);
     this.rows = Math.max(_optionsService.options.rows, MINIMUM_ROWS);
     this.buffers = new BufferSet(_optionsService, this);
+  }
+
+  public dispose(): void {
+    super.dispose();
+    this.buffers.dispose();
   }
 
   public resize(cols: number, rows: number): void {
@@ -42,6 +49,7 @@ export class BufferService implements IBufferService {
   }
 
   public reset(): void {
+    this.buffers.dispose();
     this.buffers = new BufferSet(this._optionsService, this);
     this.isUserScrolling = false;
   }
