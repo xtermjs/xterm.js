@@ -556,6 +556,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
+          // clear left over cells to the right
+          while (buffer.x < cols) {
+            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg);
+          }
           buffer.x = 0;
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
@@ -727,12 +731,62 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    *
    * @vt: #Y   C0    BS   "Backspace"  "\b, \x08"  "Move the cursor one position to the left."
+   * By default it is not possible to move the cursor past the leftmost position.
+   * If `reverse wrap-around` (`CSI ? 45 h`) is set, a previous soft line wrap (DECAWM)
+   * can be undone with BS within the scroll margins. In that case the cursor will wrap back
+   * to the end of the previous row. Note that it is not possible to peek back into the scrollbuffer
+   * with the cursor, thus at the home position (top-leftmost cell) this has no effect.
    */
   public backspace(): void {
-    this._restrictCursor();
-    if (this._bufferService.buffer.x > 0) {
-      this._bufferService.buffer.x--;
+    const buffer = this._bufferService.buffer;
+
+    // reverse wrap-around is disabled
+    if (!this._coreService.decPrivateModes.reverseWraparound) {
+      this._restrictCursor();
+      if (buffer.x > 0) {
+        buffer.x--;
+      }
+      return;
     }
+
+    // reverse wrap-around is enabled
+    // other than for normal operation mode, reverse wrap-around allows the cursor
+    // to be at x=cols to be able to address the last cell of a row by BS
+    this._restrictCursor(this._bufferService.cols);
+
+    if (buffer.x > 0) {
+      buffer.x--;
+    } else {
+      /**
+       * reverse wrap-around handling:
+       * Our implementation deviates from xterm on purpose. Details:
+       * - only previous soft NLs can be reversed (isWrapped=true)
+       * - only works within scrollborders (top/bottom, left/right not yet supported)
+       * - cannot peek into scrollbuffer
+       * - any cursor movement sequence keeps working as expected
+       */
+      if (buffer.x === 0
+          && buffer.y > buffer.scrollTop
+          && buffer.y <= buffer.scrollBottom
+          && buffer.lines.get(buffer.ybase + buffer.y)?.isWrapped)
+      {
+        buffer.lines.get(buffer.ybase + buffer.y)!.isWrapped = false;
+        buffer.y--;
+        buffer.x = this._bufferService.cols - 1;
+        // find last taken cell - last cell can have 3 different states:
+        // - hasContent(true) + hasWidth(1): narrow char - we are done
+        // - hasWidth(0): second part of wide char - we are done
+        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
+        const line = buffer.lines.get(buffer.ybase + buffer.y)!;
+        if (line.hasWidth(buffer.x) && !line.hasContent(buffer.x)) {
+          buffer.x--;
+          // We do this only once, since width=1 + hasContent=false currently happens only once before
+          // early wrapping of a wide char.
+          // This needs to be fixed once we support graphemes taking more than 2 cells.
+        }
+      }
+    }
+    this._restrictCursor();
   }
 
   /**
@@ -777,8 +831,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
-  private _restrictCursor(): void {
-    this._bufferService.buffer.x = Math.min(this._bufferService.cols - 1, Math.max(0, this._bufferService.buffer.x));
+  private _restrictCursor(maxCol: number = this._bufferService.cols - 1): void {
+    this._bufferService.buffer.x = Math.min(maxCol, Math.max(0, this._bufferService.buffer.x));
     this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
       ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
@@ -1716,6 +1770,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 9     | X10 xterm mouse protocol.                               | #Y      |
    * | 12    | Start Blinking Cursor.                                  | #Y      |
    * | 25    | Show Cursor (DECTCEM).                                  | #Y      |
+   * | 45    | Reverse wrap-around.                                    | #Y      |
    * | 47    | Use Alternate Screen Buffer.                            | #Y      |
    * | 66    | Application keypad (DECNKM).                            | #Y      |
    * | 1000  | X11 xterm mouse protocol.                               | #Y      |
@@ -1766,6 +1821,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 12:
           // this.cursorBlink = true;
+          break;
+        case 45:
+          this._coreService.decPrivateModes.reverseWraparound = true;
           break;
         case 66:
           this._logService.debug('Serial port requested application keypad.');
@@ -1950,6 +2008,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 9     | Don't send Mouse X & Y on button press.                 | #Y      |
    * | 12    | Stop Blinking Cursor.                                   | #Y      |
    * | 25    | Hide Cursor (DECTCEM).                                  | #Y      |
+   * | 45    | No reverse wrap-around.                                 | #Y      |
    * | 47    | Use Normal Screen Buffer.                               | #Y      |
    * | 66    | Numeric keypad (DECNKM).                                | #Y      |
    * | 1000  | Don't send Mouse reports.                               | #Y      |
@@ -1993,6 +2052,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 12:
           // this.cursorBlink = false;
+          break;
+        case 45:
+          this._coreService.decPrivateModes.reverseWraparound = false;
           break;
         case 66:
           this._logService.debug('Switching back to normal keypad.');

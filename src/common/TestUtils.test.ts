@@ -68,6 +68,7 @@ export class MockCoreService implements ICoreService {
     applicationKeypad: false,
     bracketedPasteMode: false,
     origin: false,
+    reverseWraparound: false,
     sendFocus: false,
     wraparound: true
   };

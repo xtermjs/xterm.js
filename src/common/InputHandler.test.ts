@@ -28,7 +28,10 @@ function getCursor(bufferService: IBufferService): number[] {
 function getLines(bufferService: IBufferService, limit: number = bufferService.rows): string[] {
   const res: string[] = [];
   for (let i = 0; i < limit; ++i) {
-    res.push(bufferService.buffer.lines.get(i)!.translateToString(true));
+    const line = bufferService.buffer.lines.get(i);
+    if (line) {
+      res.push(line.translateToString(true));
+    }
   }
   return res;
 }
@@ -358,6 +361,14 @@ describe('InputHandler', () => {
       const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
+    });
+    it('should clear cells to the right on early wrap-around', () => {
+      bufferService.resize(5, 5);
+      optionsService.options.scrollback = 1;
+      inputHandler.parse('12345');
+      bufferService.buffer.x = 0;
+      inputHandler.parse('￥￥￥');
+      assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
     });
   });
 
@@ -1375,6 +1386,88 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(bufferService), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
     });
   });
+
+  describe('BS with reverseWraparound set/unset', () => {
+    const ttyBS = '\x08 \x08';  // tty ICANON sends <BS SP BS> on pressing BS
+    beforeEach(() => {
+      bufferService.resize(5, 5);
+      optionsService.options.scrollback = 1;
+    });
+    describe('reverseWraparound unset (default)', () => {
+      it('cannot delete last cell', () => {
+        inputHandler.parse('12345');
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 1), ['123 5']);
+        inputHandler.parse(ttyBS.repeat(10));
+        assert.deepEqual(getLines(bufferService, 1), ['    5']);
+      });
+      it('cannot access prev line', () => {
+        inputHandler.parse('12345'.repeat(2));
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['12345', '123 5']);
+        inputHandler.parse(ttyBS.repeat(10));
+        assert.deepEqual(getLines(bufferService, 2), ['12345', '    5']);
+      });
+    });
+    describe('reverseWraparound set', () => {
+      it('can delete last cell', () => {
+        inputHandler.parse('\x1b[?45h');
+        inputHandler.parse('12345');
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 1), ['1234 ']);
+        inputHandler.parse(ttyBS.repeat(7));
+        assert.deepEqual(getLines(bufferService, 1), ['     ']);
+      });
+      it('can access prev line if wrapped', () => {
+        inputHandler.parse('\x1b[?45h');
+        inputHandler.parse('12345'.repeat(2));
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['12345', '1234 ']);
+        inputHandler.parse(ttyBS.repeat(7));
+        assert.deepEqual(getLines(bufferService, 2), ['12   ', '     ']);
+      });
+      it('should lift isWrapped', () => {
+        inputHandler.parse('\x1b[?45h');
+        inputHandler.parse('12345'.repeat(2));
+        assert.equal(bufferService.buffer.lines.get(1)?.isWrapped, true);
+        inputHandler.parse(ttyBS.repeat(7));
+        assert.equal(bufferService.buffer.lines.get(1)?.isWrapped, false);
+      });
+      it('stops at hard NLs', () => {
+        inputHandler.parse('\x1b[?45h');
+        inputHandler.parse('12345\r\n');
+        inputHandler.parse('12345'.repeat(2));
+        inputHandler.parse(ttyBS.repeat(50));
+        assert.deepEqual(getLines(bufferService, 3), ['12345', '     ', '     ']);
+        assert.equal(bufferService.buffer.x, 0);
+        assert.equal(bufferService.buffer.y, 1);
+      });
+      it('handles wide chars correctly', () => {
+        inputHandler.parse('\x1b[?45h');
+        inputHandler.parse('￥￥￥');
+        assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['￥￥', '  ']);
+        assert.equal(bufferService.buffer.x, 1);
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['￥￥', '  ']);
+        assert.equal(bufferService.buffer.x, 0);
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['￥  ', '  ']);
+        assert.equal(bufferService.buffer.x, 3);  // x=4 skipped due to early wrap-around
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['￥  ', '  ']);
+        assert.equal(bufferService.buffer.x, 2);
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
+        assert.equal(bufferService.buffer.x, 1);
+        inputHandler.parse(ttyBS);
+        assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
+        assert.equal(bufferService.buffer.x, 0);
+      });
+    });
+  });
+
   describe('DECSTR', () => {
     beforeEach(() => {
       bufferService.resize(10, 5);
