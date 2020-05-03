@@ -2,19 +2,16 @@
   "name": "xterm-addon-ligatures",
   "version": "0.2.1",
   "description": "Add support for programming ligatures to xterm.js",
-  "homepage": "https://github.com/xtermjs/xterm-addon-ligatures#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/xtermjs/xterm-addon-ligatures.git"
-  },
-  "bugs": {
-    "url": "https://github.com/xtermjs/xterm-addon-ligatures/issues"
-  },
-  "engines": {
-    "node": ">8.0.0"
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
   },
   "main": "lib/xterm-addon-ligatures.js",
   "types": "typings/xterm-addon-ligatures.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js",
+  "engines": {
+    "node": ">8.0.0"
+  },
   "scripts": {
     "prepare": "node bin/download-fonts.js",
     "build": "tsc -p src",
