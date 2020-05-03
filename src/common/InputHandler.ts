@@ -14,7 +14,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from '
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
@@ -509,7 +509,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (buffer.x && end - start > 0 && bufferRow.getWidth(buffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
     for (let pos = start; pos < end; ++pos) {
@@ -558,7 +558,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           // clear left over cells to the right
           while (buffer.x < cols) {
-            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg);
+            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
           }
           buffer.x = 0;
           buffer.y++;
@@ -593,12 +593,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
         if (bufferRow.getWidth(cols - 1) === 2) {
-          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg, curAttr.extended);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -606,7 +606,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
         }
       }
     }
@@ -627,7 +627,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (buffer.x < cols && end - start > 0 && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
-      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
     this._dirtyRowService.markDirty(buffer.y);
@@ -2106,6 +2106,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Helper to write color information packed with color mode.
+   */
+  private _updateAttrColor(color: number, mode: number, c1: number, c2: number, c3: number): number {
+    if (mode === 2) {
+      color |= Attributes.CM_RGB;
+      color &= ~Attributes.RGB_MASK;
+      color |= AttributeData.fromColorRGB([c1, c2, c3]);
+    } else if (mode === 5) {
+      color &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+      color |= Attributes.CM_P256 | (c1 & 0xff);
+    }
+    return color;
+  }
+
+  /**
    * Helper to extract and apply color params/subparams.
    * Returns advance for params index.
    */
@@ -2154,27 +2169,49 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // apply colors
-    if (accu[0] === 38) {
-      if (accu[1] === 2) {
-        attr.fg |= Attributes.CM_RGB;
-        attr.fg &= ~Attributes.RGB_MASK;
-        attr.fg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
-      } else if (accu[1] === 5) {
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-        attr.fg |= Attributes.CM_P256 | (accu[3] & 0xff);
-      }
-    } else if (accu[0] === 48) {
-      if (accu[1] === 2) {
-        attr.bg |= Attributes.CM_RGB;
-        attr.bg &= ~Attributes.RGB_MASK;
-        attr.bg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
-      } else if (accu[1] === 5) {
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-        attr.bg |= Attributes.CM_P256 | (accu[3] & 0xff);
-      }
+    switch (accu[0]) {
+      case 38:
+        attr.fg = this._updateAttrColor(attr.fg, accu[1], accu[3], accu[4], accu[5]);
+        break;
+      case 48:
+        attr.bg = this._updateAttrColor(attr.bg, accu[1], accu[3], accu[4], accu[5]);
+        break;
+      case 58:
+        attr.extended = attr.extended.clone();
+        attr.extended.underlineColor = this._updateAttrColor(attr.extended.underlineColor, accu[1], accu[3], accu[4], accu[5]);
     }
 
     return advance;
+  }
+
+  /**
+   * SGR 4 subparams:
+   *    4:0   -   equal to SGR 24 (turn off all underline)
+   *    4:1   -   equal to SGR 4 (single underline)
+   *    4:2   -   equal to SGR 21 (double underline)
+   *    4:3   -   curly underline
+   *    4:4   -   dotted underline
+   *    4:5   -   dashed underline
+   */
+  private _processUnderline(style: number, attr: IAttributeData): void {
+    // treat extended attrs as immutable, thus always clone from old one
+    // this is needed since the buffer only holds references to it
+    attr.extended = attr.extended.clone();
+
+    // default to 1 == single underline
+    if (!~style || style > 5) {
+      style = 1;
+    }
+    attr.extended.underlineStyle = style;
+    attr.fg |= FgFlags.UNDERLINE;
+
+    // 0 deactivates underline
+    if (style === 0) {
+      attr.fg &= ~FgFlags.UNDERLINE;
+    }
+
+    // update HAS_EXTENDED in BG
+    attr.updateExtended();
   }
 
   /**
@@ -2182,7 +2219,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #P[See below for supported attributes.]    CSI SGR   "Select Graphic Rendition"  "CSI Pm m"  "Set/Reset various text attributes."
    * SGR selects one or more character attributes at the same time. Multiple params (up to 32)
-   * are applied from in order from left to right. The changed attributes are applied to all new
+   * are applied in order from left to right. The changed attributes are applied to all new
    * characters received. If you move characters in the viewport by scrolling or any other means,
    * then the attributes move with the characters.
    *
@@ -2194,13 +2231,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | #Y      |
    * | 2         | Faint, decreased intensity.                              | #Y      |
    * | 3         | Italic.                                                  | #Y      |
-   * | 4         | Underlined. (no support for newer underline styles)      | #Y      |
+   * | 4         | Underlined (see below for style support).                | #Y      |
    * | 5         | Slowly blinking.                                         | #N      |
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters.                                  | #N      |
-   * | 21        | Doubly  underlined.                                      | #N      |
+   * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
@@ -2230,6 +2267,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 49        | Background color: Default (original).                    | #Y      |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
+   *
+   * Underline supports subparams to denote the style in the form `4 : x`:
+   *
+   * | x      | Meaning                                                       | Support |
+   * | ------ | ------------------------------------------------------------- | ------- |
+   * | 0      | No underline. Same as `SGR 24 m`.                             | #Y      |
+   * | 1      | Single underline. Same as `SGR 4 m`.                          | #Y      |
+   * | 2      | Double underline.                                             | #P[Currently outputs a single underline.] |
+   * | 3      | Curly underline.                                              | #P[Currently outputs a single underline.] |
+   * | 4      | Dotted underline.                                             | #P[Currently outputs a single underline.] |
+   * | 5      | Dashed underline.                                             | #P[Currently outputs a single underline.] |
+   * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
    * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
    *
@@ -2289,6 +2338,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 4) {
         // underlined text
         attr.fg |= FgFlags.UNDERLINE;
+        this._processUnderline(params.hasSubParams(i) ? params.getSubParams(i)![0] : UnderlineStyle.SINGLE, attr);
       } else if (p === 5) {
         // blink
         attr.fg |= FgFlags.BLINK;
@@ -2302,6 +2352,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
+      } else if (p === 21) {
+        // double underline
+        this._processUnderline(UnderlineStyle.DOUBLE, attr);
       } else if (p === 22) {
         // not bold nor faint
         attr.fg &= ~FgFlags.BOLD;
@@ -2329,9 +2382,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
-      } else if (p === 38 || p === 48) {
+      } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 59) {
+        attr.extended = attr.extended.clone();
+        attr.extended.underlineColor = -1;
+        attr.updateExtended();
       } else if (p === 100) { // FIXME: dead branch, p=100 already handled above!
         // reset fg/bg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);

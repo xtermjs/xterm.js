@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { CharData, ICellData } from 'common/Types';
+import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
 /**
  * CellData - represents a single Cell in the terminal buffer.
@@ -19,10 +19,11 @@ export class CellData extends AttributeData implements ICellData {
     return obj;
   }
   /** Primitives from terminal buffer. */
-  public content: number = 0;
-  public fg: number = 0;
-  public bg: number = 0;
-  public combinedData: string = '';
+  public content = 0;
+  public fg = 0;
+  public bg = 0;
+  public extended: IExtendedAttrs = new ExtendedAttrs();
+  public combinedData = '';
   /** Whether cell contains a combined string. */
   public isCombined(): number {
     return this.content & Content.IS_COMBINED_MASK;

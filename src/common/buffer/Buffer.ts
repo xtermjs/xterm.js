@@ -13,6 +13,7 @@ import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGe
 import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
+import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -60,9 +61,11 @@ export class Buffer implements IBuffer {
     if (attr) {
       this._nullCell.fg = attr.fg;
       this._nullCell.bg = attr.bg;
+      this._nullCell.extended = attr.extended;
     } else {
       this._nullCell.fg = 0;
       this._nullCell.bg = 0;
+      this._nullCell.extended = new ExtendedAttrs();
     }
     return this._nullCell;
   }
@@ -71,9 +74,11 @@ export class Buffer implements IBuffer {
     if (attr) {
       this._whitespaceCell.fg = attr.fg;
       this._whitespaceCell.bg = attr.bg;
+      this._whitespaceCell.extended = attr.extended;
     } else {
       this._whitespaceCell.fg = 0;
       this._whitespaceCell.bg = 0;
+      this._whitespaceCell.extended = new ExtendedAttrs();
     }
     return this._whitespaceCell;
   }

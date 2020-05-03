@@ -84,10 +84,18 @@ export interface ICharset {
 export type CharData = [number, string, number, number];
 export type IColorRGB = [number, number, number];
 
+export interface IExtendedAttrs {
+  underlineStyle: number;
+  underlineColor: number;
+  clone(): IExtendedAttrs;
+  isEmpty(): boolean;
+}
+
 /** Attribute data */
 export interface IAttributeData {
   fg: number;
   bg: number;
+  extended: IExtendedAttrs;
 
   clone(): IAttributeData;
 
@@ -114,6 +122,16 @@ export interface IAttributeData {
   // colors
   getFgColor(): number;
   getBgColor(): number;
+
+  // extended attrs
+  hasExtendedAttrs(): number;
+  updateExtended(): void;
+  getUnderlineColor(): number;
+  getUnderlineColorMode(): number;
+  isUnderlineColorRGB(): boolean;
+  isUnderlineColorPalette(): boolean;
+  isUnderlineColorDefault(): boolean;
+  getUnderlineStyle(): number;
 }
 
 /** Cell data */
@@ -138,7 +156,7 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
   addCodepointToCell(index: number, codePoint: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
   deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
