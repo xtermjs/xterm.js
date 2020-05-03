@@ -46,17 +46,15 @@ describe('xterm-addon-ligatures', () => {
   });
 
   beforeEach(() => {
-    MockTerminal.applyAddon(ligatureSupport);
     onRefresh = sinon.stub();
     term = new MockTerminal(onRefresh);
-    (term as any).enableLigatures();
+    ligatureSupport.enableLigatures(term as any);
   });
 
   it('registers itself correctly', () => {
-    MockTerminal.applyAddon(ligatureSupport);
     const term = new MockTerminal(sinon.spy());
     assert.isUndefined(term.joiner);
-    (term as any).enableLigatures();
+    ligatureSupport.enableLigatures(term as any);
     assert.isFunction(term.joiner);
   });
 
@@ -127,7 +125,7 @@ describe('xterm-addon-ligatures', () => {
     const onRefresh2 = sinon.stub();
     const term2 = new MockTerminal(onRefresh2);
     term2.setOption('fontFamily', 'Iosevka');
-    (term2 as any).enableLigatures();
+    ligatureSupport.enableLigatures(term2 as any);
 
     assert.deepEqual(term.joiner!(input), []);
     onRefresh.callsFake(() => {
@@ -193,10 +191,6 @@ describe('xterm-addon-ligatures', () => {
 });
 
 class MockTerminal {
-  public static applyAddon(addon: any): void {
-    addon.apply(MockTerminal);
-  }
-
   private _options: { [name: string]: string | number } = {
     fontFamily: 'Fira Code, monospace',
     rows: 50
