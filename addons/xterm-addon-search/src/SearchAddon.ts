@@ -87,7 +87,7 @@ export class SearchAddon implements ITerminalAddon {
     // Search from startRow + 1 to end
     if (!result) {
 
-      for (let y = startRow + 1; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
+      for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         // If the current line is wrapped line, increase index of column to ignore the previous scan
@@ -110,8 +110,12 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
-    // If there is only one result, return true.
-    if (!result && currentSelection) return true;
+    // If there is only one result, wrap back and return selection if it exists.
+    if (!result && currentSelection) {
+      searchPosition.startRow = currentSelection.startRow;
+      searchPosition.startCol = 0;
+      result = this._findInLine(term, searchPosition, searchOptions);
+    }
 
     // Set selection and scroll if a result was found
     return this._selectResult(result);
@@ -135,7 +139,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal.buffer.baseY + this._terminal.rows;
+    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
     let result: ISearchResult | undefined;
     const incremental = searchOptions ? searchOptions.incremental : false;
@@ -174,8 +178,8 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
     // If we hit the top and didn't search from the very bottom wrap back down
-    if (!result && startRow !== (this._terminal.buffer.baseY + this._terminal.rows)) {
-      for (let y = (this._terminal.buffer.baseY + this._terminal.rows); y > startRow; y--) {
+    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
+      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
         searchPosition.startRow = y;
         result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
@@ -197,7 +201,7 @@ export class SearchAddon implements ITerminalAddon {
   private _initLinesCache(): void {
     const terminal = this._terminal!;
     if (!this._linesCache) {
-      this._linesCache = new Array(terminal.buffer.length);
+      this._linesCache = new Array(terminal.buffer.active.length);
       this._cursorMoveListener = terminal.onCursorMove(() => this._destroyLinesCache());
       this._resizeListener = terminal.onResize(() => this._destroyLinesCache());
     }
@@ -249,7 +253,7 @@ export class SearchAddon implements ITerminalAddon {
     const col = searchPosition.startCol;
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    const firstLine = terminal.buffer.getLine(row);
+    const firstLine = terminal.buffer.active.getLine(row);
     if (firstLine && firstLine.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += terminal.cols;
@@ -311,7 +315,7 @@ export class SearchAddon implements ITerminalAddon {
         return;
       }
 
-      const line = terminal.buffer.getLine(row);
+      const line = terminal.buffer.active.getLine(row);
 
       if (line) {
         for (let i = 0; i < resultIndex; i++) {
@@ -354,9 +358,9 @@ export class SearchAddon implements ITerminalAddon {
     let lineWrapsToNext: boolean;
 
     do {
-      const nextLine = terminal.buffer.getLine(lineIndex + 1);
+      const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      const line = terminal.buffer.getLine(lineIndex);
+      const line = terminal.buffer.active.getLine(lineIndex);
       if (!line) {
         break;
       }
@@ -380,8 +384,8 @@ export class SearchAddon implements ITerminalAddon {
     }
     terminal.select(result.col, result.row, result.term.length);
     // If it is not in the viewport then we scroll else it just gets selected
-    if (result.row >= (terminal.buffer.viewportY + terminal.rows) || result.row < terminal.buffer.viewportY) {
-      let scroll = result.row - terminal.buffer.viewportY;
+    if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
+      let scroll = result.row - terminal.buffer.active.viewportY;
       scroll = scroll - Math.floor(terminal.rows / 2);
       terminal.scrollLines(scroll);
     }

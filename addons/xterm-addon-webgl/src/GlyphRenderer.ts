@@ -213,14 +213,14 @@ export class GlyphRenderer {
     // a_cellpos only changes on resize
   }
 
-  public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
+  public updateSelection(model: IRenderModel): void {
     const terminal = this._terminal;
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
     const bg = (this._colors.selectionOpaque.rgba >>> 8) | Attributes.CM_RGB;
 
-    if (columnSelectMode) {
+    if (model.selection.columnSelectMode) {
       const startCol = model.selection.startCol;
       const width = model.selection.endCol - startCol;
       const height = model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow + 1;
@@ -250,7 +250,7 @@ export class GlyphRenderer {
 
   private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number): void {
     const terminal = this._terminal;
-    const row = y + terminal.buffer.viewportY;
+    const row = y + terminal.buffer.active.viewportY;
     let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
       const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
@@ -281,7 +281,7 @@ export class GlyphRenderer {
       }
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {
-          line = terminal.buffer.getLine(row);
+          line = terminal.buffer.active.getLine(row);
         }
         const chars = line!.getCell(x)!.getChars();
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);

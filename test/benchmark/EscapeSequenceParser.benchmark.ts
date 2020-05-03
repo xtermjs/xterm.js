@@ -19,9 +19,9 @@ function toUtf32(s: string): Uint32Array {
 }
 
 class DcsHandler implements IDcsHandler {
-  hook(params: IParams): void {}
-  put(data: Uint32Array, start: number, end: number): void {}
-  unhook(): void {}
+  public hook(params: IParams): void {}
+  public put(data: Uint32Array, start: number, end: number): void {}
+  public unhook(): void {}
 }
 
 

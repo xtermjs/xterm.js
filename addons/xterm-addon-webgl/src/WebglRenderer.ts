@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../../src/Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -16,8 +15,8 @@ import { Disposable } from 'common/Lifecycle';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 
@@ -39,8 +38,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
 
-  private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -52,8 +51,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors, this._onRequestRefreshRows)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
+      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -83,7 +82,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
-    this._core.screenElement.appendChild(this._canvas);
+    this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
     this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
@@ -91,12 +90,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
 
-    this._isAttached = document.body.contains(this._core.screenElement);
+    this._isAttached = document.body.contains(this._core.screenElement!);
   }
 
   public dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
-    this._core.screenElement.removeChild(this._canvas);
+    this._core.screenElement!.removeChild(this._canvas);
     super.dispose();
   }
 
@@ -116,6 +115,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
+
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
     // Force a full refresh
     this._model.clear();
@@ -147,8 +149,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._canvas.style.height = `${this.dimensions.canvasHeight}px`;
 
     // Resize the screen
-    this._core.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._core.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
+    this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -170,15 +172,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
-    this._updateSelectionModel(start, end);
+    this._updateSelectionModel(start, end, columnSelectMode);
 
-    this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
-    this._glyphRenderer.updateSelection(this._model, columnSelectMode);
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
-    this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {
@@ -226,7 +228,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (document.body.contains(this._core.screenElement) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+      if (document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
@@ -292,7 +294,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
-  private _updateSelectionModel(start: [number, number], end: [number, number]): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     // Selection does not exist
@@ -302,8 +304,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.viewportY;
+    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
+    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
@@ -314,6 +316,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._model.selection.hasSelection = true;
+    this._model.selection.columnSelectMode = columnSelectMode;
     this._model.selection.viewportStartRow = viewportStartRow;
     this._model.selection.viewportEndRow = viewportEndRow;
     this._model.selection.viewportCappedStartRow = viewportCappedStartRow;

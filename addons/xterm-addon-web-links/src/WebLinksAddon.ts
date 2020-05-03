@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, ILinkProvider, IDisposable } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
 import { WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
@@ -15,7 +15,7 @@ const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
 const localHostClause = '(localhost)';
 const portClause = '(:\\d{1,5})';
 const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathCharacterSet = '(\\/[\\/\\w\\.\\-%~:+]*)*([^:"\'\\s])';
+const pathCharacterSet = '(\\/[\\/\\w\\.\\-%~:+@]*)*([^:"\'\\s])';
 const pathClause = '(' + pathCharacterSet + ')?';
 const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
 const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';

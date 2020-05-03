@@ -3,9 +3,107 @@
  * @license MIT
  */
 
+import { IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
-import { IDisposable } from 'common/Types';
+import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+
+export interface ITerminal extends IPublicTerminal, ICoreTerminal {
+  element: HTMLElement | undefined;
+  screenElement: HTMLElement | undefined;
+  browser: IBrowser;
+  buffer: IBuffer;
+  buffers: IBufferSet;
+  viewport: IViewport | undefined;
+  // TODO: We should remove options once components adopt optionsService
+  options: ITerminalOptions;
+  linkifier: ILinkifier;
+  linkifier2: ILinkifier2;
+
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
+
+  cancel(ev: Event, force?: boolean): boolean | void;
+}
+
+// Portions of the public API that are required by the internal Terminal
+export interface IPublicTerminal extends IDisposable {
+  textarea: HTMLTextAreaElement | undefined;
+  rows: number;
+  cols: number;
+  buffer: IBuffer;
+  markers: IMarker[];
+  onCursorMove: IEvent<void>;
+  onData: IEvent<string>;
+  onBinary: IEvent<string>;
+  onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+  onLineFeed: IEvent<void>;
+  onScroll: IEvent<number>;
+  onSelectionChange: IEvent<void>;
+  onRender: IEvent<{ start: number, end: number }>;
+  onResize: IEvent<{ cols: number, rows: number }>;
+  onTitleChange: IEvent<string>;
+  blur(): void;
+  focus(): void;
+  resize(columns: number, rows: number): void;
+  open(parent: HTMLElement): void;
+  attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
+  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
+  deregisterLinkMatcher(matcherId: number): void;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+  deregisterCharacterJoiner(joinerId: number): void;
+  addMarker(cursorYOffset: number): IMarker | undefined;
+  hasSelection(): boolean;
+  getSelection(): string;
+  getSelectionPosition(): ISelectionPosition | undefined;
+  clearSelection(): void;
+  select(column: number, row: number, length: number): void;
+  selectAll(): void;
+  selectLines(start: number, end: number): void;
+  dispose(): void;
+  scrollLines(amount: number): void;
+  scrollPages(pageCount: number): void;
+  scrollToTop(): void;
+  scrollToBottom(): void;
+  scrollToLine(line: number): void;
+  clear(): void;
+  write(data: string | Uint8Array, callback?: () => void): void;
+  paste(data: string): void;
+  refresh(start: number, end: number): void;
+  reset(): void;
+}
+
+export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
+
+export type LineData = CharData[];
+
+export interface ICompositionHelper {
+  compositionstart(): void;
+  compositionupdate(ev: CompositionEvent): void;
+  compositionend(): void;
+  updateCompositionElements(dontRecurse?: boolean): void;
+  keydown(ev: KeyboardEvent): boolean;
+}
+
+export interface IBrowser {
+  isNode: boolean;
+  userAgent: string;
+  platform: string;
+  isFirefox: boolean;
+  isMac: boolean;
+  isIpad: boolean;
+  isIphone: boolean;
+  isWindows: boolean;
+}
 
 export interface IColorManager {
   colors: IColorSet;
@@ -96,8 +194,8 @@ export interface ILinkifierEvent {
 }
 
 export interface ILinkifier {
-  onLinkHover: IEvent<ILinkifierEvent>;
-  onLinkLeave: IEvent<ILinkifierEvent>;
+  onShowLinkUnderline: IEvent<ILinkifierEvent>;
+  onHideLinkUnderline: IEvent<ILinkifierEvent>;
   onLinkTooltip: IEvent<ILinkifierEvent>;
 
   attachToDom(element: HTMLElement, mouseZoneManager: IMouseZoneManager): void;
@@ -107,8 +205,8 @@ export interface ILinkifier {
 }
 
 export interface ILinkifier2 {
-  onLinkHover: IEvent<ILinkifierEvent>;
-  onLinkLeave: IEvent<ILinkifierEvent>;
+  onShowLinkUnderline: IEvent<ILinkifierEvent>;
+  onHideLinkUnderline: IEvent<ILinkifierEvent>;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -172,9 +270,15 @@ interface ILinkProvider {
 interface ILink {
   range: IBufferRange;
   text: string;
+  decorations?: ILinkDecorations;
   activate(event: MouseEvent, text: string): void;
   hover?(event: MouseEvent, text: string): void;
   leave?(event: MouseEvent, text: string): void;
+}
+
+interface ILinkDecorations {
+  pointerCursor: boolean;
+  underline: boolean;
 }
 
 interface IBufferRange {

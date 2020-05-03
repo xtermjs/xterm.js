@@ -1,0 +1,13 @@
+node_modules/
+.nyc_output/
+coverage/
+
+lib/
+fonts/
+
+.env
+.vscode/
+*.swp
+*.tgz
+npm-debug.log*
+yarn-error.log*

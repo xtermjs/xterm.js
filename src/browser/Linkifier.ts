@@ -35,18 +35,17 @@ export class Linkifier implements ILinkifier {
   private _nextLinkMatcherId = 0;
   private _rowsToLinkify: { start: number | undefined, end: number | undefined };
 
-  private _onLinkHover = new EventEmitter<ILinkifierEvent>();
-  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
-  private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
-  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
+  private _onShowLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
+  private _onHideLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
   private _onLinkTooltip = new EventEmitter<ILinkifierEvent>();
   public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(
-    protected readonly _bufferService: IBufferService,
-    private readonly _logService: ILogService,
-    private readonly _optionsService: IOptionsService,
-    private readonly _unicodeService: IUnicodeService
+    @IBufferService protected readonly _bufferService: IBufferService,
+    @ILogService private readonly _logService: ILogService,
+    @IUnicodeService private readonly _unicodeService: IUnicodeService
   ) {
     this._rowsToLinkify = {
       start: undefined,
@@ -307,7 +306,7 @@ export class Linkifier implements ILinkifier {
         }
       },
       () => {
-        this._onLinkHover.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
+        this._onShowLinkUnderline.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._element!.classList.add('xterm-cursor-pointer');
       },
       e => {
@@ -319,7 +318,7 @@ export class Linkifier implements ILinkifier {
         }
       },
       () => {
-        this._onLinkLeave.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
+        this._onHideLinkUnderline.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._element!.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();

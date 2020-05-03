@@ -10,24 +10,37 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
+interface ISelectionState {
+  start: [number, number] | undefined;
+  end: [number, number] | undefined;
+  columnSelectMode: boolean;
+}
+
 export class RenderService extends Disposable implements IRenderService {
-  serviceBrand: any;
+  public serviceBrand: undefined;
 
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
+  private _isNextRenderRedrawOnly: boolean = true;
+  private _needsSelectionRefresh: boolean = false;
   private _canvasWidth: number = 0;
   private _canvasHeight: number = 0;
+  private _selectionState: ISelectionState = {
+    start: undefined,
+    end: undefined,
+    columnSelectMode: false
+  };
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
 
@@ -36,9 +49,10 @@ export class RenderService extends Disposable implements IRenderService {
   constructor(
     private _renderer: IRenderer,
     private _rowCount: number,
-    readonly screenElement: HTMLElement,
-    @IOptionsService readonly optionsService: IOptionsService,
-    @ICharSizeService readonly charSizeService: ICharSizeService
+    screenElement: HTMLElement,
+    @IOptionsService optionsService: IOptionsService,
+    @ICharSizeService charSizeService: ICharSizeService,
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -48,11 +62,12 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
+    this.register(this._bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
-    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
+    this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
@@ -75,17 +90,31 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number): void {
+  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
+    }
+    if (!isRedrawOnly) {
+      this._isNextRenderRedrawOnly = false;
     }
     this._renderDebouncer.refresh(start, end, this._rowCount);
   }
 
   private _renderRows(start: number, end: number): void {
     this._renderer.renderRows(start, end);
-    this._onRender.fire({ start, end });
+
+    // Update selection if needed
+    if (this._needsSelectionRefresh) {
+      this._renderer.onSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
+      this._needsSelectionRefresh = false;
+    }
+
+    // Fire render event only if it was not a redraw
+    if (!this._isNextRenderRedrawOnly) {
+      this._onRender.fire({ start, end });
+    }
+    this._isNextRenderRedrawOnly = true;
   }
 
   public resize(cols: number, rows: number): void {
@@ -116,8 +145,11 @@ export class RenderService extends Disposable implements IRenderService {
     // TODO: RenderService should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
-    this._renderer.onRequestRefreshRows(e => this.refreshRows(e.start, e.end));
-    this.refreshRows(0, this._rowCount - 1);
+    this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+
+    // Force a refresh
+    this._needsSelectionRefresh = true;
+    this._fullRefresh();
   }
 
   private _fullRefresh(): void {
@@ -156,7 +188,10 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.onFocus();
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    this._selectionState.start = start;
+    this._selectionState.end = end;
+    this._selectionState.columnSelectMode = columnSelectMode;
     this._renderer.onSelectionChanged(start, end, columnSelectMode);
   }
 

@@ -31,6 +31,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   fontWeight: 'normal',
   fontWeightBold: 'bold',
   lineHeight: 1.0,
+  linkTooltipHoverDuration: 500,
   letterSpacing: 0,
   logLevel: 'info',
   scrollback: 1000,
@@ -60,7 +61,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class OptionsService implements IOptionsService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   public options: ITerminalOptions;
 

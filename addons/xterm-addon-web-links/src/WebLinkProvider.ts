@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkProvider, IBufferCellPosition, ILink, Terminal, IBuffer } from 'xterm';
+import { ILinkProvider, IBufferCellPosition, ILink, Terminal } from 'xterm';
 
 export class WebLinkProvider implements ILinkProvider {
 
@@ -15,7 +15,7 @@ export class WebLinkProvider implements ILinkProvider {
 
   }
 
-  provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
+  public provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
     callback(LinkComputer.computeLink(position, this._regex, this._terminal, this._handler));
   }
 }
@@ -84,7 +84,7 @@ export class LinkComputer {
     let prevLinesToWrap: boolean;
 
     do {
-      const line = terminal.buffer.getLine(lineIndex);
+      const line = terminal.buffer.active.getLine(lineIndex);
       if (!line) {
         break;
       }
@@ -99,9 +99,9 @@ export class LinkComputer {
     const startLineIndex = lineIndex;
 
     do {
-      const nextLine = terminal.buffer.getLine(lineIndex + 1);
+      const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      const line = terminal.buffer.getLine(lineIndex);
+      const line = terminal.buffer.active.getLine(lineIndex);
       if (!line) {
         break;
       }

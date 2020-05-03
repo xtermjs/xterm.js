@@ -78,7 +78,7 @@ async function sumWidths(start: number, end: number, sentinel: string): Promise<
   await page.evaluate(`
     (function() {
       window.result = 0;
-      const buffer = window.term.buffer;
+      const buffer = window.term.buffer.active;
       for (let i = ${start}; i < ${end}; i++) {
         const line = buffer.getLine(i);
         let j = 0;

@@ -8,7 +8,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions, IRequestRefreshRowsEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IEventEmitter } from 'common/EventEmitter';
 
 interface ICursorState {
@@ -34,7 +34,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRefreshRowsEvent>
+    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>
   ) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {
@@ -76,14 +76,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onFocus(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume(terminal);
     } else {
-      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
+      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
     }
   }
 
@@ -100,7 +100,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
-    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onCursorMove(terminal: Terminal): void {
@@ -125,11 +125,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    const cursorY = terminal.buffer.baseY + terminal.buffer.cursorY;
-    const viewportRelativeCursorY = cursorY - terminal.buffer.viewportY;
+    const cursorY = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
+    const viewportRelativeCursorY = cursorY - terminal.buffer.active.viewportY;
 
     // in case cursor.x == cols adjust visual cursor to cols - 1
-    const cursorX = Math.min(terminal.buffer.cursorX, terminal.cols - 1);
+    const cursorX = Math.min(terminal.buffer.active.cursorX, terminal.cols - 1);
 
     // Don't draw the cursor if it's off-screen
     if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= terminal.rows) {

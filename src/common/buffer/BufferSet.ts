@@ -27,8 +27,8 @@ export class BufferSet implements IBufferSet {
    * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(
-    readonly optionsService: IOptionsService,
-    readonly bufferService: IBufferService
+    optionsService: IOptionsService,
+    bufferService: IBufferService
   ) {
     this._normal = new Buffer(true, optionsService, bufferService);
     this._normal.fillViewportRows();

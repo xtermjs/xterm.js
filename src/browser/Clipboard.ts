@@ -42,17 +42,17 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
  * @param ev The original paste event to be handled
  * @param term The terminal on which to apply the handled paste event
  */
-export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, coreService: ICoreService): void {
+export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
   ev.stopPropagation();
   if (ev.clipboardData) {
     const text = ev.clipboardData.getData('text/plain');
-    paste(text, textarea, bracketedPasteMode, coreService);
+    paste(text, textarea, coreService);
   }
 }
 
-export function paste(text: string, textarea: HTMLTextAreaElement, bracketedPasteMode: boolean, coreService: ICoreService): void {
+export function paste(text: string, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
   text = prepareTextForTerminal(text);
-  text = bracketTextForPaste(text, bracketedPasteMode);
+  text = bracketTextForPaste(text, coreService.decPrivateModes.bracketedPasteMode);
   coreService.triggerDataEvent(text, true);
   textarea.value = '';
 }

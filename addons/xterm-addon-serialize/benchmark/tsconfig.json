@@ -11,8 +11,6 @@
     "paths": {
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
-      "public/*": ["../../../src/public/*"],
-      "Terminal": ["../../../src/Terminal"],
       "SerializeAddon": ["../src/SerializeAddon"]
     }
   },

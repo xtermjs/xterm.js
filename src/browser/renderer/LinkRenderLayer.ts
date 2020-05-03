@@ -20,15 +20,15 @@ export class LinkRenderLayer extends BaseRenderLayer {
     rendererId: number,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService);
-    linkifier.onLinkHover(e => this._onLinkHover(e));
-    linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
 
-    linkifier2.onLinkHover(e => this._onLinkHover(e));
-    linkifier2.onLinkLeave(e => this._onLinkLeave(e));
+    linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -53,7 +53,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onLinkHover(e: ILinkifierEvent): void {
+  private _onShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
     } else if (e.fg && is256Color(e.fg)) {
@@ -77,7 +77,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     this._state = e;
   }
 
-  private _onLinkLeave(e: ILinkifierEvent): void {
+  private _onHideLinkUnderline(e: ILinkifierEvent): void {
     this._clearCurrentLink();
   }
 }
