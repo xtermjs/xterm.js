@@ -25,7 +25,8 @@
   },
   "ignorePatterns": [
     "**/typings/*.d.ts",
-    "**/node_modules"
+    "**/node_modules",
+    "**/*.js"
   ],
   "plugins": [
     "@typescript-eslint"
