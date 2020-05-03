@@ -1465,45 +1465,6 @@ describe('InputHandler', () => {
         assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
         assert.equal(bufferService.buffer.x, 0);
       });
-      /*
-      it.only('should not reverse outside of scroll margins', () => {
-        // prepare buffer content
-        inputHandler.parse('#####abcdefghijklmnopqrstuvwxy');
-        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
-        assert.equal(bufferService.buffer.ydisp, 1);
-        assert.equal(bufferService.buffer.x, 5);
-        assert.equal(bufferService.buffer.y, 4);
-        inputHandler.parse(ttyBS.repeat(100));
-        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
-
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('uvwxy');
-
-        // set top/bottom to 1/3 (0-based)
-        inputHandler.parse('\x1b[2;4r');
-        // place cursor below scroll bottom
-        bufferService.buffer.x = 5;
-        bufferService.buffer.y = 4;
-        inputHandler.parse(ttyBS.repeat(100));
-        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
-
-        inputHandler.parse('uvwxy');
-        // place cursor within scroll margins
-        bufferService.buffer.x = 5;
-        bufferService.buffer.y = 3;
-        inputHandler.parse(ttyBS.repeat(100));
-        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
-        assert.equal(bufferService.buffer.x, 0);
-        assert.equal(bufferService.buffer.y, bufferService.buffer.scrollTop);  // stops at 0, scrollTop
-
-        inputHandler.parse('fghijklmnopqrst');
-        // place cursor above scroll top
-        bufferService.buffer.x = 5;
-        bufferService.buffer.y = 0;
-        inputHandler.parse(ttyBS.repeat(100));
-        assert.deepEqual(getLines(bufferService, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
-      });
-      */
     });
   });
 
