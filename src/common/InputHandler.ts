@@ -558,7 +558,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           // clear left over cells to the right
           while (buffer.x < cols) {
-            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg);
+            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
           }
           buffer.x = 0;
           buffer.y++;
@@ -2338,7 +2338,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 4) {
         // underlined text
         attr.fg |= FgFlags.UNDERLINE;
-        this._processUnderline(params.hasSubParams(i) ? params.getSubParams(i)[0] : UnderlineStyle.SINGLE, attr);
+        this._processUnderline(params.hasSubParams(i) ? params.getSubParams(i)![0] : UnderlineStyle.SINGLE, attr);
       } else if (p === 5) {
         // blink
         attr.fg |= FgFlags.BLINK;
