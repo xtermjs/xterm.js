@@ -86,7 +86,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._instantiationService.createInstance(LogService);
     this._instantiationService.setService(ILogService, this._logService);
-    this._coreService = this._instantiationService.createInstance(CoreService, () => this.scrollToBottom());
+    this._coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
     this._instantiationService.setService(ICoreService, this._coreService);
     this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
     this._instantiationService.setService(ICoreMouseService, this._coreMouseService);

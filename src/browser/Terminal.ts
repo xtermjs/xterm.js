@@ -140,7 +140,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._setup();
 
     this.linkifier = this._instantiationService.createInstance(Linkifier);
-    this.linkifier2 = this._instantiationService.createInstance(Linkifier2);
+    this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
@@ -154,7 +154,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
-    this._bufferService.onResize(e => this._afterResize(e.cols, e.rows));
+    this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
   }
 
   public dispose(): void {
@@ -413,13 +413,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._theme = this.options.theme || this._theme;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
-    this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e));
+    this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e)));
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
     this._renderService = this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement);
     this._instantiationService.setService(IRenderService, this._renderService);
-    this._renderService.onRenderedBufferChange(e => this._onRender.fire(e));
+    this.register(this._renderService.onRenderedBufferChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._soundService = this._instantiationService.createInstance(SoundService);
@@ -442,13 +442,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onFocus(() => this._renderService!.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
 
-    this._selectionService = this._instantiationService.createInstance(SelectionService,
-      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
+    this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
-      this.screenElement);
+      this.screenElement));
     this._instantiationService.setService(ISelectionService, this._selectionService);
+    this.register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(this._selectionService.onRedrawRequest(e => this._renderService!.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this._selectionService.onRequestRedraw(e => this._renderService!.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -646,7 +646,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         }
       }
     };
-    this._coreMouseService.onProtocolChange(events => {
+    this.register(this._coreMouseService.onProtocolChange(events => {
       // apply global changes on events
       if (events) {
         if (this.optionsService.options.logLevel === 'debug') {
@@ -691,7 +691,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       } else if (!requestedEvents.mousedrag) {
         requestedEvents.mousedrag = eventListeners.mousedrag;
       }
-    });
+    }));
     // force initial onProtocolChange so we dont miss early mouse requests
     this._coreMouseService.activeProtocol = this._coreMouseService.activeProtocol;
 

@@ -8,13 +8,14 @@ import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 interface ILinkState {
   decorations: ILinkDecorations;
   isHovered: boolean;
 }
 
-export class Linkifier2 implements ILinkifier2 {
+export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _element: HTMLElement | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
@@ -26,15 +27,15 @@ export class Linkifier2 implements ILinkifier2 {
   private _lastBufferCell: IBufferCellPosition | undefined;
   private _isMouseOut: boolean = true;
 
-  private _onShowLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
   public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
-  private _onHideLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
   public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
   ) {
-
+    super();
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

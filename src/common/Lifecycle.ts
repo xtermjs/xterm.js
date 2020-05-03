@@ -28,9 +28,11 @@ export abstract class Disposable implements IDisposable {
   /**
    * Registers a disposable object.
    * @param d The disposable to register.
+   * @returns The disposable.
    */
-  public register<T extends IDisposable>(d: T): void {
+  public register<T extends IDisposable>(d: T): T {
     this._disposables.push(d);
+    return d;
   }
 
   /**

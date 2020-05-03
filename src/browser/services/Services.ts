@@ -6,7 +6,7 @@
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
-import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
 
@@ -80,7 +80,8 @@ export interface ISelectionService {
   readonly selectionEnd: [number, number] | undefined;
 
   readonly onLinuxMouseSelection: IEvent<string>;
-  readonly onRedrawRequest: IEvent<ISelectionRedrawRequestEvent>;
+  readonly onRequestRedraw: IEvent<ISelectionRequestRedrawEvent>;
+  readonly onRequestScrollLines: IEvent<ISelectionRequestScrollLinesEvent>;
   readonly onSelectionChange: IEvent<void>;
 
   disable(): void;

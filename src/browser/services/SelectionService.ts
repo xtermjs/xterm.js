@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
@@ -14,6 +14,7 @@ import { ICharSizeService, IMouseService, ISelectionService, IRenderService } fr
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
+import { Disposable } from 'common/Lifecycle';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -66,7 +67,7 @@ export const enum SelectionMode {
  * not handled by the SelectionService but the onRedrawRequest event is fired
  * when the selection is ready to be redrawn (on an animation frame).
  */
-export class SelectionService implements ISelectionService {
+export class SelectionService extends Disposable implements ISelectionService {
   public serviceBrand: undefined;
 
   protected _model: SelectionModel;
@@ -105,15 +106,16 @@ export class SelectionService implements ISelectionService {
 
   private _mouseDownTimeStamp: number = 0;
 
-  private _onLinuxMouseSelection = new EventEmitter<string>();
+  private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
-  private _onRedrawRequest = new EventEmitter<ISelectionRedrawRequestEvent>();
-  public get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
-  private _onSelectionChange = new EventEmitter<void>();
+  private _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
+  public get onRequestRedraw(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
+  private _onSelectionChange = this.register(new EventEmitter<void>());
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
+  public get onRequestScrollLines(): IEvent<ISelectionRequestScrollLinesEvent> { return this._onRequestScrollLines.event; }
 
   constructor(
-    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -122,6 +124,8 @@ export class SelectionService implements ISelectionService {
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
+    super();
+
     // Init listeners
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
@@ -131,7 +135,7 @@ export class SelectionService implements ISelectionService {
       }
     });
     this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
+    this.register(this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e)));
 
     this.enable();
 
@@ -633,7 +637,7 @@ export class SelectionService implements ISelectionService {
       return;
     }
     if (this._dragScrollAmount) {
-      this._scrollLines(this._dragScrollAmount, false);
+      this._onRequestScrollLines.fire({ amount: this._dragScrollAmount, suppressScrollEvent: false });
       // Re-evaluate selection
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
