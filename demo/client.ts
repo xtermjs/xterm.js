@@ -31,17 +31,6 @@ import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Add
 // little weird here as we're importing "this" module
 import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
-interface IDisposable {
-  dispose(): void;
-}
-
-function addDisposableListener(element: HTMLElement, type: string, listener: (event: any) => void): IDisposable {
-  element.addEventListener(type, listener);
-  return {
-    dispose: () => element.removeEventListener(type, listener)
-  };
-}
-
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
