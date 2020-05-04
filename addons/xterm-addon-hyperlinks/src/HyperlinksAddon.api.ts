@@ -33,17 +33,5 @@ describe('HyperlinksAddon', () => {
     await openTerminal(page);
   });
 
-  //it('wcwidth V11 emoji test', async () => {
-  //  await page.evaluate(`
-  //    window.unicode11 = new Unicode11Addon();
-  //    window.term.loadAddon(window.unicode11);
-  //  `);
-  //  // should have loaded '11'
-  //  assert.deepEqual(await page.evaluate(`window.term.unicode.versions`), ['6', '11']);
-  //  // switch should not throw
-  //  await page.evaluate(`window.term.unicode.activeVersion = '11';`);
-  //  assert.deepEqual(await page.evaluate(`window.term.unicode.activeVersion`), '11');
-  //  // v6: 10, V11: 20
-  //  assert.deepEqual(await page.evaluate(`window.term._core.unicodeService.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣')`), 20);
-  //});
+  // TODO: write some tests
 });

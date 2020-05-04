@@ -5,8 +5,7 @@
  * UnicodeVersionProvider for V11.
  */
 
-import { Terminal, ITerminalAddon, IDisposable, IBufferRange } from 'xterm';
-import { ILinkProvider, IBufferCellPosition, ILink } from 'xterm';
+import { Terminal, ITerminalAddon, IDisposable, IBufferRange, ILinkProvider, IBufferCellPosition, ILink } from 'xterm';
 
 /**
  * TODO:
@@ -71,7 +70,7 @@ class HyperlinkProvider implements ILinkProvider {
     }
 
     // fix ranges to 1-based, right inclusive
-    for (let r of ranges) {
+    for (const r of ranges) {
       r.start.x++;
       r.start.y++;
       r.end.y++;
