@@ -11,7 +11,7 @@
 import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { HyperlinksAddon } from '../addons/xterm-addon-hyperlinks/out/HyperlinksAddon';
+import { HyperlinksAddon, DEFAULT_SCHEMES } from '../addons/xterm-addon-hyperlinks/out/HyperlinksAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
@@ -165,6 +165,9 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.hyperlinks.instance = new HyperlinksAddon();
+  addons.hyperlinks.instance.registerSchemeHandler(DEFAULT_SCHEMES.HTTP);
+  addons.hyperlinks.instance.registerSchemeHandler(DEFAULT_SCHEMES.HTTPS);
+  addons.hyperlinks.instance.registerSchemeHandler(DEFAULT_SCHEMES.FTP);
   addons.unicode11.instance = new Unicode11Addon();
   // TODO: Remove arguments when link provider API is the default
   addons['web-links'].instance = new WebLinksAddon(undefined, undefined, true);
@@ -376,6 +379,11 @@ function initAddons(term: TerminalType): void {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
+        if (name === 'hyperlinks') {
+          addon.instance.registerSchemeHandler(DEFAULT_SCHEMES.HTTP);
+          addon.instance.registerSchemeHandler(DEFAULT_SCHEMES.HTTPS);
+          addon.instance.registerSchemeHandler(DEFAULT_SCHEMES.FTP);
+        }
         if (name === 'webgl') {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
