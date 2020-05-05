@@ -161,6 +161,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**FluffOS**](https://www.fluffos.info): Active maintained LPMUD driver with websocket support.
 - [**x-terminal**](https://atom.io/packages/x-terminal): Atom plugin for providing terminals inside your Atom workspace.
 - [**CoCalc**](https://cocalc.com/): Lots of free software pre-installed, to chat, collaborate, develop, program, publish, research, share, teach, in C++, HTML, Julia, Jupyter, LaTeX, Markdown, Python, R, SageMath, Scala, ...
+- [**Dank Domain**](https://www.DDgame.us/): Open source multiuser medieval game supporting old & new terminal emulation.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
