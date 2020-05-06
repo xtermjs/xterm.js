@@ -557,12 +557,12 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('registerLinkProvider', () => {
-    it('should fire provideLink when hovering cells', async () => {
+    it('should fire provideLinks when hovering cells', async () => {
       await openTerminal(page, { rendererType: 'dom' });
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
+          provideLinks: (position, cb) => {
             calls.push(position);
             cb(undefined);
           }
@@ -572,7 +572,7 @@ describe('API Integration Tests', function(): void {
       await moveMouseCell(page, dims, 1, 1);
       await moveMouseCell(page, dims, 2, 2);
       await moveMouseCell(page, dims, 10, 4);
-      await pollFor(page, `window.calls`, [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 10, y: 4 }]);
+      await pollFor(page, `window.calls`, [1, 2, 4]);
       await page.evaluate(`window.disposable.dispose()`);
     });
 
@@ -584,30 +584,30 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
-            window.calls.push('provide ' + position.x + ',' + position.y);
-            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
               window.calls.push('match');
-              cb({
+              cb([{
                 range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
                 text: 'bar',
                 activate: () => window.calls.push('activate'),
                 hover: () => window.calls.push('hover'),
                 leave: () => window.calls.push('leave')
-              });
+              }]);
             }
           }
         });
       `);
       const dims = await getDimensions();
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
       await moveMouseCell(page, dims, 4, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', ]);
       await moveMouseCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
       await moveMouseCell(page, dims, 8, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'hover', 'leave', 'provide 4,1', 'provide 7,1', 'match', 'hover', 'leave', 'provide 8,1']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
       await page.evaluate(`window.disposable.dispose()`);
     });
 
@@ -619,28 +619,35 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
-            window.calls.push('provide ' + position.x + ',' + position.y);
-            if (position.x >= 5 && position.x <= 7 && position.y === 1) {
-              window.calls.push('match');
-              cb({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              window.calls.push('match 1');
+              cb([{
                 range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
                 text: 'bar',
                 activate: () => window.calls.push('activate')
-              });
+              }]);
+            } else if (position === 2) {
+              window.calls.push('match 2');
+              cb([{
+                range: { start: { x: 5, y: 2 }, end: { x: 7, y: 2 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              }]);
             }
           }
         });
       `);
       const dims = await getDimensions();
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match']);
-      await moveMouseCell(page, dims, 4, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match 1']);
+      await moveMouseCell(page, dims, 4, 2);
+      await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2']);
       await moveMouseCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match']);
-      await moveMouseCell(page, dims, 8, 1);
-      await pollFor(page, `window.calls`, ['provide 5,1', 'match', 'provide 4,1', 'provide 7,1', 'match', 'provide 8,1']);
+      await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1']);
+      await moveMouseCell(page, dims, 6, 2);
+      await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1', 'provide 2', 'match 2']);
       await page.evaluate(`window.disposable.dispose()`);
     });
 
@@ -656,38 +663,84 @@ describe('API Integration Tests', function(): void {
       await moveMouseCell(page, dims, 5, 5);
       await page.mouse.down();
       await page.mouse.up();
-      await timeout(50); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
+      await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
 
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
-            window.calls.push('provide ' + position.x + ',' + position.y);
-            cb({
-              range: { start: position, end: position },
-              text: window.term.buffer.active.getLine(position.y - 1).getCell(position.x - 1).getChars(),
-              activate: (_, text) => window.calls.push('activate ' + text),
-              hover: () => window.calls.push('hover'),
-              leave: () => window.calls.push('leave')
-            });
+          provideLinks: (y, cb) => {
+            window.calls.push('provide ' + y);
+            cb([{
+              range: { start: { x: 1, y }, end: { x: 80, y } },
+              text: window.term.buffer.active.getLine(y - 1).translateToString(),
+              activate: (_, text) => window.calls.push('activate ' + y),
+              hover: () => window.calls.push('hover ' + y),
+              leave: () => window.calls.push('leave ' + y)
+            }]);
           }
         });
       `);
       await moveMouseCell(page, dims, 3, 1);
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover']);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1']);
       await page.mouse.down();
       await page.mouse.up();
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b']);
-      await moveMouseCell(page, dims, 1, 1);
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover']);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1']);
+      await moveMouseCell(page, dims, 1, 2);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2']);
       await page.mouse.down();
       await page.mouse.up();
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a']);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2']);
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover']);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1']);
       await page.mouse.down();
       await page.mouse.up();
-      await pollFor(page, `window.calls`, ['provide 3,1', 'hover', 'activate b', 'leave', 'provide 1,1', 'hover', 'activate a', 'leave', 'provide 5,1', 'hover', 'activate c']);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1', 'activate 1']);
+      await page.evaluate(`window.disposable.dispose()`);
+    });
+
+    it('should work when multiple links are provided on the same line', async () => {
+      await openTerminal(page, { rendererType: 'dom' });
+      await writeSync(page, 'foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              cb([{
+                range: { start: { x: 1, y: 1 }, end: { x: 3, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 1-3'),
+                leave: () => window.calls.push('leave 1-3')
+              }, {
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 5-7'),
+                leave: () => window.calls.push('leave 5-7')
+              }, {
+                range: { start: { x: 9, y: 1 }, end: { x: 11, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 9-11'),
+                leave: () => window.calls.push('leave 9-11')
+              }]);
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(page, dims, 2, 1);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3']);
+      await moveMouseCell(page, dims, 6, 1);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7']);
+      await moveMouseCell(page, dims, 6, 2);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2']);
+      await moveMouseCell(page, dims, 10, 1);
+      await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2', 'provide 1', 'hover 9-11']);
       await page.evaluate(`window.disposable.dispose()`);
     });
   });

@@ -10,16 +10,12 @@ import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
 
 class TestLinkifier2 extends Linkifier2 {
-  protected _currentLinkState = {
-    decorations: {
-      underline: true,
-      pointerCursor: true
-    },
-    isHovered: true
-  };
-
   constructor(bufferService: IBufferService) {
     super(bufferService);
+  }
+
+  public set currentLink(link: any) {
+    this._currentLink = link;
   }
 
   public linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
@@ -35,11 +31,6 @@ describe('Linkifier2', () => {
   let bufferService: IBufferService;
   let linkifier: TestLinkifier2;
 
-  beforeEach(() => {
-    bufferService = new MockBufferService(100, 10);
-    linkifier = new TestLinkifier2(bufferService);
-  });
-
   const link: ILink = {
     text: 'foo',
     range: {
@@ -54,6 +45,21 @@ describe('Linkifier2', () => {
     },
     activate: () => { }
   };
+
+  beforeEach(() => {
+    bufferService = new MockBufferService(100, 10);
+    linkifier = new TestLinkifier2(bufferService);
+    linkifier.currentLink = {
+      link,
+      state: {
+        decorations: {
+          underline: true,
+          pointerCursor: true
+        },
+        isHovered: true
+      }
+    };
+  });
 
   it('onShowLinkUnderline event range is correct', done => {
     linkifier.onShowLinkUnderline(e => {

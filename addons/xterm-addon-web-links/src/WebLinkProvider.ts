@@ -15,19 +15,20 @@ export class WebLinkProvider implements ILinkProvider {
 
   }
 
-  public provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void {
-    callback(LinkComputer.computeLink(position, this._regex, this._terminal, this._handler));
+  public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
+    callback(LinkComputer.computeLink(y, this._regex, this._terminal, this._handler));
   }
 }
 
 export class LinkComputer {
-  public static computeLink(position: IBufferCellPosition, regex: RegExp, terminal: Terminal, handler: (event: MouseEvent, uri: string) => void): ILink | undefined {
+  public static computeLink(y: number, regex: RegExp, terminal: Terminal, handler: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-    const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(position.y - 1, false, terminal);
+    const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
 
     let match;
     let stringIndex = -1;
+    const result: ILink[] = [];
 
     while ((match = rex.exec(line)) !== null) {
       const text = match[1];
@@ -68,8 +69,10 @@ export class LinkComputer {
         }
       };
 
-      return { range, text, activate: handler };
+      result.push({ range, text, activate: handler });
     }
+
+    return result;
   }
 
   /**

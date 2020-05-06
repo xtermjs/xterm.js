@@ -264,7 +264,7 @@ export interface IMouseZone {
 }
 
 interface ILinkProvider {
-  provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void;
+  provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }
 
 interface ILink {

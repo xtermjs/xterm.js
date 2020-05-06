@@ -1100,11 +1100,12 @@ declare module 'xterm' {
   interface ILinkProvider {
     /**
      * Provides a link a buffer position
-     * @param position The position of the buffer that is currently active.
-     * @param callback The callback to be fired with the resulting link or
-     * `undefined` when ready.
+     * @param bufferLineNumber The y position of the buffer to check for links
+     * within.
+     * @param callback The callback to be fired when ready with the resulting
+     * link(s) for the line or `undefined`.
      */
-    provideLink(position: IBufferCellPosition, callback: (link: ILink | undefined) => void): void;
+    provideLinks(bufferLineNumber: number, callback: (links: ILink[] | undefined) => void): void;
   }
 
   /**
