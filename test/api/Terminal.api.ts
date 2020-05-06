@@ -557,12 +557,12 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('registerLinkProvider', () => {
-    it('should fire provideLink when hovering cells', async () => {
+    it('should fire provideLinks when hovering cells', async () => {
       await openTerminal(page, { rendererType: 'dom' });
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
+          provideLinks: (position, cb) => {
             calls.push(position);
             cb(undefined);
           }
@@ -584,17 +584,17 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
+          provideLinks: (position, cb) => {
             window.calls.push('provide ' + position.x + ',' + position.y);
             if (position.x >= 5 && position.x <= 7 && position.y === 1) {
               window.calls.push('match');
-              cb({
+              cb([{
                 range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
                 text: 'bar',
                 activate: () => window.calls.push('activate'),
                 hover: () => window.calls.push('hover'),
                 leave: () => window.calls.push('leave')
-              });
+              }]);
             }
           }
         });
@@ -619,15 +619,15 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
+          provideLinks: (position, cb) => {
             window.calls.push('provide ' + position.x + ',' + position.y);
             if (position.x >= 5 && position.x <= 7 && position.y === 1) {
               window.calls.push('match');
-              cb({
+              cb([{
                 range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
                 text: 'bar',
                 activate: () => window.calls.push('activate')
-              });
+              }]);
             }
           }
         });
@@ -661,15 +661,15 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
-          provideLink: (position, cb) => {
+          provideLinks: (position, cb) => {
             window.calls.push('provide ' + position.x + ',' + position.y);
-            cb({
+            cb([{
               range: { start: position, end: position },
               text: window.term.buffer.active.getLine(position.y - 1).getCell(position.x - 1).getChars(),
               activate: (_, text) => window.calls.push('activate ' + text),
               hover: () => window.calls.push('hover'),
               leave: () => window.calls.push('leave')
-            });
+            }]);
           }
         });
       `);
