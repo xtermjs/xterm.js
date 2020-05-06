@@ -72,7 +72,6 @@ export class LinkComputer {
       result.push({ range, text, activate: handler });
     }
 
-    console.log('computed', result);
     return result;
   }
 

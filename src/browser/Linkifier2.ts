@@ -134,11 +134,9 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this._linkProviders.forEach((linkProvider, i) => {
       const existingReply = this._activeProviderReplies?.get(i);
       if (existingReply) {
-        console.log('existing reply', existingReply);
         linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
       } else {
         linkProvider.provideLinks(position.y, (links: ILink[] | undefined) => {
-          console.log('provided links', links);
           if (this._isMouseOut) {
             return;
           }
@@ -286,7 +284,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     if (this._currentLink?.state) {
       this._currentLink.state.isHovered = true;
       if (this._currentLink.state.decorations.underline) {
-        console.log('add underline');
         this._fireUnderlineEvent(link, true);
       }
       if (this._currentLink.state.decorations.pointerCursor) {
@@ -311,7 +308,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     if (this._currentLink?.state) {
       this._currentLink.state.isHovered = false;
       if (this._currentLink.state.decorations.underline) {
-        console.log('lose underline');
         this._fireUnderlineEvent(link, false);
       }
       if (this._currentLink.state.decorations.pointerCursor) {
