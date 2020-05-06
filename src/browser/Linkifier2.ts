@@ -132,9 +132,16 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
     // There is no link cached, so ask for one
     this._linkProviders.forEach((linkProvider, i) => {
-      const existingReply = this._activeProviderReplies?.get(i);
-      if (existingReply) {
-        linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
+      if (useLineCache) {
+        const existingReply = this._activeProviderReplies?.get(i);
+        // If there isn't a reply, the provider hasn't responded yet.
+
+        // TODO: If there isn't a reply yet it means that the provider is still resolving. Ensuring
+        // provideLinks isn't triggered again saves ILink.hover firing twice though. This probably
+        // needs promises to get fixed
+        if (existingReply) {
+          linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
+        }
       } else {
         linkProvider.provideLinks(position.y, (links: ILink[] | undefined) => {
           if (this._isMouseOut) {
