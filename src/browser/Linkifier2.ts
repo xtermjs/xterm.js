@@ -150,9 +150,37 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           const linksWithState: ILinkWithState[] | undefined = links?.map(link  => ({ link }));
           this._activeProviderReplies?.set(i, linksWithState);
           linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
+
+          // If all providers have responded, remove lower priority links that intersect ranges of
+          // higher priority links
+          if (this._activeProviderReplies?.size === this._linkProviders.length) {
+            this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+          }
         });
       }
     });
+  }
+
+  private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
+    const occupiedCells = new Set<number>();
+    for (let i = 0; i < replies.size; i++) {
+      const providerReply = replies.get(i);
+      if (!providerReply) {
+        continue;
+      }
+      for (let i = 0; i < providerReply.length; i++) {
+        const linkWithState = providerReply[i];
+        const startX = linkWithState.link.range.start.y < y ? 0 : linkWithState.link.range.start.x;
+        const endX = linkWithState.link.range.end.y > y ? this._bufferService.cols : linkWithState.link.range.end.x;
+        for (let x = startX; x <= endX; x++) {
+          if (occupiedCells.has(x)) {
+            providerReply.splice(i--, 1);
+            break;
+          }
+          occupiedCells.add(x);
+        }
+      }
+    }
   }
 
   private _checkLinkProviderResult(index: number, position: IBufferCellPosition, linkProvided: boolean): boolean {
