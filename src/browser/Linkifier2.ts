@@ -26,7 +26,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _linkProviders: ILinkProvider[] = [];
-  private _currentLink: ILinkWithState | undefined;
+  protected _currentLink: ILinkWithState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
