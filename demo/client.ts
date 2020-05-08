@@ -392,7 +392,9 @@ function initAddons(term: TerminalType): void {
     wrapper.appendChild(label);
     fragment.appendChild(wrapper);
   });
-  document.getElementById('addons-container').appendChild(fragment);
+  const container = document.getElementById('addons-container');
+  container.innerHTML = '';
+  container.appendChild(fragment);
 }
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
