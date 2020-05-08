@@ -615,7 +615,7 @@ describe('API Integration Tests', function(): void {
       await moveMouseCell(page, dims, 5, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
       await moveMouseCell(page, dims, 4, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', ]);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
       await moveMouseCell(page, dims, 7, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
       await moveMouseCell(page, dims, 8, 1);
