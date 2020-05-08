@@ -30,6 +30,13 @@ declare module 'xterm' {
    */
   export interface ITerminalOptions {
     /**
+     * Whether to allow the use of proposed API. When false, any usage of APIs
+     * marked as experimental/proposed will throw an error. This defaults to
+     * true currently, but will change to false in v5.0.
+     */
+    allowProposedApi?: boolean;
+
+    /**
      * Whether background should support non-opaque color. It must be set before
      * executing the `Terminal.open()` method and can't be changed later without
      * executing it again. Note that enabling this can negatively impact

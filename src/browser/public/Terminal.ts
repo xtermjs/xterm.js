@@ -24,6 +24,12 @@ export class Terminal implements ITerminalApi {
     this._addonManager = new AddonManager();
   }
 
+  private _checkProposedApi(): void {
+    if (!this._core.optionsService.options.allowProposedApi) {
+      throw new Error('You must set the allowProposedApi option to true to use proposed API');
+    }
+  }
+
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
@@ -37,19 +43,27 @@ export class Terminal implements ITerminalApi {
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
+    this._checkProposedApi();
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
     return this._parser;
   }
   public get unicode(): IUnicodeHandling {
+    this._checkProposedApi();
     return new UnicodeApi(this._core);
   }
   public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
-  public get buffer(): IBufferNamespaceApi { return new BufferNamespaceApi(this._core.buffers); }
-  public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
+  public get buffer(): IBufferNamespaceApi {
+    this._checkProposedApi();
+    return new BufferNamespaceApi(this._core.buffers);
+  }
+  public get markers(): ReadonlyArray<IMarker> {
+    this._checkProposedApi();
+    return this._core.markers;
+  }
   public blur(): void {
     this._core.blur();
   }
@@ -67,21 +81,27 @@ export class Terminal implements ITerminalApi {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
+    this._checkProposedApi();
     return this._core.registerLinkMatcher(regex, handler, options);
   }
   public deregisterLinkMatcher(matcherId: number): void {
+    this._checkProposedApi();
     this._core.deregisterLinkMatcher(matcherId);
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    this._checkProposedApi();
     return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+    this._checkProposedApi();
     return this._core.registerCharacterJoiner(handler);
   }
   public deregisterCharacterJoiner(joinerId: number): void {
+    this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
   public registerMarker(cursorYOffset: number): IMarker | undefined {
+    this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }

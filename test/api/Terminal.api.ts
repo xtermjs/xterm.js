@@ -33,6 +33,18 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
+  it('Proposed API check', async () => {
+    await openTerminal(page, { allowProposedApi: false });
+    await page.evaluate(`
+      try {
+        window.term.buffer;
+      } catch (e) {
+        window.throwMessage = e.message;
+      }
+    `);
+    await pollFor(page, 'window.throwMessage', 'You must set the allowProposedApi option to true to use proposed API');
+  });
+
   it('write', async () => {
     await openTerminal(page);
     await page.evaluate(`
