@@ -33,6 +33,18 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
+  it('Proposed API check', async () => {
+    await openTerminal(page, { allowProposedApi: false });
+    await page.evaluate(`
+      try {
+        window.term.buffer;
+      } catch (e) {
+        window.throwMessage = e.message;
+      }
+    `);
+    await pollFor(page, 'window.throwMessage', 'You must set the allowProposedApi option to true to use proposed API');
+  });
+
   it('write', async () => {
     await openTerminal(page);
     await page.evaluate(`
@@ -603,7 +615,7 @@ describe('API Integration Tests', function(): void {
       await moveMouseCell(page, dims, 5, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
       await moveMouseCell(page, dims, 4, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', ]);
+      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
       await moveMouseCell(page, dims, 7, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
       await moveMouseCell(page, dims, 8, 1);

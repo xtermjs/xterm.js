@@ -218,6 +218,7 @@ export interface IPartialTerminalOptions {
 }
 
 export interface ITerminalOptions {
+  allowProposedApi: boolean;
   allowTransparency: boolean;
   bellSound: string;
   bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;

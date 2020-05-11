@@ -41,6 +41,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   macOptionClickForcesSelection: false,
   minimumContrastRatio: 1,
   disableStdin: false,
+  allowProposedApi: true,
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
