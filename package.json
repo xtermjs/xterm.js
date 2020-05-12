@@ -46,7 +46,7 @@
     "@types/utf8": "^2.1.6",
     "@types/webpack": "^4.41.12",
     "@types/ws": "^7.2.4",
-    "@typescript-eslint/eslint-plugin": "^2.31.0",
+    "@typescript-eslint/eslint-plugin": "^2.32.0",
     "@typescript-eslint/parser": "^2.31.0",
     "chai": "^4.2.0",
     "deep-equal": "^2.0.3",
