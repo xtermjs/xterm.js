@@ -253,10 +253,10 @@
     "@types/minimatch" "*"
     "@types/node" "*"
 
-"@types/jsdom@^16.2.2":
-  version "16.2.2"
-  resolved "https://registry.yarnpkg.com/@types/jsdom/-/jsdom-16.2.2.tgz#5d820a9578ccb8ac20afecdc141479aa77167dd0"
-  integrity sha512-QP2IQ5d65WtIMfQwttqFVFgMNikqeWO8mwUCfLrHDI4ijwb5qGhzPEm2ajWr2rlcCnjWeoYeb7Jx3+mtZGWMBw==
+"@types/jsdom@^16.2.3":
+  version "16.2.3"
+  resolved "https://registry.yarnpkg.com/@types/jsdom/-/jsdom-16.2.3.tgz#c6feadfe0836389b27f9c911cde82cd32e91c537"
+  integrity sha512-BREatezSn74rmLIDksuqGNFUTi9HNAWWQXYpFBFLK9U6wlMCO4M0QCa8CMpDsZQuqxSO9XifVLT5Q1P0vgKLqw==
   dependencies:
     "@types/node" "*"
     "@types/parse5" "*"
