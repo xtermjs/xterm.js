@@ -60,7 +60,7 @@
     "node-pty": "^0.9.0",
     "nyc": "^15.0.1",
     "playwright-core": "^0.11.1",
-    "source-map-loader": "^0.2.4",
+    "source-map-loader": "^1.0.0",
     "ts-loader": "^7.0.5",
     "typescript": "3.9",
     "utf8": "^3.0.0",
