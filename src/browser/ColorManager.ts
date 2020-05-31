@@ -5,7 +5,7 @@
 
 import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { channels, color, css } from 'browser/Color';
+import { channels, color, css, rgba } from 'browser/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 
 const DEFAULT_FOREGROUND = css.toColor('#ffffff');
@@ -116,6 +116,16 @@ export class ColorManager implements IColorManager {
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    const [selectionR, selectionG, selectionB, selectionA] = rgba.toChannels(this.colors.selection.rgba);
+    // The selection color is opaque. It needs to be blended with background color at 0.3 opacity Issue #2737
+    if (selectionA === 0xFF) {
+      const opacity = 0.3;
+      const newAlpha = Math.round(opacity*255);
+      this.colors.selection = {
+        css: channels.toCss(selectionR, selectionG, selectionB, newAlpha),
+        rgba: channels.toRgba(selectionR, selectionG, selectionB, newAlpha)
+      };
+    }
     this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selection);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
