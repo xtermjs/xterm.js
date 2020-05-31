@@ -136,7 +136,7 @@ export interface IServiceIdentifier<T> {
 
 export interface IBrandedService {
   serviceBrand: undefined;
-};
+}
 
 type GetLeadingNonServiceArgs<Args> =
   Args extends [...IBrandedService[]] ? []

@@ -139,7 +139,7 @@ describe('Keyboard', () => {
         assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }, { isMac: true }).key, '\x1b[1;3B'); // CSI 5 C
       });
       it('should return undefined for alt+a', () => {
-        assert.strictEqual(testEvaluateKeyboardEvent({ altKey: true, keyCode: 65 }, { isMac: true }).key, undefined), { isMac: true };
+        assert.strictEqual(testEvaluateKeyboardEvent({ altKey: true, keyCode: 65 }, { isMac: true }).key, undefined);
       });
     });
 

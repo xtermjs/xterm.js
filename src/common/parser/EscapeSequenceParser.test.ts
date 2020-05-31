@@ -1589,9 +1589,9 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('final ESC range 0x30 .. 0x7e, one byte', () => {
         for (let i = 0x30; i <= 0x7e; ++i) {
-          const c = String.fromCharCode(i);
+          const final = String.fromCharCode(i);
           let handler: IDisposable | undefined;
-          chai.assert.doesNotThrow(() => { handler = parser.addEscHandler({final: c}, () => {}); }, 'final must be in range 48 .. 126');
+          chai.assert.doesNotThrow(() => { handler = parser.addEscHandler({final}, () => {}); }, 'final must be in range 48 .. 126');
           if (handler) handler.dispose();
         }
         chai.assert.throws(() => { parser.addEscHandler({final: '\x2f'}, () => {}); }, 'final must be in range 48 .. 126');

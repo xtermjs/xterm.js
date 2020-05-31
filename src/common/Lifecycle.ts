@@ -21,7 +21,9 @@ export abstract class Disposable implements IDisposable {
    */
   public dispose(): void {
     this._isDisposed = true;
-    this._disposables.forEach(d => d.dispose());
+    for (const d of this._disposables) {
+      d.dispose();
+    }
     this._disposables.length = 0;
   }
 
@@ -52,7 +54,9 @@ export abstract class Disposable implements IDisposable {
  * Dispose of all disposables in an array and set its length to 0.
  */
 export function disposeArray(disposables: IDisposable[]): void {
-  disposables.forEach(d => d.dispose());
+  for (const d of disposables) {
+    d.dispose();
+  }
   disposables.length = 0;
 }
 

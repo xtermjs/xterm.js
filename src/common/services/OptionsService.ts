@@ -71,12 +71,12 @@ export class OptionsService implements IOptionsService {
 
   constructor(options: IPartialTerminalOptions) {
     this.options = clone(DEFAULT_OPTIONS);
-    Object.keys(options).forEach(k => {
+    for (const k of Object.keys(options)) {
       if (k in this.options) {
         const newValue = options[k as keyof IPartialTerminalOptions] as any;
         this.options[k] = newValue;
       }
-    });
+    }
   }
 
   public setOption(key: string, value: any): void {
