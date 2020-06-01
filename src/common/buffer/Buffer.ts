@@ -671,6 +671,6 @@ export class BufferStringIterator implements IBufferStringIterator {
       content += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
-    return {range: range, content};
+    return {range, content};
   }
 }
