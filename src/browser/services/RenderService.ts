@@ -55,6 +55,9 @@ export class RenderService extends Disposable implements IRenderService {
     @IBufferService bufferService: IBufferService
   ) {
     super();
+
+    this.register({ dispose: () => this._renderer.dispose() });
+
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
     this.register(this._renderDebouncer);
 
@@ -137,7 +140,6 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public dispose(): void {
-    this._renderer.dispose();
     super.dispose();
   }
 
