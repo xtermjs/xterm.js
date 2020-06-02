@@ -188,13 +188,13 @@ export class TextRenderLayer extends BaseRenderLayer {
 
       if (y !== startY) {
         // our row changed, draw the previous row
-        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
+        ctx.fillStyle = prevFillStyle || '';
         this._fillCells(startX, startY, cols - startX, 1);
         startX = x;
         startY = y;
       } else if (prevFillStyle !== nextFillStyle) {
         // our color changed, draw the previous characters in this row
-        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
+        ctx.fillStyle = prevFillStyle || '';
         this._fillCells(startX, startY, x - startX, 1);
         startX = x;
         startY = y;

@@ -116,13 +116,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
 
-    this._rowElements.forEach(element => {
+    for (const element of this._rowElements) {
       element.style.width = `${this.dimensions.canvasWidth}px`;
       element.style.height = `${this.dimensions.actualCellHeight}px`;
       element.style.lineHeight = `${this.dimensions.actualCellHeight}px`;
       // Make sure rows don't overflow onto following row
       element.style.overflow = 'hidden';
-    });
+    }
 
     if (!this._dimensionsStyleElement) {
       this._dimensionsStyleElement = document.createElement('style');
@@ -346,7 +346,9 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public clear(): void {
-    this._rowElements.forEach(e => e.innerHTML = '');
+    for (const e of this._rowElements) {
+      e.innerHTML = '';
+    }
   }
 
   public renderRows(start: number, end: number): void {

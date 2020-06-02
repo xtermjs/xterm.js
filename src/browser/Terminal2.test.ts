@@ -60,7 +60,7 @@ describe('Escape Sequence Files', function(): void {
     ptyTerm._master.destroy();
   });
 
-  FILES.forEach(filename => {
+  for (const filename of FILES) {
     (process.platform === 'win32' ? it.skip : it)(filename.split('/').slice(-1)[0], async () => {
       // reset terminal and handler
       if (customHandler) {
@@ -93,7 +93,7 @@ describe('Escape Sequence Files', function(): void {
         throw new Error(formatError(fs.readFileSync(filename, 'utf8'), content, expected));
       }
     });
-  });
+  }
 });
 
 /**

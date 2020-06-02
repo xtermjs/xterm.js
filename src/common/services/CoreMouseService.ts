@@ -174,8 +174,8 @@ export class CoreMouseService implements ICoreMouseService {
     @ICoreService private readonly _coreService: ICoreService
   ) {
     // register default protocols and encodings
-    Object.keys(DEFAULT_PROTOCOLS).forEach(name => this.addProtocol(name, DEFAULT_PROTOCOLS[name]));
-    Object.keys(DEFAULT_ENCODINGS).forEach(name => this.addEncoding(name, DEFAULT_ENCODINGS[name]));
+    for (const name of Object.keys(DEFAULT_PROTOCOLS)) this.addProtocol(name, DEFAULT_PROTOCOLS[name]);
+    for (const name of Object.keys(DEFAULT_ENCODINGS)) this.addEncoding(name, DEFAULT_ENCODINGS[name]);
     // call reset to set defaults
     this.reset();
   }

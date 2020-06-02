@@ -104,7 +104,9 @@ export class MockOptionsService implements IOptionsService {
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: IPartialTerminalOptions) {
     if (testOptions) {
-      Object.keys(testOptions).forEach(key => this.options[key] = (<any>testOptions)[key]);
+      for (const key of Object.keys(testOptions)) {
+        this.options[key] = (<any>testOptions)[key];
+      }
     }
   }
   public setOption<T>(key: string, value: T): void {

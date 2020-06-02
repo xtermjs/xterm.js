@@ -32,6 +32,7 @@
     "@typescript-eslint"
   ],
   "rules": {
+    "no-extra-semi": "error",
     "@typescript-eslint/array-type": [
       "warn",
       {
