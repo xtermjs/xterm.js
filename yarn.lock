@@ -352,10 +352,10 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@^4.41.16":
-  version "4.41.16"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.41.16.tgz#57b6154c5465401b0466c5fadcaf89dd98a77798"
-  integrity sha512-w80nXwCcXwwgv7rkTXb8lET6nWPNNUJxa36lrA2DEkD5TcPpHrlGAPrjdpZnkFX/FXSSuN5IIxCYowAB1Vobtw==
+"@types/webpack@^4.41.17":
+  version "4.41.17"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.41.17.tgz#0a69005e644d657c85b7d6ec1c826a71bebd1c93"
+  integrity sha512-6FfeCidTSHozwKI67gIVQQ5Mp0g4X96c2IXxX75hYEQJwST/i6NyZexP//zzMOBb+wG9jJ7oO8fk9yObP2HWAw==
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
