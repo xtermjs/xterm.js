@@ -102,13 +102,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._rowContainer,
       this._selectionContainer,
       this._themeStyleElement,
-      this._dimensionsStyleElement,
+      this._dimensionsStyleElement
     ]) {
       if (element.parentElement === this._screenElement) {
         this._screenElement.removeChild(element);
       }
     }
-  
+
     super.dispose();
   }
 
