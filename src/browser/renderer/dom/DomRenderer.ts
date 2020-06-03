@@ -95,10 +95,20 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dispose(): void {
     this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
-    this._screenElement.removeChild(this._rowContainer);
-    this._screenElement.removeChild(this._selectionContainer);
-    this._screenElement.removeChild(this._themeStyleElement);
-    this._screenElement.removeChild(this._dimensionsStyleElement);
+
+    // Outside influences such as React unmounts may manipulate the DOM before our disposal.
+    // https://github.com/xtermjs/xterm.js/issues/2960
+    for (const element of [
+      this._rowContainer,
+      this._selectionContainer,
+      this._themeStyleElement,
+      this._dimensionsStyleElement,
+    ]) {
+      if (element.parentElement === this._screenElement) {
+        this._screenElement.removeChild(element);
+      }
+    }
+  
     super.dispose();
   }
 
