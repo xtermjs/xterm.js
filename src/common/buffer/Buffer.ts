@@ -666,11 +666,11 @@ export class BufferStringIterator implements IBufferStringIterator {
     // limit to current buffer length
     range.first = Math.max(range.first, 0);
     range.last = Math.min(range.last, this._buffer.lines.length);
-    let result = '';
+    let content = '';
     for (let i = range.first; i <= range.last; ++i) {
-      result += this._buffer.translateBufferLineToString(i, this._trimRight);
+      content += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
-    return {range: range, content: result};
+    return {range, content};
   }
 }

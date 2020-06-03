@@ -328,7 +328,9 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       }));
       this._windowsMode = {
         dispose: () => {
-          disposables.forEach(d => d.dispose());
+          for (const d of disposables) {
+            d.dispose();
+          }
         }
       };
     }

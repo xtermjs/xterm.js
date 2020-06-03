@@ -204,11 +204,11 @@ export class Terminal implements ITerminalApi {
   }
 
   private _verifyIntegers(...values: number[]): void {
-    values.forEach(value => {
+    for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
       }
-    });
+    }
   }
 }
 
