@@ -16,6 +16,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
+import { removeElementFromParent } from 'browser/Dom';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -60,7 +61,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public dispose(): void {
-    this._canvas.parentElement?.removeChild(this._canvas);
+    removeElementFromParent(this._canvas);
     this._charAtlas?.dispose();
   }
 
