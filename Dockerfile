@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:12
 MAINTAINER Paris Kasidiaris <paris@sourcelair.com>
 
 # Set the working directory
