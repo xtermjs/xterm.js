@@ -15,7 +15,6 @@ import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'browser/Color';
 
 let nextRendererId = 1;
 
@@ -45,7 +44,6 @@ export class Renderer extends Disposable implements IRenderer {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
     this._characterJoinerRegistry = new CharacterJoinerRegistry(this._bufferService);
-    color.blendSelectionWithBgWithOpacity(this._colors);
     this._renderLayers = [
       new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),

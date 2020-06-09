@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColor, IColorSet } from 'browser/Types';
+import { IColor } from 'browser/Types';
 
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
@@ -47,16 +47,8 @@ export namespace color {
     const rgba = channels.toRgba(r, g, b);
     return { css, rgba };
   }
-  export function blendSelectionWithBgWithOpacity(colors: IColorSet, opacity: number=0.3): void {
-    const [selectionR, selectionG, selectionB, selectionA] = rgba.toChannels(colors.selection.rgba);
-    // The selection color is opaque. It needs to be blended with background color at 0.3 opacity Issue #2737
-    if (selectionA === 0xFF) {
-      const newAlpha: number = Math.round(opacity*255);
-      colors.selection = {
-        css: channels.toCss(selectionR, selectionG, selectionB, newAlpha),
-        rgba: channels.toRgba(selectionR, selectionG, selectionB, newAlpha)
-      };
-    }
+  export function isOpaque(color: IColor): boolean {
+    return (color.rgba & 0xFF) === 0xFF;
   }
 
   export function ensureContrastRatio(bg: IColor, fg: IColor, ratio: number): IColor | undefined {
@@ -77,6 +69,14 @@ export namespace color {
     return {
       css: channels.toCss(r, g, b),
       rgba: rgbaColor
+    };
+  }
+  export function opacity(color: IColor, opacity: number): IColor {
+    const a = Math.round(opacity * 0xFF);
+    const [r, g, b] = rgba.toChannels(color.rgba);
+    return {
+      css: channels.toCss(r, g, b, a),
+      rgba: channels.toRgba(r, g, b, a)
     };
   }
 }
