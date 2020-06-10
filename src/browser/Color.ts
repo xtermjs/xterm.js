@@ -47,6 +47,7 @@ export namespace color {
     const rgba = channels.toRgba(r, g, b);
     return { css, rgba };
   }
+
   export function isOpaque(color: IColor): boolean {
     return (color.rgba & 0xFF) === 0xFF;
   }
@@ -71,6 +72,7 @@ export namespace color {
       rgba: rgbaColor
     };
   }
+
   export function opacity(color: IColor, opacity: number): IColor {
     const a = Math.round(opacity * 0xFF);
     const [r, g, b] = rgba.toChannels(color.rgba);
