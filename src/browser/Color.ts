@@ -88,10 +88,19 @@ export namespace color {
  */
 export namespace css {
   export function toColor(css: string): IColor {
-    return {
-      css,
-      rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
-    };
+    switch (css.length) {
+      case 7: // #rrggbb
+        return {
+          css,
+          rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
+        };
+      case 9: // #rrggbbaa
+        return {
+          css,
+          rgba: parseInt(css.slice(1), 16) >>> 0
+        };
+    }
+    throw new Error('css.toColor: Unsupported css format');
   }
 }
 
