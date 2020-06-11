@@ -674,7 +674,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         el.removeEventListener('wheel', requestedEvents.wheel!);
         requestedEvents.wheel = null;
       } else if (!requestedEvents.wheel) {
-        el.addEventListener('wheel', eventListeners.wheel);
+        el.addEventListener('wheel', eventListeners.wheel, { passive: false });
         requestedEvents.wheel = eventListeners.wheel;
       }
 
@@ -747,7 +747,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         }
         return;
       }
-    }));
+    }, { passive: true }));
 
     // allow wheel scrolling in
     // the shell for example
@@ -756,20 +756,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
-    }));
+    }, { passive: true }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
       if (this._coreMouseService.areMouseEventsActive) return;
       this.viewport!.onTouchStart(ev);
       return this.cancel(ev);
-    }));
+    }, { passive: true }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
       if (this._coreMouseService.areMouseEventsActive) return;
       if (!this.viewport!.onTouchMove(ev)) {
         return this.cancel(ev);
       }
-    }));
+    }, { passive: true }));
   }
 
 
