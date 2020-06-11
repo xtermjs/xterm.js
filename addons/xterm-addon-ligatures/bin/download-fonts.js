@@ -12,7 +12,7 @@ const mkdirp = require('mkdirp');
 const yauzl = require('yauzl');
 
 const urls = {
-  fira: 'https://github.com/tonsky/FiraCode/raw/master/distr/otf/FiraCode-Regular.otf',
+  fira: 'https://github.com/tonsky/FiraCode/raw/d42e7276fa925e5f82748f3ec9ea429736611b48/distr/otf/FiraCode-Regular.otf',
   iosevka: 'https://github.com/be5invis/Iosevka/releases/download/v1.14.3/01-iosevka-1.14.3.zip'
 };
 
