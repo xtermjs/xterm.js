@@ -120,7 +120,7 @@ export interface IColorSet {
   background: IColor;
   cursor: IColor;
   cursorAccent: IColor;
-  selection: IColor;
+  selectionTransparent: IColor;
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
   ansi: IColor[];

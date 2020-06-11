@@ -44,7 +44,6 @@ export class Renderer extends Disposable implements IRenderer {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
     this._characterJoinerRegistry = new CharacterJoinerRegistry(this._bufferService);
-
     this._renderLayers = [
       new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
       new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
@@ -89,7 +88,6 @@ export class Renderer extends Disposable implements IRenderer {
 
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
     // Clear layers and force a full render
     for (const l of this._renderLayers) {
       l.setColors(this._colors);

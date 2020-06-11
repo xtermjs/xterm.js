@@ -48,6 +48,10 @@ export namespace color {
     return { css, rgba };
   }
 
+  export function isOpaque(color: IColor): boolean {
+    return (color.rgba & 0xFF) === 0xFF;
+  }
+
   export function ensureContrastRatio(bg: IColor, fg: IColor, ratio: number): IColor | undefined {
     const result = rgba.ensureContrastRatio(bg.rgba, fg.rgba, ratio);
     if (!result) {
@@ -68,6 +72,15 @@ export namespace color {
       rgba: rgbaColor
     };
   }
+
+  export function opacity(color: IColor, opacity: number): IColor {
+    const a = Math.round(opacity * 0xFF);
+    const [r, g, b] = rgba.toChannels(color.rgba);
+    return {
+      css: channels.toCss(r, g, b, a),
+      rgba: channels.toRgba(r, g, b, a)
+    };
+  }
 }
 
 /**
@@ -75,10 +88,19 @@ export namespace color {
  */
 export namespace css {
   export function toColor(css: string): IColor {
-    return {
-      css,
-      rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
-    };
+    switch (css.length) {
+      case 7: // #rrggbb
+        return {
+          css,
+          rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
+        };
+      case 9: // #rrggbbaa
+        return {
+          css,
+          rgba: parseInt(css.slice(1), 16) >>> 0
+        };
+    }
+    throw new Error('css.toColor: Unsupported css format');
   }
 }
 

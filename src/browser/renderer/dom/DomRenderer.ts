@@ -54,7 +54,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
-
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
@@ -226,7 +225,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selection.css};` +
+      ` background-color: ${this._colors.selectionTransparent.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {

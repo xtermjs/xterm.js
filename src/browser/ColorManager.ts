@@ -92,7 +92,7 @@ export class ColorManager implements IColorManager {
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
-      selection: DEFAULT_SELECTION,
+      selectionTransparent: DEFAULT_SELECTION,
       selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
@@ -115,8 +115,16 @@ export class ColorManager implements IColorManager {
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
-    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
-    this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selection);
+    this.colors.selectionTransparent = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selectionTransparent);
+    /**
+     * If selection color is opaque, blend it with background with 0.3 opacity
+     * Issue #2737
+     */
+    if (color.isOpaque(this.colors.selectionTransparent)) {
+      const opacity = 0.3;
+      this.colors.selectionTransparent = color.opacity(this.colors.selectionTransparent, opacity);
+    }
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);

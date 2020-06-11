@@ -20,7 +20,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     background: colors.background,
     cursor: NULL_COLOR,
     cursorAccent: NULL_COLOR,
-    selection: NULL_COLOR,
+    selectionTransparent: NULL_COLOR,
     selectionOpaque: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.

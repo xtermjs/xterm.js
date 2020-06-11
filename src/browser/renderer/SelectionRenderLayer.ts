@@ -78,7 +78,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    this._ctx.fillStyle = this._colors.selection.css;
+    this._ctx.fillStyle = this._colors.selectionTransparent.css;
 
     if (columnSelectMode) {
       const startCol = start[0];
