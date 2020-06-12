@@ -336,11 +336,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     //this.register(addDisposableDomListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
     //this.register(addDisposableDomListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     //this.register(addDisposableDomListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
-    const keyboardHelper = new KeyboardHelper();
-    this.register(addDisposableDomListener(this.textarea!, 'keyup', keyboardHelper.up, true));
-    this.register(addDisposableDomListener(this.textarea!, 'keydown', keyboardHelper.down, true));
-    this.register(addDisposableDomListener(this.textarea!, 'keypress', keyboardHelper.press, true));
-    this.register(addDisposableDomListener(this.textarea!, 'input', keyboardHelper.input, true));
+    const keyboardHelper = new KeyboardHelper(this._coreService);
+    //this.register(addDisposableDomListener(this.textarea!, 'keyup', keyboardHelper.up.bind(keyboardHelper), true));
+    this.register(addDisposableDomListener(this.textarea!, 'keydown', keyboardHelper.down.bind(keyboardHelper), true));
+    //this.register(addDisposableDomListener(this.textarea!, 'keypress', keyboardHelper.press.bind(keyboardHelper), true));
+    this.register(addDisposableDomListener(this.textarea!, 'input', keyboardHelper.input.bind(keyboardHelper), true));
 
     this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
     this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));

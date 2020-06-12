@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { ICoreService } from 'common/services/Services';
+
 // non printable keys that never trigger an input event
 // these keys only trigger down/up events, repeated only trigger multiple down events
 const NON_PRINTABLE = [
@@ -38,6 +40,36 @@ const NON_PRINTABLE = [
   'AltLeft',
   'AltRight',     // key: AltGraph
   'ControlRight',
+  'ArrowUp',
+  'ArrowRight',
+  'ArrowDown',
+  'ArrowLeft'
+]
+
+const TERM_RELEVANT = [
+  'Escape',
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12',
+  'Insert',
+  'Delete',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+  'Backspace',
+  'NumLock',
+  'Tab',
+  'Enter',
   'ArrowUp',
   'ArrowRight',
   'ArrowDown',
@@ -80,20 +112,46 @@ const MODIFIERS_MAPPED = [
 ]
 
 export class KeyboardHelper {
+
+  constructor(
+    @ICoreService private readonly _coreService: ICoreService
+  ) {}
+
+  private _logPrintable(ev: InputEvent) {
+    console.log('PRINTABLE:', [ev.data]);
+  }
+  private _logNonPrintable(ev: KeyboardEvent) {
+    console.log('NON-PRINTABLE:', {key: ev.key, alt: ev.altKey, ctrl: ev.ctrlKey, meta: ev.metaKey, shift: ev.shiftKey});
+  }
+
   public down(ev: KeyboardEvent): boolean {
-    console.log('down', ev);
+    //console.log('down', ev);
+    if (NON_PRINTABLE.indexOf(ev.code) !== -1 || NON_PRINTABLE.indexOf(ev.key) !== -1) {
+      if (TERM_RELEVANT.indexOf(ev.code) !== -1 || TERM_RELEVANT.indexOf(ev.key) !== -1) {
+        this._logNonPrintable(ev);
+      }
+      this._cancel(ev);
+    } else if (ev.altKey || ev.ctrlKey || ev.metaKey) {
+      this._logNonPrintable(ev);
+      this._cancel(ev);
+    }
     return true;
   }
   public up(ev: KeyboardEvent): boolean {
     console.log('up', ev);
     return true;
   }
-  public input(ev: KeyboardEvent): boolean {
-    console.log('input', ev);
+  public input(ev: InputEvent): boolean {
+    if (ev.data) {
+      this._logPrintable(ev);
+      this._cancel(ev);
+    }
     return true;
   }
-  public press(ev: KeyboardEvent): boolean {
-    console.log('press', ev);
-    return true;
+
+  public _cancel(ev: Event): boolean | undefined {
+    ev.preventDefault();
+    ev.stopPropagation();
+    return false;
   }
 }
