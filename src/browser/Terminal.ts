@@ -53,6 +53,7 @@ import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
+import { KeyboardHelper } from 'browser/input/KeyboardHelper';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -332,9 +333,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * Apply key handling to the terminal
    */
   private _bindKeys(): void {
-    this.register(addDisposableDomListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
-    this.register(addDisposableDomListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
-    this.register(addDisposableDomListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
+    //this.register(addDisposableDomListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
+    //this.register(addDisposableDomListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
+    //this.register(addDisposableDomListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
+    const keyboardHelper = new KeyboardHelper();
+    this.register(addDisposableDomListener(this.textarea!, 'keyup', keyboardHelper.up, true));
+    this.register(addDisposableDomListener(this.textarea!, 'keydown', keyboardHelper.down, true));
+    this.register(addDisposableDomListener(this.textarea!, 'keypress', keyboardHelper.press, true));
+    this.register(addDisposableDomListener(this.textarea!, 'input', keyboardHelper.input, true));
+
     this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
     this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
