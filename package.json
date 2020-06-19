@@ -65,7 +65,7 @@
     "typescript": "3.9",
     "utf8": "^3.0.0",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11",
+    "webpack-cli": "^3.3.12",
     "ws": "^7.3.0",
     "xterm-benchmark": "^0.1.3"
   }
