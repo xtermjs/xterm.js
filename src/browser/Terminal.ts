@@ -281,6 +281,26 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._onBlur.fire();
   }
 
+  private _syncTextArea(): void {
+    if (!this.buffer.isCursorInViewport || this._compositionHelper!.isComposing) {
+      return;
+    }
+
+    const cellHeight = Math.ceil(this._charSizeService!.height * this.optionsService.options.lineHeight);
+    const cursorTop = this._bufferService.buffer.y * cellHeight;
+    const cursorLeft = this._bufferService.buffer.x * this._charSizeService!.width;
+
+    // Sync the textarea to the exact position of the composition view so the IME knows where the
+    // text is.
+    this.textarea!.style.position = 'absolute';
+    this.textarea!.style.left = cursorLeft + 'px';
+    this.textarea!.style.top = cursorTop + 'px';
+    this.textarea!.style.width = this._charSizeService!.width + 'px';
+    this.textarea!.style.height = cellHeight + 'px';
+    this.textarea!.style.lineHeight = cellHeight + 'px';
+    this.textarea!.style.zIndex = '-5';
+  }
+
   /**
    * Initialize default behavior
    */
@@ -436,7 +456,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
-    this.register(this.onCursorMove(() => this._renderService!.onCursorMove()));
+    this.register(this.onCursorMove(() => {
+      this._renderService!.onCursorMove();
+      this._syncTextArea();
+
+    }));
     this.register(this.onResize(() => this._renderService!.onResize(this.cols, this.rows)));
     this.register(this.onBlur(() => this._renderService!.onBlur()));
     this.register(this.onFocus(() => this._renderService!.onFocus()));

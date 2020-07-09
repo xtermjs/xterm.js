@@ -87,6 +87,7 @@ export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 export type LineData = CharData[];
 
 export interface ICompositionHelper {
+  readonly isComposing: boolean;
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;
   compositionend(): void;

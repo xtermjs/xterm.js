@@ -22,6 +22,7 @@ export class CompositionHelper {
    * IME. This variable determines whether the compositionText should be displayed on the UI.
    */
   private _isComposing: boolean;
+  public get isComposing(): boolean { return this._isComposing; }
 
   /**
    * The position within the input textarea's value of the current composition.
@@ -118,7 +119,6 @@ export class CompositionHelper {
   private _finalizeComposition(waitForPropagation: boolean): void {
     this._compositionView.classList.remove('active');
     this._isComposing = false;
-    this._clearTextareaPosition();
 
     if (!waitForPropagation) {
       // Cancel any delayed composition send requests and send the input immediately.
@@ -207,6 +207,7 @@ export class CompositionHelper {
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
+      this._textarea.style.position = 'absolute';
       this._textarea.style.left = cursorLeft + 'px';
       this._textarea.style.top = cursorTop + 'px';
       this._textarea.style.width = compositionViewBounds.width + 'px';
@@ -217,14 +218,5 @@ export class CompositionHelper {
     if (!dontRecurse) {
       setTimeout(() => this.updateCompositionElements(true), 0);
     }
-  }
-
-  /**
-   * Clears the textarea's position so that the cursor does not blink on IE.
-   * @private
-   */
-  private _clearTextareaPosition(): void {
-    this._textarea.style.left = '';
-    this._textarea.style.top = '';
   }
 }
