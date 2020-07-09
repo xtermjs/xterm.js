@@ -459,7 +459,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onCursorMove(() => {
       this._renderService!.onCursorMove();
       this._syncTextArea();
-
     }));
     this.register(this.onResize(() => this._renderService!.onResize(this.cols, this.rows)));
     this.register(this.onBlur(() => this._renderService!.onBlur()));
