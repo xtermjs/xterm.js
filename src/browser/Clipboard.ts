@@ -70,7 +70,6 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   const top = ev.clientY - pos.top - 10;
 
   // Bring textarea at the cursor position
-  textarea.style.position = 'absolute';
   textarea.style.width = '20px';
   textarea.style.height = '20px';
   textarea.style.left = `${left}px`;

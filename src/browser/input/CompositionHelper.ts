@@ -207,7 +207,6 @@ export class CompositionHelper {
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
-      this._textarea.style.position = 'absolute';
       this._textarea.style.left = cursorLeft + 'px';
       this._textarea.style.top = cursorTop + 'px';
       this._textarea.style.width = compositionViewBounds.width + 'px';

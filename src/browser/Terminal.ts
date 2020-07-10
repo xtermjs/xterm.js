@@ -282,7 +282,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _syncTextArea(): void {
-    if (!this.buffer.isCursorInViewport || this._compositionHelper!.isComposing) {
+    if (!this.textarea || !this.buffer.isCursorInViewport || this._compositionHelper!.isComposing) {
       return;
     }
 
@@ -292,13 +292,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
-    this.textarea!.style.position = 'absolute';
-    this.textarea!.style.left = cursorLeft + 'px';
-    this.textarea!.style.top = cursorTop + 'px';
-    this.textarea!.style.width = this._charSizeService!.width + 'px';
-    this.textarea!.style.height = cellHeight + 'px';
-    this.textarea!.style.lineHeight = cellHeight + 'px';
-    this.textarea!.style.zIndex = '-5';
+    this.textarea.style.left = cursorLeft + 'px';
+    this.textarea.style.top = cursorTop + 'px';
+    this.textarea.style.width = this._charSizeService!.width + 'px';
+    this.textarea.style.height = cellHeight + 'px';
+    this.textarea.style.lineHeight = cellHeight + 'px';
+    this.textarea.style.zIndex = '-5';
   }
 
   /**
