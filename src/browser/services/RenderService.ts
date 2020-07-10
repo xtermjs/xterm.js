@@ -86,7 +86,7 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {
-    this._isPaused = !entry.isIntersecting;
+    this._isPaused = entry.intersectionRatio === 0;
     if (!this._isPaused && this._needsFullRefresh) {
       this.refreshRows(0, this._rowCount - 1);
       this._needsFullRefresh = false;
