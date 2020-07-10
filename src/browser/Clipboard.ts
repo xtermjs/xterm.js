@@ -70,7 +70,6 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   const top = ev.clientY - pos.top - 10;
 
   // Bring textarea at the cursor position
-  textarea.style.position = 'absolute';
   textarea.style.width = '20px';
   textarea.style.height = '20px';
   textarea.style.left = `${left}px`;
@@ -78,17 +77,6 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   textarea.style.zIndex = '1000';
 
   textarea.focus();
-
-  // Reset the terminal textarea's styling
-  // Timeout needs to be long enough for click event to be handled.
-  setTimeout(() => {
-    textarea.style.position = '';
-    textarea.style.width = '';
-    textarea.style.height = '';
-    textarea.style.left = '';
-    textarea.style.top = '';
-    textarea.style.zIndex = '';
-  }, 200);
 }
 
 /**

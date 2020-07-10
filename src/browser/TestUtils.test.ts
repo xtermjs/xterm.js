@@ -309,6 +309,9 @@ export class MockViewport implements IViewport {
 }
 
 export class MockCompositionHelper implements ICompositionHelper {
+  public get isComposing(): boolean {
+    return false;
+  }
   public compositionstart(): void {
     throw new Error('Method not implemented.');
   }
