@@ -778,7 +778,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
-    }, { passive: true }));
+    }, { passive: false }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
       if (this._coreMouseService.areMouseEventsActive) return;
@@ -791,7 +791,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!this.viewport!.onTouchMove(ev)) {
         return this.cancel(ev);
       }
-    }, { passive: true }));
+    }, { passive: false }));
   }
 
 
