@@ -1042,7 +1042,7 @@ describe('Terminal', () => {
       linkifier.attachToDom({} as any, mouseZoneManager);
     });
 
-    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: Mocha.Done): void {
       terminal.writeSync(rowText);
       linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
       linkifier.linkifyRows();
