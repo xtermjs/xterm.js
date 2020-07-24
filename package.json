@@ -36,7 +36,7 @@
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.11",
+    "@types/chai": "^4.2.12",
     "@types/debug": "^4.1.5",
     "@types/deep-equal": "^1.0.1",
     "@types/glob": "^7.1.3",
