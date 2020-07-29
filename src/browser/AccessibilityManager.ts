@@ -57,7 +57,7 @@ export class AccessibilityManager extends Disposable {
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add('xterm-accessibility-tree');
-    this._rowContainer.setAttribute('role', 'list');
+    this._rowContainer.setAttribute('role', 'document');
     this._rowElements = [];
     for (let i = 0; i < this._terminal.rows; i++) {
       this._rowElements[i] = this._createAccessibilityTreeNode();
