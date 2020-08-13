@@ -166,6 +166,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Codecademy**](https://codecademy.com/): Uses xterm.js in its courses on Bash. 
 - [**Laravel Ssh Web Client**](https://github.com/roke22/Laravel-ssh-client): Laravel server inventory with ssh web client to connect at server using xterm.js
 - [**Repl.it**](https://repl.it): Collaborative browser based IDE with support for 50+ different languages.
+- [**TeleType**](https://github.com/akshaykmr/TeleType): cli tool that allows you to share your terminal online conveniently. Show off mad cli-fu, help a colleague, teach, or troubleshoot.
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
