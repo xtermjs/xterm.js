@@ -353,6 +353,23 @@ declare module 'xterm' {
   }
 
   /**
+   * An object containing options for a link provider.
+   */
+  export interface ILinkProviderOptions {
+    /**
+     * A callback that fires when the mouse hovers over a link for a period of
+     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
+     */
+    hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+
+    /**
+     * A callback that fires when the mouse leaves a link. Note that this can
+     * happen even when tooltipCallback hasn't fired for the link yet.
+     */
+    leave?(event: MouseEvent, text: string): void;
+  }
+
+  /**
    * An object that can be disposed via a dispose function.
    */
   export interface IDisposable {
