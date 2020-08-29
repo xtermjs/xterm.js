@@ -40,7 +40,6 @@
         "readonly": "generic"
       }
     ],
-    "@typescript-eslint/class-name-casing": "warn",
     "@typescript-eslint/consistent-type-definitions": "warn",
     "@typescript-eslint/explicit-function-return-type": [
       "warn",
@@ -60,10 +59,6 @@
     "@typescript-eslint/indent": [
       "warn",
       2
-    ],
-    "@typescript-eslint/interface-name-prefix": [
-      "warn",
-      "always"
     ],
     "@typescript-eslint/member-delimiter-style": [
       "warn",

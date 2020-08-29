@@ -46,11 +46,11 @@
     "@types/utf8": "^2.1.6",
     "@types/webpack": "^4.41.21",
     "@types/ws": "^7.2.6",
-    "@typescript-eslint/eslint-plugin": "^2.34.0",
-    "@typescript-eslint/parser": "^2.34.0",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
     "chai": "^4.2.0",
     "deep-equal": "^2.0.3",
-    "eslint": "^6.8.0",
+    "eslint": "^7.7.0",
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "glob": "^7.0.5",
@@ -68,5 +68,6 @@
     "webpack-cli": "^3.3.12",
     "ws": "^7.3.1",
     "xterm-benchmark": "^0.1.3"
-  }
+  },
+  "dependencies": {}
 }
