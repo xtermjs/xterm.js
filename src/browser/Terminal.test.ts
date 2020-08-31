@@ -1533,6 +1533,12 @@ describe('Terminal', () => {
       });
     });
   });
+  it('constructor options validation', () => {
+    expect(() => new TestTerminal({cursorStyle: undefined})).to.not.throw();
+    expect(() => new TestTerminal({tabStopWidth: 0})).to.throw('value: 0');
+    expect(() => new TestTerminal({scrollback: -10})).to.throw('value: -10');
+    expect(() => new TestTerminal({scrollSensitivity: 0})).to.throw('value: 0');
+  });
 });
 
 class TestLinkifier extends Linkifier {
