@@ -73,8 +73,12 @@ export class OptionsService implements IOptionsService {
     this.options = clone(DEFAULT_OPTIONS);
     for (const k of Object.keys(options)) {
       if (k in this.options) {
-        const newValue = options[k as keyof IPartialTerminalOptions] as any;
-        this.options[k] = newValue;
+        try {
+          const newValue = options[k as keyof IPartialTerminalOptions] as any;
+          this.options[k] = this._sanitizeAndValidateOption(k, newValue);
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
   }
