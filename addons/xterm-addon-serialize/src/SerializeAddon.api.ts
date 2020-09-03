@@ -270,6 +270,35 @@ describe('SerializeAddon', () => {
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
   });
+
+  it('serialize CJK correctly', async () => {
+    const lines = [
+      '中文中文',
+      '12中文',
+      '中文12',
+      '1中文中文中' // this line is going to be wrapped at last character because it has line length of 11 (1+2*5)
+    ];
+    const expected = [
+      '中文中文',
+      '12中文',
+      '中文12',
+      '1中文中文',
+      '中'
+    ];
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
+  });
+
+  it('serialize CJK Mixed with tab correctly', async () => {
+    const lines = [
+      '中文\t12' // CJK mixed with tab
+    ];
+    const expected = [
+      '中文\x1b[4C12'
+    ];
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
+  });
 });
 
 function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
