@@ -948,7 +948,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'fontWeight' | 'fontWeightBold'): string | number;
+    getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
