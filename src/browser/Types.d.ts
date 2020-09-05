@@ -275,6 +275,7 @@ interface ILink {
   activate(event: MouseEvent, text: string): void;
   hover?(event: MouseEvent, text: string): void;
   leave?(event: MouseEvent, text: string): void;
+  dispose?(): void;
 }
 
 interface ILinkDecorations {

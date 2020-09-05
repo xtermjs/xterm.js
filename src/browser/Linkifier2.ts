@@ -125,6 +125,13 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
   private _askForLink(position: IBufferCellPosition, useLineCache: boolean): void {
     if (!this._activeProviderReplies || !useLineCache) {
+      this._activeProviderReplies?.forEach(reply => {
+        reply?.forEach(linkWithState => {
+          if (linkWithState.link.dispose) {
+            linkWithState.link.dispose();
+          }
+        });
+      });
       this._activeProviderReplies = new Map();
       this._activeLine = position.y;
     }
