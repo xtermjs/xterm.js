@@ -1158,6 +1158,11 @@ declare module 'xterm' {
      * @param text The text of the link.
      */
     leave?(event: MouseEvent, text: string): void;
+
+    /**
+     * Called when the link is released and no longer used by xterm.js.
+     */
+    dispose?(): void;
   }
 
   /**
