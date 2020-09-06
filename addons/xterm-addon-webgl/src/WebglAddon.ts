@@ -40,4 +40,8 @@ export class WebglAddon implements ITerminalAddon {
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._renderer?.textureAtlas;
   }
+
+  public clearTextureAtlas(): void {
+    this._renderer?.clearCharAtlas();
+  }
 }

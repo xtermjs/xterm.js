@@ -43,7 +43,6 @@ export class RenderModel implements IRenderModel {
   public clear(): void {
     fill(this.cells, 0, 0);
     fill(this.lineLengths, 0, 0);
-    this.clearSelection();
   }
 
   public clearSelection(): void {
