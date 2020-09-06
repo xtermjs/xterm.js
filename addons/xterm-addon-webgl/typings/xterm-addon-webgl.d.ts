@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-webgl' {
   /**
@@ -15,7 +15,7 @@ declare module 'xterm-addon-webgl' {
     constructor(preserveDrawingBuffer?: boolean);
 
     /**
-     * Activates the addon
+     * Activates the addon.
      * @param terminal The terminal the addon is being loaded in.
      */
     public activate(terminal: Terminal): void;
@@ -24,5 +24,10 @@ declare module 'xterm-addon-webgl' {
      * Disposes the addon.
      */
     public dispose(): void;
+
+    /**
+     * Clears the terminal's texture atlas and triggers a redraw.
+     */
+    public clearTextureAtlas(): void;
   }
 }

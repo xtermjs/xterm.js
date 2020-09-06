@@ -26,7 +26,7 @@ export abstract class BaseCharAtlas implements IDisposable {
    * Perform any work needed to warm the cache before it can be used. Used by the default
    * implementation of warmUp(), and will only be called once.
    */
-  protected _doWarmUp(): void { }
+  private _doWarmUp(): void { }
 
   /**
    * Called when we start drawing a new frame.

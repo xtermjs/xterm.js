@@ -101,7 +101,7 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  protected _doWarmUp(): void {
+  private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
       const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
@@ -115,15 +115,24 @@ export class WebglCharAtlas implements IDisposable {
 
   public beginFrame(): boolean {
     if (this._currentRowY > TEXTURE_CAPACITY) {
-      this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-      this._cacheMap = {};
-      this._currentRowHeight = 0;
-      this._currentRowX = 0;
-      this._currentRowY = 0;
-      this._doWarmUp();
+      this.clearTexture();
+      this.warmUp();
       return true;
     }
     return false;
+  }
+
+  public clearTexture(): void {
+    if (this._currentRowX === 0 && this._currentRowY === 0) {
+      return;
+    }
+    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._cacheMap = {};
+    this._cacheMapCombined = {};
+    this._currentRowHeight = 0;
+    this._currentRowX = 0;
+    this._currentRowY = 0;
+    this._didWarmUp = false;
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
