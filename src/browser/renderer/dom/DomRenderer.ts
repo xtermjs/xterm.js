@@ -306,7 +306,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
+      const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
       documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
       // Draw middle rows
       const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
