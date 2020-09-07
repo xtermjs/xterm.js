@@ -196,7 +196,7 @@ export class RectangleRenderer {
     } else {
       // Draw first row
       const startCol = model.viewportStartRow === model.viewportCappedStartRow ? model.startCol : 0;
-      const startRowEndCol = model.viewportCappedStartRow === model.viewportCappedEndRow ? model.endCol : terminal.cols;
+      const startRowEndCol = model.viewportCappedStartRow === model.viewportEndRow ? model.endCol : terminal.cols;
       this._addRectangleFloat(
         this._vertices.selection,
         0,
