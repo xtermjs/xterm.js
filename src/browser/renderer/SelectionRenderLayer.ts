@@ -75,6 +75,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
     // No need to draw the selection
     if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
+      this._state.ydisp = this._bufferService.buffer.ydisp;
       return;
     }
 
