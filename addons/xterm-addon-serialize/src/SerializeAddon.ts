@@ -138,7 +138,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     // Count number of null cells encountered after the last non-null cell and move the cursor
     // if a non-null cell is found (eg. \t or cursor move)
     if (cell.getChars() === '') {
-      this._nullCellCount++;
+      this._nullCellCount += cell.getWidth();
     } else if (this._nullCellCount > 0) {
       this._currentRow += `\x1b[${this._nullCellCount}C`;
       this._nullCellCount = 0;
