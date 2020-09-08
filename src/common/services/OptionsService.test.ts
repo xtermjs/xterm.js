@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { OptionsService, DEFAULT_OPTIONS } from 'common/services/OptionsService';
 
 describe('OptionsService', () => {
@@ -45,7 +45,7 @@ describe('OptionsService', () => {
     });
     it('normalizes invalid fontWeight option values', () => {
       service.setOption('fontWeight', 350);
-      expect(() => service.setOption('fontWeight', 10000)).to.not.throw('', 'fontWeight should be normalized instead of throwing');
+      assert.doesNotThrow(() => service.setOption('fontWeight', 10000), 'fontWeight should be normalized instead of throwing');
       assert.equal(service.getOption('fontWeight'), DEFAULT_OPTIONS.fontWeight, 'Values greater than 1000 should be reset to default');
 
       service.setOption('fontWeight', 350);
