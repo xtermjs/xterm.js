@@ -18,8 +18,7 @@
     },
     "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha",
-      "../../../out-test/api/TestUtils"
+      "../../../node_modules/@types/mocha"
     ]
   },
   "include": [

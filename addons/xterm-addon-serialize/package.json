@@ -9,7 +9,7 @@
   "types": "typings/xterm-addon-serialize.d.ts",
   "license": "MIT",
   "scripts": {
-    "build": "../../node_modules/.bin/tsc -p src",
+    "build": "../../node_modules/.bin/tsc -p .",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",

@@ -1,27 +1,26 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2015",
     "lib": [
       "dom",
-      "es6",
+      "es2015"
     ],
     "rootDir": ".",
-    "outDir": "../out",
+    "outDir": "../out-test",
     "sourceMap": true,
     "removeComments": true,
+    "strict": true,
     "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
       ]
     },
-    "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@types/node",
+      "../../../out-test/api/TestUtils"
     ]
   },
   "include": [
@@ -31,9 +30,6 @@
   "references": [
     {
       "path": "../../../src/common"
-    },
-    {
-      "path": "../../../src/browser"
     }
   ]
 }
