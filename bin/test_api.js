@@ -13,6 +13,7 @@ env.NODE_PATH = path.resolve(__dirname, '../out');
 
 let testFiles = [
   './addons/**/out/*api.js',
+  './addons/**/out-test/*api.js',
   './out-test/**/*api.js',
 ];
 
