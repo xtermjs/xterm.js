@@ -3,3 +3,5 @@
 tsconfig.json
 .yarnrc
 webpack.config.js
+out-test/
+test/
