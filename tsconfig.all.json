@@ -13,6 +13,6 @@
     { "path": "./addons/xterm-addon-serialize/benchmark" },
     { "path": "./addons/xterm-addon-unicode11/src" },
     { "path": "./addons/xterm-addon-web-links/src" },
-    { "path": "./addons/xterm-addon-webgl/src" }
+    { "path": "./addons/xterm-addon-webgl/tsconfig.all.json" }
   ]
 }

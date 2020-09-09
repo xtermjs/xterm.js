@@ -10,7 +10,7 @@
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "scripts": {
-    "build": "../../node_modules/.bin/tsc -p src",
+    "build": "../../node_modules/.bin/tsc -p tsconfig.all.json",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package"
