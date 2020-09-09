@@ -3,11 +3,10 @@
     "module": "commonjs",
     "target": "es5",
     "lib": [
-      "dom",
       "es2015"
     ],
     "rootDir": ".",
-    "outDir": "../out",
+    "outDir": "../out-test",
     "sourceMap": true,
     "removeComments": true,
     "baseUrl": ".",
@@ -18,7 +17,9 @@
     },
     "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@types/node",
+      "../../../out-test/api/TestUtils"
     ]
   },
   "include": [
