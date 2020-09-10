@@ -111,9 +111,15 @@ describe('Search Tests', function(): void {
       let fixture: string;
       before(async () => {
         const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)));
-        fixture = rawFixture.toString()
-          .replace(/\n/g, '\\n')
-          .replace(/\r/g, '\\r')
+        if (process.platform === 'win32') {
+          fixture = rawFixture.toString()
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r');
+        } else {
+          fixture = rawFixture.toString()
+            .replace(/\n/g, '\\n\\r');
+        }
+        fixture = fixture
           .replace(/'/g, '\\\'');
       });
       it('should find all occurrences using findNext', async () => {
