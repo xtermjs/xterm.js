@@ -82,7 +82,6 @@ async function wheelUp(): Promise<void> {
     y: self._y,
     deltaX: 0,
     deltaY: -10
-    // modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 async function wheelDown(): Promise<void> {
@@ -93,7 +92,6 @@ async function wheelDown(): Promise<void> {
     y: self._y,
     deltaX: 0,
     deltaY: 10
-    // modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 
