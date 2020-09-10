@@ -23,11 +23,19 @@ describe('FitAddon', () => {
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);
+  });
+
+  beforeEach(async function(): Promise<any> {
+    await page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
     await openTerminal(page);
   });
 
   after(async () => {
     await browser.close();
+  });
+
+  afterEach(async function(): Promise<any> {
+    await page.evaluate(`window.term.dispose()`);
   });
 
   it('no terminal', async function(): Promise<any> {
@@ -62,6 +70,15 @@ describe('FitAddon', () => {
         cols: 2,
         rows: 1
       });
+    });
+
+    it('hidden', async function(): Promise<any> {
+      await page.evaluate(`window.term.dispose()`);
+      await page.evaluate(`document.querySelector('#terminal-container').style.display='none'`);
+      await page.evaluate(`window.term = new Terminal()`);
+      await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+      await loadFit();
+      assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
     });
   });
 
