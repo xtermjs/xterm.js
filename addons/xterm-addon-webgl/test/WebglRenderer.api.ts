@@ -7,7 +7,7 @@ import { ITerminalOptions } from '../../../src/common/Types';
 import { ITheme } from 'xterm';
 import { assert } from 'chai';
 import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright-core';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -892,7 +892,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
   const browserType = getBrowserType();
-  browser = await browserType.launch({ dumpio: true,
+  browser = await browserType.launch({
     headless: process.argv.indexOf('--headless') !== -1
   });
   page = await (await browser.newContext()).newPage();

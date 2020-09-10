@@ -4,7 +4,7 @@
  */
 
 import { pollFor, writeSync, openTerminal, getBrowserType } from './TestUtils';
-import { Browser, Page } from 'playwright-core';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -81,8 +81,8 @@ async function wheelUp(): Promise<void> {
     x: self._x,
     y: self._y,
     deltaX: 0,
-    deltaY: -10,
-    modifiers: toModifiersMask(page.keyboard._modifiers())
+    deltaY: -10
+    // modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 async function wheelDown(): Promise<void> {
@@ -92,8 +92,8 @@ async function wheelDown(): Promise<void> {
     x: self._x,
     y: self._y,
     deltaX: 0,
-    deltaY: 10,
-    modifiers: toModifiersMask(page.keyboard._modifiers())
+    deltaY: 10
+    // modifiers: toModifiersMask(page.keyboard._modifiers())
   });
 }
 
@@ -213,7 +213,7 @@ describe('Mouse Tracking Tests', async () => {
   const itMouse = isChromium ? it : it.skip;
 
   before(async function(): Promise<void> {
-    browser = await browserType.launch({ dumpio: true,
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();

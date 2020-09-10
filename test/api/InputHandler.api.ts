@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { pollFor, openTerminal, getBrowserType } from './TestUtils';
-import { Browser, Page } from 'playwright-core';
+import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -21,7 +21,7 @@ describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
-    browser = await browserType.launch({ dumpio: true,
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();

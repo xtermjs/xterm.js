@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright-core';
+import * as playwright from 'playwright';
 import deepEqual = require('deep-equal');
 import { ITerminalOptions } from 'xterm';
 
@@ -46,9 +46,9 @@ export async function openTerminal(page: playwright.Page, options: ITerminalOpti
   }
 }
 
-export function getBrowserType(): playwright.BrowserType {
+export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowser> | playwright.BrowserType<playwright.ChromiumBrowser> | playwright.BrowserType<playwright.FirefoxBrowser> {
   // Default to chromium
-  let browserType: playwright.BrowserType = playwright['chromium'];
+  let browserType: playwright.BrowserType<playwright.WebKitBrowser> | playwright.BrowserType<playwright.ChromiumBrowser> | playwright.BrowserType<playwright.FirefoxBrowser> = playwright['chromium'];
 
   const index = process.argv.indexOf('--browser');
   if (index !== -1 && process.argv.length > index + 1 && typeof process.argv[index + 1] === 'string') {
