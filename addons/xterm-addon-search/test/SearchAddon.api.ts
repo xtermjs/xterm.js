@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
 import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright-core';
+import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -19,7 +19,7 @@ const height = 600;
 describe('Search Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
-    browser = await browserType.launch({ dumpio: true,
+    browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1
     });
     page = await (await browser.newContext()).newPage();
@@ -111,8 +111,15 @@ describe('Search Tests', function(): void {
       let fixture: string;
       before(async () => {
         const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)));
-        fixture = rawFixture.toString()
-          .replace(/\n/g, '\\n\\r')
+        if (process.platform === 'win32') {
+          fixture = rawFixture.toString()
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r');
+        } else {
+          fixture = rawFixture.toString()
+            .replace(/\n/g, '\\n\\r');
+        }
+        fixture = fixture
           .replace(/'/g, '\\\'');
       });
       it('should find all occurrences using findNext', async () => {
