@@ -98,11 +98,6 @@ jobs:
     inputs:
       versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - task: CacheBeta@1
-    inputs:
-      key: yarn2 | $(Agent.OS) | yarn.lock
-      path: node_modules
-    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
@@ -122,11 +117,6 @@ jobs:
     inputs:
       versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - task: CacheBeta@1
-    inputs:
-      key: yarn2 | $(Agent.OS) | yarn.lock
-      path: node_modules
-    displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
