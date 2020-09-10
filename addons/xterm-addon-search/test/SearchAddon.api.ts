@@ -112,7 +112,8 @@ describe('Search Tests', function(): void {
       before(async () => {
         const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)));
         fixture = rawFixture.toString()
-          .replace(/\n/g, '\\n\\r')
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
           .replace(/'/g, '\\\'');
       });
       it('should find all occurrences using findNext', async () => {
