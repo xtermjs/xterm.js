@@ -572,6 +572,14 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
   });
 
+  it('render when visible after hidden', async () => {
+    await page.evaluate(`document.querySelector('#terminal-container').style.display='none'`);
+    await page.evaluate(`window.term = new Terminal()`);
+    await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+    await page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
+    await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
+  });
+
   describe('registerLinkProvider', () => {
     it('should fire provideLinks when hovering cells', async () => {
       await openTerminal(page, { rendererType: 'dom' });

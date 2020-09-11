@@ -24,6 +24,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
+  private _charSizeService: ICharSizeService;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -67,7 +68,9 @@ export class RenderService extends Disposable implements IRenderService {
 
     this.register(bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
-    this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+
+    this._charSizeService = charSizeService;
+    this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
@@ -90,6 +93,11 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._isPaused && this._needsFullRefresh) {
       this.refreshRows(0, this._rowCount - 1);
       this._needsFullRefresh = false;
+    }
+
+    // Terminal was hidden on open
+    if (!this._isPaused && !this._charSizeService.hasValidSize) {
+      this._charSizeService.measure();
     }
   }
 
