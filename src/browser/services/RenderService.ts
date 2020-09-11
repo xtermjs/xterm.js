@@ -24,7 +24,6 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
-  private _charSizeService: ICharSizeService;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -52,7 +51,7 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
-    @ICharSizeService charSizeService: ICharSizeService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IBufferService bufferService: IBufferService
   ) {
     super();
@@ -68,8 +67,6 @@ export class RenderService extends Disposable implements IRenderService {
 
     this.register(bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
-
-    this._charSizeService = charSizeService;
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
