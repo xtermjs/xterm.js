@@ -59,6 +59,10 @@ export class FitAddon implements ITerminalAddon {
     // TODO: Remove reliance on private API
     const core = (this._terminal as any)._core;
 
+    if (core._renderService.dimensions.actualCellWidth === 0 || core._renderService.dimensions.actualCellHeight === 0) {
+      return undefined;
+    }
+
     const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
     const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
