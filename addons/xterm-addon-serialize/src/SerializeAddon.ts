@@ -11,6 +11,11 @@ function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
+interface ISerializeOptions {
+  withAlternate?: boolean;
+
+}
+
 // TODO: Refine this template class later
 abstract class BaseSerializeHandler {
   constructor(private _buffer: IBuffer) { }
@@ -167,7 +172,7 @@ export class SerializeAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  public serialize(rows?: number): string {
+  public serialize(rows?: number, options: ISerializeOptions = {}): string {
     // TODO: Add re-position cursor support
     // TODO: Add word wrap mode support
     // TODO: Add combinedData support
@@ -175,12 +180,25 @@ export class SerializeAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    const maxRows = this._terminal.buffer.active.length;
-    const handler = new StringSerializeHandler(this._terminal.buffer.active);
+    if (this._terminal.buffer.active.type === 'normal' || !(options?.withAlternate ?? false)) {
+      const maxRows = this._terminal.buffer.active.length;
+      const handler = new StringSerializeHandler(this._terminal.buffer.active);
 
-    rows = (rows === undefined) ? maxRows : constrain(rows, 0, maxRows);
+      rows = (rows === undefined) ? maxRows : constrain(rows, 0, maxRows);
 
-    return handler.serialize(maxRows - rows, maxRows);
+      return handler.serialize(maxRows - rows, maxRows);
+    }
+
+    const maxNormalRows = this._terminal.buffer.normal.length;
+    const maxAltRows = this._terminal.buffer.alternate.length;
+    const normalHandler = new StringSerializeHandler(this._terminal.buffer.normal);
+    const altHandler = new StringSerializeHandler(this._terminal.buffer.alternate);
+    const normalRows = (rows === undefined) ? maxNormalRows : constrain(rows, 0, maxNormalRows);
+    const altRows = (rows === undefined) ? maxAltRows : constrain(rows, 0, maxAltRows);
+
+    return normalHandler.serialize(maxNormalRows - normalRows, maxNormalRows)
+      + '\u001b[?1049h\u001b[H'
+      + altHandler.serialize(maxAltRows - altRows, maxAltRows);
   }
 
   public dispose(): void { }

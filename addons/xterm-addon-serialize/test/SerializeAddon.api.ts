@@ -299,6 +299,38 @@ describe('SerializeAddon', () => {
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
   });
+
+  it('serialize with alt screen correctly', async () => {
+    const SMCUP = '\u001b[?1049h';
+    const CUP = '\u001b[H';
+
+    const lines = [
+      `1${SMCUP}${CUP}2`
+    ];
+    const expected = [
+      `1${SMCUP}${CUP}2`
+    ];
+
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active.type`)), '"alternate"');
+    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true });`)), JSON.stringify(expected.join('\r\n')));
+  });
+
+  it('serialize without alt screen correctly', async () => {
+    const SMCUP = '\u001b[?1049h';
+    const RMCUP = '\u001b[?1049l';
+
+    const lines = [
+      `1${SMCUP}2${RMCUP}`
+    ];
+    const expected = [
+      `1`
+    ];
+
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active === window.term.buffer.alt`)), 'false');
+    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true });`)), JSON.stringify(expected.join('\r\n')));
+  });
 });
 
 function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
