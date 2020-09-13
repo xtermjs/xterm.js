@@ -29,10 +29,11 @@ export class SoundService implements ISoundService {
   }
 
   public playBellSound(): void {
-    if(typeof this._optionsService.options.bellSound === 'string')
+    if (typeof this._optionsService.options.bellSound === 'string') {
       this.playBellSoundFromDataUri();
-    else
-      this.playBellSoundFromLambda()
+    } else {
+      this.playBellSoundFromLambda();
+    }
   }
 
   public playBellSoundFromDataUri(): void {
