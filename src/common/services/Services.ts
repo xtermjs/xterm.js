@@ -182,10 +182,11 @@ export interface IOptionsService {
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 export type RendererType = 'dom' | 'canvas';
+export type BellSound = string | (() => void);
 
 export interface IPartialTerminalOptions {
   allowTransparency?: boolean;
-  bellSound?: string;
+  bellSound?: BellSound;
   bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols?: number;
   cursorBlink?: boolean;
@@ -220,7 +221,7 @@ export interface IPartialTerminalOptions {
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
-  bellSound: string;
+  bellSound: BellSound;
   bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
   cursorBlink: boolean;

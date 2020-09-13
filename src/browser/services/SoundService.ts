@@ -29,16 +29,29 @@ export class SoundService implements ISoundService {
   }
 
   public playBellSound(): void {
+    if(typeof this._optionsService.options.bellSound === 'string')
+      this.playBellSoundFromDataUri();
+    else
+      this.playBellSoundFromLambda()
+  }
+
+  public playBellSoundFromDataUri(): void {
     const ctx = SoundService.audioContext;
     if (!ctx) {
       return;
     }
     const bellAudioSource = ctx.createBufferSource();
-    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._optionsService.options.bellSound)), (buffer) => {
+    const dataUri = this._optionsService.options.bellSound as string;
+    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(dataUri)), (buffer) => {
       bellAudioSource.buffer = buffer;
       bellAudioSource.connect(ctx.destination);
       bellAudioSource.start(0);
     });
+  }
+
+  public playBellSoundFromLambda(): void {
+    const callback = this._optionsService.options.bellSound as () => void;
+    callback();
   }
 
   private _base64ToArrayBuffer(base64: string): ArrayBuffer {

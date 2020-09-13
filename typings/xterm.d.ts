@@ -26,6 +26,12 @@ declare module 'xterm' {
   export type RendererType = 'dom' | 'canvas';
 
   /**
+   * A string representing a data uri or a callback to play electron's
+   * shell beep for example.
+   */
+  export type BellSound = string | (() => void);
+
+  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -45,9 +51,10 @@ declare module 'xterm' {
     allowTransparency?: boolean;
 
     /**
-     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
+     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`,
+     * or a callback to play electron's shell beep for example.
      */
-    bellSound?: string;
+    bellSound?: BellSound;
 
     /**
      * The type of the bell notification the terminal will use.
@@ -933,7 +940,12 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+    getOption(key: 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'bellSound'): BellSound;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -960,7 +972,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
+    setOption(key: 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'bellSound', value: BellSound): void;
     /**
     * Sets an option on the terminal.
     * @param key The option key.
