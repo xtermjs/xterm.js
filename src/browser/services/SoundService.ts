@@ -5,6 +5,7 @@
 
 import { IOptionsService } from 'common/services/Services';
 import { ISoundService } from 'browser/services/Services';
+import type = Mocha.utils.type;
 
 export class SoundService implements ISoundService {
   public serviceBrand: undefined;
@@ -29,30 +30,21 @@ export class SoundService implements ISoundService {
   }
 
   public playBellSound(): void {
+    // Check if the bell sound is a data uri or a callback
     if (typeof this._optionsService.options.bellSound === 'string') {
-      this.playBellSoundFromDataUri();
+      const ctx = SoundService.audioContext;
+      if (!ctx) {
+        return;
+      }
+      const bellAudioSource = ctx.createBufferSource();
+      ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._optionsService.options.bellSound)), (buffer) => {
+        bellAudioSource.buffer = buffer;
+        bellAudioSource.connect(ctx.destination);
+        bellAudioSource.start(0);
+      });
     } else {
-      this.playBellSoundFromLambda();
+      this._optionsService.options.bellSound();
     }
-  }
-
-  public playBellSoundFromDataUri(): void {
-    const ctx = SoundService.audioContext;
-    if (!ctx) {
-      return;
-    }
-    const bellAudioSource = ctx.createBufferSource();
-    const dataUri = this._optionsService.options.bellSound as string;
-    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(dataUri)), (buffer) => {
-      bellAudioSource.buffer = buffer;
-      bellAudioSource.connect(ctx.destination);
-      bellAudioSource.start(0);
-    });
-  }
-
-  public playBellSoundFromLambda(): void {
-    const callback = this._optionsService.options.bellSound as () => void;
-    callback();
   }
 
   private _base64ToArrayBuffer(base64: string): ArrayBuffer {

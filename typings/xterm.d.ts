@@ -26,12 +26,6 @@ declare module 'xterm' {
   export type RendererType = 'dom' | 'canvas';
 
   /**
-   * A string representing a data uri or a callback to play electron's
-   * shell beep for example.
-   */
-  export type BellSound = string | (() => void);
-
-  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -54,7 +48,7 @@ declare module 'xterm' {
      * A data uri of the sound to use for the bell when `bellStyle = 'sound'`,
      * or a callback to play electron's shell beep for example.
      */
-    bellSound?: BellSound;
+    bellSound?: string | (() => void);
 
     /**
      * The type of the bell notification the terminal will use.
@@ -945,7 +939,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound'): BellSound;
+    getOption(key: 'bellSound'): string | (() => void);
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -978,7 +972,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'bellSound', value: BellSound): void;
+    setOption(key: 'bellSound', value: string | (() => void)): void;
     /**
     * Sets an option on the terminal.
     * @param key The option key.
