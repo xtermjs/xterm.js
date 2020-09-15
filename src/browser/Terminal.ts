@@ -383,6 +383,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');
+    this.element.setAttribute('role', 'document');
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
