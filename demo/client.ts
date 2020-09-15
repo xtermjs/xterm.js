@@ -413,7 +413,7 @@ function updateTerminalSize(): void {
 }
 
 function serializeButtonHandler(): void {
-  const output = addons.serialize.instance.serialize();
+  const output = addons.serialize.instance.serialize(undefined, { withAlternate: true, withCursor: true });
   const outputString = JSON.stringify(output);
 
   document.getElementById('serialize-output').innerText = outputString;
