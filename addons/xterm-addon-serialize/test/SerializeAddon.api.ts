@@ -342,11 +342,12 @@ describe('SerializeAddon', () => {
     ];
 
     await writeSync(page, lines.join('\\r\\n'));
-    const originalBuffer = await page.evaluate(`serializeAddon.inspectBuffer(term.buffer.normal);`);
+    const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
     const result = await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true, withCursor: true });`);
 
     await writeSync(page, '\' +' + JSON.stringify('\x1bc' + result) + '+ \'');
-    const newBuffer = await page.evaluate(`serializeAddon.inspectBuffer(term.buffer.normal);`);
+    const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
 
     assert.deepEqual(originalBuffer, newBuffer);
   });

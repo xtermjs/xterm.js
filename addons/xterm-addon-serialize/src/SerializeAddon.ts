@@ -330,7 +330,28 @@ export class SerializeAddon implements ITerminalAddon {
     return result;
   }
 
-  public inspectBuffer(buffer: IBuffer): { x: number, y: number, data: any[][] } {
+  public serialize(scrollback?: number, options: ISerializeOptions = {}): string {
+    // TODO: Add word wrap mode support
+    // TODO: Add combinedData support
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+
+    if (this._terminal.buffer.active.type === 'normal' || !(options.withAlternate ?? true)) {
+      return this._getString(this._terminal.buffer.active, scrollback, options);
+    }
+
+    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback, options);
+    // alt screen don't have scrollback
+    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined, options);
+
+    return normalScreenContent
+      + '\u001b[?1049h\u001b[H'
+      + alternativeScreenContent;
+  }
+
+  // this is a util used only for test
+  private static _inspectBuffer(buffer: IBuffer): { x: number, y: number, data: any[][] } {
     const lines: any[] = [];
     const cell = buffer.getNullCell();
 
@@ -365,26 +386,6 @@ export class SerializeAddon implements ITerminalAddon {
       y: buffer.cursorY,
       data: lines
     };
-  }
-
-  public serialize(scrollback?: number, options: ISerializeOptions = {}): string {
-    // TODO: Add word wrap mode support
-    // TODO: Add combinedData support
-    if (!this._terminal) {
-      throw new Error('Cannot use addon until it has been loaded');
-    }
-
-    if (this._terminal.buffer.active.type === 'normal' || !(options.withAlternate ?? true)) {
-      return this._getString(this._terminal.buffer.active, scrollback, options);
-    }
-
-    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback, options);
-    // alt screen don't have scrollback
-    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined, options);
-
-    return normalScreenContent
-      + '\u001b[?1049h\u001b[H'
-      + alternativeScreenContent;
   }
 
   public dispose(): void { }
