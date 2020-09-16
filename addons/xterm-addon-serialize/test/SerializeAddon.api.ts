@@ -14,6 +14,8 @@ let page: Page;
 const width = 800;
 const height = 600;
 
+const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, '\' +' + JSON.stringify(str) + '+ \'');
+
 describe('SerializeAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
@@ -344,12 +346,14 @@ describe('SerializeAddon', () => {
     await writeSync(page, lines.join('\\r\\n'));
     const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
 
-    const result = await page.evaluate(`serializeAddon.serialize();`);
-
-    await writeSync(page, '\' +' + JSON.stringify('\x1bc' + result) + '+ \'');
+    const result = await page.evaluate(`serializeAddon.serialize();`) as string;
+    await page.evaluate(`term.reset();`);
+    await writeRawSync(page, result);
     const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
 
-    assert.deepEqual(originalBuffer, newBuffer);
+    // chai decides -0 and 0 are different number...
+    // and firefox have a bug that output -0 for unknown reason
+    assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
   });
 });
 
