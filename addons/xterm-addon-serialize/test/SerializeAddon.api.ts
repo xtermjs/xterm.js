@@ -331,6 +331,24 @@ describe('SerializeAddon', () => {
     assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active === window.term.buffer.alt`)), 'false');
     assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true });`)), JSON.stringify(expected.join('\r\n')));
   });
+
+  it('serialize with background', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+
+    const lines = [
+      `1\u001b[44m${CLEAR_RIGHT(5)}`,
+      `2${CLEAR_RIGHT(9)}`
+    ];
+
+    await writeSync(page, lines.join('\\r\\n'));
+    const originalBuffer = await page.evaluate(`serializeAddon.inspectBuffer(term.buffer.normal);`);
+    const result = await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true, withCursor: true });`);
+
+    await writeSync(page, '\' +' + JSON.stringify('\x1bc' + result) + '+ \'');
+    const newBuffer = await page.evaluate(`serializeAddon.inspectBuffer(term.buffer.normal);`);
+
+    assert.deepEqual(originalBuffer, newBuffer);
+  });
 });
 
 function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
