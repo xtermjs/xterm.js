@@ -320,10 +320,11 @@ export class SerializeAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  private _getString(buffer: IBuffer, rows?: number, option?: ISerializeOptions): string {
+  private _getString(buffer: IBuffer, scrollback?: number, option?: ISerializeOptions): string {
     const maxRows = buffer.length;
     const handler = new StringSerializeHandler(buffer, this._terminal!, option);
-    const correctRows = (rows === undefined) ? maxRows : constrain(rows, 0, maxRows);
+
+    const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + this!._terminal!.rows, 0, maxRows);
     const result = handler.serialize(maxRows - correctRows, maxRows);
 
     return result;
@@ -366,7 +367,7 @@ export class SerializeAddon implements ITerminalAddon {
     };
   }
 
-  public serialize(rows?: number, options: ISerializeOptions = {}): string {
+  public serialize(scrollback?: number, options: ISerializeOptions = {}): string {
     // TODO: Add word wrap mode support
     // TODO: Add combinedData support
     if (!this._terminal) {
@@ -374,11 +375,12 @@ export class SerializeAddon implements ITerminalAddon {
     }
 
     if (this._terminal.buffer.active.type === 'normal' || !(options.withAlternate ?? true)) {
-      return this._getString(this._terminal.buffer.active, rows, options);
+      return this._getString(this._terminal.buffer.active, scrollback, options);
     }
 
-    const normalScreenContent = this._getString(this._terminal.buffer.normal, rows, options);
-    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, rows, options);
+    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback, options);
+    // alt screen don't have scrollback
+    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined, options);
 
     return normalScreenContent
       + '\u001b[?1049h\u001b[H'

@@ -39,7 +39,7 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
   });
 
-  it('trim last empty lines', async function(): Promise<any> {
+  it('preserve last empty lines', async function(): Promise<any> {
     const cols = 10;
     const lines = [
       '',
@@ -55,7 +55,7 @@ describe('SerializeAddon', () => {
       ''
     ];
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.slice(0, 8).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('digits content', async function(): Promise<any> {
@@ -67,21 +67,22 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize half rows of content', async function(): Promise<any> {
-    const rows = 10;
-    const halfRows = rows >> 1;
+  it('serialize with half of scrollback', async function(): Promise<any> {
+    const rows = 20;
+    const scrollback = rows - 10;
+    const halfScrollback = scrollback / 2;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfRows});`), lines.slice(halfRows, 2 * halfRows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfScrollback});`), lines.slice(halfScrollback, rows).join('\r\n'));
   });
 
-  it('serialize 0 rows of content', async function(): Promise<any> {
-    const rows = 10;
+  it('serialize 0 rows of scrollback', async function(): Promise<any> {
+    const rows = 20;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), '');
+    assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), lines.slice(rows - 10, rows).join('\r\n'));
   });
 
   it('serialize all rows of content with color16', async function(): Promise<any> {
