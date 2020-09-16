@@ -314,7 +314,7 @@ describe('SerializeAddon', () => {
 
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active.type`)), '"alternate"');
-    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true });`)), JSON.stringify(expected.join('\r\n')));
+    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
   it('serialize without alt screen correctly', async () => {
@@ -330,7 +330,7 @@ describe('SerializeAddon', () => {
 
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active === window.term.buffer.alt`)), 'false');
-    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true });`)), JSON.stringify(expected.join('\r\n')));
+    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
   it('serialize with background', async () => {
@@ -344,7 +344,7 @@ describe('SerializeAddon', () => {
     await writeSync(page, lines.join('\\r\\n'));
     const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
 
-    const result = await page.evaluate(`serializeAddon.serialize(undefined, { withAlternate: true, withCursor: true });`);
+    const result = await page.evaluate(`serializeAddon.serialize();`);
 
     await writeSync(page, '\' +' + JSON.stringify('\x1bc' + result) + '+ \'');
     const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);

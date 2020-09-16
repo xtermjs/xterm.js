@@ -11,11 +11,6 @@ function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
-interface ISerializeOptions {
-  withAlternate?: boolean;
-  withCursor?: boolean;
-}
-
 // TODO: Refine this template class later
 abstract class BaseSerializeHandler {
   constructor(private _buffer: IBuffer) { }
@@ -93,7 +88,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _lastCursorRow: number = 0;
   private _lastCursorCol: number = 0;
 
-  constructor(private _buffer1: IBuffer,private _terminal: Terminal, private _option: ISerializeOptions = {}) {
+  constructor(private _buffer1: IBuffer,private _terminal: Terminal) {
     super(_buffer1);
   }
 
@@ -252,60 +247,60 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     let content = this._allRows.slice(0, rowEnd).join('\r\n');
 
-    if (this._option.withCursor ?? true) {
-      const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
-      const realCursorCol = this._buffer1.cursorX;
+    // restore the cursor
+    const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
+    const realCursorCol = this._buffer1.cursorX;
 
-      const hasScroll = this._buffer1.length > this._terminal.rows!;
-      const hasEmptyLine = hasScroll ? (this._buffer1.length - 1 > this._lastCursorRow) : (realCursorRow > this._lastCursorRow);
-      const cursorMoved =
-        hasScroll
-          ? hasEmptyLine
-            ? (realCursorCol !== 0 || realCursorRow !== this._buffer1.length - 1)
-            : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol)
-          : hasEmptyLine
-            // we don't need to check the row because empty row count are based on cursor
-            ? realCursorCol !== 0
-            : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
+    const hasScroll = this._buffer1.length > this._terminal.rows!;
+    const hasEmptyLine = hasScroll ? (this._buffer1.length - 1 > this._lastCursorRow) : (realCursorRow > this._lastCursorRow);
+    const cursorMoved =
+      hasScroll
+        ? hasEmptyLine
+          ? (realCursorCol !== 0 || realCursorRow !== this._buffer1.length - 1)
+          : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol)
+        : hasEmptyLine
+          // we don't need to check the row because empty row count are based on cursor
+          ? realCursorCol !== 0
+          : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
 
-      const moveRight = (offset: number): void => {
-        if (offset > 0) {
-          content += `\u001b[${offset}C`;
-        } else if (offset < 0) {
-          content += `\u001b[${-offset}D`;
-        }
-      };
-      const moveDown = (offset: number): void => {
-        if (offset > 0) {
-          content += `\u001b[${offset}B`;
-        } else if (offset < 0) {
-          content += `\u001b[${-offset}A`;
-        }
-      };
-
-      // Fix empty lines
-      if (hasEmptyLine) {
-        if (hasScroll) {
-          content += '\r\n'.repeat(this._buffer1.length - 1 - this._lastCursorRow);
-        } else {
-          content += '\r\n'.repeat(realCursorRow - this._lastCursorRow);
-        }
+    const moveRight = (offset: number): void => {
+      if (offset > 0) {
+        content += `\u001b[${offset}C`;
+      } else if (offset < 0) {
+        content += `\u001b[${-offset}D`;
       }
+    };
+    const moveDown = (offset: number): void => {
+      if (offset > 0) {
+        content += `\u001b[${offset}B`;
+      } else if (offset < 0) {
+        content += `\u001b[${-offset}A`;
+      }
+    };
 
-      if (cursorMoved) {
-        if (hasEmptyLine) {
-          if (hasScroll) {
-            moveRight(realCursorCol);
-            moveDown(realCursorRow - (this._buffer1.length - 1));
-          } else {
-            moveRight(realCursorCol);
-          }
-        } else {
-          moveDown(realCursorRow - this._lastCursorRow);
-          moveRight(realCursorCol - this._lastCursorCol);
-        }
+    // Fix empty lines
+    if (hasEmptyLine) {
+      if (hasScroll) {
+        content += '\r\n'.repeat(this._buffer1.length - 1 - this._lastCursorRow);
+      } else {
+        content += '\r\n'.repeat(realCursorRow - this._lastCursorRow);
       }
     }
+
+    if (cursorMoved) {
+      if (hasEmptyLine) {
+        if (hasScroll) {
+          moveRight(realCursorCol);
+          moveDown(realCursorRow - (this._buffer1.length - 1));
+        } else {
+          moveRight(realCursorCol);
+        }
+      } else {
+        moveDown(realCursorRow - this._lastCursorRow);
+        moveRight(realCursorCol - this._lastCursorCol);
+      }
+    }
+
 
     return content;
   }
@@ -320,9 +315,9 @@ export class SerializeAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  private _getString(buffer: IBuffer, scrollback?: number, option?: ISerializeOptions): string {
+  private _getString(buffer: IBuffer, scrollback?: number): string {
     const maxRows = buffer.length;
-    const handler = new StringSerializeHandler(buffer, this._terminal!, option);
+    const handler = new StringSerializeHandler(buffer, this._terminal!);
 
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + this!._terminal!.rows, 0, maxRows);
     const result = handler.serialize(maxRows - correctRows, maxRows);
@@ -330,20 +325,20 @@ export class SerializeAddon implements ITerminalAddon {
     return result;
   }
 
-  public serialize(scrollback?: number, options: ISerializeOptions = {}): string {
+  public serialize(scrollback?: number): string {
     // TODO: Add word wrap mode support
     // TODO: Add combinedData support
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    if (this._terminal.buffer.active.type === 'normal' || !(options.withAlternate ?? true)) {
-      return this._getString(this._terminal.buffer.active, scrollback, options);
+    if (this._terminal.buffer.active.type === 'normal') {
+      return this._getString(this._terminal.buffer.active, scrollback);
     }
 
-    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback, options);
+    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback);
     // alt screen don't have scrollback
-    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined, options);
+    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined);
 
     return normalScreenContent
       + '\u001b[?1049h\u001b[H'
