@@ -6,6 +6,7 @@
  */
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
+import { MyBufferCell } from './MyBufferCell';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -36,7 +37,7 @@ abstract class BaseSerializeHandler {
           oldCell = c;
         }
       }
-      this._rowEnd(row);
+      this._rowEnd(row, row === endRow - 1);
     }
 
     this._afterSerialize();
@@ -45,7 +46,7 @@ abstract class BaseSerializeHandler {
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
-  protected _rowEnd(row: number): void { }
+  protected _rowEnd(row: number, isLastRow: boolean): void { }
   protected _beforeSerialize(rows: number, startRow: number, endRow: number): void { }
   protected _afterSerialize(): void { }
   protected _serializeString(): string { return ''; }
@@ -71,20 +72,23 @@ function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
     && cell1.isDim() === cell2.isDim();
 }
 
+
+
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
 
-  // this is a null cell for reference for checking whether background is empty or not
-  private _nullCell: IBufferCell = this._buffer1.getNullCell();
-
   // we can see a full colored cell and a null cell that only have background the same style
   // but the information isn't preserved by null cell itself
   // so wee need to record it when required.
   private _cursorStyle: IBufferCell = this._buffer1.getNullCell();
 
+  // this is a null cell for reference for checking whether background is empty or not
+  private _backgroundCell: MyBufferCell = MyBufferCell.from(this._cursorStyle);
+
+  private _firstRow: number = 0;
   private _lastCursorRow: number = 0;
   private _lastCursorCol: number = 0;
 
@@ -95,26 +99,21 @@ class StringSerializeHandler extends BaseSerializeHandler {
   protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._allRows = new Array<string>(rows);
     this._lastCursorRow = start;
+    this._firstRow = start;
   }
 
-  protected _rowEnd(row: number): void {
+  protected _rowEnd(row: number, isLastRow: boolean): void {
     // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
-    if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._nullCell)) {
+    if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
       // use move right to move cursor.
       this._currentRow += `\x1b[${this._nullCellCount}X`;
+    }
 
-      // set the cursor back because we aren't there
-      this._lastCursorRow = row;
-      this._lastCursorCol = this._terminal.cols - this._nullCellCount;
-
-      this._nullCellCount = 0;
-
-      // perform a style reset before next line,
-      // because scroll when having background set will change the whole background of next line.
-      this._currentRow += `\x1b[m`;
-      // FIXME: we just get a new one because we can't reset it.
-      this._cursorStyle = this._buffer1.getNullCell();
+    if (!isLastRow) {
+      if (row - this._firstRow >= this._terminal.rows) {
+        this._backgroundCell = MyBufferCell.from(this._cursorStyle);
+      }
     }
 
     this._allRows[this._rowIndex++] = this._currentRow;
@@ -178,9 +177,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
     // this cell don't have content
     const isEmptyCell = cell.getChars() === '';
 
-    // this cell don't have content and style
-    const isNullCell = cell.getWidth() === 1 && cell.getChars() === '' && cell.isAttributeDefault();
-
     const sgrSeq = this._diffStyle(cell, this._cursorStyle);
 
     // the empty cell style is only assumed to be changed when background changed, because foreground is always 0.
@@ -194,7 +190,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
       if (this._nullCellCount > 0) {
         // use clear right to set background.
         // use move right to move cursor.
-        if (equalBg(this._cursorStyle, this._nullCell)) {
+        if (equalBg(this._cursorStyle, this._backgroundCell)) {
           this._currentRow += `\x1b[${this._nullCellCount}C`;
         } else {
           this._currentRow += `\x1b[${this._nullCellCount}X`;
@@ -202,6 +198,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
         }
         this._nullCellCount = 0;
       }
+
+      this._lastCursorRow = row;
+      this._lastCursorCol = col;
 
       this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
 
@@ -219,7 +218,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         // we can just assume we have same style with previous one here
         // because style change is handled by previous stage
         // use move right when background is empty, use clear right when there is background.
-        if (equalBg(this._cursorStyle, this._nullCell)) {
+        if (equalBg(this._cursorStyle, this._backgroundCell)) {
           this._currentRow += `\x1b[${this._nullCellCount}C`;
         } else {
           this._currentRow += `\x1b[${this._nullCellCount}X`;
@@ -227,10 +226,10 @@ class StringSerializeHandler extends BaseSerializeHandler {
         }
         this._nullCellCount = 0;
       }
-      this._currentRow += cell.getChars();
-    }
 
-    if (!isNullCell) {
+      this._currentRow += cell.getChars();
+
+      // update cursor
       this._lastCursorRow = row;
       this._lastCursorCol = col + cell.getWidth();
     }

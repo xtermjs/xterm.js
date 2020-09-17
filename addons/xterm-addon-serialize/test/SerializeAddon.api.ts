@@ -355,6 +355,33 @@ describe('SerializeAddon', () => {
     // and firefox have a bug that output -0 for unknown reason
     assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
   });
+
+  it('cause the BCE on scroll', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+
+    const padLines = newArray<string>(
+      (index: number) => digitsString(10, index),
+      10
+    );
+
+    const lines = [
+      ...padLines,
+      `\u001b[44m${CLEAR_RIGHT(5)}1111111111111111`
+    ];
+
+    await writeSync(page, lines.join('\\r\\n'));
+    const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    const result = await page.evaluate(`serializeAddon.serialize();`) as string;
+
+    await page.evaluate(`term.reset();`);
+    await writeRawSync(page, result);
+    const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    // chai decides -0 and 0 are different number...
+    // and firefox have a bug that output -0 for unknown reason
+    assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
+  });
 });
 
 function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
