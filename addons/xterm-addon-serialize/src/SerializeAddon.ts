@@ -106,7 +106,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
     // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
-      // use move right to move cursor.
       this._currentRow += `\x1b[${this._nullCellCount}X`;
     }
 
@@ -189,13 +188,11 @@ class StringSerializeHandler extends BaseSerializeHandler {
       // before update the style, we need to fill empty cell back
       if (this._nullCellCount > 0) {
         // use clear right to set background.
-        // use move right to move cursor.
-        if (equalBg(this._cursorStyle, this._backgroundCell)) {
-          this._currentRow += `\x1b[${this._nullCellCount}C`;
-        } else {
+        if (!equalBg(this._cursorStyle, this._backgroundCell)) {
           this._currentRow += `\x1b[${this._nullCellCount}X`;
-          this._currentRow += `\x1b[${this._nullCellCount}C`;
         }
+        // use move right to move cursor.
+        this._currentRow += `\x1b[${this._nullCellCount}C`;
         this._nullCellCount = 0;
       }
 
