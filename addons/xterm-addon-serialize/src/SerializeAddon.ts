@@ -106,6 +106,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._firstRow = start;
   }
 
+  private _thisRowLastChar: IBufferCell = this._buffer1.getNullCell();
+  private _thisRowLastSecondChar: IBufferCell = this._buffer1.getNullCell();
+  private _nextRowFirstChar: IBufferCell = this._buffer1.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
     // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
@@ -135,9 +138,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
         this._lastCursorCol = 0;
       } else {
         rowSeparator = '';
-        const thisRowLastChar = currentLine.getCell(currentLine.length - 1)!;
-        const thisRowLastSecondChar = currentLine.getCell(currentLine.length - 2)!;
-        const nextRowFirstChar = nextLine.getCell(0)!;
+        const thisRowLastChar = currentLine.getCell(currentLine.length - 1, this._thisRowLastChar)!;
+        const thisRowLastSecondChar = currentLine.getCell(currentLine.length - 2, this._thisRowLastSecondChar)!;
+        const nextRowFirstChar = nextLine.getCell(0, this._nextRowFirstChar)!;
         const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
 
         // validate whether this line wrap is ever possible
