@@ -181,6 +181,11 @@ class StringSerializeHandler extends BaseSerializeHandler {
             rowSeparator += `\x1b[${this._nullCellCount}X`;
             rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}D`;
             rowSeparator += '\x1b[B';
+
+            // This is content even it is invisible
+            // without this, wrap will be missing
+            this._lastContentCursorRow = row + 1;
+            this._lastContentCursorCol = 0;
           }
 
           // force commit the cursor position

@@ -335,7 +335,12 @@ describe('SerializeAddon', () => {
       '中文中文',
       '12中文',
       '中文12',
-      '1中文中文中' // this line is going to be wrapped at last character because it has line length of 11 (1+2*5)
+      // This line is going to be wrapped at last character
+      // because it has line length of 11 (1+2*5).
+      // We concat it back without the null cell currently.
+      // But this may be incorrect.
+      // see also #3097
+      '1中文中文中'
     ];
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
@@ -410,21 +415,58 @@ describe('SerializeAddon', () => {
 
     await testNormalScreenEqual(page, lines.join('\r\n'));
   });
-  it('handle invalid wrap', async () => {
+
+  it('handle invalid wrap before scroll', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
     const MOVE_UP = (l: number): string => `\u001b[${l}A`;
     const MOVE_DOWN = (l: number): string => `\u001b[${l}B`;
+    const MOVE_LEFT = (l: number): string => `\u001b[${l}D`;
+
+    // A line wrap happened after current line.
+    // But there is no content.
+    // so wrap shouldn't even be able to happen.
+    const segments = [
+      `123456789012345`,
+      MOVE_UP(1),
+      CLEAR_RIGHT(5),
+      MOVE_DOWN(1),
+      MOVE_LEFT(5),
+      CLEAR_RIGHT(5),
+      MOVE_UP(1),
+      '1'
+    ];
+
+    await testNormalScreenEqual(page, segments.join(''));
+  });
+
+  it('handle invalid wrap after scroll', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+    const MOVE_UP = (l: number): string => `\u001b[${l}A`;
+    const MOVE_DOWN = (l: number): string => `\u001b[${l}B`;
+    const MOVE_LEFT = (l: number): string => `\u001b[${l}D`;
 
     const padLines = newArray<string>(
       (index: number) => digitsString(10, index),
       10
     );
 
+    // A line wrap happened after current line.
+    // But there is no content.
+    // so wrap shouldn't even be able to happen.
     const lines = [
-      `\u001b[44m${CLEAR_RIGHT(5)}123456789012345${MOVE_UP(1)}${CLEAR_RIGHT(5)}${MOVE_DOWN(1)}`
+      padLines.join('\r\n'),
+      '\r\n',
+      `123456789012345`,
+      MOVE_UP(1),
+      CLEAR_RIGHT(5),
+      MOVE_DOWN(1),
+      MOVE_LEFT(5),
+      CLEAR_RIGHT(5),
+      MOVE_UP(1),
+      '1'
     ];
 
-    await testNormalScreenEqual(page, lines.join('\r\n'));
+    await testNormalScreenEqual(page, lines.join(''));
   });
 });
 
