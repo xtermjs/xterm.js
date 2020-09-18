@@ -77,6 +77,7 @@ function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
+  private _allRowSeparators: string[] = new Array<string>();
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
 
@@ -91,6 +92,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _firstRow: number = 0;
   private _lastCursorRow: number = 0;
   private _lastCursorCol: number = 0;
+  private _lastContentCursorRow: number = 0;
+  private _lastContentCursorCol: number = 0;
 
   constructor(private _buffer1: IBuffer,private _terminal: Terminal) {
     super(_buffer1);
@@ -98,6 +101,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
   protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._allRows = new Array<string>(rows);
+    this._lastContentCursorRow = start;
     this._lastCursorRow = start;
     this._firstRow = start;
   }
@@ -109,13 +113,82 @@ class StringSerializeHandler extends BaseSerializeHandler {
       this._currentRow += `\x1b[${this._nullCellCount}X`;
     }
 
+    let rowSeparator = '';
+
+    // handle row separator
     if (!isLastRow) {
+      // Enable BCE
       if (row - this._firstRow >= this._terminal.rows) {
         this._backgroundCell = MyBufferCell.from(this._cursorStyle);
       }
+
+      // Fetch current line
+      const currentLine = this._buffer1.getLine(row)!;
+      // Fetch next line
+      const nextLine = this._buffer1.getLine(row + 1)!;
+
+      if (!nextLine.isWrapped) {
+        // just insert the line break
+        rowSeparator = '\r\n';
+        // we sended the enter
+        this._lastCursorRow = row + 1;
+        this._lastCursorCol = 0;
+      } else {
+        rowSeparator = '';
+        const thisRowLastChar = currentLine.getCell(currentLine.length - 1)!;
+        const thisRowLastSecondChar = currentLine.getCell(currentLine.length - 2)!;
+        const nextRowFirstChar = nextLine.getCell(0)!;
+        const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
+
+        // validate whether this line wrap is ever possible
+        let isValid = false;
+
+        if (
+          nextRowFirstChar.getChars() &&
+          isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
+        ) {
+          if (
+            (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
+            equalBg(thisRowLastChar, nextRowFirstChar)
+          ) {
+            isValid = true;
+          }
+
+          if (
+            isNextRowFirstCharDoubleWidth &&
+            (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
+            equalBg(thisRowLastChar, nextRowFirstChar) &&
+            equalBg(thisRowLastSecondChar, nextRowFirstChar)
+          ) {
+            isValid = true;
+          }
+        }
+
+        if (!isValid) {
+          // force the wrap with magic
+          // insert enough character to force the wrap
+          rowSeparator = '-'.repeat(this._nullCellCount + 1);
+          // move back and erase next line head
+          rowSeparator += '\x1b[1D\x1b[1X';
+
+          // do these because we filled the last several null slot, which we shouldn't
+          if (this._nullCellCount > 0) {
+            rowSeparator += '\x1b[A';
+            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}C`;
+            rowSeparator += `\x1b[${this._nullCellCount}X`;
+            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}D`;
+            rowSeparator += '\x1b[B';
+          }
+
+          // force commit the cursor position
+          this._lastCursorRow = row + 1;
+          this._lastCursorCol = 0;
+        }
+      }
     }
 
-    this._allRows[this._rowIndex++] = this._currentRow;
+    this._allRows[this._rowIndex] = this._currentRow;
+    this._allRowSeparators[this._rowIndex++] = rowSeparator;
     this._currentRow = '';
     this._nullCellCount = 0;
   }
@@ -196,8 +269,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
         this._nullCellCount = 0;
       }
 
-      this._lastCursorRow = row;
-      this._lastCursorCol = col;
+      this._lastContentCursorRow = this._lastCursorRow = row;
+      this._lastContentCursorCol = this._lastCursorCol = col;
 
       this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
 
@@ -227,37 +300,36 @@ class StringSerializeHandler extends BaseSerializeHandler {
       this._currentRow += cell.getChars();
 
       // update cursor
-      this._lastCursorRow = row;
-      this._lastCursorCol = col + cell.getWidth();
+      this._lastContentCursorRow = this._lastCursorRow = row;
+      this._lastContentCursorCol = this._lastCursorCol = col + cell.getWidth();
     }
   }
 
   protected _serializeString(): string {
     let rowEnd = this._allRows.length;
 
-    for (; rowEnd > 0; rowEnd--) {
-      if (this._allRows[rowEnd - 1]) {
-        break;
-      }
+    // the fixup is only required for data without scrollback
+    // because it will always be placed at last line otherwise
+    if (this._buffer1.length - this._firstRow <= this._terminal.rows) {
+      rowEnd = this._lastContentCursorRow + 1 - this._firstRow;
+      this._lastCursorCol = this._lastContentCursorCol;
+      this._lastCursorRow = this._lastContentCursorRow;
     }
 
-    let content = this._allRows.slice(0, rowEnd).join('\r\n');
+    let content = '';
+
+    for (let i = 0; i < rowEnd; i++) {
+      content += this._allRows[i];
+      if (i + 1 < rowEnd) {
+        content += this._allRowSeparators[i];
+      }
+    }
 
     // restore the cursor
     const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
     const realCursorCol = this._buffer1.cursorX;
 
-    const hasScroll = this._buffer1.length > this._terminal.rows!;
-    const hasEmptyLine = hasScroll ? (this._buffer1.length - 1 > this._lastCursorRow) : (realCursorRow > this._lastCursorRow);
-    const cursorMoved =
-      hasScroll
-        ? hasEmptyLine
-          ? (realCursorCol !== 0 || realCursorRow !== this._buffer1.length - 1)
-          : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol)
-        : hasEmptyLine
-          // we don't need to check the row because empty row count are based on cursor
-          ? realCursorCol !== 0
-          : (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
+    const cursorMoved =  (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
 
     const moveRight = (offset: number): void => {
       if (offset > 0) {
@@ -274,27 +346,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
       }
     };
 
-    // Fix empty lines
-    if (hasEmptyLine) {
-      if (hasScroll) {
-        content += '\r\n'.repeat(this._buffer1.length - 1 - this._lastCursorRow);
-      } else {
-        content += '\r\n'.repeat(realCursorRow - this._lastCursorRow);
-      }
-    }
-
     if (cursorMoved) {
-      if (hasEmptyLine) {
-        if (hasScroll) {
-          moveRight(realCursorCol);
-          moveDown(realCursorRow - (this._buffer1.length - 1));
-        } else {
-          moveRight(realCursorCol);
-        }
-      } else {
-        moveDown(realCursorRow - this._lastCursorRow);
-        moveRight(realCursorCol - this._lastCursorCol);
-      }
+      moveDown(realCursorRow - this._lastCursorRow);
+      moveRight(realCursorCol - this._lastCursorCol);
     }
 
 
@@ -322,7 +376,6 @@ export class SerializeAddon implements ITerminalAddon {
   }
 
   public serialize(scrollback?: number): string {
-    // TODO: Add word wrap mode support
     // TODO: Add combinedData support
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
@@ -344,32 +397,14 @@ export class SerializeAddon implements ITerminalAddon {
   // this is a util used only for test
   private static _inspectBuffer(buffer: IBuffer): { x: number, y: number, data: any[][] } {
     const lines: any[] = [];
-    const cell = buffer.getNullCell();
 
     for (let i = 0; i < buffer.length; i++) {
-      const line = [];
-      const bufferLine = buffer.getLine(i)!;
-      for (let j = 0; j < bufferLine.length; j++) {
-        const cellData: any = {};
-        bufferLine.getCell(j, cell)!;
-        cellData.getBgColor = cell.getBgColor();
-        cellData.getBgColorMode = cell.getBgColorMode();
-        cellData.getChars = cell.getChars();
-        cellData.getCode = cell.getCode();
-        cellData.getFgColor = cell.getFgColor();
-        cellData.getFgColorMode = cell.getFgColorMode();
-        cellData.getWidth = cell.getWidth();
-        cellData.isAttributeDefault = cell.isAttributeDefault();
-        cellData.isBlink = cell.isBlink();
-        cellData.isBold = cell.isBold();
-        cellData.isDim = cell.isDim();
-        cellData.isInverse = cell.isInverse();
-        cellData.isInvisible = cell.isInvisible();
+      /**
+       * Do this intentionally to get content of underlining source
+       */
+      const bufferLine = (buffer.getLine(i)! as any)._line;
 
-        line.push(cellData);
-      }
-
-      lines.push(line);
+      lines.push(JSON.stringify(bufferLine));
     }
 
     return {

@@ -16,6 +16,20 @@ const height = 600;
 
 const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, '\' +' + JSON.stringify(str) + '+ \'');
 
+const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
+  await writeRawSync(page, str);
+  const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+  const result = await page.evaluate(`serializeAddon.serialize();`) as string;
+  await page.evaluate(`term.reset();`);
+  await writeRawSync(page, result);
+  const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+  // chai decides -0 and 0 are different number...
+  // and firefox have a bug that output -0 for unknown reason
+  assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
+};
+
 describe('SerializeAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
@@ -35,11 +49,53 @@ describe('SerializeAddon', () => {
   after(async () => await browser.close());
   beforeEach(async () => await page.evaluate(`window.term.reset()`));
 
+  it('produce different output when we call test util with different text', async function(): Promise<any> {
+    await writeRawSync(page, '12345');
+    const buffer1 = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    await page.evaluate(`term.reset();`);
+    await writeRawSync(page, '67890');
+    const buffer2 = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    assert.throw(() => {
+      assert.equal(JSON.stringify(buffer1), JSON.stringify(buffer2));
+    });
+  });
+
+  it('produce different output when we call test util with different line wrap', async function(): Promise<any> {
+    await writeRawSync(page, '1234567890\r\n12345');
+    const buffer3 = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    await page.evaluate(`term.reset();`);
+    await writeRawSync(page, '1234567890n12345');
+    const buffer4 = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+
+    assert.throw(() => {
+      assert.equal(JSON.stringify(buffer3), JSON.stringify(buffer4));
+    });
+  });
+
   it('empty content', async function(): Promise<any> {
     const rows = 10;
     const cols = 10;
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
   });
+
+  it('unwrap wrapped line', async function(): Promise<any> {
+    const lines = ['123456789123456789'];
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+  });
+
+  it('does not unwrap non-wrapped line', async function(): Promise<any> {
+    const lines = [
+      '123456789',
+      '123456789'
+    ];
+    await writeSync(page, lines.join('\\r\\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+  });
+
 
   it('preserve last empty lines', async function(): Promise<any> {
     const cols = 10;
@@ -281,15 +337,8 @@ describe('SerializeAddon', () => {
       '中文12',
       '1中文中文中' // this line is going to be wrapped at last character because it has line length of 11 (1+2*5)
     ];
-    const expected = [
-      '中文中文',
-      '12中文',
-      '中文12',
-      '1中文中文',
-      '中'
-    ];
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
 
   it('serialize CJK Mixed with tab correctly', async () => {
@@ -315,7 +364,7 @@ describe('SerializeAddon', () => {
     ];
 
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active.type`)), '"alternate"');
+    assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'alternate');
     assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
@@ -331,7 +380,7 @@ describe('SerializeAddon', () => {
     ];
 
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(JSON.stringify(await page.evaluate(`window.term.buffer.active === window.term.buffer.alt`)), 'false');
+    assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
     assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
@@ -343,17 +392,7 @@ describe('SerializeAddon', () => {
       `2${CLEAR_RIGHT(9)}`
     ];
 
-    await writeSync(page, lines.join('\\r\\n'));
-    const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
-
-    const result = await page.evaluate(`serializeAddon.serialize();`) as string;
-    await page.evaluate(`term.reset();`);
-    await writeRawSync(page, result);
-    const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
-
-    // chai decides -0 and 0 are different number...
-    // and firefox have a bug that output -0 for unknown reason
-    assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
+    await testNormalScreenEqual(page, lines.join('\r\n'));
   });
 
   it('cause the BCE on scroll', async () => {
@@ -369,18 +408,23 @@ describe('SerializeAddon', () => {
       `\u001b[44m${CLEAR_RIGHT(5)}1111111111111111`
     ];
 
-    await writeSync(page, lines.join('\\r\\n'));
-    const originalBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+    await testNormalScreenEqual(page, lines.join('\r\n'));
+  });
+  it('handle invalid wrap', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+    const MOVE_UP = (l: number): string => `\u001b[${l}A`;
+    const MOVE_DOWN = (l: number): string => `\u001b[${l}B`;
 
-    const result = await page.evaluate(`serializeAddon.serialize();`) as string;
+    const padLines = newArray<string>(
+      (index: number) => digitsString(10, index),
+      10
+    );
 
-    await page.evaluate(`term.reset();`);
-    await writeRawSync(page, result);
-    const newBuffer = await page.evaluate(`SerializeAddon._inspectBuffer(term.buffer.normal);`);
+    const lines = [
+      `\u001b[44m${CLEAR_RIGHT(5)}123456789012345${MOVE_UP(1)}${CLEAR_RIGHT(5)}${MOVE_DOWN(1)}`
+    ];
 
-    // chai decides -0 and 0 are different number...
-    // and firefox have a bug that output -0 for unknown reason
-    assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
+    await testNormalScreenEqual(page, lines.join('\r\n'));
   });
 });
 
