@@ -61,7 +61,7 @@
     "ts-loader": "^8.0.3",
     "typescript": "4.0",
     "utf8": "^3.0.0",
-    "webpack": "^4.44.1",
+    "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12",
     "ws": "^7.3.1",
     "xterm-benchmark": "^0.1.3"
