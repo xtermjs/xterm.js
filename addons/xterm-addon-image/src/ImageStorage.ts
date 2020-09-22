@@ -13,10 +13,10 @@ const INVISIBLE = 0x40000000; // taken from BufferLine.ts
 
 
 // TODO: This is temporary, link to xterm when the new version is published
-//export interface ITerminalAddon {
-//  activate(terminal: Terminal): void;
-//  dispose(): void;
-//}
+// export interface ITerminalAddon {
+//   activate(terminal: Terminal): void;
+//   dispose(): void;
+// }
 
 interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
@@ -154,31 +154,31 @@ export class ImageStorage implements IDisposable {
     }
     */
 
-   for (let row = 0; row < rows - 1; ++row) {
+    for (let row = 0; row < rows - 1; ++row) {
+      const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+      for (let col = 0; col < cols; ++col) {
+        if (offset + col >= internalTerm.cols) {
+          break;
+        }
+        const tileNum = row * cols + col;
+        bufferRow.setCellFromCodePoint(offset + col, CODE, 1, fg, tileNum);
+      }
+      internalTerm._inputHandler.lineFeed();
+      buffer.x = offset;
+    }
+    // last line
     const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
     for (let col = 0; col < cols; ++col) {
       if (offset + col >= internalTerm.cols) {
         break;
       }
-      const tileNum = row * cols + col;
+      const tileNum = (rows - 1) * cols + col;
       bufferRow.setCellFromCodePoint(offset + col, CODE, 1, fg, tileNum);
     }
-    internalTerm._inputHandler.lineFeed();
-    buffer.x = offset;
-  }
-  // last line
-  const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
-  for (let col = 0; col < cols; ++col) {
-    if (offset + col >= internalTerm.cols) {
-      break;
+    buffer.x += cols;
+    if (buffer.x >= internalTerm.cols) {
+      internalTerm._inputHandler.lineFeed();
     }
-    const tileNum = (rows - 1) * cols + col;
-    bufferRow.setCellFromCodePoint(offset + col, CODE, 1, fg, tileNum);
-  }
-  buffer.x += cols;
-  if (buffer.x >= internalTerm.cols) {
-    internalTerm._inputHandler.lineFeed();
-  }
 
     return position;
   }

@@ -72,7 +72,7 @@ class SixelHandler implements IDcsHandler {
   private _rejected = false;
   constructor(private _storage: ImageStorage) {}
   public hook(params: IParams): void {
-    //TODO: palette + background select
+    // TODO: palette + background select
   }
   public put(data: Uint32Array, start: number, end: number): void {
     // reject image with more than 3M pixels
@@ -104,22 +104,22 @@ export class ImageAddon implements ITerminalAddon {
   constructor(opts: IImageAddonOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._sixelPalette = this._opts.sixelDefaultPalette === 'VT340-COLOR' ? PALETTE_VT340_COLOR
-                        : this._opts.sixelDefaultPalette === 'VT340-GREY' ? PALETTE_VT340_GREY
-                        : PALETTE_ANSI_256;
+      : this._opts.sixelDefaultPalette === 'VT340-GREY' ? PALETTE_VT340_GREY
+        : PALETTE_ANSI_256;
   }
   public activate(terminal: Terminal): void {
     this._storage = new ImageStorage(terminal);
     if (this._opts.sixelSupport && !this._sixelHandler) {
-      //this._sixelHandler = terminal.parser.addDcsHandler({final: 'q'}, (data, params) => {
-      //  const pal = this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette;
-      //  // TODO: 0 - get startup background, 2 - get BCE
-      //  const dec = new SixelDecoder(params[1] === 1 ? 0 : DEFAULT_BACKGROUND, pal, this._opts.sixelPaletteLimit);
-      //  dec.decodeString(data);
-      //  if (this._storage) {
-      //    this._storage.addImageFromSixel(dec);
-      //  }
-      //  return true;
-      //});
+      // this._sixelHandler = terminal.parser.addDcsHandler({final: 'q'}, (data, params) => {
+      //   const pal = this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette;
+      //   // TODO: 0 - get startup background, 2 - get BCE
+      //   const dec = new SixelDecoder(params[1] === 1 ? 0 : DEFAULT_BACKGROUND, pal, this._opts.sixelPaletteLimit);
+      //   dec.decodeString(data);
+      //   if (this._storage) {
+      //     this._storage.addImageFromSixel(dec);
+      //   }
+      //   return true;
+      // });
 
       (terminal as any)._core._inputHandler._parser.setDcsHandler({final: 'q'}, new SixelHandler(this._storage));
     }
