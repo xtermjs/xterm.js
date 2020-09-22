@@ -13,10 +13,10 @@ const INVISIBLE = 0x40000000; // taken from BufferLine.ts
 
 
 // TODO: This is temporary, link to xterm when the new version is published
-export interface ITerminalAddon {
-  activate(terminal: Terminal): void;
-  dispose(): void;
-}
+//export interface ITerminalAddon {
+//  activate(terminal: Terminal): void;
+//  dispose(): void;
+//}
 
 interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
