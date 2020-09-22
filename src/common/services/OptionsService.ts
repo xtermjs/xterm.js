@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
+import { IOptionsService, ITerminalOptions, IPartialTerminalOptions, FontWeight } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { clone } from 'common/Clone';
@@ -20,6 +20,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
+  cursorWidth: 1,
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
@@ -30,6 +31,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   fontWeight: 'normal',
   fontWeightBold: 'bold',
   lineHeight: 1.0,
+  linkTooltipHoverDuration: 500,
   letterSpacing: 0,
   logLevel: 'info',
   scrollback: 1000,
@@ -37,21 +39,24 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
+  minimumContrastRatio: 1,
   disableStdin: false,
+  allowProposedApi: true,
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
   rightClickSelectsWord: isMac,
   rendererType: 'canvas',
+  windowOptions: {},
   windowsMode: false,
+  wordSeparator: ' ()[]{}\',"`',
 
   convertEol: false,
   termName: 'xterm',
-  screenKeys: false,
-  cancelEvents: false,
-  useFlowControl: false,
-  wordSeparator: ' ()[]{}\',:;"'
+  cancelEvents: false
 });
+
+const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -59,7 +64,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class OptionsService implements IOptionsService {
-  serviceBrand: any;
+  public serviceBrand: any;
 
   public options: ITerminalOptions;
 
@@ -68,12 +73,16 @@ export class OptionsService implements IOptionsService {
 
   constructor(options: IPartialTerminalOptions) {
     this.options = clone(DEFAULT_OPTIONS);
-    Object.keys(options).forEach(k => {
+    for (const k of Object.keys(options)) {
       if (k in this.options) {
-        const newValue = options[k as keyof IPartialTerminalOptions] as any;
-        this.options[k] = newValue;
+        try {
+          const newValue = options[k as keyof IPartialTerminalOptions] as any;
+          this.options[k] = this._sanitizeAndValidateOption(k, newValue);
+        } catch (e) {
+          console.error(e);
+        }
       }
-    });
+    }
   }
 
   public setOption(key: string, value: any): void {
@@ -102,19 +111,31 @@ export class OptionsService implements IOptionsService {
     switch (key) {
       case 'bellStyle':
       case 'cursorStyle':
-      case 'fontWeight':
-      case 'fontWeightBold':
       case 'rendererType':
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];
         }
         break;
+      case 'fontWeight':
+      case 'fontWeightBold':
+        if (typeof value === 'number' && 1 <= value && value <= 1000) {
+          // already valid numeric value
+          break;
+        }
+        value = FONT_WEIGHT_OPTIONS.indexOf(value) !== -1 ? value : DEFAULT_OPTIONS[key];
+        break;
+      case 'cursorWidth':
+        value = Math.floor(value);
+        // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {
           throw new Error(`${key} cannot be less than 1, value: ${value}`);
         }
+        break;
+      case 'minimumContrastRatio':
+        value = Math.max(1, Math.min(21, Math.round(value * 10) / 10));
         break;
       case 'scrollback':
         value = Math.min(value, 4294967295);

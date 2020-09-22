@@ -3,7 +3,7 @@
   "dockerFile": "Dockerfile",
   "appPort": 3000,
   "extensions": [
-    "editorconfig.editorconfig",
-    "ms-vscode.vscode-typescript-tslint-plugin"
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig"
   ]
 }

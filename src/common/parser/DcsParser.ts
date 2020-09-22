@@ -136,7 +136,7 @@ export class DcsHandler implements IDcsHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data, this._params ? this._params : new Params());
+      ret = this._handler(this._data, this._params || new Params());
     }
     this._params = undefined;
     this._data = '';

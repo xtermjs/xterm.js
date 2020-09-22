@@ -1,3 +1,4 @@
 {
-  "typescript.preferences.quoteStyle": "single"
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "typescript.preferences.quoteStyle": "single"
 }

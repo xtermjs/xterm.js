@@ -6,12 +6,11 @@
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { is256Color } from './atlas/CharAtlasUtils';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -23,13 +22,13 @@ const enum VertexAttribLocations {
 const vertexShaderSource = `#version 300 es
 layout (location = ${VertexAttribLocations.POSITION}) in vec2 a_position;
 layout (location = ${VertexAttribLocations.SIZE}) in vec2 a_size;
-layout (location = ${VertexAttribLocations.COLOR}) in vec3 a_color;
+layout (location = ${VertexAttribLocations.COLOR}) in vec4 a_color;
 layout (location = ${VertexAttribLocations.UNIT_QUAD}) in vec2 a_unitquad;
 
 uniform mat4 u_projection;
 uniform vec2 u_resolution;
 
-out vec3 v_color;
+out vec4 v_color;
 
 void main() {
   vec2 zeroToOne = (a_position + (a_unitquad * a_size)) / u_resolution;
@@ -40,12 +39,12 @@ void main() {
 const fragmentShaderSource = `#version 300 es
 precision lowp float;
 
-in vec3 v_color;
+in vec4 v_color;
 
 out vec4 outColor;
 
 void main() {
-  outColor = vec4(v_color, 1);
+  outColor = v_color;
 }`;
 
 interface IVertices {
@@ -156,7 +155,7 @@ export class RectangleRenderer {
 
   private _updateCachedColors(): void {
     this._bgFloat = this._colorToFloat32Array(this._colors.background);
-    this._selectionFloat = this._colorToFloat32Array(this._colors.selection);
+    this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
   }
 
   private _updateViewportRectangle(): void {
@@ -172,7 +171,7 @@ export class RectangleRenderer {
     );
   }
 
-  public updateSelection(model: ISelectionRenderModel, columnSelectMode: boolean): void {
+  public updateSelection(model: ISelectionRenderModel): void {
     const terminal = this._terminal;
 
     if (!model.hasSelection) {
@@ -180,7 +179,7 @@ export class RectangleRenderer {
       return;
     }
 
-    if (columnSelectMode) {
+    if (model.columnSelectMode) {
       const startCol = model.startCol;
       const width = model.endCol - startCol;
       const height = model.viewportCappedEndRow - model.viewportCappedStartRow + 1;
@@ -197,7 +196,7 @@ export class RectangleRenderer {
     } else {
       // Draw first row
       const startCol = model.viewportStartRow === model.viewportCappedStartRow ? model.startCol : 0;
-      const startRowEndCol = model.viewportCappedStartRow === model.viewportCappedEndRow ? model.endCol : terminal.cols;
+      const startRowEndCol = model.viewportCappedStartRow === model.viewportEndRow ? model.endCol : terminal.cols;
       this._addRectangleFloat(
         this._vertices.selection,
         0,
@@ -247,47 +246,73 @@ export class RectangleRenderer {
 
     for (let y = 0; y < terminal.rows; y++) {
       let currentStartX = -1;
-      let currentBg = DEFAULT_COLOR;
+      let currentBg = 0;
+      let currentFg = 0;
+      let currentInverse = false;
       for (let x = 0; x < terminal.cols; x++) {
-        const modelIndex = ((y * terminal.cols) + x) * 4;
-        const bg = model.cells[modelIndex + 2];
-        if (bg !== currentBg) {
+        const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
+        const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
+        const inverse = !!(fg & FgFlags.INVERSE);
+        if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color
-          if (currentBg !== DEFAULT_COLOR) {
+          if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-            this._updateRectangle(vertices, offset, currentBg, currentStartX, x, y);
+            this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
           currentStartX = x;
           currentBg = bg;
+          currentFg = fg;
+          currentInverse = inverse;
         }
       }
       // Finish rectangle if it's still going
-      if (currentBg !== DEFAULT_COLOR) {
+      if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
         const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-        this._updateRectangle(vertices, offset, currentBg, currentStartX, terminal.cols, y);
+        this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
     }
     vertices.count = rectangleCount;
   }
 
-  private _updateRectangle(vertices: IVertices, offset: number, bg: number, startX: number, endX: number, y: number): void {
-    let color: IColor | null = null;
-    if (bg === INVERTED_DEFAULT_COLOR) {
-      color = this._colors.foreground;
-    } else if (is256Color(bg)) {
-      color = this._colors.ansi[bg];
+  private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
+    let rgba: number | undefined;
+    if (fg & FgFlags.INVERSE) {
+      switch (fg & Attributes.CM_MASK) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
+          break;
+        case Attributes.CM_RGB:
+          rgba = (fg & Attributes.RGB_MASK) << 8;
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          rgba = this._colors.foreground.rgba;
+      }
     } else {
-      // TODO: Add support for true color
-      color = this._colors.foreground;
+      switch (bg & Attributes.CM_MASK) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+          break;
+        case Attributes.CM_RGB:
+          rgba = (bg & Attributes.RGB_MASK) << 8;
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          rgba = this._colors.background.rgba;
+      }
     }
+
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
     const x1 = startX * this._dimensions.scaledCellWidth;
     const y1 = y * this._dimensions.scaledCellHeight;
-    const r = ((color.rgba >> 24) & 0xFF) / 255;
-    const g = ((color.rgba >> 16) & 0xFF) / 255;
-    const b = ((color.rgba >> 8 ) & 0xFF) / 255;
+    const r = ((rgba >> 24) & 0xFF) / 255;
+    const g = ((rgba >> 16) & 0xFF) / 255;
+    const b = ((rgba >> 8 ) & 0xFF) / 255;
 
     this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, 1);
   }

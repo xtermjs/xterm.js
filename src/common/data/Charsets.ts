@@ -10,12 +10,12 @@ import { ICharset } from 'common/Types';
  * to be represented within the terminal with only 8-bit encoding. See ISO 2022
  * for a discussion on character sets. Only VT100 character sets are supported.
  */
-export const CHARSETS: { [key: string]: ICharset | null } = {};
+export const CHARSETS: { [key: string]: ICharset | undefined } = {};
 
 /**
  * The default character set, US.
  */
-export const DEFAULT_CHARSET: ICharset | null = CHARSETS['B'];
+export const DEFAULT_CHARSET: ICharset | undefined = CHARSETS['B'];
 
 /**
  * DEC Special Character and Line Drawing Set.
@@ -30,14 +30,14 @@ export const DEFAULT_CHARSET: ICharset | null = CHARSETS['B'];
 CHARSETS['0'] = {
   '`': '\u25c6', // '◆'
   'a': '\u2592', // '▒'
-  'b': '\u0009', // '\t'
-  'c': '\u000c', // '\f'
-  'd': '\u000d', // '\r'
-  'e': '\u000a', // '\n'
+  'b': '\u2409', // '␉' (HT)
+  'c': '\u240c', // '␌' (FF)
+  'd': '\u240d', // '␍' (CR)
+  'e': '\u240a', // '␊' (LF)
   'f': '\u00b0', // '°'
   'g': '\u00b1', // '±'
-  'h': '\u2424', // '\u2424' (NL)
-  'i': '\u000b', // '\v'
+  'h': '\u2424', // '␤' (NL)
+  'i': '\u240b', // '␋' (VT)
   'j': '\u2518', // '┘'
   'k': '\u2510', // '┐'
   'l': '\u250c', // '┌'
@@ -74,7 +74,7 @@ CHARSETS['A'] = {
  * United States character set
  * ESC (B
  */
-CHARSETS['B'] = null;
+CHARSETS['B'] = undefined;
 
 /**
  * Dutch character set
@@ -246,6 +246,7 @@ CHARSETS['='] = {
   '\\': 'ç',
   ']': 'ê',
   '^': 'î',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   '_': 'è',
   '`': 'ô',
   '{': 'ä',

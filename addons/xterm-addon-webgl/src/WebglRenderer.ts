@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../../src/Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -11,19 +10,15 @@ import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal } from 'xterm';
-import { getLuminance } from './ColorUtils';
+import { NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
-import { FLAGS } from './Constants';
-import { getCompatAttr } from './CharDataCompat';
-
-export const INDICIES_PER_CELL = 4;
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { ITerminal, IColorSet } from 'browser/Types';
+import { EventEmitter } from 'common/EventEmitter';
+import { CellData } from 'common/buffer/CellData';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -31,6 +26,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();
+  private _workCell: CellData = new CellData();
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -40,6 +36,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
+  private _isAttached: boolean;
+
+  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -48,13 +48,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this._core = (<any>this._terminal)._core;
-
-    this._applyBgLuminanceBasedSelection();
+    this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement, 3, this._colors)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
+      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -82,37 +80,31 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
-        throw new Error('WebGL2 not supported');
+      throw new Error('WebGL2 not supported ' + this._gl);
     }
-    this._core.screenElement.appendChild(this._canvas);
+    this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
     this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
+
+    this._isAttached = document.body.contains(this._core.screenElement!);
   }
 
   public dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
-    this._core.screenElement.removeChild(this._canvas);
+    this._core.screenElement!.removeChild(this._canvas);
     super.dispose();
   }
 
-  private _applyBgLuminanceBasedSelection(): void {
-    // HACK: This is needed until webgl renderer adds support for selection colors
-    if (getLuminance(this._colors.background) > 0.5) {
-      this._colors.selection = { css: '#000', rgba: 255 };
-    } else {
-      this._colors.selection = { css: '#fff', rgba: 4294967295 };
-    }
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._charAtlas?.cacheCanvas;
   }
 
   public setColors(colors: IColorSet): void {
     this._colors = colors;
-
-    this._applyBgLuminanceBasedSelection();
-
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
       l.setColors(this._terminal, this._colors);
@@ -124,8 +116,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
+
     // Force a full refresh
     this._model.clear();
+    this._model.clearSelection();
   }
 
   public onDevicePixelRatioChange(): void {
@@ -154,8 +150,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._canvas.style.height = `${this.dimensions.canvasHeight}px`;
 
     // Resize the screen
-    this._core.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._core.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
+    this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -163,6 +159,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Force a full refresh
     this._model.clear();
+    this._model.clearSelection();
   }
 
   public onCharSizeChanged(): void {
@@ -177,16 +174,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
-    this._updateSelectionModel(start, end);
+    this._updateSelectionModel(start, end, columnSelectMode);
 
-    this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
-    this._glyphRenderer.updateSelection(this._model, columnSelectMode);
+    this._rectangleRenderer.updateSelection(this._model.selection);
+    this._glyphRenderer.updateSelection(this._model);
 
-    // TODO: #2102 Should this move to RenderCoordinator?
-    this._core.refresh(0, this._terminal.rows - 1);
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {
@@ -206,6 +202,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    */
   private _refreshCharAtlas(): void {
     if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {
+      // Mark as not attached so char atlas gets refreshed on next render
+      this._isAttached = false;
       return;
     }
 
@@ -216,6 +214,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._charAtlas = atlas as WebglCharAtlas;
     this._charAtlas.warmUp();
     this._glyphRenderer.setAtlas(this._charAtlas);
+  }
+
+  public clearCharAtlas(): void {
+    this._charAtlas?.clearTexture();
+    this._model.clear();
+    this._updateModel(0, this._terminal.rows - 1);
+    this._glyphRenderer.updateSelection(this._model);
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public clear(): void {
@@ -231,12 +237,23 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public renderRows(start: number, end: number): void {
+    if (!this._isAttached) {
+      if (document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+        this._updateDimensions();
+        this._refreshCharAtlas();
+        this._isAttached = true;
+      } else {
+        return;
+      }
+    }
+
     // Update render layers
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._model.clear();
+      this._model.clearSelection();
     }
 
     // Update model to reflect what's drawn
@@ -255,58 +272,40 @@ export class WebglRenderer extends Disposable implements IRenderer {
       const line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line.get(x);
-        const chars = charData[CHAR_DATA_CHAR_INDEX];
-        let code = charData[CHAR_DATA_CODE_INDEX];
-        const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
-        const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
+        line.loadCell(x, this._workCell);
+
+        const chars = this._workCell.getChars();
+        let code = this._workCell.getCode();
+        const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
         }
 
         // Nothing has changed, no updates needed
-        if (this._model.cells[i] === code && this._model.cells[i + 1] === attr) {
+        if (this._model.cells[i] === code &&
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workCell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workCell.fg) {
           continue;
         }
-
-        // Resolve bg and fg and cache in the model
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
-
-        // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
-          if (fg === DEFAULT_COLOR) {
-            fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === DEFAULT_COLOR) {
-            bg = INVERTED_DEFAULT_COLOR;
-          }
-        }
-        const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && !!(flags & FLAGS.BOLD) && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
-        fg += drawInBrightColor ? 8 : 0;
 
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {
           code = code | COMBINED_CHAR_BIT_MASK;
         }
 
-        this._model.cells[i    ] = code;
-        this._model.cells[i + 1] = attr;
-        this._model.cells[i + 2] = bg;
-        this._model.cells[i + 3] = fg;
+        // Cache the results in the model
+        this._model.cells[i] = code;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, attr, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workCell.bg, this._workCell.fg, chars);
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
-  private _updateSelectionModel(start: [number, number], end: [number, number]): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     // Selection does not exist
@@ -316,8 +315,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.viewportY;
+    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
+    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
@@ -328,6 +327,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._model.selection.hasSelection = true;
+    this._model.selection.columnSelectMode = columnSelectMode;
     this._model.selection.viewportStartRow = viewportStartRow;
     this._model.selection.viewportEndRow = viewportEndRow;
     this._model.selection.viewportCappedStartRow = viewportCappedStartRow;
@@ -343,7 +343,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // TODO: Acquire CharSizeService properly
 
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!(<any>this._core)._charSizeService.width || !(<any>this._core)._charSizeService.height) {
+    if (!(this._core as any)._charSizeService.width || !(this._core as any)._charSizeService.height) {
       return;
     }
 
@@ -354,12 +354,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there

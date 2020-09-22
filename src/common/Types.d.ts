@@ -3,11 +3,27 @@
  * @license MIT
  */
 
+import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
+import { IParams } from 'common/parser/Types';
+import { IOptionsService, IUnicodeService } from 'common/services/Services';
+
+export interface ICoreTerminal {
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
+}
 
 export interface IDisposable {
   dispose(): void;
+}
+
+// TODO: The options that are not in the public API should be reviewed
+export interface ITerminalOptions extends IPublicTerminalOptions {
+  [key: string]: any;
+  cancelEvents?: boolean;
+  convertEol?: boolean;
+  termName?: string;
 }
 
 export type XtermListener = (...args: any[]) => void;
@@ -41,7 +57,7 @@ export interface ICircularList<T> {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  recycle(): T | undefined;
+  recycle(): T;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
@@ -62,16 +78,24 @@ export interface IKeyboardResult {
 }
 
 export interface ICharset {
-  [key: string]: string;
+  [key: string]: string | undefined;
 }
 
 export type CharData = [number, string, number, number];
 export type IColorRGB = [number, number, number];
 
+export interface IExtendedAttrs {
+  underlineStyle: number;
+  underlineColor: number;
+  clone(): IExtendedAttrs;
+  isEmpty(): boolean;
+}
+
 /** Attribute data */
 export interface IAttributeData {
   fg: number;
   bg: number;
+  extended: IExtendedAttrs;
 
   clone(): IAttributeData;
 
@@ -93,10 +117,21 @@ export interface IAttributeData {
   isBgPalette(): boolean;
   isFgDefault(): boolean;
   isBgDefault(): boolean;
+  isAttributeDefault(): boolean;
 
   // colors
   getFgColor(): number;
   getBgColor(): number;
+
+  // extended attrs
+  hasExtendedAttrs(): number;
+  updateExtended(): void;
+  getUnderlineColor(): number;
+  getUnderlineColorMode(): number;
+  isUnderlineColorRGB(): boolean;
+  isUnderlineColorPalette(): boolean;
+  isUnderlineColorDefault(): boolean;
+  getUnderlineStyle(): number;
 }
 
 /** Cell data */
@@ -121,11 +156,11 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
   addCodepointToCell(index: number, codePoint: number): void;
-  insertCells(pos: number, n: number, ch: ICellData): void;
-  deleteCells(pos: number, n: number, fill: ICellData): void;
-  replaceCells(start: number, end: number, fill: ICellData): void;
+  insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
+  deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
+  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData): void;
   resize(cols: number, fill: ICellData): void;
   fill(fillCellData: ICellData): void;
   copyFrom(line: IBufferLine): void;
@@ -149,9 +184,18 @@ export interface IMarker extends IDisposable {
   readonly isDisposed: boolean;
   readonly line: number;
 }
+export interface IModes {
+  insertMode: boolean;
+}
 
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
+  applicationKeypad: boolean;
+  bracketedPasteMode: boolean;
+  origin: boolean;
+  reverseWraparound: boolean;
+  sendFocus: boolean;
+  wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 
 export interface IRowRange {
@@ -249,5 +293,121 @@ export interface ICoreMouseProtocol {
  * The tracking encoding can be registered and activated at the CoreMouseService.
  * If a ICoreMouseEvent passes all procotol restrictions it will be encoded
  * with the active encoding and sent out.
+ * Note: Returning an empty string will supress sending a mouse report,
+ * which can be used to skip creating falsey reports in limited encodings
+ * (DEFAULT only supports up to 223 1-based as coord value).
  */
 export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
+
+/**
+ * windowOptions
+ */
+export interface IWindowOptions {
+  restoreWin?: boolean;
+  minimizeWin?: boolean;
+  setWinPosition?: boolean;
+  setWinSizePixels?: boolean;
+  raiseWin?: boolean;
+  lowerWin?: boolean;
+  refreshWin?: boolean;
+  setWinSizeChars?: boolean;
+  maximizeWin?: boolean;
+  fullscreenWin?: boolean;
+  getWinState?: boolean;
+  getWinPosition?: boolean;
+  getWinSizePixels?: boolean;
+  getScreenSizePixels?: boolean;
+  getCellSizePixels?: boolean;
+  getWinSizeChars?: boolean;
+  getScreenSizeChars?: boolean;
+  getIconTitle?: boolean;
+  getWinTitle?: boolean;
+  pushTitle?: boolean;
+  popTitle?: boolean;
+  setWinLines?: boolean;
+}
+
+/**
+ * Calls the parser and handles actions generated by the parser.
+ */
+export interface IInputHandler {
+  onTitleChange: IEvent<string>;
+  onRequestScroll: IEvent<IAttributeData, boolean | void>;
+
+  parse(data: string | Uint8Array): void;
+  print(data: Uint32Array, start: number, end: number): void;
+
+  /** C0 BEL */ bell(): void;
+  /** C0 LF */ lineFeed(): void;
+  /** C0 CR */ carriageReturn(): void;
+  /** C0 BS */ backspace(): void;
+  /** C0 HT */ tab(): void;
+  /** C0 SO */ shiftOut(): void;
+  /** C0 SI */ shiftIn(): void;
+
+  /** CSI @ */ insertChars(params: IParams): void;
+  /** CSI SP @ */ scrollLeft(params: IParams): void;
+  /** CSI A */ cursorUp(params: IParams): void;
+  /** CSI SP A */ scrollRight(params: IParams): void;
+  /** CSI B */ cursorDown(params: IParams): void;
+  /** CSI C */ cursorForward(params: IParams): void;
+  /** CSI D */ cursorBackward(params: IParams): void;
+  /** CSI E */ cursorNextLine(params: IParams): void;
+  /** CSI F */ cursorPrecedingLine(params: IParams): void;
+  /** CSI G */ cursorCharAbsolute(params: IParams): void;
+  /** CSI H */ cursorPosition(params: IParams): void;
+  /** CSI I */ cursorForwardTab(params: IParams): void;
+  /** CSI J */ eraseInDisplay(params: IParams): void;
+  /** CSI K */ eraseInLine(params: IParams): void;
+  /** CSI L */ insertLines(params: IParams): void;
+  /** CSI M */ deleteLines(params: IParams): void;
+  /** CSI P */ deleteChars(params: IParams): void;
+  /** CSI S */ scrollUp(params: IParams): void;
+  /** CSI T */ scrollDown(params: IParams, collect?: string): void;
+  /** CSI X */ eraseChars(params: IParams): void;
+  /** CSI Z */ cursorBackwardTab(params: IParams): void;
+  /** CSI ` */ charPosAbsolute(params: IParams): void;
+  /** CSI a */ hPositionRelative(params: IParams): void;
+  /** CSI b */ repeatPrecedingCharacter(params: IParams): void;
+  /** CSI c */ sendDeviceAttributesPrimary(params: IParams): void;
+  /** CSI > c */ sendDeviceAttributesSecondary(params: IParams): void;
+  /** CSI d */ linePosAbsolute(params: IParams): void;
+  /** CSI e */ vPositionRelative(params: IParams): void;
+  /** CSI f */ hVPosition(params: IParams): void;
+  /** CSI g */ tabClear(params: IParams): void;
+  /** CSI h */ setMode(params: IParams, collect?: string): void;
+  /** CSI l */ resetMode(params: IParams, collect?: string): void;
+  /** CSI m */ charAttributes(params: IParams): void;
+  /** CSI n */ deviceStatus(params: IParams, collect?: string): void;
+  /** CSI p */ softReset(params: IParams, collect?: string): void;
+  /** CSI q */ setCursorStyle(params: IParams, collect?: string): void;
+  /** CSI r */ setScrollRegion(params: IParams, collect?: string): void;
+  /** CSI s */ saveCursor(params: IParams): void;
+  /** CSI u */ restoreCursor(params: IParams): void;
+  /** CSI ' } */ insertColumns(params: IParams): void;
+  /** CSI ' ~ */ deleteColumns(params: IParams): void;
+  /** OSC 0
+      OSC 2 */ setTitle(data: string): void;
+  /** ESC E */ nextLine(): void;
+  /** ESC = */ keypadApplicationMode(): void;
+  /** ESC > */ keypadNumericMode(): void;
+  /** ESC % G
+      ESC % @ */ selectDefaultCharset(): void;
+  /** ESC ( C
+      ESC ) C
+      ESC * C
+      ESC + C
+      ESC - C
+      ESC . C
+      ESC / C */ selectCharset(collectAndFlag: string): void;
+  /** ESC D */ index(): void;
+  /** ESC H */ tabSet(): void;
+  /** ESC M */ reverseIndex(): void;
+  /** ESC c */ fullReset(): void;
+  /** ESC n
+      ESC o
+      ESC |
+      ESC }
+      ESC ~ */ setgLevel(level: number): void;
+  /** ESC # 8 */ screenAlignmentPattern(): void;
+}

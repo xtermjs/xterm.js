@@ -14,16 +14,17 @@ export function addDisposableDomListener(
   node: Element | Window | Document,
   type: string,
   handler: (e: any) => void,
-  useCapture?: boolean
+  options?: boolean | AddEventListenerOptions
 ): IDisposable {
-  node.addEventListener(type, handler, useCapture);
+  node.addEventListener(type, handler, options);
+  let disposed = false;
   return {
     dispose: () => {
-      if (!handler) {
-        // Already disposed
+      if (disposed) {
         return;
       }
-      node.removeEventListener(type, handler, useCapture);
+      disposed = true;
+      node.removeEventListener(type, handler, options);
     }
   };
 }

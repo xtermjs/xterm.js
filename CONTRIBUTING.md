@@ -52,3 +52,7 @@ By contributing code to xterm.js you:
    holder has explicitly granted the right to use it like this,
    through a compatible open source license or through a direct
    agreement with you.)
+
+### Test coverage
+
+One area that always needs attention is improving out unit test coverage, you can view the code coverage report on [Azure Pipelines](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3) by clicking the Code Coverage tab.

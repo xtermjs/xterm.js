@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es5",
     "lib": [
       "dom",
       "es2015"
@@ -10,7 +10,10 @@
     "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
-    "strict": true
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
   },
   "include": [
     "./**/*",

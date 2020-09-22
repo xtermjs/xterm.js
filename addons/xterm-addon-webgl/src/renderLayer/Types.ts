@@ -42,7 +42,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(terminal: Terminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void;
+  onSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
 
   /**
    * Registers a handler to join characters to render as a group

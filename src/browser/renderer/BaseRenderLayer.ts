@@ -5,16 +5,18 @@
 
 import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
 import { ICellData } from 'common/Types';
-import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IColor } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { channels, color, rgba } from 'browser/Color';
+import { removeElementFromParent } from 'browser/Dom';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -59,10 +61,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public dispose(): void {
-    this._container.removeChild(this._canvas);
-    if (this._charAtlas) {
-      this._charAtlas.dispose();
-    }
+    removeElementFromParent(this._canvas);
+    this._charAtlas?.dispose();
   }
 
   private _initCanvas(): void {
@@ -78,7 +78,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onFocus(): void {}
   public onCursorMove(): void {}
   public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
 
   public setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
@@ -94,7 +94,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const oldCanvas = this._canvas;
     this._alpha = alpha;
     // Cloning preserves properties
-    this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
+    this._canvas = this._canvas.cloneNode() as HTMLCanvasElement;
     this._initCanvas();
     this._container.replaceChild(this._canvas, oldCanvas);
 
@@ -146,10 +146,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+      x * this._scaledCellWidth,
+      y * this._scaledCellHeight,
+      width * this._scaledCellWidth,
+      height * this._scaledCellHeight);
   }
 
   /**
@@ -160,10 +160,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        width * this._scaledCellWidth,
-        window.devicePixelRatio);
+      x * this._scaledCellWidth,
+      (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+      width * this._scaledCellWidth,
+      window.devicePixelRatio);
   }
 
   /**
@@ -172,12 +172,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected _fillLeftLineAtCell(x: number, y: number): void {
+  protected _fillLeftLineAtCell(x: number, y: number, width: number): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        window.devicePixelRatio,
-        this._scaledCellHeight);
+      x * this._scaledCellWidth,
+      y * this._scaledCellHeight,
+      window.devicePixelRatio * width,
+      this._scaledCellHeight);
   }
 
   /**
@@ -189,10 +189,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _strokeRectAtCell(x: number, y: number, width: number, height: number): void {
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
-        x * this._scaledCellWidth + window.devicePixelRatio / 2,
-        y * this._scaledCellHeight + (window.devicePixelRatio / 2),
-        width * this._scaledCellWidth - window.devicePixelRatio,
-        (height * this._scaledCellHeight) - window.devicePixelRatio);
+      x * this._scaledCellWidth + window.devicePixelRatio / 2,
+      y * this._scaledCellHeight + (window.devicePixelRatio / 2),
+      width * this._scaledCellWidth - window.devicePixelRatio,
+      (height * this._scaledCellHeight) - window.devicePixelRatio);
   }
 
   /**
@@ -217,17 +217,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
-          x * this._scaledCellWidth,
-          y * this._scaledCellHeight,
-          width * this._scaledCellWidth,
-          height * this._scaledCellHeight);
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
+        width * this._scaledCellWidth,
+        height * this._scaledCellHeight);
     } else {
       this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(
-          x * this._scaledCellWidth,
-          y * this._scaledCellHeight,
-          width * this._scaledCellWidth,
-          height * this._scaledCellHeight);
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
+        width * this._scaledCellWidth,
+        height * this._scaledCellHeight);
     }
   }
 
@@ -245,9 +245,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'middle';
     this._clipRow(y);
     this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      cell.getChars(),
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
   }
 
   /**
@@ -264,13 +264,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
+    const contrastColor = this._getContrastColor(cell);
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
     //       in the cache handler itself (atlasDidDraw == false) and
     //       fall through to uncached later down below
-    if (cell.isFgRGB() || cell.isBgRGB()) {
-      this._drawUncachedChars(cell, x, y);
+    if (contrastColor || cell.isFgRGB() || cell.isBgRGB()) {
+      this._drawUncachedChars(cell, x, y, contrastColor);
       return;
     }
 
@@ -284,7 +285,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -316,21 +317,29 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChars(cell: ICellData, x: number, y: number): void {
+  private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
     this._ctx.textBaseline = 'middle';
 
     if (cell.isInverse()) {
-      if (cell.isBgDefault()) {
-        this._ctx.fillStyle = this._colors.background.css;
+      if (fgOverride) {
+        this._ctx.fillStyle = fgOverride.css;
+      } else if (cell.isBgDefault()) {
+        this._ctx.fillStyle = color.opaque(this._colors.background).css;
       } else if (cell.isBgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
-        this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+        let bg = cell.getBgColor();
+        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+          bg += 8;
+        }
+        this._ctx.fillStyle = this._colors.ansi[bg].css;
       }
     } else {
-      if (cell.isFgDefault()) {
+      if (fgOverride) {
+        this._ctx.fillStyle = fgOverride.css;
+      } else if (cell.isFgDefault()) {
         this._ctx.fillStyle = this._colors.foreground.css;
       } else if (cell.isFgRGB()) {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
@@ -351,9 +360,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     // Draw the character
     this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      cell.getChars(),
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
     this._ctx.restore();
   }
 
@@ -364,10 +373,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _clipRow(y: number): void {
     this._ctx.beginPath();
     this._ctx.rect(
-        0,
-        y * this._scaledCellHeight,
-        this._bufferService.cols * this._scaledCellWidth,
-        this._scaledCellHeight);
+      0,
+      y * this._scaledCellHeight,
+      this._bufferService.cols * this._scaledCellWidth,
+      this._scaledCellHeight);
     this._ctx.clip();
   }
 
@@ -380,6 +389,89 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontStyle = isItalic ? 'italic' : '';
 
     return `${fontStyle} ${fontWeight} ${this._optionsService.options.fontSize * window.devicePixelRatio}px ${this._optionsService.options.fontFamily}`;
+  }
+
+  private _getContrastColor(cell: CellData): IColor | undefined {
+    if (this._optionsService.options.minimumContrastRatio === 1) {
+      return undefined;
+    }
+
+    // Try get from cache first
+    const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
+    if (adjustedColor !== undefined) {
+      return adjustedColor || undefined;
+    }
+
+    let fgColor = cell.getFgColor();
+    let fgColorMode = cell.getFgColorMode();
+    let bgColor = cell.getBgColor();
+    let bgColorMode = cell.getBgColorMode();
+    const isInverse = !!cell.isInverse();
+    const isBold = !!cell.isInverse();
+    if (isInverse) {
+      const temp = fgColor;
+      fgColor = bgColor;
+      bgColor = temp;
+      const temp2 = fgColorMode;
+      fgColorMode = bgColorMode;
+      bgColorMode = temp2;
+    }
+
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
+    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
+
+    if (!result) {
+      this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
+      return undefined;
+    }
+
+    const color: IColor = {
+      css: channels.toCss(
+        (result >> 24) & 0xFF,
+        (result >> 16) & 0xFF,
+        (result >> 8) & 0xFF
+      ),
+      rgba: result
+    };
+    this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+
+    return color;
+  }
+
+  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
+    switch (bgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._colors.ansi[bgColor].rgba;
+      case Attributes.CM_RGB:
+        return bgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._colors.foreground.rgba;
+        }
+        return this._colors.background.rgba;
+    }
+  }
+
+  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
+    switch (fgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        if (this._optionsService.options.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._colors.ansi[fgColor].rgba;
+      case Attributes.CM_RGB:
+        return fgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._colors.background.rgba;
+        }
+        return this._colors.foreground.rgba;
+    }
   }
 }
 

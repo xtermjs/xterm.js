@@ -25,7 +25,7 @@ export function createDecorator<T>(id: string): IServiceIdentifier<T> {
     return serviceRegistry.get(id)!;
   }
 
-  const decorator = <any>function (target: Function, key: string, index: number): any {
+  const decorator: any = function (target: Function, key: string, index: number): any {
     if (arguments.length !== 3) {
       throw new Error('@IServiceName-decorator can only be used to decorate a parameter');
     }

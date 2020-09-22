@@ -5,19 +5,20 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly cols: number;
   readonly rows: number;
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
+  isUserScrolling: boolean;
 
-  // TODO: Move resize event here
+  onResize: IEvent<{ cols: number, rows: number }>;
 
   resize(cols: number, rows: number): void;
   reset(): void;
@@ -27,6 +28,7 @@ export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseSe
 export interface ICoreMouseService {
   activeProtocol: string;
   activeEncoding: string;
+  areMouseEventsActive: boolean;
   addProtocol(name: string, protocol: ICoreMouseProtocol): void;
   addEncoding(name: string, encoding: CoreMouseEncoding): void;
   reset(): void;
@@ -51,17 +53,26 @@ export interface ICoreMouseService {
   /**
    * Human readable version of mouse events.
    */
-  explainEvents(events: CoreMouseEventType): {[event: string]: boolean};
+  explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
 export interface ICoreService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
+  /**
+   * Initially the cursor will not be visible until the first time the terminal
+   * is focused.
+   */
+  isCursorInitialized: boolean;
+  isCursorHidden: boolean;
+
+  readonly modes: IModes;
   readonly decPrivateModes: IDecPrivateModes;
 
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
+  readonly onBinary: IEvent<string>;
 
   reset(): void;
 
@@ -72,13 +83,42 @@ export interface ICoreService {
    * resulting from parsing incoming data). When true this will also:
    * - Scroll to the bottom of the buffer.s
    * - Fire the `onUserInput` event (so selection can be cleared).
-    */
+   */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
+
+  /**
+   * Triggers the onBinary event in the public API.
+   * @param data The data that is being emitted.
+   */
+  triggerBinaryEvent(data: string): void;
+}
+
+export const ICharsetService = createDecorator<ICharsetService>('CharsetService');
+export interface ICharsetService {
+  serviceBrand: undefined;
+
+  charset: ICharset | undefined;
+  readonly glevel: number;
+
+  reset(): void;
+
+  /**
+   * Set the G level of the terminal.
+   * @param g
+   */
+  setgLevel(g: number): void;
+
+  /**
+   * Set the charset for the given G level of the terminal.
+   * @param g
+   * @param charset
+   */
+  setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
 export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
 export interface IDirtyRowService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly start: number;
   readonly end: number;
@@ -94,60 +134,32 @@ export interface IServiceIdentifier<T> {
   type: T;
 }
 
-export interface IConstructorSignature0<T> {
-  new(...services: { serviceBrand: any; }[]): T;
+export interface IBrandedService {
+  serviceBrand: undefined;
 }
 
-export interface IConstructorSignature1<A1, T> {
-  new(first: A1, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature2<A1, A2, T> {
-  new(first: A1, second: A2, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature3<A1, A2, A3, T> {
-  new(first: A1, second: A2, third: A3, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature4<A1, A2, A3, A4, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature5<A1, A2, A3, A4, A5, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature6<A1, A2, A3, A4, A5, A6, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature7<A1, A2, A3, A4, A5, A6, A7, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, ...services: { serviceBrand: any; }[]): T;
-}
-
-export interface IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T> {
-  new(first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8, ...services: { serviceBrand: any; }[]): T;
-}
+type GetLeadingNonServiceArgs<Args> =
+  Args extends [...IBrandedService[]] ? []
+    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
+      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
+        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
+          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
+            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
+              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
+                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
+                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
+                    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
-
-  createInstance<T>(ctor: IConstructorSignature0<T>): T;
-  createInstance<A1, T>(ctor: IConstructorSignature1<A1, T>, first: A1): T;
-  createInstance<A1, A2, T>(ctor: IConstructorSignature2<A1, A2, T>, first: A1, second: A2): T;
-  createInstance<A1, A2, A3, T>(ctor: IConstructorSignature3<A1, A2, A3, T>, first: A1, second: A2, third: A3): T;
-  createInstance<A1, A2, A3, A4, T>(ctor: IConstructorSignature4<A1, A2, A3, A4, T>, first: A1, second: A2, third: A3, fourth: A4): T;
-  createInstance<A1, A2, A3, A4, A5, T>(ctor: IConstructorSignature5<A1, A2, A3, A4, A5, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5): T;
-  createInstance<A1, A2, A3, A4, A5, A6, T>(ctor: IConstructorSignature6<A1, A2, A3, A4, A5, A6, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6): T;
-  createInstance<A1, A2, A3, A4, A5, A6, A7, T>(ctor: IConstructorSignature7<A1, A2, A3, A4, A5, A6, A7, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7): T;
-  createInstance<A1, A2, A3, A4, A5, A6, A7, A8, T>(ctor: IConstructorSignature8<A1, A2, A3, A4, A5, A6, A7, A8, T>, first: A1, second: A2, third: A3, fourth: A4, fifth: A5, sixth: A6, seventh: A7, eigth: A8): T;
+  getService<T>(id: IServiceIdentifier<T>): T | undefined;
+  createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
 }
 
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -157,7 +169,7 @@ export interface ILogService {
 
 export const IOptionsService = createDecorator<IOptionsService>('OptionsService');
 export interface IOptionsService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly options: ITerminalOptions;
 
@@ -167,17 +179,18 @@ export interface IOptionsService {
   getOption<T>(key: string): T | undefined;
 }
 
-export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 export type RendererType = 'dom' | 'canvas';
 
 export interface IPartialTerminalOptions {
   allowTransparency?: boolean;
   bellSound?: string;
-  bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+  bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols?: number;
   cursorBlink?: boolean;
   cursorStyle?: 'block' | 'underline' | 'bar';
+  cursorWidth?: number;
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
   fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
@@ -201,15 +214,18 @@ export interface IPartialTerminalOptions {
   theme?: ITheme;
   windowsMode?: boolean;
   wordSeparator?: string;
+  windowOptions?: IWindowOptions;
 }
 
 export interface ITerminalOptions {
+  allowProposedApi: boolean;
   allowTransparency: boolean;
   bellSound: string;
-  bellStyle: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
+  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
+  cursorWidth: number;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
@@ -220,9 +236,11 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
+  linkTooltipHoverDuration: number;
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
+  minimumContrastRatio: number;
   rendererType: RendererType;
   rightClickSelectsWord: boolean;
   rows: number;
@@ -232,14 +250,13 @@ export interface ITerminalOptions {
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;
+  windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
   cancelEvents: boolean;
   convertEol: boolean;
-  screenKeys: boolean;
   termName: string;
-  useFlowControl: boolean;
 }
 
 export interface ITheme {
@@ -264,4 +281,28 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
+export interface IUnicodeService {
+  serviceBrand: undefined;
+  /** Register an Unicode version provider. */
+  register(provider: IUnicodeVersionProvider): void;
+  /** Registered Unicode versions. */
+  readonly versions: string[];
+  /** Currently active version. */
+  activeVersion: string;
+  /** Event triggered, when activate version changed. */
+  readonly onChange: IEvent<string>;
+
+  /**
+   * Unicode version dependent
+   */
+  wcwidth(codepoint: number): number;
+  getStringCellWidth(s: string): number;
+}
+
+export interface IUnicodeVersionProvider {
+  readonly version: string;
+  wcwidth(ucs: number): 0 | 1 | 2;
 }

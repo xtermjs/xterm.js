@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2015",
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "rootDir": ".",
+    "outDir": "../out-test",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ]
+    },
+    "types": [
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@types/node",
+      "../../../out-test/api/TestUtils"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    }
+  ]
+}

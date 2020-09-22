@@ -41,16 +41,16 @@ class MockOscPutParser implements IOscParser {
       this._fallback(id, 'END', this.data.slice(this.data.indexOf(';') + 1));
     }
   }
-  addHandler(ident: number, handler: IOscHandler): IDisposable {
+  public addHandler(ident: number, handler: IOscHandler): IDisposable {
     throw new Error('not implemented');
   }
-  setHandler(ident: number, handler: IOscHandler): void {
+  public setHandler(ident: number, handler: IOscHandler): void {
     throw new Error('not implemented');
   }
-  clearHandler(ident: number): void {
+  public clearHandler(ident: number): void {
     throw new Error('not implemented');
   }
-  setHandlerFallback(handler: OscFallbackHandlerType): void {
+  public setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._fallback = handler;
   }
 }
@@ -58,6 +58,9 @@ const oscPutParser = new MockOscPutParser();
 
 // derived parser with access to internal states
 class TestEscapeSequenceParser extends EscapeSequenceParser {
+  public get transitions(): TransitionTable {
+    return this._transitions;
+  }
   public get osc(): string {
     return (this._oscParser as MockOscPutParser).data;
   }
@@ -192,13 +195,13 @@ describe('EscapeSequenceParser', function (): void {
   const parser = testParser;
   describe('Parser init and methods', function (): void {
     it('constructor', function (): void {
-      let p: EscapeSequenceParser = new EscapeSequenceParser();
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
-      p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
-      chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
+      let p = new TestEscapeSequenceParser();
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+      p = new TestEscapeSequenceParser(VT500_TRANSITION_TABLE);
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
       const tansitions: TransitionTable = new TransitionTable(10);
-      p = new EscapeSequenceParser(tansitions);
-      chai.expect(p.TRANSITIONS).equal(tansitions);
+      p = new TestEscapeSequenceParser(tansitions);
+      chai.expect(p.transitions).equal(tansitions);
     });
     it('inital states', function (): void {
       chai.expect(parser.initialState).equal(ParserState.GROUND);
@@ -735,7 +738,7 @@ describe('EscapeSequenceParser', function (): void {
     it('state OSC_STRING ignore rules', function (): void {
       parser.reset();
       const ignored = [
-        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', /*'\x07',*/ '\x08',
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', /* '\x07', */ '\x08',
         '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
         '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f'];
       for (let i = 0; i < ignored.length; ++i) {
@@ -1586,9 +1589,9 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('final ESC range 0x30 .. 0x7e, one byte', () => {
         for (let i = 0x30; i <= 0x7e; ++i) {
-          const c = String.fromCharCode(i);
+          const final = String.fromCharCode(i);
           let handler: IDisposable | undefined;
-          chai.assert.doesNotThrow(() => { handler = parser.addEscHandler({final: c}, () => {}); }, 'final must be in range 48 .. 126');
+          chai.assert.doesNotThrow(() => { handler = parser.addEscHandler({final}, () => {}); }, 'final must be in range 48 .. 126');
           if (handler) handler.dispose();
         }
         chai.assert.throws(() => { parser.addEscHandler({final: '\x2f'}, () => {}); }, 'final must be in range 48 .. 126');

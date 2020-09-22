@@ -10,7 +10,10 @@
     "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
-    "strict": true
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
   },
   "include": [
     "./**/*",

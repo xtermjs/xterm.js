@@ -7,11 +7,11 @@ import { IOptionsService } from 'common/services/Services';
 import { ISoundService } from 'browser/services/Services';
 
 export class SoundService implements ISoundService {
-  serviceBrand: any;
+  public serviceBrand: undefined;
 
   private static _audioContext: AudioContext;
 
-  static get audioContext(): AudioContext | null {
+  public static get audioContext(): AudioContext | null {
     if (!SoundService._audioContext) {
       const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
       if (!audioContextCtor) {

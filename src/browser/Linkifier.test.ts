@@ -11,10 +11,11 @@ import { BufferLine } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockLogService, MockBufferService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
+import { UnicodeService } from 'common/services/UnicodeService';
 
 class TestLinkifier extends Linkifier {
   constructor(bufferService: IBufferService) {
-    super(bufferService, new MockLogService());
+    super(bufferService, new MockLogService(), new UnicodeService());
     Linkifier._timeBeforeLatency = 0;
   }
 
@@ -23,14 +24,14 @@ class TestLinkifier extends Linkifier {
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
-  dispose(): void {
+  public dispose(): void {
   }
   public clears: number = 0;
   public zones: IMouseZone[] = [];
-  add(zone: IMouseZone): void {
+  public add(zone: IMouseZone): void {
     this.zones.push(zone);
   }
-  clearAll(): void {
+  public clearAll(): void {
     this.clears++;
   }
 }
@@ -58,7 +59,7 @@ describe('Linkifier', () => {
     bufferService.buffer.lines.push(stringToRow(text));
   }
 
-  function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
+  function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: Mocha.Done): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
     linkifier.linkifyRows();
@@ -75,7 +76,7 @@ describe('Linkifier', () => {
     }, 0);
   }
 
-  function assertLinkifiesMultiLineLink(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+  function assertLinkifiesMultiLineLink(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: Mocha.Done): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
     linkifier.linkifyRows();

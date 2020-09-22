@@ -8,7 +8,7 @@ import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class CharSizeService implements ICharSizeService {
-  serviceBrand: any;
+  public serviceBrand: undefined;
 
   public width: number = 0;
   public height: number = 0;
@@ -20,8 +20,8 @@ export class CharSizeService implements ICharSizeService {
   public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
 
   constructor(
-    readonly document: Document,
-    readonly parentElement: HTMLElement,
+    document: Document,
+    parentElement: HTMLElement,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);

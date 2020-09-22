@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData, IAttributeData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
 /**
  * buffer memory layout:
@@ -55,6 +55,7 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
+  protected _extendedAttrs: {[index: number]: ExtendedAttrs} = {};
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
@@ -174,6 +175,9 @@ export class BufferLine implements IBufferLine {
     if (cell.content & Content.IS_COMBINED_MASK) {
       cell.combinedData = this._combined[index];
     }
+    if (cell.bg & BgFlags.HAS_EXTENDED) {
+      cell.extended = this._extendedAttrs[index];
+    }
     return cell;
   }
 
@@ -183,6 +187,9 @@ export class BufferLine implements IBufferLine {
   public setCell(index: number, cell: ICellData): void {
     if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
+    }
+    if (cell.bg & BgFlags.HAS_EXTENDED) {
+      this._extendedAttrs[index] = cell.extended;
     }
     this._data[index * CELL_SIZE + Cell.CONTENT] = cell.content;
     this._data[index * CELL_SIZE + Cell.FG] = cell.fg;
@@ -194,7 +201,10 @@ export class BufferLine implements IBufferLine {
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
    */
-  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void {
+  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
+    if (bg & BgFlags.HAS_EXTENDED) {
+      this._extendedAttrs[index] = eAttrs;
+    }
     this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * CELL_SIZE + Cell.FG] = fg;
     this._data[index * CELL_SIZE + Cell.BG] = bg;
@@ -228,8 +238,14 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public insertCells(pos: number, n: number, fillCellData: ICellData): void {
+  public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
     pos %= this.length;
+
+    // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
+    if (pos && this.getWidth(pos - 1) === 2) {
+      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
+
     if (n < this.length - pos) {
       const cell = new CellData();
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
@@ -243,9 +259,14 @@ export class BufferLine implements IBufferLine {
         this.setCell(i, fillCellData);
       }
     }
+
+    // handle fullwidth at line end: reset last cell if it is first cell of a wide char
+    if (this.getWidth(this.length - 1) === 2) {
+      this.setCellFromCodePoint(this.length - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
   }
 
-  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
+  public deleteCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
     pos %= this.length;
     if (n < this.length - pos) {
       const cell = new CellData();
@@ -260,9 +281,28 @@ export class BufferLine implements IBufferLine {
         this.setCell(i, fillCellData);
       }
     }
+
+    // handle fullwidth at pos:
+    // - reset pos-1 if wide char
+    // - reset pos if width==0 (previous second cell of a wide char)
+    if (pos && this.getWidth(pos - 1) === 2) {
+      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
+    if (this.getWidth(pos) === 0 && !this.hasContent(pos)) {
+      this.setCellFromCodePoint(pos, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
   }
 
-  public replaceCells(start: number, end: number, fillCellData: ICellData): void {
+  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+    // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
+    if (start && this.getWidth(start - 1) === 2) {
+      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
+    // handle fullwidth at last cell + 1: reset to empty cell if it is second part of a wide char
+    if (end < this.length && this.getWidth(end - 1) === 2) {
+      this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+    }
+
     while (start < end  && start < this.length) {
       this.setCell(start++, fillCellData);
     }
@@ -290,7 +330,7 @@ export class BufferLine implements IBufferLine {
         const data = new Uint32Array(cols * CELL_SIZE);
         data.set(this._data.subarray(0, cols * CELL_SIZE));
         this._data = data;
-        // Remove any cut off combined data
+        // Remove any cut off combined data, FIXME: repeat this for extended attrs
         const keys = Object.keys(this._combined);
         for (let i = 0; i < keys.length; i++) {
           const key = parseInt(keys[i], 10);
@@ -309,6 +349,7 @@ export class BufferLine implements IBufferLine {
   /** fill a line with fillCharData */
   public fill(fillCellData: ICellData): void {
     this._combined = {};
+    this._extendedAttrs = {};
     for (let i = 0; i < this.length; ++i) {
       this.setCell(i, fillCellData);
     }
@@ -327,6 +368,10 @@ export class BufferLine implements IBufferLine {
     for (const el in line._combined) {
       this._combined[el] = line._combined[el];
     }
+    this._extendedAttrs = {};
+    for (const el in line._extendedAttrs) {
+      this._extendedAttrs[el] = line._extendedAttrs[el];
+    }
     this.isWrapped = line.isWrapped;
   }
 
@@ -337,6 +382,9 @@ export class BufferLine implements IBufferLine {
     newLine.length = this.length;
     for (const el in this._combined) {
       newLine._combined[el] = this._combined[el];
+    }
+    for (const el in this._extendedAttrs) {
+      newLine._extendedAttrs[el] = this._extendedAttrs[el];
     }
     newLine.isWrapped = this.isWrapped;
     return newLine;
@@ -367,7 +415,7 @@ export class BufferLine implements IBufferLine {
       }
     }
 
-    // Move any combined data over as needed
+    // Move any combined data over as needed, FIXME: repeat for extended attrs
     const srcCombinedKeys = Object.keys(src._combined);
     for (let i = 0; i < srcCombinedKeys.length; i++) {
       const key = parseInt(srcCombinedKeys[i], 10);

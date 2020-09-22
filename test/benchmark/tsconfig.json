@@ -16,7 +16,7 @@
     "paths": {
       "common/*": [ "../../src/common/*" ],
       "browser/*": [ "../../src/browser/*" ],
-      "Terminal": [ "../../src/Terminal" ]
+      "Terminal": ["../../src/Terminal"]
     },
   },
   "include": [

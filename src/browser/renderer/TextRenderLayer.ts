@@ -36,8 +36,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     characterJoinerRegistry: ICharacterJoinerRegistry,
     alpha: boolean,
     rendererId: number,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
     this._state = new GridCache<CharData>();
@@ -188,13 +188,13 @@ export class TextRenderLayer extends BaseRenderLayer {
 
       if (y !== startY) {
         // our row changed, draw the previous row
-        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
+        ctx.fillStyle = prevFillStyle || '';
         this._fillCells(startX, startY, cols - startX, 1);
         startX = x;
         startY = y;
       } else if (prevFillStyle !== nextFillStyle) {
         // our color changed, draw the previous characters in this row
-        ctx.fillStyle = prevFillStyle ? prevFillStyle : '';
+        ctx.fillStyle = prevFillStyle || '';
         this._fillCells(startX, startY, x - startX, 1);
         startX = x;
         startY = y;
@@ -227,7 +227,11 @@ export class TextRenderLayer extends BaseRenderLayer {
           } else if (cell.isBgRGB()) {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
           } else {
-            this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+            let bg = cell.getBgColor();
+            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+              bg += 8;
+            }
+            this._ctx.fillStyle = this._colors.ansi[bg].css;
           }
         } else {
           if (cell.isFgDefault()) {

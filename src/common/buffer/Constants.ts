@@ -121,8 +121,18 @@ export const enum FgFlags {
 
 export const enum BgFlags {
   /**
-   * bit 27..32 (upper 4 unused)
+   * bit 27..32 (upper 3 unused)
    */
   ITALIC = 0x4000000,
-  DIM = 0x8000000
+  DIM = 0x8000000,
+  HAS_EXTENDED = 0x10000000
+}
+
+export const enum UnderlineStyle {
+  NONE = 0,
+  SINGLE = 1,
+  DOUBLE = 2,
+  CURLY = 3,
+  DOTTED = 4,
+  DASHED = 5
 }

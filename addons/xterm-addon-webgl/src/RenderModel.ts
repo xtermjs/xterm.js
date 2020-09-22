@@ -6,7 +6,9 @@
 import { IRenderModel, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 
-export const RENDER_MODEL_INDICIES_PER_CELL = 4;
+export const RENDER_MODEL_INDICIES_PER_CELL = 3;
+export const RENDER_MODEL_BG_OFFSET = 1;
+export const RENDER_MODEL_FG_OFFSET = 2;
 
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 
@@ -20,6 +22,7 @@ export class RenderModel implements IRenderModel {
     this.lineLengths = new Uint32Array(0);
     this.selection = {
       hasSelection: false,
+      columnSelectMode: false,
       viewportStartRow: 0,
       viewportEndRow: 0,
       viewportCappedStartRow: 0,
@@ -40,7 +43,6 @@ export class RenderModel implements IRenderModel {
   public clear(): void {
     fill(this.cells, 0, 0);
     fill(this.lineLengths, 0, 0);
-    this.clearSelection();
   }
 
   public clearSelection(): void {

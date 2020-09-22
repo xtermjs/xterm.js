@@ -6,15 +6,14 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { INDICIES_PER_CELL } from './WebglRenderer';
-import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_BG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
-import { getLuminance } from './ColorUtils';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 interface IVertices {
   attributes: Float32Array;
@@ -103,7 +102,6 @@ export class GlyphRenderer {
     private _dimensions: IRenderDimensions
   ) {
     const gl = this._gl;
-
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
     this._program = program;
 
@@ -169,11 +167,11 @@ export class GlyphRenderer {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, attr: number, bg: number, fg: number, chars: string): void {
-    this._updateCell(this._vertices.attributes, x, y, code, attr, bg, fg, chars);
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, attr: number, bg: number, fg: number, chars?: string): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars?: string): void {
     const terminal = this._terminal;
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
@@ -186,12 +184,12 @@ export class GlyphRenderer {
 
     let rasterizedGlyph: IRasterizedGlyph;
     if (!this._atlas) {
-      throw new Error('atlas must be set before updating cell');
+      return;
     }
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg);
     }
 
     // Fill empty if no glyph was found
@@ -215,65 +213,89 @@ export class GlyphRenderer {
     // a_cellpos only changes on resize
   }
 
-  public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
+  public updateSelection(model: IRenderModel): void {
     const terminal = this._terminal;
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
-    // TODO: Make fg and bg configurable, currently since the buffer doesn't
-    // support truecolor the char atlas cannot store it.
-    const lumi = getLuminance(this._colors.background);
-    const fg = lumi > 0.5 ? 7 : 0;
-    const bg = lumi > 0.5 ? 0 : 7;
+    const bg = (this._colors.selectionOpaque.rgba >>> 8) | Attributes.CM_RGB;
 
-    if (columnSelectMode) {
+    if (model.selection.columnSelectMode) {
       const startCol = model.selection.startCol;
       const width = model.selection.endCol - startCol;
       const height = model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow + 1;
       for (let y = model.selection.viewportCappedStartRow; y < model.selection.viewportCappedStartRow + height; y++) {
-        this._updateSelectionRange(startCol, startCol + width, y, model, bg, fg);
+        this._updateSelectionRange(startCol, startCol + width, y, model, bg);
       }
     } else {
       // Draw first row
       const startCol = model.selection.viewportStartRow === model.selection.viewportCappedStartRow ? model.selection.startCol : 0;
       const startRowEndCol = model.selection.viewportCappedStartRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-      this._updateSelectionRange(startCol, startRowEndCol, model.selection.viewportCappedStartRow, model, bg, fg);
+      this._updateSelectionRange(startCol, startRowEndCol, model.selection.viewportCappedStartRow, model, bg);
 
       // Draw middle rows
       const middleRowsCount = Math.max(model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow - 1, 0);
       for (let y = model.selection.viewportCappedStartRow + 1; y <= model.selection.viewportCappedStartRow + middleRowsCount; y++) {
-        this._updateSelectionRange(0, startRowEndCol, y, model, bg, fg);
+        this._updateSelectionRange(0, startRowEndCol, y, model, bg);
       }
 
       // Draw final row
       if (model.selection.viewportCappedStartRow !== model.selection.viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
         const endCol = model.selection.viewportEndRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-        this._updateSelectionRange(0, endCol, model.selection.viewportCappedEndRow, model, bg, fg);
+        this._updateSelectionRange(0, endCol, model.selection.viewportCappedEndRow, model, bg);
       }
     }
   }
 
-  private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number, fg: number): void {
+  private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number): void {
     const terminal = this._terminal;
-    const row = y + terminal.buffer.viewportY;
+    const row = y + terminal.buffer.active.viewportY;
     let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
-      const offset = (y * this._terminal.cols + x) * INDICIES_PER_CELL;
-      // Because the cache uses attr as a lookup key it needs to contain the selection colors as well
-      let attr = model.cells[offset + 1];
-      attr = attr & ~0x3ffff | bg << 9 | fg;
+      const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
       const code = model.cells[offset];
+      let fg = model.cells[offset + RENDER_MODEL_FG_OFFSET];
+      if (fg & FgFlags.INVERSE) {
+        const workCell = new AttributeData();
+        workCell.fg = fg;
+        workCell.bg = model.cells[offset + RENDER_MODEL_BG_OFFSET];
+        // Get attributes from fg (excluding inverse) and resolve inverse by pullibng rgb colors
+        // from bg. This is needed since the inverse fg color should be based on the original bg
+        // color, not on the selection color
+        fg = (fg & ~(Attributes.CM_MASK | Attributes.RGB_MASK | FgFlags.INVERSE));
+        switch (workCell.getBgColorMode()) {
+          case Attributes.CM_P16:
+          case Attributes.CM_P256:
+            const c = this._getColorFromAnsiIndex(workCell.getBgColor()).rgba;
+            fg |= (c >> 8) & Attributes.RED_MASK | (c >> 8) & Attributes.GREEN_MASK | (c >> 8) & Attributes.BLUE_MASK;
+          case Attributes.CM_RGB:
+            const arr = AttributeData.toColorRGB(workCell.getBgColor());
+            fg |= arr[0] << Attributes.RED_SHIFT | arr[1] << Attributes.GREEN_SHIFT | arr[2] << Attributes.BLUE_SHIFT;
+          case Attributes.CM_DEFAULT:
+          default:
+            const c2 = this._colors.background.rgba;
+            fg |= (c2 >> 8) & Attributes.RED_MASK | (c2 >> 8) & Attributes.GREEN_MASK | (c2 >> 8) & Attributes.BLUE_MASK;
+        }
+        fg |= Attributes.CM_RGB;
+      }
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {
-          line = terminal.buffer.getLine(row);
+          line = terminal.buffer.active.getLine(row);
         }
-        const chars = line!.getCell(x)!.char;
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg, chars);
+        const chars = line!.getCell(x)!.getChars();
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
       } else {
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg);
+        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);
       }
     }
+  }
+
+  private _getColorFromAnsiIndex(idx: number): IColor {
+    if (idx >= this._colors.ansi.length) {
+      throw new Error('No color found for idx ' + idx);
+    }
+    return this._colors.ansi[idx];
   }
 
   public onResize(): void {

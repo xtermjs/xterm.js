@@ -13,6 +13,7 @@ import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGe
 import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
+import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -36,7 +37,7 @@ export class Buffer implements IBuffer {
   public savedY: number = 0;
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
-  public savedCharset: ICharset | null = DEFAULT_CHARSET;
+  public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
@@ -60,9 +61,11 @@ export class Buffer implements IBuffer {
     if (attr) {
       this._nullCell.fg = attr.fg;
       this._nullCell.bg = attr.bg;
+      this._nullCell.extended = attr.extended;
     } else {
       this._nullCell.fg = 0;
       this._nullCell.bg = 0;
+      this._nullCell.extended = new ExtendedAttrs();
     }
     return this._nullCell;
   }
@@ -71,9 +74,11 @@ export class Buffer implements IBuffer {
     if (attr) {
       this._whitespaceCell.fg = attr.fg;
       this._whitespaceCell.bg = attr.bg;
+      this._whitespaceCell.extended = attr.extended;
     } else {
       this._whitespaceCell.fg = 0;
       this._whitespaceCell.bg = 0;
+      this._whitespaceCell.extended = new ExtendedAttrs();
     }
     return this._whitespaceCell;
   }
@@ -661,11 +666,11 @@ export class BufferStringIterator implements IBufferStringIterator {
     // limit to current buffer length
     range.first = Math.max(range.first, 0);
     range.last = Math.min(range.last, this._buffer.lines.length);
-    let result = '';
+    let content = '';
     for (let i = range.first; i <= range.last; ++i) {
-      result += this._buffer.translateBufferLineToString(i, this._trimRight);
+      content += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
-    return {range: range, content: result};
+    return {range, content};
   }
 }

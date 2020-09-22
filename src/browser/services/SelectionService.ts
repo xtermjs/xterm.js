@@ -3,17 +3,18 @@
  * @license MIT
  */
 
-import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, ISelectionService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
+import { Disposable } from 'common/Lifecycle';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -66,8 +67,8 @@ export const enum SelectionMode {
  * not handled by the SelectionService but the onRedrawRequest event is fired
  * when the selection is ready to be redrawn (on an animation frame).
  */
-export class SelectionService implements ISelectionService {
-  serviceBrand: any;
+export class SelectionService extends Disposable implements ISelectionService {
+  public serviceBrand: undefined;
 
   protected _model: SelectionModel;
 
@@ -105,23 +106,26 @@ export class SelectionService implements ISelectionService {
 
   private _mouseDownTimeStamp: number = 0;
 
-  private _onLinuxMouseSelection = new EventEmitter<string>();
+  private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
-  private _onRedrawRequest = new EventEmitter<ISelectionRedrawRequestEvent>();
-  public get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
-  private _onSelectionChange = new EventEmitter<void>();
+  private _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
+  public get onRequestRedraw(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
+  private _onSelectionChange = this.register(new EventEmitter<void>());
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
+  public get onRequestScrollLines(): IEvent<ISelectionRequestScrollLinesEvent> { return this._onRequestScrollLines.event; }
 
   constructor(
-    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
+    super();
+
     // Init listeners
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
@@ -131,7 +135,7 @@ export class SelectionService implements ISelectionService {
       }
     });
     this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
+    this.register(this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e)));
 
     this.enable();
 
@@ -374,7 +378,7 @@ export class SelectionService implements ISelectionService {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
-    const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
+    const terminalHeight = this._renderService.dimensions.canvasHeight;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -633,7 +637,7 @@ export class SelectionService implements ISelectionService {
       return;
     }
     if (this._dragScrollAmount) {
-      this._scrollLines(this._dragScrollAmount, false);
+      this._onRequestScrollLines.fire({ amount: this._dragScrollAmount, suppressScrollEvent: false });
       // Re-evaluate selection
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
@@ -663,8 +667,8 @@ export class SelectionService implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      if (event.altKey && this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey) {
+      if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
           this._element,
@@ -688,9 +692,7 @@ export class SelectionService implements ISelectionService {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    if (this._trimListener) {
-      this._trimListener.dispose();
-    }
+    this._trimListener.dispose();
     this._trimListener = e.activeBuffer.lines.onTrim(amount => this._onTrim(amount));
   }
 
@@ -837,12 +839,12 @@ export class SelectionService implements ISelectionService {
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
     let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
-        endIndex // The index of the selection's end char in the line string
-        - startIndex // The index of the selection's start char in the line string
-        + leftWideCharCount // The number of wide chars left of the initial char
-        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
-        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
-        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+      endIndex // The index of the selection's end char in the line string
+      - startIndex // The index of the selection's start char in the line string
+      + leftWideCharCount // The number of wide chars left of the initial char
+      + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+      - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return undefined;
@@ -850,9 +852,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse upwards if the line is wrapped and the word wraps to the above line
     if (followWrappedLinesAbove) {
-      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /*' '*/) {
+      if (start === 0 && bufferLine.getCodePoint(0) !== 32 /* ' ' */) {
         const previousBufferLine = buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
           const previousLineWordPosition = this._getWordAt([this._bufferService.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
             const offset = this._bufferService.cols - previousLineWordPosition.start;
@@ -865,9 +867,9 @@ export class SelectionService implements ISelectionService {
 
     // Recurse downwards if the line is wrapped and the word wraps to the next line
     if (followWrappedLinesBelow) {
-      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
         const nextBufferLine = buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /*' '*/) {
+        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /* ' ' */) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;

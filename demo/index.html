@@ -2,6 +2,11 @@
 <html>
   <head>
     <title>xterm.js demo</title>
+    <!--
+      WARNING: This demo is a barebones implementation designed for development and evaluation
+      purposes only. It is definitely NOT production ready and does not aim to be so. Exposing the
+      demo to the public as is would introduce security risks for the host.
+    -->
     <link rel="shortcut icon" type="image/png" href="/logo.png">
     <link rel="stylesheet" href="/xterm.css" />
     <link rel="stylesheet" href="/style.css" />
@@ -12,7 +17,16 @@
     <h1 style="color: #2D2E2C">xterm.js: A terminal for the <em style="color: #5DA5D5">web</em></h1>
     <div id="terminal-container"></div>
     <div>
-      <h3>Actions</h3>
+      <h3>Options</h3>
+      <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.setOption</code> function.</p>
+      <div id="options-container"></div>
+    </div>
+    <div>
+      <h3>Addons</h3>
+      <p>Addons can be loaded and unloaded on a particular terminal to extend its functionality.</p>
+      <div id="addons-container"></div>
+      <h3>Addons Control</h3>
+      <h4>SearchAddon</h4>
       <p>
         <label>Find next <input id="find-next"/></label>
         <label>Find previous <input id="find-previous"/></label>
@@ -20,11 +34,12 @@
         <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
         <label>Whole word<input type="checkbox" id="whole-word"/></label>
       </p>
-    </div>
-    <div>
-      <h3>Options</h3>
-      <p>These options can be set in the <code>Terminal</code> constructor or using the <code>Terminal.setOption</code> function.</p>
-      <div id="options-container"></div>
+      <h4>SerializeAddon</h4>
+      <p>
+        <button id="serialize">Serialize the content of terminal</button>
+        <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
+        <div><pre id="serialize-output"></pre></div>
+      </p>
     </div>
     <div>
       <h3>Style</h3>
@@ -34,9 +49,7 @@
       </div>
     </div>
     <hr/>
-    <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for the development and evaluation of xterm.js only. Exposing the demo to the public as is would introduce security risks for the host.</p>
     <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
-    <button id="webgl">Enable WebGL Renderer</button>
     <script src="dist/client-bundle.js" defer ></script>
   </body>
 </html>

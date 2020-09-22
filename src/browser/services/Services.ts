@@ -6,13 +6,13 @@
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
-import { ISelectionRedrawRequestEvent } from 'browser/selection/Types';
+import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly width: number;
   readonly height: number;
@@ -23,9 +23,16 @@ export interface ICharSizeService {
   measure(): void;
 }
 
+export const ICoreBrowserService = createDecorator<ICoreBrowserService>('CoreBrowserService');
+export interface ICoreBrowserService {
+  serviceBrand: undefined;
+
+  readonly isFocused: boolean;
+}
+
 export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
@@ -33,10 +40,14 @@ export interface IMouseService {
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
 export interface IRenderService extends IDisposable {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   onDimensionsChange: IEvent<IRenderDimensions>;
-  onRender: IEvent<{ start: number, end: number }>;
+  /**
+   * Fires when buffer changes are rendered. This does not fire when only cursor
+   * or selections are rendered.
+   */
+  onRenderedBufferChange: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
@@ -52,7 +63,7 @@ export interface IRenderService extends IDisposable {
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
-  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
+  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   onCursorMove(): void;
   clear(): void;
   registerCharacterJoiner(handler: CharacterJoinerHandler): number;
@@ -61,7 +72,7 @@ export interface IRenderService extends IDisposable {
 
 export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
 export interface ISelectionService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   readonly selectionText: string;
   readonly hasSelection: boolean;
@@ -69,7 +80,8 @@ export interface ISelectionService {
   readonly selectionEnd: [number, number] | undefined;
 
   readonly onLinuxMouseSelection: IEvent<string>;
-  readonly onRedrawRequest: IEvent<ISelectionRedrawRequestEvent>;
+  readonly onRequestRedraw: IEvent<ISelectionRequestRedrawEvent>;
+  readonly onRequestScrollLines: IEvent<ISelectionRequestScrollLinesEvent>;
   readonly onSelectionChange: IEvent<void>;
 
   disable(): void;
@@ -89,7 +101,7 @@ export interface ISelectionService {
 
 export const ISoundService = createDecorator<ISoundService>('SoundService');
 export interface ISoundService {
-  serviceBrand: any;
+  serviceBrand: undefined;
 
   playBellSound(): void;
 }

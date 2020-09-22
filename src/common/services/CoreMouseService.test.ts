@@ -79,6 +79,7 @@ describe('CoreMouseService', () => {
       cms = new CoreMouseService(bufferService, coreService);
       reports = [];
       coreService.triggerDataEvent = (data: string, userInput?: boolean) => reports.push(data);
+      coreService.triggerBinaryEvent = (data: string) => reports.push(data);
     });
     it('NONE', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
@@ -143,11 +144,11 @@ describe('CoreMouseService', () => {
         cms.activeProtocol = 'ANY';
         for (let i = 0; i < bufferService.cols; ++i) {
           assert.equal(cms.triggerMouseEvent({ col: i, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
-          // capped at 95
-          if (i < 95) {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
+          if (i > 222) {
+            // supress mouse reports if we are out of addressible range (max. 222)
+            assert.deepEqual(toBytes(reports.pop()), []);
           } else {
-            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, 0x7f, 0x21]);
+            assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);
           }
         }
       });
@@ -170,7 +171,7 @@ describe('CoreMouseService', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.RIGHT, action: CoreMouseAction.DOWN, ctrl: false, alt: false, shift: false }), true);
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.WHEEL, action: CoreMouseAction.DOWN, ctrl: false, alt: false, shift: false }), true);
       assert.deepEqual(reports, ['\x1b[M !!', '\x1b[M!!!', '\x1b[M"!!', '\x1b[Ma!!']);
-      while (reports.pop()) { }
+      reports = [];
 
       // all buttons + up + no modifier
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.UP, ctrl: false, alt: false, shift: false }), true);
@@ -178,7 +179,7 @@ describe('CoreMouseService', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.RIGHT, action: CoreMouseAction.UP, ctrl: false, alt: false, shift: false }), true);
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.WHEEL, action: CoreMouseAction.UP, ctrl: false, alt: false, shift: false }), true);
       assert.deepEqual(reports, ['\x1b[M#!!', '\x1b[M#!!', '\x1b[M#!!', '\x1b[M`!!']);
-      while (reports.pop()) { }
+      reports = [];
 
       // all buttons + move + no modifier
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.MOVE, ctrl: false, alt: false, shift: false }), true);
@@ -186,7 +187,7 @@ describe('CoreMouseService', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.RIGHT, action: CoreMouseAction.MOVE, ctrl: false, alt: false, shift: false }), true);
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: false, alt: false, shift: false }), true);
       assert.deepEqual(reports, ['\x1b[M@!!', '\x1b[MA!!', '\x1b[MB!!', '\x1b[MC!!']);
-      while (reports.pop()) { }
+      reports = [];
 
       // button none + move + modifiers
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: true, alt: false, shift: false }), true);
@@ -196,7 +197,7 @@ describe('CoreMouseService', () => {
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: false, alt: true, shift: true }), true);
       assert.equal(cms.triggerMouseEvent({ col: 0, row: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: true, alt: true, shift: true }), true);
       assert.deepEqual(reports, ['\x1b[MS!!', '\x1b[MK!!', '\x1b[MG!!', '\x1b[M[!!', '\x1b[MO!!', '\x1b[M_!!']);
-      while (reports.pop()) { }
+      reports = [];
     });
   });
 });

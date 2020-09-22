@@ -23,8 +23,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    readonly bufferService: IBufferService,
-    readonly optionsService: IOptionsService
+    bufferService: IBufferService,
+    optionsService: IOptionsService
   ) {
     super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._clearState();
@@ -52,7 +52,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;
@@ -75,10 +75,11 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
     // No need to draw the selection
     if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
+      this._state.ydisp = this._bufferService.buffer.ydisp;
       return;
     }
 
-    this._ctx.fillStyle = this._colors.selection.css;
+    this._ctx.fillStyle = this._colors.selectionTransparent.css;
 
     if (columnSelectMode) {
       const startCol = start[0];
@@ -88,7 +89,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
+      const startRowEndCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
       this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
       // Draw middle rows
@@ -110,7 +111,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.ydisp = this._bufferService.buffer.ydisp;
   }
 
-  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {
+  private _didStateChange(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean, ydisp: number): boolean {
     return !this._areCoordinatesEqual(start, this._state.start) ||
       !this._areCoordinatesEqual(end, this._state.end) ||
       columnSelectMode !== this._state.columnSelectMode ||

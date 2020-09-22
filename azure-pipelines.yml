@@ -6,42 +6,55 @@
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
-      yarn test-unit --forbid-only
+      yarn test-unit-coverage --forbid-only
+      EXIT_CODE=$?
+      ./node_modules/.bin/nyc report --reporter=cobertura
+      exit $EXIT_CODE
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+    displayName: 'Publish coverage'
 
 - job: macOS
   pool:
-    vmImage: 'xcode9-macos10.13'
+    vmImage: 'macOS-10.15'
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Windows
@@ -50,55 +63,72 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn test-unit --forbid-only
+  - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
-  - script: |
-      yarn lint
+  - script: yarn lint
     displayName: 'Lint'
 
 - job: Linux_IntegrationTests
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
+  - script: |
+      # source: https://github.com/microsoft/playwright/issues/1041
+      sudo apt update
+      sudo apt install libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant1c2a libgudev-1.0-0 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libnotify4 libxslt1.1 libevent-2.1-6 libgles2 libgl1 libegl1 libvpx5
+      # for chromium
+      sudo apt install libnss3 libxss1 libasound2
+      # for firefox
+      sudo apt install libdbus-glib-1-2 libxt6
+    displayName: Install required packages
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'Linux Integration tests'
+    displayName: 'Start test server'
+  - script: yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
+    displayName: 'Integration tests (Firefox)'
 
 - job: macOS_IntegrationTests
   pool:
-    vmImage: 'xcode9-macos10.13'
+    vmImage: 'macOS-10.15'
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - script: |
-      yarn
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
       sleep 10
-      yarn test-api --headless --forbid-only
-    displayName: 'MacOS Integration tests'
+    displayName: 'Start test server'
+  - script: yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: yarn test-api-firefox --headless --forbid-only
+    displayName: 'Integration tests (Firefox)'
+  - script: yarn test-api-webkit --headless --forbid-only
+    displayName: 'Integration tests (Webkit)'
 
 - job: Release
   dependsOn:
@@ -113,15 +143,18 @@ jobs:
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: '10.x'
     displayName: 'Install Node.js'
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+  - task: YarnInstaller@3
     inputs:
-      versionSpec: "1.9.4"
+      versionSpec: '1.x'
     displayName: 'Install Yarn'
-  - script: |
-      yarn
+  - task: CacheBeta@1
+    inputs:
+      key: yarn2 | $(Agent.OS) | yarn.lock
+      path: node_modules
+    displayName: Cache node modules
+  - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: |
-      NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
+  - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'

@@ -82,7 +82,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   // range macro for byte
   const BYTE_VALUES = 256;
   const blueprint = Array.apply(null, Array(BYTE_VALUES)).map((unused: any, i: number) => i);
-  const r = (start: number, end: number) => blueprint.slice(start, end);
+  const r = (start: number, end: number): number[] => blueprint.slice(start, end);
 
   // Default definitions.
   const PRINTABLES = r(0x20, 0x7f); // 0x20 (SP) included, 0x7F (DEL) excluded
@@ -253,7 +253,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _escHandlerFb: EscFallbackHandlerType;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
-  constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
+  constructor(
+    protected readonly _transitions: TransitionTable = VT500_TRANSITION_TABLE
+  ) {
     super();
 
     this.initialState = ParserState.GROUND;
@@ -471,7 +473,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     const dcs = this._dcsParser;
     let collect = this._collect;
     const params = this._params;
-    const table: Uint8Array = this.TRANSITIONS.table;
+    const table: Uint8Array = this._transitions.table;
 
     // process input string
     for (let i = 0; i < length; ++i) {

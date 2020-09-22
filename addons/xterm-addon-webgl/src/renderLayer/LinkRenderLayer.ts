@@ -3,21 +3,23 @@
  * @license MIT
  */
 
-import { ILinkifierAccessor } from '../../../../src/Types';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
-import { IColorSet, ILinkifierEvent } from 'browser/Types';
+import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
     super(container, 'link', zIndex, true, colors);
-    terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
-    terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
+    terminal.linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    terminal.linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
+
+    terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
+    terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -42,7 +44,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onLinkHover(e: ILinkifierEvent): void {
+  private _onShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
     } else if (e.fg !== undefined && is256Color(e.fg)) {
@@ -66,7 +68,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     this._state = e;
   }
 
-  private _onLinkLeave(e: ILinkifierEvent): void {
+  private _onHideLinkUnderline(e: ILinkifierEvent): void {
     this._clearCurrentLink();
   }
 }

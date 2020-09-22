@@ -4,14 +4,14 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
-import { is256Color } from './CharAtlasUtils';
+import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'browser/Types';
-import { FLAGS } from '../Constants';
 import { IDisposable } from 'xterm';
+import { AttributeData } from 'common/buffer/AttributeData';
+import { channels, rgba } from 'browser/Color';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -68,8 +68,12 @@ export class WebglCharAtlas implements IDisposable {
   public hasCanvasChanged = false;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
+  private _workAttributeData: AttributeData = new AttributeData();
 
-  constructor(document: Document, private _config: ICharAtlasConfig) {
+  constructor(
+    document: Document,
+    private _config: ICharAtlasConfig
+  ) {
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
     this.cacheCanvas.height = TEXTURE_HEIGHT;
@@ -82,9 +86,6 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
-
-    // This is useful for debugging
-    document.body.appendChild(this.cacheCanvas);
   }
 
   public dispose(): void {
@@ -100,39 +101,57 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  protected _doWarmUp(): void {
+  private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
-        [DEFAULT_ATTR]: rasterizedGlyph
+        [DEFAULT_COLOR]: {
+          [DEFAULT_COLOR]: rasterizedGlyph
+        }
       };
     }
   }
 
   public beginFrame(): boolean {
     if (this._currentRowY > TEXTURE_CAPACITY) {
-      this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-      this._cacheMap = {};
-      this._currentRowHeight = 0;
-      this._currentRowX = 0;
-      this._currentRowY = 0;
-      this._doWarmUp();
+      this.clearTexture();
+      this.warmUp();
       return true;
     }
     return false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public clearTexture(): void {
+    if (this._currentRowX === 0 && this._currentRowY === 0) {
+      return;
+    }
+    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._cacheMap = {};
+    this._cacheMapCombined = {};
+    this._currentRowHeight = 0;
+    this._currentRowX = 0;
+    this._currentRowY = 0;
+    this._didWarmUp = false;
+  }
+
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMapCombined[chars] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, attr, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(chars, bg, fg);
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
@@ -140,16 +159,23 @@ export class WebglCharAtlas implements IDisposable {
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
       this._cacheMap[code] = rasterizedGlyphSet;
     }
-    let rasterizedGlyph = rasterizedGlyphSet[attr];
+    let rasterizedGlyph: IRasterizedGlyph | undefined;
+    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (rasterizedGlyphSetBg) {
+      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    }
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, attr, bg, fg);
-      rasterizedGlyphSet[attr] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(code, bg, fg);
+      if (!rasterizedGlyphSet[bg]) {
+        rasterizedGlyphSet[bg] = {};
+      }
+      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
     }
     return rasterizedGlyph;
   }
@@ -161,48 +187,165 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bg: number): IColor {
+  private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (bg === INVERTED_DEFAULT_COLOR) {
-      return this._config.colors.foreground;
-    } else if (is256Color(bg)) {
-      return this._getColorFromAnsiIndex(bg);
     }
-    // TODO: Support true color
-    return this._config.colors.background;
+
+    switch (bgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(bgColor);
+      case Attributes.CM_RGB:
+        const arr = AttributeData.toColorRGB(bgColor);
+        // TODO: This object creation is slow
+        return {
+          rgba: bgColor << 8,
+          css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
+        };
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._config.colors.foreground;
+        }
+        return this._config.colors.background;
+    }
   }
 
-  private _getForegroundColor(fg: number): IColor {
-    if (fg === INVERTED_DEFAULT_COLOR) {
-      return this._config.colors.background;
-    } else if (is256Color(fg)) {
-      return this._getColorFromAnsiIndex(fg);
+  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
+    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
+    if (minimumContrastCss) {
+      return minimumContrastCss;
     }
-    // TODO: Support true color
-    return this._config.colors.foreground;
+
+    switch (fgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._getColorFromAnsiIndex(fgColor).css;
+      case Attributes.CM_RGB:
+        const arr = AttributeData.toColorRGB(fgColor);
+        return channels.toCss(arr[0], arr[1], arr[2]);
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          const bg = this._config.colors.background.css;
+          if (bg.length === 9) {
+            // Remove bg alpha channel if present
+            return bg.substr(0, 7);
+          }
+          return bg;
+        }
+        return this._config.colors.foreground.css;
+    }
   }
 
-  private _drawToCache(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(codeOrChars: number | string, attr: number, bg: number, fg: number): IRasterizedGlyph {
+  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
+    switch (bgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        return this._getColorFromAnsiIndex(bgColor).rgba;
+      case Attributes.CM_RGB:
+        return bgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._config.colors.foreground.rgba;
+        }
+        return this._config.colors.background.rgba;
+    }
+  }
+
+  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
+    switch (fgColorMode) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:
+        if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
+          fgColor += 8;
+        }
+        return this._getColorFromAnsiIndex(fgColor).rgba;
+      case Attributes.CM_RGB:
+        return fgColor << 8;
+      case Attributes.CM_DEFAULT:
+      default:
+        if (inverse) {
+          return this._config.colors.background.rgba;
+        }
+        return this._config.colors.foreground.rgba;
+    }
+  }
+
+  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
+    if (this._config.minimumContrastRatio === 1) {
+      return undefined;
+    }
+
+    // Try get from cache first
+    const adjustedColor = this._config.colors.contrastCache.getCss(bg, fg);
+    if (adjustedColor !== undefined) {
+      return adjustedColor || undefined;
+    }
+
+    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
+    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio);
+
+    if (!result) {
+      this._config.colors.contrastCache.setCss(bg, fg, null);
+      return undefined;
+    }
+
+    const css = channels.toCss(
+      (result >> 24) & 0xFF,
+      (result >> 16) & 0xFF,
+      (result >> 8) & 0xFF
+    );
+    this._config.colors.contrastCache.setCss(bg, fg, css);
+
+    return css;
+  }
+
+  private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(chars: string, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
 
-    const flags = attr >> 18;
-
-    const bold = !!(flags & FLAGS.BOLD);
-    const dim = !!(flags & FLAGS.DIM);
-    const italic = !!(flags & FLAGS.ITALIC);
-
     this._tmpCtx.save();
 
+    this._workAttributeData.fg = fg;
+    this._workAttributeData.bg = bg;
+
+    const invisible = !!this._workAttributeData.isInvisible();
+    if (invisible) {
+      return NULL_RASTERIZED_GLYPH;
+    }
+
+    const bold = !!this._workAttributeData.isBold();
+    const inverse = !!this._workAttributeData.isInverse();
+    const dim = !!this._workAttributeData.isDim();
+    const italic = !!this._workAttributeData.isItalic();
+    let fgColor = this._workAttributeData.getFgColor();
+    let fgColorMode = this._workAttributeData.getFgColorMode();
+    let bgColor = this._workAttributeData.getBgColor();
+    let bgColorMode = this._workAttributeData.getBgColorMode();
+    if (inverse) {
+      const temp = fgColor;
+      fgColor = bgColor;
+      bgColor = temp;
+      const temp2 = fgColorMode;
+      fgColorMode = bgColorMode;
+      bgColorMode = temp2;
+    }
+
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bg);
+    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -215,9 +358,9 @@ export class WebglCharAtlas implements IDisposable {
     const fontStyle = italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'top';
+    this._tmpCtx.textBaseline = 'middle';
 
-    this._tmpCtx.fillStyle = this._getForegroundColor(fg).css;
+    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
     // Apply alpha to dim the character
     if (dim) {
@@ -225,7 +368,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // Draw the character
-    this._tmpCtx.fillText(chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING);
+    this._tmpCtx.fillText(chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING + this._config.scaledCharHeight / 2);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
@@ -397,4 +540,9 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
     }
   }
   return isEmpty;
+}
+
+function toPaddedHex(c: number): string {
+  const s = c.toString(16);
+  return s.length < 2 ? '0' + s : s;
 }

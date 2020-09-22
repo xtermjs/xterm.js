@@ -1,0 +1,164 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": [
+      "src/browser/tsconfig.json",
+      "src/common/tsconfig.json",
+      "test/api/tsconfig.json",
+      "test/benchmark/tsconfig.json",
+      "addons/xterm-addon-attach/src/tsconfig.json",
+      "addons/xterm-addon-attach/test/tsconfig.json",
+      "addons/xterm-addon-fit/src/tsconfig.json",
+      "addons/xterm-addon-fit/test/tsconfig.json",
+      "addons/xterm-addon-ligatures/src/tsconfig.json",
+      "addons/xterm-addon-search/src/tsconfig.json",
+      "addons/xterm-addon-search/test/tsconfig.json",
+      "addons/xterm-addon-serialize/src/tsconfig.json",
+      "addons/xterm-addon-serialize/test/tsconfig.json",
+      "addons/xterm-addon-serialize/benchmark/tsconfig.json",
+      "addons/xterm-addon-unicode11/src/tsconfig.json",
+      "addons/xterm-addon-unicode11/test/tsconfig.json",
+      "addons/xterm-addon-web-links/src/tsconfig.json",
+      "addons/xterm-addon-web-links/test/tsconfig.json",
+      "addons/xterm-addon-webgl/src/tsconfig.json",
+      "addons/xterm-addon-webgl/test/tsconfig.json"
+    ],
+    "sourceType": "module"
+  },
+  "ignorePatterns": [
+    "**/typings/*.d.ts",
+    "**/node_modules",
+    "**/*.js"
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "no-extra-semi": "error",
+    "@typescript-eslint/array-type": [
+      "warn",
+      {
+        "default": "array-simple",
+        "readonly": "generic"
+      }
+    ],
+    "@typescript-eslint/consistent-type-definitions": "warn",
+    "@typescript-eslint/explicit-function-return-type": [
+      "warn",
+      {
+        "allowExpressions": true
+      }
+    ],
+    "@typescript-eslint/explicit-member-accessibility": [
+      "warn",
+      {
+        "accessibility": "explicit",
+        "overrides": {
+          "constructors": "off"
+        }
+      }
+    ],
+    "@typescript-eslint/indent": [
+      "warn",
+      2
+    ],
+    "@typescript-eslint/member-delimiter-style": [
+      "warn",
+      {
+        "multiline": {
+          "delimiter": "semi",
+          "requireLast": true
+        },
+        "singleline": {
+          "delimiter": "comma",
+          "requireLast": false
+        }
+      }
+    ],
+    "@typescript-eslint/naming-convention": [
+      "warn",
+      { "selector": "default", "format": ["camelCase"] },
+      // variableLike
+      { "selector": "variable", "format": ["camelCase", "UPPER_CASE"] },
+      { "selector": "variable", "filter": "^I.+Service$", "format": ["PascalCase"], "prefix": ["I"] },
+      // memberLike
+      { "selector": "memberLike", "modifiers": ["private"], "format": ["camelCase"], "leadingUnderscore": "require" },
+      { "selector": "memberLike", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require" },
+      { "selector": "enumMember", "format": ["UPPER_CASE"] },
+      // memberLike - Allow enum-like objects to use UPPER_CASE
+      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
+      { "selector": "method", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
+      // typeLike
+      { "selector": "typeLike", "format": ["PascalCase"] },
+      { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }
+    ],
+    "@typescript-eslint/prefer-namespace-keyword": "warn",
+    "@typescript-eslint/type-annotation-spacing": "warn",
+    "@typescript-eslint/quotes": [
+      "warn",
+      "single",
+      { "allowTemplateLiterals": true }
+    ],
+    "@typescript-eslint/semi": [
+      "warn",
+      "always"
+    ],
+    "comma-dangle": [
+      "warn",
+      {
+        "objects": "never",
+        "arrays": "never",
+        "functions": "never"
+      }
+    ],
+    "curly": [
+      "warn",
+      "multi-line"
+    ],
+    "eol-last": "warn",
+    "eqeqeq": [
+      "warn",
+      "always"
+    ],
+    "keyword-spacing": "warn",
+    "new-parens": "warn",
+    "no-duplicate-imports": "warn",
+    "no-else-return": [
+      "warn",
+      {
+        "allowElseIf": false
+      }
+    ],
+    "no-eval": "warn",
+    "no-irregular-whitespace": "warn",
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          ".*\\/out\\/.*"
+        ]
+      }
+    ],
+    "no-trailing-spaces": "warn",
+    "no-unsafe-finally": "warn",
+    "no-var": "warn",
+    "one-var": [
+      "warn",
+      "never"
+    ],
+    "prefer-const": "warn",
+    "spaced-comment": [
+      "warn",
+      "always",
+      {
+        "markers": ["/"],
+        "exceptions": ["-"]
+      }
+    ]
+  }
+}
