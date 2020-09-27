@@ -183,6 +183,7 @@ export interface IMarker extends IDisposable {
   readonly id: number;
   readonly isDisposed: boolean;
   readonly line: number;
+  onDispose: IEvent<void>;
 }
 export interface IModes {
   insertMode: boolean;
