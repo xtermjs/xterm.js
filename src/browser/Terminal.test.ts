@@ -11,6 +11,7 @@ import { IBufferService, IUnicodeService } from 'common/services/Services';
 import { Linkifier } from 'browser/Linkifier';
 import { MockLogService, MockUnicodeService } from 'common/TestUtils.test';
 import { IRegisteredLinkMatcher, IMouseZoneManager, IMouseZone } from 'browser/Types';
+import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -1531,6 +1532,70 @@ describe('Terminal', () => {
           assert.deepEqual(getLines(term, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
         });
       });
+    });
+  });
+
+  // FIXME: move to common/CoreTerminal.test once the trimming is moved over
+  describe('marker lifecycle', () => {
+    // create a 10x5 terminal with markers on every line
+    // to test marker lifecycle under various terminal actions
+    let markers: IMarker[];
+    let disposeStack: IMarker[];
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal({});
+      markers = [];
+      disposeStack = [];
+      term.optionsService.setOption('scrollback', 1);
+      term.resize(10, 5);
+      markers.push(term.buffers.active.addMarker(term.buffers.active.y));
+      term.writeSync('\x1b[r0\r\n');
+      markers.push(term.buffers.active.addMarker(term.buffers.active.y));
+      term.writeSync('1\r\n');
+      markers.push(term.buffers.active.addMarker(term.buffers.active.y));
+      term.writeSync('2\r\n');
+      markers.push(term.buffers.active.addMarker(term.buffers.active.y));
+      term.writeSync('3\r\n');
+      markers.push(term.buffers.active.addMarker(term.buffers.active.y));
+      term.writeSync('4');
+      for (let i = 0; i < markers.length; ++i) {
+        const marker = markers[i];
+        marker.onDispose(() => disposeStack.push(marker));
+      }
+    });
+    it('initial', () => {
+      assert.deepEqual(markers.map(m => m.line), [0, 1, 2, 3, 4]);
+    });
+    it('should dispose on normal trim off the top', () => {
+      // moves top line into scrollback
+      term.writeSync('\n');
+      assert.deepEqual(disposeStack, []);
+      // trims first marker
+      term.writeSync('\n');
+      assert.deepEqual(disposeStack, [markers[0]]);
+      // trims second marker
+      term.writeSync('\n');
+      assert.deepEqual(disposeStack, [markers[0], markers[1]]);
+      // trimmed marker objs should be disposed
+      assert.deepEqual(disposeStack.map(el => el.isDisposed), [true, true]);
+      assert.deepEqual(disposeStack.map(el => (el as any)._isDisposed), [true, true]);
+      // trimmed markers should contain line -1
+      assert.deepEqual(disposeStack.map(el => el.line), [-1, -1]);
+    });
+    it.skip('should dispose on DL', () => {
+      term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
+      term.writeSync('\x1b[2M');    // delete 2 lines
+      assert.deepEqual(disposeStack, [markers[2], markers[3]]);
+    });
+    it.skip('should dispose on IL', () => {
+      term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
+      term.writeSync('\x1b[2L');    // insert 2 lines
+      assert.deepEqual(disposeStack, [markers[3], markers[4]]);
+    });
+    it('should dispose on resize', () => {
+      term.resize(10, 2);
+      assert.deepEqual(disposeStack, [markers[0], markers[1]]);
+      assert.deepEqual(markers.map(el => el.line), [-1, -1, 0, 1, 2]);
     });
   });
 });
