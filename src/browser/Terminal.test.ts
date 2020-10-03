@@ -1582,15 +1582,16 @@ describe('Terminal', () => {
       // trimmed markers should contain line -1
       assert.deepEqual(disposeStack.map(el => el.line), [-1, -1]);
     });
-    it.skip('should dispose on DL', () => {
+    it('should dispose on DL', () => {
       term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
       term.writeSync('\x1b[2M');    // delete 2 lines
       assert.deepEqual(disposeStack, [markers[2], markers[3]]);
     });
-    it.skip('should dispose on IL', () => {
+    it('should dispose on IL', () => {
       term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
       term.writeSync('\x1b[2L');    // insert 2 lines
-      assert.deepEqual(disposeStack, [markers[3], markers[4]]);
+      assert.deepEqual(disposeStack, [markers[4], markers[3]]);
+      assert.deepEqual(markers.map(el => el.line), [0, 1, 4, -1, -1]);
     });
     it('should dispose on resize', () => {
       term.resize(10, 2);
