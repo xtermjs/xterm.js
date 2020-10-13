@@ -158,8 +158,13 @@ export class SearchAddon implements ITerminalAddon {
     };
 
     if (incremental) {
-      result = this._findInLine(term, searchPosition, searchOptions, false);
+      result = this._findInLine(term, searchPosition, searchOptions, false); // Try to expand selection to right first.
       if (!(result && result.row === startRow && result.col === startCol)) {
+        // If selection was not able to be expanded to right, then reverse search begin.
+        if (currentSelection) {
+          searchPosition.startRow = currentSelection.endRow;
+          searchPosition.startCol = currentSelection.endColumn;
+        }
         result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
