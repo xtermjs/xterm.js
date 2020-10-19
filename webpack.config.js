@@ -35,7 +35,8 @@ module.exports = {
   output: {
     filename: 'xterm.js',
     path: path.resolve('./lib'),
-    libraryTarget: 'umd'
+    libraryTarget: 'umd',
+    globalObject: 'typeof self !== \'undefined\' ? self : this'
   },
   mode: 'production'
 };
