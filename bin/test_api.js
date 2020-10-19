@@ -21,7 +21,7 @@ let flagArgs = [];
 
 if (process.argv.length > 2) {
   const args = process.argv.slice(2);
-  flagArgs = args.filter(e => e.startsWith('--')).map(arg => arg.split('=')).reduce((arr, val) => arr.concat([...val], []));
+  flagArgs = args.filter(e => e.startsWith('--')).map(arg => arg.split('=')).reduce((arr, val) => arr.concat(val.split(''), []));
   console.info(flagArgs);
   // ability to inject particular test files via
   // yarn test [testFileA testFileB ...]

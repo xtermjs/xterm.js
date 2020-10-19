@@ -11,7 +11,7 @@ const path = require('path');
 // Setup auth
 fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 
-const isDryRun = process.argv.indexOf('--dry') !== -1;
+const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
   console.log('Publish dry run');
 }
@@ -36,13 +36,13 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
-addonPackageDirs.forEach(p => {
+for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  if (changedFiles.some(e => e.indexOf(addon) !== -1)) {
+  if (changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
   }
-});
+}
 
 // Publish website if it's a stable release
 if (isStableRelease) {
@@ -54,7 +54,7 @@ function checkAndPublishPackage(packageDir) {
 
   // Determine if this is a stable or beta release
   const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = publishedVersions.indexOf(packageJson.version) === -1;
+  const isStableRelease = !publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
