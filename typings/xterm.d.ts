@@ -383,6 +383,13 @@ declare module 'xterm' {
      * -1 if the marker has been disposed.
      */
     readonly line: number;
+
+    /**
+     * Event listener to get notified when the marker gets disposed. Automatic disposal
+     * might happen for a marker, that got invalidated by scrolling out or removal of
+     * a line from the buffer.
+     */
+    onDispose: IEvent<void>;
   }
 
   /**
