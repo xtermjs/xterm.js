@@ -37,10 +37,6 @@ interface IImageSpec {
   bitmap: ImageBitmap | null;
 }
 
-interface IMarkerAutoDispose extends IMarker {
-  onDispose(handler: () => void): void;
-}
-
 type UintTypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray;
 
 export class ImageStorage implements IDisposable {
@@ -150,7 +146,7 @@ export class ImageStorage implements IDisposable {
     }
 
     const endMarker = this._terminal.registerMarker(0);
-    (endMarker as IMarkerAutoDispose).onDispose(() => this._markerGotDisposed(this._lastId));
+    endMarker?.onDispose(() => this._markerGotDisposed(this._lastId));
     const imgSpec: IImageSpec = {
       orig: img,
       origCellSize: this._cellSize,
