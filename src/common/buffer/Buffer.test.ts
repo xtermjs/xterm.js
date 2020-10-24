@@ -1085,6 +1085,20 @@ describe('Buffer', () => {
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
     });
+    it('should call onDispose', () => {
+      const eventStack: string[] = [];
+      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService);
+      buffer.fillViewportRows();
+      assert.equal(buffer.markers.length, 0);
+      const marker = buffer.addMarker(0);
+      marker.onDispose(() => eventStack.push('disposed'));
+      assert.equal(marker.isDisposed, false);
+      assert.equal(buffer.markers.length, 1);
+      buffer.lines.onTrimEmitter.fire(1);
+      assert.equal(marker.isDisposed, true);
+      assert.equal(buffer.markers.length, 0);
+      assert.deepEqual(eventStack, ['disposed']);
+    });
   });
 
   describe ('translateBufferLineToString', () => {
