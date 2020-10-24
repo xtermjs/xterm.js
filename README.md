@@ -87,7 +87,7 @@ The xterm.js team maintains the following addons but they can be built by anyone
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Specifically the latest versions of *Chrome*, *Edge*, *Firefox* and *Safari*.
 
-We also partially support *Intenet Explorer 11*, meaning xterm.js should work for the most part, but we reserve the right to not provide workarounds specifically for it unless it's absolutely necessary to get the basic input/output flow working.
+We also partially support *Internet Explorer 11*, meaning xterm.js should work for the most part, but we reserve the right to not provide workarounds specifically for it unless it's absolutely necessary to get the basic input/output flow working.
 
 Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers, these are the versions we strive to keep working.
 
@@ -168,6 +168,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Repl.it**](https://repl.it): Collaborative browser based IDE with support for 50+ different languages.
 - [**TeleType**](https://github.com/akshaykmr/TeleType): cli tool that allows you to share your terminal online conveniently. Show off mad cli-fu, help a colleague, teach, or troubleshoot.
 - [**Intervue**](https://www.intervue.io): Pair programming for interviews. Multiple programming languages supported, with results displayed by xterm.js.
+- [**TRASA**](https://trasa.io): Zero trust access to Web, SSH, RDP and Database services.  
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
