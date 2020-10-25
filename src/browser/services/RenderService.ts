@@ -87,14 +87,15 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
-    if (!this._isPaused && this._needsFullRefresh) {
-      this.refreshRows(0, this._rowCount - 1);
-      this._needsFullRefresh = false;
-    }
 
     // Terminal was hidden on open
     if (!this._isPaused && !this._charSizeService.hasValidSize) {
       this._charSizeService.measure();
+    }
+
+    if (!this._isPaused && this._needsFullRefresh) {
+      this.refreshRows(0, this._rowCount - 1);
+      this._needsFullRefresh = false;
     }
   }
 
