@@ -57,7 +57,7 @@
     "node-pty": "^0.9.0",
     "nyc": "^15.1.0",
     "playwright": "^1.5.1",
-    "source-map-loader": "^1.1.1",
+    "source-map-loader": "^1.1.2",
     "ts-loader": "^8.0.7",
     "typescript": "4.0",
     "utf8": "^3.0.0",
