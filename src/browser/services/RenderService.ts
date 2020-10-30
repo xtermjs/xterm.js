@@ -51,7 +51,7 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
-    @ICharSizeService charSizeService: ICharSizeService,
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IBufferService bufferService: IBufferService
   ) {
     super();
@@ -67,7 +67,7 @@ export class RenderService extends Disposable implements IRenderService {
 
     this.register(bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
-    this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+    this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
@@ -87,6 +87,12 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
+
+    // Terminal was hidden on open
+    if (!this._isPaused && !this._charSizeService.hasValidSize) {
+      this._charSizeService.measure();
+    }
+
     if (!this._isPaused && this._needsFullRefresh) {
       this.refreshRows(0, this._rowCount - 1);
       this._needsFullRefresh = false;
