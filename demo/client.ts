@@ -98,7 +98,7 @@ const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
-  term.fit();
+  addons.fit.instance.fit();
 }
 
 function getSearchOptions(e: KeyboardEvent): ISearchOptions {

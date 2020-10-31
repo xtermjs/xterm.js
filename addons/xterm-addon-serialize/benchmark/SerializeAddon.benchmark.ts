@@ -16,12 +16,12 @@ class TestTerminal extends Terminal {
   }
 }
 
-perfContext('Terminal: sh -c "dd if=/dev/random count=40 bs=1k | hexdump | lolcat -f"', () => {
+perfContext('Terminal: sh -c "dd if=/dev/urandom count=40 bs=1k | hexdump | lolcat -f"', () => {
   let content = '';
   let contentUtf8: Uint8Array;
 
   before(async () => {
-    const p = spawn('sh', ['-c', 'dd if=/dev/random count=40 bs=1k | hexdump | lolcat -f'], {
+    const p = spawn('sh', ['-c', 'dd if=/dev/urandom count=40 bs=1k | hexdump | lolcat -f'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 25,
