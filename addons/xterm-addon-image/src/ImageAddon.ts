@@ -7,7 +7,7 @@
 
 import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
 import { SixelDecoder, DEFAULT_BACKGROUND, PALETTE_ANSI_256, PALETTE_VT340_COLOR, PALETTE_VT340_GREY, RGBA8888 } from 'sixel';
-import { ImageStorage } from './ImageStorage';
+import { ImageRenderer, ImageStorage } from './ImageStorage';
 
 interface IImageAddonOptions {
   sixelSupport?: boolean;
@@ -96,10 +96,21 @@ class SixelHandler implements IDcsHandler {
   }
 }
 
+
+/**
+ * Missing features:
+ * CSI Ps c     -->   Ps = 4  ⇒  Sixel graphics
+ * CSI ? Pm h   -->   Ps = 8 0  ⇒  Sixel scrolling
+ *                    Ps = 1 0 7 0  ⇒  use private color registers for each graphic
+ *                    Ps = 8 4 5 2  ⇒  Sixel scrolling leaves cursor to right of graphic
+ *                    from mintty: 7730h | 7730l (in scrolling: whether cursor is below left | beginning)
+ */
 export class ImageAddon implements ITerminalAddon {
   private _opts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;
+  private _renderer: ImageRenderer | undefined;
   private _sixelHandler: IDisposable | undefined;
+  private _clearSixelHandler: () => void = () => {};
   private _sixelPalette: RGBA8888[];
   constructor(opts: IImageAddonOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
@@ -108,8 +119,12 @@ export class ImageAddon implements ITerminalAddon {
         : PALETTE_ANSI_256;
   }
   public activate(terminal: Terminal): void {
-    this._storage = new ImageStorage(terminal);
+    this._renderer = new ImageRenderer(terminal);
+    this._storage = new ImageStorage(terminal, this._renderer);
     if (this._opts.sixelSupport && !this._sixelHandler) {
+
+      // NOTE: this is way too slow (creates nasty hickups due to interim string conversion):
+      //
       // this._sixelHandler = terminal.parser.addDcsHandler({final: 'q'}, (data, params) => {
       //   const pal = this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette;
       //   // TODO: 0 - get startup background, 2 - get BCE
@@ -120,8 +135,11 @@ export class ImageAddon implements ITerminalAddon {
       //   }
       //   return true;
       // });
-
+      //
+      // while a chunked handler operating on typed array via private API is speedy:
+      // TODO: rewrite into disposable object
       (terminal as any)._core._inputHandler._parser.setDcsHandler({final: 'q'}, new SixelHandler(this._storage));
+      this._clearSixelHandler = () => (terminal as any)._core._inputHandler._parser.clearDcsHandler({final: 'q'});
     }
 
     terminal.onRender(this._storage.render.bind(this._storage));
@@ -132,9 +150,14 @@ export class ImageAddon implements ITerminalAddon {
       this._sixelHandler.dispose();
       this._sixelHandler = undefined;
     }
+    this._clearSixelHandler();
     if (this._storage) {
       this._storage.dispose();
       this._storage = undefined;
+    }
+    if (this._renderer) {
+      this._renderer.dispose();
+      this._renderer = undefined;
     }
   }
 }

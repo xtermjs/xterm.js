@@ -12,12 +12,6 @@ const CODE = 0x110000; // illegal unicode char
 const INVISIBLE = 0x40000000; // taken from BufferLine.ts
 
 
-// TODO: This is temporary, link to xterm when the new version is published
-// export interface ITerminalAddon {
-//   activate(terminal: Terminal): void;
-//   dispose(): void;
-// }
-
 interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
   put(data: Uint32Array, start: number, end: number): void;
@@ -43,7 +37,7 @@ export class ImageStorage implements IDisposable {
   private _images: Map<number, IImageSpec> = new Map();
   private _lastId = 0;
 
-  constructor(private _terminal: Terminal) {}
+  constructor(private _terminal: Terminal, private _ir: ImageRenderer) {}
 
   public dispose(): void {
     this._images.clear();
@@ -194,10 +188,16 @@ export class ImageStorage implements IDisposable {
     }
   }
 
+  // TODO: resort render stuff to image renderer
   public render(e: {start: number, end: number}): void {
     const {start, end} = e;
     const internalTerm = (this._terminal as any)._core;
     const buffer = internalTerm.buffer;
+    const ctx = this._ir.ctx;
+    if (!ctx) return;
+
+    // clear drawing area
+    this._clear(ctx, start, end, internalTerm._renderService.dimensions);
 
     // walk all cells in viewport and draw tile if needed
     for (let row = start; row <= end; ++row) {
@@ -206,16 +206,22 @@ export class ImageStorage implements IDisposable {
         if (bufferRow.getCodePoint(col) === CODE) {
           const fg = bufferRow.getFg(col);
           if (fg & INVISIBLE) {
-            this._draw(fg & 0xFFFFFF, bufferRow.getBg(col) & 0xFFFFFF, col, row);
+            this._draw(ctx, fg & 0xFFFFFF, bufferRow.getBg(col) & 0xFFFFFF, col, row);
           }
         }
       }
     }
   }
 
+  private _clear(ctx: CanvasRenderingContext2D, start: number, end: number, dimensions: any): void {
+    const top = start * dimensions.actualCellHeight;
+    const bottom = ++end * dimensions.actualCellHeight;
+    ctx.clearRect(0, top, dimensions.canvasWidth, bottom);
+  }
+
   // FIXME: needs some layered drawing/composition
   //        reason - partially overdrawing of older tiles should be possible
-  private _draw(imgId: number, tileId: number, col: number, row: number): void {
+  private _draw(ctx: CanvasRenderingContext2D, imgId: number, tileId: number, col: number, row: number): void {
     const is = this._images.get(imgId);
     if (!is) {
       // FIXME: draw placeholder if image got removed?
@@ -223,10 +229,6 @@ export class ImageStorage implements IDisposable {
     }
     this._rescale(imgId);
     const img = is.bitmap || is.actual;
-
-    // shamelessly draw on foreign canvas for now
-    // FIXME: needs own layer term._core._renderService._renderer._renderLayers
-    const ctx: CanvasRenderingContext2D = (this._terminal as any)._core._renderService._renderer._renderLayers[0]._ctx;
 
     const {width: cellWidth, height: cellHeight} = this._cellSize;
     const cols = Math.ceil(img.width / cellWidth);
@@ -242,5 +244,85 @@ export class ImageStorage implements IDisposable {
       cellWidth,
       cellHeight
     );
+  }
+}
+
+
+export class ImageRenderer implements IDisposable {
+  private _internalTerm: any;
+  private _oldOpen: (parent: HTMLElement) => void;
+  private _rs: any;
+  private _oldSetRenderer: (renderer: any) => void = () => {};
+  private _csms: any;
+  public canvas: HTMLCanvasElement | undefined;
+  public ctx: CanvasRenderingContext2D | null | undefined;
+  private _dimHandler: IDisposable | undefined;
+  private _charSizeHandler: IDisposable | undefined;
+
+  constructor(terminal: Terminal) {
+    this._internalTerm = (terminal as any)._core;
+    this._oldOpen = this._internalTerm.open;
+    this._internalTerm.open = (parent: HTMLElement): void => {
+      this._oldOpen.call(this._internalTerm, parent);
+      this.open();
+    };
+    if (this._internalTerm.screenElement) {
+      this.open();
+    }
+  }
+
+  public dispose(): void {
+    this.removeLayerFromDom();
+    if (this._internalTerm && this._oldOpen) {
+      this._internalTerm.open = this._oldOpen;
+    }
+    if (this._rs && this._oldSetRenderer) {
+      this._rs.setRenderer = this._oldSetRenderer;
+    }
+    this._internalTerm = undefined;
+    this._rs = undefined;
+    this._csms = undefined;
+    this._dimHandler?.dispose();
+    this._charSizeHandler?.dispose();
+  }
+
+  public open(): void {
+    this._rs = this._internalTerm._renderService;
+    this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
+    this._rs.setRenderer = (renderer: any) => {
+      this.removeLayerFromDom();
+      this._oldSetRenderer(renderer);
+      this.insertLayerToDom();
+    };
+    this._csms = this._internalTerm._charSizeService;
+    this._dimHandler = this._rs.onDimensionsChange((data: any) => this.dimensionChanged(data));
+    this._charSizeHandler = this._csms.onCharSizeChange(() => this.dimensionChanged(this._rs.dimensions));
+    this.insertLayerToDom();
+  }
+
+  public removeLayerFromDom(): void {
+    this.canvas?.parentNode?.removeChild(this.canvas);
+  }
+
+  public insertLayerToDom(): void {
+    this.canvas = document.createElement('canvas');
+    this.canvas.setAttribute('width', `${this._rs.dimensions.canvasWidth}`);
+    this.canvas.setAttribute('height', `${this._rs.dimensions.canvasHeight}`);
+    this.canvas.classList.add('xterm-image-layer');
+    this._internalTerm.screenElement.appendChild(this.canvas);
+    this.ctx = this.canvas.getContext('2d');
+  }
+
+  public dimensionChanged(dimensions: any): void {
+    // FIXME: why do we have to wait for next event loop tick? (creates a really nasty blackout bug)
+    // get current dimensions from draw call instead?
+    setTimeout(() => {
+      this.canvas?.setAttribute('width', `${dimensions.canvasWidth}`);
+      this.canvas?.setAttribute('height', `${dimensions.canvasHeight}`);
+    }, 0);
+  }
+
+  public clearCtx(): void {
+    this.ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
   }
 }
