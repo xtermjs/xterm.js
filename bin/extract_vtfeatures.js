@@ -359,7 +359,7 @@ function empty(ar) {
 }
 
 function* parseMultiLineGen(filename, s) {
-  if (!~s.indexOf('@vt:')) {
+  if (!s.includes('@vt:')) {
     return;
   }
   const lines = s.split('\n').map(el => el.trim().replace(/[*]/, '').replace(/\s/, ''));
@@ -413,7 +413,7 @@ function parseSingleLine(filename, s) {
   const line = s.trim();
   const match = line.match(REX_VT_LINE);
   if (match !== null) {
-    if (!~TYPES.indexOf(match[2])) {
+    if (!TYPES.includes(match[2])) {
       throw new Error(`unkown vt-command type "${match[2]}" specified in "${filename}"`);
     }
     return {

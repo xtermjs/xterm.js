@@ -4,6 +4,7 @@
     "lib": [
       "dom",
       "es2015",
+      "es2016.Array.Include"
     ],
     "outDir": "../../out",
     "types": [

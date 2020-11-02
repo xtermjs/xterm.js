@@ -25,7 +25,7 @@ if (fs.existsSync(addonsPath)) {
 
   // walk all addon folders
   fs.readdir(addonsPath, (err, files) => {
-    files.forEach(folder => {
+    for (const folder of files) {
       const addonPath = path.join(addonsPath, folder);
 
       // install only if there are dependencies listed
@@ -51,6 +51,6 @@ if (fs.existsSync(addonsPath)) {
       } else {
         console.log('Skipped', folder);
       }
-    });
+    }
   });
 }
