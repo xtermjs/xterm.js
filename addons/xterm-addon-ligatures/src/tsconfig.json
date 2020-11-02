@@ -8,7 +8,12 @@
     "strict": true,
     "noUnusedLocals": true,
     "preserveWatchOutput": true,
-    "types": ["../../../node_modules/@types/mocha"]
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
   },
-  "include": ["./**/*", "../../../typings/xterm.d.ts"]
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ]
 }
