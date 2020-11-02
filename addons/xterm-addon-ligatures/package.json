@@ -14,10 +14,10 @@
   },
   "scripts": {
     "prepare": "node bin/download-fonts.js",
-    "build": "tsc -p src",
-    "watch": "tsc -w -p src",
+    "build": "../../node_modules/.bin/tsc -p src",
+    "watch": "../../node_modules/.bin/tsc -w -p src",
     "prepackage": "npm run build",
-    "package": "webpack",
+    "package": "../../node_modules/.bin/webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
     "prepublish": "npm run package"
