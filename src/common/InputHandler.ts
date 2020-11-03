@@ -250,6 +250,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  private _onAnsiColorChange = new EventEmitter<number, string>();
+  public get onAnsiColorChange(): IEvent<number, string> { return this._onAnsiColorChange.event; }
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -372,6 +374,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
+    this._parser.setOscHandler(4, new OscHandler((data: string) => {
+      const ansiColor = data.split(';');
+      const colorIndex = parseInt(ansiColor[0]);
+      const colorValue = ansiColor[1];
+      this.setAnsiColor(colorIndex, colorValue);
+    }));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
@@ -2709,6 +2717,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setIconName(data: string): void {
     this._iconName = data;
+  }
+
+  /**
+   * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
+   */
+  public setAnsiColor(colorIndex: number, colorData: string): void {
+    //TODO: remove debug
+    console.log(`Setting ANSI color ${colorIndex} to value ${colorData}`);
+    this._onAnsiColorChange.fire(colorIndex, colorData);
   }
 
   /**

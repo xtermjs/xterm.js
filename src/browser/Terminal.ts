@@ -53,6 +53,7 @@ import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
+import { css } from 'browser/Color';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -150,11 +151,27 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(this._inputHandler.onAnsiColorChange((index, color) => this.changeAnsiColor(index, color)));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
+  }
+
+  private changeAnsiColor(colorIndex: number, colorValue: string): void {
+    // colorValue = rgb:xx/yy/zz
+    const r = colorValue.substring(4, 6);
+    const g = colorValue.substring(7, 9);
+    const b = colorValue.substring(10, 12);
+    const color = `#${r}${g}${b}`;
+
+    //TODO: remove debug
+    console.log(`Change ANSI color[${colorIndex}]=${colorValue} (${color})`);
+
+    this._colorManager!.colors.ansi[colorIndex] = css.toColor(color);
+    this._renderService?.setColors(this._colorManager!.colors);
+    this.viewport?.onThemeChange(this._colorManager!.colors);
   }
 
   public dispose(): void {

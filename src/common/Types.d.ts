@@ -389,6 +389,7 @@ export interface IInputHandler {
   /** CSI ' ~ */ deleteColumns(params: IParams): void;
   /** OSC 0
       OSC 2 */ setTitle(data: string): void;
+  /** OSC 4 */ setAnsiColor(colorIndex: number, colorData: string): void;
   /** ESC E */ nextLine(): void;
   /** ESC = */ keypadApplicationMode(): void;
   /** ESC > */ keypadNumericMode(): void;
