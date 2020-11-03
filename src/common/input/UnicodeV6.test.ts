@@ -161,7 +161,7 @@ it('wcwidth should match all values from the old implementation', function(): vo
     //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
     //   we are only interested in 2 LSBs, cut off higher bits
     //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
-    return function (num: number): number {
+    return (num: number): number => {
       num = num | 0;  // get asm.js like optimization under V8
       if (num < 32) {
         return control | 0;

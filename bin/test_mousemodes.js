@@ -88,19 +88,19 @@ function evalButtonCode(code) {
   if (code & 64) {
     button |= 4
   }
-  let actionS = 'press';
+  let action = 'press';
   let buttonS = reverseButtons[button];
   if (button === 3) {
     buttonS = '<none>';
-    actionS = 'release';
+    action = 'release';
   }
   if (move) {
-    actionS = 'move';
+    action = 'move';
   } else if (4 <= button && button <= 7) {
     buttonS = 'wheel';
-    actionS = button === 4 ? 'up' : button === 5 ? 'down' : button === 6 ? 'left' : 'right';
+    action = button === 4 ? 'up' : button === 5 ? 'down' : button === 6 ? 'left' : 'right';
   }
-  return {button: buttonS, action: actionS, modifier};
+  return {button: buttonS, action, modifier};
 }
 
 // protocols
