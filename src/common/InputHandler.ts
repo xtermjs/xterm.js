@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorRGB } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -250,8 +250,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onAnsiColorChange = new EventEmitter<number, string>();
-  public get onAnsiColorChange(): IEvent<number, string> { return this._onAnsiColorChange.event; }
+  private _onAnsiColorChange = new EventEmitter<number, IColorRGB>();
+  public get onAnsiColorChange(): IEvent<number, IColorRGB> { return this._onAnsiColorChange.event; }
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -374,12 +374,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
-    this._parser.setOscHandler(4, new OscHandler((data: string) => {
-      const ansiColor = data.split(';');
-      const colorIndex = parseInt(ansiColor[0]);
-      const colorValue = ansiColor[1];
-      this.setAnsiColor(colorIndex, colorValue);
-    }));
+    this._parser.setOscHandler(4, new OscHandler((data: string) => this.setAnsiColor(data)));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
@@ -2721,11 +2716,29 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
+   *
+   * The expected content of data is: <number>;rgb:<rr>/<gg>/<bb> where rr, gg, bb are hex numbers.
    */
-  public setAnsiColor(colorIndex: number, colorData: string): void {
-    //TODO: remove debug
-    console.log(`Setting ANSI color ${colorIndex} to value ${colorData}`);
-    this._onAnsiColorChange.fire(colorIndex, colorData);
+  public setAnsiColor(data: string): void {
+    // example data: 5;rgb:aa/bb/cc
+    const regex = /(\d+);rgb:([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})/;
+    const match = data.match(regex);
+
+    if (match) {
+      const colorIndex = parseInt(match[1]);
+      const color: IColorRGB = [
+        parseInt(match[2], 16),
+        parseInt(match[3], 16),
+        parseInt(match[4], 16)
+      ];
+
+      //TODO: remove debug
+      console.log(`Setting ANSI color ${colorIndex} to RGB value ${color}`);
+      this._onAnsiColorChange.fire(colorIndex, color);
+    }
+    else {
+      this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
+    }
   }
 
   /**
