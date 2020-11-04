@@ -4344,10 +4344,10 @@ triple-beam@^1.2.0, triple-beam@^1.3.0:
   resolved "https://registry.yarnpkg.com/triple-beam/-/triple-beam-1.3.0.tgz#a595214c7298db8339eeeee083e4d10bd8cb8dd9"
   integrity sha512-XrHUvV5HpdLmIj4uVMxHggLbFSZYIn7HEWsqePZcI50pco+MPqJ50wMGY794X7AOOhxOBAjbkqfAbEe/QMp2Lw==
 
-ts-loader@^8.0.7:
-  version "8.0.7"
-  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-8.0.7.tgz#9ce70db5b3906cc9143a09c54ff5247d102ea974"
-  integrity sha512-ooa4wxlZ9TOXaJ/iVyZlWsim79Ul4KyifSwyT2hOrbQA6NZJypsLOE198o8Ko+JV+ZHnMArvWcl4AnRqpCU/Mw==
+ts-loader@^8.0.8:
+  version "8.0.8"
+  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-8.0.8.tgz#5c514c895d3b2462bf0148f63da0c22b227f7867"
+  integrity sha512-wihija1i2Ub9FxKFoEgx/phToJiDZKLIbTFURgf4Efxla2QuVucDO6ZpHf2jNJsRtDQfBId0g+1HF0biIjoT6Q==
   dependencies:
     chalk "^2.3.0"
     enhanced-resolve "^4.0.0"
