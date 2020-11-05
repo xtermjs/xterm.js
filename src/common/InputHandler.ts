@@ -2732,7 +2732,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         parseInt(match[4], 16)
       ];
 
-      //TODO: remove debug
+      // TODO: remove debug
       console.log(`Setting ANSI color ${colorIndex} to RGB value ${color}`);
       this._onAnsiColorChange.fire(colorIndex, color);
     }
