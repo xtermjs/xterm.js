@@ -18,7 +18,9 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     selection: undefined,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
-    ansi: colors.ansi.slice(0, 16)
+    // ansi: colors.ansi.slice(0, 16)
+    // TODO: Using entire array to support OSC 4; can this break anything?
+    ansi: colors.ansi
   };
   return {
     devicePixelRatio: window.devicePixelRatio,
