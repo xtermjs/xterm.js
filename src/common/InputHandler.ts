@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorRGB } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -250,8 +250,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onAnsiColorChange = new EventEmitter<number, IColorRGB>();
-  public get onAnsiColorChange(): IEvent<number, IColorRGB> { return this._onAnsiColorChange.event; }
+  private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
+  public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -2714,27 +2714,33 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._iconName = data;
   }
 
+  // This is really an internal method and not part of IInputHandler implementation.
+  // Making it public so that I can test it.
+  public parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
+    // example data: 5;rgb:aa/bb/cc
+    const regex = /(\d+);rgb:([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})/;
+    const match = data.match(regex);
+
+    if (match) {
+      return {
+        colorIndex: parseInt(match[1]),
+        red: parseInt(match[2], 16),
+        green: parseInt(match[3], 16),
+        blue: parseInt(match[4], 16)
+      };
+    }
+    return null;
+  }
+
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * The expected content of data is: <number>;rgb:<rr>/<gg>/<bb> where rr, gg, bb are hex numbers.
    */
   public setAnsiColor(data: string): void {
-    // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})/;
-    const match = data.match(regex);
-
-    if (match) {
-      const colorIndex = parseInt(match[1]);
-      const color: IColorRGB = [
-        parseInt(match[2], 16),
-        parseInt(match[3], 16),
-        parseInt(match[4], 16)
-      ];
-
-      // TODO: remove debug
-      console.log(`Setting ANSI color ${colorIndex} to RGB value ${color}`);
-      this._onAnsiColorChange.fire(colorIndex, color);
+    const event = this.parseAnsiColorChange(data);
+    if (event) {
+      this._onAnsiColorChange.fire(event);
     }
     else {
       this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);

@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData } from 'common/Types';
+import { IBufferLine, IAttributeData, IAnsiColorChangeEvent } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, UnderlineStyle } from 'common/buffer/Constants';

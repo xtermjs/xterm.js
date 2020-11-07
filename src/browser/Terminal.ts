@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, IColorRGB } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, IAnsiColorChangeEvent } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -149,9 +149,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
+    this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(this._inputHandler.onAnsiColorChange((index, color) => this._changeAnsiColor(index, color)));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
@@ -159,10 +159,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
   }
 
-  private _changeAnsiColor(colorIndex: number, colorRGB: IColorRGB): void {
-    const color = rgba.toColor(colorRGB[0], colorRGB[1], colorRGB[2]);
+  private _changeAnsiColor(event: IAnsiColorChangeEvent): void {
+    const color = rgba.toColor(event.red, event.green, event.blue);
 
-    this._colorManager!.colors.ansi[colorIndex] = color;
+    this._colorManager!.colors.ansi[event.colorIndex] = color;
     this._renderService?.setColors(this._colorManager!.colors);
     this.viewport?.onThemeChange(this._colorManager!.colors);
   }
