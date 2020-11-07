@@ -1692,4 +1692,25 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.origin, false);
     });
   });
+  describe('OSC', () => {
+    it('should ignore incorrect Ansi color change data', () => {
+      assert.deepEqual(inputHandler.parseAnsiColorChange('17;rgb:1a/2b/3c'), {
+        colorIndex: 17,
+        red: 0x1a,
+        green: 0x2b,
+        blue: 0x3c
+      });
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:#aabbcc'));
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
+      assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
+    });
+    it('should fire event on Ansi color change', (done) => {
+      inputHandler.onAnsiColorChange(e => {
+        assert.deepEqual(e, { colorIndex: 17, red: 0x1a, green: 0x2b, blue: 0x3c });
+        done();
+      });
+      inputHandler.parse('\x1b]4;17;rgb:1a/2b/3c\x1b\\');
+    });
+  });
 });
