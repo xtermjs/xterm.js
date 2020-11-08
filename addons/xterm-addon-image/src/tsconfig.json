@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
+    "target": "es2017",
     "module": "commonjs",
-    "target": "es2015",
-    "lib": [
-      "dom",
-      "es2015"
-    ],
-    "rootDir": ".",
-    "outDir": "../out",
     "sourceMap": true,
-    "removeComments": true,
-    "strict": true
+    "outDir": "../out",
+    "rootDir": ".",
+    "strict": true,
+    "noUnusedLocals": true,
+    "preserveWatchOutput": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
   },
   "include": [
     "./**/*",

@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { Terminal, IDisposable, IMarker } from 'xterm';
+import { Terminal, IDisposable } from 'xterm';
 import { SixelDecoder } from 'sixel';
 
 
@@ -11,12 +11,6 @@ import { SixelDecoder } from 'sixel';
 const CODE = 0x110000; // illegal unicode char
 const INVISIBLE = 0x40000000; // taken from BufferLine.ts
 
-
-interface IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void;
-  put(data: Uint32Array, start: number, end: number): void;
-  unhook(): void;
-}
 
 interface ICellSize {
   width: number;
@@ -176,7 +170,7 @@ export class ImageStorage implements IDisposable {
       const imageData = new ImageData(sixel.width, sixel.height);
 
       // whether current BG should be applied to sixel image
-      const applyBG = !!sixel.fillColor;  // TODO
+      // const applyBG = !!sixel.fillColor;  // TODO
       sixel.toPixelData(imageData.data, sixel.width, sixel.height);
 
       ctx.putImageData(imageData, 0, 0);
