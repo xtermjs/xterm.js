@@ -31,7 +31,6 @@ interface IImageSpec {
   bitmap: ImageBitmap | null;
 }
 
-type UintTypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray;
 
 export class ImageStorage implements IDisposable {
   private _images: Map<number, IImageSpec> = new Map();
@@ -68,9 +67,7 @@ export class ImageStorage implements IDisposable {
       is.actualCellSize.height = oh;
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(is.orig.width * cw / ow);
-    canvas.height = Math.ceil(is.orig.height * ch / oh);
+    const canvas = this._ir.getCanvas(Math.ceil(is.orig.width * cw / ow), Math.ceil(is.orig.height * ch / oh));
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(is.orig, 0, 0, canvas.width, canvas.height);
@@ -139,6 +136,7 @@ export class ImageStorage implements IDisposable {
       internalTerm._inputHandler.lineFeed();
     }
 
+    // TODO: mark every line + remark on resize to get better disposal coverage
     const endMarker = this._terminal.registerMarker(0);
     endMarker?.onDispose(() => this._markerGotDisposed(this._lastId));
     const imgSpec: IImageSpec = {
@@ -172,9 +170,7 @@ export class ImageStorage implements IDisposable {
    * @param sixel SixelImage
    */
   public addImageFromSixel(sixel: SixelDecoder): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = sixel.width;
-    canvas.height = sixel.height;
+    const canvas = this._ir.getCanvas(sixel.width, sixel.height);
     const ctx = canvas.getContext('2d');
     if (ctx) {
       const imageData = new ImageData(sixel.width, sixel.height);
@@ -206,7 +202,25 @@ export class ImageStorage implements IDisposable {
         if (bufferRow.getCodePoint(col) === CODE) {
           const fg = bufferRow.getFg(col);
           if (fg & INVISIBLE) {
-            this._draw(ctx, fg & 0xFFFFFF, bufferRow.getBg(col) & 0xFFFFFF, col, row);
+            const id = fg & 0xFFFFFF;
+            let cCol = col;
+            let count = 1;
+            // TODO: check for correct tile order as well
+            // FIXME: draw as much as possible to the right
+            // --> this needs a proper way of resize handling w/o too many wrapping artefacts
+            const trimmedLength = bufferRow.getTrimmedLength();
+            const lastIsImage = bufferRow.getCodePoint(trimmedLength - 1) === CODE && bufferRow.getFg(trimmedLength - 1);
+            while (
+              ++cCol < internalTerm.cols
+              && (
+                id === (bufferRow.getFg(cCol) & 0xFFFFFF)
+                || (cCol >= trimmedLength && lastIsImage)
+              )
+            ) {
+              count++;
+            }
+            this._draw(ctx, id, bufferRow.getBg(col) & 0xFFFFFF, col, row, count);
+            col = cCol - 1;
           }
         }
       }
@@ -221,7 +235,7 @@ export class ImageStorage implements IDisposable {
 
   // FIXME: needs some layered drawing/composition
   //        reason - partially overdrawing of older tiles should be possible
-  private _draw(ctx: CanvasRenderingContext2D, imgId: number, tileId: number, col: number, row: number): void {
+  private _draw(ctx: CanvasRenderingContext2D, imgId: number, tileId: number, col: number, row: number, count: number = 1): void {
     const is = this._images.get(imgId);
     if (!is) {
       // FIXME: draw placeholder if image got removed?
@@ -237,17 +251,22 @@ export class ImageStorage implements IDisposable {
       img,
       (tileId % cols) * cellWidth,
       Math.floor(tileId / cols) * cellHeight,
-      cellWidth,
+      cellWidth * count,
       cellHeight,
       col * cellWidth,
       row * cellHeight,
-      cellWidth,
+      cellWidth * count,
       cellHeight
     );
   }
 }
 
 
+/**
+ * image renderer
+ * Holds all output related data structures.
+ * Defaults to browser output for now.
+ */
 export class ImageRenderer implements IDisposable {
   private _internalTerm: any;
   private _oldOpen: (parent: HTMLElement) => void;
@@ -305,24 +324,26 @@ export class ImageRenderer implements IDisposable {
   }
 
   public insertLayerToDom(): void {
-    this.canvas = document.createElement('canvas');
-    this.canvas.setAttribute('width', `${this._rs.dimensions.canvasWidth}`);
-    this.canvas.setAttribute('height', `${this._rs.dimensions.canvasHeight}`);
+    this.canvas = this.getCanvas(this._rs?.dimensions.canvasWidth, this._rs?.dimensions.canvasHeight);
     this.canvas.classList.add('xterm-image-layer');
     this._internalTerm.screenElement.appendChild(this.canvas);
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', {alpha: true, desynchronized: true});
   }
 
   public dimensionChanged(dimensions: any): void {
     // FIXME: why do we have to wait for next event loop tick? (creates a really nasty blackout bug)
     // get current dimensions from draw call instead?
     setTimeout(() => {
+      console.log(dimensions);
       this.canvas?.setAttribute('width', `${dimensions.canvasWidth}`);
       this.canvas?.setAttribute('height', `${dimensions.canvasHeight}`);
     }, 0);
   }
 
-  public clearCtx(): void {
-    this.ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
+  public getCanvas(width: number, height: number): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = width | 0;
+    canvas.height = height | 0;
+    return canvas;
   }
 }

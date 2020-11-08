@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-image' {
   export interface IImageAddonOptions {}

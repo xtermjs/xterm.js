@@ -5,24 +5,35 @@
  * Implements image support for the terminal.
  */
 
-import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from 'xterm';
 import { SixelDecoder, DEFAULT_BACKGROUND, PALETTE_ANSI_256, PALETTE_VT340_COLOR, PALETTE_VT340_GREY, RGBA8888 } from 'sixel';
 import { ImageRenderer, ImageStorage } from './ImageStorage';
 
 interface IImageAddonOptions {
+  // SIXEL settings
+  // Whether SIXEL is enabled (default is true).
   sixelSupport?: boolean;
-  sixelScroll?: boolean;
+  // Whether SIXEL scrolling is enabled (default is true).
+  sixelScrolling?: boolean;
+  // Palette color limit (default 256).
   sixelPaletteLimit?: number;
+  // SIXEL image size limit in bytes (calculated with 4 channels, default 12000000).
+  sixelSizeLimit?: number;
+  // Whether it use private palettes for separate SIXEL sequences.
   sixelPrivatePalette?: boolean;
-  sixelDefaultPalette: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
+  // Default start palette (default 'ANSI256').
+  sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
+  // TODO: iTerm image protocol support
 }
 
 const DEFAULT_OPTIONS: IImageAddonOptions = {
+  // SIXEL default settings
   sixelSupport: true,
-  sixelScroll: true,
+  sixelScrolling: true,
   sixelPaletteLimit: 256,
+  sixelSizeLimit: 12000000,
   sixelPrivatePalette: true,
-  sixelDefaultPalette: 'ANSI256'
+  sixelDefaultPalette: 'VT340-COLOR'
 };
 
 interface IDcsHandler {
@@ -46,6 +57,8 @@ interface IDcsHandler {
   unhook(success: boolean): void | boolean;
 }
 
+type ParamsArray = (number | number[])[];
+
 interface IParams {
   /** from ctor */
   maxLength: number;
@@ -65,34 +78,46 @@ interface IParams {
   getSubParams(idx: number): Int32Array | null;
   getSubParamsAll(): {[idx: number]: Int32Array};
 }
-type ParamsArray = (number | number[])[];
+
 
 class SixelHandler implements IDcsHandler {
-  private _dec = new SixelDecoder(0);
-  private _rejected = false;
-  constructor(private _storage: ImageStorage) {}
-  public hook(params: IParams): void {
-    // TODO: palette + background select
+  private _dec: SixelDecoder | undefined;
+  private _sixelPalette: RGBA8888[];
+  private _opts: IImageAddonOptions;
+
+  constructor(private _storage: ImageStorage, opts: IImageAddonOptions = DEFAULT_OPTIONS) {
+    this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
+    this._sixelPalette = this._opts.sixelDefaultPalette === 'VT340-COLOR'
+      ? PALETTE_VT340_COLOR
+      : this._opts.sixelDefaultPalette === 'VT340-GREY'
+        ? PALETTE_VT340_GREY
+        : PALETTE_ANSI_256;
   }
+
+  public hook(params: IParams): void {
+    this._dec = new SixelDecoder(
+      params.params[1] === 1 ? 0 : DEFAULT_BACKGROUND,
+      this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette,
+      this._opts.sixelPaletteLimit
+    );
+  }
+
   public put(data: Uint32Array, start: number, end: number): void {
-    // reject image with more than 3M pixels
-    const size = (this._dec.rasterWidth * this._dec.rasterHeight * 4) || this._dec.memUsage;
-    if (size > 12000000) {
-      this._rejected = true;
-      this._dec = new SixelDecoder(0);
-    }
-    if (!this._rejected) {
+    if (!this._dec) return;
+    const size = Math.max(this._dec.rasterWidth * this._dec.rasterHeight * 4, this._dec.memUsage);
+    if (size > this._opts.sixelSizeLimit!) {
+      this._dec = undefined;
+    } else {
       this._dec.decode(data, start, end);
     }
   }
+
   public unhook(success: boolean): void | boolean {
-    if (!this._rejected) {
-      if (success) {
-        this._storage.addImageFromSixel(this._dec);
-      }
-      this._dec = new SixelDecoder(0);
+    if (!this._dec) return;
+    if (success) {
+      this._storage.addImageFromSixel(this._dec);
     }
-    this._rejected = false;
+    this._dec = undefined;
   }
 }
 
@@ -109,36 +134,17 @@ export class ImageAddon implements ITerminalAddon {
   private _opts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;
   private _renderer: ImageRenderer | undefined;
-  private _sixelHandler: IDisposable | undefined;
+  private _sixelHandler: SixelHandler | undefined;
   private _clearSixelHandler: () => void = () => {};
-  private _sixelPalette: RGBA8888[];
   constructor(opts: IImageAddonOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
-    this._sixelPalette = this._opts.sixelDefaultPalette === 'VT340-COLOR' ? PALETTE_VT340_COLOR
-      : this._opts.sixelDefaultPalette === 'VT340-GREY' ? PALETTE_VT340_GREY
-        : PALETTE_ANSI_256;
   }
   public activate(terminal: Terminal): void {
     this._renderer = new ImageRenderer(terminal);
     this._storage = new ImageStorage(terminal, this._renderer);
     if (this._opts.sixelSupport && !this._sixelHandler) {
-
-      // NOTE: this is way too slow (creates nasty hickups due to interim string conversion):
-      //
-      // this._sixelHandler = terminal.parser.addDcsHandler({final: 'q'}, (data, params) => {
-      //   const pal = this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette;
-      //   // TODO: 0 - get startup background, 2 - get BCE
-      //   const dec = new SixelDecoder(params[1] === 1 ? 0 : DEFAULT_BACKGROUND, pal, this._opts.sixelPaletteLimit);
-      //   dec.decodeString(data);
-      //   if (this._storage) {
-      //     this._storage.addImageFromSixel(dec);
-      //   }
-      //   return true;
-      // });
-      //
-      // while a chunked handler operating on typed array via private API is speedy:
-      // TODO: rewrite into disposable object
-      (terminal as any)._core._inputHandler._parser.setDcsHandler({final: 'q'}, new SixelHandler(this._storage));
+      this._sixelHandler = new SixelHandler(this._storage, this._opts);
+      (terminal as any)._core._inputHandler._parser.setDcsHandler({final: 'q'}, this._sixelHandler);
       this._clearSixelHandler = () => (terminal as any)._core._inputHandler._parser.clearDcsHandler({final: 'q'});
     }
 
@@ -147,10 +153,9 @@ export class ImageAddon implements ITerminalAddon {
 
   public dispose(): void {
     if (this._sixelHandler) {
-      this._sixelHandler.dispose();
+      this._clearSixelHandler();
       this._sixelHandler = undefined;
     }
-    this._clearSixelHandler();
     if (this._storage) {
       this._storage.dispose();
       this._storage = undefined;
