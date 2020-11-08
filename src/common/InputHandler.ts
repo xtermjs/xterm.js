@@ -2735,8 +2735,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
-   * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; Ps ; Pt BEL" "Set ANSI color `Ps` to `Pt`."
-   * `Ps` is the color index between 0 and 255. `Pt` color format is 'rgb:rr/gg/bb' where r, g, b are hexadecimal digits.
+   * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
+   * `c` is the color index between 0 and 255. `spec` color format is 'rgb:rr/gg/bb' where r, g, b are hexadecimal digits.
    */
   public setAnsiColor(data: string): void {
     const event = this.parseAnsiColorChange(data);
