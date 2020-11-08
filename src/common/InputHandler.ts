@@ -2735,7 +2735,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
-   * The expected content of data is: <number>;rgb:<rr>/<gg>/<bb> where rr, gg, bb are hex numbers.
+   * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; Ps ; Pt BEL" "Set ANSI color `Ps` to `Pt`."
+   * `Ps` is the color index between 0 and 255. `Pt` color format is 'rgb:rr/gg/bb' where r, g, b are hexadecimal digits.
    */
   public setAnsiColor(data: string): void {
     const event = this.parseAnsiColorChange(data);
