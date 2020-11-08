@@ -32,7 +32,7 @@ if (os.platform() === 'darwin') {
   );
 }
 // filter skipFilenames
-const FILES = TESTFILES.filter(value => SKIP_FILES.indexOf(value.split('/').slice(-1)[0]) === -1);
+const FILES = TESTFILES.filter(value => !SKIP_FILES.includes(value.split('/').slice(-1)[0]));
 
 describe('Escape Sequence Files', function(): void {
   this.timeout(1000);
@@ -104,7 +104,7 @@ describe('Escape Sequence Files', function(): void {
 function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
-    return function(s: string): string {
+    return (s: string): string => {
       counter += 1;
       return '\x1b[33m' + (' ' + counter).slice(-2) + color + s;
     };

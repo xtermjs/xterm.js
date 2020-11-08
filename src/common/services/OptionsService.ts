@@ -89,7 +89,7 @@ export class OptionsService implements IOptionsService {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
-    if (CONSTRUCTOR_ONLY_OPTIONS.indexOf(key) !== -1) {
+    if (CONSTRUCTOR_ONLY_OPTIONS.includes(key)) {
       throw new Error(`Option "${key}" can only be set in the constructor`);
     }
     if (this.options[key] === value) {
@@ -123,7 +123,7 @@ export class OptionsService implements IOptionsService {
           // already valid numeric value
           break;
         }
-        value = FONT_WEIGHT_OPTIONS.indexOf(value) !== -1 ? value : DEFAULT_OPTIONS[key];
+        value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
         break;
       case 'cursorWidth':
         value = Math.floor(value);
