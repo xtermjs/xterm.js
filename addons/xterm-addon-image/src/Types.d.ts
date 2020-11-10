@@ -3,26 +3,47 @@
  * @license MIT
  */
 
-import { IDisposable } from 'xterm';
+import { RGBA8888 } from 'sixel';
+import { IDisposable, Terminal } from 'xterm';
 
 /**
  * Plugin ctor options.
  */
 export interface IImageAddonOptionalOptions {
-  // SIXEL settings
+  /**
+   * Leave cursor to right of image.
+   * This has no effect, if an image covers all cells to the right.
+   * Same as DECSET 8452, default is false.
+   */
+  cursorRight?: boolean;
+  /**
+   * Leave cursor below the first row of an image, scrolling if needed.
+   * If disabled, the cursor is left at the beginning of the next line.
+   * This settings is partially overwritten by `cursorRight`, if an image
+   * does not cover all cells to the right.
+   * Same as DECSET 7730, default is false.
+   */
+  cursorBelow?: boolean;
+
+  /**
+   * SIXEL settings
+   */
   // Whether SIXEL is enabled (default is true).
   sixelSupport?: boolean;
-  // Whether SIXEL scrolling is enabled (default is true).
+  // Whether SIXEL scrolling is enabled (default is true). Same as DECSET 80.
   sixelScrolling?: boolean;
   // Palette color limit (default 256).
   sixelPaletteLimit?: number;
-  // SIXEL image size limit in bytes (calculated with 4 channels, default 12000000).
+  // SIXEL image size limit in bytes (default 25000000).
   sixelSizeLimit?: number;
-  // Whether it use private palettes for separate SIXEL sequences.
+  // Whether to use private palettes for SIXEL sequences (default is true). Same as DECSET 1070.
   sixelPrivatePalette?: boolean;
   // Default start palette (default 'ANSI256').
   sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
-  // TODO: iTerm image protocol support
+
+  /**
+   * TODO: iTerm image protocol support
+   */
 }
 
 export type IImageAddonOptions = {
@@ -75,10 +96,58 @@ export interface ITerminalParser {
 
 // stub into xterm core terminal
 /* eslint-disable */
-export interface ICoreTerminal {
+export interface ICoreTerminal extends Terminal {
   _core: {
+    buffer: {
+      x: number;
+      y: number;
+      ybase: number;
+      ydisp: number;
+      lines: {
+        get(id: number): {
+          getBg(id: number): number;
+          _extendedAttrs: IExtendedAttrsImage[];
+        } | undefined;
+      };
+    };
+    cols: number;
+    rows: number;
+    screenElement: HTMLElement;
+    optionsService: {
+      onOptionChange(handler: (s: string) => void): IDisposable;
+    };
+    _dirtyRowService: {
+      markAllDirty(): void;
+    };
+    open(parent: HTMLElement): void;
+    _renderService: IRenderService;
     _inputHandler: {
       _parser: ITerminalParser;
+      _curAttrData: {
+        isInverse(): boolean;
+        isFgDefault(): boolean;
+        isFgRGB(): boolean;
+        getFgColor(): number;
+        isBgDefault(): boolean;
+        isBgRGB(): boolean;
+        getBgColor(): number;
+      };
+      lineFeed(): void;
+    };
+    _colorManager: {
+      colors: {
+        ansi: {
+          [key: number]: {
+            rgba: number;
+          };
+        };
+        foreground: {
+          rgba: number;
+        };
+        background: {
+          rgba: number;
+        };
+      };
     };
   };
 }
@@ -111,4 +180,49 @@ export interface IImageSpec {
   actual: HTMLCanvasElement;
   actualCellSize: ICellSize;
   bitmap: ImageBitmap | undefined;
+}
+
+
+// image storage options
+export interface IStorageOptions {
+  // whether to scroll on image input
+  scroll: boolean;
+  // whether cursor should be left right in the next logical cell
+  right: boolean;
+  // whether cursor is moved below the first row or to beginning
+  below: boolean;
+  // whether image contains alpha parts (to be respected by furture overdrawing composition)
+  alpha: boolean;
+  // fill color to be used to align to full cell coverage
+  fill: RGBA8888;
+  // alignment within to covered cells
+  align: Align;
+}
+
+
+export const enum Align {
+  TOP_LEFT = 0,
+  TOP = 1,
+  TOP_RIGHT = 2,
+  RIGHT = 3,
+  BOTTOM_RIGHT = 4,
+  BOTTOM = 5,
+  BOTTOM_LEFT = 6,
+  LEFT = 7,
+  CENTER = 8
+}
+
+export interface IExtendedAttrsImage {
+  underlineStyle: number;
+  underlineColor: number;
+  imageId: number;
+  tileId: number;
+  clone(): IExtendedAttrsImage;
+  isEmpty(): boolean;
+}
+
+export interface IRenderService {
+  setRenderer(renderer: any): void;
+  dimensions: IRenderDimensions;
+  refreshRows(start: number, end: number): void;
 }

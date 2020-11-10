@@ -2,31 +2,104 @@
  * Copyright (c) 2020 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { Terminal, IDisposable } from 'xterm';
+import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { IImageSpec } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageSpec, IStorageOptions } from './Types';
 
 
-// buffer placeholder
-// FIXME: find better method to announce foreign content
-const CODE = 0x110000; // illegal unicode char
-const INVISIBLE = 0x40000000; // taken from BufferLine.ts
+// some constants for bufferline
+const HAS_EXTENDED = 0x10000000;
+const CELL_SIZE = 3;
+const enum Cell {
+  CONTENT = 0,
+  FG = 1,
+  BG = 2
+}
+
+/**
+ * Extend extended attribute to also hold image tile information.
+ */
+export class ExtendedAttrsImage implements IExtendedAttrsImage {
+  constructor(
+    public underlineStyle = 0,
+    public underlineColor: number = -1,
+    public imageId = -1,
+    public tileId = -1
+  ) {}
+  public clone(): ExtendedAttrsImage {
+    return new ExtendedAttrsImage(this.underlineStyle, this.underlineColor, this.imageId, this.tileId);
+  }
+  public isEmpty(): boolean {
+    return this.underlineStyle === 0 && this.imageId === -1;
+  }
+}
+const EMPTY_ATTRS = new ExtendedAttrsImage();
 
 
 /**
  * ImageStorage - extension of CoreTerminal:
  * - hold image data
- * - write image data to buffer
- * - alter buffer on resize
+ * - write/read image data to/from buffer
+ * - alter buffer on resize (TODO)
  */
 export class ImageStorage implements IDisposable {
   private _images: Map<number, IImageSpec> = new Map();
   private _lastId = 0;
 
-  constructor(private _terminal: Terminal, private _ir: ImageRenderer) {}
+  constructor(private _terminal: ICoreTerminal, private _renderer: ImageRenderer) {}
 
   public dispose(): void {
     this._images.clear();
+  }
+
+  public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
+    return ImageRenderer.createCanvas(
+      Math.ceil(width / this._renderer.currentCellSize.width) * this._renderer.currentCellSize.width,
+      Math.ceil(height / this._renderer.currentCellSize.height) * this._renderer.currentCellSize.height
+    );
+  }
+
+  // FIXME: move to image handlers to avoid canvas reconstruction
+  // private _adjustToFullCells(img: HTMLCanvasElement, opts: IStorageOptions): HTMLCanvasElement {
+  //   const nw = Math.ceil(img.width / this._renderer.currentCellSize.width) * this._renderer.currentCellSize.width;
+  //   const nh = Math.ceil(img.height / this._renderer.currentCellSize.height) * this._renderer.currentCellSize.height;
+  //   const c = ImageRenderer.createCanvas(nw, nh);
+  //   const ctx = c.getContext('2d');
+  //   if (ctx) {
+  //     if (opts.fill) {
+  //       ctx.fillStyle = `rgba(${opts.fill >>> 24}, ${opts.fill >>> 16 & 0xFF}, ${opts.fill >>> 8 & 0xFF}, 1)`;
+  //       ctx.fillRect(0, 0, c.width, c.height);
+  //     }
+  //     let x = 0;
+  //     let y = 0;
+  //     switch (opts.align) {
+  //       case Align.TOP_LEFT:      x = 0; y = 0; break;
+  //       case Align.TOP:           x = (c.width - img.width) / 2; y = 0; break;
+  //       case Align.TOP_RIGHT:     x = c.width - img.width; y = 0; break;
+  //       case Align.RIGHT:         x = c.width - img.width; y = (c.height - img.height) / 2; break;
+  //       case Align.BOTTOM_RIGHT:  x = c.width - img.width; y = c.height - img.height; break;
+  //       case Align.BOTTOM:        x = (c.width - img.width) / 2; y = c.height - img.height; break;
+  //       case Align.BOTTOM_LEFT:   x = 0; y = c.height - img.height; break;
+  //       case Align.LEFT:          x = 0; y = (c.height - img.height) / 2; break;
+  //       case Align.CENTER:        x = (c.width - img.width) / 2; y = (c.height - img.height) / 2; break;
+  //     }
+  //     ctx.drawImage(img, x, y);
+  //   }
+  //   return c;
+  // }
+
+  private _writeToCell(line: any, x: number, imageId: number, tileId: number): void {
+    const eAttr = new ExtendedAttrsImage(0, -1, imageId, tileId);
+    if (line._data[x * CELL_SIZE + Cell.BG] & HAS_EXTENDED) {
+      if (line._extendedAttrs[x]) {
+        eAttr.underlineStyle = line._extendedAttrs[x].underlineStyle;
+        eAttr.underlineColor = line._extendedAttrs[x].underlineColor;
+        // TODO: collect and return old image tile for later composition
+      }
+    } else {
+      line._data[x * CELL_SIZE + Cell.BG] |= HAS_EXTENDED;
+    }
+    line._extendedAttrs[x] = eAttr;
   }
 
   /**
@@ -34,7 +107,7 @@ export class ImageStorage implements IDisposable {
    * Does all the needed low level stuff to tile the image data correctly
    * onto the terminal buffer cells.
    */
-  public addImage(img: HTMLCanvasElement): void {
+  public addImage(img: HTMLCanvasElement, options: IStorageOptions): void {
     /**
      * TODO - create markers:
      *    start marker  - first line containing image data
@@ -48,41 +121,39 @@ export class ImageStorage implements IDisposable {
      */
 
     // calc rows x cols needed to display the image
-    const cols = Math.ceil(img.width / this._ir.currentCellSize.width);
-    const rows = Math.ceil(img.height / this._ir.currentCellSize.height);
+    const cols = Math.ceil(img.width / this._renderer.currentCellSize.width);
+    const rows = Math.ceil(img.height / this._renderer.currentCellSize.height);
 
-    // write placeholder into terminal buffer
     const imgIdx = this._lastId;
-    const fg = INVISIBLE | imgIdx;
 
-    const internalTerm = (this._terminal as any)._core;
-    const buffer = internalTerm.buffer;
-    const offset = internalTerm.buffer.x;
+    const buffer = this._terminal._core.buffer;
+    const offset = this._terminal._core.buffer.x;
+    const termCols = this._terminal._core.cols;
+
+    // TODO: track image intersections from _writeToCell for composing
 
     for (let row = 0; row < rows - 1; ++row) {
-      const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+      const line = buffer.lines.get(buffer.y + buffer.ybase);
       for (let col = 0; col < cols; ++col) {
-        if (offset + col >= internalTerm.cols) {
+        if (offset + col >= termCols) {
           break;
         }
-        const tileNum = row * cols + col;
-        bufferRow.setCellFromCodePoint(offset + col, CODE, 1, fg, tileNum);
+        this._writeToCell(line, offset + col, imgIdx, row * cols + col);
       }
-      internalTerm._inputHandler.lineFeed();
+      this._terminal._core._inputHandler.lineFeed();
       buffer.x = offset;
     }
     // last line
-    const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    const line = buffer.lines.get(buffer.y + buffer.ybase);
     for (let col = 0; col < cols; ++col) {
-      if (offset + col >= internalTerm.cols) {
+      if (offset + col >= termCols) {
         break;
       }
-      const tileNum = (rows - 1) * cols + col;
-      bufferRow.setCellFromCodePoint(offset + col, CODE, 1, fg, tileNum);
+      this._writeToCell(line, offset + col, imgIdx, (rows - 1) * cols + col);
     }
     buffer.x += cols;
-    if (buffer.x >= internalTerm.cols) {
-      internalTerm._inputHandler.lineFeed();
+    if (buffer.x >= termCols) {
+      this._terminal._core._inputHandler.lineFeed();
     }
 
     // TODO: mark every line + remark on resize to get better disposal coverage
@@ -90,9 +161,9 @@ export class ImageStorage implements IDisposable {
     endMarker?.onDispose(() => this._markerGotDisposed(this._lastId));
     const imgSpec: IImageSpec = {
       orig: img,
-      origCellSize: this._ir.currentCellSize,
+      origCellSize: this._renderer.currentCellSize,
       actual: img,
-      actualCellSize: this._ir.currentCellSize,
+      actualCellSize: this._renderer.currentCellSize,
       bitmap: undefined
     };
     this._images.set(this._lastId++, imgSpec);
@@ -107,58 +178,57 @@ export class ImageStorage implements IDisposable {
     // - scan tile usage in original image area on image pressure (start + end marker?)
     // - failsafe setting: upper image limit (fifo? least recently?)
     if (this._images.has(idx)) {
-      const is = this._images.get(idx);
-      is?.bitmap?.close();
+      this._images.get(idx)?.bitmap?.close();
       this._images.delete(idx);
     }
     // FIXME: is it enough to remove the image spec here?
   }
 
-  // TODO: resort render stuff to image renderer
-  public render(e: {start: number, end: number}): void {
+  public render(range: {start: number, end: number}): void {
     // exit early if dont have any images to test for
-    if (!this._images.size || !this._ir.canvas) {
+    if (!this._images.size || !this._renderer.canvas) {
       return;
     }
 
-    const {start, end} = e;
-    const internalTerm = (this._terminal as any)._core;
-    const buffer = internalTerm.buffer;
+    const {start, end} = range;
+    const buffer = this._terminal._core.buffer;
+    const cols = this._terminal._core.cols;
 
     // rescale image layer if needed
-    this._ir.rescaleCanvas();
+    this._renderer.rescaleCanvas();
     // clear drawing area
-    this._ir.clearLines(start, end);
+    this._renderer.clearLines(start, end);
 
-    // walk all cells in viewport and draw tile if needed
+    // walk all cells in viewport and draw tiles found
     for (let row = start; row <= end; ++row) {
-      const bufferRow = buffer.lines.get(row + buffer.ydisp);
-      for (let col = 0; col < internalTerm.cols; ++col) {
-        if (bufferRow.getCodePoint(col) === CODE) {
-          const fg = bufferRow.getFg(col);
-          if (fg & INVISIBLE) {
-            const id = fg & 0xFFFFFF;
-            let cCol = col;
+      const line = buffer.lines.get(row + buffer.ydisp);
+      if (!line) return;
+      for (let col = 0; col < cols; ++col) {
+        if (line.getBg(col) & HAS_EXTENDED) {
+          let e: ExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
+          const imageId = e.imageId;
+          const imgSpec = this._images.get(imageId);
+          if (imgSpec && e.tileId !== -1) {
+            const startTile = e.tileId;
+            const startCol = col;
             let count = 1;
-            // TODO: check for correct tile order as well
-            // FIXME: draw as much as possible to the right
-            // --> this needs a proper way of resize handling w/o too many wrapping artefacts
-            const trimmedLength = bufferRow.getTrimmedLength();
-            const lastIsImage = bufferRow.getCodePoint(trimmedLength - 1) === CODE && bufferRow.getFg(trimmedLength - 1);
+            /**
+             * merge tiles to the right into a single draw call, if:
+             * - not at end of line
+             * - cell has same image id
+             * - cell has consecutive tile id
+             */
             while (
-              ++cCol < internalTerm.cols
-              && (
-                id === (bufferRow.getFg(cCol) & 0xFFFFFF)
-                || (cCol >= trimmedLength && lastIsImage)
-              )
+              ++col < cols
+              && (line.getBg(col) & HAS_EXTENDED)
+              && (e = line._extendedAttrs[col] || EMPTY_ATTRS)
+              && (e.imageId === imageId)
+              && (e.tileId === startTile + count)
             ) {
               count++;
             }
-            const imgSpec = this._images.get(id);
-            if (imgSpec) {
-              this._ir.draw(imgSpec, bufferRow.getBg(col) & 0xFFFFFF, col, row, count);
-            }
-            col = cCol - 1;
+            col--;
+            this._renderer.draw(imgSpec, startTile, startCol, row, count);
           }
         }
       }

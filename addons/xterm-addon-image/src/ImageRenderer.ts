@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IDisposable, Terminal } from 'xterm';
-import { ICellSize, IImageSpec, IRenderDimensions } from './Types';
+import { IDisposable } from 'xterm';
+import { ICellSize, ICoreTerminal, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 
 
 /**
@@ -16,14 +16,12 @@ import { ICellSize, IImageSpec, IRenderDimensions } from './Types';
  * FIXME: needs overload of Terminal.setOption('fontSize')
  */
 export class ImageRenderer implements IDisposable {
-  private _internalTerm: any;
-  private _oldOpen: (parent: HTMLElement) => void;
-  private _rs: any;
-  private _oldSetRenderer: (renderer: any) => void = () => {};
   public canvas: HTMLCanvasElement | undefined;
   public ctx: CanvasRenderingContext2D | null | undefined;
-  private _dimHandler: IDisposable | undefined;
-  private _charSizeHandler: IDisposable | undefined;
+  private _optionsRefresh: IDisposable | undefined;
+  private _oldOpen: (parent: HTMLElement) => void;
+  private _rs: IRenderService | undefined;
+  private _oldSetRenderer: (renderer: any) => void = () => {};
 
   // drawing primitive - canvas
   public static createCanvas(width: number, height: number): HTMLCanvasElement {
@@ -49,34 +47,38 @@ export class ImageRenderer implements IDisposable {
     return createImageBitmap(img);
   }
 
-  constructor(terminal: Terminal) {
-    this._internalTerm = (terminal as any)._core;
-    this._oldOpen = this._internalTerm.open;
-    this._internalTerm.open = (parent: HTMLElement): void => {
-      this._oldOpen.call(this._internalTerm, parent);
+  constructor(private _terminal: ICoreTerminal) {
+    this._oldOpen = this._terminal._core.open;
+    this._terminal._core.open = (parent: HTMLElement): void => {
+      this._oldOpen.call(this._terminal._core, parent);
       this.open();
     };
-    if (this._internalTerm.screenElement) {
+    if (this._terminal._core.screenElement) {
       this.open();
     }
+    // hack to spot fontSize changes
+    this._optionsRefresh = this._terminal._core.optionsService.onOptionChange(option => {
+      if (option === 'fontSize') {
+        this.rescaleCanvas();
+        this._rs?.refreshRows(0, this._terminal.rows);
+      }
+    });
   }
 
   public dispose(): void {
+    this._optionsRefresh?.dispose();
     this.removeLayerFromDom();
-    if (this._internalTerm && this._oldOpen) {
-      this._internalTerm.open = this._oldOpen;
+    if (this._terminal._core && this._oldOpen) {
+      this._terminal._core.open = this._oldOpen;
     }
     if (this._rs && this._oldSetRenderer) {
       this._rs.setRenderer = this._oldSetRenderer;
     }
-    this._internalTerm = undefined;
     this._rs = undefined;
-    this._dimHandler?.dispose();
-    this._charSizeHandler?.dispose();
   }
 
   public open(): void {
-    this._rs = this._internalTerm._renderService;
+    this._rs = this._terminal._core._renderService;
     this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
     this._rs.setRenderer = (renderer: any) => {
       this.removeLayerFromDom();
@@ -91,20 +93,20 @@ export class ImageRenderer implements IDisposable {
   }
 
   public insertLayerToDom(): void {
-    this.canvas = ImageRenderer.createCanvas(this.dimensions.canvasWidth, this.dimensions.canvasHeight);
+    this.canvas = ImageRenderer.createCanvas(this.dimensions?.canvasWidth || 0, this.dimensions?.canvasHeight || 0);
     this.canvas.classList.add('xterm-image-layer');
-    this._internalTerm.screenElement.appendChild(this.canvas);
+    this._terminal._core.screenElement.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d', {alpha: true, desynchronized: true});
   }
 
-  public get dimensions(): IRenderDimensions {
+  public get dimensions(): IRenderDimensions | undefined {
     return this._rs?.dimensions;
   }
 
   public get currentCellSize(): ICellSize {
     return {
-      width: this.dimensions.actualCellWidth,
-      height: this.dimensions.actualCellHeight
+      width: Math.round(this.dimensions?.actualCellWidth || -1),
+      height: Math.round(this.dimensions?.actualCellHeight || -1)
     };
   }
 
@@ -112,32 +114,34 @@ export class ImageRenderer implements IDisposable {
    * Clear a region of the image layer canvas.
    */
   public clearLines(start: number, end: number): void {
-    const top = start * this.dimensions.actualCellHeight;
-    const bottom = ++end * this.dimensions.actualCellHeight;
-    this.ctx?.clearRect(0, top, this.dimensions.canvasWidth, bottom);
+    this.ctx?.clearRect(
+      0,
+      start * (this.dimensions?.actualCellHeight || 0),
+      this.dimensions?.canvasWidth || 0,
+      (++end - start) * (this.dimensions?.actualCellHeight || 0)
+    );
   }
 
   /**
    * Draw neighboring tiles on the image layer canvas.
    */
   public draw(imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number = 1): void {
-    const cellWidth = this.dimensions.actualCellWidth;
-    const cellHeight = this.dimensions.actualCellHeight;
-    this.rescaleImage(imgSpec, cellWidth, cellHeight);
+    const {width, height} = this.currentCellSize;
+    this.rescaleImage(imgSpec, width, height);
 
     const img = imgSpec.bitmap || imgSpec.actual;
-    const cols = Math.ceil(img.width / cellWidth);
+    const cols = Math.ceil(img.width / width);
 
     this.ctx?.drawImage(
       img,
-      (tileId % cols) * cellWidth,
-      Math.floor(tileId / cols) * cellHeight,
-      cellWidth * count,
-      cellHeight,
-      col * cellWidth,
-      row * cellHeight,
-      cellWidth * count,
-      cellHeight
+      (tileId % cols) * width,
+      Math.floor(tileId / cols) * height,
+      width * count,
+      height,
+      col * width,
+      row * height,
+      width * count,
+      height
     );
   }
 
@@ -149,9 +153,9 @@ export class ImageRenderer implements IDisposable {
     if (!this.canvas) {
       return;
     }
-    if (this.canvas.width !== this.dimensions.canvasWidth || this.canvas.height !== this.dimensions.canvasHeight) {
-      this.canvas.width = this.dimensions.canvasWidth;
-      this.canvas.height = this.dimensions.canvasHeight;
+    if (this.canvas.width !== this.dimensions?.canvasWidth || this.canvas.height !== this.dimensions.canvasHeight) {
+      this.canvas.width = this.dimensions?.canvasWidth || 0;
+      this.canvas.height = this.dimensions?.canvasHeight || 0;
     }
   }
 
@@ -168,6 +172,9 @@ export class ImageRenderer implements IDisposable {
       is.actual = is.orig;
       is.actualCellSize.width = ow;
       is.actualCellSize.height = oh;
+      is.bitmap?.close();
+      is.bitmap = undefined;
+      ImageRenderer.createImageBitmap(is.actual).then((bitmap) => is.bitmap = bitmap);
       return;
     }
     const canvas = ImageRenderer.createCanvas(
