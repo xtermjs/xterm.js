@@ -52,6 +52,10 @@ export class ImageStorage implements IDisposable {
     this._images.clear();
   }
 
+  public reset(): void {
+    this._images.clear();
+  }
+
   public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
     return ImageRenderer.createCanvas(
       Math.ceil(width / this._renderer.currentCellSize.width) * this._renderer.currentCellSize.width,
@@ -104,8 +108,6 @@ export class ImageStorage implements IDisposable {
 
   /**
    * Method to add an image to the storage.
-   * Does all the needed low level stuff to tile the image data correctly
-   * onto the terminal buffer cells.
    */
   public addImage(img: HTMLCanvasElement, options: IStorageOptions): void {
     /**
@@ -127,33 +129,51 @@ export class ImageStorage implements IDisposable {
     const imgIdx = this._lastId;
 
     const buffer = this._terminal._core.buffer;
-    const offset = this._terminal._core.buffer.x;
-    const termCols = this._terminal._core.cols;
+    const termCols = this._terminal.cols;
+    const termRows = this._terminal.rows;
+    const originX = buffer.x;
+    const originY = buffer.y;
+    let offset = originX;
 
-    // TODO: track image intersections from _writeToCell for composing
+    if (!options.scroll) {
+      this._terminal._core._dirtyRowService.markAllDirty();
+      buffer.x = 0;
+      buffer.y = 0;
+      offset = 0;
+    }
 
-    for (let row = 0; row < rows - 1; ++row) {
+    // TODO: track image intersections from _writeToCell for composing and better tile eviction
+
+    // FIXME: how to go with origin mode / scroll margins here?
+    for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(buffer.y + buffer.ybase);
       for (let col = 0; col < cols; ++col) {
-        if (offset + col >= termCols) {
-          break;
-        }
+        if (offset + col >= termCols) break;
         this._writeToCell(line, offset + col, imgIdx, row * cols + col);
       }
-      this._terminal._core._inputHandler.lineFeed();
+      if (options.scroll) {
+        if (row < rows - 1) this._terminal._core._inputHandler.lineFeed();
+      } else {
+        if (++buffer.y >= termRows) break;
+      }
       buffer.x = offset;
     }
-    // last line
-    const line = buffer.lines.get(buffer.y + buffer.ybase);
-    for (let col = 0; col < cols; ++col) {
-      if (offset + col >= termCols) {
-        break;
+
+    // cursor positioning modes
+    if (options.scroll) {
+      if (options.right) {
+        buffer.x = offset + cols;
+        if (buffer.x >= termCols) {
+          this._terminal._core._inputHandler.lineFeed();
+          buffer.x = (options.below) ? offset : 0;
+        }
+      } else {
+        this._terminal._core._inputHandler.lineFeed();
+        buffer.x = (options.below) ? offset : 0;
       }
-      this._writeToCell(line, offset + col, imgIdx, (rows - 1) * cols + col);
-    }
-    buffer.x += cols;
-    if (buffer.x >= termCols) {
-      this._terminal._core._inputHandler.lineFeed();
+    } else {
+      buffer.x = originX;
+      buffer.y = originY;
     }
 
     // TODO: mark every line + remark on resize to get better disposal coverage

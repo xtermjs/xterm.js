@@ -19,9 +19,9 @@ export class ImageRenderer implements IDisposable {
   public canvas: HTMLCanvasElement | undefined;
   public ctx: CanvasRenderingContext2D | null | undefined;
   private _optionsRefresh: IDisposable | undefined;
-  private _oldOpen: (parent: HTMLElement) => void;
+  private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _rs: IRenderService | undefined;
-  private _oldSetRenderer: (renderer: any) => void = () => {};
+  private _oldSetRenderer: ((renderer: any) => void) | undefined;
 
   // drawing primitive - canvas
   public static createCanvas(width: number, height: number): HTMLCanvasElement {
@@ -50,7 +50,7 @@ export class ImageRenderer implements IDisposable {
   constructor(private _terminal: ICoreTerminal) {
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
-      this._oldOpen.call(this._terminal._core, parent);
+      this._oldOpen?.call(this._terminal._core, parent);
       this.open();
     };
     if (this._terminal._core.screenElement) {
@@ -70,11 +70,15 @@ export class ImageRenderer implements IDisposable {
     this.removeLayerFromDom();
     if (this._terminal._core && this._oldOpen) {
       this._terminal._core.open = this._oldOpen;
+      this._oldOpen = undefined;
     }
     if (this._rs && this._oldSetRenderer) {
       this._rs.setRenderer = this._oldSetRenderer;
+      this._oldSetRenderer = undefined;
     }
     this._rs = undefined;
+    this.canvas = undefined;
+    this.ctx = undefined;
   }
 
   public open(): void {
@@ -82,7 +86,7 @@ export class ImageRenderer implements IDisposable {
     this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
     this._rs.setRenderer = (renderer: any) => {
       this.removeLayerFromDom();
-      this._oldSetRenderer(renderer);
+      this._oldSetRenderer?.call(this._rs, renderer);
       this.insertLayerToDom();
     };
     this.insertLayerToDom();

@@ -133,6 +133,7 @@ export interface ICoreTerminal extends Terminal {
         getBgColor(): number;
       };
       lineFeed(): void;
+      onRequestReset(handler: () => void): IDisposable;
     };
     _colorManager: {
       colors: {
@@ -187,7 +188,7 @@ export interface IImageSpec {
 export interface IStorageOptions {
   // whether to scroll on image input
   scroll: boolean;
-  // whether cursor should be left right in the next logical cell
+  // whether cursor should be right in the next logical cell
   right: boolean;
   // whether cursor is moved below the first row or to beginning
   below: boolean;

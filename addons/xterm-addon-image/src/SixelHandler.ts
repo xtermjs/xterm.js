@@ -91,12 +91,16 @@ export class SixelHandler implements IDcsHandler {
   }
 }
 
-// helpers to extract current terminal colors (quite hacky)
+
+
+/**
+ * Some helpers to extract current terminal colors.
+ * (quite hacky for now)
+ */
 
 function extractDefaultBg(colors: ICoreTerminal['_core']['_colorManager']['colors']): RGBA8888 {
-  return colors.background.rgba;
+  return convertLittleEndian(colors.background.rgba);
 }
-
 
 function extractActiveBg(
   attr: ICoreTerminal['_core']['_inputHandler']['_curAttrData'],
