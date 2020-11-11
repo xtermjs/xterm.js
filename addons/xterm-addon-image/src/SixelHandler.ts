@@ -38,7 +38,7 @@ export class SixelHandler implements IDcsHandler {
     this._decoder = new SixelDecoder(
       fillColor,
       this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette,
-      this._opts.sixelPaletteLimit
+      this._opts.sixelPaletteLimit || undefined
     );
     this._size = 0;
   }

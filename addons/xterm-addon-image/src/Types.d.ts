@@ -44,6 +44,10 @@ export interface IImageAddonOptionalOptions {
   /**
    * TODO: iTerm image protocol support
    */
+
+  /**
+   * TODO: storage settings
+   */
 }
 
 export type IImageAddonOptions = {
