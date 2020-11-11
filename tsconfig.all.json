@@ -7,12 +7,12 @@
     { "path": "./test/benchmark" },
     { "path": "./addons/xterm-addon-attach" },
     { "path": "./addons/xterm-addon-fit" },
+    { "path": "./addons/xterm-addon-image" },
     { "path": "./addons/xterm-addon-ligatures" },
     { "path": "./addons/xterm-addon-search" },
     { "path": "./addons/xterm-addon-serialize" },
     { "path": "./addons/xterm-addon-unicode11" },
     { "path": "./addons/xterm-addon-web-links" },
-    { "path": "./addons/xterm-addon-webgl" },
-    { "path": "./addons/xterm-addon-image/src" }
+    { "path": "./addons/xterm-addon-webgl" }
   ]
 }

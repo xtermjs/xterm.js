@@ -2,7 +2,19 @@
 # yarn lockfile v1
 
 
-sixel@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.12.0.tgz#820dbb0b802df9e7a57760749c56a094005fca82"
-  integrity sha512-RL2kt9fsZyo9rlbsw+zc7wOjKt2VnPEK9As6D9zmIE7RGWG7v65dI84nEBP7aJmcn0X1SGiDnZTWrs/FZjwoGw==
+pako@^1.0.6:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.11.tgz#6c9599d340d54dfd3946380252a35705a6b992bf"
+  integrity sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
+
+png-ts@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/png-ts/-/png-ts-0.0.3.tgz#497fa90f13b9a2cdcd5a457cb1c28ab3c68ec145"
+  integrity sha512-Qwn3yMfbrbaN86QjrDAqD1UVJc4AV4hvBCx5Dv9libLd6D20xKtgOFs/UcvD0nnjxWlgS12kEVWCDFd9ZtwB+g==
+  dependencies:
+    pako "^1.0.6"
+
+sixel@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.13.0.tgz#dac13b506341584074b95fac886628e626666386"
+  integrity sha512-9CRnPYNV6pdcSG9bHofaFRS4D+OXfYMFAbzgc9nmK/ia33bBnVUeTYcZzadYwGIiNEfNGpwXNMNBkqSxnLzbOQ==

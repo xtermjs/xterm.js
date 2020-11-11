@@ -178,7 +178,7 @@ export class ImageStorage implements IDisposable {
 
     // TODO: mark every line + remark on resize to get better disposal coverage
     const endMarker = this._terminal.registerMarker(0);
-    endMarker?.onDispose(() => this._markerGotDisposed(this._lastId));
+    endMarker?.onDispose(this._markerGotDisposed(this._lastId));
     const imgSpec: IImageSpec = {
       orig: img,
       origCellSize: this._renderer.currentCellSize,
@@ -190,18 +190,20 @@ export class ImageStorage implements IDisposable {
     ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
   }
 
-  private _markerGotDisposed(idx: number): void {
+  private _markerGotDisposed(idx: number): () => void {
     // FIXME: check if all tiles got really removed (best efford read-ahead?)
     // FIXME: this also needs a method to throw away images once the tile counter is zero
     // --> avoid memory hogging by inplace image overwrites
     // How to achieve that?
     // - scan tile usage in original image area on image pressure (start + end marker?)
     // - failsafe setting: upper image limit (fifo? least recently?)
-    if (this._images.has(idx)) {
-      this._images.get(idx)?.bitmap?.close();
-      this._images.delete(idx);
-    }
-    // FIXME: is it enough to remove the image spec here?
+    return () => {
+      if (this._images.has(idx)) {
+        this._images.get(idx)?.bitmap?.close();
+        this._images.delete(idx);
+      }
+      // FIXME: is it enough to remove the image spec here?
+    };
   }
 
   public render(range: {start: number, end: number}): void {

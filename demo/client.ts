@@ -37,11 +37,11 @@ export interface IWindowWithTerminal extends Window {
   Terminal?: typeof TerminalType;
   AttachAddon?: typeof AttachAddon;
   FitAddon?: typeof FitAddon;
+  ImageAddon?: typeof ImageAddon;
   SearchAddon?: typeof SearchAddon;
   SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
-  ImageAddon?: typeof ImageAddon;
   Unicode11Addon?: typeof Unicode11Addon;
 }
 declare let window: IWindowWithTerminal;
@@ -60,33 +60,33 @@ interface IDemoAddon<T extends AddonType> {
   ctor:
     T extends 'attach' ? typeof AttachAddon :
     T extends 'fit' ? typeof FitAddon :
+    T extends 'image' ? typeof ImageAddon :
     T extends 'search' ? typeof SearchAddon :
     T extends 'serialize' ? typeof SerializeAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'image' ? typeof ImageAddon :
     typeof WebglAddon;
   instance?:
     T extends 'attach' ? AttachAddon :
     T extends 'fit' ? FitAddon :
+    T extends 'image' ? typeof ImageAddon :
     T extends 'search' ? SearchAddon :
     T extends 'serialize' ? SerializeAddon :
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'image' ? typeof ImageAddon :
     never;
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T>} = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
+  image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
-  image: { name: 'image', ctor: ImageAddon, canChange: true },
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -119,6 +119,7 @@ const disposeRecreateButtonHandler = () => {
     socket = null;
     addons.attach.instance = undefined;
     addons.fit.instance = undefined;
+    addons.image.instance = undefined;
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
@@ -135,6 +136,7 @@ if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
   window.FitAddon = FitAddon;
+  window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
