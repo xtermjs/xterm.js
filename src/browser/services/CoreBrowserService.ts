@@ -14,6 +14,7 @@ export class CoreBrowserService implements ICoreBrowserService {
   }
 
   public get isFocused(): boolean {
-    return document.activeElement === this._textarea && document.hasFocus();
+    const docOrShadowRoot = this._textarea.getRootNode ? this._textarea.getRootNode() as Document | ShadowRoot : document;
+    return docOrShadowRoot.activeElement === this._textarea && document.hasFocus();
   }
 }
