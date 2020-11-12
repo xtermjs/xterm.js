@@ -126,6 +126,10 @@ export class ImageRenderer implements IDisposable {
     );
   }
 
+  public clearAll(): void {
+    this.ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
+  }
+
   /**
    * Draw neighboring tiles on the image layer canvas.
    */

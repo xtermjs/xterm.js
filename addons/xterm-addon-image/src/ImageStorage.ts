@@ -45,6 +45,7 @@ const EMPTY_ATTRS = new ExtendedAttrsImage();
 export class ImageStorage implements IDisposable {
   private _images: Map<number, IImageSpec> = new Map();
   private _lastId = 0;
+  private _hasDrawn = false;  // whether last render call has drawn anything
 
   constructor(private _terminal: ICoreTerminal, private _renderer: ImageRenderer) {}
 
@@ -54,6 +55,7 @@ export class ImageStorage implements IDisposable {
 
   public reset(): void {
     this._images.clear();
+    this._renderer.clearAll();
   }
 
   public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
@@ -209,12 +211,17 @@ export class ImageStorage implements IDisposable {
   public render(range: {start: number, end: number}): void {
     // exit early if dont have any images to test for
     if (!this._images.size || !this._renderer.canvas) {
+      if (this._hasDrawn) {
+        this._renderer.clearAll();
+        this._hasDrawn = false;
+      }
       return;
     }
 
     const {start, end} = range;
     const buffer = this._terminal._core.buffer;
     const cols = this._terminal._core.cols;
+    this._hasDrawn = false;
 
     // rescale image layer if needed
     this._renderer.rescaleCanvas();
@@ -251,6 +258,7 @@ export class ImageStorage implements IDisposable {
             }
             col--;
             this._renderer.draw(imgSpec, startTile, startCol, row, count);
+            this._hasDrawn = true;
           }
         }
       }
