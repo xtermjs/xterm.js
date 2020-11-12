@@ -29,15 +29,37 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelDefaultPalette: 'VT340-COLOR'
 };
 
+// definitions for _xtermGraphicsAttributes sequence
+const enum GaItem {
+  COLORS = 1,
+  SIXEL_GEO = 2,
+  REGIS_GEO = 3
+}
+const enum GaAction {
+  READ = 1,
+  SET_DEFAULT = 2,
+  SET = 3,
+  READ_MAX = 4
+}
+const enum GaStatus {
+  SUCCESS = 0,
+  ITEM_ERROR = 1,
+  ACTION_ERROR = 2,
+  FAILURE = 3
+}
+
 
 export class ImageAddon implements ITerminalAddon {
   private _opts: IImageAddonOptions;
+  private _defaultOpts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;
   private _renderer: ImageRenderer | undefined;
   private _disposables: IDisposable[] = [];
+  private _terminal: ICoreTerminal | undefined;
 
   constructor(opts: IImageAddonOptionalOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
+    this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
   }
 
   public dispose(): void {
@@ -54,6 +76,8 @@ export class ImageAddon implements ITerminalAddon {
   }
 
   public activate(terminal: Terminal): void {
+    this._terminal = <ICoreTerminal>terminal;
+
     // internal data structures
     this._renderer = new ImageRenderer(<ICoreTerminal>terminal);
     this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer);
@@ -62,9 +86,11 @@ export class ImageAddon implements ITerminalAddon {
       this._renderer,
       this._storage,
 
-      // DECSET/DECRST handlers
+      // DECSET/DECRST/DA1/XTSMGRAPHICS handlers
       terminal.parser.registerCsiHandler({ prefix: '?', final: 'h' }, params => this._decset(params)),
       terminal.parser.registerCsiHandler({ prefix: '?', final: 'l' }, params => this._decrst(params)),
+      terminal.parser.registerCsiHandler({ final: 'c' }, params => this._da1(params)),
+      terminal.parser.registerCsiHandler({ prefix: '?', final: 'S' }, params => this._xtermGraphicsAttributes(params)),
 
       // render hook
       terminal.onRender(range => this._storage?.render(range)),
@@ -101,6 +127,10 @@ export class ImageAddon implements ITerminalAddon {
     // clear image storage
     this._storage?.reset();
     return false;
+  }
+
+  private _report(s: string): void {
+    this._terminal?._core._coreService.triggerDataEvent(s);
   }
 
   private _decset(params: (number | number[])[]): boolean {
@@ -141,5 +171,82 @@ export class ImageAddon implements ITerminalAddon {
       }
     }
     return false;
+  }
+
+  // temporary fix: overload DA to return something more appropriate
+  private _da1(params: (number | number[])[]): boolean {
+    if (params[0] > 0) {
+      return true;
+    }
+    // reported features:
+    // 62 - VT220
+    // 4 - SIXEL support
+    // 9 - charsets
+    // 22 - ANSI colors
+    this._report(`\x1b[?62;4;9;22c`);
+    return true;
+  }
+
+  /**
+   * Implementation of xterm's graphics attribute sequence.
+   * Most things are stubbed out as we don't support setting up a canvas directly:
+   *
+   * We do not hard limit the canvas size of a single SIXEL sequence nor to change that.
+   * FIXME: Apply at least some sane upper limits to avoid OOM in the browser.
+   *
+   * ReGIS is not supported at all.
+   *
+   * Supported features:
+   * - read/change palette limits
+   * - read SIXEL canvas geometry (always reports current viewport pixel size)
+   */
+  private _xtermGraphicsAttributes(params: (number | number[])[]): boolean {
+    if (params.length < 2) {
+      return true;
+    }
+    if (params[0] === GaItem.COLORS) {
+      switch (params[1]) {
+        case GaAction.READ:
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
+          return true;
+        case GaAction.SET_DEFAULT:
+          this._opts.sixelPaletteLimit = this._defaultOpts.sixelPaletteLimit;
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
+          return true;
+        case GaAction.SET:
+          if (params.length > 2 && !(params[2] instanceof Array)) {
+            this._opts.sixelPaletteLimit = params[2];
+            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
+          } else {
+            this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
+          }
+          return true;
+        case GaAction.READ_MAX:
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};65536S`);  // hardlinked in sixel lib
+          return true;
+        default:
+          this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
+          return true;
+      }
+    }
+    if (params[0] === GaItem.SIXEL_GEO) {
+      switch (params[1]) {
+        case GaAction.READ:
+          const width = this._renderer?.canvas?.width || 0;
+          const height = this._renderer?.canvas?.height || 0;
+          if (width && height) {
+            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${width};${height}S`);
+          } else {
+            this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
+          }
+          return true;
+        default:
+          this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
+          return true;
+      }
+    }
+    // exit with error on ReGIS or any other requests
+    this._report(`\x1b[?${params[0]};${GaStatus.ITEM_ERROR}S`);
+    return true;
   }
 }

@@ -5,7 +5,7 @@
 
 import { ImageStorage } from './ImageStorage';
 import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, Align } from './Types';
-import { SixelDecoder, DEFAULT_BACKGROUND, PALETTE_ANSI_256, PALETTE_VT340_COLOR, PALETTE_VT340_GREY, RGBA8888, toRGBA8888 } from 'sixel';
+import { SixelDecoder, PALETTE_ANSI_256, PALETTE_VT340_COLOR, PALETTE_VT340_GREY, RGBA8888, toRGBA8888 } from 'sixel';
 import { ImageRenderer } from './ImageRenderer';
 import { BIG_ENDIAN } from 'sixel/lib/Colors';
 
@@ -29,12 +29,9 @@ export class SixelHandler implements IDcsHandler {
 
   // called on new SIXEL DCS sequence
   public hook(params: IParams): void {
-    const fillColor = params.params[1] === 0 ? extractDefaultBg(this._coreTerminal._core._colorManager.colors)
-      : params.params[1] === 1 ? 0
-        : params.params[1] === 2 ? extractActiveBg(
+    const fillColor = params.params[1] === 1 ? 0 : extractActiveBg(
           this._coreTerminal._core._inputHandler._curAttrData,
-          this._coreTerminal._core._colorManager.colors
-        ) : DEFAULT_BACKGROUND;
+          this._coreTerminal._core._colorManager.colors);
     this._decoder = new SixelDecoder(
       fillColor,
       this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette,
@@ -84,7 +81,7 @@ export class SixelHandler implements IDcsHandler {
         right: this._opts.cursorRight,
         below: this._opts.cursorBelow,
         alpha: true,
-        fill: convertLittleEndian(this._decoder.fillColor),
+        fill: convertLe(this._decoder.fillColor),
         align: Align.CENTER
       });
     }
@@ -98,10 +95,6 @@ export class SixelHandler implements IDcsHandler {
  * (quite hacky for now)
  */
 
-function extractDefaultBg(colors: ICoreTerminal['_core']['_colorManager']['colors']): RGBA8888 {
-  return convertLittleEndian(colors.background.rgba);
-}
-
 function extractActiveBg(
   attr: ICoreTerminal['_core']['_inputHandler']['_curAttrData'],
   colors: ICoreTerminal['_core']['_colorManager']['colors']
@@ -109,29 +102,28 @@ function extractActiveBg(
   let bg = 0;
   if (attr.isInverse()) {
     if (attr.isFgDefault()) {
-      bg = colors.foreground.rgba;
+      bg = convertLe(colors.foreground.rgba);
     } else if (attr.isFgRGB()) {
       const t = <[number, number, number]>(attr as any).constructor.toColorRGB(attr.getFgColor());
       bg = toRGBA8888(...t);
     } else {
-      bg = convertLittleEndian(colors.ansi[attr.getFgColor()].rgba);
+      bg = convertLe(colors.ansi[attr.getFgColor()].rgba);
     }
   } else {
     if (attr.isBgDefault()) {
-      bg = colors.background.rgba;
+      bg = convertLe(colors.background.rgba);
     } else if (attr.isBgRGB()) {
       const t = <[number, number, number]>(attr as any).constructor.toColorRGB(attr.getBgColor());
       bg = toRGBA8888(...t);
     } else {
-      bg = convertLittleEndian(colors.ansi[attr.getBgColor()].rgba);
+      bg = convertLe(colors.ansi[attr.getBgColor()].rgba);
     }
   }
   return bg;
 }
 
-function convertLittleEndian(color: number): RGBA8888 {
-  if (!BIG_ENDIAN) {
-    return (color & 0xFF) << 24 | (color >>> 8 & 0xFF) << 16 | (color >>> 16 & 0xFF) << 8 | color >>> 24 & 0xFF;
-  }
-  return color;
+// rgba values on the color managers are always in BE, thus convert to LE
+function convertLe(color: number): RGBA8888 {
+  if (BIG_ENDIAN) return color;
+  return (color & 0xFF) << 24 | (color >>> 8 & 0xFF) << 16 | (color >>> 16 & 0xFF) << 8 | color >>> 24 & 0xFF;
 }

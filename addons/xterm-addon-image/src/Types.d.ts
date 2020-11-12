@@ -139,6 +139,9 @@ export interface ICoreTerminal extends Terminal {
       lineFeed(): void;
       onRequestReset(handler: () => void): IDisposable;
     };
+    _coreService: {
+      triggerDataEvent(s: string): void;
+    };
     _colorManager: {
       colors: {
         ansi: {
