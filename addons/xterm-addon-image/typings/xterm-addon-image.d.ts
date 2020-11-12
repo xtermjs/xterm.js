@@ -45,12 +45,32 @@ declare module 'xterm-addon-image' {
     /**
      * TODO: storage settings
      */
+    // storage limit in MBs (default 100 MB)
+    storageLimit: number;
   }
 
   export class ImageAddon implements ITerminalAddon {
     constructor(options?: IImageAddonOptions);
     public activate(terminal: Terminal): void;
     public dispose(): void;
+
+    /**
+     * Reset the image addon.
+     *
+     * This resets all runtime options to default values (as given to the ctor)
+     * and resets the image storage.
+     */
     public reset(): void;
+
+    /**
+     * Getter/Setter for the storageLimit in MB.
+     * Synchronously deletes images if the stored data exceeds the new value.
+     */
+    public storageLimit: number;
+
+    /**
+     * Current memory usage of the stored images in MB.
+     */
+    public readonly storageUsage: number;
   }
 }

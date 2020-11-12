@@ -30,8 +30,8 @@ export class SixelHandler implements IDcsHandler {
   // called on new SIXEL DCS sequence
   public hook(params: IParams): void {
     const fillColor = params.params[1] === 1 ? 0 : extractActiveBg(
-          this._coreTerminal._core._inputHandler._curAttrData,
-          this._coreTerminal._core._colorManager.colors);
+      this._coreTerminal._core._inputHandler._curAttrData,
+      this._coreTerminal._core._colorManager.colors);
     this._decoder = new SixelDecoder(
       fillColor,
       this._opts.sixelPrivatePalette ? Object.assign([], this._sixelPalette) : this._sixelPalette,

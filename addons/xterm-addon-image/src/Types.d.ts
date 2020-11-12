@@ -48,6 +48,8 @@ export interface IImageAddonOptionalOptions {
   /**
    * TODO: storage settings
    */
+  // storage limit in MBs (default 100 MB)
+  storageLimit: number;
 }
 
 export type IImageAddonOptions = {

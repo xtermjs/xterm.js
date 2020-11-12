@@ -84,7 +84,8 @@ describe('ImageAddon', () => {
         sixelPaletteLimit: 512,  // set to 512 to get example image working
         sixelSizeLimit: 25000000,
         sixelPrivatePalette: true,
-        sixelDefaultPalette: 'VT340-COLOR'
+        sixelDefaultPalette: 'VT340-COLOR',
+        storageLimit: 100
       };
       assert.deepEqual(await page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
@@ -97,7 +98,8 @@ describe('ImageAddon', () => {
         sixelPaletteLimit: 1024,
         sixelSizeLimit: 1000,
         sixelPrivatePalette: false,
-        sixelDefaultPalette: 'VT340-GREY'
+        sixelDefaultPalette: 'VT340-GREY',
+        storageLimit: 10
       };
       await page.evaluate(opts => {
         (<any>window).imageAddonCustom = new ImageAddon(opts);

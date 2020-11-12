@@ -43,19 +43,75 @@ const EMPTY_ATTRS = new ExtendedAttrsImage();
  * - alter buffer on resize (TODO)
  */
 export class ImageStorage implements IDisposable {
+  // storage
   private _images: Map<number, IImageSpec> = new Map();
+  // last used id
   private _lastId = 0;
-  private _hasDrawn = false;  // whether last render call has drawn anything
+  // last evicted id
+  private _lowestId = 0;
+  // whether last render call has drawn anything
+  private _hasDrawn = false;
+  // total amount of stored pixels (used for hard limiting memory usage)
+  private _storedPixels = 0;
+  // hard limit of stored pixels (fallback limit of 10 MB)
+  private _pixelLimit: number = 2500000;
 
-  constructor(private _terminal: ICoreTerminal, private _renderer: ImageRenderer) {}
+  constructor(private _terminal: ICoreTerminal, private _renderer: ImageRenderer, limit: number) {
+    try {
+      this.setLimit(limit);
+    } catch (e) {
+      console.error(e.message);
+      console.warn(`storageLimit is set to ${this.getLimit()} MB`);
+    }
+  }
 
   public dispose(): void {
-    this._images.clear();
+    this.reset();
   }
 
   public reset(): void {
+    // FIXME: Do we actually have to close all bitmaps beforehand?
+    for (const spec of this._images.values()) {
+      spec.bitmap?.close();
+    }
     this._images.clear();
+    this._storedPixels = 0;
     this._renderer.clearAll();
+  }
+
+  public getLimit(): number {
+    return this._pixelLimit * 4 / 1000000;
+  }
+
+  public setLimit(value: number): void {
+    if (value < 1 || value > 1000) {
+      throw RangeError('invalid storageLimit, should be at least 1 MB and not exceed 1G');
+    }
+    this._pixelLimit = (value / 4 * 1000000) >>> 0;
+    if (this._storedPixels > this._pixelLimit) {
+      this._evictOldest();
+    }
+  }
+
+  public getUsage(): number {
+    return this._storedPixels * 4 / 1000000;
+  }
+
+  // FIXME: Do we need some blob offloading tricks here to avoid early eviction?
+  // also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
+  private _evictOldest(): void {
+    // FIXME: check for _lowestId >= _lastId here?
+    while (this._storedPixels > this._pixelLimit && this._images.size) {
+      const spec = this._images.get(++this._lowestId);
+      if (spec) {
+        this._storedPixels -= spec.orig.width * spec.orig.height;
+        if (spec.orig !== spec.actual) {
+          this._storedPixels -= spec.actual.width * spec.actual.height;
+        }
+        spec.bitmap?.close();
+        this._images.delete(this._lowestId);
+      }
+    }
   }
 
   public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
@@ -112,23 +168,17 @@ export class ImageStorage implements IDisposable {
    * Method to add an image to the storage.
    */
   public addImage(img: HTMLCanvasElement, options: IStorageOptions): void {
-    /**
-     * TODO - create markers:
-     *    start marker  - first line containing image data
-     *    end marker    - line below last line containing image data
-     *
-     * use markers:
-     *  - speedup rendering
-     *    instead of searching cell by cell through all viewport cells,
-     *    search for image start-end marker intersections with viewport lines
-     *    --> investigate, not likely to help much from first tests
-     */
+    // never allow storage to exceed memory limit
+    this._storedPixels += img.width *img.height;
+    if (this._storedPixels > this._pixelLimit) {
+      this._evictOldest();
+    }
 
     // calc rows x cols needed to display the image
     const cols = Math.ceil(img.width / this._renderer.currentCellSize.width);
     const rows = Math.ceil(img.height / this._renderer.currentCellSize.height);
 
-    const imgIdx = this._lastId;
+    const imgIdx = ++this._lastId;
 
     const buffer = this._terminal._core.buffer;
     const termCols = this._terminal.cols;
@@ -188,7 +238,7 @@ export class ImageStorage implements IDisposable {
       actualCellSize: this._renderer.currentCellSize,
       bitmap: undefined
     };
-    this._images.set(this._lastId++, imgSpec);
+    this._images.set(this._lastId, imgSpec);
     ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
   }
 
@@ -201,7 +251,7 @@ export class ImageStorage implements IDisposable {
     // - failsafe setting: upper image limit (fifo? least recently?)
     return () => {
       if (this._images.has(idx)) {
-        this._images.get(idx)?.bitmap?.close();
+        this._images.get(idx)!.bitmap?.close();
         this._images.delete(idx);
       }
       // FIXME: is it enough to remove the image spec here?

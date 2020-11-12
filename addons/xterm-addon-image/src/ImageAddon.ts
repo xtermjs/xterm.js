@@ -26,7 +26,8 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelPaletteLimit: 256,
   sixelSizeLimit: 25000000,
   sixelPrivatePalette: true,
-  sixelDefaultPalette: 'VT340-COLOR'
+  sixelDefaultPalette: 'VT340-COLOR',
+  storageLimit: 100
 };
 
 // definitions for _xtermGraphicsAttributes sequence
@@ -80,7 +81,7 @@ export class ImageAddon implements ITerminalAddon {
 
     // internal data structures
     this._renderer = new ImageRenderer(<ICoreTerminal>terminal);
-    this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer);
+    this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer, this._opts.storageLimit);
 
     this._disposeLater(
       this._renderer,
@@ -118,15 +119,33 @@ export class ImageAddon implements ITerminalAddon {
     // TODO: iTerm2 image support
   }
 
+  // Note: storageLimit is skipped here to not intoduce a surprising side effect.
   public reset(): boolean {
     // reset options customizable by sequences to defaults
-    this._opts.sixelScrolling = true;
-    this._opts.cursorRight = false;
-    this._opts.cursorBelow = false;
-    this._opts.sixelPrivatePalette = true;
+    this._opts.sixelScrolling = this._defaultOpts.sixelScrolling;
+    this._opts.cursorRight = this._defaultOpts.cursorRight;
+    this._opts.cursorBelow = this._defaultOpts.cursorBelow;
+    this._opts.sixelPrivatePalette = this._defaultOpts.sixelPrivatePalette;
+    this._opts.sixelPaletteLimit = this._defaultOpts.sixelPaletteLimit;
     // clear image storage
     this._storage?.reset();
     return false;
+  }
+
+  public get storageLimit(): number {
+    return this._storage?.getLimit() || -1;
+  }
+
+  public set storageLimit(limit: number) {
+    this._storage?.setLimit(limit);
+    this._opts.storageLimit = limit;
+  }
+
+  public get storageUsage(): number {
+    if (this._storage) {
+      return this._storage.getUsage();
+    }
+    return -1;
   }
 
   private _report(s: string): void {

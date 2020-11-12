@@ -169,6 +169,10 @@ export class ImageRenderer implements IDisposable {
 
   /**
    * Rescale image in storage if needed.
+   *
+   * Note: Currently rescaled images are not accounted on storage size.
+   * This might create memory issues if the font size get enlarged alot.
+   * (Doubling the font size will increase image memory 5 times).
    */
   public rescaleImage(is: IImageSpec, cw: number, ch: number): void {
     const {width: aw, height: ah} = is.actualCellSize;
