@@ -27,7 +27,8 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelSizeLimit: 25000000,
   sixelPrivatePalette: true,
   sixelDefaultPalette: 'VT340-COLOR',
-  storageLimit: 100
+  storageLimit: 100,
+  showPlaceholder: true
 };
 
 // definitions for _xtermGraphicsAttributes sequence
@@ -80,8 +81,8 @@ export class ImageAddon implements ITerminalAddon {
     this._terminal = <ICoreTerminal>terminal;
 
     // internal data structures
-    this._renderer = new ImageRenderer(<ICoreTerminal>terminal);
-    this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer, this._opts.storageLimit);
+    this._renderer = new ImageRenderer(<ICoreTerminal>terminal, this._opts.showPlaceholder);
+    this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer, this._opts);
 
     this._disposeLater(
       this._renderer,
@@ -146,6 +147,15 @@ export class ImageAddon implements ITerminalAddon {
       return this._storage.getUsage();
     }
     return -1;
+  }
+
+  public get showPlaceholder(): boolean {
+    return this._opts.showPlaceholder;
+  }
+
+  public set showPlaceholder(value: boolean) {
+    this._opts.showPlaceholder = value;
+    this._renderer?.showPlaceholder(value);
   }
 
   private _report(s: string): void {

@@ -4,7 +4,7 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageSpec, IStorageOptions } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IStorageOptions } from './Types';
 
 
 // some constants for bufferline
@@ -25,7 +25,7 @@ export class ExtendedAttrsImage implements IExtendedAttrsImage {
     public underlineColor: number = -1,
     public imageId = -1,
     public tileId = -1
-  ) {}
+  ) { }
   public clone(): ExtendedAttrsImage {
     return new ExtendedAttrsImage(this.underlineStyle, this.underlineColor, this.imageId, this.tileId);
   }
@@ -56,9 +56,13 @@ export class ImageStorage implements IDisposable {
   // hard limit of stored pixels (fallback limit of 10 MB)
   private _pixelLimit: number = 2500000;
 
-  constructor(private _terminal: ICoreTerminal, private _renderer: ImageRenderer, limit: number) {
+  constructor(
+    private _terminal: ICoreTerminal,
+    private _renderer: ImageRenderer,
+    private _opts: IImageAddonOptions
+  ) {
     try {
-      this.setLimit(limit);
+      this.setLimit(this._opts.storageLimit);
     } catch (e) {
       console.error(e.message);
       console.warn(`storageLimit is set to ${this.getLimit()} MB`);
@@ -115,9 +119,10 @@ export class ImageStorage implements IDisposable {
   }
 
   public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
+    // FIXME: needs cellSize fallback
     return ImageRenderer.createCanvas(
-      Math.ceil(width / this._renderer.currentCellSize.width) * this._renderer.currentCellSize.width,
-      Math.ceil(height / this._renderer.currentCellSize.height) * this._renderer.currentCellSize.height
+      Math.ceil(width / this._renderer.cellSize.width) * this._renderer.cellSize.width,
+      Math.ceil(height / this._renderer.cellSize.height) * this._renderer.cellSize.height
     );
   }
 
@@ -169,14 +174,15 @@ export class ImageStorage implements IDisposable {
    */
   public addImage(img: HTMLCanvasElement, options: IStorageOptions): void {
     // never allow storage to exceed memory limit
-    this._storedPixels += img.width *img.height;
+    this._storedPixels += img.width * img.height;
     if (this._storedPixels > this._pixelLimit) {
       this._evictOldest();
     }
 
     // calc rows x cols needed to display the image
-    const cols = Math.ceil(img.width / this._renderer.currentCellSize.width);
-    const rows = Math.ceil(img.height / this._renderer.currentCellSize.height);
+    // FIXME: needs cellSize fallback
+    const cols = Math.ceil(img.width / this._renderer.cellSize.width);
+    const rows = Math.ceil(img.height / this._renderer.cellSize.height);
 
     const imgIdx = ++this._lastId;
 
@@ -229,13 +235,15 @@ export class ImageStorage implements IDisposable {
     }
 
     // TODO: mark every line + remark on resize to get better disposal coverage
+    // FIXME: needs cellSize fallback
+    // FIXME: clear marker dispose handler if addon gets disposed itself
     const endMarker = this._terminal.registerMarker(0);
     endMarker?.onDispose(this._markerGotDisposed(this._lastId));
     const imgSpec: IImageSpec = {
       orig: img,
-      origCellSize: this._renderer.currentCellSize,
+      origCellSize: this._renderer.cellSize,
       actual: img,
-      actualCellSize: this._renderer.currentCellSize,
+      actualCellSize: this._renderer.cellSize,
       bitmap: undefined
     };
     this._images.set(this._lastId, imgSpec);
@@ -258,8 +266,9 @@ export class ImageStorage implements IDisposable {
     };
   }
 
-  public render(range: {start: number, end: number}): void {
+  public render(range: { start: number, end: number }): void {
     // exit early if dont have any images to test for
+    // TODO: Should this respect placeholder state && lastId != 0?
     if (!this._images.size || !this._renderer.canvas) {
       if (this._hasDrawn) {
         this._renderer.clearAll();
@@ -268,7 +277,7 @@ export class ImageStorage implements IDisposable {
       return;
     }
 
-    const {start, end} = range;
+    const { start, end } = range;
     const buffer = this._terminal._core.buffer;
     const cols = this._terminal._core.cols;
     this._hasDrawn = false;
@@ -287,7 +296,7 @@ export class ImageStorage implements IDisposable {
           let e: ExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
           const imageId = e.imageId;
           const imgSpec = this._images.get(imageId);
-          if (imgSpec && e.tileId !== -1) {
+          if (e.tileId !== -1) {
             const startTile = e.tileId;
             const startCol = col;
             let count = 1;
@@ -307,7 +316,11 @@ export class ImageStorage implements IDisposable {
               count++;
             }
             col--;
-            this._renderer.draw(imgSpec, startTile, startCol, row, count);
+            if (imgSpec) {
+              this._renderer.draw(imgSpec, startTile, startCol, row, count);
+            } else if (this._opts.showPlaceholder) {
+              this._renderer.drawPlaceholder(startCol, row, count);
+            }
             this._hasDrawn = true;
           }
         }

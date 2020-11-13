@@ -49,7 +49,9 @@ export interface IImageAddonOptionalOptions {
    * TODO: storage settings
    */
   // storage limit in MBs (default 100 MB)
-  storageLimit: number;
+  storageLimit?: number;
+  // whether to show a placeholder for evicted images
+  showPlaceholder?: boolean;
 }
 
 export type IImageAddonOptions = {

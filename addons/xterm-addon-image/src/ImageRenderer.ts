@@ -3,9 +3,13 @@
  * @license MIT
  */
 
+import { toRGBA8888 } from 'sixel';
 import { IDisposable } from 'xterm';
 import { ICellSize, ICoreTerminal, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 
+
+const PLACEHOLDER_LENGTH = 4096;
+const PLACEHOLDER_HEIGHT = 24;
 
 /**
  * ImageRenderer - terminal frontend extension:
@@ -17,7 +21,9 @@ import { ICellSize, ICoreTerminal, IImageSpec, IRenderDimensions, IRenderService
  */
 export class ImageRenderer implements IDisposable {
   public canvas: HTMLCanvasElement | undefined;
-  public ctx: CanvasRenderingContext2D | null | undefined;
+  private _ctx: CanvasRenderingContext2D | null | undefined;
+  private _placeholder: HTMLCanvasElement | undefined;
+  private _placeholderBitmap: ImageBitmap | undefined;
   private _optionsRefresh: IDisposable | undefined;
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _rs: IRenderService | undefined;
@@ -47,14 +53,15 @@ export class ImageRenderer implements IDisposable {
     return createImageBitmap(img);
   }
 
-  constructor(private _terminal: ICoreTerminal) {
+
+  constructor(private _terminal: ICoreTerminal, private _showPlaceholder: boolean) {
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
       this._oldOpen?.call(this._terminal._core, parent);
-      this.open();
+      this._open();
     };
     if (this._terminal._core.screenElement) {
-      this.open();
+      this._open();
     }
     // hack to spot fontSize changes
     this._optionsRefresh = this._terminal._core.optionsService.onOptionChange(option => {
@@ -65,9 +72,10 @@ export class ImageRenderer implements IDisposable {
     });
   }
 
+
   public dispose(): void {
     this._optionsRefresh?.dispose();
-    this.removeLayerFromDom();
+    this._removeLayerFromDom();
     if (this._terminal._core && this._oldOpen) {
       this._terminal._core.open = this._oldOpen;
       this._oldOpen = undefined;
@@ -78,36 +86,39 @@ export class ImageRenderer implements IDisposable {
     }
     this._rs = undefined;
     this.canvas = undefined;
-    this.ctx = undefined;
+    this._ctx = undefined;
+    this._placeholderBitmap?.close();
+    this._placeholderBitmap = undefined;
+    this._placeholder = undefined;
   }
 
-  public open(): void {
-    this._rs = this._terminal._core._renderService;
-    this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
-    this._rs.setRenderer = (renderer: any) => {
-      this.removeLayerFromDom();
-      this._oldSetRenderer?.call(this._rs, renderer);
-      this.insertLayerToDom();
-    };
-    this.insertLayerToDom();
+  /**
+   * Enable the placeholder (shown on next screen update).
+   */
+  public showPlaceholder(value: boolean): void {
+    if (value) {
+      if (!this._placeholder && this.cellSize.height !== -1) {
+        this._createPlaceHolder(Math.max(this.cellSize.height + 1, PLACEHOLDER_HEIGHT));
+      }
+    } else {
+      this._placeholderBitmap?.close();
+      this._placeholderBitmap = undefined;
+      this._placeholder = undefined;
+    }
   }
 
-  public removeLayerFromDom(): void {
-    this.canvas?.parentNode?.removeChild(this.canvas);
-  }
-
-  public insertLayerToDom(): void {
-    this.canvas = ImageRenderer.createCanvas(this.dimensions?.canvasWidth || 0, this.dimensions?.canvasHeight || 0);
-    this.canvas.classList.add('xterm-image-layer');
-    this._terminal._core.screenElement.appendChild(this.canvas);
-    this.ctx = this.canvas.getContext('2d', {alpha: true, desynchronized: true});
-  }
-
+  /**
+   * Dimensions of the terminal.
+   * Forwarded from internal render service.
+   */
   public get dimensions(): IRenderDimensions | undefined {
     return this._rs?.dimensions;
   }
 
-  public get currentCellSize(): ICellSize {
+  /**
+   * Rounded current cell size.
+   */
+  public get cellSize(): ICellSize {
     return {
       width: Math.round(this.dimensions?.actualCellWidth || -1),
       height: Math.round(this.dimensions?.actualCellHeight || -1)
@@ -118,7 +129,7 @@ export class ImageRenderer implements IDisposable {
    * Clear a region of the image layer canvas.
    */
   public clearLines(start: number, end: number): void {
-    this.ctx?.clearRect(
+    this._ctx?.clearRect(
       0,
       start * (this.dimensions?.actualCellHeight || 0),
       this.dimensions?.canvasWidth || 0,
@@ -126,21 +137,25 @@ export class ImageRenderer implements IDisposable {
     );
   }
 
+  /**
+   * Clear whole image canvas.
+   */
   public clearAll(): void {
-    this.ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
+    this._ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
   }
 
   /**
    * Draw neighboring tiles on the image layer canvas.
    */
   public draw(imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number = 1): void {
-    const {width, height} = this.currentCellSize;
-    this.rescaleImage(imgSpec, width, height);
-
+    if (!this._ctx) {
+      return;
+    }
+    const { width, height } = this.cellSize;
+    this._rescaleImage(imgSpec, width, height);
     const img = imgSpec.bitmap || imgSpec.actual;
     const cols = Math.ceil(img.width / width);
-
-    this.ctx?.drawImage(
+    this._ctx.drawImage(
       img,
       (tileId % cols) * width,
       Math.floor(tileId / cols) * height,
@@ -151,6 +166,29 @@ export class ImageRenderer implements IDisposable {
       width * count,
       height
     );
+  }
+
+  /**
+   * Draw a line with placeholder on the image layer canvas.
+   */
+  public drawPlaceholder(col: number, row: number, count: number = 1): void {
+    if ((this._placeholderBitmap || this._placeholder) && this._ctx) {
+      const { width, height } = this.cellSize;
+      if (height >= this._placeholder!.height) {
+        this._createPlaceHolder(height + 1);
+      }
+      this._ctx.drawImage(
+        this._placeholderBitmap || this._placeholder!,
+        col * width,
+        (row * height) % 2 ? 0 : 1,  // needs %2 offset correction
+        width * count,
+        height,
+        col * width,
+        row * height,
+        width * count,
+        height
+      );
+    }
   }
 
   /**
@@ -170,16 +208,16 @@ export class ImageRenderer implements IDisposable {
   /**
    * Rescale image in storage if needed.
    *
-   * Note: Currently rescaled images are not accounted on storage size.
+   * FIXME: Currently rescaled images are not accounted on storage size.
    * This might create memory issues if the font size get enlarged alot.
-   * (Doubling the font size will increase image memory 5 times).
+   * (Doubling the font size will increase image memory 5 times!)
    */
-  public rescaleImage(is: IImageSpec, cw: number, ch: number): void {
-    const {width: aw, height: ah} = is.actualCellSize;
+  private _rescaleImage(is: IImageSpec, cw: number, ch: number): void {
+    const { width: aw, height: ah } = is.actualCellSize;
     if (cw === aw && ch === ah) {
       return;
     }
-    const {width: ow, height: oh} = is.origCellSize;
+    const { width: ow, height: oh } = is.origCellSize;
     if (cw === ow && ch === oh) {
       is.actual = is.orig;
       is.actualCellSize.width = ow;
@@ -203,5 +241,71 @@ export class ImageRenderer implements IDisposable {
       is.bitmap = undefined;
       ImageRenderer.createImageBitmap(canvas).then((bitmap) => is.bitmap = bitmap);
     }
+  }
+
+  /**
+   * Lazy init for the renderer.
+   */
+  private _open(): void {
+    this._rs = this._terminal._core._renderService;
+    this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
+    this._rs.setRenderer = (renderer: any) => {
+      this._removeLayerFromDom();
+      this._oldSetRenderer?.call(this._rs, renderer);
+      this._insertLayerToDom();
+    };
+    this._insertLayerToDom();
+    if (this._showPlaceholder) {
+      this._createPlaceHolder();
+    }
+  }
+
+  private _insertLayerToDom(): void {
+    this.canvas = ImageRenderer.createCanvas(this.dimensions?.canvasWidth || 0, this.dimensions?.canvasHeight || 0);
+    this.canvas.classList.add('xterm-image-layer');
+    this._terminal._core.screenElement.appendChild(this.canvas);
+    this._ctx = this.canvas.getContext('2d', { alpha: true, desynchronized: true });
+  }
+
+  private _removeLayerFromDom(): void {
+    this.canvas?.parentNode?.removeChild(this.canvas);
+  }
+
+  private _createPlaceHolder(height: number = PLACEHOLDER_HEIGHT): void {
+    this._placeholderBitmap?.close();
+    this._placeholderBitmap = undefined;
+
+    // create blueprint to fill placeholder with
+    const bWidth = 32;  // must be 2^n
+    const blueprint = ImageRenderer.createCanvas(bWidth, height);
+    const ctx = blueprint.getContext('2d', {alpha: false});
+    if (!ctx) return;
+    const imgData = ImageRenderer.createImageData(ctx, bWidth, height);
+    const d32 = new Uint32Array(imgData.data.buffer);
+    const black = toRGBA8888(0, 0, 0);
+    const white = toRGBA8888(255, 255, 255);
+    d32.fill(black);
+    for (let y = 0; y < height; ++y) {
+      const shift = y % 2;
+      const offset = y * bWidth;
+      for (let x = 0; x < bWidth; x += 2) {
+        d32[offset + x + shift] = white;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // create placeholder line, width aligned to blueprint width
+    const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || PLACEHOLDER_LENGTH;
+    this._placeholder = ImageRenderer.createCanvas(width, height);
+    const ctx2 = this._placeholder.getContext('2d', {alpha: false});
+    if (!ctx2) {
+      this._placeholder = undefined;
+      return;
+    }
+    for (let i = 0; i < width; i += bWidth) {
+      ctx2.drawImage(blueprint, i, 0);
+    }
+
+    ImageRenderer.createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
   }
 }

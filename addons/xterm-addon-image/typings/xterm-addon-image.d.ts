@@ -72,5 +72,10 @@ declare module 'xterm-addon-image' {
      * Current memory usage of the stored images in MB.
      */
     public readonly storageUsage: number;
+
+    /**
+     * Getter/Setter whether the placeholder should be shown.
+     */
+    public showPlaceholder: boolean;
   }
 }
