@@ -36,6 +36,7 @@ interface IDim {
   height: number;
 }
 
+// image: 640 x 80, 512 color
 const TESTDATA: ITestData = (() => {
   const pngImage = PNG.load(readFileSync('./addons/xterm-addon-image/fixture/palette.png'));
   const data8 = pngImage.decode();
@@ -51,6 +52,9 @@ const TESTDATA: ITestData = (() => {
     sixel
   };
 })();
+const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
+// const SIXEL_SEQ_1 = introducer(1) + TESTDATA.sixel + FINALIZER;
+// const SIXEL_SEQ_2 = introducer(2) + TESTDATA.sixel + FINALIZER;
 
 
 describe('ImageAddon', () => {
@@ -114,60 +118,53 @@ describe('ImageAddon', () => {
   describe('scrolling & cursor modes', () => {
     it('testdata default (scrolling, cursor next line, beginning)', async () => {
       const dim = await getDim();
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write(data, res)), sixelSequence);
+      await writeToTerminal(SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
-      await page.evaluate(data => new Promise(res => (window as any).term.write('#'.repeat(10) + data, res)), sixelSequence);
+      await writeToTerminal('#'.repeat(10) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight) * 2]);
       // await new Promise(res => setTimeout(res, 1000));
     });
     it('write testdata noScrolling', async () => {
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write('\x1b[?80l' + data, res)), sixelSequence);
+      await writeToTerminal('\x1b[?80l' + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, 0]);
       // second draw does not change anything
-      await page.evaluate(data => new Promise(res => (window as any).term.write(data, res)), sixelSequence);
+      await writeToTerminal(SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, 0]);
     });
     it.skip('testdata cursor right', async () => {
       const dim = await getDim();
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write('\x1b[?8452h' + data, res)), sixelSequence);
+      await writeToTerminal('\x1b[?8452h' + SIXEL_SEQ_0);
       // currently failing on OSX firefox with AssertionError: expected [ 72, 4 ] to deeply equal [ 72, 5 ]
       assert.deepEqual(await getCursor(), [Math.ceil(TESTDATA.width/dim.cellWidth), Math.floor(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor right with overflow beginning', async () => {
       const dim = await getDim();
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write('\x1b[?8452h' + '#'.repeat(30) + data, res)), sixelSequence);
+      await writeToTerminal('\x1b[?8452h' + '#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor right with overflow below', async () => {
       const dim = await getDim();
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write('\x1b[?8452;7730h' + '#'.repeat(30) + data, res)), sixelSequence);
+      await writeToTerminal('\x1b[?8452;7730h' + '#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [30, Math.ceil(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor always below', async () => {
       const dim = await getDim();
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
       // offset 0
-      await page.evaluate(data => new Promise(res => (window as any).term.write('\x1b[?7730h' + data, res)), sixelSequence);
+      await writeToTerminal('\x1b[?7730h' + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
-      await page.evaluate(data => new Promise(res => (window as any).term.write('#'.repeat(10) + data, res)), sixelSequence);
+      await writeToTerminal('#'.repeat(10) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [10, Math.ceil(TESTDATA.height/dim.cellHeight) * 2]);
       // moved by 30 cells (+10 prev)
-      await page.evaluate(data => new Promise(res => (window as any).term.write('#'.repeat(30) + data, res)), sixelSequence);
+      await writeToTerminal('#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [10 + 30, Math.ceil(TESTDATA.height/dim.cellHeight) * 3]);
     });
   });
 
-  describe('image lifecycle', () => {
-    it('should delete image once scrolled off', async () => {
-      const sixelSequence = introducer(0) + TESTDATA.sixel + FINALIZER;
-      await page.evaluate(data => new Promise(res => (window as any).term.write(data, res)), sixelSequence);
+  describe('image lifecycle & eviction', () => {
+    it('delete image once scrolled off', async () => {
+      await writeToTerminal(SIXEL_SEQ_0);
       assert.equal(await getImageStorageLength(), 1);
       // scroll to scrollback + rows - 1
       await page.evaluate(
@@ -178,6 +175,62 @@ describe('ImageAddon', () => {
       // scroll one further should delete the image
       await page.evaluate(() => new Promise(res => (window as any).term.write('\n', res)));
       assert.equal(await getImageStorageLength(), 0);
+    });
+    it('get storageUsage', async () => {
+      assert.equal(await page.evaluate('imageAddon.storageUsage'), 0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      assert.closeTo(await page.evaluate('imageAddon.storageUsage'), 640 * 80 * 4 / 1000000, 0.05);
+    });
+    it('get/set storageLimit', async () => {
+      assert.equal(await page.evaluate('imageAddon.storageLimit'), 100);
+      assert.equal(await page.evaluate('imageAddon.storageLimit = 1'), 1);
+      assert.equal(await page.evaluate('imageAddon.storageLimit'), 1);
+    });
+    it('remove images by storage limit pressure', async () => {
+      assert.equal(await page.evaluate('imageAddon.storageLimit = 1'), 1);
+      // never go beyond storage limit
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      const usage = await page.evaluate('imageAddon.storageUsage');
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0);
+      assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
+      assert.equal(usage as number < 1, true);
+    });
+    it('set storageLimit removes images synchronously', async () => {
+      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      const usage: number = await page.evaluate('imageAddon.storageUsage');
+      const newUsage: number = await page.evaluate('imageAddon.storageLimit = 1; imageAddon.storageUsage');
+      assert.equal(newUsage < usage, true);
+      assert.equal(newUsage < 1, true);
+    });
+    it('clear alternate images on buffer change', async () => {
+      assert.equal(await page.evaluate('imageAddon.storageUsage'), 0);
+      await writeToTerminal('\x1b[?1049h' + SIXEL_SEQ_0);
+      assert.closeTo(await page.evaluate('imageAddon.storageUsage'), 640 * 80 * 4 / 1000000, 0.05);
+      await writeToTerminal('\x1b[?1049l');
+      assert.equal(await page.evaluate('imageAddon.storageUsage'), 0);
+    });
+    it('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
+      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      const usage = await page.evaluate('imageAddon.storageUsage');
+      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
+    });
+    it('manual eviction on alternate buffer must not miss images', async () => {
+      await writeToTerminal('\x1b[?1049h');
+      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      const usage: number = await page.evaluate('imageAddon.storageUsage');
+      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      const newUsage: number = await page.evaluate('imageAddon.storageUsage');
+      assert.equal(newUsage, usage);
     });
   });
 
@@ -206,4 +259,8 @@ async function getImageStorageLength(): Promise<number> {
 
 async function getScrollbackPlusRows(): Promise<number> {
   return page.evaluate('window.term.getOption(\'scrollback\') + window.term.rows');
+}
+
+async function writeToTerminal(d: string): Promise<any> {
+  return page.evaluate(data => new Promise(res => (window as any).term.write(data, res)), d);
 }

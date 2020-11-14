@@ -41,15 +41,16 @@ export class SixelHandler implements IDcsHandler {
   }
 
   // called for any SIXEL data chunk
+  // TODO: exit early on hard upper pixel limit (allow max half of storageLimit)
   public put(data: Uint32Array, start: number, end: number): void {
     if (!this._decoder) return;
     this._size += end - start;
     if (this._size > this._opts.sixelSizeLimit) {
+      console.warn(`SIXEL: too much data, aborting`);
       this._decoder = undefined;
-      console.log(`SIXEL image too big, got ${this._size} bytes`);
-    } else {
-      this._decoder.decode(data, start, end);
+      return;
     }
+    this._decoder.decode(data, start, end);
   }
 
   // called on finalizing the SIXEL DCS sequence
@@ -62,6 +63,9 @@ export class SixelHandler implements IDcsHandler {
   }
 
   // Convert SIXEL data to a canvas digestable by the image storage.
+  // TODO: Does this need an async variant? Might block up to 500ms for images >4M
+  // --> refactor: write buffer cells in sync, postpone canvas creation to async action/webworker
+  // investigate: shared palette is not really working due to image realisation done only once
   private _addImageToStorage(): void {
     if (!this._decoder || !this._decoder.width || !this._decoder.height) return;
 
@@ -69,11 +73,12 @@ export class SixelHandler implements IDcsHandler {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       const imageData = ImageRenderer.createImageData(ctx, canvas.width, canvas.height);
-      if (this._decoder.fillColor) {
-        const d32 = new Uint32Array(imageData.data.buffer);
-        d32.fill(this._decoder.fillColor);
-        this._decoder.fillColor = 0;
-      }
+      // TODO: better backgroundSelect handling, simply filling the oversized cells does not work well
+      // if (this._decoder.fillColor) {
+      //   const d32 = new Uint32Array(imageData.data.buffer);
+      //   d32.fill(this._decoder.fillColor);
+      //   this._decoder.fillColor = 0;
+      // }
       this._decoder.toPixelData(imageData.data, canvas.width, canvas.height);
       ctx.putImageData(imageData, 0, 0);
       this._storage.addImage(canvas, {

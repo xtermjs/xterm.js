@@ -4,7 +4,7 @@
  */
 
 import { RGBA8888 } from 'sixel';
-import { IDisposable, Terminal } from 'xterm';
+import { IDisposable, IMarker, Terminal } from 'xterm';
 
 /**
  * Plugin ctor options.
@@ -115,6 +115,7 @@ export interface ICoreTerminal extends Terminal {
         get(id: number): {
           getBg(id: number): number;
           _extendedAttrs: IExtendedAttrsImage[];
+          _data: Uint32Array;
         } | undefined;
       };
     };
@@ -192,6 +193,9 @@ export interface IImageSpec {
   actual: HTMLCanvasElement;
   actualCellSize: ICellSize;
   bitmap: ImageBitmap | undefined;
+  marker: IMarker | undefined;
+  tileCount: number;
+  bufferType: 'alternate' | 'normal';
 }
 
 

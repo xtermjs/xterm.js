@@ -16,6 +16,9 @@ import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from '.
 // shopt -s extglob
 // cat !(*_clean).six
 
+// no scrolling test:
+// echo -ne '\x1b[?80l\x1bP0;0q' && cat ../node-sixel/testfiles/screen_clean.six && echo -e '\x1b\\'
+
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
@@ -105,7 +108,10 @@ export class ImageAddon implements ITerminalAddon {
        */
       terminal.parser.registerCsiHandler({intermediates: '!', final: 'p'}, () => this.reset()),
       terminal.parser.registerEscHandler({final: 'c'}, () => this.reset()),
-      (<ICoreTerminal>terminal)._core._inputHandler.onRequestReset(() => this.reset())
+      (<ICoreTerminal>terminal)._core._inputHandler.onRequestReset(() => this.reset()),
+
+      // wipe canvas and delete alternate images on buffer switch
+      this._terminal.buffer.onBufferChange(() => this._storage?.wipeAlternate())
     );
 
     // SIXEL handler
