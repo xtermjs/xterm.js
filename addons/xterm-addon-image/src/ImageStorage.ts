@@ -318,7 +318,6 @@ export class ImageStorage implements IDisposable {
     const used = this._getStoredPixels();
     let current = used;
     while (this._pixelLimit < current + room && this._images.size) {
-      console.log(this._pixelLimit, used + room, room);
       const spec = this._images.get(++this._lowestId);
       if (spec) {
         current -= spec.orig.width * spec.orig.height;

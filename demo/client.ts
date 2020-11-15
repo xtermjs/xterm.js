@@ -146,6 +146,7 @@ if (document.location.pathname === '/test') {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
+  initImageAddonExposed();
 }
 
 function createTerminal(): void {
@@ -373,6 +374,17 @@ function initAddons(term: TerminalType): void {
       checkbox.disabled = true;
     }
     addDomListener(checkbox, 'change', () => {
+      if (name === 'image') {
+        if (checkbox.checked) {
+          const ctorOptionsJson = (<HTMLTextAreaElement>document.getElementById('image-options'))?.value;
+          addon.instance = ctorOptionsJson ? new addon.ctor(JSON.parse(ctorOptionsJson)) : new addon.ctor();
+          term.loadAddon(addon.instance);
+        } else {
+          addon.instance!.dispose();
+          addon.instance = undefined;
+        }
+        return;
+      }
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
@@ -430,4 +442,39 @@ function serializeButtonHandler(): void {
     term.reset();
     term.write(output);
   }
+}
+
+function initImageAddonExposed(): void {
+  const DEFAULT_OPTIONS: any = {
+    cursorRight: false,
+    cursorBelow: false,
+    sixelSupport: true,
+    sixelScrolling: true,
+    sixelPaletteLimit: 256,
+    sixelSizeLimit: 25000000,
+    sixelPrivatePalette: true,
+    sixelDefaultPalette: 'VT340-COLOR',
+    storageLimit: 100,
+    showPlaceholder: true
+  }
+  const limitStorageElement = (<HTMLInputElement>document.getElementById('image-storagelimit'));
+  limitStorageElement.value = addons.image.instance.storageLimit;
+  addDomListener(limitStorageElement, 'change', () => {
+    try {
+      addons.image.instance.storageLimit = limitStorageElement.value;
+      limitStorageElement.value = addons.image.instance.storageLimit;
+      console.log('changed storageLimit to', addons.image.instance.storageLimit);
+    } catch (e) {
+      limitStorageElement.value = addons.image.instance.storageLimit;
+      console.log('storageLimit at', addons.image.instance.storageLimit);
+      throw e;
+    }
+  });
+  const showPlaceholderElement = (<HTMLInputElement>document.getElementById('image-showplaceholder'));
+  showPlaceholderElement.checked = addons.image.instance.showPlaceholder;
+  addDomListener(showPlaceholderElement, 'change', () => {
+    addons.image.instance.showPlaceholder = showPlaceholderElement.checked;
+  });
+  const ctorOptionsElement = (<HTMLTextAreaElement>document.getElementById('image-options'));
+  ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 }
