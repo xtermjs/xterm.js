@@ -8,7 +8,7 @@ import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import PNG from 'png-ts';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -90,7 +90,8 @@ describe('ImageAddon', () => {
         sixelPrivatePalette: true,
         sixelDefaultPalette: 'VT340-COLOR',
         storageLimit: 100,
-        showPlaceholder: true
+        showPlaceholder: true,
+        itermImageProtocolSupport: true
       };
       assert.deepEqual(await page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
@@ -105,7 +106,8 @@ describe('ImageAddon', () => {
         sixelPrivatePalette: false,
         sixelDefaultPalette: 'VT340-GREY',
         storageLimit: 10,
-        showPlaceholder: false
+        showPlaceholder: false,
+        itermImageProtocolSupport: false
       };
       await page.evaluate(opts => {
         (<any>window).imageAddonCustom = new ImageAddon(opts);

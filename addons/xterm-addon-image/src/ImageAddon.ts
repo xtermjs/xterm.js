@@ -8,6 +8,7 @@
 import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage } from './ImageStorage';
+import { InlineImageProtocol } from './ITermImageHandler';
 import { SixelHandler } from './SixelHandler';
 import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
 
@@ -31,7 +32,8 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelPrivatePalette: true,
   sixelDefaultPalette: 'VT340-COLOR',
   storageLimit: 100,
-  showPlaceholder: true
+  showPlaceholder: true,
+  itermImageProtocolSupport: true
 };
 
 // definitions for _xtermGraphicsAttributes sequence
@@ -123,7 +125,13 @@ export class ImageAddon implements ITerminalAddon {
       );
     }
 
-    // TODO: iTerm2 image support
+    // TODO: iTerm2 inline image protocol
+    if (this._opts.itermImageProtocolSupport) {
+      this._disposeLater(
+        (<ICoreTerminal>terminal)._core._inputHandler._parser.addOscHandler(
+          1337, new InlineImageProtocol(this._opts, this._storage, <ICoreTerminal>terminal))
+      );
+    }
   }
 
   // Note: storageLimit is skipped here to not intoduce a surprising side effect.

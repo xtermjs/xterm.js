@@ -44,6 +44,7 @@ export interface IImageAddonOptionalOptions {
   /**
    * TODO: iTerm image protocol support
    */
+  itermImageProtocolSupport: boolean;
 
   /**
    * TODO: storage settings
@@ -90,6 +91,12 @@ export interface IDcsHandler {
   unhook(success: boolean): void | boolean;
 }
 
+export interface IOscHandler {
+  start(): void;
+  put(data: Uint32Array, start: number, end: number): void;
+  end(success: boolean): void | boolean;
+}
+
 // stub needed symbols from parser
 
 interface IFunctionIdentifier {
@@ -100,6 +107,7 @@ interface IFunctionIdentifier {
 
 export interface ITerminalParser {
   addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
+  addOscHandler(id: number, handler: IOscHandler): IDisposable;
 }
 
 // stub into xterm core terminal
@@ -188,9 +196,9 @@ export interface ICellSize {
 }
 
 export interface IImageSpec {
-  orig: HTMLCanvasElement;
+  orig: HTMLCanvasElement | undefined | HTMLImageElement;
   origCellSize: ICellSize;
-  actual: HTMLCanvasElement;
+  actual: HTMLCanvasElement | undefined | HTMLImageElement;
   actualCellSize: ICellSize;
   bitmap: ImageBitmap | undefined;
   marker: IMarker | undefined;
@@ -241,4 +249,37 @@ export interface IRenderService {
   setRenderer(renderer: any): void;
   dimensions: IRenderDimensions;
   refreshRows(start: number, end: number): void;
+}
+
+
+/**
+ * copied over from node-imgsize
+ */
+export type UintTypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray;
+
+/**
+ * Supported image types.
+ * INVALID is set if the data does not pass the header checks,
+ * either being to short or containing invalid bytes.
+ */
+export const enum ImageType {
+  JPEG = 0,
+  PNG = 1,
+  GIF = 2,
+  INVALID = 255
+}
+
+/**
+ * Returned by ImageSize functions.
+ * If the dimensions could not be determined height/width are set to -1.
+ * If the header checks fail type is set to INVALID.
+ * PNG and GIF have a fixed sized header thus -1 in width/height means that the data
+ * did not pass the header checks.
+ * JPEG might pass the header checks (type set to JPEG) and still report no width/height,
+ * if the SOFx frame was not found within the provided data.
+ */
+export interface ISize {
+  width: number;
+  height: number;
+  type: ImageType;
 }

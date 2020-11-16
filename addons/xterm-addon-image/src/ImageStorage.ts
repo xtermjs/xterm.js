@@ -101,9 +101,11 @@ export class ImageStorage implements IDisposable {
   private _getStoredPixels(): number {
     let storedPixels = 0;
     for (const spec of this._images.values()) {
-      storedPixels += spec.orig.width * spec.orig.height;
-      if (spec.actual !== spec.orig) {
-        storedPixels += spec.actual.width * spec.actual.height;
+      if (spec.orig) {
+        storedPixels += spec.orig.width * spec.orig.height;
+        if (spec.actual && spec.actual !== spec.orig) {
+          storedPixels += spec.actual.width * spec.actual.height;
+        }
       }
     }
     return storedPixels;
@@ -139,7 +141,7 @@ export class ImageStorage implements IDisposable {
   /**
    * Method to add an image to the storage.
    */
-  public addImage(img: HTMLCanvasElement, options: IStorageOptions): void {
+  public addImage(img: HTMLCanvasElement | HTMLImageElement, options: IStorageOptions, createBitmap: boolean = true): number {
     // never allow storage to exceed memory limit
     // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
     this._evictOldest(img.width * img.height);
@@ -230,20 +232,55 @@ export class ImageStorage implements IDisposable {
 
     // create storage entry
     // FIXME: needs cellSize fallback
-    const imgSpec: IImageSpec = {
-      orig: img,
-      origCellSize: this._renderer.cellSize,
-      actual: img,
-      actualCellSize: this._renderer.cellSize,
-      bitmap: undefined,
-      marker: endMarker || undefined,
-      tileCount,
-      bufferType: this._terminal.buffer.active.type
-    };
+    // const imgSpec: IImageSpec = {
+    //   orig: img,
+    //   origCellSize: this._renderer.cellSize,
+    //   actual: img,
+    //   actualCellSize: this._renderer.cellSize,
+    //   bitmap: undefined,
+    //   marker: endMarker || undefined,
+    //   tileCount,
+    //   bufferType: this._terminal.buffer.active.type
+    // };
 
     // finally add the image and trigger bitmap creation
-    this._images.set(this._lastId, imgSpec);
-    ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
+    // this._images.set(imageId, imgSpec);
+    // if (createBitmap) {
+    //   ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
+    // }
+
+    if (createBitmap) {
+      const imgSpec: IImageSpec = {
+        orig: img,
+        origCellSize: this._renderer.cellSize,
+        actual: img,
+        actualCellSize: this._renderer.cellSize,
+        bitmap: undefined,
+        marker: endMarker || undefined,
+        tileCount,
+        bufferType: this._terminal.buffer.active.type
+      };
+
+      // finally add the image and trigger bitmap creation
+      this._images.set(imageId, imgSpec);
+      if (createBitmap) {
+        ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
+      }
+    } else {
+      const imgSpec: IImageSpec = {
+        orig: undefined,
+        origCellSize: this._renderer.cellSize,
+        actual: undefined,
+        actualCellSize: this._renderer.cellSize,
+        bitmap: undefined,
+        marker: endMarker || undefined,
+        tileCount,
+        bufferType: this._terminal.buffer.active.type
+      };
+      this._images.set(imageId, imgSpec);
+    }
+
+    return imageId;
   }
 
 
@@ -301,7 +338,9 @@ export class ImageStorage implements IDisposable {
             }
             col--;
             if (imgSpec) {
-              this._renderer.draw(imgSpec, startTile, startCol, row, count);
+              if (imgSpec.actual || imgSpec.bitmap) {
+                this._renderer.draw(imgSpec, startTile, startCol, row, count);
+              }
             } else if (this._opts.showPlaceholder) {
               this._renderer.drawPlaceholder(startCol, row, count);
             }
@@ -319,9 +358,9 @@ export class ImageStorage implements IDisposable {
     let current = used;
     while (this._pixelLimit < current + room && this._images.size) {
       const spec = this._images.get(++this._lowestId);
-      if (spec) {
+      if (spec && spec.orig) {
         current -= spec.orig.width * spec.orig.height;
-        if (spec.orig !== spec.actual) {
+        if (spec.actual && spec.orig !== spec.actual) {
           current -= spec.actual.width * spec.actual.height;
         }
         spec.bitmap?.close();

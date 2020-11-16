@@ -60,6 +60,7 @@ export class SixelHandler implements IDcsHandler {
       this._addImageToStorage();
     }
     this._decoder = undefined;
+    return true;
   }
 
   // Convert SIXEL data to a canvas digestable by the image storage.
