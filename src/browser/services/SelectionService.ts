@@ -676,7 +676,7 @@ export class SelectionService extends Disposable implements ISelectionService {
           this._bufferService.rows,
           false
         );
-        if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
+        if (this._optionsService.getOption('altClickMovesCursor') && coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
           const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._coreService.decPrivateModes.applicationCursorKeys);
           this._coreService.triggerDataEvent(sequence, true);
         }

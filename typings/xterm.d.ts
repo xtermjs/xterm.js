@@ -45,6 +45,11 @@ declare module 'xterm' {
     allowTransparency?: boolean;
 
     /**
+     * If enabled, alt + click will move the prompt cursor to position underneath the mouse.
+     */
+    altClickMovesCursor?: boolean;
+
+    /**
      * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
      */
     bellSound?: string;
