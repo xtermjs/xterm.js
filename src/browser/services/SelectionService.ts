@@ -667,7 +667,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.getOption('altClickMovesCursor')) {
       if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
@@ -676,7 +676,7 @@ export class SelectionService extends Disposable implements ISelectionService {
           this._bufferService.rows,
           false
         );
-        if (this._optionsService.getOption('altClickMovesCursor') && coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
+        if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
           const sequence = moveToCellSequence(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._coreService.decPrivateModes.applicationCursorKeys);
           this._coreService.triggerDataEvent(sequence, true);
         }
