@@ -45,7 +45,8 @@ declare module 'xterm' {
     allowTransparency?: boolean;
 
     /**
-     * If enabled, alt + click will move the prompt cursor to position underneath the mouse.
+     * If enabled, alt + click will move the prompt cursor to position
+     * underneath the mouse. The default is true.
      */
     altClickMovesCursor?: boolean;
 
