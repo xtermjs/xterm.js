@@ -50,7 +50,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   windowOptions: {},
   windowsMode: false,
   wordSeparator: ' ()[]{}\',"`',
-
+  altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false

@@ -184,6 +184,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 export type RendererType = 'dom' | 'canvas';
 
 export interface IPartialTerminalOptions {
+  altClickMovesCursor?: boolean;
   allowTransparency?: boolean;
   bellSound?: string;
   bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
@@ -220,6 +221,7 @@ export interface IPartialTerminalOptions {
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
+  altClickMovesCursor: boolean;
   bellSound: string;
   bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
