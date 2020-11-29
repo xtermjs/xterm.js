@@ -2714,9 +2714,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._iconName = data;
   }
 
-  // This is really an internal method and not part of IInputHandler implementation.
-  // Making it public so that I can test it.
-  public parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
+  private _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
     // example data: 5;rgb:aa/bb/cc
     const regex = /(\d+);rgb:([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})/;
     const match = data.match(regex);
@@ -2739,7 +2737,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
    */
   public setAnsiColor(data: string): void {
-    const event = this.parseAnsiColorChange(data);
+    const event = this._parseAnsiColorChange(data);
     if (event) {
       this._onAnsiColorChange.fire(event);
     }

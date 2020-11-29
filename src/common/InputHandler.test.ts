@@ -1694,16 +1694,13 @@ describe('InputHandler', () => {
   });
   describe('OSC', () => {
     it('should ignore incorrect Ansi color change data', () => {
-      assert.deepEqual(inputHandler.parseAnsiColorChange('17;rgb:1a/2b/3c'), {
-        colorIndex: 17,
-        red: 0x1a,
-        green: 0x2b,
-        blue: 0x3c
-      });
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:#aabbcc'));
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
-      assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
+      // this is testing a private method
+      const parseAnsiColorChange = inputHandler["_parseAnsiColorChange"];
+
+      assert.isNull(parseAnsiColorChange('17;rgb:a/b/c'));
+      assert.isNull(parseAnsiColorChange('17;rgb:#aabbcc'));
+      assert.isNull(parseAnsiColorChange('17;rgba:aa/bb/cc'));
+      assert.isNull(parseAnsiColorChange('rgb:aa/bb/cc'));
     });
     it('should fire event on Ansi color change', (done) => {
       inputHandler.onAnsiColorChange(e => {
