@@ -1695,7 +1695,7 @@ describe('InputHandler', () => {
   describe('OSC', () => {
     it('should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler["_parseAnsiColorChange"];
+      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
 
       assert.isNull(parseAnsiColorChange('17;rgb:a/b/c'));
       assert.isNull(parseAnsiColorChange('17;rgb:#aabbcc'));
