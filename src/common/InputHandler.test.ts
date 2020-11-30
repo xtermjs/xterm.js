@@ -1693,6 +1693,15 @@ describe('InputHandler', () => {
     });
   });
   describe('OSC', () => {
+    it('should parse correct Ansi color change data', () => {
+      // this is testing a private method
+      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
+
+      assert.deepEqual(
+        parseAnsiColorChange('19;rgb:a1/b2/c3'),
+        { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 }
+      );
+    }),
     it('should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
       const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
