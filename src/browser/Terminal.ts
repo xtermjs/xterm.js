@@ -162,11 +162,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _changeAnsiColor(event: IAnsiColorChangeEvent): void {
     if (!this._colorManager) { return; }
 
-    const color = rgba.toColor(event.red, event.green, event.blue);
+    event.colors.forEach(ansiColor => {
+      const color = rgba.toColor(ansiColor.red, ansiColor.green, ansiColor.blue);
 
-    this._colorManager.colors.ansi[event.colorIndex] = color;
-    this._renderService?.setColors(this._colorManager.colors);
-    this.viewport?.onThemeChange(this._colorManager.colors);
+      this._colorManager!.colors.ansi[ansiColor.colorIndex] = color;
+    });
+
+    this._renderService?.setColors(this._colorManager!.colors);
+    this.viewport?.onThemeChange(this._colorManager!.colors);
   }
 
   public dispose(): void {

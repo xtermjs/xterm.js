@@ -2715,19 +2715,25 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   private _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
+    const result: IAnsiColorChangeEvent = { colors: [] };
     // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})\/([0-9a-fA-F]{2})/;
-    const match = data.match(regex);
+    const regex = /(\d+);rgb:([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})/gi;
+    let match;
 
-    if (match) {
-      return {
+    while ((match = regex.exec(data)) !== null) {
+      result.colors.push({
         colorIndex: parseInt(match[1]),
         red: parseInt(match[2], 16),
         green: parseInt(match[3], 16),
         blue: parseInt(match[4], 16)
-      };
+      });
     }
-    return null;
+
+    if (result.colors.length === 0) {
+      return null;
+    }
+
+    return result;
   }
 
   /**
@@ -2735,6 +2741,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
    * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
+   * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
    */
   public setAnsiColor(data: string): void {
     const event = this._parseAnsiColorChange(data);

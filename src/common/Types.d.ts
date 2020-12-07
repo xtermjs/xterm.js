@@ -328,14 +328,18 @@ export interface IWindowOptions {
   setWinLines?: boolean;
 }
 
-/**
- * Event fired for OSC 4 command - to change ANSI color based on its index.
- */
-export interface IAnsiColorChangeEvent {
+export interface IAnsiColorChangeEventColor {
   colorIndex: number;
   red: number;
   green: number;
   blue: number;
+}
+
+/**
+ * Event fired for OSC 4 command - to change ANSI color based on its index.
+ */
+export interface IAnsiColorChangeEvent {
+  colors: IAnsiColorChangeEventColor[];
 }
 
 /**
