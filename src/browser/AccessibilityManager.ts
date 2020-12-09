@@ -263,7 +263,7 @@ export class AccessibilityManager extends Disposable {
       const element = this._rowElements[i];
       if (element) {
         if (lineData.length === 0) {
-          element.innerText = '\u00a0;';
+          element.innerText = '\u00a0';
         } else {
           element.textContent = lineData;
         }
