@@ -18,6 +18,7 @@ export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
+  private _buffer: BufferNamespaceApi | undefined;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
@@ -58,7 +59,10 @@ export class Terminal implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
-    return new BufferNamespaceApi(this._core.buffers);
+    if (!this._buffer) {
+      return new BufferNamespaceApi(this._core.buffers);
+    }
+    return this._buffer;
   }
   public get markers(): ReadonlyArray<IMarker> {
     this._checkProposedApi();
