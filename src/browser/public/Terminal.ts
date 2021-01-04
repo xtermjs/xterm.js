@@ -60,7 +60,7 @@ export class Terminal implements ITerminalApi {
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
     if (!this._buffer) {
-      return new BufferNamespaceApi(this._core.buffers);
+      this._buffer = new BufferNamespaceApi(this._core.buffers);
     }
     return this._buffer;
   }
