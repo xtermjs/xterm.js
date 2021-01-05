@@ -13,6 +13,7 @@ import * as Strings from '../LocalizableStrings';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
+import { BufferSet } from 'common/buffer/BufferSet';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -60,7 +61,7 @@ export class Terminal implements ITerminalApi {
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
     if (!this._buffer) {
-      return new BufferNamespaceApi(this._core.buffers);
+      this._buffer = new BufferNamespaceApi(this._core);
     }
     return this._buffer;
   }
@@ -249,21 +250,21 @@ class BufferNamespaceApi implements IBufferNamespaceApi {
   private _onBufferChange = new EventEmitter<IBufferApi>();
   public get onBufferChange(): IEvent<IBufferApi> { return this._onBufferChange.event; }
 
-  constructor(private _buffers: IBufferSet) {
-    this._normal = new BufferApiView(this._buffers.normal, 'normal');
-    this._alternate = new BufferApiView(this._buffers.alt, 'alternate');
-    this._buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
+  constructor(private _core: ITerminal) {
+    this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
+    this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
+    this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
   }
   public get active(): IBufferApi {
-    if (this._buffers.active === this._buffers.normal) { return this.normal; }
-    if (this._buffers.active === this._buffers.alt) { return this.alternate; }
+    if (this._core.buffers.active === this._core.buffers.normal) { return this.normal; }
+    if (this._core.buffers.active === this._core.buffers.alt) { return this.alternate; }
     throw new Error('Active buffer is neither normal nor alternate');
   }
   public get normal(): IBufferApi {
-    return this._normal.init(this._buffers.normal);
+    return this._normal.init(this._core.buffers.normal);
   }
   public get alternate(): IBufferApi {
-    return this._alternate.init(this._buffers.alt);
+    return this._alternate.init(this._core.buffers.alt);
   }
 }
 

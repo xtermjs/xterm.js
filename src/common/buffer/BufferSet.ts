@@ -15,10 +15,9 @@ import { Disposable } from 'common/Lifecycle';
  * provides also utilities for working with them.
  */
 export class BufferSet extends Disposable implements IBufferSet {
-  private _normal: Buffer;
-  private _alt: Buffer;
-  private _activeBuffer: Buffer;
-
+  private _normal!: Buffer;
+  private _alt!: Buffer;
+  private _activeBuffer!: Buffer;
 
   private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
   public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
@@ -28,17 +27,20 @@ export class BufferSet extends Disposable implements IBufferSet {
    * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(
-    optionsService: IOptionsService,
-    bufferService: IBufferService
+    private readonly _optionsService: IOptionsService,
+    private readonly _bufferService: IBufferService
   ) {
     super();
+    this.reset();
+  }
 
-    this._normal = new Buffer(true, optionsService, bufferService);
+  public reset(): void {
+    this._normal = new Buffer(true, this._optionsService, this._bufferService);
     this._normal.fillViewportRows();
 
     // The alt buffer should never have scrollback.
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
-    this._alt = new Buffer(false, optionsService, bufferService);
+    this._alt = new Buffer(false, this._optionsService, this._bufferService);
     this._activeBuffer = this._normal;
 
     this.setupTabStops();
