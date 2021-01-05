@@ -13,6 +13,7 @@ import * as Strings from '../LocalizableStrings';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { IParams } from 'common/parser/Types';
+import { BufferSet } from 'common/buffer/BufferSet';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -59,6 +60,7 @@ export class Terminal implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
+    this._core.reset();
     if (!this._buffer) {
       this._buffer = new BufferNamespaceApi(this._core.buffers);
     }
