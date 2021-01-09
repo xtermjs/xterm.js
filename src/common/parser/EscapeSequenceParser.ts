@@ -95,8 +95,9 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
 
   // set default transition
   table.setDefault(ParserAction.ERROR, ParserState.GROUND);
-  // printables
+  // printables and 7f
   table.addMany(PRINTABLES, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
+  table.add(0x7f, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   // global anywhere rules
   for (state in states) {
     table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ParserAction.EXECUTE, ParserState.GROUND);
