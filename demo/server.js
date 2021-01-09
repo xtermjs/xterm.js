@@ -43,15 +43,15 @@ function startServer() {
     const env = Object.assign({}, process.env);
     env['COLORTERM'] = 'truecolor';
     var cols = parseInt(req.query.cols),
-        rows = parseInt(req.query.rows),
-        term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-          name: 'xterm-256color',
-          cols: cols || 80,
-          rows: rows || 24,
-          cwd: env.PWD,
-          env: env,
-          encoding: USE_BINARY ? null : 'utf8'
-        });
+      rows = parseInt(req.query.rows),
+      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+        name: 'xterm-256color',
+        cols: cols || 80,
+        rows: rows || 24,
+        cwd: process.platform === 'win32' ? undefined : env.PWD,
+        env: env,
+        encoding: USE_BINARY ? null : 'utf8'
+      });
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
