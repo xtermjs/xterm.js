@@ -40,6 +40,7 @@ class TestInputHandler extends InputHandler {
   public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
   public get windowTitleStack(): string[] { return this._windowTitleStack; }
   public get iconNameStack(): string[] { return this._iconNameStack; }
+  public parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null { return this._parseAnsiColorChange(data); }
 }
 
 describe('InputHandler', () => {
@@ -1695,25 +1696,21 @@ describe('InputHandler', () => {
   describe('OSC', () => {
     it('4: should parse correct Ansi color change data', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
-      const event = parseAnsiColorChange('19;rgb:a1/b2/c3');
+      const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3');
 
       assert.isNotNull(event);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
     }),
     it('4: should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
-
-      assert.isNull(parseAnsiColorChange('17;rgb:a/b/c'));
-      assert.isNull(parseAnsiColorChange('17;rgb:#aabbcc'));
-      assert.isNull(parseAnsiColorChange('17;rgba:aa/bb/cc'));
-      assert.isNull(parseAnsiColorChange('rgb:aa/bb/cc'));
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:#aabbcc'));
+      assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
+      assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
     });
     it('4: should parse a list of Ansi color changes', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
-      const event = parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');
+      const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');
 
       assert.isNotNull(event);
       assert.equal(event!.colors.length, 3);
@@ -1723,8 +1720,7 @@ describe('InputHandler', () => {
     });
     it('4: should ignore incorrect colors in a list of Ansi color changes', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
-      const event = parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:WR/ON/G;255;rgb:01/ef/2d');
+      const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:WR/ON/G;255;rgb:01/ef/2d');
 
       assert.equal(event!.colors.length, 2);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
@@ -1732,8 +1728,7 @@ describe('InputHandler', () => {
     });
     it('4: should be case insensitive when parsing Ansi color changes', () => {
       // this is testing a private method
-      const parseAnsiColorChange = inputHandler['_parseAnsiColorChange'];
-      const event = parseAnsiColorChange('19;rGb:A1/b2/C3');
+      const event = inputHandler.parseAnsiColorChange('19;rGb:A1/b2/C3');
 
       assert.equal(event!.colors.length, 1);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });

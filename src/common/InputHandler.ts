@@ -2714,7 +2714,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._iconName = data;
   }
 
-  private _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
+  protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
     const result: IAnsiColorChangeEvent = { colors: [] };
     // example data: 5;rgb:aa/bb/cc
     const regex = /(\d+);rgb:([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})/gi;
