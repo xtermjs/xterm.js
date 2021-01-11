@@ -158,8 +158,15 @@ export class SearchAddon implements ITerminalAddon {
     };
 
     if (incremental) {
+      // Try to expand selection to right first.
       result = this._findInLine(term, searchPosition, searchOptions, false);
-      if (!(result && result.row === startRow && result.col === startCol)) {
+      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
+      if (!isOldResultHighlighted) {
+        // If selection was not able to be expanded to the right, then try reverse search
+        if (currentSelection) {
+          searchPosition.startRow = currentSelection.endRow;
+          searchPosition.startCol = currentSelection.endColumn;
+        }
         result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
@@ -245,6 +252,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param term The search term.
    * @param position The position to start the search.
    * @param searchOptions Search options.
+   * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
