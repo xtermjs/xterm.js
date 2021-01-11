@@ -49,8 +49,7 @@ export class BufferService extends Disposable implements IBufferService {
   }
 
   public reset(): void {
-    this.buffers.dispose();
-    this.buffers = new BufferSet(this._optionsService, this);
+    this.buffers.reset();
     this.isUserScrolling = false;
   }
 }
