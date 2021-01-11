@@ -138,7 +138,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` width: ${this.dimensions.actualCellWidth}px` +
       `}`;
 
-    this._dimensionsStyleElement.innerHTML = styles;
+    this._dimensionsStyleElement.textContent = styles;
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
@@ -237,7 +237,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
-    this._themeStyleElement.innerHTML = styles;
+    this._themeStyleElement.textContent = styles;
   }
 
   public onDevicePixelRatioChange(): void {
@@ -348,7 +348,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public clear(): void {
     for (const e of this._rowElements) {
-      e.innerHTML = '';
+      e.innerText = '';
     }
   }
 
@@ -359,7 +359,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
-      rowElement.innerHTML = '';
+      rowElement.innerText = '';
 
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);

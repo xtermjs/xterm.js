@@ -56,6 +56,7 @@ export interface IBufferSet extends IDisposable {
 
   activateNormalBuffer(): void;
   activateAltBuffer(fillAttr?: IAttributeData): void;
+  reset(): void;
   resize(newCols: number, newRows: number): void;
   setupTabStops(i?: number): void;
 }

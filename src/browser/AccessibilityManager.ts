@@ -56,6 +56,7 @@ export class AccessibilityManager extends Disposable {
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
 
     this._rowContainer = document.createElement('div');
+    this._rowContainer.setAttribute('role', 'list');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     this._rowElements = [];
     for (let i = 0; i < this._terminal.rows; i++) {
@@ -262,7 +263,7 @@ export class AccessibilityManager extends Disposable {
       const element = this._rowElements[i];
       if (element) {
         if (lineData.length === 0) {
-          element.innerHTML = '&nbsp;';
+          element.innerText = '\u00a0';
         } else {
           element.textContent = lineData;
         }

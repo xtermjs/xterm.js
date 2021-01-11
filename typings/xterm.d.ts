@@ -45,6 +45,12 @@ declare module 'xterm' {
     allowTransparency?: boolean;
 
     /**
+     * If enabled, alt + click will move the prompt cursor to position
+     * underneath the mouse. The default is true.
+     */
+    altClickMovesCursor?: boolean;
+
+    /**
      * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
      */
     bellSound?: string;
@@ -382,6 +388,13 @@ declare module 'xterm' {
      * -1 if the marker has been disposed.
      */
     readonly line: number;
+
+    /**
+     * Event listener to get notified when the marker gets disposed. Automatic disposal
+     * might happen for a marker, that got invalidated by scrolling out or removal of
+     * a line from the buffer.
+     */
+    onDispose: IEvent<void>;
   }
 
   /**

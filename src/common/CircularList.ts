@@ -158,6 +158,7 @@ export class CircularList<T> implements ICircularList<T> {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
+      this.onDeleteEmitter.fire({index: start, amount: deleteCount});
     }
 
     // Add items
@@ -166,6 +167,9 @@ export class CircularList<T> implements ICircularList<T> {
     }
     for (let i = 0; i < items.length; i++) {
       this._array[this._getCyclicIndex(start + i)] = items[i];
+    }
+    if (items.length) {
+      this.onInsertEmitter.fire({index: start, amount: items.length});
     }
 
     // Adjust length as needed
