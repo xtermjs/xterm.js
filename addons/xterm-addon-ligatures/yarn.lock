@@ -78,9 +78,17 @@ follow-redirects@1.5.10:
   dependencies:
     debug "=3.1.0"
 
-font-finder@^1.0.3, font-finder@^1.0.4:
+font-finder@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/font-finder/-/font-finder-1.0.4.tgz#2ca944954dd8d0e1b5bdc4c596cc08607761d89b"
+  dependencies:
+    get-system-fonts "^2.0.0"
+    promise-stream-reader "^1.0.1"
+
+font-finder@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/font-finder/-/font-finder-1.1.0.tgz#2bff2b2762acba720239c8bec898a96daae90858"
+  integrity sha512-wpCL2uIbi6GurJbU7ZlQ3nGd61Ho+dSU6U83/xJT5UPFfN35EeCW/rOtS+5k+IuEZu2SYmHzDIPL9eA5tSYRAw==
   dependencies:
     get-system-fonts "^2.0.0"
     promise-stream-reader "^1.0.1"
