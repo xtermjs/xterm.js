@@ -448,7 +448,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent, ScrollSource.VIEWPORT),
+      (amount: number) => this.scrollLines(amount, false, ScrollSource.VIEWPORT),
       this._viewportElement,
       this._viewportScrollArea
     );
@@ -480,8 +480,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this.register(this.onScroll(() => {
+    this.register(this._onScroll.event(ev => {
+      if (ev.source !== ScrollSource.VIEWPORT) {
         this.viewport!.syncScrollArea();
+      }
       this._selectionService!.refresh();
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
