@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -448,7 +448,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent),
+      (amount: number, suppressEvent: boolean) => this.scrollLines(amount, suppressEvent, ScrollSource.VIEWPORT),
       this._viewportElement,
       this._viewportScrollArea
     );
@@ -481,7 +481,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.textarea!.select();
     }));
     this.register(this.onScroll(() => {
-      this.viewport!.syncScrollArea();
+        this.viewport!.syncScrollArea();
       this._selectionService!.refresh();
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
@@ -836,8 +836,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    super.scrollLines(disp, suppressScrollEvent);
+  public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
+    super.scrollLines(disp, suppressScrollEvent, source);
     this.refresh(0, this.rows - 1);
   }
 
@@ -1168,7 +1168,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
-    this._onScroll.fire(this.buffer.ydisp);
+    this._onScroll.fire({position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
   }
 
   /**

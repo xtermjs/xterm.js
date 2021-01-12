@@ -42,6 +42,16 @@ export interface IKeyboardEvent {
   type: string;
 }
 
+export interface IScrollEvent {
+  position: number;
+  source: ScrollSource;
+}
+
+export const enum ScrollSource {
+  TERMINAL,
+  VIEWPORT,
+}
+
 export interface ICircularList<T> {
   length: number;
   maxLength: number;

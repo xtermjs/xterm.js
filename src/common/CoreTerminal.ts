@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData, ICoreTerminal } from 'common/Types';
+import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData, ICoreTerminal, IKeyboardEvent, IScrollEvent, ScrollSource } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -66,8 +66,12 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  protected _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  protected _onScroll = new EventEmitter<IScrollEvent, void>();
+  /**
+   * An emitter for legacy on scroll events that just included the position, and not the source.
+   * Used to maintain API consistency for the onScroll method.
+   */
+  protected _legacyOnScroll?: EventEmitter<number, void>;
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
@@ -204,17 +208,17 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Flag rows that need updating
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
 
-    this._onScroll.fire(buffer.ydisp);
+    this._onScroll.fire({position: buffer.ydisp, source: ScrollSource.TERMINAL});
   }
 
   /**
    * Scroll the display of the terminal
    * @param disp The number of lines to scroll down (negative scroll up).
-   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
-   * to avoid unwanted events being handled by the viewport when the event was triggered from the
-   * viewport originally.
+   * @param suppressScrollEvent Don't emit an onScroll event.
+   * @param source The source of the scroll action. Emitted as part of the onScroll event
+   * to avoid cyclic invocations if the event originated from the Viewport.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+  public scrollLines(disp: number, suppressScrollEvent = false, source = ScrollSource.TERMINAL): void {
     const buffer = this._bufferService.buffer;
     if (disp < 0) {
       if (buffer.ydisp === 0) {
@@ -234,7 +238,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }
 
     if (!suppressScrollEvent) {
-      this._onScroll.fire(buffer.ydisp);
+      this._onScroll.fire({position: buffer.ydisp, source});
     }
   }
 
@@ -265,6 +269,16 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     if (scrollAmount !== 0) {
       this.scrollLines(scrollAmount);
     }
+  }
+
+  public get onScroll(): IEvent<number, void> {
+    if (!this._legacyOnScroll) {
+      this._legacyOnScroll = new EventEmitter<number, void>();
+      this.register(this._onScroll.event(ev => {
+        this._legacyOnScroll?.fire(ev.position);
+      }));
+    }
+    return this._legacyOnScroll.event;
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
