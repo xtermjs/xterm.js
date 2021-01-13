@@ -31,7 +31,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "font-finder": "^1.0.4",
+    "font-finder": "^1.1.0",
     "font-ligatures": "^1.3.3"
   },
   "devDependencies": {
