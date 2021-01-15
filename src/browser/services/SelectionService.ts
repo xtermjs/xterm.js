@@ -105,6 +105,9 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number = 0;
+  private _oldHasSelection: boolean = false;
+  private _oldSelectionStart: [number, number] | undefined = undefined;
+  private _oldSelectionEnd: [number, number] | undefined = undefined;
 
   private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
@@ -681,7 +684,36 @@ export class SelectionService extends Disposable implements ISelectionService {
           this._coreService.triggerDataEvent(sequence, true);
         }
       }
-    } else if (this.hasSelection) {
+    } else {
+      this._fireIfSelectionChanged();
+    }
+  }
+
+  private _fireIfSelectionChanged(): void {
+    // Fire if there is no selection
+    const hasSelection = this.hasSelection;
+    if (!hasSelection) {
+      if (this._oldHasSelection) {
+        this._onSelectionChange.fire();
+      }
+      return;
+    }
+
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+
+    // Sanity check, these should not be undefined as there is a selection
+    if (!start || !end) {
+      return;
+    }
+
+    if (!this._oldSelectionStart || !this._oldSelectionEnd || (
+      start[0] !== this._oldSelectionStart[0] || start[1] !== this._oldSelectionStart[1] ||
+      end[0] !== this._oldSelectionEnd[0] || end[1] !== this._oldSelectionEnd[1])) {
+
+      this._oldSelectionStart = start;
+      this._oldSelectionEnd = end;
+      this._oldHasSelection = hasSelection;
       this._onSelectionChange.fire();
     }
   }
