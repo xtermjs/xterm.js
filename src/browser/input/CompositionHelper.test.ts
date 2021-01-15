@@ -11,7 +11,7 @@ import { MockCoreService, MockBufferService, MockOptionsService } from 'common/T
 describe('CompositionHelper', () => {
   let compositionHelper: CompositionHelper;
   let compositionView: HTMLElement;
-  let textarea: HTMLTextAreaElement;
+  let textarea: HTMLInputElement;
   let handledText: string;
 
   beforeEach(() => {

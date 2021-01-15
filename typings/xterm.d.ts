@@ -581,7 +581,7 @@ declare module 'xterm' {
     /**
      * The textarea that accepts input for the terminal.
      */
-    readonly textarea: HTMLTextAreaElement | undefined;
+    readonly textarea: HTMLInputElement | undefined;
 
     /**
      * The number of rows in the terminal's viewport. Use

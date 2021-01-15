@@ -9,7 +9,7 @@ export class CoreBrowserService implements ICoreBrowserService {
   public serviceBrand: undefined;
 
   constructor(
-    private _textarea: HTMLTextAreaElement
+    private _textarea: HTMLInputElement
   ) {
   }
 

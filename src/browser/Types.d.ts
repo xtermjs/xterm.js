@@ -32,7 +32,7 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
 
 // Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable {
-  textarea: HTMLTextAreaElement | undefined;
+  textarea: HTMLInputElement | undefined;
   rows: number;
   cols: number;
   buffer: IBuffer;

@@ -146,7 +146,7 @@ export class MockTerminal implements ITerminal {
   public rowContainer!: HTMLElement;
   public selectionContainer!: HTMLElement;
   public selectionService!: ISelectionService;
-  public textarea!: HTMLTextAreaElement;
+  public textarea!: HTMLInputElement;
   public rows!: number;
   public cols!: number;
   public browser: IBrowser = <any>Browser;

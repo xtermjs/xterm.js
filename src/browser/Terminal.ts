@@ -59,7 +59,7 @@ import { rgba } from 'browser/Color';
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
 
 export class Terminal extends CoreTerminal implements ITerminal {
-  public textarea: HTMLTextAreaElement | undefined;
+  public textarea: HTMLInputElement | undefined;
   public element: HTMLElement | undefined;
   public screenElement: HTMLElement | undefined;
 
@@ -420,13 +420,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this.textarea = document.createElement('textarea');
+    this.textarea = document.createElement('input');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel);
     this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
+    // note: incorrect 'autocomplete' attribute value 'nope' by purpose
+    // see: https://github.com/reef-technologies/xterm.js/issues/1
+    this.textarea.setAttribute('autocomplete', 'nope');
+    this.textarea.setAttribute('type', 'password');
     this.textarea.tabIndex = 0;
     this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._onTextAreaFocus(ev)));
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
@@ -442,6 +446,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._compositionView.classList.add('composition-view');
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
+
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);

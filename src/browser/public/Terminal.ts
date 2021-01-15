@@ -55,7 +55,7 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     return new UnicodeApi(this._core);
   }
-  public get textarea(): HTMLTextAreaElement | undefined { return this._core.textarea; }
+  public get textarea(): HTMLInputElement | undefined { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {

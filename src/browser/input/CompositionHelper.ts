@@ -41,7 +41,7 @@ export class CompositionHelper {
   private _dataAlreadySent: string;
 
   constructor(
-    private readonly _textarea: HTMLTextAreaElement,
+    private readonly _textarea: HTMLInputElement,
     private readonly _compositionView: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,

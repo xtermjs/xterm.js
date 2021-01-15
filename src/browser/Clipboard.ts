@@ -42,7 +42,7 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
  * @param ev The original paste event to be handled
  * @param term The terminal on which to apply the handled paste event
  */
-export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
+export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLInputElement, coreService: ICoreService): void {
   ev.stopPropagation();
   if (ev.clipboardData) {
     const text = ev.clipboardData.getData('text/plain');
@@ -50,7 +50,7 @@ export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaEleme
   }
 }
 
-export function paste(text: string, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
+export function paste(text: string, textarea: HTMLInputElement, coreService: ICoreService): void {
   text = prepareTextForTerminal(text);
   text = bracketTextForPaste(text, coreService.decPrivateModes.bracketedPasteMode);
   coreService.triggerDataEvent(text, true);
@@ -62,7 +62,7 @@ export function paste(text: string, textarea: HTMLTextAreaElement, coreService: 
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
  */
-export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement): void {
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLInputElement, screenElement: HTMLElement): void {
 
   // Calculate textarea position relative to the screen element
   const pos = screenElement.getBoundingClientRect();
@@ -86,7 +86,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
  * @param selectionService The terminal's selection manager.
  * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement, selectionService: ISelectionService, shouldSelectWord: boolean): void {
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLInputElement, screenElement: HTMLElement, selectionService: ISelectionService, shouldSelectWord: boolean): void {
   moveTextAreaUnderMouseCursor(ev, textarea, screenElement);
 
   if (shouldSelectWord && !selectionService.isClickInSelection(ev)) {
