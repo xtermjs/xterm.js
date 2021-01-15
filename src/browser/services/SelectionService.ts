@@ -690,16 +690,26 @@ export class SelectionService extends Disposable implements ISelectionService {
   }
 
   private _fireIfSelectionChanged(): void {
+    // Fire if there is no selection
     const hasSelection = this.hasSelection;
-    if (!hasSelection && !this._oldHasSelection) {
+    if (!hasSelection) {
+      if (this._oldHasSelection) {
+        this._onSelectionChange.fire();
+      }
       return;
     }
 
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
 
-    if (start?.[0] !== this._oldSelectionStart?.[0] || start?.[1] !== this._oldSelectionStart?.[1] ||
-      end?.[0] !== this._oldSelectionEnd?.[0] || end?.[1] !== this._oldSelectionEnd?.[1]) {
+    // Sanity check, these should not be undefined as there is a selection
+    if (!start || !end) {
+      return;
+    }
+
+    if (!this._oldSelectionStart || !this._oldSelectionEnd || (
+      start[0] !== this._oldSelectionStart[0] || start[1] !== this._oldSelectionStart[1] ||
+      end[0] !== this._oldSelectionEnd[0] || end[1] !== this._oldSelectionEnd[1])) {
 
       this._oldSelectionStart = start;
       this._oldSelectionEnd = end;
