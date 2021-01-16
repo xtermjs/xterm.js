@@ -293,7 +293,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Checks if the current click was inside the current selection
    * @param event The mouse event
    */
-  public isClickInSelection(event: MouseEvent): boolean {
+  private _isClickInSelection(event: MouseEvent): boolean {
     const coords = this._getMouseBufferCoords(event);
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
@@ -316,7 +316,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
-  public selectWordAtCursor(event: MouseEvent): void {
+  private _selectWordAtCursor(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords, false);
@@ -757,6 +757,13 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
     this.refresh();
+  }
+
+  public rightClickSelect(ev: MouseEvent): void {
+    if (!this._isClickInSelection(ev)) {
+      this._selectWordAtCursor(ev);
+      this._fireIfSelectionChanged();
+    }
   }
 
   /**
