@@ -22,7 +22,7 @@ export class DcsParser implements IDcsParser {
     this._handlerFb = () => {};
   }
 
-  public addHandler(ident: number, handler: IDcsHandler): IDisposable {
+  public registerHandler(ident: number, handler: IDcsHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -36,10 +36,6 @@ export class DcsParser implements IDcsParser {
         }
       }
     };
-  }
-
-  public setHandler(ident: number, handler: IDcsHandler): void {
-    this._handlers[ident] = [handler];
   }
 
   public clearHandler(ident: number): void {
@@ -112,7 +108,7 @@ export class DcsHandler implements IDcsHandler {
   private _params: IParams | undefined;
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string, params: IParams) => any) {}
+  constructor(private _handler: (data: string, params: IParams) => boolean) {}
 
   public hook(params: IParams): void {
     this._params = params.clone();
@@ -131,8 +127,8 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): any {
-    let ret;
+  public unhook(success: boolean): boolean {
+    let ret = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {

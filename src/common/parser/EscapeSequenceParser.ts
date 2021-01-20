@@ -280,7 +280,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
-    this.setEscHandler({final: '\\'}, () => {});
+    this.registerEscHandler({final: '\\'}, () => true);
   }
 
   protected _identifier(id: IFunctionIdentifier, finalRange: number[] = [0x40, 0x7e]): number {
@@ -344,7 +344,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._printHandler = this._printHandlerFb;
   }
 
-  public addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
     if (this._escHandlers[ident] === undefined) {
       this._escHandlers[ident] = [];
@@ -359,9 +359,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         }
       }
     };
-  }
-  public setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void {
-    this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [handler];
   }
   public clearEscHandler(id: IFunctionIdentifier): void {
     if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
@@ -380,7 +377,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = handler;
   }
 
-  public addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
     if (this._csiHandlers[ident] === undefined) {
       this._csiHandlers[ident] = [];
@@ -396,9 +393,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  public setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void {
-    this._csiHandlers[this._identifier(id)] = [handler];
-  }
   public clearCsiHandler(id: IFunctionIdentifier): void {
     if (this._csiHandlers[this._identifier(id)]) delete this._csiHandlers[this._identifier(id)];
   }
@@ -406,11 +400,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._csiHandlerFb = callback;
   }
 
-  public addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
-    return this._dcsParser.addHandler(this._identifier(id), handler);
-  }
-  public setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void {
-    this._dcsParser.setHandler(this._identifier(id), handler);
+  public registerDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
+    return this._dcsParser.registerHandler(this._identifier(id), handler);
   }
   public clearDcsHandler(id: IFunctionIdentifier): void {
     this._dcsParser.clearHandler(this._identifier(id));
@@ -419,11 +410,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.setHandlerFallback(handler);
   }
 
-  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
-    return this._oscParser.addHandler(ident, handler);
-  }
-  public setOscHandler(ident: number, handler: IOscHandler): void {
-    this._oscParser.setHandler(ident, handler);
+  public registerOscHandler(ident: number, handler: IOscHandler): IDisposable {
+    return this._oscParser.registerHandler(ident, handler);
   }
   public clearOscHandler(ident: number): void {
     this._oscParser.clearHandler(ident);

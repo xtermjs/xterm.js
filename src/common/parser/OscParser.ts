@@ -15,7 +15,7 @@ export class OscParser implements IOscParser {
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandlerType = () => { };
 
-  public addHandler(ident: number, handler: IOscHandler): IDisposable {
+  public registerHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -29,9 +29,6 @@ export class OscParser implements IOscParser {
         }
       }
     };
-  }
-  public setHandler(ident: number, handler: IOscHandler): void {
-    this._handlers[ident] = [handler];
   }
   public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
@@ -171,7 +168,7 @@ export class OscHandler implements IOscHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string) => any) {}
+  constructor(private _handler: (data: string) => boolean) {}
 
   public start(): void {
     this._data = '';
@@ -189,8 +186,8 @@ export class OscHandler implements IOscHandler {
     }
   }
 
-  public end(success: boolean): any {
-    let ret;
+  public end(success: boolean): boolean {
+    let ret = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {

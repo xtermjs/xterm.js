@@ -69,7 +69,7 @@ export interface IParsingState {
  * CSI handler types.
  * Note: `params` is borrowed.
  */
-export type CsiHandlerType = (params: IParams) => boolean | void;
+export type CsiHandlerType = (params: IParams) => boolean;
 export type CsiFallbackHandlerType = (ident: number, params: IParams) => void;
 
 /**
@@ -93,20 +93,20 @@ export interface IDcsHandler {
    * execution of the command should depend on `success`.
    * To save memory also cleanup data structures here.
    */
-  unhook(success: boolean): void | boolean;
+  unhook(success: boolean): boolean;
 }
 export type DcsFallbackHandlerType = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
 /**
  * ESC handler types.
  */
-export type EscHandlerType = () => boolean | void;
+export type EscHandlerType = () => boolean;
 export type EscFallbackHandlerType = (identifier: number) => void;
 
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandlerType = () => boolean | void;
+export type ExecuteHandlerType = () => boolean;
 export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
@@ -129,7 +129,7 @@ export interface IOscHandler {
    * execution of the command should depend on `success`.
    * To save memory also cleanup data structures here.
    */
-  end(success: boolean): void | boolean;
+  end(success: boolean): boolean;
 }
 export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
@@ -174,29 +174,25 @@ export interface IEscapeSequenceParser extends IDisposable {
   setPrintHandler(handler: PrintHandlerType): void;
   clearPrintHandler(): void;
 
-  setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void;
+  registerEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable;
   clearEscHandler(id: IFunctionIdentifier): void;
   setEscHandlerFallback(handler: EscFallbackHandlerType): void;
-  addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable;
 
   setExecuteHandler(flag: string, handler: ExecuteHandlerType): void;
   clearExecuteHandler(flag: string): void;
   setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void;
 
-  setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void;
+  registerCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable;
   clearCsiHandler(id: IFunctionIdentifier): void;
   setCsiHandlerFallback(callback: CsiFallbackHandlerType): void;
-  addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable;
 
-  setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void;
+  registerDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
   clearDcsHandler(id: IFunctionIdentifier): void;
   setDcsHandlerFallback(handler: DcsFallbackHandlerType): void;
-  addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
 
-  setOscHandler(ident: number, handler: IOscHandler): void;
+  registerOscHandler(ident: number, handler: IOscHandler): IDisposable;
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandlerType): void;
-  addOscHandler(ident: number, handler: IOscHandler): IDisposable;
 
   setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
@@ -209,8 +205,7 @@ export interface IEscapeSequenceParser extends IDisposable {
  */
 export interface ISubParser<T, U> extends IDisposable {
   reset(): void;
-  addHandler(ident: number, handler: T): IDisposable;
-  setHandler(ident: number, handler: T): void;
+  registerHandler(ident: number, handler: T): IDisposable;
   clearHandler(ident: number): void;
   setHandlerFallback(handler: U): void;
   put(data: Uint32Array, start: number, end: number): void;
