@@ -333,7 +333,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
     this._parser.setCsiHandler({final: 'l'}, params => this.resetMode(params));
     this._parser.setCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
-    this._parser.setCsiHandler({final: 'm'}, params => this.charAttributes(params));
+    this._parser.setCsiHandler({final: 'm'}, (params => this.charAttributes(params)) as (p: any) => void);
     this._parser.setCsiHandler({final: 'n'}, params => this.deviceStatus(params));
     this._parser.setCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
     this._parser.setCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
@@ -454,10 +454,43 @@ export class InputHandler extends Disposable implements IInputHandler {
     super.dispose();
   }
 
-  public parse(data: string | Uint8Array): void {
+  // FIXME: cleanup async handling
+  private _parseStack = {
+    paused: false,
+    cursorStartX: 0,
+    cursorStartY: 0,
+    decodedLength: 0,
+    position: 0
+  };
+
+  private _preserveStack(cursorStartX: number, cursorStartY: number, decodedLength: number, position: number): void {
+    this._parseStack.paused = true;
+    this._parseStack.cursorStartX = cursorStartX;
+    this._parseStack.cursorStartY = cursorStartY;
+    this._parseStack.decodedLength = decodedLength;
+    this._parseStack.position = position;
+  }
+
+  public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
+    let result: void | Promise<boolean>;
     let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
+    let cursorStartX = buffer.x;
+    let cursorStartY = buffer.y;
+    let start = 0;
+    const wasPaused = this._parseStack.paused;
+
+    if (wasPaused) {
+      // assumption: _parseBuffer never mutates between async calls
+      if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+        return result;
+      }
+      cursorStartX = this._parseStack.cursorStartX;
+      cursorStartY = this._parseStack.cursorStartY;
+      this._parseStack.paused = false;
+      if (data.length > MAX_PARSEBUFFER_LENGTH) {
+        start = this._parseStack.position + MAX_PARSEBUFFER_LENGTH;
+      }
+    }
 
     this._logService.debug('parsing data', data);
 
@@ -469,22 +502,33 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Clear the dirty row service so we know which lines changed as a result of parsing
-    this._dirtyRowService.clearRange();
+    // Important: do not clear between async calls, otherwise we lost pending update information.
+    if (!wasPaused) {
+      this._dirtyRowService.clearRange();
+    }
 
     // process big data in smaller chunks
     if (data.length > MAX_PARSEBUFFER_LENGTH) {
-      for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
+      for (let i = start; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
         const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
-        this._parser.parse(this._parseBuffer, len);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, i);
+          return result;
+        }
       }
     } else {
-      const len = (typeof data === 'string')
-        ? this._stringDecoder.decode(data, this._parseBuffer)
-        : this._utf8Decoder.decode(data, this._parseBuffer);
-      this._parser.parse(this._parseBuffer, len);
+      if (!wasPaused) {
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data, this._parseBuffer)
+          : this._utf8Decoder.decode(data, this._parseBuffer);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, 0);
+          return result;
+        }
+      }
     }
 
     buffer = this._bufferService.buffer;

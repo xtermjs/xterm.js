@@ -449,7 +449,45 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.precedingCodepoint = 0;
   }
 
+  // FIXME: cleanup async handling
+  private _parseStack: {
+    paused: boolean;
+    type: 'ESC' | 'CSI';  // FIXME: support for DCS and OSC
+    handlers: CsiHandlerType[] | EscHandlerType[];
+    handlerPos: number;
+    transition: number;
+    currentState: ParserState;
+    collect: number;
+    pos: number;
+  } = {
+    paused: false,
+    type: 'ESC',
+    handlers: [],
+    handlerPos: 0,
+    transition: 0,
+    currentState: 0,
+    collect: 0,
+    pos: 0
+  };
 
+  private _preserveStack(
+    type: 'ESC' | 'CSI',
+    handlers: CsiHandlerType[] | EscHandlerType[],
+    handlerPos: number,
+    transition: number,
+    currentState: ParserState,
+    collect: number,
+    pos: number
+  ): void {
+    this._parseStack.paused = true;
+    this._parseStack.type = type;
+    this._parseStack.handlers = handlers;
+    this._parseStack.handlerPos = handlerPos;
+    this._parseStack.transition = transition;
+    this._parseStack.currentState = currentState;
+    this._parseStack.collect = collect;
+    this._parseStack.pos = pos;
+  }
 
   /**
    * Parse UTF32 codepoints in `data` up to `length`.
@@ -465,7 +503,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
    */
-  public parse(data: Uint32Array, length: number): void {
+  public parse(data: Uint32Array, length: number, promiseResult?: boolean): void | Promise<boolean> {
     let code = 0;
     let transition = 0;
     let currentState = this.currentState;
@@ -475,8 +513,58 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     const params = this._params;
     const table: Uint8Array = this._transitions.table;
 
+    let res: any;
+    let start = 0;
+    if (this._parseStack.paused) {
+      const handlers = this._parseStack.handlers;
+      let handlerPos = this._parseStack.handlerPos - 1;
+      transition = this._parseStack.transition;
+      currentState = this._parseStack.currentState;
+      collect = this._parseStack.collect;
+      start = this._parseStack.pos;
+
+      // we have to resume the old handler loop if:
+      // - return value of the promise was `false`
+      // - handlers are not exhausted yet
+      // FIXME: removing handlers from within a handler of the same sequence
+      //        is not supported atm (also true for sync handlers)!!
+      if (promiseResult === false && handlerPos > -1) {
+        switch (this._parseStack.type) {
+          case 'CSI':
+            for (; handlerPos >= 0; handlerPos--) {
+              if ((res = (handlers as CsiHandlerType[])[handlerPos](params)) !== false) {
+                if (res instanceof Promise) {
+                  this._parseStack.handlerPos = handlerPos;
+                  return res;
+                }
+                break;
+              }
+            }
+            break;
+          case 'ESC':
+            for (; handlerPos >= 0; handlerPos--) {
+              if ((res = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
+                if (res instanceof Promise) {
+                  this._parseStack.handlerPos = handlerPos;
+                  return res;
+                }
+                break;
+              }
+            }
+            break;
+        }
+      }
+      // cleanup before continuing with the main loop
+      this.precedingCodepoint = 0;
+      this._parseStack.paused = false;
+      start++;
+      currentState = transition & TableAccess.TRANSITION_STATE_MASK;
+    }
+
+    // console.log('startPos', start, length);
+
     // process input string
-    for (let i = 0; i < length; ++i) {
+    for (let i = start; i < length; ++i) {
       code = data[i];
 
       // normal transition & action lookup
@@ -534,7 +622,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
             // undefined or true means success and to stop bubbling
-            if (handlers[j](params) !== false) {
+            // FIXME: remove setHandler interface, always use addHandler with proper return value in true|false
+            // background - result of undefined leads to nonsense instanceof Promise test below
+            if ((res = handlers[j](params)) !== false) {
+              if (res && res instanceof Promise) {
+                this._preserveStack('CSI', handlers, j, transition, currentState, collect, i);
+                return res;
+              }
               break;
             }
           }
@@ -568,7 +662,11 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           let jj = handlersEsc ? handlersEsc.length - 1 : -1;
           for (; jj >= 0; jj--) {
             // undefined or true means success and to stop bubbling
-            if (handlersEsc[jj]() !== false) {
+            if ((res = handlersEsc[jj]()) !== false) {
+              if (res && res instanceof Promise) {
+                this._preserveStack('ESC', handlersEsc, jj, transition, currentState, collect, i);
+                return res;
+              }
               break;
             }
           }

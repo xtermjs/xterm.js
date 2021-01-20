@@ -160,7 +160,7 @@ export interface IEscapeSequenceParser extends IDisposable {
    * Parse UTF32 codepoints in `data` up to `length`.
    * @param data The data to parse.
    */
-  parse(data: Uint32Array, length: number): void;
+  parse(data: Uint32Array, length: number, promiseResult?: boolean): void | Promise<boolean>;
 
   /**
    * Get string from numercial function identifier `ident`.
