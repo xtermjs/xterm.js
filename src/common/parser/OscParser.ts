@@ -8,9 +8,11 @@ import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
+const EMPTY_HANDLERS: IOscHandler[] = [];
 
 export class OscParser implements IOscParser {
   private _state = OscState.START;
+  private _active = EMPTY_HANDLERS;
   private _id = -1;
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandlerType = () => { };
@@ -40,6 +42,7 @@ export class OscParser implements IOscParser {
   public dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
+    this._active = EMPTY_HANDLERS;
   }
 
   public reset(): void {
@@ -47,28 +50,28 @@ export class OscParser implements IOscParser {
     if (this._state === OscState.PAYLOAD) {
       this.end(false);
     }
+    this._active = EMPTY_HANDLERS;
     this._id = -1;
     this._state = OscState.START;
   }
 
   private _start(): void {
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
+    this._active = this._handlers[this._id] || EMPTY_HANDLERS;
+    if (!this._active.length) {
       this._handlerFb(this._id, 'START');
     } else {
-      for (let j = handlers.length - 1; j >= 0; j--) {
-        handlers[j].start();
+      for (let j = this._active.length - 1; j >= 0; j--) {
+        this._active[j].start();
       }
     }
   }
 
   private _put(data: Uint32Array, start: number, end: number): void {
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
+    if (!this._active.length) {
       this._handlerFb(this._id, 'PUT', utf32ToString(data, start, end));
     } else {
-      for (let j = handlers.length - 1; j >= 0; j--) {
-        handlers[j].put(data, start, end);
+      for (let j = this._active.length - 1; j >= 0; j--) {
+        this._active[j].put(data, start, end);
       }
     }
   }
@@ -77,20 +80,19 @@ export class OscParser implements IOscParser {
     // other than the old code we always have to call .end
     // to keep the bubbling we use `success` to indicate
     // whether a handler should execute
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
+    if (!this._active.length) {
       this._handlerFb(this._id, 'END', success);
     } else {
-      let j = handlers.length - 1;
+      let j = this._active.length - 1;
       for (; j >= 0; j--) {
-        if (handlers[j].end(success)) {
+        if (this._active[j].end(success)) {
           break;
         }
       }
       j--;
       // cleanup left over handlers
       for (; j >= 0; j--) {
-        handlers[j].end(false);
+        this._active[j].end(false);
       }
     }
   }
@@ -98,7 +100,6 @@ export class OscParser implements IOscParser {
   public start(): void {
     // always reset leftover handlers
     this.reset();
-    this._id = -1;
     this._state = OscState.ID;
   }
 
@@ -155,6 +156,7 @@ export class OscParser implements IOscParser {
       }
       this._end(success);
     }
+    this._active = EMPTY_HANDLERS;
     this._id = -1;
     this._state = OscState.START;
   }
