@@ -521,8 +521,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           const handlers = this._csiHandlers[collect << 8 | code];
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
-            // undefined or true means success and to stop bubbling
-            if (handlers[j](params) !== false) {
+            // true means success and to stop bubbling
+            if (handlers[j](params)) {
               break;
             }
           }
@@ -555,8 +555,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           const handlersEsc = this._escHandlers[collect << 8 | code];
           let jj = handlersEsc ? handlersEsc.length - 1 : -1;
           for (; jj >= 0; jj--) {
-            // undefined or true means success and to stop bubbling
-            if (handlersEsc[jj]() !== false) {
+            // true means success and to stop bubbling
+            if (handlersEsc[jj]()) {
               break;
             }
           }
@@ -578,6 +578,21 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+              dcs.put(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+              dcs.put(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+              dcs.put(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
               dcs.put(data, i, j);
               i = j - 1;
               break;

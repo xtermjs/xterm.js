@@ -83,7 +83,7 @@ export class OscParser implements IOscParser {
     } else {
       let j = handlers.length - 1;
       for (; j >= 0; j--) {
-        if (handlers[j].end(success) !== false) {
+        if (handlers[j].end(success)) {
           break;
         }
       }

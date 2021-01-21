@@ -84,7 +84,7 @@ export class DcsParser implements IDcsParser {
     } else {
       let j = this._active.length - 1;
       for (; j >= 0; j--) {
-        if (this._active[j].unhook(success) !== false) {
+        if (this._active[j].unhook(success)) {
           break;
         }
       }
