@@ -20,6 +20,7 @@ export class DcsParser implements IDcsParser {
   public dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
+    this._active = EMPTY_HANDLERS;
   }
 
   public registerHandler(ident: number, handler: IDcsHandler): IDisposable {
