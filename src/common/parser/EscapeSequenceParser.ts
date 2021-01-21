@@ -582,21 +582,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               i = j - 1;
               break;
             }
-            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              dcs.put(data, i, j);
-              i = j - 1;
-              break;
-            }
-            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              dcs.put(data, i, j);
-              i = j - 1;
-              break;
-            }
-            if (++j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              dcs.put(data, i, j);
-              i = j - 1;
-              break;
-            }
           }
           break;
         case ParserAction.DCS_UNHOOK:
@@ -613,7 +598,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.OSC_PUT:
           // inner loop: 0x20 (SP) included, 0x7F (DEL) included
           for (let j = i + 1; ; j++) {
-            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code <= 0x9f)) {
+            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
               osc.put(data, i, j);
               i = j - 1;
               break;

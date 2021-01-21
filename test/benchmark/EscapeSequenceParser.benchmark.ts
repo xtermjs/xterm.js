@@ -6,9 +6,11 @@ import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-be
 
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { C0, C1 } from 'common/data/EscapeSequences';
-import { IDcsHandler, IParams } from 'common/parser/Types';
+import { IDcsHandler, IOscHandler, IParams } from 'common/parser/Types';
 import { OscHandler } from 'common/parser/OscParser';
+import { DcsHandler } from '../../out/common/parser/DcsParser';
 
+const SIZE = 5000000;
 
 function toUtf32(s: string): Uint32Array {
   const result = new Uint32Array(s.length);
@@ -18,10 +20,16 @@ function toUtf32(s: string): Uint32Array {
   return result;
 }
 
-class DcsHandler implements IDcsHandler {
+class FastDcsHandler implements IDcsHandler {
   public hook(params: IParams): void {}
   public put(data: Uint32Array, start: number, end: number): void {}
-  public unhook(): boolean { return true; }
+  public unhook(success: boolean): boolean { return true; }
+}
+
+class FastOscHandler implements IOscHandler {
+  public start(): void {}
+  public put(data: Uint32Array, start: number, end: number): void {}
+  public end(success: boolean): boolean { return true; }
 }
 
 
@@ -81,7 +89,7 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.setExecuteHandler(C1.NEL, () => true);
     parser.setExecuteHandler(C1.HTS, () => true);
     parser.registerOscHandler(0, new OscHandler(data => true));
-    parser.registerOscHandler(2, new OscHandler(data => true));
+    parser.registerOscHandler(1, new FastOscHandler());
     parser.registerEscHandler({final: '7'}, () => true);
     parser.registerEscHandler({final: '8'}, () => true);
     parser.registerEscHandler({final: 'D'}, () => true);
@@ -98,14 +106,15 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.registerEscHandler({final: '~'}, () => true);
     parser.registerEscHandler({intermediates: '%', final: '@'}, () => true);
     parser.registerEscHandler({intermediates: '%', final: 'G'}, () => true);
-    parser.registerDcsHandler({final: 'q'}, new DcsHandler());
+    parser.registerDcsHandler({final: 'p'}, new DcsHandler(data => true));
+    parser.registerDcsHandler({final: 'q'}, new FastDcsHandler());
   });
 
   perfContext('PRINT - a', () => {
     before(() => {
       const data = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -120,7 +129,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\n\n\n\n\n\n\n';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -135,7 +144,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -150,7 +159,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -165,7 +174,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -180,7 +189,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -195,7 +204,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -210,7 +219,7 @@ perfContext('Parser throughput - 50MB data', () => {
     before(() => {
       const data = '\x1b[1;2;3;4;5;6;7;8;9;0m\x1b[1;2;3;4;5;6;7;8;9;0m\x1b[1;2;3;4;5;6;7;8;9;0m';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -221,11 +230,11 @@ perfContext('Parser throughput - 50MB data', () => {
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('OSC (short) - OSC 0;hi ST', () => {
+  perfContext('OSC string interface (short seq) - OSC 0;hi ST', () => {
     before(() => {
       const data = '\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\x1b]0;hi\x1b\\';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -236,11 +245,11 @@ perfContext('Parser throughput - 50MB data', () => {
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('OSC (long) - OSC 0;<text> ST', () => {
+  perfContext('OSC string interface (long seq) - OSC 0;<text> ST', () => {
     before(() => {
       const data = '\x1b]0;Lorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -251,11 +260,41 @@ perfContext('Parser throughput - 50MB data', () => {
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('DCS (short)', () => {
+  perfContext('OSC class interface (short seq) - OSC 0;hi ST', () => {
     before(() => {
-      const data = '\x1bPq~~\x1b\\';
+      const data = '\x1b]1;hi\x1b\\\x1b]1;hi\x1b\\\x1b]1;hi\x1b\\\x1b]1;hi\x1b\\x1b]1;hi\x1b\\';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
+    }, {fork: true}).showAverageThroughput();
+  });
+
+  perfContext('OSC class interface (long seq) - OSC 0;<text> ST', () => {
+    before(() => {
+      const data = '\x1b]1;Lorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
+    }, {fork: true}).showAverageThroughput();
+  });
+
+  perfContext('DCS string interface (short seq)', () => {
+    before(() => {
+      const data = '\x1bPphi\x1b\\\x1bPphi\x1b\\\x1bPphi\x1b\\\x1bPphi\x1b\\\x1bPphi\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
@@ -266,11 +305,41 @@ perfContext('Parser throughput - 50MB data', () => {
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('DCS (long)', () => {
+  perfContext('DCS string interface (long seq)', () => {
     before(() => {
-      const data = '\x1bPq#0;2;0;0;0#1;2;100;100;0#2;2;0;100;0#1~~@@vv@@~~@@~~$#2??}}GG}}??}}??-#1!14@\x1b\\';
+      const data = '\x1bPpLorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
       let content = '';
-      while (content.length < 50000000) {
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
+    }, {fork: true}).showAverageThroughput();
+  });
+
+  perfContext('DCS class interface (short seq)', () => {
+    before(() => {
+      const data = '\x1bPqhi\x1b\\\x1bPqhi\x1b\\\x1bPqhi\x1b\\\x1bPqhi\x1b\\\x1bPqhi\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
+    }, {fork: true}).showAverageThroughput();
+  });
+
+  perfContext('DCS class interface (long seq)', () => {
+    before(() => {
+      const data = '\x1bPqLorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
         content += data;
       }
       parsed = toUtf32(content);
