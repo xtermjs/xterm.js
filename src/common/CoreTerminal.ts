@@ -125,7 +125,17 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._writeBuffer.write(data, callback);
   }
 
+  /**
+   * Write data to terminal synchonously.
+   * 
+   * This method is unreliable with async parser handlers, thus should not
+   * be used anymore. If you need blocking semantics on data input consider
+   * `write` with a callback instead.
+   * 
+   * @deprecated Unreliable, will be removed soon.
+   */
   public writeSync(data: string | Uint8Array): void {
+    console.error('writeSync is unreliable and will be removed soon.');
     this._writeBuffer.writeSync(data);
   }
 

@@ -55,22 +55,30 @@ describe('Terminal', () => {
     //   term.onData(() => done());
     //   term.handler('fake');
     // });
-    it('should fire the onCursorMove event', (done) => {
-      term.onCursorMove(() => done());
-      term.writeSync('foo');
+    it('should fire the onCursorMove event', () => {
+      return new Promise(async r => {
+        term.onCursorMove(() => r());
+        await term.writeP('foo');
+      });
     });
-    it('should fire the onLineFeed event', (done) => {
-      term.onLineFeed(() => done());
-      term.writeSync('\n');
+    it('should fire the onLineFeed event', () => {
+      return new Promise(async r => {
+        term.onLineFeed(() => r());
+        await term.writeP('\n');
+      });
     });
-    it('should fire a scroll event when scrollback is created', (done) => {
-      term.onScroll(() => done());
-      term.writeSync('\n'.repeat(INIT_ROWS));
+    it('should fire a scroll event when scrollback is created', () => {
+      return new Promise(async r => {
+        term.onScroll(() => r());
+        await term.writeP('\n'.repeat(INIT_ROWS));
+      });
     });
-    it('should fire a scroll event when scrollback is cleared', (done) => {
-      term.writeSync('\n'.repeat(INIT_ROWS));
-      term.onScroll(() => done());
-      term.clear();
+    it('should fire a scroll event when scrollback is cleared', () => {
+      return new Promise(async r => {
+        await term.writeP('\n'.repeat(INIT_ROWS));
+        term.onScroll(() => r());
+        term.clear();
+      });
     });
     it('should fire a key event after a keypress DOM event', (done) => {
       term.onKey(e => {
@@ -178,10 +186,10 @@ describe('Terminal', () => {
         assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
     });
-    it('should clear a buffer larger than rows', () => {
+    it('should clear a buffer larger than rows', async () => {
       // Fill the buffer with dummy rows
       for (let i = 0; i < term.rows * 2; i++) {
-        term.writeSync('test\n');
+        await term.writeP('test\n');
       }
 
       const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
@@ -225,22 +233,24 @@ describe('Terminal', () => {
       });
       term.paste('\r\nfoo\nbar\r');
     });
-    it('should respect bracketed paste mode', done => {
-      term.onData(e => {
-        assert.equal(e, '\x1b[200~foo\x1b[201~');
-        done();
+    it('should respect bracketed paste mode', () => {
+      return new Promise(async r => {
+        term.onData(e => {
+          assert.equal(e, '\x1b[200~foo\x1b[201~');
+          r();
+        });
+        await term.writeP('\x1b[?2004h');
+        term.paste('foo');
       });
-      term.writeSync('\x1b[?2004h');
-      term.paste('foo');
     });
   });
 
   describe('scroll', () => {
     describe('scrollLines', () => {
       let startYDisp: number;
-      beforeEach(() => {
+      beforeEach(async () => {
         for (let i = 0; i < INIT_ROWS * 2; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
         startYDisp = INIT_ROWS + 1;
       });
@@ -273,9 +283,9 @@ describe('Terminal', () => {
 
     describe('scrollPages', () => {
       let startYDisp: number;
-      beforeEach(() => {
+      beforeEach(async () => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -296,9 +306,9 @@ describe('Terminal', () => {
     });
 
     describe('scrollToTop', () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
       });
       it('should scroll to the top', () => {
@@ -310,9 +320,9 @@ describe('Terminal', () => {
 
     describe('scrollToBottom', () => {
       let startYDisp: number;
-      beforeEach(() => {
+      beforeEach(async () => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -331,9 +341,9 @@ describe('Terminal', () => {
 
     describe('scrollToLine', () => {
       let startYDisp: number;
-      beforeEach(() => {
+      beforeEach(async () => {
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
         startYDisp = (term.rows * 2) + 1;
       });
@@ -375,10 +385,10 @@ describe('Terminal', () => {
         assert.equal(term.buffer.ydisp, term.buffer.ybase);
       });
 
-      it('should not scroll down, when a custom keydown handler prevents the event', () => {
+      it('should not scroll down, when a custom keydown handler prevents the event', async () => {
         // Add some output to the terminal
         for (let i = 0; i < term.rows * 3; i++) {
-          term.writeSync('test\r\n');
+          await term.writeP('test\r\n');
         }
         const startYDisp = (term.rows * 2) + 1;
         term.attachCustomKeyEventHandler(() => {
@@ -717,12 +727,12 @@ describe('Terminal', () => {
   });
 
   describe('unicode - surrogates', () => {
-    it('2 characters per cell', function (): void {
+    it('2 characters per cell', async function (): Promise<void> {
       this.timeout(10000);  // This is needed because istanbul patches code and slows it down
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.writeSync(high + String.fromCharCode(i));
+        await term.writeP(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
@@ -731,25 +741,25 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('2 characters at last cell', () => {
+    it('2 characters at last cell', async () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
-        term.writeSync(high + String.fromCharCode(i));
+        await term.writeP(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
         expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql('');
         term.reset();
       }
     });
-    it('2 characters per cell over line end with autowrap', () => {
+    it('2 characters per cell over line end with autowrap', async () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
 
-        term.writeSync('a' + high + String.fromCharCode(i));
+        await term.writeP('a' + high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql('a');
         expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length).eql(2);
@@ -757,17 +767,17 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('2 characters per cell over line end without autowrap', () => {
+    it('2 characters per cell over line end without autowrap', async () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
-        term.writeSync('\x1b[?7l'); // Disable wraparound mode
+        await term.writeP('\x1b[?7l'); // Disable wraparound mode
         const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
         if (width !== 1) {
           continue;
         }
-        term.writeSync('a' + high + String.fromCharCode(i));
+        await term.writeP('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
         expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
         expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length).eql(2);
@@ -775,12 +785,11 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('splitted surrogates', () => {
+    it('splitted surrogates', async () => {
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.writeSync(high);
-        term.writeSync(String.fromCharCode(i));
+        await term.writeP(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
         expect(tchar.getChars()).eql(high + String.fromCharCode(i));
         expect(tchar.getChars().length).eql(2);
@@ -793,16 +802,16 @@ describe('Terminal', () => {
 
   describe('unicode - combining characters', () => {
     const cell = new CellData();
-    it('café', () => {
-      term.writeSync('cafe\u0301');
+    it('café', async () => {
+      await term.writeP('cafe\u0301');
       term.buffer.lines.get(0)!.loadCell(3, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(1);
     });
-    it('café - end of line', () => {
+    it('café - end of line', async () => {
       term.buffer.x = term.cols - 1 - 3;
-      term.writeSync('cafe\u0301');
+      await term.writeP('cafe\u0301');
       term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
       expect(cell.getChars()).eql('e\u0301');
       expect(cell.getChars().length).eql(2);
@@ -812,8 +821,8 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(0);
       expect(cell.getWidth()).eql(1);
     });
-    it('multiple combined é', () => {
-      term.writeSync(Array(100).join('e\u0301'));
+    it('multiple combined é', async () => {
+      await term.writeP(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         expect(cell.getChars()).eql('e\u0301');
@@ -825,8 +834,8 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(1);
     });
-    it('multiple surrogate with combined', () => {
-      term.writeSync(Array(100).join('\uD800\uDC00\u0301'));
+    it('multiple surrogate with combined', async () => {
+      await term.writeP(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         expect(cell.getChars()).eql('\uD800\uDC00\u0301');
@@ -842,19 +851,19 @@ describe('Terminal', () => {
 
   describe('unicode - fullwidth characters', () => {
     const cell = new CellData();
-    it('cursor movement even', () => {
+    it('cursor movement even', async () => {
       expect(term.buffer.x).eql(0);
-      term.writeSync('￥');
+      await term.writeP('￥');
       expect(term.buffer.x).eql(2);
     });
-    it('cursor movement odd', () => {
+    it('cursor movement odd', async () => {
       term.buffer.x = 1;
       expect(term.buffer.x).eql(1);
-      term.writeSync('￥');
+      await term.writeP('￥');
       expect(term.buffer.x).eql(3);
     });
-    it('line of ￥ even', () => {
-      term.writeSync(Array(50).join('￥'));
+    it('line of ￥ even', async () => {
+      await term.writeP(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -872,9 +881,9 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(1);
       expect(cell.getWidth()).eql(2);
     });
-    it('line of ￥ odd', () => {
+    it('line of ￥ odd', async () => {
       term.buffer.x = 1;
-      term.writeSync(Array(50).join('￥'));
+      await term.writeP(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -896,9 +905,9 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(1);
       expect(cell.getWidth()).eql(2);
     });
-    it('line of ￥ with combining odd', () => {
+    it('line of ￥ with combining odd', async () => {
       term.buffer.x = 1;
-      term.writeSync(Array(50).join('￥\u0301'));
+      await term.writeP(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -920,8 +929,8 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(2);
     });
-    it('line of ￥ with combining even', () => {
-      term.writeSync(Array(50).join('￥\u0301'));
+    it('line of ￥ with combining even', async () => {
+      await term.writeP(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -939,9 +948,9 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(2);
       expect(cell.getWidth()).eql(2);
     });
-    it('line of surrogate fullwidth with combining odd', () => {
+    it('line of surrogate fullwidth with combining odd', async () => {
       term.buffer.x = 1;
-      term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
+      await term.writeP(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -963,8 +972,8 @@ describe('Terminal', () => {
       expect(cell.getChars().length).eql(3);
       expect(cell.getWidth()).eql(2);
     });
-    it('line of surrogate fullwidth with combining even', () => {
-      term.writeSync(Array(50).join('\ud843\ude6d\u0301'));
+    it('line of surrogate fullwidth with combining even', async () => {
+      await term.writeP(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -986,24 +995,24 @@ describe('Terminal', () => {
 
   describe('insert mode', () => {
     const cell = new CellData();
-    it('halfwidth - all', () => {
-      term.writeSync(Array(9).join('0123456789').slice(-80));
+    it('halfwidth - all', async () => {
+      await term.writeP(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
-      term.writeSync('abcde');
+      await term.writeP('abcde');
       expect(term.buffer.lines.get(0)!.length).eql(term.cols);
       expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
       expect(term.buffer.lines.get(0)!.loadCell(14, cell).getChars()).eql('e');
       expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('0');
       expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('4');
     });
-    it('fullwidth - insert', () => {
-      term.writeSync(Array(9).join('0123456789').slice(-80));
+    it('fullwidth - insert', async () => {
+      await term.writeP(Array(9).join('0123456789').slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
-      term.writeSync('￥￥￥');
+      await term.writeP('￥￥￥');
       expect(term.buffer.lines.get(0)!.length).eql(term.cols);
       expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('￥');
       expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('');
@@ -1011,17 +1020,17 @@ describe('Terminal', () => {
       expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('');
       expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('3');
     });
-    it('fullwidth - right border', () => {
-      term.writeSync(Array(41).join('￥'));
+    it('fullwidth - right border', async () => {
+      await term.writeP(Array(41).join('￥'));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
-      term.writeSync('a');
+      await term.writeP('a');
       expect(term.buffer.lines.get(0)!.length).eql(term.cols);
       expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
       expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('￥');
       expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
-      term.writeSync('b');
+      await term.writeP('b');
       expect(term.buffer.lines.get(0)!.length).eql(term.cols);
       expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('b');
       expect(term.buffer.lines.get(0)!.loadCell(12, cell).getChars()).eql('￥');
@@ -1043,85 +1052,87 @@ describe('Terminal', () => {
       linkifier.attachToDom({} as any, mouseZoneManager);
     });
 
-    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: Mocha.Done): void {
-      terminal.writeSync(rowText);
-      linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-      linkifier.linkifyRows();
-      // Allow linkify to happen
-      setTimeout(() => {
-        assert.equal(mouseZoneManager.zones.length, links.length);
-        links.forEach((l, i) => {
-          assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
-          assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
-          assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
-          assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
-        });
-        done();
-      }, 0);
+    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[]): Promise<void> {
+      return new Promise(async r => {
+        await terminal.writeP(rowText);
+        linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+        linkifier.linkifyRows();
+        // Allow linkify to happen
+        setTimeout(() => {
+          assert.equal(mouseZoneManager.zones.length, links.length);
+          links.forEach((l, i) => {
+            assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
+            assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
+            assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
+            assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
+          });
+          r();
+        }, 0);
+      });
     }
 
     describe('unicode before the match', () => {
-      it('combining - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      it('combining - match within one line', () => {
+        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
       });
-      it('combining - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      it('combining - match over two lines', () => {
+        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
       });
-      it('surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      it('surrogate - match within one line', () => {
+        return assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
       });
-      it('surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      it('surrogate - match over two lines', () => {
+        return assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
       });
-      it('combining surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      it('combining surrogate - match within one line', () => {
+        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
       });
-      it('combining surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      it('combining surrogate - match over two lines', () => {
+        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
       });
-      it('fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      it('fullwidth - match within one line', () => {
+        return assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
       });
-      it('fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      it('fullwidth - match over two lines', () => {
+        return assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
       });
-      it('combining fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      it('combining fullwidth - match within one line', () => {
+        return assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
       });
-      it('combining fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      it('combining fullwidth - match over two lines', () => {
+        return assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
       });
     });
     describe('unicode within the match', () => {
-      it('combining - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      it('combining - match within one line', () => {
+        return assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
       });
-      it('combining - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      it('combining - match over two lines', () => {
+        return assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
       });
-      it('surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      it('surrogate - match within one line', () => {
+        return assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
       });
-      it('surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      it('surrogate - match over two lines', () => {
+        return assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}]);
       });
-      it('combining surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      it('combining surrogate - match within one line', () => {
+        return assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
       });
-      it('combining surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      it('combining surrogate - match over two lines', () => {
+        return assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}]);
       });
-      it('fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      it('fullwidth - match within one line', () => {
+        return assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
       });
-      it('fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      it('fullwidth - match over two lines', () => {
+        return assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
       });
-      it('combining fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      it('combining fullwidth - match within one line', () => {
+        return assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
       });
-      it('combining fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      it('combining fullwidth - match over two lines', () => {
+        return assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
       });
     });
   });
@@ -1133,9 +1144,9 @@ describe('Terminal', () => {
       terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
     });
 
-    it('multiline ascii', () => {
+    it('multiline ascii', async () => {
       const input = 'This is ASCII text spanning multiple lines.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
@@ -1144,9 +1155,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('combining e\u0301 in a sentence', () => {
+    it('combining e\u0301 in a sentence', async () => {
       const input = 'Sitting in the cafe\u0301 drinking coffee.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 19; ++i) {
@@ -1164,9 +1175,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('multiline combining e\u0301', () => {
+    it('multiline combining e\u0301', async () => {
       const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
@@ -1176,9 +1187,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('surrogate char in a sentence', () => {
+    it('surrogate char in a sentence', async () => {
       const input = 'The 𝄞 is a clef widely used in modern notation.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 5; ++i) {
@@ -1196,9 +1207,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('multiline surrogate char', () => {
+    it('multiline surrogate char', async () => {
       const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
@@ -1208,10 +1219,10 @@ describe('Terminal', () => {
       }
     });
 
-    it('surrogate char with combining', () => {
+    it('surrogate char with combining', async () => {
       // eye of Ra with acute accent - string length of 3
       const input = '𓂀\u0301 - the eye hiroglyph with an acute accent.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       // index 0..2 should map to 0
@@ -1223,9 +1234,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('multiline surrogate with combining', () => {
+    it('multiline surrogate with combining', async () => {
       const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 3 string indices
@@ -1235,9 +1246,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('fullwidth chars', () => {
+    it('fullwidth chars', async () => {
       const input = 'These １２３ are some fat numbers.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 6; ++i) {
@@ -1254,9 +1265,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('multiline fullwidth chars', () => {
+    it('multiline fullwidth chars', async () => {
       const input = '１２３４５６７８９０１２３４５６７８９０';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 9; i < input.length; ++i) {
@@ -1265,9 +1276,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('fullwidth combining with emoji - match emoji cell', () => {
+    it('fullwidth combining with emoji - match emoji cell', async () => {
       const input = 'Lots of ￥\u0301 make me 😃.';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       const stringIndex = s.match(/😃/)!.index!;
@@ -1275,14 +1286,14 @@ describe('Terminal', () => {
       assert(terminal.buffer.lines.get(bufferIndex[0])!.loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
     });
 
-    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
+    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', async () => {
       const input = 'a１２３４５６７８９０１２３４５６７８９０';
       // the 'a' at the beginning moves all fullwidth chars one to the right
       // now the end of the line contains a dangling empty cell since
       // the next fullwidth char has to wrap early
       // the dangling last cell is wrongly added in the string
       // --> fixable after resolving #1685
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 10; i < input.length; ++i) {
@@ -1292,9 +1303,9 @@ describe('Terminal', () => {
       }
     });
 
-    it('test fully wrapped buffer up to last char', () => {
+    it('test fully wrapped buffer up to last char', async () => {
       const input = Array(6).join('1234567890');
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
@@ -1303,10 +1314,10 @@ describe('Terminal', () => {
       }
     });
 
-    it('test fully wrapped buffer up to last char with full width odd', () => {
+    it('test fully wrapped buffer up to last char with full width odd', async () => {
       const input = 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301'
                     + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
@@ -1321,16 +1332,16 @@ describe('Terminal', () => {
       }
     });
 
-    it('should handle \t in lines correctly', () => {
+    it('should handle \t in lines correctly', async () => {
       const input = '\thttps://google.de';
-      terminal.writeSync(input);
+      await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(s, Array(terminal.optionsService.options.tabStopWidth + 1).join(' ') + 'https://google.de');
     });
   });
 
   describe('BufferStringIterator', function(): void {
-    it('iterator does not overflow buffer limits', function(): void {
+    it('iterator does not overflow buffer limits', async () => {
       const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
       const data = [
         'aaaaaaaaaa',
@@ -1344,7 +1355,7 @@ describe('Terminal', () => {
         'aaaaaaaaaa',
         'aaaaaaaaaa'
       ];
-      terminal.writeSync(data.join(''));
+      await terminal.writeP(data.join(''));
       // brute force test with insane values
       expect(() => {
         for (let overscan = 0; overscan < 20; ++overscan) {
@@ -1362,7 +1373,7 @@ describe('Terminal', () => {
   });
 
   describe('Windows Mode', () => {
-    it('should mark lines as wrapped when the line ends in a non-null character after a LF', () => {
+    it('should mark lines as wrapped when the line ends in a non-null character after a LF', async () => {
       const data = [
         'aaaaaaaaaa\n\r', // cannot wrap as it's the first
         'aaaaaaaaa\n\r',  // wrapped (windows mode only)
@@ -1370,19 +1381,19 @@ describe('Terminal', () => {
       ];
 
       const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
-      normalTerminal.writeSync(data.join(''));
+      await normalTerminal.writeP(data.join(''));
       assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
       const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
-      windowsModeTerminal.writeSync(data.join(''));
+      await windowsModeTerminal.writeP(data.join(''));
       assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
       assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
     });
 
-    it('should mark lines as wrapped when the line ends in a non-null character after a CUP', () => {
+    it('should mark lines as wrapped when the line ends in a non-null character after a CUP', async () => {
       const data = [
         'aaaaaaaaaa\x1b[2;1H', // cannot wrap as it's the first
         'aaaaaaaaa\x1b[3;1H',  // wrapped (windows mode only)
@@ -1390,22 +1401,22 @@ describe('Terminal', () => {
       ];
 
       const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
-      normalTerminal.writeSync(data.join(''));
+      await normalTerminal.writeP(data.join(''));
       assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
       const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
-      windowsModeTerminal.writeSync(data.join(''));
+      await windowsModeTerminal.writeP(data.join(''));
       assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
       assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
     });
   });
-  it('convertEol setting', function(): void {
+  it('convertEol setting', async () => {
     // not converting
     const termNotConverting = new TestTerminal({cols: 15, rows: 10});
-    termNotConverting.writeSync('Hello\nWorld');
+    await termNotConverting.writeP('Hello\nWorld');
     expect(termNotConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
     expect(termNotConverting.buffer.lines.get(1)!.translateToString(false)).equals('     World     ');
     expect(termNotConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
@@ -1413,7 +1424,7 @@ describe('Terminal', () => {
 
     // converting
     const termConverting = new TestTerminal({cols: 15, rows: 10, convertEol: true});
-    termConverting.writeSync('Hello\nWorld');
+    await termConverting.writeP('Hello\nWorld');
     expect(termConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
     expect(termConverting.buffer.lines.get(1)!.translateToString(false)).equals('World          ');
     expect(termConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
@@ -1434,54 +1445,54 @@ describe('Terminal', () => {
       beforeEach(() => {
         term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
       });
-      it('SL (scrollLeft)', () => {
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[ @');
+      it('SL (scrollLeft)', async () => {
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[ @');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '2345', '2345', '2345', '2345', '2345']);
-        term.writeSync('\x1b[0 @');
+        await term.writeP('\x1b[0 @');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '345', '345', '345', '345', '345']);
-        term.writeSync('\x1b[2 @');
+        await term.writeP('\x1b[2 @');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '5', '5', '5', '5', '5']);
       });
-      it('SR (scrollRight)', () => {
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[ A');
+      it('SR (scrollRight)', async () => {
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[ A');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
-        term.writeSync('\x1b[0 A');
+        await term.writeP('\x1b[0 A');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '  123', '  123', '  123', '  123', '  123']);
-        term.writeSync('\x1b[2 A');
+        await term.writeP('\x1b[2 A');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '    1', '    1', '    1', '    1', '    1']);
       });
-      it('insertColumns (DECIC)', () => {
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[\'}');
+      it('insertColumns (DECIC)', async () => {
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[\'}');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
         term.reset();
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[1\'}');
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[1\'}');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
         term.reset();
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[2\'}');
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[2\'}');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
       });
-      it('deleteColumns (DECDC)', () => {
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[\'~');
+      it('deleteColumns (DECDC)', async () => {
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[\'~');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
         term.reset();
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[1\'~');
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[1\'~');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
         term.reset();
-        term.writeSync('12345'.repeat(6));
-        term.writeSync('\x1b[3;3H');
-        term.writeSync('\x1b[2\'~');
+        await term.writeP('12345'.repeat(6));
+        await term.writeP('\x1b[3;3H');
+        await term.writeP('\x1b[2\'~');
         assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
       });
     });
@@ -1494,41 +1505,41 @@ describe('Terminal', () => {
       });
 
       describe('reverseWraparound set', () => {
-        it('should not reverse outside of scroll margins', () => {
+        it('should not reverse outside of scroll margins', async () => {
           // prepare buffer content
-          term.writeSync('#####abcdefghijklmnopqrstuvwxy');
+          await term.writeP('#####abcdefghijklmnopqrstuvwxy');
           assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
           assert.equal(term.buffer.ydisp, 1);
           assert.equal(term.buffer.x, 5);
           assert.equal(term.buffer.y, 4);
-          term.writeSync(ttyBS.repeat(100));
+          await term.writeP(ttyBS.repeat(100));
           assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
 
-          term.writeSync('\x1b[?45h');
-          term.writeSync('uvwxy');
+          await term.writeP('\x1b[?45h');
+          await term.writeP('uvwxy');
 
           // set top/bottom to 1/3 (0-based)
-          term.writeSync('\x1b[2;4r');
+          await term.writeP('\x1b[2;4r');
           // place cursor below scroll bottom
           term.buffer.x = 5;
           term.buffer.y = 4;
-          term.writeSync(ttyBS.repeat(100));
+          await term.writeP(ttyBS.repeat(100));
           assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
 
-          term.writeSync('uvwxy');
+          await term.writeP('uvwxy');
           // place cursor within scroll margins
           term.buffer.x = 5;
           term.buffer.y = 3;
-          term.writeSync(ttyBS.repeat(100));
+          await term.writeP(ttyBS.repeat(100));
           assert.deepEqual(getLines(term, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
           assert.equal(term.buffer.x, 0);
           assert.equal(term.buffer.y, term.buffer.scrollTop);  // stops at 0, scrollTop
 
-          term.writeSync('fghijklmnopqrst');
+          await term.writeP('fghijklmnopqrst');
           // place cursor above scroll top
           term.buffer.x = 5;
           term.buffer.y = 0;
-          term.writeSync(ttyBS.repeat(100));
+          await term.writeP(ttyBS.repeat(100));
           assert.deepEqual(getLines(term, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
         });
       });
@@ -1542,22 +1553,22 @@ describe('Terminal', () => {
     let markers: IMarker[];
     let disposeStack: IMarker[];
     let term: TestTerminal;
-    beforeEach(() => {
+    beforeEach(async () => {
       term = new TestTerminal({});
       markers = [];
       disposeStack = [];
       term.optionsService.setOption('scrollback', 1);
       term.resize(10, 5);
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
-      term.writeSync('\x1b[r0\r\n');
+      await term.writeP('\x1b[r0\r\n');
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
-      term.writeSync('1\r\n');
+      await term.writeP('1\r\n');
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
-      term.writeSync('2\r\n');
+      await term.writeP('2\r\n');
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
-      term.writeSync('3\r\n');
+      await term.writeP('3\r\n');
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
-      term.writeSync('4');
+      await term.writeP('4');
       for (let i = 0; i < markers.length; ++i) {
         const marker = markers[i];
         marker.onDispose(() => disposeStack.push(marker));
@@ -1566,15 +1577,15 @@ describe('Terminal', () => {
     it('initial', () => {
       assert.deepEqual(markers.map(m => m.line), [0, 1, 2, 3, 4]);
     });
-    it('should dispose on normal trim off the top', () => {
+    it('should dispose on normal trim off the top', async () => {
       // moves top line into scrollback
-      term.writeSync('\n');
+      await term.writeP('\n');
       assert.deepEqual(disposeStack, []);
       // trims first marker
-      term.writeSync('\n');
+      await term.writeP('\n');
       assert.deepEqual(disposeStack, [markers[0]]);
       // trims second marker
-      term.writeSync('\n');
+      await term.writeP('\n');
       assert.deepEqual(disposeStack, [markers[0], markers[1]]);
       // trimmed marker objs should be disposed
       assert.deepEqual(disposeStack.map(el => el.isDisposed), [true, true]);
@@ -1582,14 +1593,14 @@ describe('Terminal', () => {
       // trimmed markers should contain line -1
       assert.deepEqual(disposeStack.map(el => el.line), [-1, -1]);
     });
-    it('should dispose on DL', () => {
-      term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
-      term.writeSync('\x1b[2M');    // delete 2 lines
+    it('should dispose on DL', async () => {
+      await term.writeP('\x1b[3;1H');  // move cursor to 0, 2
+      await term.writeP('\x1b[2M');    // delete 2 lines
       assert.deepEqual(disposeStack, [markers[2], markers[3]]);
     });
-    it('should dispose on IL', () => {
-      term.writeSync('\x1b[3;1H');  // move cursor to 0, 2
-      term.writeSync('\x1b[2L');    // insert 2 lines
+    it('should dispose on IL', async () => {
+      await term.writeP('\x1b[3;1H');  // move cursor to 0, 2
+      await term.writeP('\x1b[2L');    // insert 2 lines
       assert.deepEqual(disposeStack, [markers[4], markers[3]]);
       assert.deepEqual(markers.map(el => el.line), [0, 1, 4, -1, -1]);
     });
