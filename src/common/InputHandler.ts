@@ -146,36 +146,42 @@ class DECRQSS implements IDcsHandler {
     this._data = concat(this._data, data.subarray(start, end));
   }
 
-  public unhook(success: boolean): void {
+  public unhook(success: boolean): boolean {
     if (!success) {
       this._data = new Uint32Array(0);
-      return;
+      return true;
     }
     const data = utf32ToString(this._data);
     this._data = new Uint32Array(0);
     switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
+        break;
       case '"p': // DECSCL
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
+        break;
       case 'r': // DECSTBM
         const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
                 ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
+        break;
       case 'm': // SGR
         // TODO: report real settings instead of 0m
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
+        break;
       case ' q': // DECSCUSR
         const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
         let style = STYLES[this._optionsService.options.cursorStyle];
         style -= this._optionsService.options.cursorBlink ? 1 : 0;
-        return this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
+        break;
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._logService.debug('Unknown DCS $q %s', data);
         this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
+    return true;
   }
 }
 
@@ -297,53 +303,53 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * CSI handler
      */
-    this._parser.setCsiHandler({final: '@'}, params => this.insertChars(params));
-    this._parser.setCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
-    this._parser.setCsiHandler({final: 'A'}, params => this.cursorUp(params));
-    this._parser.setCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
-    this._parser.setCsiHandler({final: 'B'}, params => this.cursorDown(params));
-    this._parser.setCsiHandler({final: 'C'}, params => this.cursorForward(params));
-    this._parser.setCsiHandler({final: 'D'}, params => this.cursorBackward(params));
-    this._parser.setCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
-    this._parser.setCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
-    this._parser.setCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
-    this._parser.setCsiHandler({final: 'H'}, params => this.cursorPosition(params));
-    this._parser.setCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
-    this._parser.setCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.setCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.setCsiHandler({final: 'K'}, params => this.eraseInLine(params));
-    this._parser.setCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
-    this._parser.setCsiHandler({final: 'L'}, params => this.insertLines(params));
-    this._parser.setCsiHandler({final: 'M'}, params => this.deleteLines(params));
-    this._parser.setCsiHandler({final: 'P'}, params => this.deleteChars(params));
-    this._parser.setCsiHandler({final: 'S'}, params => this.scrollUp(params));
-    this._parser.setCsiHandler({final: 'T'}, params => this.scrollDown(params));
-    this._parser.setCsiHandler({final: 'X'}, params => this.eraseChars(params));
-    this._parser.setCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
-    this._parser.setCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
-    this._parser.setCsiHandler({final: 'a'}, params => this.hPositionRelative(params));
-    this._parser.setCsiHandler({final: 'b'}, params => this.repeatPrecedingCharacter(params));
-    this._parser.setCsiHandler({final: 'c'}, params => this.sendDeviceAttributesPrimary(params));
-    this._parser.setCsiHandler({prefix: '>', final: 'c'}, params => this.sendDeviceAttributesSecondary(params));
-    this._parser.setCsiHandler({final: 'd'}, params => this.linePosAbsolute(params));
-    this._parser.setCsiHandler({final: 'e'}, params => this.vPositionRelative(params));
-    this._parser.setCsiHandler({final: 'f'}, params => this.hVPosition(params));
-    this._parser.setCsiHandler({final: 'g'}, params => this.tabClear(params));
-    this._parser.setCsiHandler({final: 'h'}, params => this.setMode(params));
-    this._parser.setCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
-    this._parser.setCsiHandler({final: 'l'}, params => this.resetMode(params));
-    this._parser.setCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
-    this._parser.setCsiHandler({final: 'm'}, params => this.charAttributes(params));
-    this._parser.setCsiHandler({final: 'n'}, params => this.deviceStatus(params));
-    this._parser.setCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
-    this._parser.setCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
-    this._parser.setCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
-    this._parser.setCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
-    this._parser.setCsiHandler({final: 's'}, params => this.saveCursor(params));
-    this._parser.setCsiHandler({final: 't'}, params => this.windowOptions(params));
-    this._parser.setCsiHandler({final: 'u'}, params => this.restoreCursor(params));
-    this._parser.setCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
-    this._parser.setCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({final: '@'}, params => this.insertChars(params));
+    this._parser.registerCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
+    this._parser.registerCsiHandler({final: 'A'}, params => this.cursorUp(params));
+    this._parser.registerCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
+    this._parser.registerCsiHandler({final: 'B'}, params => this.cursorDown(params));
+    this._parser.registerCsiHandler({final: 'C'}, params => this.cursorForward(params));
+    this._parser.registerCsiHandler({final: 'D'}, params => this.cursorBackward(params));
+    this._parser.registerCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
+    this._parser.registerCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
+    this._parser.registerCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
+    this._parser.registerCsiHandler({final: 'H'}, params => this.cursorPosition(params));
+    this._parser.registerCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
+    this._parser.registerCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({final: 'K'}, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({final: 'L'}, params => this.insertLines(params));
+    this._parser.registerCsiHandler({final: 'M'}, params => this.deleteLines(params));
+    this._parser.registerCsiHandler({final: 'P'}, params => this.deleteChars(params));
+    this._parser.registerCsiHandler({final: 'S'}, params => this.scrollUp(params));
+    this._parser.registerCsiHandler({final: 'T'}, params => this.scrollDown(params));
+    this._parser.registerCsiHandler({final: 'X'}, params => this.eraseChars(params));
+    this._parser.registerCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
+    this._parser.registerCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
+    this._parser.registerCsiHandler({final: 'a'}, params => this.hPositionRelative(params));
+    this._parser.registerCsiHandler({final: 'b'}, params => this.repeatPrecedingCharacter(params));
+    this._parser.registerCsiHandler({final: 'c'}, params => this.sendDeviceAttributesPrimary(params));
+    this._parser.registerCsiHandler({prefix: '>', final: 'c'}, params => this.sendDeviceAttributesSecondary(params));
+    this._parser.registerCsiHandler({final: 'd'}, params => this.linePosAbsolute(params));
+    this._parser.registerCsiHandler({final: 'e'}, params => this.vPositionRelative(params));
+    this._parser.registerCsiHandler({final: 'f'}, params => this.hVPosition(params));
+    this._parser.registerCsiHandler({final: 'g'}, params => this.tabClear(params));
+    this._parser.registerCsiHandler({final: 'h'}, params => this.setMode(params));
+    this._parser.registerCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
+    this._parser.registerCsiHandler({final: 'l'}, params => this.resetMode(params));
+    this._parser.registerCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
+    this._parser.registerCsiHandler({final: 'm'}, params => this.charAttributes(params));
+    this._parser.registerCsiHandler({final: 'n'}, params => this.deviceStatus(params));
+    this._parser.registerCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
+    this._parser.registerCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
+    this._parser.registerCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
+    this._parser.registerCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
+    this._parser.registerCsiHandler({final: 's'}, params => this.saveCursor(params));
+    this._parser.registerCsiHandler({final: 't'}, params => this.windowOptions(params));
+    this._parser.registerCsiHandler({final: 'u'}, params => this.restoreCursor(params));
+    this._parser.registerCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
+    this._parser.registerCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
 
     /**
      * execute handler
@@ -367,14 +373,14 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    this._parser.setOscHandler(0, new OscHandler((data: string) => { this.setTitle(data); this.setIconName(data); }));
+    this._parser.registerOscHandler(0, new OscHandler(data => { this.setTitle(data); this.setIconName(data); return true; }));
     //   1 - icon name
-    this._parser.setOscHandler(1, new OscHandler((data: string) => this.setIconName(data)));
+    this._parser.registerOscHandler(1, new OscHandler(data => this.setIconName(data)));
     //   2 - title
-    this._parser.setOscHandler(2, new OscHandler((data: string) => this.setTitle(data)));
+    this._parser.registerOscHandler(2, new OscHandler(data => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
-    this._parser.setOscHandler(4, new OscHandler((data: string) => this.setAnsiColor(data)));
+    this._parser.registerOscHandler(4, new OscHandler(data => this.setAnsiColor(data)));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
@@ -409,32 +415,32 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * ESC handlers
      */
-    this._parser.setEscHandler({final: '7'}, () => this.saveCursor());
-    this._parser.setEscHandler({final: '8'}, () => this.restoreCursor());
-    this._parser.setEscHandler({final: 'D'}, () => this.index());
-    this._parser.setEscHandler({final: 'E'}, () => this.nextLine());
-    this._parser.setEscHandler({final: 'H'}, () => this.tabSet());
-    this._parser.setEscHandler({final: 'M'}, () => this.reverseIndex());
-    this._parser.setEscHandler({final: '='}, () => this.keypadApplicationMode());
-    this._parser.setEscHandler({final: '>'}, () => this.keypadNumericMode());
-    this._parser.setEscHandler({final: 'c'}, () => this.fullReset());
-    this._parser.setEscHandler({final: 'n'}, () => this.setgLevel(2));
-    this._parser.setEscHandler({final: 'o'}, () => this.setgLevel(3));
-    this._parser.setEscHandler({final: '|'}, () => this.setgLevel(3));
-    this._parser.setEscHandler({final: '}'}, () => this.setgLevel(2));
-    this._parser.setEscHandler({final: '~'}, () => this.setgLevel(1));
-    this._parser.setEscHandler({intermediates: '%', final: '@'}, () => this.selectDefaultCharset());
-    this._parser.setEscHandler({intermediates: '%', final: 'G'}, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({final: '7'}, () => this.saveCursor());
+    this._parser.registerEscHandler({final: '8'}, () => this.restoreCursor());
+    this._parser.registerEscHandler({final: 'D'}, () => this.index());
+    this._parser.registerEscHandler({final: 'E'}, () => this.nextLine());
+    this._parser.registerEscHandler({final: 'H'}, () => this.tabSet());
+    this._parser.registerEscHandler({final: 'M'}, () => this.reverseIndex());
+    this._parser.registerEscHandler({final: '='}, () => this.keypadApplicationMode());
+    this._parser.registerEscHandler({final: '>'}, () => this.keypadNumericMode());
+    this._parser.registerEscHandler({final: 'c'}, () => this.fullReset());
+    this._parser.registerEscHandler({final: 'n'}, () => this.setgLevel(2));
+    this._parser.registerEscHandler({final: 'o'}, () => this.setgLevel(3));
+    this._parser.registerEscHandler({final: '|'}, () => this.setgLevel(3));
+    this._parser.registerEscHandler({final: '}'}, () => this.setgLevel(2));
+    this._parser.registerEscHandler({final: '~'}, () => this.setgLevel(1));
+    this._parser.registerEscHandler({intermediates: '%', final: '@'}, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({intermediates: '%', final: 'G'}, () => this.selectDefaultCharset());
     for (const flag in CHARSETS) {
-      this._parser.setEscHandler({intermediates: '(', final: flag}, () => this.selectCharset('(' + flag));
-      this._parser.setEscHandler({intermediates: ')', final: flag}, () => this.selectCharset(')' + flag));
-      this._parser.setEscHandler({intermediates: '*', final: flag}, () => this.selectCharset('*' + flag));
-      this._parser.setEscHandler({intermediates: '+', final: flag}, () => this.selectCharset('+' + flag));
-      this._parser.setEscHandler({intermediates: '-', final: flag}, () => this.selectCharset('-' + flag));
-      this._parser.setEscHandler({intermediates: '.', final: flag}, () => this.selectCharset('.' + flag));
-      this._parser.setEscHandler({intermediates: '/', final: flag}, () => this.selectCharset('/' + flag)); // TODO: supported?
+      this._parser.registerEscHandler({intermediates: '(', final: flag}, () => this.selectCharset('(' + flag));
+      this._parser.registerEscHandler({intermediates: ')', final: flag}, () => this.selectCharset(')' + flag));
+      this._parser.registerEscHandler({intermediates: '*', final: flag}, () => this.selectCharset('*' + flag));
+      this._parser.registerEscHandler({intermediates: '+', final: flag}, () => this.selectCharset('+' + flag));
+      this._parser.registerEscHandler({intermediates: '-', final: flag}, () => this.selectCharset('-' + flag));
+      this._parser.registerEscHandler({intermediates: '.', final: flag}, () => this.selectCharset('.' + flag));
+      this._parser.registerEscHandler({intermediates: '/', final: flag}, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
-    this._parser.setEscHandler({intermediates: '#', final: '8'}, () => this.screenAlignmentPattern());
+    this._parser.registerEscHandler({intermediates: '#', final: '8'}, () => this.screenAlignmentPattern());
 
     /**
      * error handler
@@ -447,7 +453,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.setDcsHandler({intermediates: '$', final: 'q'}, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({intermediates: '$', final: 'q'}, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
   }
 
   public dispose(): void {
@@ -642,35 +648,35 @@ export class InputHandler extends Disposable implements IInputHandler {
   public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
-      return this._parser.addCsiHandler(id, params => {
+      return this._parser.registerCsiHandler(id, params => {
         if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
           return true;
         }
         return callback(params);
       });
     }
-    return this._parser.addCsiHandler(id, callback);
+    return this._parser.registerCsiHandler(id, callback);
   }
 
   /**
    * Forward addDcsHandler from parser.
    */
   public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._parser.addDcsHandler(id, new DcsHandler(callback));
+    return this._parser.registerDcsHandler(id, new DcsHandler(callback));
   }
 
   /**
    * Forward addEscHandler from parser.
    */
   public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
-    return this._parser.addEscHandler(id, callback);
+    return this._parser.registerEscHandler(id, callback);
   }
 
   /**
    * Forward addOscHandler from parser.
    */
   public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._parser.addOscHandler(ident, new OscHandler(callback));
+    return this._parser.registerOscHandler(ident, new OscHandler(callback));
   }
 
   /**
@@ -681,8 +687,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The behavior of the bell is further customizable with `ITerminalOptions.bellStyle`
    * and `ITerminalOptions.bellSound`.
    */
-  public bell(): void {
+  public bell(): boolean {
     this._onRequestBell.fire();
+    return true;
   }
 
   /**
@@ -695,7 +702,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    VT   "Vertical Tabulation"  "\v, \x0B"  "Treated as LF."
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
-  public lineFeed(): void {
+  public lineFeed(): boolean {
     // make buffer local for faster access
     const buffer = this._bufferService.buffer;
 
@@ -717,6 +724,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._dirtyRowService.markDirty(buffer.y);
 
     this._onLineFeed.fire();
+    return true;
   }
 
   /**
@@ -725,8 +733,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
    */
-  public carriageReturn(): void {
+  public carriageReturn(): boolean {
     this._bufferService.buffer.x = 0;
+    return true;
   }
 
   /**
@@ -740,7 +749,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * to the end of the previous row. Note that it is not possible to peek back into the scrollbuffer
    * with the cursor, thus at the home position (top-leftmost cell) this has no effect.
    */
-  public backspace(): void {
+  public backspace(): boolean {
     const buffer = this._bufferService.buffer;
 
     // reverse wrap-around is disabled
@@ -749,7 +758,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (buffer.x > 0) {
         buffer.x--;
       }
-      return;
+      return true;
     }
 
     // reverse wrap-around is enabled
@@ -790,6 +799,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     this._restrictCursor();
+    return true;
   }
 
   /**
@@ -798,15 +808,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y   C0    HT   "Horizontal Tabulation"  "\t, \x09"  "Move the cursor to the next character tab stop."
    */
-  public tab(): void {
+  public tab(): boolean {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
-      return;
+      return true;
     }
     const originalX = this._bufferService.buffer.x;
     this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
     if (this._optionsService.options.screenReaderMode) {
       this._onA11yTab.fire(this._bufferService.buffer.x - originalX);
     }
+    return true;
   }
 
   /**
@@ -816,8 +827,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #P[Only limited ISO-2022 charset support.]  C0    SO   "Shift Out"  "\x0E"  "Switch to an alternative character set."
    */
-  public shiftOut(): void {
+  public shiftOut(): boolean {
     this._charsetService.setgLevel(1);
+    return true;
   }
 
   /**
@@ -827,8 +839,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y   C0    SI   "Shift In"   "\x0F"  "Return to regular character set after Shift Out."
    */
-  public shiftIn(): void {
+  public shiftIn(): boolean {
     this._charsetService.setgLevel(0);
+    return true;
   }
 
   /**
@@ -875,7 +888,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CUU   "Cursor Up"   "CSI Ps A"  "Move cursor `Ps` times up (default=1)."
    * If the cursor would pass the top scroll margin, it will stop there.
    */
-  public cursorUp(params: IParams): void {
+  public cursorUp(params: IParams): boolean {
     // stop at scrollTop
     const diffToTop = this._bufferService.buffer.y - this._bufferService.buffer.scrollTop;
     if (diffToTop >= 0) {
@@ -883,6 +896,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       this._moveCursor(0, -(params.params[0] || 1));
     }
+    return true;
   }
 
   /**
@@ -892,7 +906,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CUD   "Cursor Down"   "CSI Ps B"  "Move cursor `Ps` times down (default=1)."
    * If the cursor would pass the bottom scroll margin, it will stop there.
    */
-  public cursorDown(params: IParams): void {
+  public cursorDown(params: IParams): boolean {
     // stop at scrollBottom
     const diffToBottom = this._bufferService.buffer.scrollBottom - this._bufferService.buffer.y;
     if (diffToBottom >= 0) {
@@ -900,6 +914,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else {
       this._moveCursor(0, params.params[0] || 1);
     }
+    return true;
   }
 
   /**
@@ -908,8 +923,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI CUF   "Cursor Forward"    "CSI Ps C"  "Move cursor `Ps` times forward (default=1)."
    */
-  public cursorForward(params: IParams): void {
+  public cursorForward(params: IParams): boolean {
     this._moveCursor(params.params[0] || 1, 0);
+    return true;
   }
 
   /**
@@ -918,8 +934,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI CUB   "Cursor Backward"   "CSI Ps D"  "Move cursor `Ps` times backward (default=1)."
    */
-  public cursorBackward(params: IParams): void {
+  public cursorBackward(params: IParams): boolean {
     this._moveCursor(-(params.params[0] || 1), 0);
+    return true;
   }
 
   /**
@@ -930,9 +947,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CNL   "Cursor Next Line"  "CSI Ps E"  "Move cursor `Ps` times down (default=1) and to the first column."
    * Same as CUD, additionally places the cursor at the first column.
    */
-  public cursorNextLine(params: IParams): void {
+  public cursorNextLine(params: IParams): boolean {
     this.cursorDown(params);
     this._bufferService.buffer.x = 0;
+    return true;
   }
 
   /**
@@ -943,9 +961,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CPL   "Cursor Backward"   "CSI Ps F"  "Move cursor `Ps` times up (default=1) and to the first column."
    * Same as CUU, additionally places the cursor at the first column.
    */
-  public cursorPrecedingLine(params: IParams): void {
+  public cursorPrecedingLine(params: IParams): boolean {
     this.cursorUp(params);
     this._bufferService.buffer.x = 0;
+    return true;
   }
 
   /**
@@ -954,8 +973,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
    */
-  public cursorCharAbsolute(params: IParams): void {
+  public cursorCharAbsolute(params: IParams): boolean {
     this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
+    return true;
   }
 
   /**
@@ -967,12 +987,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * If ORIGIN mode is not set, places the cursor to the absolute position within the viewport.
    * Note that the coordinates are 1-based, thus the top left position starts at `1 ; 1`.
    */
-  public cursorPosition(params: IParams): void {
+  public cursorPosition(params: IParams): boolean {
     this._setCursor(
       // col
       (params.length >= 2) ? (params.params[1] || 1) - 1 : 0,
       // row
-      (params.params[0] || 1) - 1);
+      (params.params[0] || 1) - 1
+    );
+    return true;
   }
 
   /**
@@ -982,8 +1004,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
    */
-  public charPosAbsolute(params: IParams): void {
+  public charPosAbsolute(params: IParams): boolean {
     this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
+    return true;
   }
 
   /**
@@ -992,8 +1015,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI HPR   "Horizontal Position Relative"  "CSI Ps a"  "Same as CUF."
    */
-  public hPositionRelative(params: IParams): void {
+  public hPositionRelative(params: IParams): boolean {
     this._moveCursor(params.params[0] || 1, 0);
+    return true;
   }
 
   /**
@@ -1002,8 +1026,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
    */
-  public linePosAbsolute(params: IParams): void {
+  public linePosAbsolute(params: IParams): boolean {
     this._setCursor(this._bufferService.buffer.x, (params.params[0] || 1) - 1);
+    return true;
   }
 
   /**
@@ -1013,8 +1038,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI VPR   "Vertical Position Relative"    "CSI Ps e"  "Move cursor `Ps` times down (default=1)."
    */
-  public vPositionRelative(params: IParams): void {
+  public vPositionRelative(params: IParams): boolean {
     this._moveCursor(0, params.params[0] || 1);
+    return true;
   }
 
   /**
@@ -1025,8 +1051,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI HVP   "Horizontal and Vertical Position" "CSI Ps ; Ps f"  "Same as CUP."
    */
-  public hVPosition(params: IParams): void {
+  public hVPosition(params: IParams): boolean {
     this.cursorPosition(params);
+    return true;
   }
 
   /**
@@ -1040,13 +1067,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI TBC   "Tab Clear" "CSI Ps g"  "Clear tab stops at current position (0) or all (3) (default=0)."
    * Clearing tabstops off the active row (Ps = 2, VT100) is currently not supported.
    */
-  public tabClear(params: IParams): void {
+  public tabClear(params: IParams): boolean {
     const param = params.params[0];
     if (param === 0) {
       delete this._bufferService.buffer.tabs[this._bufferService.buffer.x];
     } else if (param === 3) {
       this._bufferService.buffer.tabs = {};
     }
+    return true;
   }
 
   /**
@@ -1055,14 +1083,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
    */
-  public cursorForwardTab(params: IParams): void {
+  public cursorForwardTab(params: IParams): boolean {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
-      return;
+      return true;
     }
     let param = params.params[0] || 1;
     while (param--) {
       this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
     }
+    return true;
   }
 
   /**
@@ -1070,9 +1099,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI CBT   "Cursor Backward Tabulation"  "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
    */
-  public cursorBackwardTab(params: IParams): void {
+  public cursorBackwardTab(params: IParams): boolean {
     if (this._bufferService.buffer.x >= this._bufferService.cols) {
-      return;
+      return true;
     }
     let param = params.params[0] || 1;
 
@@ -1082,6 +1111,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     while (param--) {
       buffer.x = buffer.prevStop();
     }
+    return true;
   }
 
 
@@ -1140,7 +1170,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
-  public eraseInDisplay(params: IParams): void {
+  public eraseInDisplay(params: IParams): boolean {
     this._restrictCursor();
     let j;
     switch (params.params[0]) {
@@ -1187,6 +1217,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         break;
     }
+    return true;
   }
 
   /**
@@ -1211,7 +1242,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
-  public eraseInLine(params: IParams): void {
+  public eraseInLine(params: IParams): boolean {
     this._restrictCursor();
     switch (params.params[0]) {
       case 0:
@@ -1225,6 +1256,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
     }
     this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    return true;
   }
 
   /**
@@ -1236,7 +1268,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The cursor is set to the first column.
    * IL has no effect if the cursor is outside the scroll margins.
    */
-  public insertLines(params: IParams): void {
+  public insertLines(params: IParams): boolean {
     this._restrictCursor();
     let param = params.params[0] || 1;
 
@@ -1244,7 +1276,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._bufferService.buffer;
 
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
 
     const row: number = buffer.ybase + buffer.y;
@@ -1260,6 +1292,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
     buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
+    return true;
   }
 
   /**
@@ -1271,7 +1304,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The cursor is set to the first column.
    * DL has no effect if the cursor is outside the scroll margins.
    */
-  public deleteLines(params: IParams): void {
+  public deleteLines(params: IParams): boolean {
     this._restrictCursor();
     let param = params.params[0] || 1;
 
@@ -1279,7 +1312,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._bufferService.buffer;
 
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
 
     const row: number = buffer.ybase + buffer.y;
@@ -1296,6 +1329,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
     buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
+    return true;
   }
 
   /**
@@ -1309,7 +1343,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
-  public insertChars(params: IParams): void {
+  public insertChars(params: IParams): boolean {
     this._restrictCursor();
     const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
@@ -1321,6 +1355,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
+    return true;
   }
 
   /**
@@ -1334,7 +1369,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
    */
-  public deleteChars(params: IParams): void {
+  public deleteChars(params: IParams): boolean {
     this._restrictCursor();
     const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
@@ -1346,6 +1381,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
+    return true;
   }
 
   /**
@@ -1356,7 +1392,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
    */
-  public scrollUp(params: IParams): void {
+  public scrollUp(params: IParams): boolean {
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
@@ -1367,6 +1403,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._eraseAttrData()));
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1374,7 +1411,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI SD  "Scroll Down"   "CSI Ps T"  "Scroll `Ps` lines down (default=1)."
    */
-  public scrollDown(params: IParams): void {
+  public scrollDown(params: IParams): boolean {
     let param = params.params[0] || 1;
 
     // make buffer local for faster access
@@ -1385,6 +1422,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1405,10 +1443,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * SL moves the content of all lines within the scroll margins `Ps` times to the left.
    * SL has no effect outside of the scroll margins.
    */
-  public scrollLeft(params: IParams): void {
+  public scrollLeft(params: IParams): boolean {
     const buffer = this._bufferService.buffer;
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
@@ -1417,6 +1455,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1438,10 +1477,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Content at the right margin is lost.
    * SL has no effect outside of the scroll margins.
    */
-  public scrollRight(params: IParams): void {
+  public scrollRight(params: IParams): boolean {
     const buffer = this._bufferService.buffer;
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
@@ -1450,6 +1489,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1461,10 +1501,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * moving content to the right. Content at the right margin is lost.
    * DECIC has no effect outside the scrolling margins.
    */
-  public insertColumns(params: IParams): void {
+  public insertColumns(params: IParams): boolean {
     const buffer = this._bufferService.buffer;
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
@@ -1473,6 +1513,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1484,10 +1525,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * moving content to the left. Blank columns are added at the right margin.
    * DECDC has no effect outside the scrolling margins.
    */
-  public deleteColumns(params: IParams): void {
+  public deleteColumns(params: IParams): boolean {
     const buffer = this._bufferService.buffer;
     if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
-      return;
+      return true;
     }
     const param = params.params[0] || 1;
     for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
@@ -1496,6 +1537,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.isWrapped = false;
     }
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    return true;
   }
 
   /**
@@ -1506,7 +1548,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ED erases `Ps` characters from current cursor position to the right.
    * ED works inside or outside the scrolling margins.
    */
-  public eraseChars(params: IParams): void {
+  public eraseChars(params: IParams): boolean {
     this._restrictCursor();
     const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
     if (line) {
@@ -1518,6 +1560,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       );
       this._dirtyRowService.markDirty(this._bufferService.buffer.y);
     }
+    return true;
   }
 
   /**
@@ -1547,9 +1590,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * REP has no effect if the sequence does not follow a printable ASCII character
    * (NOOP for any other sequence in between or NON ASCII characters).
    */
-  public repeatPrecedingCharacter(params: IParams): void {
+  public repeatPrecedingCharacter(params: IParams): boolean {
     if (!this._parser.precedingCodepoint) {
-      return;
+      return true;
     }
     // call print to insert the chars and handle correct wrapping
     const length = params.params[0] || 1;
@@ -1558,6 +1601,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       data[i] = this._parser.precedingCodepoint;
     }
     this.print(data, 0, data.length);
+    return true;
   }
 
   /**
@@ -1585,15 +1629,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * TODO: fix and cleanup response
    */
-  public sendDeviceAttributesPrimary(params: IParams): void {
+  public sendDeviceAttributesPrimary(params: IParams): boolean {
     if (params.params[0] > 0) {
-      return;
+      return true;
     }
     if (this._is('xterm') || this._is('rxvt-unicode') || this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?1;2c');
     } else if (this._is('linux')) {
       this._coreService.triggerDataEvent(C0.ESC + '[?6c');
     }
+    return true;
   }
 
   /**
@@ -1620,9 +1665,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * TODO: fix and cleanup response
    */
-  public sendDeviceAttributesSecondary(params: IParams): void {
+  public sendDeviceAttributesSecondary(params: IParams): boolean {
     if (params.params[0] > 0) {
-      return;
+      return true;
     }
     // xterm and urxvt
     // seem to spit this
@@ -1638,6 +1683,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
     }
+    return true;
   }
 
   /**
@@ -1665,7 +1711,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 12    | Send/receive (SRM). Always off.        | #N      |
    * | 20    | Automatic Newline (LNM). Always off.   | #N      |
    */
-  public setMode(params: IParams): void {
+  public setMode(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
@@ -1676,6 +1722,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
@@ -1791,7 +1838,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: implement DECSCNM, 1049 should clear altbuffer
    */
-  public setModePrivate(params: IParams): void {
+  public setModePrivate(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 1:
@@ -1884,6 +1931,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
 
@@ -1907,7 +1955,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: why is LNM commented out?
    */
-  public resetMode(params: IParams): void {
+  public resetMode(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 4:
@@ -1918,6 +1966,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
@@ -2029,7 +2078,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: DECCOLM is currently broken (already fixed in window options PR)
    */
-  public resetModePrivate(params: IParams): void {
+  public resetModePrivate(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
       switch (params.params[i]) {
         case 1:
@@ -2106,6 +2155,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
@@ -2298,12 +2348,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * FIXME: blinking is implemented in attrs, but not working in renderers?
    * FIXME: remove dead branch for p=100
    */
-  public charAttributes(params: IParams): void {
+  public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
     if (params.length === 1 && params.params[0] === 0) {
       this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
       this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
-      return;
+      return true;
     }
 
     const l = params.length;
@@ -2402,6 +2452,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._logService.debug('Unknown SGR attribute: %d.', p);
       }
     }
+    return true;
   }
 
   /**
@@ -2429,7 +2480,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DSR   "Device Status Report"  "CSI Ps n"  "Request cursor position (CPR) with `Ps` = 6."
    */
-  public deviceStatus(params: IParams): void {
+  public deviceStatus(params: IParams): boolean {
     switch (params.params[0]) {
       case 5:
         // status report
@@ -2442,10 +2493,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
         break;
     }
+    return true;
   }
 
   // @vt: #P[Only CPR is supported.]  CSI DECDSR  "DEC Device Status Report"  "CSI ? Ps n"  "Only CPR is supported (same as DSR)."
-  public deviceStatusPrivate(params: IParams): void {
+  public deviceStatusPrivate(params: IParams): boolean {
     // modern xterm doesnt seem to
     // respond to any of these except ?6, 6, and 5
     switch (params.params[0]) {
@@ -2472,6 +2524,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // this.handler(C0.ESC + '[?50n');
         break;
     }
+    return true;
   }
 
   /**
@@ -2493,7 +2546,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * FIXME: there are several more attributes missing (see VT520 manual)
    */
-  public softReset(params: IParams): void {
+  public softReset(params: IParams): boolean {
     this._coreService.isCursorHidden = false;
     this._onRequestSyncScrollBar.fire();
     this._bufferService.buffer.scrollTop = 0;
@@ -2511,6 +2564,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // reset DECOM
     this._coreService.decPrivateModes.origin = false;
+    return true;
   }
 
   /**
@@ -2532,7 +2586,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *  - 5: steady bar
    *  - 6: blink bar
    */
-  public setCursorStyle(params: IParams): void {
+  public setCursorStyle(params: IParams): boolean {
     const param = params.params[0] || 1;
     switch (param) {
       case 1:
@@ -2550,6 +2604,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const isBlinking = param % 2 === 1;
     this._optionsService.options.cursorBlink = isBlinking;
+    return true;
   }
 
   /**
@@ -2559,7 +2614,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSTBM "Set Top and Bottom Margin" "CSI Ps ; Ps r" "Set top and bottom margins of the viewport [top;bottom] (default = viewport size)."
    */
-  public setScrollRegion(params: IParams): void {
+  public setScrollRegion(params: IParams): boolean {
     const top = params.params[0] || 1;
     let bottom: number;
 
@@ -2572,6 +2627,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.buffer.scrollBottom = bottom - 1;
       this._setCursor(0, 0);
     }
+    return true;
   }
 
   /**
@@ -2604,9 +2660,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps = 23 ; 2  -> Restore xterm window title from stack.            supported
    *    Ps >= 24                                                          not implemented
    */
-  public windowOptions(params: IParams): void {
+  public windowOptions(params: IParams): boolean {
     if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
-      return;
+      return true;
     }
     const second = (params.length > 1) ? params.params[1] : 0;
     switch (params.params[0]) {
@@ -2650,6 +2706,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         break;
     }
+    return true;
   }
 
 
@@ -2661,12 +2718,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[TODO...]  CSI SCOSC   "Save Cursor"   "CSI s"   "Save cursor position, charmap and text attributes."
    * @vt: #Y ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
-  public saveCursor(params?: IParams): void {
+  public saveCursor(params?: IParams): boolean {
     this._bufferService.buffer.savedX = this._bufferService.buffer.x;
     this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     this._bufferService.buffer.savedCurAttrData.fg = this._curAttrData.fg;
     this._bufferService.buffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._bufferService.buffer.savedCharset = this._charsetService.charset;
+    return true;
   }
 
 
@@ -2678,7 +2736,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[TODO...]  CSI SCORC "Restore Cursor"  "CSI u"   "Restore cursor position, charmap and text attributes."
    * @vt: #Y ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
-  public restoreCursor(params?: IParams): void {
+  public restoreCursor(params?: IParams): boolean {
     this._bufferService.buffer.x = this._bufferService.buffer.savedX || 0;
     this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
     this._curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
@@ -2688,6 +2746,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._charsetService.charset = this._bufferService.buffer.savedCharset;
     }
     this._restrictCursor();
+    return true;
   }
 
 
@@ -2701,17 +2760,19 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
    * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
    */
-  public setTitle(data: string): void {
+  public setTitle(data: string): boolean {
     this._windowTitle = data;
     this._onTitleChange.fire(data);
+    return true;
   }
 
   /**
    * OSC 1; <data> ST
    * Note: Icon name is not exposed.
    */
-  public setIconName(data: string): void {
+  public setIconName(data: string): boolean {
     this._iconName = data;
+    return true;
   }
 
   protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
@@ -2743,7 +2804,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
    * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
    */
-  public setAnsiColor(data: string): void {
+  public setAnsiColor(data: string): boolean {
     const event = this._parseAnsiColorChange(data);
     if (event) {
       this._onAnsiColorChange.fire(event);
@@ -2751,6 +2812,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     else {
       this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
     }
+    return true;
   }
 
   /**
@@ -2762,9 +2824,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C1    NEL   "Next Line"   "\x85"    "Move the cursor to the beginning of the next row."
    * @vt: #Y   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
-  public nextLine(): void {
+  public nextLine(): boolean {
     this._bufferService.buffer.x = 0;
     this.index();
+    return true;
   }
 
   /**
@@ -2772,10 +2835,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECKPAM (https://vt100.net/docs/vt510-rm/DECKPAM.html)
    *   Enables the numeric keypad to send application sequences to the host.
    */
-  public keypadApplicationMode(): void {
+  public keypadApplicationMode(): boolean {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
     this._onRequestSyncScrollBar.fire();
+    return true;
   }
 
   /**
@@ -2783,10 +2847,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECKPNM (https://vt100.net/docs/vt510-rm/DECKPNM.html)
    *   Enables the keypad to send numeric characters to the host.
    */
-  public keypadNumericMode(): void {
+  public keypadNumericMode(): boolean {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
     this._onRequestSyncScrollBar.fire();
+    return true;
   }
 
   /**
@@ -2795,9 +2860,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Select default character set. UTF-8 is not supported (string are unicode anyways)
    *   therefore ESC % G does the same.
    */
-  public selectDefaultCharset(): void {
+  public selectDefaultCharset(): boolean {
     this._charsetService.setgLevel(0);
     this._charsetService.setgCharset(0, DEFAULT_CHARSET); // US (default)
+    return true;
   }
 
   /**
@@ -2816,16 +2882,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC / C
    *   Designate G3 Character Set (VT300). C = A  -> ISO Latin-1 Supplemental. - Supported?
    */
-  public selectCharset(collectAndFlag: string): void {
+  public selectCharset(collectAndFlag: string): boolean {
     if (collectAndFlag.length !== 2) {
       this.selectDefaultCharset();
-      return;
+      return true;
     }
     if (collectAndFlag[0] === '/') {
-      return;  // TODO: Is this supported?
+      return true;  // TODO: Is this supported?
     }
     this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
-    return;
+    return true;
   }
 
   /**
@@ -2837,7 +2903,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C1    IND   "Index"   "\x84"    "Move the cursor one line down scrolling if needed."
    * @vt: #Y   ESC   IND   "Index"   "ESC D"   "Move the cursor one line down scrolling if needed."
    */
-  public index(): void {
+  public index(): boolean {
     this._restrictCursor();
     const buffer = this._bufferService.buffer;
     this._bufferService.buffer.y++;
@@ -2848,6 +2914,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.y = this._bufferService.rows - 1;
     }
     this._restrictCursor();
+    return true;
   }
 
   /**
@@ -2860,8 +2927,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C1    HTS   "Horizontal Tabulation Set" "\x88"    "Places a tab stop at the current cursor position."
    * @vt: #Y   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
-  public tabSet(): void {
+  public tabSet(): boolean {
     this._bufferService.buffer.tabs[this._bufferService.buffer.x] = true;
+    return true;
   }
 
   /**
@@ -2873,7 +2941,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y ESC  IR "Reverse Index" "ESC M"  "Move the cursor one line up scrolling if needed."
    */
-  public reverseIndex(): void {
+  public reverseIndex(): boolean {
     this._restrictCursor();
     const buffer = this._bufferService.buffer;
     if (buffer.y === buffer.scrollTop) {
@@ -2888,6 +2956,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       buffer.y--;
       this._restrictCursor(); // quickfix to not run out of bounds
     }
+    return true;
   }
 
   /**
@@ -2895,9 +2964,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
    *   Reset to initial state.
    */
-  public fullReset(): void {
+  public fullReset(): boolean {
     this._parser.reset();
     this._onRequestReset.fire();
+    return true;
   }
 
   public reset(): void {
@@ -2924,8 +2994,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   When you use a locking shift, the character set remains in GL or GR until
    *   you use another locking shift. (partly supported)
    */
-  public setgLevel(level: number): void {
+  public setgLevel(level: number): boolean {
     this._charsetService.setgLevel(level);
+    return true;
   }
 
   /**
@@ -2936,7 +3007,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y   ESC   DECALN   "Screen Alignment Pattern"  "ESC # 8"  "Fill viewport with a test pattern (E)."
    */
-  public screenAlignmentPattern(): void {
+  public screenAlignmentPattern(): boolean {
     // prepare cell data
     const cell = new CellData();
     cell.content = 1 << Content.WIDTH_SHIFT | 'E'.charCodeAt(0);
@@ -2956,5 +3027,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     this._dirtyRowService.markAllDirty();
     this._setCursor(0, 0);
+    return true;
   }
 }
