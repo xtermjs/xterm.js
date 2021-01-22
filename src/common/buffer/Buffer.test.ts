@@ -700,7 +700,7 @@ describe('Buffer', () => {
             }
             const wrappedLines: number[] = [];
             for (let i = 0; i < buffer.lines.length; i++) {
-              assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+              assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
             }
           });
         });
@@ -723,7 +723,7 @@ describe('Buffer', () => {
               }
               const wrappedLines: number[] = [];
               for (let i = 0; i < buffer.lines.length; i++) {
-                assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
               }
             });
           });
@@ -754,7 +754,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines: number[] = [];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -777,7 +777,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines: number[] = [];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -814,7 +814,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines: number[] = [];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -837,7 +837,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines: number[] = [];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -891,7 +891,7 @@ describe('Buffer', () => {
             }
             const wrappedLines = [1, 3, 5];
             for (let i = 0; i < buffer.lines.length; i++) {
-              assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+              assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
             }
           });
         });
@@ -917,7 +917,7 @@ describe('Buffer', () => {
               }
               const wrappedLines = [1, 3, 5];
               for (let i = 0; i < buffer.lines.length; i++) {
-                assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
               }
             });
           });
@@ -950,7 +950,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines = [11, 13, 15];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -975,7 +975,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines = [11, 13, 15];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -1014,7 +1014,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines = [8, 10, 12];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });
@@ -1040,7 +1040,7 @@ describe('Buffer', () => {
                 }
                 const wrappedLines = [8, 10, 12];
                 for (let i = 0; i < buffer.lines.length; i++) {
-                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                  assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
               });
             });

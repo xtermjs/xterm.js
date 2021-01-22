@@ -35,6 +35,11 @@ export class CompositionHelper {
    */
   private _isSendingComposition: boolean;
 
+  /**
+   * Data already sent due to keydown event.
+   */
+  private _dataAlreadySent: string;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
@@ -46,6 +51,7 @@ export class CompositionHelper {
     this._isComposing = false;
     this._isSendingComposition = false;
     this._compositionPosition = { start: 0, end: 0 };
+    this._dataAlreadySent = '';
   }
 
   /**
@@ -55,6 +61,7 @@ export class CompositionHelper {
     this._isComposing = true;
     this._compositionPosition.start = this._textarea.value.length;
     this._compositionView.textContent = '';
+    this._dataAlreadySent = '';
     this._compositionView.classList.add('active');
   }
 
@@ -147,6 +154,9 @@ export class CompositionHelper {
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
           let input;
+          // Add length of data already sent due to keydown event,
+          // otherwise input characters can be duplicated. (Issue #3191)
+          currentCompositionPosition.start += this._dataAlreadySent.length;
           if (this._isComposing) {
             // Use the end position to get the string if a new composition has started.
             input = this._textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
@@ -156,7 +166,9 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._coreService.triggerDataEvent(input, true);
+          if (input.length > 0) {
+            this._coreService.triggerDataEvent(input, true);
+          }
         }
       }, 0);
     }
@@ -176,6 +188,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
+          this._dataAlreadySent = diff;
           this._coreService.triggerDataEvent(diff, true);
         }
       }

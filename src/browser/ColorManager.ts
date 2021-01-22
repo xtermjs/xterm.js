@@ -17,9 +17,8 @@ const DEFAULT_SELECTION = {
   rgba: 0xFFFFFF4D
 };
 
-// An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
-// and mutate that.
-export const DEFAULT_ANSI_COLORS = (() => {
+// An IIFE to generate DEFAULT_ANSI_COLORS.
+export const DEFAULT_ANSI_COLORS = Object.freeze((() => {
   const colors = [
     // dark:
     css.toColor('#2e3436'),
@@ -64,7 +63,7 @@ export const DEFAULT_ANSI_COLORS = (() => {
   }
 
   return colors;
-})();
+})());
 
 /**
  * Manages the source of truth for a terminal's colors.

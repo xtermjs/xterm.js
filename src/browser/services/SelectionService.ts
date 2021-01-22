@@ -105,6 +105,9 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number = 0;
+  private _oldHasSelection: boolean = false;
+  private _oldSelectionStart: [number, number] | undefined = undefined;
+  private _oldSelectionEnd: [number, number] | undefined = undefined;
 
   private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
@@ -290,7 +293,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Checks if the current click was inside the current selection
    * @param event The mouse event
    */
-  public isClickInSelection(event: MouseEvent): boolean {
+  private _isClickInSelection(event: MouseEvent): boolean {
     const coords = this._getMouseBufferCoords(event);
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
@@ -313,7 +316,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
-  public selectWordAtCursor(event: MouseEvent): void {
+  private _selectWordAtCursor(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords, false);
@@ -667,7 +670,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.getOption('altClickMovesCursor')) {
       if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
@@ -681,9 +684,41 @@ export class SelectionService extends Disposable implements ISelectionService {
           this._coreService.triggerDataEvent(sequence, true);
         }
       }
-    } else if (this.hasSelection) {
-      this._onSelectionChange.fire();
+    } else {
+      this._fireEventIfSelectionChanged();
     }
+  }
+
+  private _fireEventIfSelectionChanged(): void {
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    const hasSelection = !!start && !!end && (start[0] !== end[0] || start[1] !== end[1]);
+
+    if (!hasSelection) {
+      if (this._oldHasSelection) {
+        this._fireOnSelectionChange(start, end, hasSelection);
+      }
+      return;
+    }
+
+    // Sanity check, these should not be undefined as there is a selection
+    if (!start || !end) {
+      return;
+    }
+
+    if (!this._oldSelectionStart || !this._oldSelectionEnd || (
+      start[0] !== this._oldSelectionStart[0] || start[1] !== this._oldSelectionStart[1] ||
+      end[0] !== this._oldSelectionEnd[0] || end[1] !== this._oldSelectionEnd[1])) {
+
+      this._fireOnSelectionChange(start, end, hasSelection);
+    }
+  }
+
+  private _fireOnSelectionChange(start: [number, number] | undefined, end: [number, number] | undefined, hasSelection: boolean): void {
+    this._oldSelectionStart = start;
+    this._oldSelectionEnd = end;
+    this._oldHasSelection = hasSelection;
+    this._onSelectionChange.fire();
   }
 
   private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
@@ -725,6 +760,13 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
     this.refresh();
+  }
+
+  public rightClickSelect(ev: MouseEvent): void {
+    if (!this._isClickInSelection(ev)) {
+      this._selectWordAtCursor(ev);
+      this._fireEventIfSelectionChanged();
+    }
   }
 
   /**
