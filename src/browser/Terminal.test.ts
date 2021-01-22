@@ -753,7 +753,8 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('2 characters per cell over line end with autowrap', async () => {
+    it('2 characters per cell over line end with autowrap', async function (): Promise<void> {
+      this.timeout(10000);
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
@@ -767,7 +768,8 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('2 characters per cell over line end without autowrap', async () => {
+    it('2 characters per cell over line end without autowrap', async function (): Promise<void> {
+      this.timeout(10000);
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
@@ -785,7 +787,8 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('splitted surrogates', async () => {
+    it('splitted surrogates', async function (): Promise<void> {
+      this.timeout(10000);
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
