@@ -20,9 +20,10 @@ export class DcsParser implements IDcsParser {
   public dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
+    this._active = EMPTY_HANDLERS;
   }
 
-  public addHandler(ident: number, handler: IDcsHandler): IDisposable {
+  public registerHandler(ident: number, handler: IDcsHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -36,10 +37,6 @@ export class DcsParser implements IDcsParser {
         }
       }
     };
-  }
-
-  public setHandler(ident: number, handler: IDcsHandler): void {
-    this._handlers[ident] = [handler];
   }
 
   public clearHandler(ident: number): void {
@@ -88,7 +85,7 @@ export class DcsParser implements IDcsParser {
     } else {
       let j = this._active.length - 1;
       for (; j >= 0; j--) {
-        if (this._active[j].unhook(success) !== false) {
+        if (this._active[j].unhook(success)) {
           break;
         }
       }
@@ -103,19 +100,27 @@ export class DcsParser implements IDcsParser {
   }
 }
 
+// predefine empty params as [0] (ZDM)
+const EMPTY_PARAMS = new Params();
+EMPTY_PARAMS.addParam(0);
+
 /**
  * Convenient class to create a DCS handler from a single callback function.
  * Note: The payload is currently limited to 50 MB (hardcoded).
  */
 export class DcsHandler implements IDcsHandler {
   private _data = '';
-  private _params: IParams | undefined;
+  private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string, params: IParams) => any) {}
+  constructor(private _handler: (data: string, params: IParams) => boolean) {}
 
   public hook(params: IParams): void {
-    this._params = params.clone();
+    // since we need to preserve params until `unhook`, we have to clone it
+    // (only borrowed from parser and spans multiple parser states)
+    // perf optimization:
+    // clone only, if we have non empty params, otherwise stick with default
+    this._params = (params.length > 1 || params.params[0]) ? params.clone() : EMPTY_PARAMS;
     this._data = '';
     this._hitLimit = false;
   }
@@ -131,14 +136,14 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): any {
-    let ret;
+  public unhook(success: boolean): boolean {
+    let ret = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data, this._params || new Params());
+      ret = this._handler(this._data, this._params);
     }
-    this._params = undefined;
+    this._params = EMPTY_PARAMS;
     this._data = '';
     this._hitLimit = false;
     return ret;

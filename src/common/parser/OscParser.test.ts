@@ -23,11 +23,12 @@ class TestHandler implements IOscHandler {
   public put(data: Uint32Array, start: number, end: number): void {
     this.output.push([this.msg, this.id, 'PUT', utf32ToString(data, start, end)]);
   }
-  public end(success: boolean): void | boolean {
+  public end(success: boolean): boolean {
     this.output.push([this.msg, this.id, 'END', success]);
     if (this.returnFalse) {
       return false;
     }
+    return true;
   }
 }
 
@@ -78,7 +79,7 @@ describe('OscParser', () => {
   });
   describe('handler registration', () => {
     it('setOscHandler', () => {
-      parser.setHandler(1234, new TestHandler(1234, reports, 'th'));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th'));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -94,7 +95,7 @@ describe('OscParser', () => {
       ]);
     });
     it('clearOscHandler', () => {
-      parser.setHandler(1234, new TestHandler(1234, reports, 'th'));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th'));
       parser.clearHandler(1234);
       parser.start();
       let data = toUtf32('1234;Here comes');
@@ -111,8 +112,8 @@ describe('OscParser', () => {
       ]);
     });
     it('addOscHandler', () => {
-      parser.setHandler(1234, new TestHandler(1234, reports, 'th1'));
-      parser.addHandler(1234, new TestHandler(1234, reports, 'th2'));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th1'));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th2'));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -131,8 +132,8 @@ describe('OscParser', () => {
       ]);
     });
     it('addOscHandler with return false', () => {
-      parser.setHandler(1234, new TestHandler(1234, reports, 'th1'));
-      parser.addHandler(1234, new TestHandler(1234, reports, 'th2', true));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th1'));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th2', true));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -151,8 +152,8 @@ describe('OscParser', () => {
       ]);
     });
     it('dispose handlers', () => {
-      parser.setHandler(1234, new TestHandler(1234, reports, 'th1'));
-      const dispo = parser.addHandler(1234, new TestHandler(1234, reports, 'th2', true));
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th1'));
+      const dispo = parser.registerHandler(1234, new TestHandler(1234, reports, 'th2', true));
       dispo.dispose();
       parser.start();
       let data = toUtf32('1234;Here comes');
@@ -170,7 +171,7 @@ describe('OscParser', () => {
   });
   describe('OscHandlerFactory', () => {
     it('should be called once on end(true)', () => {
-      parser.setHandler(1234, new OscHandler(data => reports.push([1234, data])));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -180,7 +181,7 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [[1234, 'Here comes the mouse!']]);
     });
     it('should not be called on end(false)', () => {
-      parser.setHandler(1234, new OscHandler(data => reports.push([1234, data])));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -190,8 +191,8 @@ describe('OscParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.setHandler(1234, new OscHandler(data => reports.push(['one', data])));
-      const dispo = parser.addHandler(1234, new OscHandler(data => reports.push(['two', data])));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push(['one', data]); return true; }));
+      const dispo = parser.registerHandler(1234, new OscHandler(data => { reports.push(['two', data]); return true; }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -209,8 +210,8 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
     });
     it('should respect return false', () => {
-      parser.setHandler(1234, new OscHandler(data => reports.push(['one', data])));
-      parser.addHandler(1234, new OscHandler(data => { reports.push(['two', data]); return false; }));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push(['one', data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push(['two', data]); return false; }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -221,7 +222,7 @@ describe('OscParser', () => {
     });
     it('should work up to payload limit', function(): void {
       this.timeout(10000);
-      parser.setHandler(1234, new OscHandler(data => reports.push([1234, data])));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);
@@ -234,7 +235,7 @@ describe('OscParser', () => {
     });
     it('should abort for payload limit +1', function(): void {
       this.timeout(10000);
-      parser.setHandler(1234, new OscHandler(data => reports.push([1234, data])));
+      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);
