@@ -105,6 +105,10 @@ export class StringToUtf32 {
         }
         continue;
       }
+      if (code === 0xFEFF) {
+        // BOM
+        continue;
+      }
       target[size++] = code;
     }
     return size;
@@ -286,8 +290,8 @@ export class Utf8ToUtf32 {
           continue;
         }
         codepoint = (byte1 & 0x0F) << 12 | (byte2 & 0x3F) << 6 | (byte3 & 0x3F);
-        if (codepoint < 0x0800 || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
-          // illegal codepoint, no i-- here
+        if (codepoint < 0x0800 || (codepoint >= 0xD800 && codepoint <= 0xDFFF) || codepoint === 0xFEFF) {
+          // illegal codepoint or BOM, no i-- here
           continue;
         }
         target[size++] = codepoint;
