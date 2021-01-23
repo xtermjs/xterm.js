@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
 import { IBufferLine, IAttributeData, IAnsiColorChangeEvent } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -136,7 +136,16 @@ describe('InputHandler', () => {
 
     it('insertChars', function(): void {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // insert some data in first and second line
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
@@ -144,36 +153,45 @@ describe('InputHandler', () => {
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // insert one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + ' 123456789');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + ' 123456789');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '  12345678');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '  12345678');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '    123456');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '    123456');
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
     });
     it('deleteChars', function(): void {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // insert some data in first and second line
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
@@ -181,39 +199,49 @@ describe('InputHandler', () => {
       inputHandler.parse(Array(bufferService.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // delete one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '234567890 ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '234567890 ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '234567890');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '34567890  ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '34567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '34567890  ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '34567890');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '567890    ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '567890    ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '567890');
+
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
     });
     it('eraseInLine', function(): void {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // fill 6 lines to test 3 different states
       inputHandler.parse(Array(bufferService.cols + 1).join('a'));
@@ -224,24 +252,33 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([0]));
-      expect(bufferService.buffer.lines.get(0)!.translateToString(false)).equals(Array(71).join('a') + '          ');
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), Array(71).join('a') + '          ');
 
       // params[1] - left erase
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(1)!.translateToString(false)).equals(Array(71).join(' ') + ' aaaaaaaaa');
+      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(false), Array(71).join(' ') + ' aaaaaaaaa');
 
       // params[1] - left erase
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([2]));
-      expect(bufferService.buffer.lines.get(2)!.translateToString(false)).equals(Array(bufferService.cols + 1).join(' '));
+      assert.equal(bufferService.buffer.lines.get(2)!.translateToString(false), Array(bufferService.cols + 1).join(' '));
 
     });
     it('eraseInDisplay', function(): void {
       const bufferService = new MockBufferService(80, 7);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // fill display with a's
       for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
@@ -250,7 +287,7 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([0]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
@@ -259,7 +296,7 @@ describe('InputHandler', () => {
         Array(40 + 1).join('a') + Array(bufferService.cols - 40 + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
@@ -278,7 +315,7 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
@@ -287,7 +324,7 @@ describe('InputHandler', () => {
         Array(41 + 1).join(' ') + Array(bufferService.cols - 41 + 1).join('a'),
         Array(bufferService.cols + 1).join('a')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         '',
         '',
         '',
@@ -306,7 +343,7 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([2]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
@@ -315,7 +352,7 @@ describe('InputHandler', () => {
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         '',
         '',
         '',
@@ -334,11 +371,11 @@ describe('InputHandler', () => {
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
 
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
@@ -349,16 +386,25 @@ describe('InputHandler', () => {
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 90; // Cursor is beyond last column
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
   });
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
-      const inputHandler = new InputHandler(new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        new MockBufferService(80, 30),
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
       const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
@@ -383,48 +429,48 @@ describe('InputHandler', () => {
     });
     it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
       handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor()), 1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
       handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor()), 1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
       handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), 'JUNK');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
       // Text color of 'JUNK' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor()), 1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
     });
     it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
       handler.parse('\x1b[?1049h\x1b[uTEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), 'TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor()), 1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
       handler.parse('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(bufferService.buffer.lines.get(20)!.loadCell(10, new CellData()).getBgColor()).to.equal(2);
+      assert.equal(bufferService.buffer.lines.get(20)!.loadCell(10, new CellData()).getBgColor(), 2);
     });
   });
 
