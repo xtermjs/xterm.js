@@ -685,22 +685,21 @@ export class SelectionService extends Disposable implements ISelectionService {
         }
       }
     } else {
-      this._fireIfSelectionChanged();
+      this._fireEventIfSelectionChanged();
     }
   }
 
-  private _fireIfSelectionChanged(): void {
-    // Fire if there is no selection
-    const hasSelection = this.hasSelection;
+  private _fireEventIfSelectionChanged(): void {
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    const hasSelection = !!start && !!end && (start[0] !== end[0] || start[1] !== end[1]);
+
     if (!hasSelection) {
       if (this._oldHasSelection) {
-        this._onSelectionChange.fire();
+        this._fireOnSelectionChange(start, end, hasSelection);
       }
       return;
     }
-
-    const start = this._model.finalSelectionStart;
-    const end = this._model.finalSelectionEnd;
 
     // Sanity check, these should not be undefined as there is a selection
     if (!start || !end) {
@@ -711,11 +710,15 @@ export class SelectionService extends Disposable implements ISelectionService {
       start[0] !== this._oldSelectionStart[0] || start[1] !== this._oldSelectionStart[1] ||
       end[0] !== this._oldSelectionEnd[0] || end[1] !== this._oldSelectionEnd[1])) {
 
-      this._oldSelectionStart = start;
-      this._oldSelectionEnd = end;
-      this._oldHasSelection = hasSelection;
-      this._onSelectionChange.fire();
+      this._fireOnSelectionChange(start, end, hasSelection);
     }
+  }
+
+  private _fireOnSelectionChange(start: [number, number] | undefined, end: [number, number] | undefined, hasSelection: boolean): void {
+    this._oldSelectionStart = start;
+    this._oldSelectionEnd = end;
+    this._oldHasSelection = hasSelection;
+    this._onSelectionChange.fire();
   }
 
   private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
@@ -762,7 +765,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   public rightClickSelect(ev: MouseEvent): void {
     if (!this._isClickInSelection(ev)) {
       this._selectWordAtCursor(ev);
-      this._fireIfSelectionChanged();
+      this._fireEventIfSelectionChanged();
     }
   }
 
