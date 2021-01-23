@@ -95,7 +95,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _lastContentCursorRow: number = 0;
   private _lastContentCursorCol: number = 0;
 
-  constructor(private _buffer1: IBuffer,private _terminal: Terminal) {
+  constructor(private _buffer1: IBuffer, private _terminal: Terminal) {
     super(_buffer1);
   }
 
@@ -201,7 +201,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._nullCellCount = 0;
   }
 
-  private _diffStyle (cell: IBufferCell, oldCell: IBufferCell): number[] {
+  private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): number[] {
     const sgrSeq: number[] = [];
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);
@@ -337,7 +337,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
     const realCursorCol = this._buffer1.cursorX;
 
-    const cursorMoved =  (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
+    const cursorMoved = (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
 
     const moveRight = (offset: number): void => {
       if (offset > 0) {
