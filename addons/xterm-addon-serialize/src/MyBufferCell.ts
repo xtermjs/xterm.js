@@ -4,7 +4,7 @@ import { IBufferCell } from 'xterm';
  * This is a dummy buffer cell to hold data from real buffer cell
  */
 export class MyBufferCell implements IBufferCell {
-  constructor (private _cell: IBufferCell) {}
+  constructor(private _cell: IBufferCell) {}
   private _width: number = this._cell.getWidth();
   private _chars: string = this._cell.getChars();
   private _code: number = this._cell.getCode();
