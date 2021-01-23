@@ -58,8 +58,8 @@ describe('text encodings', () => {
         const decoder = new StringToUtf32();
         const target = new Uint32Array(5);
         for (let i = 0; i < 65536; ++i) {
-          // skip surrogate pairs
-          if (i >= 0xD800 && i <= 0xDFFF) {
+          // skip surrogate pairs and a BOM
+          if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
             continue;
           }
           const length = decoder.decode(String.fromCharCode(i), target);
@@ -83,6 +83,14 @@ describe('text encodings', () => {
           assert.equal(utf32ToString(target, 0, length), s);
           decoder.clear();
         }
+      });
+
+      it('0xFEFF(BOM)', () => {
+        const decoder = new StringToUtf32();
+        const target = new Uint32Array(5);
+        const length = decoder.decode(String.fromCharCode(0xFEFF), target);
+        assert.equal(length, 0);
+        decoder.clear();
       });
     });
 
@@ -118,8 +126,8 @@ describe('text encodings', () => {
         const decoder = new Utf8ToUtf32();
         const target = new Uint32Array(5);
         for (let i = 0; i < 65536; ++i) {
-          // skip surrogate pairs
-          if (i >= 0xD800 && i <= 0xDFFF) {
+          // skip surrogate pairs and a BOM
+          if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
             continue;
           }
           const utf8Data = fromByteString(encode(String.fromCharCode(i)));
@@ -141,6 +149,15 @@ describe('text encodings', () => {
           assert.equal(target[0], i);
           decoder.clear();
         }
+      });
+
+      it('0xFEFF(BOM)', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString(encode(String.fromCharCode(0xFEFF)));
+        const length = decoder.decode(utf8Data, target);
+        assert.equal(length, 0);
+        decoder.clear();
       });
     });
 
@@ -215,6 +232,19 @@ describe('text encodings', () => {
         }
         assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
+
+      it('BOMs (3 byte sequences) - advance by 2', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xef\xbb\xbf\xef\xbb\xbf');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; i += 2) {
+          const written = decoder.decode(utf8Data.slice(i, i + 2), target);
+          decoded += toString(target, written);
+        }
+        assert.equal(decoded, '');
+      });
+
       it('test break after 3 bytes - issue #2495', () => {
         const decoder = new Utf8ToUtf32();
         const target = new Uint32Array(5);
