@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
@@ -437,44 +437,28 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.precedingCodepoint = 0;
   }
 
-  // FIXME: cleanup async handling
-  private _parseStack: {
-    paused: boolean;
-    type: 'ESC' | 'CSI';  // FIXME: support for DCS and OSC
-    handlers: CsiHandlerType[] | EscHandlerType[];
-    handlerPos: number;
-    transition: number;
-    currentState: ParserState;
-    collect: number;
-    pos: number;
-  } = {
-    paused: false,
-    type: 'ESC',
+  /**
+   * Async parse support.
+   */
+  private _parseStack: IParserStackState = {
+    state: ParserStackType.NONE,
     handlers: [],
     handlerPos: 0,
     transition: 0,
-    currentState: 0,
-    collect: 0,
-    pos: 0
+    chunkPos: 0
   };
-
   private _preserveStack(
-    type: 'ESC' | 'CSI',
-    handlers: CsiHandlerType[] | EscHandlerType[],
+    state: ParserStackType,
+    handlers: ResumableHandlersType,
     handlerPos: number,
     transition: number,
-    currentState: ParserState,
-    collect: number,
-    pos: number
-  ): void {
-    this._parseStack.paused = true;
-    this._parseStack.type = type;
+    chunkPos: number): void
+  {
+    this._parseStack.state = state;
     this._parseStack.handlers = handlers;
     this._parseStack.handlerPos = handlerPos;
     this._parseStack.transition = transition;
-    this._parseStack.currentState = currentState;
-    this._parseStack.collect = collect;
-    this._parseStack.pos = pos;
+    this._parseStack.chunkPos = chunkPos;
   }
 
   /**
@@ -494,22 +478,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   public parse(data: Uint32Array, length: number, promiseResult?: boolean): void | Promise<boolean> {
     let code = 0;
     let transition = 0;
-    let currentState = this.currentState;
-    const osc = this._oscParser;
-    const dcs = this._dcsParser;
-    let collect = this._collect;
-    const params = this._params;
-    const table: Uint8Array = this._transitions.table;
-
-    let res: any;
     let start = 0;
-    if (this._parseStack.paused) {
-      const handlers = this._parseStack.handlers;
+    let handlerResult: any;
+
+    // resume from async handler
+    if (this._parseStack.state) {
       let handlerPos = this._parseStack.handlerPos - 1;
-      transition = this._parseStack.transition;
-      currentState = this._parseStack.currentState;
-      collect = this._parseStack.collect;
-      start = this._parseStack.pos;
 
       // we have to resume the old handler loop if:
       // - return value of the promise was `false`
@@ -517,24 +491,25 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       // FIXME: removing handlers from within a handler of the same sequence
       //        is not supported atm (also true for sync handlers)!!
       if (promiseResult === false && handlerPos > -1) {
-        switch (this._parseStack.type) {
-          case 'CSI':
+        const handlers = this._parseStack.handlers;
+        switch (this._parseStack.state) {
+          case ParserStackType.CSI:
             for (; handlerPos >= 0; handlerPos--) {
-              if ((res = (handlers as CsiHandlerType[])[handlerPos](params)) !== false) {
-                if (res instanceof Promise) {
+              if ((handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params)) !== false) {
+                if (handlerResult instanceof Promise) {
                   this._parseStack.handlerPos = handlerPos;
-                  return res;
+                  return handlerResult;
                 }
                 break;
               }
             }
             break;
-          case 'ESC':
+          case ParserStackType.ESC:
             for (; handlerPos >= 0; handlerPos--) {
-              if ((res = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
-                if (res instanceof Promise) {
+              if ((handlerResult = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
+                if (handlerResult instanceof Promise) {
                   this._parseStack.handlerPos = handlerPos;
-                  return res;
+                  return handlerResult;
                 }
                 break;
               }
@@ -543,20 +518,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         }
       }
       // cleanup before continuing with the main loop
+      this._parseStack.state = ParserStackType.NONE;
+      start = this._parseStack.chunkPos + 1;
       this.precedingCodepoint = 0;
-      this._parseStack.paused = false;
-      start++;
-      currentState = transition & TableAccess.TRANSITION_STATE_MASK;
+      this.currentState = this._parseStack.transition & TableAccess.TRANSITION_STATE_MASK;
     }
 
-    // console.log('startPos', start, length);
+    // continue with main sync loop
 
     // process input string
     for (let i = start; i < length; ++i) {
       code = data[i];
 
       // normal transition & action lookup
-      transition = table[currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
+      transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           // read ahead with loop unrolling
@@ -596,9 +571,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             {
               position: i,
               code,
-              currentState,
-              collect,
-              params,
+              currentState: this.currentState,
+              collect: this._collect,
+              params: this._params,
               abort: false
             });
           if (inject.abort) return;
@@ -606,19 +581,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.CSI_DISPATCH:
           // Trigger CSI Handler
-          const handlers = this._csiHandlers[collect << 8 | code];
+          const handlers = this._csiHandlers[this._collect << 8 | code];
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
-            // undefined or true means success and to stop bubbling
-            if ((res = handlers[j](params)) === true) {
+            // true means success and to stop bubbling
+            // a promise indicates an async handler that needs to finish before progressing
+            if ((handlerResult = handlers[j](this._params)) === true) {
               break;
-            } else if (res instanceof Promise) {
-              this._preserveStack('CSI', handlers, j, transition, currentState, collect, i);
-              return res;
+            } else if (handlerResult instanceof Promise) {
+              this._preserveStack(ParserStackType.CSI, handlers, j, transition, i);
+              return handlerResult;
             }
           }
           if (j < 0) {
-            this._csiHandlerFb(collect << 8 | code, params);
+            this._csiHandlerFb(this._collect << 8 | code, this._params);
           }
           this.precedingCodepoint = 0;
           break;
@@ -627,94 +603,89 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           do {
             switch (code) {
               case 0x3b:
-                params.addParam(0);  // ZDM
+                this._params.addParam(0);  // ZDM
                 break;
               case 0x3a:
-                params.addSubParam(-1);
+                this._params.addSubParam(-1);
                 break;
               default:  // 0x30 - 0x39
-                params.addDigit(code - 48);
+                this._params.addDigit(code - 48);
             }
           } while (++i < length && (code = data[i]) > 0x2f && code < 0x3c);
           i--;
           break;
         case ParserAction.COLLECT:
-          collect <<= 8;
-          collect |= code;
+          this._collect <<= 8;
+          this._collect |= code;
           break;
         case ParserAction.ESC_DISPATCH:
-          const handlersEsc = this._escHandlers[collect << 8 | code];
+          const handlersEsc = this._escHandlers[this._collect << 8 | code];
           let jj = handlersEsc ? handlersEsc.length - 1 : -1;
           for (; jj >= 0; jj--) {
-            // undefined or true means success and to stop bubbling
-            if ((res = handlersEsc[jj]()) === true) {
+            // true means success and to stop bubbling
+            // a promise indicates an async handler that needs to finish before progressing
+            if ((handlerResult = handlersEsc[jj]()) === true) {
               break;
-            } else if (res instanceof Promise) {
-              this._preserveStack('ESC', handlersEsc, jj, transition, currentState, collect, i);
-              return res;
+            } else if (handlerResult instanceof Promise) {
+              this._preserveStack(ParserStackType.ESC, handlersEsc, jj, transition, i);
+              return handlerResult;
             }
           }
           if (jj < 0) {
-            this._escHandlerFb(collect << 8 | code);
+            this._escHandlerFb(this._collect << 8 | code);
           }
           this.precedingCodepoint = 0;
           break;
         case ParserAction.CLEAR:
-          params.reset();
-          params.addParam(0); // ZDM
-          collect = 0;
+          this._params.reset();
+          this._params.addParam(0); // ZDM
+          this._collect = 0;
           break;
         case ParserAction.DCS_HOOK:
-          dcs.hook(collect << 8 | code, params);
+          this._dcsParser.hook(this._collect << 8 | code, this._params);
           break;
         case ParserAction.DCS_PUT:
           // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
           // unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              dcs.put(data, i, j);
+              this._dcsParser.put(data, i, j);
               i = j - 1;
               break;
             }
           }
           break;
         case ParserAction.DCS_UNHOOK:
-          dcs.unhook(code !== 0x18 && code !== 0x1a);
+          this._dcsParser.unhook(code !== 0x18 && code !== 0x1a);
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          params.reset();
-          params.addParam(0); // ZDM
-          collect = 0;
+          this._params.reset();
+          this._params.addParam(0); // ZDM
+          this._collect = 0;
           this.precedingCodepoint = 0;
           break;
         case ParserAction.OSC_START:
-          osc.start();
+          this._oscParser.start();
           break;
         case ParserAction.OSC_PUT:
           // inner loop: 0x20 (SP) included, 0x7F (DEL) included
           for (let j = i + 1; ; j++) {
             if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              osc.put(data, i, j);
+              this._oscParser.put(data, i, j);
               i = j - 1;
               break;
             }
           }
           break;
         case ParserAction.OSC_END:
-          osc.end(code !== 0x18 && code !== 0x1a);
+          this._oscParser.end(code !== 0x18 && code !== 0x1a);
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          params.reset();
-          params.addParam(0); // ZDM
-          collect = 0;
+          this._params.reset();
+          this._params.addParam(0); // ZDM
+          this._collect = 0;
           this.precedingCodepoint = 0;
           break;
       }
-      currentState = transition & TableAccess.TRANSITION_STATE_MASK;
+      this.currentState = transition & TableAccess.TRANSITION_STATE_MASK;
     }
-
-    // save collected intermediates
-    this._collect = collect;
-
-    // save state
-    this.currentState = currentState;
   }
 }

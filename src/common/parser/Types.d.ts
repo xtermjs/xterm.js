@@ -5,6 +5,7 @@
 
 import { IDisposable } from 'common/Types';
 import { ParserState } from 'common/parser/Constants';
+import { OscParser } from 'common/parser/OscParser';
 
 /** sequence params serialized to js arrays */
 export type ParamsArray = (number | number[])[];
@@ -236,4 +237,23 @@ export interface IFunctionIdentifier {
 
 export interface IHandlerCollection<T> {
   [key: string]: T[];
+}
+
+/**
+ * Types for async parser support.
+ */
+export const enum ParserStackType {
+  NONE = 0,
+  CSI,
+  ESC,
+  OSC,
+  DCS
+}
+export type ResumableHandlersType = CsiHandlerType[] | EscHandlerType[];
+export interface IParserStackState {
+  state: ParserStackType;
+  handlers: ResumableHandlersType;
+  handlerPos: number;
+  transition: number;
+  chunkPos: number;
 }
