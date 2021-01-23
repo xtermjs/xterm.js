@@ -192,8 +192,8 @@ export class Utf8ToUtf32 {
             target[size++] = cp;
           }
         } else if (type === 3) {
-          if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
-            // illegal codepoint
+          if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF) || cp === 0xFEFF) {
+            // illegal codepoint or BOM
           } else {
             target[size++] = cp;
           }

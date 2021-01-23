@@ -232,6 +232,19 @@ describe('text encodings', () => {
         }
         assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
+
+      it('BOMs (3 byte sequences) - advance by 2', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xef\xbb\xbf\xef\xbb\xbf');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; i += 2) {
+          const written = decoder.decode(utf8Data.slice(i, i + 2), target);
+          decoded += toString(target, written);
+        }
+        assert.equal(decoded, '');
+      });
+
       it('test break after 3 bytes - issue #2495', () => {
         const decoder = new Utf8ToUtf32();
         const target = new Uint32Array(5);
