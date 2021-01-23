@@ -13,6 +13,7 @@ import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
+import { SerializeAddonTestUtil } from '../addons/xterm-addon-serialize/out-test/SerializeAddonTestUtil';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
@@ -38,6 +39,7 @@ export interface IWindowWithTerminal extends Window {
   FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
   SerializeAddon?: typeof SerializeAddon;
+  SerializeAddonTestUtil?: typeof SerializeAddonTestUtil;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
   Unicode11Addon?: typeof Unicode11Addon;
@@ -132,6 +134,7 @@ if (document.location.pathname === '/test') {
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
+  window.SerializeAddonTestUtil = SerializeAddonTestUtil;
   window.Unicode11Addon = Unicode11Addon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
