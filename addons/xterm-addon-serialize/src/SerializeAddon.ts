@@ -6,7 +6,6 @@
  */
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
-import { MyBufferCell } from './MyBufferCell';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -86,8 +85,14 @@ class StringSerializeHandler extends BaseSerializeHandler {
   // so wee need to record it when required.
   private _cursorStyle: IBufferCell = this._buffer1.getNullCell();
 
+  // where exact the cursor styles comes from
+  // because we can't copy the cell directly
+  // so we remember where the content comes from instead
+  private _cursorStyleRow: number = 0;
+  private _cursorStyleCol: number = 0;
+
   // this is a null cell for reference for checking whether background is empty or not
-  private _backgroundCell: MyBufferCell = MyBufferCell.from(this._cursorStyle);
+  private _backgroundCell: IBufferCell = this._buffer1.getNullCell();
 
   private _firstRow: number = 0;
   private _lastCursorRow: number = 0;
@@ -122,7 +127,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     if (!isLastRow) {
       // Enable BCE
       if (row - this._firstRow >= this._terminal.rows) {
-        this._backgroundCell = MyBufferCell.from(this._cursorStyle);
+        this._buffer1.getLine(this._cursorStyleRow)?.getCell(this._cursorStyleCol, this._backgroundCell);
       }
 
       // Fetch current line
@@ -283,7 +288,12 @@ class StringSerializeHandler extends BaseSerializeHandler {
       this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
 
       // update the last cursor style
-      this._buffer1.getLine(row)?.getCell(col, this._cursorStyle);
+      const line = this._buffer1.getLine(row);
+      if (line !== undefined) {
+        line.getCell(col, this._cursorStyle);
+        this._cursorStyleRow = row;
+        this._cursorStyleCol = col;
+      }
     }
 
     /**
