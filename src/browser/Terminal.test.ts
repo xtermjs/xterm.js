@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 'browser/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
@@ -83,7 +83,7 @@ describe('Terminal', () => {
     it('should fire a key event after a keypress DOM event', (done) => {
       term.onKey(e => {
         assert.equal(typeof e.key, 'string');
-        expect(e.domEvent).to.be.an.instanceof(Object);
+        assert.equal(e.domEvent instanceof Object, true);
         done();
       });
       const evKeyPress = <KeyboardEvent>{
@@ -97,7 +97,7 @@ describe('Terminal', () => {
     it('should fire a key event after a keydown DOM event', (done) => {
       term.onKey(e => {
         assert.equal(typeof e.key, 'string');
-        expect(e.domEvent).to.be.an.instanceof(Object);
+        assert.equal(e.domEvent instanceof Object, true);
         done();
       });
       (<any>term).textarea = { value: '' };
@@ -111,7 +111,6 @@ describe('Terminal', () => {
     });
     it('should fire the onResize event', (done) => {
       term.onResize(e => {
-        expect(e).to.have.keys(['cols', 'rows']);
         assert.equal(typeof e.cols, 'number');
         assert.equal(typeof e.rows, 'number');
         done();
@@ -734,10 +733,10 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         await term.writeP(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
-        expect(tchar.getChars()).eql(high + String.fromCharCode(i));
-        expect(tchar.getChars().length).eql(2);
-        expect(tchar.getWidth()).eql(1);
-        expect(term.buffer.lines.get(0)!.loadCell(1, cell).getChars()).eql('');
+        assert.equal(tchar.getChars(), high + String.fromCharCode(i));
+        assert.equal(tchar.getChars().length, 2);
+        assert.equal(tchar.getWidth(), 1);
+        assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
         term.reset();
       }
     });
@@ -747,9 +746,9 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         await term.writeP(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql('');
+        assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars(), high + String.fromCharCode(i));
+        assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length, 2);
+        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), '');
         term.reset();
       }
     });
@@ -761,10 +760,10 @@ describe('Terminal', () => {
         term.buffer.x = term.cols - 1;
 
         await term.writeP('a' + high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql('a');
-        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1)!.loadCell(1, cell).getChars()).eql('');
+        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), 'a');
+        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), high + String.fromCharCode(i));
+        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length, 2);
+        assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
         term.reset();
       }
     });
@@ -781,9 +780,9 @@ describe('Terminal', () => {
         }
         await term.writeP('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars()).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length).eql(2);
-        expect(term.buffer.lines.get(1)!.loadCell(1, cell).getChars()).eql('');
+        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), high + String.fromCharCode(i));
+        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length, 2);
+        assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
         term.reset();
       }
     });
@@ -794,10 +793,10 @@ describe('Terminal', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         await term.writeP(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
-        expect(tchar.getChars()).eql(high + String.fromCharCode(i));
-        expect(tchar.getChars().length).eql(2);
-        expect(tchar.getWidth()).eql(1);
-        expect(term.buffer.lines.get(0)!.loadCell(1, cell).getChars()).eql('');
+        assert.equal(tchar.getChars(), high + String.fromCharCode(i));
+        assert.equal(tchar.getChars().length, 2);
+        assert.equal(tchar.getWidth(), 1);
+        assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
         term.reset();
       }
     });
@@ -808,81 +807,81 @@ describe('Terminal', () => {
     it('café', async () => {
       await term.writeP('cafe\u0301');
       term.buffer.lines.get(0)!.loadCell(3, cell);
-      expect(cell.getChars()).eql('e\u0301');
-      expect(cell.getChars().length).eql(2);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), 'e\u0301');
+      assert.equal(cell.getChars().length, 2);
+      assert.equal(cell.getWidth(), 1);
     });
     it('café - end of line', async () => {
       term.buffer.x = term.cols - 1 - 3;
       await term.writeP('cafe\u0301');
       term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
-      expect(cell.getChars()).eql('e\u0301');
-      expect(cell.getChars().length).eql(2);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), 'e\u0301');
+      assert.equal(cell.getChars().length, 2);
+      assert.equal(cell.getWidth(), 1);
       term.buffer.lines.get(0)!.loadCell(1, cell);
-      expect(cell.getChars()).eql('');
-      expect(cell.getChars().length).eql(0);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), '');
+      assert.equal(cell.getChars().length, 0);
+      assert.equal(cell.getWidth(), 1);
     });
     it('multiple combined é', async () => {
       await term.writeP(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
-        expect(cell.getChars()).eql('e\u0301');
-        expect(cell.getChars().length).eql(2);
-        expect(cell.getWidth()).eql(1);
+        assert.equal(cell.getChars(), 'e\u0301');
+        assert.equal(cell.getChars().length, 2);
+        assert.equal(cell.getWidth(), 1);
       }
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('e\u0301');
-      expect(cell.getChars().length).eql(2);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), 'e\u0301');
+      assert.equal(cell.getChars().length, 2);
+      assert.equal(cell.getWidth(), 1);
     });
     it('multiple surrogate with combined', async () => {
       await term.writeP(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
-        expect(cell.getChars()).eql('\uD800\uDC00\u0301');
-        expect(cell.getChars().length).eql(3);
-        expect(cell.getWidth()).eql(1);
+        assert.equal(cell.getChars(), '\uD800\uDC00\u0301');
+        assert.equal(cell.getChars().length, 3);
+        assert.equal(cell.getWidth(), 1);
       }
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('\uD800\uDC00\u0301');
-      expect(cell.getChars().length).eql(3);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), '\uD800\uDC00\u0301');
+      assert.equal(cell.getChars().length, 3);
+      assert.equal(cell.getWidth(), 1);
     });
   });
 
   describe('unicode - fullwidth characters', () => {
     const cell = new CellData();
     it('cursor movement even', async () => {
-      expect(term.buffer.x).eql(0);
+      assert.equal(term.buffer.x, 0);
       await term.writeP('￥');
-      expect(term.buffer.x).eql(2);
+      assert.equal(term.buffer.x, 2);
     });
     it('cursor movement odd', async () => {
       term.buffer.x = 1;
-      expect(term.buffer.x).eql(1);
+      assert.equal(term.buffer.x, 1);
       await term.writeP('￥');
-      expect(term.buffer.x).eql(3);
+      assert.equal(term.buffer.x, 3);
     });
     it('line of ￥ even', async () => {
       await term.writeP(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('￥');
-          expect(cell.getChars().length).eql(1);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '￥');
+          assert.equal(cell.getChars().length, 1);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('￥');
-      expect(cell.getChars().length).eql(1);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '￥');
+      assert.equal(cell.getChars().length, 1);
+      assert.equal(cell.getWidth(), 2);
     });
     it('line of ￥ odd', async () => {
       term.buffer.x = 1;
@@ -890,23 +889,23 @@ describe('Terminal', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('￥');
-          expect(cell.getChars().length).eql(1);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '￥');
+          assert.equal(cell.getChars().length, 1);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
-      expect(cell.getChars()).eql('');
-      expect(cell.getChars().length).eql(0);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), '');
+      assert.equal(cell.getChars().length, 0);
+      assert.equal(cell.getWidth(), 1);
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('￥');
-      expect(cell.getChars().length).eql(1);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '￥');
+      assert.equal(cell.getChars().length, 1);
+      assert.equal(cell.getWidth(), 2);
     });
     it('line of ￥ with combining odd', async () => {
       term.buffer.x = 1;
@@ -914,42 +913,42 @@ describe('Terminal', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('￥\u0301');
-          expect(cell.getChars().length).eql(2);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '￥\u0301');
+          assert.equal(cell.getChars().length, 2);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
-      expect(cell.getChars()).eql('');
-      expect(cell.getChars().length).eql(0);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), '');
+      assert.equal(cell.getChars().length, 0);
+      assert.equal(cell.getWidth(), 1);
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('￥\u0301');
-      expect(cell.getChars().length).eql(2);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '￥\u0301');
+      assert.equal(cell.getChars().length, 2);
+      assert.equal(cell.getWidth(), 2);
     });
     it('line of ￥ with combining even', async () => {
       await term.writeP(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('￥\u0301');
-          expect(cell.getChars().length).eql(2);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '￥\u0301');
+          assert.equal(cell.getChars().length, 2);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('￥\u0301');
-      expect(cell.getChars().length).eql(2);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '￥\u0301');
+      assert.equal(cell.getChars().length, 2);
+      assert.equal(cell.getWidth(), 2);
     });
     it('line of surrogate fullwidth with combining odd', async () => {
       term.buffer.x = 1;
@@ -957,42 +956,42 @@ describe('Terminal', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('\ud843\ude6d\u0301');
-          expect(cell.getChars().length).eql(3);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '\ud843\ude6d\u0301');
+          assert.equal(cell.getChars().length, 3);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell);
-      expect(cell.getChars()).eql('');
-      expect(cell.getChars().length).eql(0);
-      expect(cell.getWidth()).eql(1);
+      assert.equal(cell.getChars(), '');
+      assert.equal(cell.getChars().length, 0);
+      assert.equal(cell.getWidth(), 1);
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('\ud843\ude6d\u0301');
-      expect(cell.getChars().length).eql(3);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '\ud843\ude6d\u0301');
+      assert.equal(cell.getChars().length, 3);
+      assert.equal(cell.getWidth(), 2);
     });
     it('line of surrogate fullwidth with combining even', async () => {
       await term.writeP(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
-          expect(cell.getChars()).eql('');
-          expect(cell.getChars().length).eql(0);
-          expect(cell.getWidth()).eql(0);
+          assert.equal(cell.getChars(), '');
+          assert.equal(cell.getChars().length, 0);
+          assert.equal(cell.getWidth(), 0);
         } else {
-          expect(cell.getChars()).eql('\ud843\ude6d\u0301');
-          expect(cell.getChars().length).eql(3);
-          expect(cell.getWidth()).eql(2);
+          assert.equal(cell.getChars(), '\ud843\ude6d\u0301');
+          assert.equal(cell.getChars().length, 3);
+          assert.equal(cell.getWidth(), 2);
         }
       }
       term.buffer.lines.get(1)!.loadCell(0, cell);
-      expect(cell.getChars()).eql('\ud843\ude6d\u0301');
-      expect(cell.getChars().length).eql(3);
-      expect(cell.getWidth()).eql(2);
+      assert.equal(cell.getChars(), '\ud843\ude6d\u0301');
+      assert.equal(cell.getChars().length, 3);
+      assert.equal(cell.getWidth(), 2);
     });
   });
 
@@ -1004,11 +1003,11 @@ describe('Terminal', () => {
       term.buffer.y = 0;
       term.write('\x1b[4h');
       await term.writeP('abcde');
-      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
-      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
-      expect(term.buffer.lines.get(0)!.loadCell(14, cell).getChars()).eql('e');
-      expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('0');
-      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('4');
+      assert.equal(term.buffer.lines.get(0)!.length, term.cols);
+      assert.equal(term.buffer.lines.get(0)!.loadCell(10, cell).getChars(), 'a');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(14, cell).getChars(), 'e');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(15, cell).getChars(), '0');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '4');
     });
     it('fullwidth - insert', async () => {
       await term.writeP(Array(9).join('0123456789').slice(-80));
@@ -1016,12 +1015,12 @@ describe('Terminal', () => {
       term.buffer.y = 0;
       term.write('\x1b[4h');
       await term.writeP('￥￥￥');
-      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
-      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('');
-      expect(term.buffer.lines.get(0)!.loadCell(14, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0)!.loadCell(15, cell).getChars()).eql('');
-      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('3');
+      assert.equal(term.buffer.lines.get(0)!.length, term.cols);
+      assert.equal(term.buffer.lines.get(0)!.loadCell(10, cell).getChars(), '￥');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(11, cell).getChars(), '');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(14, cell).getChars(), '￥');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(15, cell).getChars(), '');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '3');
     });
     it('fullwidth - right border', async () => {
       await term.writeP(Array(41).join('￥'));
@@ -1029,15 +1028,15 @@ describe('Terminal', () => {
       term.buffer.y = 0;
       term.write('\x1b[4h');
       await term.writeP('a');
-      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
-      expect(term.buffer.lines.get(0)!.loadCell(10, cell).getChars()).eql('a');
-      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
+      assert.equal(term.buffer.lines.get(0)!.length, term.cols);
+      assert.equal(term.buffer.lines.get(0)!.loadCell(10, cell).getChars(), 'a');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(11, cell).getChars(), '￥');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '');  // fullwidth char got replaced
       await term.writeP('b');
-      expect(term.buffer.lines.get(0)!.length).eql(term.cols);
-      expect(term.buffer.lines.get(0)!.loadCell(11, cell).getChars()).eql('b');
-      expect(term.buffer.lines.get(0)!.loadCell(12, cell).getChars()).eql('￥');
-      expect(term.buffer.lines.get(0)!.loadCell(79, cell).getChars()).eql('');  // empty cell after fullwidth
+      assert.equal(term.buffer.lines.get(0)!.length, term.cols);
+      assert.equal(term.buffer.lines.get(0)!.loadCell(11, cell).getChars(), 'b');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(12, cell).getChars(), '￥');
+      assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '');  // empty cell after fullwidth
     });
   });
 
@@ -1360,7 +1359,7 @@ describe('Terminal', () => {
       ];
       await terminal.writeP(data.join(''));
       // brute force test with insane values
-      expect(() => {
+      assert.doesNotThrow(() => {
         for (let overscan = 0; overscan < 20; ++overscan) {
           for (let start = -10; start < 20; ++start) {
             for (let end = -10; end < 20; ++end) {
@@ -1371,7 +1370,7 @@ describe('Terminal', () => {
             }
           }
         }
-      }).to.not.throw();
+      });
     });
   });
 
@@ -1420,18 +1419,18 @@ describe('Terminal', () => {
     // not converting
     const termNotConverting = new TestTerminal({cols: 15, rows: 10});
     await termNotConverting.writeP('Hello\nWorld');
-    expect(termNotConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
-    expect(termNotConverting.buffer.lines.get(1)!.translateToString(false)).equals('     World     ');
-    expect(termNotConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
-    expect(termNotConverting.buffer.lines.get(1)!.translateToString(true)).equals('     World');
+    assert.equal(termNotConverting.buffer.lines.get(0)!.translateToString(false), 'Hello          ');
+    assert.equal(termNotConverting.buffer.lines.get(1)!.translateToString(false), '     World     ');
+    assert.equal(termNotConverting.buffer.lines.get(0)!.translateToString(true), 'Hello');
+    assert.equal(termNotConverting.buffer.lines.get(1)!.translateToString(true), '     World');
 
     // converting
     const termConverting = new TestTerminal({cols: 15, rows: 10, convertEol: true});
     await termConverting.writeP('Hello\nWorld');
-    expect(termConverting.buffer.lines.get(0)!.translateToString(false)).equals('Hello          ');
-    expect(termConverting.buffer.lines.get(1)!.translateToString(false)).equals('World          ');
-    expect(termConverting.buffer.lines.get(0)!.translateToString(true)).equals('Hello');
-    expect(termConverting.buffer.lines.get(1)!.translateToString(true)).equals('World');
+    assert.equal(termConverting.buffer.lines.get(0)!.translateToString(false), 'Hello          ');
+    assert.equal(termConverting.buffer.lines.get(1)!.translateToString(false), 'World          ');
+    assert.equal(termConverting.buffer.lines.get(0)!.translateToString(true), 'Hello');
+    assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
   });
   describe('Terminal InputHandler integration', () => {
     function getLines(term: TestTerminal, limit: number = term.rows): string[] {
