@@ -440,14 +440,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   /**
    * Async parse support.
    */
-  private _parseStack: IParserStackState = {
+  protected _parseStack: IParserStackState = {
     state: ParserStackType.NONE,
     handlers: [],
     handlerPos: 0,
     transition: 0,
     chunkPos: 0
   };
-  private _preserveStack(
+  protected _preserveStack(
     state: ParserStackType,
     handlers: ResumableHandlersType,
     handlerPos: number,
@@ -474,6 +474,39 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - DCS_PARAM:PARAM
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
+   *
+   * Note on asynchronous handler support:
+   * Any handler returning a promise will be treated as asynchronous.
+   * To keep the in-band blocking working for async handlers, `parse` pauses execution,
+   * creates a stack save and returns the promise to the caller.
+   * For proper continuation of the paused state it is important
+   * to await the promise resolving. On resolve the parse must be repeated
+   * with the same chunk of data and the resolved value in `promiseResult`
+   * until no promise is returned.
+   *
+   * Important: With only sync handlers defined, parsing is completely synchronous as well.
+   * As soon as an async handler is involved, synchronous parsing is not possible anymore.
+   *
+   * FIXME: to be discussed
+   *   While awaiting parse promises the terminal buffer state may not change.
+   *   --> Implement lock semantics / promise chaining on buffer alterations? Waah, pandora's box ;)
+   *   --> Maybe easier: Give up on non-mutating rule for async handlers...
+   *       (needs explanation in docs about exact executor/thenable/worker execution contexts)
+   *
+   * Example for proper parsing of multiple chunks:
+   *
+   * ```typescript
+   * async function parseMultipleChunks(chunks: Uint32Array[]): Promise<void> {
+   *   for (const chunk of chunks) {
+   *     let result: void | Promise<boolean>;
+   *     let prev: boolean | undefined;
+   *     while (result = parser.parse(chunk, chunk.length, prev)) {
+   *       prev = await result;
+   *     }
+   *   }
+   *   // finished parsing all chunks...
+   * }
+   * ```
    */
   public parse(data: Uint32Array, length: number, promiseResult?: boolean): void | Promise<boolean> {
     let code = 0;
@@ -483,6 +516,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
     // resume from async handler
     if (this._parseStack.state) {
+      if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
+        /**
+         * Reject further parsing on improper continuation after pausing.
+         * This will happen with sync parse calls not awaiting a returned promise.
+         * It is a really bad condition with screwed up execution order,
+         * therefore we exit hard with an exception.
+         * FIXME: Do we need a method to escape from this broken parser state? (hard to achieve properly)
+         */
+        this._parseStack.state = ParserStackType.FAIL;
+        throw new Error('improper continuation due to previous async handler, giving up parsing');
+      }
       let handlerPos = this._parseStack.handlerPos - 1;
 
       // we have to resume the old handler loop if:

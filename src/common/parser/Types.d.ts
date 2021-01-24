@@ -244,6 +244,7 @@ export interface IHandlerCollection<T> {
  */
 export const enum ParserStackType {
   NONE = 0,
+  FAIL,
   CSI,
   ESC,
   OSC,
