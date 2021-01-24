@@ -205,9 +205,19 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
+interface ILinkState {
+  decorations: ILinkDecorations;
+  isHovered: boolean;
+}
+export interface ILinkWithState {
+  link: ILink;
+  state?: ILinkState;
+}
+
 export interface ILinkifier2 {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
+  currentLink: ILinkWithState | undefined;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
