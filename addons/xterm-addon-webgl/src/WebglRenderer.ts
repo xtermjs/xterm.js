@@ -116,12 +116,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
-    this._rectangleRenderer.updateSelection(this._model.selection);
-    this._glyphRenderer.updateSelection(this._model);
-
     // Force a full refresh
     this._model.clear();
-    this._model.clearSelection();
+    this._updateSelectionModel(undefined, undefined);
   }
 
   public onDevicePixelRatioChange(): void {
@@ -159,7 +156,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Force a full refresh
     this._model.clear();
-    this._model.clearSelection();
+    this._updateSelectionModel(undefined, undefined);
   }
 
   public onCharSizeChanged(): void {
@@ -178,9 +175,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end, columnSelectMode);
-
-    this._rectangleRenderer.updateSelection(this._model.selection);
-    this._glyphRenderer.updateSelection(this._model);
 
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
@@ -220,7 +214,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._charAtlas?.clearTexture();
     this._model.clear();
     this._updateModel(0, this._terminal.rows - 1);
-    this._glyphRenderer.updateSelection(this._model);
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
@@ -253,7 +246,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._model.clear();
-      this._model.clearSelection();
+      this._updateSelectionModel(undefined, undefined);
     }
 
     // Update model to reflect what's drawn
@@ -303,14 +296,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
+    if (this._model.selection.hasSelection) {
+      // Model could be updated but the selection is unchanged
+      this._glyphRenderer.updateSelection(this._model);
+    }
   }
 
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     const terminal = this._terminal;
 
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
       this._model.clearSelection();
+      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -323,6 +321,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // No need to draw the selection
     if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
       this._model.clearSelection();
+      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -334,6 +333,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
     this._model.selection.startCol = start[0];
     this._model.selection.endCol = end[0];
+
+    this._rectangleRenderer.updateSelection(this._model.selection);
   }
 
   /**
