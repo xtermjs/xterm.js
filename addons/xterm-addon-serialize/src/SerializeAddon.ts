@@ -149,22 +149,32 @@ class StringSerializeHandler extends BaseSerializeHandler {
         const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
 
         // validate whether this line wrap is ever possible
+        // which mean whether cursor can placed at a overflow position (x === row) naturally
         let isValid = false;
 
         if (
+          // you must output character to cause overflow, control sequence can't do this
           nextRowFirstChar.getChars() &&
           isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
         ) {
           if (
+            // the last character can't be null,
+            // you can't use control sequence to move cursor to (x === row)
             (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar)
           ) {
             isValid = true;
           }
 
           if (
+            // the second to last character can't be null if the next line starts with CJK,
+            // you can't use control sequence to move cursor to (x === row)
             isNextRowFirstCharDoubleWidth &&
             (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar) &&
             equalBg(thisRowLastSecondChar, nextRowFirstChar)
           ) {
@@ -179,19 +189,19 @@ class StringSerializeHandler extends BaseSerializeHandler {
           // move back and erase next line head
           rowSeparator += '\x1b[1D\x1b[1X';
 
-          // do these because we filled the last several null slot, which we shouldn't
           if (this._nullCellCount > 0) {
+            // do these because we filled the last several null slot, which we shouldn't
             rowSeparator += '\x1b[A';
             rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}C`;
             rowSeparator += `\x1b[${this._nullCellCount}X`;
             rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}D`;
             rowSeparator += '\x1b[B';
-
-            // This is content even it is invisible
-            // without this, wrap will be missing
-            this._lastContentCursorRow = row + 1;
-            this._lastContentCursorCol = 0;
           }
+
+          // This is content and need the be serialized even it is invisible.
+          // without this, wrap will be missing from outputs.
+          this._lastContentCursorRow = row + 1;
+          this._lastContentCursorCol = 0;
 
           // force commit the cursor position
           this._lastCursorRow = row + 1;
