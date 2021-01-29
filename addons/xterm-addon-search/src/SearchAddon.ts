@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { Terminal, IBufferLine, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -21,6 +21,7 @@ export interface ISearchResult {
   term: string;
   col: number;
   row: number;
+  length: number;
 }
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
@@ -324,32 +325,40 @@ export class SearchAddon implements ITerminalAddon {
       }
 
       const line = terminal.buffer.active.getLine(row);
+      let { length } = term;
 
       if (line) {
-        for (let i = 0; i < resultIndex; i++) {
-          const cell = line.getCell(i);
-          if (!cell) {
-            break;
-          }
-          // Adjust the searchIndex to normalize emoji into single chars
-          const char = cell.getChars();
-          if (char.length > 1) {
-            resultIndex -= char.length - 1;
-          }
-          // Adjust the searchIndex for empty characters following wide unicode
-          // chars (eg. CJK)
-          const charWidth = cell.getWidth();
-          if (charWidth === 0) {
-            resultIndex++;
-          }
-        }
+        resultIndex = this._stringLengthToBufferSize(line, resultIndex);
+        length = this._stringLengthToBufferSize(line, length, resultIndex);
       }
       return {
         term,
         col: resultIndex,
-        row
+        row,
+        length
       };
     }
+  }
+
+  private _stringLengthToBufferSize(line: IBufferLine, length: number, start: number = 0): number {
+    for (let i = 0; i < length; i++) {
+      const cell = line.getCell(start + i);
+      if (!cell) {
+        break;
+      }
+      // Adjust the searchIndex to normalize emoji into single chars
+      const char = cell.getChars();
+      if (char.length > 1) {
+        length -= char.length - 1;
+      }
+      // Adjust the searchIndex for empty characters following wide unicode
+      // chars (eg. CJK)
+      const nextCell = line.getCell(start + i + 1);
+      if (nextCell && nextCell.getWidth() === 0) {
+        length++;
+      }
+    }
+    return length;
   }
 
   /**
@@ -390,7 +399,7 @@ export class SearchAddon implements ITerminalAddon {
       terminal.clearSelection();
       return false;
     }
-    terminal.select(result.col, result.row, result.term.length);
+    terminal.select(result.col, result.row, result.length);
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
       let scroll = result.row - terminal.buffer.active.viewportY;

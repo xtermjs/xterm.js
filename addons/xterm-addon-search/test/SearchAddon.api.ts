@@ -106,6 +106,14 @@ describe('Search Tests', function(): void {
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'abc');
   });
 
+  it('Search for result bounding with wide unicode chars', async () => {
+    await writeSync(page, '中文xxx');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('中')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '中');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('xxx')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'xxx');
+  });
+
   describe('Regression tests', () => {
     describe('#2444 wrapped line content not being found', () => {
       let fixture: string;
