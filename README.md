@@ -169,6 +169,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**TeleType**](https://github.com/akshaykmr/TeleType): cli tool that allows you to share your terminal online conveniently. Show off mad cli-fu, help a colleague, teach, or troubleshoot.
 - [**Intervue**](https://www.intervue.io): Pair programming for interviews. Multiple programming languages supported, with results displayed by xterm.js.
 - [**TRASA**](https://trasa.io): Zero trust access to Web, SSH, RDP and Database services.  
+- [**Commas**](https://github.com/CyanSalt/commas): Commas is a hackable terminal and command runner.
+- [**Devtron**](https://github.com/devtron-labs/devtron): Software Delivery Workflow For Kubernetes. 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
