@@ -386,7 +386,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       throw new Error('Terminal requires a parent element.');
     }
 
-    if (!document.body.contains(parent)) {
+    if (!parent.isConnected) {
       this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
