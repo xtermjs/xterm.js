@@ -135,9 +135,9 @@ export class ImageAddon implements ITerminalAddon {
 
     // playground: hook to export image data somehow
     // TODO: make this configurable via API
-    const callback = (data: Blob | null) => window.open(URL.createObjectURL(data), '_blank');
+    const callback: any = (data: Blob | null) => window.open(URL.createObjectURL(data), '_blank');
 
-    setTimeout(() => 
+    setTimeout(() =>
       terminal.element?.addEventListener('click', (ev: MouseEvent) => {
         if (!ev.ctrlKey) return;
         const pos = (this._terminal as any)._core._mouseService!.getRawByteCoords(
@@ -159,7 +159,7 @@ export class ImageAddon implements ITerminalAddon {
           if (imgData && imgData.orig) (imgData.orig as HTMLCanvasElement).toBlob(callback);
         }
       }),
-      100);
+    100);
   }
 
   // Note: storageLimit is skipped here to not intoduce a surprising side effect.
