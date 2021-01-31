@@ -106,8 +106,8 @@ interface IFunctionIdentifier {
 }
 
 export interface ITerminalParser {
-  addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
-  addOscHandler(id: number, handler: IOscHandler): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
+  registerOscHandler(id: number, handler: IOscHandler): IDisposable;
 }
 
 // stub into xterm core terminal
