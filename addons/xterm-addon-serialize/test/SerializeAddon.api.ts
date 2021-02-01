@@ -18,12 +18,12 @@ const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, 
 
 const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
   await writeRawSync(page, str);
-  const originalBuffer = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+  const originalBuffer = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
   const result = await page.evaluate(`serializeAddon.serialize();`) as string;
   await page.evaluate(`term.reset();`);
   await writeRawSync(page, result);
-  const newBuffer = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+  const newBuffer = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
   // chai decides -0 and 0 are different number...
   // and firefox have a bug that output -0 for unknown reason
@@ -43,6 +43,19 @@ describe('SerializeAddon', () => {
     await page.evaluate(`
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);
+      window.inspectBuffer = (buffer) => {
+        const lines = [];
+        for (let i = 0; i < buffer.length; i++) {
+          // Do this intentionally to get content of underlining source
+          const bufferLine = buffer.getLine(i)._line;
+          lines.push(JSON.stringify(bufferLine));
+        }
+        return {
+          x: buffer.cursorX,
+          y: buffer.cursorY,
+          data: lines
+        };
+      }
     `);
   });
 
@@ -51,11 +64,11 @@ describe('SerializeAddon', () => {
 
   it('produce different output when we call test util with different text', async function(): Promise<any> {
     await writeRawSync(page, '12345');
-    const buffer1 = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+    const buffer1 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     await page.evaluate(`term.reset();`);
     await writeRawSync(page, '67890');
-    const buffer2 = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+    const buffer2 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     assert.throw(() => {
       assert.equal(JSON.stringify(buffer1), JSON.stringify(buffer2));
@@ -64,11 +77,11 @@ describe('SerializeAddon', () => {
 
   it('produce different output when we call test util with different line wrap', async function(): Promise<any> {
     await writeRawSync(page, '1234567890\r\n12345');
-    const buffer3 = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+    const buffer3 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     await page.evaluate(`term.reset();`);
     await writeRawSync(page, '1234567890n12345');
-    const buffer4 = await page.evaluate(`SerializeAddonTestUtil.inspectBuffer(term.buffer.normal);`);
+    const buffer4 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     assert.throw(() => {
       assert.equal(JSON.stringify(buffer3), JSON.stringify(buffer4));
