@@ -21,7 +21,7 @@ abstract class BaseSerializeHandler {
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
-    this._beforeSerialize(endRow - startRow);
+    this._beforeSerialize(endRow - startRow, startRow, endRow);
 
     for (let row = startRow; row < endRow; row++) {
       const line = this._buffer.getLine(row);
@@ -36,7 +36,7 @@ abstract class BaseSerializeHandler {
           oldCell = c;
         }
       }
-      this._rowEnd(row);
+      this._rowEnd(row, row === endRow - 1);
     }
 
     this._afterSerialize();
@@ -45,8 +45,8 @@ abstract class BaseSerializeHandler {
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
-  protected _rowEnd(row: number): void { }
-  protected _beforeSerialize(rows: number): void { }
+  protected _rowEnd(row: number, isLastRow: boolean): void { }
+  protected _beforeSerialize(rows: number, startRow: number, endRow: number): void { }
   protected _afterSerialize(): void { }
   protected _serializeString(): string { return ''; }
 }
@@ -71,27 +71,152 @@ function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
     && cell1.isDim() === cell2.isDim();
 }
 
+
+
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
+  private _allRowSeparators: string[] = new Array<string>();
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
 
-  constructor(buffer: IBuffer) {
-    super(buffer);
+  // we can see a full colored cell and a null cell that only have background the same style
+  // but the information isn't preserved by null cell itself
+  // so wee need to record it when required.
+  private _cursorStyle: IBufferCell = this._buffer1.getNullCell();
+
+  // where exact the cursor styles comes from
+  // because we can't copy the cell directly
+  // so we remember where the content comes from instead
+  private _cursorStyleRow: number = 0;
+  private _cursorStyleCol: number = 0;
+
+  // this is a null cell for reference for checking whether background is empty or not
+  private _backgroundCell: IBufferCell = this._buffer1.getNullCell();
+
+  private _firstRow: number = 0;
+  private _lastCursorRow: number = 0;
+  private _lastCursorCol: number = 0;
+  private _lastContentCursorRow: number = 0;
+  private _lastContentCursorCol: number = 0;
+
+  constructor(private _buffer1: IBuffer, private _terminal: Terminal) {
+    super(_buffer1);
   }
 
-  protected _beforeSerialize(rows: number): void {
+  protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._allRows = new Array<string>(rows);
+    this._lastContentCursorRow = start;
+    this._lastCursorRow = start;
+    this._firstRow = start;
   }
 
-  protected _rowEnd(row: number): void {
-    this._allRows[this._rowIndex++] = this._currentRow;
+  private _thisRowLastChar: IBufferCell = this._buffer1.getNullCell();
+  private _thisRowLastSecondChar: IBufferCell = this._buffer1.getNullCell();
+  private _nextRowFirstChar: IBufferCell = this._buffer1.getNullCell();
+  protected _rowEnd(row: number, isLastRow: boolean): void {
+    // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
+    if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
+      // use clear right to set background.
+      this._currentRow += `\x1b[${this._nullCellCount}X`;
+    }
+
+    let rowSeparator = '';
+
+    // handle row separator
+    if (!isLastRow) {
+      // Enable BCE
+      if (row - this._firstRow >= this._terminal.rows) {
+        this._buffer1.getLine(this._cursorStyleRow)?.getCell(this._cursorStyleCol, this._backgroundCell);
+      }
+
+      // Fetch current line
+      const currentLine = this._buffer1.getLine(row)!;
+      // Fetch next line
+      const nextLine = this._buffer1.getLine(row + 1)!;
+
+      if (!nextLine.isWrapped) {
+        // just insert the line break
+        rowSeparator = '\r\n';
+        // we sended the enter
+        this._lastCursorRow = row + 1;
+        this._lastCursorCol = 0;
+      } else {
+        rowSeparator = '';
+        const thisRowLastChar = currentLine.getCell(currentLine.length - 1, this._thisRowLastChar)!;
+        const thisRowLastSecondChar = currentLine.getCell(currentLine.length - 2, this._thisRowLastSecondChar)!;
+        const nextRowFirstChar = nextLine.getCell(0, this._nextRowFirstChar)!;
+        const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
+
+        // validate whether this line wrap is ever possible
+        // which mean whether cursor can placed at a overflow position (x === row) naturally
+        let isValid = false;
+
+        if (
+          // you must output character to cause overflow, control sequence can't do this
+          nextRowFirstChar.getChars() &&
+          isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
+        ) {
+          if (
+            // the last character can't be null,
+            // you can't use control sequence to move cursor to (x === row)
+            (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
+            equalBg(thisRowLastChar, nextRowFirstChar)
+          ) {
+            isValid = true;
+          }
+
+          if (
+            // the second to last character can't be null if the next line starts with CJK,
+            // you can't use control sequence to move cursor to (x === row)
+            isNextRowFirstCharDoubleWidth &&
+            (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
+            equalBg(thisRowLastChar, nextRowFirstChar) &&
+            equalBg(thisRowLastSecondChar, nextRowFirstChar)
+          ) {
+            isValid = true;
+          }
+        }
+
+        if (!isValid) {
+          // force the wrap with magic
+          // insert enough character to force the wrap
+          rowSeparator = '-'.repeat(this._nullCellCount + 1);
+          // move back and erase next line head
+          rowSeparator += '\x1b[1D\x1b[1X';
+
+          if (this._nullCellCount > 0) {
+            // do these because we filled the last several null slot, which we shouldn't
+            rowSeparator += '\x1b[A';
+            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}C`;
+            rowSeparator += `\x1b[${this._nullCellCount}X`;
+            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}D`;
+            rowSeparator += '\x1b[B';
+          }
+
+          // This is content and need the be serialized even it is invisible.
+          // without this, wrap will be missing from outputs.
+          this._lastContentCursorRow = row + 1;
+          this._lastContentCursorCol = 0;
+
+          // force commit the cursor position
+          this._lastCursorRow = row + 1;
+          this._lastCursorCol = 0;
+        }
+      }
+    }
+
+    this._allRows[this._rowIndex] = this._currentRow;
+    this._allRowSeparators[this._rowIndex++] = rowSeparator;
     this._currentRow = '';
     this._nullCellCount = 0;
   }
 
-  protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+  private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): number[] {
     const sgrSeq: number[] = [];
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);
@@ -99,7 +224,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     if (fgChanged || bgChanged || flagsChanged) {
       if (cell.isAttributeDefault()) {
-        this._currentRow += '\x1b[0m';
+        if (!oldCell.isAttributeDefault()) {
+          sgrSeq.push(0);
+        }
       } else {
         if (fgChanged) {
           const color = cell.getFgColor();
@@ -131,30 +258,129 @@ class StringSerializeHandler extends BaseSerializeHandler {
       }
     }
 
-    if (sgrSeq.length) {
+    return sgrSeq;
+  }
+
+  protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+    // a width 0 cell don't need to be count because it is just a placeholder after a CJK character;
+    const isPlaceHolderCell = cell.getWidth() === 0;
+
+    if (isPlaceHolderCell) {
+      return;
+    }
+
+    // this cell don't have content
+    const isEmptyCell = cell.getChars() === '';
+
+    const sgrSeq = this._diffStyle(cell, this._cursorStyle);
+
+    // the empty cell style is only assumed to be changed when background changed, because foreground is always 0.
+    const styleChanged = isEmptyCell ? !equalBg(this._cursorStyle, cell) : sgrSeq.length > 0;
+
+    /**
+     *  handles style change
+     */
+    if (styleChanged) {
+      // before update the style, we need to fill empty cell back
+      if (this._nullCellCount > 0) {
+        // use clear right to set background.
+        if (!equalBg(this._cursorStyle, this._backgroundCell)) {
+          this._currentRow += `\x1b[${this._nullCellCount}X`;
+        }
+        // use move right to move cursor.
+        this._currentRow += `\x1b[${this._nullCellCount}C`;
+        this._nullCellCount = 0;
+      }
+
+      this._lastContentCursorRow = this._lastCursorRow = row;
+      this._lastContentCursorCol = this._lastCursorCol = col;
+
       this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
+
+      // update the last cursor style
+      const line = this._buffer1.getLine(row);
+      if (line !== undefined) {
+        line.getCell(col, this._cursorStyle);
+        this._cursorStyleRow = row;
+        this._cursorStyleCol = col;
+      }
     }
 
-    // Count number of null cells encountered after the last non-null cell and move the cursor
-    // if a non-null cell is found (eg. \t or cursor move)
-    if (cell.getChars() === '') {
+    /**
+     *  handles actual content
+     */
+    if (isEmptyCell) {
       this._nullCellCount += cell.getWidth();
-    } else if (this._nullCellCount > 0) {
-      this._currentRow += `\x1b[${this._nullCellCount}C`;
-      this._nullCellCount = 0;
-    }
+    } else {
+      if (this._nullCellCount > 0) {
+        // we can just assume we have same style with previous one here
+        // because style change is handled by previous stage
+        // use move right when background is empty, use clear right when there is background.
+        if (equalBg(this._cursorStyle, this._backgroundCell)) {
+          this._currentRow += `\x1b[${this._nullCellCount}C`;
+        } else {
+          this._currentRow += `\x1b[${this._nullCellCount}X`;
+          this._currentRow += `\x1b[${this._nullCellCount}C`;
+        }
+        this._nullCellCount = 0;
+      }
 
-    this._currentRow += cell.getChars();
+      this._currentRow += cell.getChars();
+
+      // update cursor
+      this._lastContentCursorRow = this._lastCursorRow = row;
+      this._lastContentCursorCol = this._lastCursorCol = col + cell.getWidth();
+    }
   }
 
   protected _serializeString(): string {
     let rowEnd = this._allRows.length;
-    for (; rowEnd > 0; rowEnd--) {
-      if (this._allRows[rowEnd - 1]) {
-        break;
+
+    // the fixup is only required for data without scrollback
+    // because it will always be placed at last line otherwise
+    if (this._buffer1.length - this._firstRow <= this._terminal.rows) {
+      rowEnd = this._lastContentCursorRow + 1 - this._firstRow;
+      this._lastCursorCol = this._lastContentCursorCol;
+      this._lastCursorRow = this._lastContentCursorRow;
+    }
+
+    let content = '';
+
+    for (let i = 0; i < rowEnd; i++) {
+      content += this._allRows[i];
+      if (i + 1 < rowEnd) {
+        content += this._allRowSeparators[i];
       }
     }
-    return this._allRows.slice(0, rowEnd).join('\r\n');
+
+    // restore the cursor
+    const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
+    const realCursorCol = this._buffer1.cursorX;
+
+    const cursorMoved = (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
+
+    const moveRight = (offset: number): void => {
+      if (offset > 0) {
+        content += `\u001b[${offset}C`;
+      } else if (offset < 0) {
+        content += `\u001b[${-offset}D`;
+      }
+    };
+    const moveDown = (offset: number): void => {
+      if (offset > 0) {
+        content += `\u001b[${offset}B`;
+      } else if (offset < 0) {
+        content += `\u001b[${-offset}A`;
+      }
+    };
+
+    if (cursorMoved) {
+      moveDown(realCursorRow - this._lastCursorRow);
+      moveRight(realCursorCol - this._lastCursorCol);
+    }
+
+
+    return content;
   }
 }
 
@@ -167,20 +393,33 @@ export class SerializeAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  public serialize(rows?: number): string {
-    // TODO: Add re-position cursor support
-    // TODO: Add word wrap mode support
+  private _getString(buffer: IBuffer, scrollback?: number): string {
+    const maxRows = buffer.length;
+    const handler = new StringSerializeHandler(buffer, this._terminal!);
+
+    const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + this!._terminal!.rows, 0, maxRows);
+    const result = handler.serialize(maxRows - correctRows, maxRows);
+
+    return result;
+  }
+
+  public serialize(scrollback?: number): string {
     // TODO: Add combinedData support
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    const maxRows = this._terminal.buffer.active.length;
-    const handler = new StringSerializeHandler(this._terminal.buffer.active);
+    if (this._terminal.buffer.active.type === 'normal') {
+      return this._getString(this._terminal.buffer.active, scrollback);
+    }
 
-    rows = (rows === undefined) ? maxRows : constrain(rows, 0, maxRows);
+    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback);
+    // alt screen don't have scrollback
+    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined);
 
-    return handler.serialize(maxRows - rows, maxRows);
+    return normalScreenContent
+      + '\u001b[?1049h\u001b[H'
+      + alternativeScreenContent;
   }
 
   public dispose(): void { }
