@@ -134,7 +134,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
-    this._rectangleRenderer.onResize();
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
@@ -148,6 +147,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Resize the screen
     this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
+
+    this._rectangleRenderer.onResize();
+    if (this._model.selection.hasSelection) {
+      // Update selection as dimensions have changed
+      this._rectangleRenderer.updateSelection(this._model.selection);
+    }
+
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
