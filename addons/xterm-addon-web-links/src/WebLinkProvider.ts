@@ -3,7 +3,12 @@
  * @license MIT
  */
 
-import { ILinkProvider, ILink, Terminal, IViewportRange, ILinkProviderOptions } from 'xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
+
+interface ILinkProviderOptions {
+  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+  leave?(event: MouseEvent, text: string): void;
+}
 
 export class WebLinkProvider implements ILinkProvider {
 

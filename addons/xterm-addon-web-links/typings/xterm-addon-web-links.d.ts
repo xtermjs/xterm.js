@@ -4,7 +4,7 @@
  */
 
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IViewportRange } from 'xterm';
 
 declare module 'xterm-addon-web-links' {
   /**
@@ -20,7 +20,7 @@ declare module 'xterm-addon-web-links' {
      * link provider (new) may cause issues. Link provider will eventually be
      * the default and only option.
      */
-    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions, useLinkProvider?: boolean);
+    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions | ILinkProviderOptions, useLinkProvider?: boolean);
 
     /**
      * Activates the addon
@@ -32,5 +32,22 @@ declare module 'xterm-addon-web-links' {
      * Disposes the addon.
      */
     public dispose(): void;
+  }
+
+  /**
+   * An object containing options for a link provider.
+   */
+  export interface ILinkProviderOptions {
+    /**
+     * A callback that fires when the mouse hovers over a link for a period of
+     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
+     */
+    hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+
+    /**
+     * A callback that fires when the mouse leaves a link. Note that this can
+     * happen even when tooltipCallback hasn't fired for the link yet.
+     */
+    leave?(event: MouseEvent, text: string): void;
   }
 }
