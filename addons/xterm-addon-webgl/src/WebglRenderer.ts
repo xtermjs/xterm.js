@@ -118,7 +118,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Force a full refresh
     this._model.clear();
-    this._updateSelectionModel(undefined, undefined);
   }
 
   public onDevicePixelRatioChange(): void {
@@ -156,7 +155,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Force a full refresh
     this._model.clear();
-    this._updateSelectionModel(undefined, undefined);
   }
 
   public onCharSizeChanged(): void {
