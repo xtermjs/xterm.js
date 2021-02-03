@@ -25,10 +25,10 @@ declare module 'xterm-addon-serialize' {
      * to restore the state. The cursor will also be positioned to the correct cell.
      * When restoring a terminal it is best to do before `Terminal.open` is called
      * to avoid wasting CPU cycles rendering incomplete frames.
-     * @param rows The number of rows to serialize, starting from the bottom of the
-     * terminal. This defaults to the number of rows in the viewport.
+     * @param scrollback The number of rows in scrollback buffer to serialize, starting from the bottom of the
+     * scrollback buffer. This defaults to the all available rows in the scrollback buffer.
      */
-    public serialize(rows?: number): string;
+    public serialize(scrollback?: number): string;
 
     /**
      * Disposes the addon.
