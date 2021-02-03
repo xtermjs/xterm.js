@@ -3,20 +3,40 @@
  * @license MIT
  */
 
-import { ILinkProvider, IBufferCellPosition, ILink, Terminal } from 'xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
+
+interface ILinkProviderOptions {
+  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+  leave?(event: MouseEvent, text: string): void;
+}
 
 export class WebLinkProvider implements ILinkProvider {
 
   constructor(
     private readonly _terminal: Terminal,
     private readonly _regex: RegExp,
-    private readonly _handler: (event: MouseEvent, uri: string) => void
+    private readonly _handler: (event: MouseEvent, uri: string) => void,
+    private readonly _options: ILinkProviderOptions = {}
   ) {
 
   }
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
-    callback(LinkComputer.computeLink(y, this._regex, this._terminal, this._handler));
+    const links = LinkComputer.computeLink(y, this._regex, this._terminal, this._handler);
+    callback(this._addCallbacks(links));
+  }
+
+  private _addCallbacks(links: ILink[]): ILink[] {
+    return links.map(link => {
+      link.leave = this._options.leave;
+      link.hover = (event: MouseEvent, uri: string): void => {
+        if (this._options.hover) {
+          const { range } = link;
+          this._options.hover(event, uri, range);
+        }
+      };
+      return link;
+    });
   }
 }
 
