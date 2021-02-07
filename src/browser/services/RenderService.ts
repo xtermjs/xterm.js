@@ -174,6 +174,10 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public onDevicePixelRatioChange(): void {
+    // Force char size measurement as DomMeasureStrategy(getBoundingClientRect) is not stable
+    // when devicePixelRatio changes
+    this._charSizeService.measure();
+
     this._renderer.onDevicePixelRatioChange();
     this.refreshRows(0, this._rowCount - 1);
   }

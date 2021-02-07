@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable, IViewportRange } from 'xterm';
 import { WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
@@ -36,6 +36,11 @@ function handleLink(event: MouseEvent, uri: string): void {
   }
 }
 
+interface ILinkProviderOptions {
+  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+  leave?(event: MouseEvent, text: string): void;
+}
+
 export class WebLinksAddon implements ITerminalAddon {
   private _linkMatcherId: number | undefined;
   private _terminal: Terminal | undefined;
@@ -43,20 +48,22 @@ export class WebLinksAddon implements ITerminalAddon {
 
   constructor(
     private _handler: (event: MouseEvent, uri: string) => void = handleLink,
-    private _options: ILinkMatcherOptions = {},
+    private _options: ILinkMatcherOptions | ILinkProviderOptions = {},
     private _useLinkProvider: boolean = false
   ) {
-    this._options.matchIndex = 1;
   }
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
-      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler));
+      const options = this._options as ILinkProviderOptions;
+      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler, options));
     } else {
       // TODO: This should be removed eventually
-      this._linkMatcherId = (this._terminal as Terminal).registerLinkMatcher(strictUrlRegex, this._handler, this._options);
+      const options = this._options as ILinkMatcherOptions;
+      options.matchIndex = 1;
+      this._linkMatcherId = (this._terminal as Terminal).registerLinkMatcher(strictUrlRegex, this._handler, options);
     }
   }
 
