@@ -15,11 +15,11 @@ export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
   private _active: IDcsHandler[] = EMPTY_HANDLERS;
   private _ident: number = 0;
-  private _handlerFb: DcsFallbackHandlerType = () => {};
+  private _handlerFb: DcsFallbackHandlerType = () => { };
 
   public dispose(): void {
     this._handlers = Object.create(null);
-    this._handlerFb = () => {};
+    this._handlerFb = () => { };
     this._active = EMPTY_HANDLERS;
   }
 
@@ -79,20 +79,46 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  public unhook(success: boolean): void {
+  private _stack = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
+  public unhook(success: boolean, promiseResult?: boolean): void | Promise<boolean> {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'UNHOOK', success);
     } else {
+      let handlerResult: any = false;
       let j = this._active.length - 1;
-      for (; j >= 0; j--) {
-        if (this._active[j].unhook(success)) {
-          break;
-        }
+      let fallThrough = false;
+      if (this._stack.paused) {
+        j = this._stack.loopPosition - 1;
+        handlerResult = promiseResult;
+        fallThrough = this._stack.fallThrough;
+        this._stack.paused = false;
       }
-      j--;
-      // cleanup left over handlers
+      if (!fallThrough && handlerResult === false) {
+        for (; j >= 0; j--) {
+          if ((handlerResult = this._active[j].unhook(success)) !== false) {
+            if (handlerResult instanceof Promise) {
+              this._stack.paused = true;
+              this._stack.loopPosition = j;
+              this._stack.fallThrough = false;
+              return handlerResult;
+            }
+            break;
+          }
+        }
+        j--;
+      }
+      // cleanup left over handlers (fallThrough for async)
       for (; j >= 0; j--) {
-        this._active[j].unhook(false);
+        if ((handlerResult = this._active[j].unhook(false)) instanceof Promise) {
+          this._stack.paused = true;
+          this._stack.loopPosition = j;
+          this._stack.fallThrough = true;
+          return handlerResult;
+        }
       }
     }
     this._active = EMPTY_HANDLERS;
@@ -113,7 +139,7 @@ export class DcsHandler implements IDcsHandler {
   private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string, params: IParams) => boolean) {}
+  constructor(private _handler: (data: string, params: IParams) => boolean | Promise<boolean>) { }
 
   public hook(params: IParams): void {
     // since we need to preserve params until `unhook`, we have to clone it
@@ -136,12 +162,21 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): boolean {
-    let ret = false;
+  public unhook(success: boolean): boolean | Promise<boolean> {
+    let ret: boolean | Promise<boolean> = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data, this._params);
+      if ((ret = this._handler(this._data, this._params)) instanceof Promise) {
+        // FIXME: should this be behind a catch rule?
+        return ret.then(res => {
+          // cleanup handler state late
+          this._params = EMPTY_PARAMS;
+          this._data = '';
+          this._hitLimit = false;
+          return res;
+        });
+      }
     }
     this._params = EMPTY_PARAMS;
     this._data = '';

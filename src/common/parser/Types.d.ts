@@ -5,7 +5,7 @@
 
 import { IDisposable } from 'common/Types';
 import { ParserState } from 'common/parser/Constants';
-import { OscParser } from 'common/parser/OscParser';
+
 
 /** sequence params serialized to js arrays */
 export type ParamsArray = (number | number[])[];
@@ -94,7 +94,7 @@ export interface IDcsHandler {
    * execution of the command should depend on `success`.
    * To save memory also cleanup data structures here.
    */
-  unhook(success: boolean): boolean;
+  unhook(success: boolean): boolean | Promise<boolean>;
 }
 export type DcsFallbackHandlerType = (ident: number, action: 'HOOK' | 'PUT' | 'UNHOOK', payload?: any) => void;
 
@@ -219,7 +219,7 @@ export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandlerTy
 
 export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerType> {
   hook(ident: number, params: IParams): void;
-  unhook(success: boolean): void;
+  unhook(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
 }
 
 /**
