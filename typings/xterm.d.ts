@@ -1515,7 +1515,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1534,7 +1534,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1547,7 +1547,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1565,7 +1565,7 @@ declare module 'xterm' {
      * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
 
   /**
