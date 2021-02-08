@@ -78,16 +78,16 @@ export class MockTerminal implements ITerminal {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {

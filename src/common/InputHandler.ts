@@ -701,9 +701,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addCsiHandler from parser.
+   * Forward registerCsiHandler from parser.
    */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.registerCsiHandler(id, params => {
@@ -717,23 +717,23 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addDcsHandler from parser.
+   * Forward registerDcsHandler from parser.
    */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerDcsHandler(id, new DcsHandler(callback));
   }
 
   /**
-   * Forward addEscHandler from parser.
+   * Forward registerEscHandler from parser.
    */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerEscHandler(id, callback);
   }
 
   /**
-   * Forward addOscHandler from parser.
+   * Forward registerOscHandler from parser.
    */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerOscHandler(ident, new OscHandler(callback));
   }
 

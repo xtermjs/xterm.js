@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
@@ -351,6 +351,10 @@ export interface IInputHandler {
 
   parse(data: string | Uint8Array): void;
   print(data: Uint32Array, start: number, end: number): void;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;

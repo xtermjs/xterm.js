@@ -278,23 +278,23 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
-    return this._inputHandler.addEscHandler(id, callback);
+  public registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerEscHandler(id, callback);
   }
 
   /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._inputHandler.addDcsHandler(id, callback);
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerDcsHandler(id, callback);
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(id, callback);
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerCsiHandler(id, callback);
   }
 
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._inputHandler.addOscHandler(ident, callback);
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerOscHandler(ident, callback);
   }
 
   protected _setup(): void {
@@ -332,7 +332,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     if (!this._windowsMode) {
       const disposables: IDisposable[] = [];
       disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
-      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
+      disposables.push(this.registerCsiHandler({ final: 'H' }, () => {
         updateWindowsModeWrappedState(this._bufferService);
         return false;
       }));

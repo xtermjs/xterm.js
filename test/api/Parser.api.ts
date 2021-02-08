@@ -28,12 +28,12 @@ describe('Parser Integration Tests', function(): void {
 
   after(async () => browser.close());
 
-  describe('addCsiHandler', () => {
+  describe('registerCsiHandler', () => {
     it('should call custom CSI handler with js array params', async () => {
       await page.evaluate(`
         window.term.reset();
         window._customCsiHandlerParams = [];
-        const _customCsiHandler = window.term.parser.addCsiHandler({final: 'm'}, (params, collect) => {
+        const _customCsiHandler = window.term.parser.registerCsiHandler({final: 'm'}, (params, collect) => {
           window._customCsiHandlerParams.push(params);
           return false;
         }, '');
@@ -42,20 +42,20 @@ describe('Parser Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => window._customCsiHandlerParams)();`), [[38, 5, 123], [38, [2, -1, 50, 100, 150]]]);
     });
   });
-  describe('addDcsHandler', () => {
+  describe('registerDcsHandler', () => {
     it('should respects return value', async () => {
       await page.evaluate(`
         window.term.reset();
         window._customDcsHandlerCallStack = [];
-        const _customDcsHandlerA = window.term.parser.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
+        const _customDcsHandlerA = window.term.parser.registerDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           window._customDcsHandlerCallStack.push(['A', params, data]);
           return false;
         });
-        const _customDcsHandlerB = window.term.parser.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
+        const _customDcsHandlerB = window.term.parser.registerDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           window._customDcsHandlerCallStack.push(['B', params, data]);
           return true;
         });
-        const _customDcsHandlerC = window.term.parser.addDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
+        const _customDcsHandlerC = window.term.parser.registerDcsHandler({intermediates:'+', final: 'p'}, (data, params) => {
           window._customDcsHandlerCallStack.push(['C', params, data]);
           return false;
         });
@@ -64,20 +64,20 @@ describe('Parser Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => window._customDcsHandlerCallStack)();`), [['C', [1, 2], 'some data'], ['B', [1, 2], 'some data']]);
     });
   });
-  describe('addEscHandler', () => {
+  describe('registerEscHandler', () => {
     it('should respects return value', async () => {
       await page.evaluate(`
         window.term.reset();
         window._customEscHandlerCallStack = [];
-        const _customEscHandlerA = window.term.parser.addEscHandler({intermediates:'(', final: 'B'}, () => {
+        const _customEscHandlerA = window.term.parser.registerEscHandler({intermediates:'(', final: 'B'}, () => {
           window._customEscHandlerCallStack.push('A');
           return false;
         });
-        const _customEscHandlerB = window.term.parser.addEscHandler({intermediates:'(', final: 'B'}, () => {
+        const _customEscHandlerB = window.term.parser.registerEscHandler({intermediates:'(', final: 'B'}, () => {
           window._customEscHandlerCallStack.push('B');
           return true;
         });
-        const _customEscHandlerC = window.term.parser.addEscHandler({intermediates:'(', final: 'B'}, () => {
+        const _customEscHandlerC = window.term.parser.registerEscHandler({intermediates:'(', final: 'B'}, () => {
           window._customEscHandlerCallStack.push('C');
           return false;
         });
@@ -86,20 +86,20 @@ describe('Parser Integration Tests', function(): void {
       assert.deepEqual(await page.evaluate(`(() => window._customEscHandlerCallStack)();`), ['C', 'B']);
     });
   });
-  describe('addOscHandler', () => {
+  describe('registerOscHandler', () => {
     it('should respects return value', async () => {
       await page.evaluate(`
         window.term.reset();
         window._customOscHandlerCallStack = [];
-        const _customOscHandlerA = window.term.parser.addOscHandler(1234, data => {
+        const _customOscHandlerA = window.term.parser.registerOscHandler(1234, data => {
           window._customOscHandlerCallStack.push(['A', data]);
           return false;
         });
-        const _customOscHandlerB = window.term.parser.addOscHandler(1234, data => {
+        const _customOscHandlerB = window.term.parser.registerOscHandler(1234, data => {
           window._customOscHandlerCallStack.push(['B', data]);
           return true;
         });
-        const _customOscHandlerC = window.term.parser.addOscHandler(1234, data => {
+        const _customOscHandlerC = window.term.parser.registerOscHandler(1234, data => {
           window._customOscHandlerCallStack.push(['C', data]);
           return false;
         });
