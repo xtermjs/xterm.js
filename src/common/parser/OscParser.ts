@@ -41,7 +41,7 @@ export class OscParser implements IOscParser {
 
   public dispose(): void {
     this._handlers = Object.create(null);
-    this._handlerFb = () => {};
+    this._handlerFb = () => { };
     this._active = EMPTY_HANDLERS;
   }
 
@@ -72,27 +72,6 @@ export class OscParser implements IOscParser {
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
         this._active[j].put(data, start, end);
-      }
-    }
-  }
-
-  private _end(success: boolean): void {
-    // other than the old code we always have to call .end
-    // to keep the bubbling we use `success` to indicate
-    // whether a handler should execute
-    if (!this._active.length) {
-      this._handlerFb(this._id, 'END', success);
-    } else {
-      let j = this._active.length - 1;
-      for (; j >= 0; j--) {
-        if (this._active[j].end(success)) {
-          break;
-        }
-      }
-      j--;
-      // cleanup left over handlers
-      for (; j >= 0; j--) {
-        this._active[j].end(false);
       }
     }
   }
@@ -137,12 +116,18 @@ export class OscParser implements IOscParser {
     }
   }
 
+  private _stack = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
+
   /**
    * Indicates end of an OSC command.
    * Whether the OSC got aborted or finished normally
    * is indicated by `success`.
    */
-  public end(success: boolean): void {
+  public end(success: boolean, promiseResult?: boolean): void | Promise<boolean> {
     if (this._state === OscState.START) {
       return;
     }
@@ -154,7 +139,46 @@ export class OscParser implements IOscParser {
       if (this._state === OscState.ID) {
         this._start();
       }
-      this._end(success);
+
+      if (!this._active.length) {
+        this._handlerFb(this._id, 'END', success);
+      } else {
+        let handlerResult: any = false;
+        let j = this._active.length - 1;
+        let fallThrough = false;
+        if (this._stack.paused) {
+          j = this._stack.loopPosition - 1;
+          handlerResult = promiseResult;
+          fallThrough = this._stack.fallThrough;
+          this._stack.paused = false;
+        }
+        if (!fallThrough && handlerResult === false) {
+          for (; j >= 0; j--) {
+            if ((handlerResult = this._active[j].end(success)) !== false) {
+              if (handlerResult instanceof Promise) {
+                this._stack.paused = true;
+                this._stack.loopPosition = j;
+                this._stack.fallThrough = false;
+                return handlerResult;
+              }
+              break;
+            }
+          }
+          j--;
+        }
+        // cleanup left over handlers
+        // we always have to call .end for proper cleanup,
+        // here we use `success` to indicate whether a handler should execute
+        for (; j >= 0; j--) {
+          if ((handlerResult = this._active[j].end(false)) instanceof Promise) {
+            this._stack.paused = true;
+            this._stack.loopPosition = j;
+            this._stack.fallThrough = true;
+            return handlerResult;
+          }
+        }
+      }
+
     }
     this._active = EMPTY_HANDLERS;
     this._id = -1;
@@ -170,7 +194,7 @@ export class OscHandler implements IOscHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string) => boolean) {}
+  constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
 
   public start(): void {
     this._data = '';
@@ -188,12 +212,18 @@ export class OscHandler implements IOscHandler {
     }
   }
 
-  public end(success: boolean): boolean {
-    let ret = false;
+  public end(success: boolean): boolean | Promise<boolean> {
+    let ret: boolean | Promise<boolean> = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data);
+      if ((ret = this._handler(this._data)) instanceof Promise) {
+        return ret.then(res => {
+          this._data = '';
+          this._hitLimit = false;
+          return res;
+        });
+      }
     }
     this._data = '';
     this._hitLimit = false;

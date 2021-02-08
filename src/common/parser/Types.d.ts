@@ -130,7 +130,7 @@ export interface IOscHandler {
    * execution of the command should depend on `success`.
    * To save memory also cleanup data structures here.
    */
-  end(success: boolean): boolean;
+  end(success: boolean): boolean | Promise<boolean>;
 }
 export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
@@ -214,7 +214,7 @@ export interface ISubParser<T, U> extends IDisposable {
 
 export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandlerType> {
   start(): void;
-  end(success: boolean): void;
+  end(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
 }
 
 export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerType> {

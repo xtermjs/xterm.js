@@ -548,6 +548,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               }
             }
           }
+          this._parseStack.handlers = [];
           break;
         case ParserStackType.ESC:
           if (promiseResult === false && handlerPos > -1) {
@@ -562,10 +563,11 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               }
             }
           }
+          this._parseStack.handlers = [];
           break;
         case ParserStackType.DCS:
           code = data[this._parseStack.chunkPos];
-          if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a)) {
+          if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a, promiseResult)) {
             return handlerResult;
           }
           if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
@@ -574,7 +576,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._collect = 0;
           break;
         case ParserStackType.OSC:
-          // TODO
+          code = data[this._parseStack.chunkPos];
+          if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult)) {
+            return handlerResult;
+          }
+          if (code === 0x1b) transition |= ParserState.ESCAPE;
+          this._params.reset();
+          this._params.addParam(0); // ZDM
+          this._collect = 0;
           break;
       }
       // cleanup before continuing with the main loop
@@ -717,7 +726,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.DCS_UNHOOK:
           if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a)) {
-            this._parseStack.state = ParserStackType.DCS;
+            this._preserveStack(ParserStackType.DCS, [], 0, transition, i);
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
@@ -740,7 +749,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.OSC_END:
-          this._oscParser.end(code !== 0x18 && code !== 0x1a);
+          if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a)) {
+            this._preserveStack(ParserStackType.OSC, [], 0, transition, i);
+            return handlerResult;
+          }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
           this._params.reset();
           this._params.addParam(0); // ZDM

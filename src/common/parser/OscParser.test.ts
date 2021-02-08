@@ -250,3 +250,204 @@ describe('OscParser', () => {
     });
   });
 });
+
+
+class TestHandlerAsync implements IOscHandler {
+  constructor(public id: number, public output: any[], public msg: string, public returnFalse: boolean = false) {}
+  public start(): void {
+    this.output.push([this.msg, this.id, 'START']);
+  }
+  public put(data: Uint32Array, start: number, end: number): void {
+    this.output.push([this.msg, this.id, 'PUT', utf32ToString(data, start, end)]);
+  }
+  public async end(success: boolean): Promise<boolean> {
+    await new Promise(res => setTimeout(res, 20));
+    this.output.push([this.msg, this.id, 'END', success]);
+    if (this.returnFalse) {
+      return false;
+    }
+    return true;
+  }
+}
+async function endP(parser: OscParser, success: boolean): Promise<void> {
+  let result: void | Promise<boolean>;
+  let prev: boolean | undefined;
+  while (result = parser.end(success, prev)) {
+    prev = await result;
+  }
+}
+
+describe('OscParser - async tests', () => {
+  let parser: OscParser;
+  let reports: any[] = [];
+  beforeEach(() => {
+    reports = [];
+    parser = new OscParser();
+    parser.setHandlerFallback((id, action, data) => {
+      reports.push([id, action, data]);
+    });
+  });
+  describe('sync and async mixed', () => {
+    describe('sync | async | sync', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(1234, new TestHandler(1234, reports, 's1'));
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 'a1'));
+        parser.registerHandler(1234, new TestHandler(1234, reports, 's2'));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 1234, 'START'],
+          ['a1', 1234, 'START'],
+          ['s1', 1234, 'START'],
+          ['s2', 1234, 'PUT', 'Here comes'],
+          ['a1', 1234, 'PUT', 'Here comes'],
+          ['s1', 1234, 'PUT', 'Here comes'],
+          ['s2', 1234, 'PUT', 'the mouse!'],
+          ['a1', 1234, 'PUT', 'the mouse!'],
+          ['s1', 1234, 'PUT', 'the mouse!'],
+          ['s2', 1234, 'END', true],
+          ['a1', 1234, 'END', false],
+          ['s1', 1234, 'END', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(1234, new TestHandler(1234, reports, 's1', true));
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 'a1', true));
+        parser.registerHandler(1234, new TestHandler(1234, reports, 's2', true));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 1234, 'START'],
+          ['a1', 1234, 'START'],
+          ['s1', 1234, 'START'],
+          ['s2', 1234, 'PUT', 'Here comes'],
+          ['a1', 1234, 'PUT', 'Here comes'],
+          ['s1', 1234, 'PUT', 'Here comes'],
+          ['s2', 1234, 'PUT', 'the mouse!'],
+          ['a1', 1234, 'PUT', 'the mouse!'],
+          ['s1', 1234, 'PUT', 'the mouse!'],
+          ['s2', 1234, 'END', true],
+          ['a1', 1234, 'END', true],
+          ['s1', 1234, 'END', true]
+        ]);
+      });
+    });
+    describe('async | sync | async', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 's1'));
+        parser.registerHandler(1234, new TestHandler(1234, reports, 'a1'));
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 's2'));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 1234, 'START'],
+          ['a1', 1234, 'START'],
+          ['s1', 1234, 'START'],
+          ['s2', 1234, 'PUT', 'Here comes'],
+          ['a1', 1234, 'PUT', 'Here comes'],
+          ['s1', 1234, 'PUT', 'Here comes'],
+          ['s2', 1234, 'PUT', 'the mouse!'],
+          ['a1', 1234, 'PUT', 'the mouse!'],
+          ['s1', 1234, 'PUT', 'the mouse!'],
+          ['s2', 1234, 'END', true],
+          ['a1', 1234, 'END', false],
+          ['s1', 1234, 'END', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 's1', true));
+        parser.registerHandler(1234, new TestHandler(1234, reports, 'a1', true));
+        parser.registerHandler(1234, new TestHandlerAsync(1234, reports, 's2', true));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 1234, 'START'],
+          ['a1', 1234, 'START'],
+          ['s1', 1234, 'START'],
+          ['s2', 1234, 'PUT', 'Here comes'],
+          ['a1', 1234, 'PUT', 'Here comes'],
+          ['s1', 1234, 'PUT', 'Here comes'],
+          ['s2', 1234, 'PUT', 'the mouse!'],
+          ['a1', 1234, 'PUT', 'the mouse!'],
+          ['s1', 1234, 'PUT', 'the mouse!'],
+          ['s2', 1234, 'END', true],
+          ['a1', 1234, 'END', true],
+          ['s1', 1234, 'END', true]
+        ]);
+      });
+    });
+    describe('OscHandlerFactory', () => {
+      it('should be called once on end(true)', async () => {
+        parser.registerHandler(1234, new OscHandler(async data => { reports.push([1234, data]); return true; }));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        parser.end(true);
+        await endP(parser, true);
+        assert.deepEqual(reports, [[1234, 'Here comes the mouse!']]);
+      });
+      it('should not be called on end(false)', async () => {
+        parser.registerHandler(1234, new OscHandler(async data => { reports.push([1234, data]); return true; }));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, false);
+        assert.deepEqual(reports, []);
+      });
+      it('should be disposable', async () => {
+        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['one', data]); return true; }));
+        const dispo = parser.registerHandler(1234, new OscHandler(async data => { reports.push(['two', data]); return true; }));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!']]);
+        dispo.dispose();
+        parser.start();
+        data = toUtf32('1234;some other');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' data');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
+      });
+      it('should respect return false', async () => {
+        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['one', data]); return true; }));
+        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['two', data]); return false; }));
+        parser.start();
+        let data = toUtf32('1234;Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await endP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
+      });
+    });
+  });
+});
