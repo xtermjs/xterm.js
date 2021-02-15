@@ -526,18 +526,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         this._parseStack.state = ParserStackType.FAIL;
         throw new Error('improper continuation due to previous async handler, giving up parsing');
       }
-      let handlerPos = this._parseStack.handlerPos - 1;
 
       // we have to resume the old handler loop if:
       // - return value of the promise was `false`
       // - handlers are not exhausted yet
       // FIXME: removing handlers from within a handler of the same sequence
       //        is not supported atm (also true for sync handlers)!!
-      let handlers: ResumableHandlersType;
+      let handlers = this._parseStack.handlers;
+      let handlerPos = this._parseStack.handlerPos - 1;
       switch (this._parseStack.state) {
         case ParserStackType.CSI:
           if (promiseResult === false && handlerPos > -1) {
-            handlers = this._parseStack.handlers;
             for (; handlerPos >= 0; handlerPos--) {
               if ((handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params)) !== false) {
                 if (handlerResult instanceof Promise) {
@@ -552,7 +551,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserStackType.ESC:
           if (promiseResult === false && handlerPos > -1) {
-            handlers = this._parseStack.handlers;
             for (; handlerPos >= 0; handlerPos--) {
               if ((handlerResult = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
                 if (handlerResult instanceof Promise) {

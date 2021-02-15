@@ -1501,6 +1501,23 @@ declare module 'xterm' {
 
   /**
    * Allows hooking into the parser for custom handling of escape sequences.
+   *
+   * Note on sync vs. async handlers:
+   * xterm.js implements all parser actions with synchronous handlers.
+   * In general custom handlers should also operate in sync mode wherever
+   * possible to keep the parser fast.
+   * Still the exposed interfaces allow to register async handlers by returning
+   * a `Promise<boolean>`. Here the parser will pause input processing until
+   * the promise got resolved or rejected (in-band blocking). This "full stop"
+   * on the input chain allows to implement backpressure from a certain async
+   * action while the terminal state will not progress any further from input.
+   * It does not mean that the terminal state will not change at all in between,
+   * as user actions like resize or reset are still processed immediately.
+   * It is an error to assume a stable terminal state while giving back control
+   * in between, e.g. by multiple chained `then` calls.
+   * Downside of an async handler is a rather bad throughput performance,
+   * thus use async handlers only as a last resort or for actions that have
+   * to rely on async interfaces itself.
    */
   export interface IParser {
     /**
@@ -1510,9 +1527,8 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence. The callback is
      * called with the numerical params. If the sequence has subparams the
      * array will contain subarrays with their numercial values.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addCsiHandler or setCsiHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
@@ -1529,9 +1545,8 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits DCS payload to 10 MB
      * which should give enough room for most use cases.
      * The function gets the payload and numerical parameters as arguments.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addDcsHandler or setDcsHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
@@ -1542,9 +1557,8 @@ declare module 'xterm' {
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
      * @param callback The function to handle the sequence.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addEscHandler or setEscHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
@@ -1560,9 +1574,8 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits OSC payload to 10 MB
      * which should give enough room for most use cases.
      * The callback is called with OSC data string.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addOscHandler or setOscHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
