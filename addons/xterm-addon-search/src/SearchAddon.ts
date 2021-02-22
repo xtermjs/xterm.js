@@ -21,7 +21,7 @@ export interface ISearchResult {
   term: string;
   col: number;
   row: number;
-  length: number;
+  size: number;
 }
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
@@ -283,6 +283,7 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
+    const offset = this._bufferColsToStringOffset(row, col);
     const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
     const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
 
@@ -291,26 +292,26 @@ export class SearchAddon implements ITerminalAddon {
       const searchRegex = RegExp(searchTerm, 'g');
       let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
-        // This loop will get the resultIndex of the _last_ regex match in the range 0..col
-        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
+        // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
+        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
           searchRegex.lastIndex -= (term.length - 1);
         }
       } else {
-        foundTerm = searchRegex.exec(searchStringLine.slice(col));
+        foundTerm = searchRegex.exec(searchStringLine.slice(offset));
         if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = col + (searchRegex.lastIndex - foundTerm[0].length);
+          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
           term = foundTerm[0];
         }
       }
     } else {
       if (isReverseSearch) {
-        if (col - searchTerm.length >= 0) {
-          resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
+        if (offset - searchTerm.length >= 0) {
+          resultIndex = searchStringLine.lastIndexOf(searchTerm, offset - searchTerm.length);
         }
       } else {
-        resultIndex = searchStringLine.indexOf(searchTerm, col);
+        resultIndex = searchStringLine.indexOf(searchTerm, offset);
       }
     }
 
@@ -325,17 +326,18 @@ export class SearchAddon implements ITerminalAddon {
       }
 
       const line = terminal.buffer.active.getLine(row);
-      let { length } = term;
+      let size = term.length;
 
+      let col = 0;
       if (line) {
-        resultIndex = this._stringLengthToBufferSize(line, resultIndex);
-        length = this._stringLengthToBufferSize(line, length, resultIndex);
+        col = this._stringLengthToBufferSize(line, resultIndex);
+        size = this._stringLengthToBufferSize(line, term.length, col);
       }
       return {
         term,
-        col: resultIndex,
+        col,
         row,
-        length
+        size
       };
     }
   }
@@ -359,6 +361,31 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
     return length;
+  }
+
+  private _bufferColsToStringOffset(startRow: number, cols: number): number {
+    const terminal = this._terminal!;
+    let lineIndex = startRow;
+    let offset = 0;
+    let line = terminal.buffer.active.getLine(lineIndex);
+    while (cols > 0 && line) {
+      for (let i = 0; i < cols && i < terminal.cols; i++) {
+        const cell = line.getCell(i);
+        if (!cell) {
+          break;
+        }
+        if (cell.getWidth()) {
+          offset += cell.getChars().length;
+        }
+      }
+      lineIndex++;
+      line = terminal.buffer.active.getLine(lineIndex);
+      if (line && !line.isWrapped) {
+        break;
+      }
+      cols -= terminal.cols;
+    }
+    return offset;
   }
 
   /**
@@ -399,7 +426,7 @@ export class SearchAddon implements ITerminalAddon {
       terminal.clearSelection();
       return false;
     }
-    terminal.select(result.col, result.row, result.length);
+    terminal.select(result.col, result.row, result.size);
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
       let scroll = result.row - terminal.buffer.active.viewportY;

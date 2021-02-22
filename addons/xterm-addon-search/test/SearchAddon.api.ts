@@ -107,11 +107,20 @@ describe('Search Tests', function(): void {
   });
 
   it('Search for result bounding with wide unicode chars', async () => {
-    await writeSync(page, '中文xxx');
+    await writeSync(page, '中文xx𝄞𝄞');
     assert.deepEqual(await page.evaluate(`window.search.findNext('中')`), true);
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '中');
-    assert.deepEqual(await page.evaluate(`window.search.findNext('xxx')`), true);
-    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'xxx');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('xx')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), 'xx');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('𝄞')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '𝄞');
+    assert.deepEqual(await page.evaluate(`window.search.findNext('𝄞')`), true);
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), {
+      startRow: 0,
+      endRow: 0,
+      startColumn: 7,
+      endColumn: 8
+    });
   });
 
   describe('Regression tests', () => {
