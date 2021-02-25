@@ -46,10 +46,13 @@ export class OscParser implements IOscParser {
   }
 
   public reset(): void {
-    // cleanup handlers if payload was already sent
+    // force cleanup handlers if payload was already sent
     if (this._state === OscState.PAYLOAD) {
-      this.end(false);
+      for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
+        this._active[j].end(false);
+      }
     }
+    this._stack.paused = false;
     this._active = EMPTY_HANDLERS;
     this._id = -1;
     this._state = OscState.START;

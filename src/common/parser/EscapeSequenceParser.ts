@@ -427,6 +427,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = this._errorHandlerFb;
   }
 
+  /**
+   * Reset parser to initial values.
+   *
+   * This can also be used to lift the improper continuation error condition
+   * when dealing with async handlers. Use this only as a last resort to silence
+   * that error when the terminal has no pending data to be processed. Note that
+   * the interrupted async handler might continue its work in the future messing
+   * up the terminal state even further.
+   */
   public reset(): void {
     this.currentState = this.initialState;
     this._oscParser.reset();
@@ -435,6 +444,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params.addParam(0); // ZDM
     this._collect = 0;
     this.precedingCodepoint = 0;
+    // abort pending continuation from async handler
+    // Here the RESET type indicates, that the next parse call will
+    // ignore any saved stack, instead continues sync with next codepoint from GROUND
+    if (this._parseStack.state !== ParserStackType.NONE) {
+      this._parseStack.state = ParserStackType.RESET;
+      this._parseStack.handlers = []; // also release handlers ref
+    }
   }
 
   /**
@@ -486,12 +502,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * Important: With only sync handlers defined, parsing is completely synchronous as well.
    * As soon as an async handler is involved, synchronous parsing is not possible anymore.
    *
-   * FIXME: to be discussed
-   *   While awaiting parse promises the terminal buffer state may not change.
-   *   --> Implement lock semantics / promise chaining on buffer alterations? Waah, pandora's box ;)
-   *   --> Maybe easier: Give up on non-mutating rule for async handlers...
-   *       (needs explanation in docs about exact executor/thenable/worker execution contexts)
-   *
    * Boilerplate for proper parsing of multiple chunks with async handlers:
    *
    * ```typescript
@@ -515,84 +525,95 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
     // resume from async handler
     if (this._parseStack.state) {
-      if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
-        /**
-         * Reject further parsing on improper continuation after pausing.
-         * This is a really bad condition with screwed up execution order and messed up terminal state,
-         * therefore we exit hard with an exception and reject any further parsing.
-         *
-         * Note: With `Terminal.write` usage this exception should never occur, as the top level
-         * calls are guaranteed to handle async conditions properly. If you ever encounter this
-         * exception in your terminal integration it indicates, that you injected data chunks to
-         * `InputHandler.parse` or `EscapeSequenceParser.parse` synchronously without waiting for
-         * continuation of a running async handler.
-         */
-        this._parseStack.state = ParserStackType.FAIL;
-        throw new Error('improper continuation due to previous async handler, giving up parsing');
-      }
+      // allow sync parser reset even in continuation mode
+      // Note: can be used to recover parser from improper continuation error above
+      if (this._parseStack.state === ParserStackType.RESET) {
+        this._parseStack.state = ParserStackType.NONE;
+        start = this._parseStack.chunkPos + 1; // continue with next codepoint in GROUND
+      } else {
+        if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
+          /**
+           * Reject further parsing on improper continuation after pausing.
+           * This is a really bad condition with screwed up execution order and messed up terminal state,
+           * therefore we exit hard with an exception and reject any further parsing.
+           *
+           * Note: With `Terminal.write` usage this exception should never occur, as the top level
+           * calls are guaranteed to handle async conditions properly. If you ever encounter this
+           * exception in your terminal integration it indicates, that you injected data chunks to
+           * `InputHandler.parse` or `EscapeSequenceParser.parse` synchronously without waiting for
+           * continuation of a running async handler.
+           *
+           * Its possible to get rid of this error condition by calling `reset`, but dont rely on that,
+           * as the pending async handler might mess up the terminal even further. Instead fix the faulty
+           * async handling, so this error will not be thrown anymore.
+           */
+          this._parseStack.state = ParserStackType.FAIL;
+          throw new Error('improper continuation due to previous async handler, giving up parsing');
+        }
 
-      // we have to resume the old handler loop if:
-      // - return value of the promise was `false`
-      // - handlers are not exhausted yet
-      // FIXME: removing handlers from within a handler of the same sequence
-      //        is not supported atm (also true for sync handlers)!!
-      const handlers = this._parseStack.handlers;
-      let handlerPos = this._parseStack.handlerPos - 1;
-      switch (this._parseStack.state) {
-        case ParserStackType.CSI:
-          if (promiseResult === false && handlerPos > -1) {
-            for (; handlerPos >= 0; handlerPos--) {
-              if ((handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params)) !== false) {
-                if (handlerResult instanceof Promise) {
-                  this._parseStack.handlerPos = handlerPos;
-                  return handlerResult;
+        // we have to resume the old handler loop if:
+        // - return value of the promise was `false`
+        // - handlers are not exhausted yet
+        // FIXME: removing handlers from within a handler of the same sequence
+        //        is not supported atm (also true for sync handlers)!!
+        const handlers = this._parseStack.handlers;
+        let handlerPos = this._parseStack.handlerPos - 1;
+        switch (this._parseStack.state) {
+          case ParserStackType.CSI:
+            if (promiseResult === false && handlerPos > -1) {
+              for (; handlerPos >= 0; handlerPos--) {
+                if ((handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params)) !== false) {
+                  if (handlerResult instanceof Promise) {
+                    this._parseStack.handlerPos = handlerPos;
+                    return handlerResult;
+                  }
+                  break;
                 }
-                break;
               }
             }
-          }
-          this._parseStack.handlers = [];
-          break;
-        case ParserStackType.ESC:
-          if (promiseResult === false && handlerPos > -1) {
-            for (; handlerPos >= 0; handlerPos--) {
-              if ((handlerResult = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
-                if (handlerResult instanceof Promise) {
-                  this._parseStack.handlerPos = handlerPos;
-                  return handlerResult;
+            this._parseStack.handlers = [];
+            break;
+          case ParserStackType.ESC:
+            if (promiseResult === false && handlerPos > -1) {
+              for (; handlerPos >= 0; handlerPos--) {
+                if ((handlerResult = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
+                  if (handlerResult instanceof Promise) {
+                    this._parseStack.handlerPos = handlerPos;
+                    return handlerResult;
+                  }
+                  break;
                 }
-                break;
               }
             }
-          }
-          this._parseStack.handlers = [];
-          break;
-        case ParserStackType.DCS:
-          code = data[this._parseStack.chunkPos];
-          if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a, promiseResult)) {
-            return handlerResult;
-          }
-          if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
-          this._collect = 0;
-          break;
-        case ParserStackType.OSC:
-          code = data[this._parseStack.chunkPos];
-          if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult)) {
-            return handlerResult;
-          }
-          if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
-          this._collect = 0;
-          break;
+            this._parseStack.handlers = [];
+            break;
+          case ParserStackType.DCS:
+            code = data[this._parseStack.chunkPos];
+            if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a, promiseResult)) {
+              return handlerResult;
+            }
+            if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
+            this._params.reset();
+            this._params.addParam(0); // ZDM
+            this._collect = 0;
+            break;
+          case ParserStackType.OSC:
+            code = data[this._parseStack.chunkPos];
+            if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult)) {
+              return handlerResult;
+            }
+            if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
+            this._params.reset();
+            this._params.addParam(0); // ZDM
+            this._collect = 0;
+            break;
+        }
+        // cleanup before continuing with the main sync loop
+        this._parseStack.state = ParserStackType.NONE;
+        start = this._parseStack.chunkPos + 1;
+        this.precedingCodepoint = 0;
+        this.currentState = this._parseStack.transition & TableAccess.TRANSITION_STATE_MASK;
       }
-      // cleanup before continuing with the main sync loop
-      this._parseStack.state = ParserStackType.NONE;
-      start = this._parseStack.chunkPos + 1;
-      this.precedingCodepoint = 0;
-      this.currentState = this._parseStack.transition & TableAccess.TRANSITION_STATE_MASK;
     }
 
     // continue with main sync loop

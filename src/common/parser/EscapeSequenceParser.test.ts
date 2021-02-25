@@ -1847,7 +1847,9 @@ describe('EscapeSequenceParser - async', () => {
       // keeps being broken for further parse calls (sync and async)
       assert.throws(() => parseSync(parser, 'random'), 'improper continuation due to previous async handler, giving up parsing');
       await throwsAsync(() => parseP(parser, 'foobar'), 'improper continuation due to previous async handler, giving up parsing');
-      // FIXME: come up with a good recovery strategy
+      // reset should lift the error condition
+      parser.reset();
+      await parseP(parser, INPUT); // does not throw anymore
     });
     it('correct result on awaited parse call', async () => {
       await parseP(parser, INPUT);

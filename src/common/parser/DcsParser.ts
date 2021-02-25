@@ -48,9 +48,13 @@ export class DcsParser implements IDcsParser {
   }
 
   public reset(): void {
+    // force cleanup leftover handlers
     if (this._active.length) {
-      this.unhook(false);
+      for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
+        this._active[j].unhook(false);
+      }
     }
+    this._stack.paused = false;
     this._active = EMPTY_HANDLERS;
     this._ident = 0;
   }
