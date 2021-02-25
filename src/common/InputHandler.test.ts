@@ -17,6 +17,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
+import { OscHandler } from 'common/parser/OscParser';
 
 function getCursor(bufferService: IBufferService): number[] {
   return [
@@ -1803,5 +1804,63 @@ describe('InputHandler', () => {
         await inputHandler.parseP('\x1b]4;17;rgb:1a/2b/3c;12;rgb:11/22/33\x1b\\');
       });
     });
+  });
+});
+
+
+describe('InputHandler - async handlers', () => {
+  let bufferService: IBufferService;
+  let coreService: ICoreService;
+  let optionsService: MockOptionsService;
+  let inputHandler: TestInputHandler;
+
+  beforeEach(() => {
+    optionsService = new MockOptionsService();
+    bufferService = new BufferService(optionsService);
+    bufferService.resize(80, 30);
+    coreService = new CoreService(() => {}, bufferService, new MockLogService(), optionsService);
+    coreService.onData(data => { console.log(data); });
+
+    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService(), new MockUnicodeService());
+  });
+
+  it('async CUP with CPR check', async () => {
+    const cup: number[][] = [];
+    const cpr: number[][] = [];
+    inputHandler.registerCsiHandler({final: 'H'}, async params => {
+      cup.push(params.toArray() as number[]);
+      await new Promise(res => setTimeout(res, 50));
+      // late call of real repositioning
+      return inputHandler.cursorPosition(params);
+    });
+    coreService.onData(data => {
+      const m = data.match(/\x1b\[(.*?);(.*?)R/);
+      if (m) {
+        cpr.push([parseInt(m[1]), parseInt(m[2])]);
+      }
+    });
+    await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
+    assert.deepEqual(cup, cpr);
+  });
+  it('async OSC between', async () => {
+    inputHandler.registerOscHandler(1000, async data => {
+      await new Promise(res => setTimeout(res, 50));
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+      assert.equal(data, 'some data');
+      return true;
+    });
+    await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
+    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
+  });
+  it('async DCS between', async () => {
+    inputHandler.registerDcsHandler({final: 'a'}, async (data, params) => {
+      await new Promise(res => setTimeout(res, 50));
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+      assert.equal(data, 'some data');
+      assert.deepEqual(params.toArray(), [1, 2]);
+      return true;
+    });
+    await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
+    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
   });
 });
