@@ -536,7 +536,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       // - handlers are not exhausted yet
       // FIXME: removing handlers from within a handler of the same sequence
       //        is not supported atm (also true for sync handlers)!!
-      let handlers = this._parseStack.handlers;
+      const handlers = this._parseStack.handlers;
       let handlerPos = this._parseStack.handlerPos - 1;
       switch (this._parseStack.state) {
         case ParserStackType.CSI:
