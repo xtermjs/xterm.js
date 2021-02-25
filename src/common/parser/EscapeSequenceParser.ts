@@ -492,7 +492,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    *   --> Maybe easier: Give up on non-mutating rule for async handlers...
    *       (needs explanation in docs about exact executor/thenable/worker execution contexts)
    *
-   * Example for proper parsing of multiple chunks:
+   * Boilerplate for proper parsing of multiple chunks with async handlers:
    *
    * ```typescript
    * async function parseMultipleChunks(chunks: Uint32Array[]): Promise<void> {
@@ -518,10 +518,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
         /**
          * Reject further parsing on improper continuation after pausing.
-         * This will happen with sync parse calls not awaiting a returned promise.
-         * It is a really bad condition with screwed up execution order,
-         * therefore we exit hard with an exception.
-         * FIXME: Do we need a method to escape from this broken parser state? (hard to achieve properly)
+         * This is a really bad condition with screwed up execution order and messed up terminal state,
+         * therefore we exit hard with an exception and reject any further parsing.
+         *
+         * Note: With `Terminal.write` usage this exception should never occur, as the top level
+         * calls are guaranteed to handle async conditions properly. If you ever encounter this
+         * exception in your terminal integration it indicates, that you injected data chunks to
+         * `InputHandler.parse` or `EscapeSequenceParser.parse` synchronously without waiting for
+         * continuation of a running async handler.
          */
         this._parseStack.state = ParserStackType.FAIL;
         throw new Error('improper continuation due to previous async handler, giving up parsing');
@@ -578,13 +582,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult)) {
             return handlerResult;
           }
-          if (code === 0x1b) transition |= ParserState.ESCAPE;
+          if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
           this._params.reset();
           this._params.addParam(0); // ZDM
           this._collect = 0;
           break;
       }
-      // cleanup before continuing with the main loop
+      // cleanup before continuing with the main sync loop
       this._parseStack.state = ParserStackType.NONE;
       start = this._parseStack.chunkPos + 1;
       this.precedingCodepoint = 0;
