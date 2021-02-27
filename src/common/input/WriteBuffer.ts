@@ -31,6 +31,12 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
+// queueMicrotask polyfill for nodejs < v11
+const qmt: (cb: () => void) => void = (typeof queueMicrotask === 'undefined')
+  ? (cb: () => void) => { Promise.resolve().then(cb); }
+  : queueMicrotask;
+
+
 export class WriteBuffer {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
@@ -39,7 +45,9 @@ export class WriteBuffer {
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
 
-  // FIXME: does not work that way anymore with async handlers!!!
+  /**
+   * @deprecated Unreliable, to be removed soon.
+   */
   public writeSync(data: string | Uint8Array): void {
     // force sync processing on pending data chunks to avoid in-band data scrambling
     // does the same as innerWrite but without event loop
@@ -77,13 +85,40 @@ export class WriteBuffer {
     this._callbacks.push(callback);
   }
 
-  protected _innerWrite(d: number = 0, promiseResult: boolean = true): void {
-    let result: void | Promise<boolean>;
-    const startTime = d || Date.now();
+  /**
+   * Inner write call, that enters the sliced chunk processing by timing.
+   *
+   * `lastTime` indicates, when the last _innerWrite call had started.
+   * It is used to aggregate async handler execution under a timeout constraint
+   * effectively lowering the redrawing needs, schematically:
+   *
+   *   macroTask _innerWrite:
+   *     if (Date.now() - (lastTime | 0) < WRITE_TIMEOUT_MS):
+   *        schedule microTask _innerWrite(lastTime)
+   *     else:
+   *        schedule macroTask _innerWrite(0)
+   *
+   *   overall execution order on task queues:
+   *
+   *   macrotasks:  [...]  -->  _innerWrite(0)  -->  [...]  -->  screenUpdate  -->  [...]
+   *         m  t:                    |
+   *         i  a:                  [...]
+   *         c  s:                    |
+   *         r  k:              while < timeout:
+   *         o  s:                _innerWrite(timeout)
+   *
+   * `promiseResult` depicts the promise resolve value of an async handler.
+   * This value gets carried forward through all saved stack states of the
+   * paused parser for proper continuation.
+   *
+   * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
+   */
+  protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+    const startTime = lastTime || Date.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
-
-      if (result = this._action(data, promiseResult)) {
+      const result = this._action(data, promiseResult);
+      if (result) {
         /**
          * If we get a promise as return value, we re-schedule the continuation
          * as thenable on the promise and exit right away.
@@ -98,7 +133,6 @@ export class WriteBuffer {
          *
          * Exceptions on async handlers will be logged to console async, but do not interrupt
          * the input processing (continues with next handler at the current input position).
-         * FIXME: No clear exception handling rules for sync handlers yet (will exit whole processing?).
          */
 
         /**
@@ -127,7 +161,14 @@ export class WriteBuffer {
         //   ? r => setTimeout(() => this._innerWrite(0, r))
         //   : r => this._innerWrite(startTime, r);
 
-        result.then(continuation, err => { setTimeout(() => { throw err; }); continuation(true); });
+        // Handle exceptions synchronously to current band position, idea:
+        // 1. spawn a single microtask which we allow to throw hard
+        // 2. spawn a promise immediately resolving to `true`
+        // (executed on the same queue, thus properly aligned before continuation happens)
+        result.catch(err => {
+          qmt(() => {throw err;});
+          return Promise.resolve(true);
+        }).then(continuation);
         return;
       }
 

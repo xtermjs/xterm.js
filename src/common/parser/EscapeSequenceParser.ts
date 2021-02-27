@@ -468,7 +468,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     handlers: ResumableHandlersType,
     handlerPos: number,
     transition: number,
-    chunkPos: number): void {
+    chunkPos: number
+  ): void {
     this._parseStack.state = state;
     this._parseStack.handlers = handlers;
     this._parseStack.handlerPos = handlerPos;
@@ -521,12 +522,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code = 0;
     let transition = 0;
     let start = 0;
-    let handlerResult: any;
+    let handlerResult: void | boolean | Promise<boolean>;
 
     // resume from async handler
     if (this._parseStack.state) {
       // allow sync parser reset even in continuation mode
-      // Note: can be used to recover parser from improper continuation error above
+      // Note: can be used to recover parser from improper continuation error below
       if (this._parseStack.state === ParserStackType.RESET) {
         this._parseStack.state = ParserStackType.NONE;
         start = this._parseStack.chunkPos + 1; // continue with next codepoint in GROUND
@@ -534,8 +535,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
           /**
            * Reject further parsing on improper continuation after pausing.
-           * This is a really bad condition with screwed up execution order and messed up terminal state,
-           * therefore we exit hard with an exception and reject any further parsing.
+           * This is a really bad condition with screwed up execution order and prolly messed up
+           * terminal state, therefore we exit hard with an exception and reject any further parsing.
            *
            * Note: With `Terminal.write` usage this exception should never occur, as the top level
            * calls are guaranteed to handle async conditions properly. If you ever encounter this
@@ -543,8 +544,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
            * `InputHandler.parse` or `EscapeSequenceParser.parse` synchronously without waiting for
            * continuation of a running async handler.
            *
-           * Its possible to get rid of this error condition by calling `reset`, but dont rely on that,
-           * as the pending async handler might mess up the terminal even further. Instead fix the faulty
+           * It is possible to get rid of this error by calling `reset`. But dont rely on that,
+           * as the pending async handler still might mess up the terminal later. Instead fix the faulty
            * async handling, so this error will not be thrown anymore.
            */
           this._parseStack.state = ParserStackType.FAIL;
@@ -554,20 +555,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         // we have to resume the old handler loop if:
         // - return value of the promise was `false`
         // - handlers are not exhausted yet
-        // FIXME: removing handlers from within a handler of the same sequence
-        //        is not supported atm (also true for sync handlers)!!
         const handlers = this._parseStack.handlers;
         let handlerPos = this._parseStack.handlerPos - 1;
         switch (this._parseStack.state) {
           case ParserStackType.CSI:
             if (promiseResult === false && handlerPos > -1) {
               for (; handlerPos >= 0; handlerPos--) {
-                if ((handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params)) !== false) {
-                  if (handlerResult instanceof Promise) {
-                    this._parseStack.handlerPos = handlerPos;
-                    return handlerResult;
-                  }
+                handlerResult = (handlers as CsiHandlerType[])[handlerPos](this._params);
+                if (handlerResult === true) {
                   break;
+                } else if (handlerResult instanceof Promise) {
+                  this._parseStack.handlerPos = handlerPos;
+                  return handlerResult;
                 }
               }
             }
@@ -576,12 +575,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           case ParserStackType.ESC:
             if (promiseResult === false && handlerPos > -1) {
               for (; handlerPos >= 0; handlerPos--) {
-                if ((handlerResult = (handlers as EscHandlerType[])[handlerPos]()) !== false) {
-                  if (handlerResult instanceof Promise) {
-                    this._parseStack.handlerPos = handlerPos;
-                    return handlerResult;
-                  }
+                handlerResult = (handlers as EscHandlerType[])[handlerPos]();
+                if (handlerResult === true) {
                   break;
+                } else if (handlerResult instanceof Promise) {
+                  this._parseStack.handlerPos = handlerPos;
+                  return handlerResult;
                 }
               }
             }
@@ -589,7 +588,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             break;
           case ParserStackType.DCS:
             code = data[this._parseStack.chunkPos];
-            if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a, promiseResult)) {
+            handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a, promiseResult);
+            if (handlerResult) {
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
@@ -599,7 +599,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             break;
           case ParserStackType.OSC:
             code = data[this._parseStack.chunkPos];
-            if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult)) {
+            handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult);
+            if (handlerResult) {
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
@@ -678,7 +679,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           for (; j >= 0; j--) {
             // true means success and to stop bubbling
             // a promise indicates an async handler that needs to finish before progressing
-            if ((handlerResult = handlers[j](this._params)) === true) {
+            handlerResult = handlers[j](this._params);
+            if (handlerResult === true) {
               break;
             } else if (handlerResult instanceof Promise) {
               this._preserveStack(ParserStackType.CSI, handlers, j, transition, i);
@@ -716,7 +718,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           for (; jj >= 0; jj--) {
             // true means success and to stop bubbling
             // a promise indicates an async handler that needs to finish before progressing
-            if ((handlerResult = handlersEsc[jj]()) === true) {
+            handlerResult = handlersEsc[jj]();
+            if (handlerResult === true) {
               break;
             } else if (handlerResult instanceof Promise) {
               this._preserveStack(ParserStackType.ESC, handlersEsc, jj, transition, i);
@@ -748,7 +751,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.DCS_UNHOOK:
-          if (handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a)) {
+          handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a);
+          if (handlerResult) {
             this._preserveStack(ParserStackType.DCS, [], 0, transition, i);
             return handlerResult;
           }
@@ -772,7 +776,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.OSC_END:
-          if (handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a)) {
+          handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a);
+          if (handlerResult) {
             this._preserveStack(ParserStackType.OSC, [], 0, transition, i);
             return handlerResult;
           }

@@ -44,28 +44,6 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     }
   });
 
-  // perfContext('write/string/sync', () => {
-  //   let terminal: Terminal;
-  //   before(() => {
-  //     terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
-  //   });
-  //   new ThroughputRuntimeCase('', () => {
-  //     terminal.writeSync(content);
-  //     return {payloadSize: contentUtf8.length};
-  //   }, {fork: false}).showAverageThroughput();
-  // });
-  //
-  // perfContext('write/Utf8/sync', () => {
-  //   let terminal: Terminal;
-  //   before(() => {
-  //     terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
-  //   });
-  //   new ThroughputRuntimeCase('', () => {
-  //     terminal.writeSync(content);
-  //     return {payloadSize: contentUtf8.length};
-  //   }, {fork: false}).showAverageThroughput();
-  // });
-
   perfContext('write/string/async', () => {
     let terminal: Terminal;
     before(() => {

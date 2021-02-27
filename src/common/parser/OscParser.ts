@@ -130,7 +130,7 @@ export class OscParser implements IOscParser {
    * Whether the OSC got aborted or finished normally
    * is indicated by `success`.
    */
-  public end(success: boolean, promiseResult?: boolean): void | Promise<boolean> {
+  public end(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (this._state === OscState.START) {
       return;
     }
@@ -146,7 +146,7 @@ export class OscParser implements IOscParser {
       if (!this._active.length) {
         this._handlerFb(this._id, 'END', success);
       } else {
-        let handlerResult: any = false;
+        let handlerResult: boolean | Promise<boolean> = false;
         let j = this._active.length - 1;
         let fallThrough = false;
         if (this._stack.paused) {
@@ -157,14 +157,14 @@ export class OscParser implements IOscParser {
         }
         if (!fallThrough && handlerResult === false) {
           for (; j >= 0; j--) {
-            if ((handlerResult = this._active[j].end(success)) !== false) {
-              if (handlerResult instanceof Promise) {
-                this._stack.paused = true;
-                this._stack.loopPosition = j;
-                this._stack.fallThrough = false;
-                return handlerResult;
-              }
+            handlerResult = this._active[j].end(success);
+            if (handlerResult === true) {
               break;
+            } else if (handlerResult instanceof Promise) {
+              this._stack.paused = true;
+              this._stack.loopPosition = j;
+              this._stack.fallThrough = false;
+              return handlerResult;
             }
           }
           j--;
@@ -173,7 +173,8 @@ export class OscParser implements IOscParser {
         // we always have to call .end for proper cleanup,
         // here we use `success` to indicate whether a handler should execute
         for (; j >= 0; j--) {
-          if ((handlerResult = this._active[j].end(false)) instanceof Promise) {
+          handlerResult = this._active[j].end(false);
+          if (handlerResult instanceof Promise) {
             this._stack.paused = true;
             this._stack.loopPosition = j;
             this._stack.fallThrough = true;
@@ -220,7 +221,10 @@ export class OscHandler implements IOscHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      if ((ret = this._handler(this._data)) instanceof Promise) {
+      ret = this._handler(this._data);
+      if (ret instanceof Promise) {
+        // need to hold data until `ret` got resolved
+        // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
           this._data = '';
           this._hitLimit = false;

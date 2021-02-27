@@ -488,8 +488,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   execution stopped at async handler, stack saved, continue with
    *   same chunk and the promise resolve value as `promiseResult` until the method returns `undefined`
    *
-   * Note: Never call this directly for a running terminal instance in production.
-   * Always use `Terminal.write`, which provides in-band blocking and correct exection order.
+   * Note: This method should only be called by `Terminal.write` to ensure correct execution order and
+   * proper continuation of async parser handlers.
    */
   public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
     let result: void | Promise<boolean>;

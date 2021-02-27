@@ -88,11 +88,11 @@ export class DcsParser implements IDcsParser {
     loopPosition: 0,
     fallThrough: false
   };
-  public unhook(success: boolean, promiseResult?: boolean): void | Promise<boolean> {
+  public unhook(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'UNHOOK', success);
     } else {
-      let handlerResult: any = false;
+      let handlerResult: boolean | Promise<boolean> = false;
       let j = this._active.length - 1;
       let fallThrough = false;
       if (this._stack.paused) {
@@ -103,21 +103,22 @@ export class DcsParser implements IDcsParser {
       }
       if (!fallThrough && handlerResult === false) {
         for (; j >= 0; j--) {
-          if ((handlerResult = this._active[j].unhook(success)) !== false) {
-            if (handlerResult instanceof Promise) {
-              this._stack.paused = true;
-              this._stack.loopPosition = j;
-              this._stack.fallThrough = false;
-              return handlerResult;
-            }
+          handlerResult = this._active[j].unhook(success);
+          if (handlerResult === true) {
             break;
+          } else if (handlerResult instanceof Promise) {
+            this._stack.paused = true;
+            this._stack.loopPosition = j;
+            this._stack.fallThrough = false;
+            return handlerResult;
           }
         }
         j--;
       }
       // cleanup left over handlers (fallThrough for async)
       for (; j >= 0; j--) {
-        if ((handlerResult = this._active[j].unhook(false)) instanceof Promise) {
+        handlerResult = this._active[j].unhook(false);
+        if (handlerResult instanceof Promise) {
           this._stack.paused = true;
           this._stack.loopPosition = j;
           this._stack.fallThrough = true;
@@ -171,10 +172,11 @@ export class DcsHandler implements IDcsHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      if ((ret = this._handler(this._data, this._params)) instanceof Promise) {
-        // FIXME: should this be behind a catch rule?
+      ret = this._handler(this._data, this._params);
+      if (ret instanceof Promise) {
+        // need to hold data and params until `ret` got resolved
+        // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
-          // cleanup handler state late
           this._params = EMPTY_PARAMS;
           this._data = '';
           this._hitLimit = false;
