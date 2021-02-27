@@ -20,6 +20,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { LogLevel } from 'common/services/LogService';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -96,6 +97,9 @@ export enum WindowsOptionsReportType {
   GET_WIN_SIZE_PIXELS = 0,
   GET_CELL_SIZE_PIXELS = 1
 }
+
+// create a warning log if an async handler takes longer than the limit (in ms)
+const SLOW_ASYNC_LIMIT = 5000;
 
 /**
  * DCS subparser implementations
@@ -477,6 +481,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parseStack.decodedLength = decodedLength;
     this._parseStack.position = position;
   }
+  private _logSlowResolvingAsync(p: Promise<boolean>): void {
+    // log a limited warning about an async taking too long
+    if ((this._logService as any)._logLevel <= LogLevel.WARN) {
+      Promise.race([p, new Promise((res, rej) => setTimeout(rej, SLOW_ASYNC_LIMIT))])
+        .catch(() => console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`));
+    }
+  }
 
   /**
    * Parse call with async handler support.
@@ -502,6 +513,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
       if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+        this._logSlowResolvingAsync(result);
         return result;
       }
       cursorStartX = this._parseStack.cursorStartX;
@@ -536,6 +548,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
         if (result = this._parser.parse(this._parseBuffer, len)) {
           this._preserveStack(cursorStartX, cursorStartY, len, i);
+          this._logSlowResolvingAsync(result);
           return result;
         }
       }
@@ -546,6 +559,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           : this._utf8Decoder.decode(data, this._parseBuffer);
         if (result = this._parser.parse(this._parseBuffer, len)) {
           this._preserveStack(cursorStartX, cursorStartY, len, 0);
+          this._logSlowResolvingAsync(result);
           return result;
         }
       }
