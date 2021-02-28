@@ -484,8 +484,13 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _logSlowResolvingAsync(p: Promise<boolean>): void {
     // log a limited warning about an async taking too long
     if ((this._logService as any)._logLevel <= LogLevel.WARN) {
-      Promise.race([p, new Promise((res, rej) => setTimeout(rej, SLOW_ASYNC_LIMIT))])
-        .catch(() => console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`));
+      Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
+        .catch(err => {
+          if (err !== '#SLOW_TIMEOUT') {
+            throw err;
+          }
+          console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`);
+        });
     }
   }
 

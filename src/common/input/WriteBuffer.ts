@@ -167,7 +167,7 @@ export class WriteBuffer {
         // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
           qmt(() => {throw err;});
-          return Promise.resolve(true);
+          return Promise.resolve(false);
         }).then(continuation);
         return;
       }
