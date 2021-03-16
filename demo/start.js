@@ -49,6 +49,13 @@ const clientConfig = {
     alias: {
       common: path.resolve('./out/common'),
       browser: path.resolve('./out/browser')
+    },
+    fallback: {
+      stream: false,
+      util: false,
+      os: false,
+      path: false,
+      fs: false
     }
   },
   output: {
