@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,7 +17,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 
@@ -96,6 +96,9 @@ export enum WindowsOptionsReportType {
   GET_WIN_SIZE_PIXELS = 0,
   GET_CELL_SIZE_PIXELS = 1
 }
+
+// create a warning log if an async handler takes longer than the limit (in ms)
+const SLOW_ASYNC_LIMIT = 5000;
 
 /**
  * DCS subparser implementations
@@ -258,6 +261,14 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
   public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
+
+  private _parseStack: IParseStack = {
+    paused: false,
+    cursorStartX: 0,
+    cursorStartY: 0,
+    decodedLength: 0,
+    position: 0
+  };
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -460,10 +471,64 @@ export class InputHandler extends Disposable implements IInputHandler {
     super.dispose();
   }
 
-  public parse(data: string | Uint8Array): void {
+  /**
+   * Async parse support.
+   */
+  private _preserveStack(cursorStartX: number, cursorStartY: number, decodedLength: number, position: number): void {
+    this._parseStack.paused = true;
+    this._parseStack.cursorStartX = cursorStartX;
+    this._parseStack.cursorStartY = cursorStartY;
+    this._parseStack.decodedLength = decodedLength;
+    this._parseStack.position = position;
+  }
+
+  private _logSlowResolvingAsync(p: Promise<boolean>): void {
+    // log a limited warning about an async handler taking too long
+    if (this._logService.logLevel <= LogLevelEnum.WARN) {
+      Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
+        .catch(err => {
+          if (err !== '#SLOW_TIMEOUT') {
+            throw err;
+          }
+          console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`);
+        });
+    }
+  }
+
+  /**
+   * Parse call with async handler support.
+   *
+   * Whether the stack state got preserved for the next call, is indicated by the return value:
+   * - undefined (void):
+   *   all handlers were sync, no stack save, continue normally with next chunk
+   * - Promise\<boolean\>:
+   *   execution stopped at async handler, stack saved, continue with
+   *   same chunk and the promise resolve value as `promiseResult` until the method returns `undefined`
+   *
+   * Note: This method should only be called by `Terminal.write` to ensure correct execution order and
+   * proper continuation of async parser handlers.
+   */
+  public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
+    let result: void | Promise<boolean>;
     let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
+    let cursorStartX = buffer.x;
+    let cursorStartY = buffer.y;
+    let start = 0;
+    const wasPaused = this._parseStack.paused;
+
+    if (wasPaused) {
+      // assumption: _parseBuffer never mutates between async calls
+      if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+        this._logSlowResolvingAsync(result);
+        return result;
+      }
+      cursorStartX = this._parseStack.cursorStartX;
+      cursorStartY = this._parseStack.cursorStartY;
+      this._parseStack.paused = false;
+      if (data.length > MAX_PARSEBUFFER_LENGTH) {
+        start = this._parseStack.position + MAX_PARSEBUFFER_LENGTH;
+      }
+    }
 
     this._logService.debug('parsing data', data);
 
@@ -475,22 +540,35 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Clear the dirty row service so we know which lines changed as a result of parsing
-    this._dirtyRowService.clearRange();
+    // Important: do not clear between async calls, otherwise we lost pending update information.
+    if (!wasPaused) {
+      this._dirtyRowService.clearRange();
+    }
 
     // process big data in smaller chunks
     if (data.length > MAX_PARSEBUFFER_LENGTH) {
-      for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
+      for (let i = start; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
         const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
-        this._parser.parse(this._parseBuffer, len);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, i);
+          this._logSlowResolvingAsync(result);
+          return result;
+        }
       }
     } else {
-      const len = (typeof data === 'string')
-        ? this._stringDecoder.decode(data, this._parseBuffer)
-        : this._utf8Decoder.decode(data, this._parseBuffer);
-      this._parser.parse(this._parseBuffer, len);
+      if (!wasPaused) {
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data, this._parseBuffer)
+          : this._utf8Decoder.decode(data, this._parseBuffer);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, 0);
+          this._logSlowResolvingAsync(result);
+          return result;
+        }
+      }
     }
 
     buffer = this._bufferService.buffer;
@@ -643,9 +721,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addCsiHandler from parser.
+   * Forward registerCsiHandler from parser.
    */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.registerCsiHandler(id, params => {
@@ -659,23 +737,23 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addDcsHandler from parser.
+   * Forward registerDcsHandler from parser.
    */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerDcsHandler(id, new DcsHandler(callback));
   }
 
   /**
-   * Forward addEscHandler from parser.
+   * Forward registerEscHandler from parser.
    */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerEscHandler(id, callback);
   }
 
   /**
-   * Forward addOscHandler from parser.
+   * Forward registerOscHandler from parser.
    */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerOscHandler(ident, new OscHandler(callback));
   }
 

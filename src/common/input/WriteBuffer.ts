@@ -31,14 +31,23 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
+// queueMicrotask polyfill for nodejs < v11
+const qmt: (cb: () => void) => void = (typeof queueMicrotask === 'undefined')
+  ? (cb: () => void) => { Promise.resolve().then(cb); }
+  : queueMicrotask;
+
+
 export class WriteBuffer {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
   private _pendingData = 0;
   private _bufferOffset = 0;
 
-  constructor(private _action: (data: string | Uint8Array) => void) { }
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
 
+  /**
+   * @deprecated Unreliable, to be removed soon.
+   */
   public writeSync(data: string | Uint8Array): void {
     // force sync processing on pending data chunks to avoid in-band data scrambling
     // does the same as innerWrite but without event loop
@@ -76,16 +85,97 @@ export class WriteBuffer {
     this._callbacks.push(callback);
   }
 
-  protected _innerWrite(): void {
-    const startTime = Date.now();
+  /**
+   * Inner write call, that enters the sliced chunk processing by timing.
+   *
+   * `lastTime` indicates, when the last _innerWrite call had started.
+   * It is used to aggregate async handler execution under a timeout constraint
+   * effectively lowering the redrawing needs, schematically:
+   *
+   *   macroTask _innerWrite:
+   *     if (Date.now() - (lastTime | 0) < WRITE_TIMEOUT_MS):
+   *        schedule microTask _innerWrite(lastTime)
+   *     else:
+   *        schedule macroTask _innerWrite(0)
+   *
+   *   overall execution order on task queues:
+   *
+   *   macrotasks:  [...]  -->  _innerWrite(0)  -->  [...]  -->  screenUpdate  -->  [...]
+   *         m  t:                    |
+   *         i  a:                  [...]
+   *         c  s:                    |
+   *         r  k:              while < timeout:
+   *         o  s:                _innerWrite(timeout)
+   *
+   * `promiseResult` depicts the promise resolve value of an async handler.
+   * This value gets carried forward through all saved stack states of the
+   * paused parser for proper continuation.
+   *
+   * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
+   */
+  protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+    const startTime = lastTime || Date.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
-      const cb = this._callbacks[this._bufferOffset];
-      this._bufferOffset++;
+      const result = this._action(data, promiseResult);
+      if (result) {
+        /**
+         * If we get a promise as return value, we re-schedule the continuation
+         * as thenable on the promise and exit right away.
+         *
+         * The exit here means, that we block input processing at the current active chunk,
+         * the exact execution position within the chunk is preserved by the saved
+         * stack content in InputHandler and EscapeSequenceParser.
+         *
+         * Resuming happens automatically from that saved stack state.
+         * Also the resolved promise value is passed along the callstack to
+         * `EscapeSequenceParser.parse` to correctly resume the stopped handler loop.
+         *
+         * Exceptions on async handlers will be logged to console async, but do not interrupt
+         * the input processing (continues with next handler at the current input position).
+         */
 
-      this._action(data);
-      this._pendingData -= data.length;
+        /**
+         * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
+         * This might already be too late, if our .then enters really late (executor + prev thens took very long).
+         * This cannot be solved here for the handler itself (it is the handlers responsibility to slice hard work),
+         * but we can at least schedule a screen update as we gain control.
+         */
+        const continuation: (r: boolean) => void = (r: boolean) => Date.now() - startTime >= WRITE_TIMEOUT_MS
+          ? setTimeout(() => this._innerWrite(0, r))
+          : this._innerWrite(startTime, r);
+
+        /**
+         * Optimization considerations:
+         * The continuation above favors FPS over throughput by eval'ing `startTime` on resolve.
+         * This might schedule too many screen updates with bad throughput drops (in case a slow
+         * resolving handler sliced its work properly behind setTimeout calls). We cannot spot
+         * this condition here, also the renderer has no way to spot nonsense updates either.
+         * FIXME: A proper fix for this would track the FPS at the renderer entry level separately.
+         *
+         * If favoring of FPS shows bad throughtput impact, use the following instead. It favors
+         * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
+         * current microtask queue (executed before setTimeout).
+         */
+        // const continuation: (r: boolean) => void = Date.now() - startTime >= WRITE_TIMEOUT_MS
+        //   ? r => setTimeout(() => this._innerWrite(0, r))
+        //   : r => this._innerWrite(startTime, r);
+
+        // Handle exceptions synchronously to current band position, idea:
+        // 1. spawn a single microtask which we allow to throw hard
+        // 2. spawn a promise immediately resolving to `true`
+        // (executed on the same queue, thus properly aligned before continuation happens)
+        result.catch(err => {
+          qmt(() => {throw err;});
+          return Promise.resolve(false);
+        }).then(continuation);
+        return;
+      }
+
+      const cb = this._callbacks[this._bufferOffset];
       if (cb) cb();
+      this._bufferOffset++;
+      this._pendingData -= data.length;
 
       if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
@@ -99,7 +189,7 @@ export class WriteBuffer {
         this._callbacks = this._callbacks.slice(this._bufferOffset);
         this._bufferOffset = 0;
       }
-      setTimeout(() => this._innerWrite(), 0);
+      setTimeout(() => this._innerWrite());
     } else {
       this._writeBuffer = [];
       this._callbacks = [];
