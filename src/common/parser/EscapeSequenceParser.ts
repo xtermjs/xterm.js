@@ -253,6 +253,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _escHandlerFb: EscFallbackHandlerType;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
+  // parser stack save for async handler support
+  protected _parseStack: IParserStackState = {
+    state: ParserStackType.NONE,
+    handlers: [],
+    handlerPos: 0,
+    transition: 0,
+    chunkPos: 0
+  };
+
   constructor(
     protected readonly _transitions: TransitionTable = VT500_TRANSITION_TABLE
   ) {
@@ -456,13 +465,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   /**
    * Async parse support.
    */
-  protected _parseStack: IParserStackState = {
-    state: ParserStackType.NONE,
-    handlers: [],
-    handlerPos: 0,
-    transition: 0,
-    chunkPos: 0
-  };
   protected _preserveStack(
     state: ParserStackType,
     handlers: ResumableHandlersType,

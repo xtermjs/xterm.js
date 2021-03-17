@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType } from 'common/parser/Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
@@ -16,6 +16,11 @@ export class DcsParser implements IDcsParser {
   private _active: IDcsHandler[] = EMPTY_HANDLERS;
   private _ident: number = 0;
   private _handlerFb: DcsFallbackHandlerType = () => { };
+  private _stack: ISubParserStackState = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
 
   public dispose(): void {
     this._handlers = Object.create(null);
@@ -83,11 +88,6 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  private _stack = {
-    paused: false,
-    loopPosition: 0,
-    fallThrough: false
-  };
   public unhook(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'UNHOOK', success);

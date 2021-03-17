@@ -242,6 +242,8 @@ export interface IHandlerCollection<T> {
 /**
  * Types for async parser support.
  */
+
+// type of saved stack state in parser
 export const enum ParserStackType {
   NONE = 0,
   FAIL,
@@ -251,11 +253,22 @@ export const enum ParserStackType {
   OSC,
   DCS
 }
+
+// aggregate of resumable handler lists
 export type ResumableHandlersType = CsiHandlerType[] | EscHandlerType[];
+
+// saved stack state of the parser
 export interface IParserStackState {
   state: ParserStackType;
   handlers: ResumableHandlersType;
   handlerPos: number;
   transition: number;
   chunkPos: number;
+}
+
+// saved stack state of subparser (OSC and DCS)
+export interface ISubParserStackState {
+  paused: boolean;
+  loopPosition: number;
+  fallThrough: boolean;
 }

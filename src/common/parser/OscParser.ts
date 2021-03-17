@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser } from 'common/parser/Types';
+import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
 import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
@@ -16,6 +16,11 @@ export class OscParser implements IOscParser {
   private _id = -1;
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandlerType = () => { };
+  private _stack: ISubParserStackState = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
 
   public registerHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
@@ -118,12 +123,6 @@ export class OscParser implements IOscParser {
       this._put(data, start, end);
     }
   }
-
-  private _stack = {
-    paused: false,
-    loopPosition: 0,
-    fallThrough: false
-  };
 
   /**
    * Indicates end of an OSC command.
