@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,10 +17,9 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
-import { LogLevel } from 'common/services/LogService';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -263,6 +262,14 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
   public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
 
+  private _parseStack: IParseStack = {
+    paused: false,
+    cursorStartX: 0,
+    cursorStartY: 0,
+    decodedLength: 0,
+    position: 0
+  };
+
   constructor(
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
@@ -467,13 +474,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Async parse support.
    */
-  private _parseStack = {
-    paused: false,
-    cursorStartX: 0,
-    cursorStartY: 0,
-    decodedLength: 0,
-    position: 0
-  };
   private _preserveStack(cursorStartX: number, cursorStartY: number, decodedLength: number, position: number): void {
     this._parseStack.paused = true;
     this._parseStack.cursorStartX = cursorStartX;
@@ -481,9 +481,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parseStack.decodedLength = decodedLength;
     this._parseStack.position = position;
   }
+
   private _logSlowResolvingAsync(p: Promise<boolean>): void {
-    // log a limited warning about an async taking too long
-    if ((this._logService as any)._logLevel <= LogLevel.WARN) {
+    // log a limited warning about an async handler taking too long
+    if (this._logService.logLevel <= LogLevelEnum.WARN) {
       Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
         .catch(err => {
           if (err !== '#SLOW_TIMEOUT') {
