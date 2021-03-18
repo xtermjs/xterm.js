@@ -55,7 +55,6 @@ export interface IRenderService extends IDisposable {
   refreshRows(start: number, end: number): void;
   resize(cols: number, rows: number): void;
   changeOptions(): void;
-  recoverContext(renderer: IRenderer): void;
   setRenderer(renderer: IRenderer): void;
   setColors(colors: IColorSet): void;
   onDevicePixelRatioChange(): void;

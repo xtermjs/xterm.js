@@ -85,11 +85,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
+
     if (this._core.textarea) {
-      this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
       this.register(this._core.onKey((e) => {
         if (e.key === 'a') {
           this._gl.getExtension('WEBGL_lose_context')?.loseContext();
+
+
         }
       }));
     }
@@ -108,7 +111,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _onContextLost(e: Event): void {
     console.log('lost context');
     e.preventDefault();
-    this._onRecoverContext.fire(this);
+    this._onRequestRedraw.fire({ start: 0, end: this._core.rows - 1 });
   }
 
   public dispose(): void {
