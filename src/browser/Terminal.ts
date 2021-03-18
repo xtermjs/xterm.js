@@ -408,7 +408,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
     this._viewportScrollArea = document.createElement('div');
-    this._viewportScrollArea.classList.add('xterm-scroll-area');
+    this._viewportScrollArea.classList.add('xterm-scroll-area'); // this.register(renderer.onRecoverContext(() => this._renderService!.recoverContext()));
     this._viewportElement.appendChild(this._viewportScrollArea);
 
     this.screenElement = document.createElement('div');
@@ -479,7 +479,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onBlur(() => this._renderService!.onBlur()));
     this.register(this.onFocus(() => this._renderService!.onFocus()));
     this.register(this._renderService!.onDimensionsChange(() => this.viewport!.syncScrollArea()));
-    // this.register(renderer.onRecoverContext(() => this._renderService!.recoverContext()));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,

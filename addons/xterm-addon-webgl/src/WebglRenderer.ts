@@ -53,6 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super();
 
     this._core = (this._terminal as any)._core;
+
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
       new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
@@ -189,6 +190,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end, columnSelectMode);
+
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 

@@ -355,7 +355,6 @@ export class MockRenderService implements IRenderService {
   public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRecoverContext: IEvent<any, void> = new EventEmitter<any>().event;
-  public recoverContext(): void { }
   public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,
     scaledCharHeight: 0,

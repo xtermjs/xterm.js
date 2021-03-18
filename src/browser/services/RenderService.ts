@@ -43,8 +43,6 @@ export class RenderService extends Disposable implements IRenderService {
   public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
-  private _onRecoverContext = new EventEmitter<IRenderer>();
-  public get onRecoverContext(): IEvent<IRenderer> { return this._onRecoverContext.event; }
 
   public get dimensions(): IRenderDimensions { return this._renderer.dimensions; }
 
@@ -57,6 +55,7 @@ export class RenderService extends Disposable implements IRenderService {
     @IBufferService bufferService: IBufferService
   ) {
     super();
+
     this.register({ dispose: () => this._renderer.dispose() });
 
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -69,6 +68,7 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(bufferService.onResize(e => this._fullRefresh()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
 
@@ -154,6 +154,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.dispose();
     this._renderer = renderer;
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+
     // Force a refresh
     this._needsSelectionRefresh = true;
     this._fullRefresh();
