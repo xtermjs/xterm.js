@@ -30,7 +30,8 @@ export class Renderer extends Disposable implements IRenderer {
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
-  public get onRecoverContext(): IEvent<any> { return new EventEmitter<any>().event; }
+  private _onRecoverContext = new EventEmitter<IRenderer>();
+  public get onRecoverContext(): IEvent<IRenderer> { return this._onRecoverContext.event; }
 
   constructor(
     private _colors: IColorSet,

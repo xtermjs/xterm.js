@@ -478,7 +478,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onResize(() => this._renderService!.onResize(this.cols, this.rows)));
     this.register(this.onBlur(() => this._renderService!.onBlur()));
     this.register(this.onFocus(() => this._renderService!.onFocus()));
-    this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
+    this.register(this._renderService!.onDimensionsChange(() => this.viewport!.syncScrollArea()));
+    // this.register(renderer.onRecoverContext(() => this._renderService!.recoverContext()));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,

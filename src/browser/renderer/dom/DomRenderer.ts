@@ -41,7 +41,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public dimensions: IRenderDimensions;
 
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return new EventEmitter<IRequestRedrawEvent>().event; }
-  public get onRecoverContext(): IEvent<any> { return new EventEmitter<any>().event; }
+  public get onRecoverContext(): IEvent<IRenderer> { return new EventEmitter<IRenderer>().event; }
 
   constructor(
     private _colors: IColorSet,

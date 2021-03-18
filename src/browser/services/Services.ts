@@ -34,7 +34,7 @@ export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
   serviceBrand: undefined;
 
-  getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
+  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
 }
 
@@ -55,6 +55,7 @@ export interface IRenderService extends IDisposable {
   refreshRows(start: number, end: number): void;
   resize(cols: number, rows: number): void;
   changeOptions(): void;
+  recoverContext(renderer: IRenderer): void;
   setRenderer(renderer: IRenderer): void;
   setColors(colors: IColorSet): void;
   onDevicePixelRatioChange(): void;

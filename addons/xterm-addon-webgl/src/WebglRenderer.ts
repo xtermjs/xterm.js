@@ -42,8 +42,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
-  private _onRecoverContext = new EventEmitter();
-  public get onRecoverContext(): IEvent<any> { return this._onRecoverContext.event; }
+  private _onRecoverContext = new EventEmitter<IRenderer>();
+  public get onRecoverContext(): IEvent<IRenderer> { return this._onRecoverContext.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -53,7 +53,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super();
 
     this._core = (this._terminal as any)._core;
-
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
       new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
@@ -86,8 +85,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
-    // this.register(addDisposableDomListener(this._canvas, 'keydown', () => this._gl.getExtension('WEBGL_lose_context')?.loseContext()));
+    if (this._core.textarea) {
+      this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
+      this.register(this._core.onKey((e) => {
+        if (e.key === 'a') {
+          this._gl.getExtension('WEBGL_lose_context')?.loseContext();
+        }
+      }));
+    }
 
     this._core.screenElement!.appendChild(this._canvas);
 
@@ -192,7 +197,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end, columnSelectMode);
-
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
