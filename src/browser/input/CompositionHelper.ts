@@ -225,8 +225,6 @@ export class CompositionHelper {
       // Ensure the text area is at least 1x1, otherwise certain IMEs may break
       this._textarea.style.width = Math.max(compositionViewBounds.width, 1) + 'px';
       this._textarea.style.height = Math.max(compositionViewBounds.height, 1) + 'px';
-      this._textarea.style.width = compositionViewBounds.width + 'px';
-      this._textarea.style.height = compositionViewBounds.height + 'px';
       this._textarea.style.lineHeight = compositionViewBounds.height + 'px';
     }
 
