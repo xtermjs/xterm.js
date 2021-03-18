@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -92,6 +92,7 @@ export class MockDirtyRowService implements IDirtyRowService {
 
 export class MockLogService implements ILogService {
   public serviceBrand: any;
+  public logLevel = LogLevelEnum.DEBUG;
   public debug(message: any, ...optionalParams: any[]): void {}
   public info(message: any, ...optionalParams: any[]): void {}
   public warn(message: any, ...optionalParams: any[]): void {}
