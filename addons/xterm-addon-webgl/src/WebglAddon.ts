@@ -14,7 +14,7 @@ export class WebglAddon implements ITerminalAddon {
 
   constructor(
     private _preserveDrawingBuffer?: boolean
-  ) {}
+  ) { }
 
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
@@ -24,6 +24,11 @@ export class WebglAddon implements ITerminalAddon {
     const renderService: IRenderService = (<any>terminal)._core._renderService;
     const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
     this._renderer = new WebglRenderer(terminal, colors, this._preserveDrawingBuffer);
+    this._renderer?.onRecoverContext(() => {
+      if (this._terminal) {
+        this.activate(this._terminal);
+      }
+    });
     renderService.setRenderer(this._renderer);
   }
 
