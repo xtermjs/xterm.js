@@ -40,6 +40,9 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 
+// Only trigger this warning a single time per session
+let hasWriteSyncWarnHappened: boolean = false;
+
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
   protected readonly _bufferService: IBufferService;
@@ -135,13 +138,12 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @deprecated Unreliable, will be removed soon.
    */
   public writeSync(data: string | Uint8Array): void {
-    if (this._logService.logLevel <= LogLevelEnum.WARN && !this._hasBeenWarnedOnce) {
+    if (this._logService.logLevel <= LogLevelEnum.WARN && !hasWriteSyncWarnHappened) {
       this._logService.warn('writeSync is unreliable and will be removed soon.');
-      this._hasBeenWarnedOnce = true;
+      hasWriteSyncWarnHappened = true;
     }
     this._writeBuffer.writeSync(data);
   }
-  private _hasBeenWarnedOnce = false;
 
   public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
