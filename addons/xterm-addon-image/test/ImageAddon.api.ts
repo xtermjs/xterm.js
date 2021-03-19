@@ -90,8 +90,7 @@ describe('ImageAddon', () => {
         sixelPrivatePalette: true,
         sixelDefaultPalette: 'VT340-COLOR',
         storageLimit: 100,
-        showPlaceholder: true,
-        itermImageProtocolSupport: true
+        showPlaceholder: true
       };
       assert.deepEqual(await page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
@@ -106,8 +105,7 @@ describe('ImageAddon', () => {
         sixelPrivatePalette: false,
         sixelDefaultPalette: 'VT340-GREY',
         storageLimit: 10,
-        showPlaceholder: false,
-        itermImageProtocolSupport: false
+        showPlaceholder: false
       };
       await page.evaluate(opts => {
         (<any>window).imageAddonCustom = new ImageAddon(opts);

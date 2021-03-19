@@ -42,11 +42,6 @@ export interface IImageAddonOptionalOptions {
   sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
 
   /**
-   * TODO: iTerm image protocol support
-   */
-  itermImageProtocolSupport: boolean;
-
-  /**
    * TODO: storage settings
    */
   // storage limit in MBs (default 100 MB)
