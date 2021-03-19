@@ -31,7 +31,7 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelPrivatePalette: true,
   sixelDefaultPalette: 'VT340-COLOR',
   storageLimit: 100,
-  showPlaceholder: true,
+  showPlaceholder: true
 };
 
 // definitions for _xtermGraphicsAttributes sequence
