@@ -22,7 +22,7 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
@@ -135,9 +135,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @deprecated Unreliable, will be removed soon.
    */
   public writeSync(data: string | Uint8Array): void {
-    console.error('writeSync is unreliable and will be removed soon.');
+    if (this._logService.logLevel <= LogLevelEnum.WARN && !this._hasBeenWarnedOnce) {
+      this._logService.warn('writeSync is unreliable and will be removed soon.');
+      this._hasBeenWarnedOnce = true;
+    }
     this._writeBuffer.writeSync(data);
   }
+  private _hasBeenWarnedOnce = false;
 
   public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
