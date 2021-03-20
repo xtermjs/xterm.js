@@ -53,6 +53,11 @@ export default function parse(family: string): string[] {
     }
   }
 
+  // Register the found family if no other ones exists
+  if(families.length === 0 && currentFamily) {
+    families.push(currentFamily)
+  }
+
   return families;
 }
 
