@@ -12,6 +12,17 @@ import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-ligatures' {
   /**
+   * Options for the ligatures addon.
+   */
+  export interface ILigaturesOptions {
+    /**
+     * A custom file protocol to use when loading the fonts
+     * in the computer.
+     */
+    protocol?: string;
+  }
+
+  /**
    * An xterm.js addon that enables web links.
    */
   export class LigaturesAddon implements ITerminalAddon {
@@ -23,8 +34,9 @@ declare module 'xterm-addon-ligatures' {
     /**
      * Activates the addon
      * @param terminal The terminal the addon is being loaded in.
+     * @param options Optionnal options to use.
      */
-    public activate(terminal: Terminal): void;
+    public activate(terminal: Terminal, options?: ILigaturesOptions): void;
 
     /**
      * Disposes the addon.

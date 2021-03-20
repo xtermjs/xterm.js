@@ -7,6 +7,7 @@ import { Terminal } from 'xterm';
 import { Font } from 'font-ligatures';
 
 import load from './font';
+import { ILigaturesOptions } from './LigaturesAddon';
 
 const enum LoadingState {
   UNLOADED,
@@ -25,8 +26,9 @@ const CACHE_SIZE = 100000;
  * the font currently in use supports ligatures, the terminal will automatically
  * start to render them.
  * @param term Terminal instance from xterm.js
+ * @param options Optionnal options to use
  */
-export function enableLigatures(term: Terminal): void {
+export function enableLigatures(term: Terminal, options?: ILigaturesOptions): void {
   let currentFontName: string | undefined = undefined;
   let font: Font | undefined = undefined;
   let loadingState: LoadingState = LoadingState.UNLOADED;
@@ -44,7 +46,7 @@ export function enableLigatures(term: Terminal): void {
       currentFontName = termFont;
       const currentCallFontName = currentFontName;
 
-      load(currentCallFontName, CACHE_SIZE)
+      load(currentCallFontName, CACHE_SIZE, options)
         .then(f => {
           // Another request may have come in while we were waiting, so make
           // sure our font is still vaild.

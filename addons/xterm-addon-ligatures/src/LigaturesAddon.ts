@@ -11,11 +11,15 @@ export interface ITerminalAddon {
   dispose(): void;
 }
 
+export interface ILigaturesOptions {
+  protocol?: string;
+}
+
 export class LigaturesAddon implements ITerminalAddon {
   constructor() {}
 
-  public activate(terminal: Terminal): void {
-    enableLigatures(terminal);
+  public activate(terminal: Terminal, options?: ILigaturesOptions): void {
+    enableLigatures(terminal, options);
   }
 
   public dispose(): void {}

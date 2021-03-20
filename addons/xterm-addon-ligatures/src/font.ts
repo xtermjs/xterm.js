@@ -6,6 +6,7 @@
 import * as fontFinder from 'font-finder';
 import * as fontLigatures from 'font-ligatures';
 
+import { ILigaturesOptions } from './LigaturesAddon';
 import parse from './parse';
 
 let fontsPromise: Promise<fontFinder.FontList> | undefined = undefined;
@@ -15,8 +16,9 @@ let fontsPromise: Promise<fontFinder.FontList> | undefined = undefined;
  * resolved, throwing if it is unable to find a suitable match.
  * @param fontFamily The CSS font family definition to resolve
  * @param cacheSize The size of the ligature cache to maintain if the font is resolved
+ * @param options The options to use
  */
-export default async function load(fontFamily: string, cacheSize: number): Promise<fontLigatures.Font | undefined> {
+export default async function load(fontFamily: string, cacheSize: number, options?: ILigaturesOptions): Promise<fontLigatures.Font | undefined> {
   if (!fontsPromise) {
     fontsPromise = fontFinder.list();
   }
@@ -31,7 +33,9 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     }
 
     if (fonts.hasOwnProperty(family) && fonts[family].length > 0) {
-      return await fontLigatures.loadFile(fonts[family][0].path, { cacheSize });
+      const { path } = fonts[family][0];
+      // Allow the use of a custom file protocol
+      return await fontLigatures.loadFile(options?.protocol + path, { cacheSize });
     }
   }
 
