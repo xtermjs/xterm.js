@@ -28,15 +28,15 @@ declare module 'xterm-addon-ligatures' {
   export class LigaturesAddon implements ITerminalAddon {
     /**
      * Creates a new ligatures addon.
+     * @param options The optionnal options
      */
-    constructor();
+    constructor(options: ILigaturesOptions);
 
     /**
      * Activates the addon
      * @param terminal The terminal the addon is being loaded in.
-     * @param options Optionnal options to use.
      */
-    public activate(terminal: Terminal, options?: ILigaturesOptions): void;
+    public activate(terminal: Terminal): void;
 
     /**
      * Disposes the addon.

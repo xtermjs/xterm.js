@@ -16,10 +16,13 @@ export interface ILigaturesOptions {
 }
 
 export class LigaturesAddon implements ITerminalAddon {
-  constructor() {}
+  constructor(
+    private _options?: ILigaturesOptions
+  ) {
+  }
 
-  public activate(terminal: Terminal, options?: ILigaturesOptions): void {
-    enableLigatures(terminal, options);
+  public activate(terminal: Terminal): void {
+    enableLigatures(terminal, this._options);
   }
 
   public dispose(): void {}
