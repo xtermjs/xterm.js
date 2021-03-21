@@ -22,7 +22,7 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
@@ -39,6 +39,9 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+
+// Only trigger this warning a single time per session
+let hasWriteSyncWarnHappened: boolean = false;
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
@@ -135,7 +138,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @deprecated Unreliable, will be removed soon.
    */
   public writeSync(data: string | Uint8Array): void {
-    console.error('writeSync is unreliable and will be removed soon.');
+    if (this._logService.logLevel <= LogLevelEnum.WARN && !hasWriteSyncWarnHappened) {
+      this._logService.warn('writeSync is unreliable and will be removed soon.');
+      hasWriteSyncWarnHappened = true;
+    }
     this._writeBuffer.writeSync(data);
   }
 
