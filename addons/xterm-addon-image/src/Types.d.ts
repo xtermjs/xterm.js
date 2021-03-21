@@ -110,6 +110,9 @@ export interface ITerminalParser {
 }
 
 // stub into xterm core terminal
+// This should be kept in line with common libs.
+// Any change made here should be replayed in the accessors test case to
+// have a somewhat reliable testing against code changes in the core repo.
 /* eslint-disable */
 export interface ICoreTerminal extends Terminal {
   _core: {

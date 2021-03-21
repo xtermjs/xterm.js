@@ -78,6 +78,57 @@ describe('ImageAddon', () => {
     await page.evaluate(`window.term.loadAddon(window.imageAddon);`);
   });
 
+  it('test for private accessors', async () => {
+    const accessors = [
+      '_core',
+      '_core.buffer',
+      '_core.buffer.x',
+      '_core.buffer.y',
+      '_core.buffer.ybase',
+      '_core.buffer.ydisp',
+      '_core.buffer.lines',
+      '_core.buffer.lines.get',
+      '_core.cols',
+      '_core.rows',
+      '_core.screenElement',
+      '_core.optionsService',
+      '_core.optionsService.onOptionChange',
+      '_core._dirtyRowService',
+      '_core._dirtyRowService.markAllDirty',
+      '_core.open',
+      '_core._renderService',
+      '_core._inputHandler',
+      '_core._inputHandler._parser',
+      '_core._inputHandler._parser.registerDcsHandler',
+      '_core._inputHandler._parser.registerOscHandler',
+      '_core._inputHandler._curAttrData.isInverse',
+      '_core._inputHandler._curAttrData.isFgDefault',
+      '_core._inputHandler._curAttrData.isFgRGB',
+      '_core._inputHandler._curAttrData.getFgColor',
+      '_core._inputHandler._curAttrData.isBgDefault',
+      '_core._inputHandler._curAttrData.isBgRGB',
+      '_core._inputHandler._curAttrData.getBgColor',
+      '_core._inputHandler.lineFeed',
+      '_core._inputHandler.onRequestReset',
+      '_core._coreService',
+      '_core._coreService.triggerDataEvent',
+      '_core._colorManager',
+      '_core._colorManager.colors',
+      '_core._colorManager.colors.ansi',
+      '_core._colorManager.colors.ansi[0].rgba',
+      '_core._colorManager.colors.foreground',
+      '_core._colorManager.colors.foreground.rgba',
+      '_core._colorManager.colors.background',
+      '_core._colorManager.colors.background.rgba'
+    ];
+    for (const prop of accessors) {
+      assert.equal(
+        await page.evaluate('(() => { const v = window.term.' + prop + '; return v !== undefined && v !== null; })()'),
+        true
+      );
+    }
+  });
+
   describe('ctor options', () => {
     it('empty settings should load defaults', async () => {
       const DEFAULT_OPTIONS: IImageAddonOptions = {
