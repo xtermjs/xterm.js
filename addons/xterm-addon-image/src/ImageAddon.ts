@@ -10,6 +10,7 @@ import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
 import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptionalOptions, IImageAddonOptions, IImageSpec } from './Types';
+import { WorkerManager } from './WorkerManager';
 
 // to run testfiles:
 // cd ../node-sixel/testfiles/
@@ -19,9 +20,15 @@ import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptionalOptions, IImageA
 // no scrolling test:
 // echo -ne '\x1b[?80l\x1bP0;0q' && cat ../node-sixel/testfiles/screen_clean.six && echo -e '\x1b\\'
 
+// mpv test
+// cd ../mpv-build/
+// mpv/build/mpv /home/jerch/Downloads/sintel.webm --vo=sixel --vo-sixel-width=800 --vo-sixel-height=600 \
+// --profile=sw-fast --vo-sixel-fixedpalette=no --vo-sixel-reqcolors=256 --really-quiet
+
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
+  workerPath: '/workers/xterm-addon-image-worker.js',
   cursorRight: false,
   cursorBelow: false,
   sixelSupport: true,
@@ -61,10 +68,13 @@ export class ImageAddon implements ITerminalAddon {
   private _renderer: ImageRenderer | undefined;
   private _disposables: IDisposable[] = [];
   private _terminal: ICoreTerminal | undefined;
+  private _workerManager: WorkerManager;
 
   constructor(opts: IImageAddonOptionalOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
+    this._workerManager = new WorkerManager(this._opts.workerPath);
+    this._disposeLater(this._workerManager);
   }
 
   public dispose(): void {
@@ -119,7 +129,7 @@ export class ImageAddon implements ITerminalAddon {
     if (this._opts.sixelSupport) {
       this._disposeLater(
         (<ICoreTerminal>terminal)._core._inputHandler._parser.registerDcsHandler(
-          { final: 'q' }, new SixelHandler(this._opts, this._storage, <ICoreTerminal>terminal))
+          { final: 'q' }, new SixelHandler(this._opts, this._storage, <ICoreTerminal>terminal, this._workerManager))
       );
     }
 

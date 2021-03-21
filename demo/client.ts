@@ -445,18 +445,7 @@ function serializeButtonHandler(): void {
 }
 
 function initImageAddonExposed(): void {
-  const DEFAULT_OPTIONS: any = {
-    cursorRight: false,
-    cursorBelow: false,
-    sixelSupport: true,
-    sixelScrolling: true,
-    sixelPaletteLimit: 256,
-    sixelSizeLimit: 25000000,
-    sixelPrivatePalette: true,
-    sixelDefaultPalette: 'VT340-COLOR',
-    storageLimit: 100,
-    showPlaceholder: true
-  }
+  const DEFAULT_OPTIONS: any = (addons.image.instance as any)._defaultOpts;
   const limitStorageElement = (<HTMLInputElement>document.getElementById('image-storagelimit'));
   limitStorageElement.value = addons.image.instance.storageLimit;
   addDomListener(limitStorageElement, 'change', () => {

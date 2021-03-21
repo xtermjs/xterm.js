@@ -14,6 +14,7 @@
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-image/src/tsconfig.json",
+      "addons/xterm-addon-image/src-worker/tsconfig.json",
       "addons/xterm-addon-ligatures/src/tsconfig.json",
       "addons/xterm-addon-search/src/tsconfig.json",
       "addons/xterm-addon-serialize/src/tsconfig.json",

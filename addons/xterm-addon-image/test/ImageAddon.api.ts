@@ -8,7 +8,7 @@ import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import PNG from 'png-ts';
 
 const APP = 'http://127.0.0.1:3000/test';
@@ -81,6 +81,7 @@ describe('ImageAddon', () => {
   describe('ctor options', () => {
     it('empty settings should load defaults', async () => {
       const DEFAULT_OPTIONS: IImageAddonOptions = {
+        workerPath: '/workers/xterm-addon-image-worker.js',
         cursorRight: false,
         cursorBelow: false,
         sixelSupport: true,
@@ -96,6 +97,7 @@ describe('ImageAddon', () => {
     });
     it('custom settings should overload defaults', async () => {
       const customSettings: IImageAddonOptions = {
+        workerPath: 'xyz.js',
         cursorRight: true,
         cursorBelow: true,
         sixelSupport: false,

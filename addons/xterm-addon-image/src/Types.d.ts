@@ -3,13 +3,17 @@
  * @license MIT
  */
 
-import { RGBA8888 } from 'sixel';
+import { RGBA8888 } from 'sixel/lib/Types';
 import { IDisposable, IMarker, Terminal } from 'xterm';
 
 /**
  * Plugin ctor options.
  */
 export interface IImageAddonOptionalOptions {
+  /**
+   * Path to the worker file.
+   */
+  workerPath?: string;
   /**
    * Leave cursor to right of image.
    * This has no effect, if an image covers all cells to the right.
@@ -83,13 +87,13 @@ export interface IParams {
 export interface IDcsHandler {
   hook(params: IParams): void;
   put(data: Uint32Array, start: number, end: number): void;
-  unhook(success: boolean): void | boolean;
+  unhook(success: boolean): boolean | Promise<boolean>;
 }
 
 export interface IOscHandler {
   start(): void;
   put(data: Uint32Array, start: number, end: number): void;
-  end(success: boolean): void | boolean;
+  end(success: boolean): boolean | Promise<boolean>;
 }
 
 // stub needed symbols from parser

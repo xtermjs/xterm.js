@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { toRGBA8888 } from 'sixel';
+import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from 'xterm';
 import { ICellSize, ICoreTerminal, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 
