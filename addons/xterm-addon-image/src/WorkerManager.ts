@@ -4,7 +4,16 @@
  */
 
 import { IDisposable } from 'xterm';
-import { IImageWorkerProtocol, IAckMsg, ISixelImageMsg, IChunkTransferMsg, ISixelImage, ISixelInitMsg, ISixelPutMsg, ISixelEndMsg } from './WorkerTypes';
+import { IImageWorkerProtocol, ISixelImage } from './WorkerTypes';
+
+
+// narrow types for postMessage to our protocol
+interface IImageWorker extends Worker {
+  postMessage: {
+    <T extends IImageWorkerProtocol>(message: T, transfer: Transferable[]): void;
+    <T extends IImageWorkerProtocol>(message: T, options?: PostMessageOptions | undefined): void;
+  };
+}
 
 
 /**
@@ -15,7 +24,7 @@ import { IImageWorkerProtocol, IAckMsg, ISixelImageMsg, IChunkTransferMsg, ISixe
  * - mem pooling
  */
 export class WorkerManager implements IDisposable {
-  private _worker: Worker | undefined;
+  private _worker: IImageWorker | undefined;
   private _memPool: ArrayBuffer[] = [];
   private _sixelResolver: ((img: ISixelImage | null) => void) | undefined;
   private _failedToLoad = false;
@@ -31,11 +40,11 @@ export class WorkerManager implements IDisposable {
   private _message(data: IImageWorkerProtocol): void {
     switch (data.type) {
       case 'CHUNK_TRANSFER':
-        this.storeChunk((data as IChunkTransferMsg).payload);
+        this.storeChunk(data.payload);
         break;
       case 'SIXEL_IMAGE':
         if (this._sixelResolver) {
-          this._sixelResolver((data as ISixelImageMsg).payload);
+          this._sixelResolver(data.payload);
           this._sixelResolver = undefined;
         }
         break;
@@ -51,7 +60,7 @@ export class WorkerManager implements IDisposable {
     this._sixelResolver = f;
   }
 
-  constructor(public url: string, public chunkSize: number = 65536, public maxPoolSize: number = 100) {}
+  constructor(public url: string, public chunkSize: number = 65536 * 2, public maxPoolSize: number = 50) {}
 
   public dispose(): void {
     this._worker?.terminate();
@@ -60,12 +69,12 @@ export class WorkerManager implements IDisposable {
     this._setSixelResolver();
   }
 
-  public get worker(): Worker | undefined {
+  public get worker(): IImageWorker | undefined {
     if (!this._worker && !this._failedToLoad) {
       this._worker = new Worker(this.url);
       this._worker.addEventListener('message', ev => this._message(ev.data), false);
       this._worker.addEventListener('error', this._startupError, false);
-      this._worker.postMessage({type: 'ACK', payload: 'ping'} as IAckMsg);
+      this._worker.postMessage({type: 'ACK', payload: 'ping'});
     }
     return this._worker;
   }
@@ -95,12 +104,12 @@ export class WorkerManager implements IDisposable {
   }
 
   // SIXEL message interface
-  public sixelInit(fillColor: number, paletteName: string, limit: number): void {
+  public sixelInit(fillColor: number, paletteName: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI-256' | 'private', limit: number): void {
     this._setSixelResolver();
     this.worker?.postMessage({
       type: 'SIXEL_INIT',
       payload: {fillColor, paletteName, limit}
-    } as ISixelInitMsg);
+    });
   }
   public sixelPut(data: Uint8Array, length: number): void {
     this.worker?.postMessage({
@@ -109,17 +118,14 @@ export class WorkerManager implements IDisposable {
         buffer: data.buffer,
         length
       }
-    } as ISixelPutMsg, [data.buffer]);
+    }, [data.buffer]);
   }
   public sixelEnd(success: boolean): Promise<ISixelImage|null> | void {
     let result: Promise<ISixelImage|null> | undefined;
     if (success && this.worker) {
       result = new Promise<ISixelImage|null>(resolve => this._setSixelResolver(resolve));
     }
-    this.worker?.postMessage({
-      type: 'SIXEL_END',
-      payload: success
-    } as ISixelEndMsg);
+    this.worker?.postMessage({type: 'SIXEL_END', payload: success});
     return result;
   }
 }
