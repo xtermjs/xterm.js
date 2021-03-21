@@ -8,6 +8,10 @@ import { Terminal, ITerminalAddon } from 'xterm';
 declare module 'xterm-addon-image' {
   export interface IImageAddonOptions {
     /**
+     * Path to the worker file.
+     */
+    workerPath?: string;
+    /**
      * Leave cursor to right of image.
      * This has no effect, if an image covers all cells to the right.
      * Same as DECSET 8452, default is false.
@@ -47,6 +51,8 @@ declare module 'xterm-addon-image' {
      */
     // storage limit in MBs (default 100 MB)
     storageLimit: number;
+    // whether to show a placeholder for evicted images
+    showPlaceholder?: boolean;
   }
 
   export class ImageAddon implements ITerminalAddon {

@@ -1,9 +1,9 @@
 ## xterm-addon-image
 
-An addon providing image support for xterm.js. Currently it only supports the SIXEL format
-(iTerm2 image protocol planned).
+Image support for xterm.js.
 
 **Note:** This addon is still alpha, expect all sorts of weird errors at the current stage.
+It only supports SIXEL at the moment.
 
 
 ### Install
@@ -32,6 +32,9 @@ terminal.loadAddon(imageAddon);
 // when done
 imageAddon.dispose();
 ```
+
+**Note:** The image decoding is done with a worker internally, therefore the addon will only work
+if you expose the worker file as well (distributed under `lib/xterm-addon-image-worker.js`).
 
 
 ### Operation Modes
@@ -72,12 +75,26 @@ imageAddon.dispose();
     Keep the cursor on the next line at the beginning (default). Same as the constructor option `{cursorBelow: false}`.
 
 - **SIXEL Palette Handling**
-  By default the addon limits the palette size to 256 registers (as demanded by the DEC specification)
-  and can be increased up to 65536.
+  By default the addon limits the palette size to 256 registers (as demanded by the DEC specification).
+  The limit can be increased to a maximum of 65536 registers (via `sixelPaletteLimit`).
 
-  By default SIXEL images are initialized with their own palette derived from the default palette
-  (default `{sixelDefaultPalette: 'ANSI256'}`). This can be changed to a shared palette with
-  `DECRST 1070` (binary: `\x1b [ ? 1070 l`) or the constructor option `{sixelPrivatePalette: true}`.
-  Note that a shared palette is only applied during the image construction once, a later change
-  to the shared palette does not re-color older SIXEL images.
-  
+  SIXEL images are initialized with their own private palette derived from the default palette
+  (default `{sixelDefaultPalette: 'ANSI256'}`). Support for non-private palette is currently broken
+  and falls back to private palette mode.
+
+
+### Storage and Drawing Settings
+
+The internal storage holds images up to `storageLimit` (in MB, calculated as 4-channel RBGA unpacked).
+Once hit images get evicted by FIFO. Furthermore images on the alternate buffer will always
+be erased on buffer changes.
+
+The addon exposes two properties to interact with the storage limits at runtime:
+- `storageLimit`  
+  Change the value to your needs at runtime. This is especially useful, if you have multiple terminal
+  instances running, that all add to one upper memory limit.
+- `storageUsage`  
+  Inspect the current memory usage of the image storage.
+
+By default the addon will show a placeholder pattern for evicted images that are still part
+of the terminal (e.g. in the scrollback). The pattern can be deactivated by toggling `showPlaceholder`.
