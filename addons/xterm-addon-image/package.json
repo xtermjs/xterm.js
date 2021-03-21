@@ -16,12 +16,11 @@
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
-    "xterm": "^4.0.0"
+    "xterm": "^4.11.0"
   },
-  "dependencies": {
-    "sixel": "^0.13.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "png-ts": "^0.0.3"
+    "png-ts": "^0.0.3",
+    "sixel": "^0.14.0"
   }
 }

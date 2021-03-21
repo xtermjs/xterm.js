@@ -1,8 +1,6 @@
 /**
  * Copyright (c) 2020 The xterm.js authors. All rights reserved.
  * @license MIT
- *
- * Implements image support for the terminal.
  */
 
 import { Terminal, ITerminalAddon, IDisposable } from 'xterm';

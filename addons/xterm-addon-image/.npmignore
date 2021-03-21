@@ -3,3 +3,9 @@
 tsconfig.json
 .yarnrc
 webpack.config.js
+
+fixture
+src
+src-worker
+test
+out-test
