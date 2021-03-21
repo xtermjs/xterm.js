@@ -24,7 +24,11 @@ export class SixelHandler implements IDcsHandler {
 
   // called on new SIXEL DCS sequence
   public hook(params: IParams): void {
-    this._aborted = false;
+    // NOOP fall-through for all action if worker is in non-working condition
+    this._aborted = this._workerManager.failed;
+    if (this._aborted) {
+      return;
+    }
     this._fillColor = params.params[1] === 1 ? 0 : extractActiveBg(
       this._coreTerminal._core._inputHandler._curAttrData,
       this._coreTerminal._core._colorManager.colors);
@@ -34,7 +38,7 @@ export class SixelHandler implements IDcsHandler {
 
   // called for any SIXEL data chunk
   public put(data: Uint32Array, start: number, end: number): void {
-    if (this._aborted) {
+    if (this._aborted || this._workerManager.failed) {
       return;
     }
     this._size += end - start;
@@ -44,6 +48,15 @@ export class SixelHandler implements IDcsHandler {
       this._aborted = true;
       return;
     }
+    /**
+     * copy data over to worker:
+     * - narrow data from uint32 to uint8 (high codepoints are not valid for SIXELs)
+     * - push multiple buffer chunks until all data got written
+     *
+     * We cannot limit data flow at the PUT stage as async pausing is
+     * only implemented for UNHOOK in the parser. To avoid OOM from message flooding
+     * we have `sixelSizeLimit` above in place.
+     */
     let p = start;
     while (p < end) {
       const chunk = new Uint8Array(this._workerManager.getChunk());
@@ -54,9 +67,20 @@ export class SixelHandler implements IDcsHandler {
     }
   }
 
-  // called on finalizing the SIXEL DCS sequence
+  /**
+   * Called on finalizing the SIXEL DCS sequence.
+   * Some notes on control flow and return values:
+   * - worker is in non-working condition: NOOP with sync return
+   * - `sixelSizeLimit` exceeded: NOOP with sync return
+   * - `sixelEnd(false)`: NOOP with sync return
+   * - `sixelEnd(true)`:
+   *    async path waiting for `Promise<ISixelImage | null>`
+   *    from worker depending on decoding success,
+   *    a valid image definition will be added
+   *    to the terminal before finally returning
+   */
   public unhook(success: boolean): boolean | Promise<boolean> {
-    if (this._aborted) {
+    if (this._aborted || this._workerManager.failed) {
       return true;
     }
     const imgData = this._workerManager.sixelEnd(success);
@@ -65,6 +89,7 @@ export class SixelHandler implements IDcsHandler {
       if (!data) {
         return true;
       }
+      // FIXME: how to deal with cell adjustments here?
       const canvas = this._storage.getCellAdjustedCanvas(data.width, data.height);
       const ctx = canvas.getContext('2d');
       if (ctx) {
@@ -90,6 +115,8 @@ export class SixelHandler implements IDcsHandler {
  * (quite hacky for now)
  */
 
+// get currently active background color from terminal
+// also respect INVERSE setting
 function extractActiveBg(
   attr: ICoreTerminal['_core']['_inputHandler']['_curAttrData'],
   colors: ICoreTerminal['_core']['_colorManager']['colors']

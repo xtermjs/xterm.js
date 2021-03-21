@@ -16,6 +16,10 @@ interface IImageWorker extends Worker {
 }
 
 
+// pool cleanup interval in ms
+const CLEANUP_INTERVAL = 20000;
+
+
 /**
  * Manager to encapsulate certain worker aspects:
  * - lazy worker loading
@@ -65,8 +69,16 @@ export class WorkerManager implements IDisposable {
   public dispose(): void {
     this._worker?.terminate();
     this._worker = undefined;
-    this._memPool.length = 0;
     this._setSixelResolver();
+    this.flushPool();
+    if (this._poolChecker) {
+      clearInterval(this._poolChecker);
+      this._poolChecker = undefined;
+    }
+  }
+
+  public get failed(): boolean {
+    return this._failedToLoad;
   }
 
   public get worker(): IImageWorker | undefined {
@@ -87,12 +99,12 @@ export class WorkerManager implements IDisposable {
   public storeChunk(chunk: ArrayBuffer): void {
     if (!this._poolChecker) {
       this._poolChecker = setInterval(() => {
-        if (Date.now() - this._lastActive > 20000) {
+        if (Date.now() - this._lastActive > CLEANUP_INTERVAL) {
           this.flushPool();
           clearInterval(this._poolChecker);
           this._poolChecker = undefined;
         }
-      }, 20000);
+      }, CLEANUP_INTERVAL);
     }
     if (this._memPool.length < this.maxPoolSize) {
       this._memPool.push(chunk);

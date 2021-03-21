@@ -26,21 +26,24 @@ function messageHandler(event: MessageEvent): void {
       postMessage({type: 'CHUNK_TRANSFER', payload: data.payload.buffer}, [data.payload.buffer]);
       break;
     case 'SIXEL_END':
-      if (!decoder || !decoder.width || !decoder.height) break;
       const success = data.payload;
       if (success) {
-        const width = decoder.width;
-        const height = decoder.height;
-        const result = new Uint8ClampedArray(width * height * 4);
-        decoder.toPixelData(result, width, height);
-        postMessage({
-          type: 'SIXEL_IMAGE',
-          payload: {
-            buffer: result.buffer,
-            width,
-            height
-          }
-        }, [result.buffer]);
+        if (!decoder || !decoder.width || !decoder.height) {
+          postMessage({type: 'SIXEL_IMAGE', payload: null});
+        } else {
+          const width = decoder.width;
+          const height = decoder.height;
+          const result = new Uint8ClampedArray(width * height * 4);
+          decoder.toPixelData(result, width, height);
+          postMessage({
+            type: 'SIXEL_IMAGE',
+            payload: {
+              buffer: result.buffer,
+              width,
+              height
+            }
+          }, [result.buffer]);
+        }
       }
       decoder = undefined;
       break;

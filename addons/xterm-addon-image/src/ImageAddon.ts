@@ -125,7 +125,6 @@ export class ImageAddon implements ITerminalAddon {
     );
 
     // SIXEL handler
-    // TODO: report SIXEL support in DA
     if (this._opts.sixelSupport) {
       this._disposeLater(
         (<ICoreTerminal>terminal)._core._inputHandler._parser.registerDcsHandler(
@@ -244,7 +243,7 @@ export class ImageAddon implements ITerminalAddon {
     return false;
   }
 
-  // temporary fix: overload DA to return something more appropriate
+  // overload DA to return something more appropriate
   private _da1(params: (number | number[])[]): boolean {
     if (params[0] > 0) {
       return true;
@@ -254,8 +253,11 @@ export class ImageAddon implements ITerminalAddon {
     // 4 - SIXEL support
     // 9 - charsets
     // 22 - ANSI colors
-    this._report(`\x1b[?62;4;9;22c`);
-    return true;
+    if (this._opts.sixelSupport && !this._workerManager.failed) {
+      this._report(`\x1b[?62;4;9;22c`);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -273,6 +275,11 @@ export class ImageAddon implements ITerminalAddon {
    */
   private _xtermGraphicsAttributes(params: (number | number[])[]): boolean {
     if (params.length < 2) {
+      return true;
+    }
+    if (this._workerManager.failed) {
+      // on worker error report graphics caps as not supported
+      this._report(`\x1b[?${params[0]};${GaStatus.ITEM_ERROR}S`);
       return true;
     }
     if (params[0] === GaItem.COLORS) {

@@ -38,7 +38,7 @@ export interface ISixelImage {
 }
 export interface ISixelImageMsg {
   type: 'SIXEL_IMAGE';
-  payload: ISixelImage;
+  payload: ISixelImage | null;
 }
 export interface IChunkTransferMsg {
   type: 'CHUNK_TRANSFER';
