@@ -7,7 +7,7 @@ import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptionalOptions, IImageAddonOptions, IImageSpec } from './Types';
+import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
 
 // to run testfiles:
@@ -22,6 +22,20 @@ import { WorkerManager } from './WorkerManager';
 // cd ../mpv-build/
 // mpv/build/mpv /home/jerch/Downloads/sintel.webm --vo=sixel --vo-sixel-width=800 --vo-sixel-height=600 \
 // --profile=sw-fast --vo-sixel-fixedpalette=no --vo-sixel-reqcolors=256 --really-quiet
+
+/**
+ * TODOs / next steps:
+ * - lower private member access + better type checks
+ * - opt-in for FastSixelDecoder
+ * - expose API to access image data
+ * - solve cell alignment issue
+ * - allow overprinting with composition
+ * - investigate in worker based drawing (OffscreenCanvas, createImageBitmap)
+ *
+ * Longterm:
+ * - iTerm2 protocol support
+ * - a better image protocol
+ */
 
 
 // default values of addon ctor options
@@ -129,34 +143,6 @@ export class ImageAddon implements ITerminalAddon {
           { final: 'q' }, new SixelHandler(this._opts, this._storage, <ICoreTerminal>terminal, this._workerManager))
       );
     }
-
-    // playground: hook to export image data somehow
-    // TODO: make this configurable via API
-    const callback: any = (data: Blob | null) => window.open(URL.createObjectURL(data), '_blank');
-
-    setTimeout(() =>
-      terminal.element?.addEventListener('click', (ev: MouseEvent) => {
-        if (!ev.ctrlKey) return;
-        const pos = (this._terminal as any)._core._mouseService!.getRawByteCoords(
-          ev,
-          this._terminal!._core.screenElement!,
-          terminal.cols,
-          terminal.rows
-        );
-        const buffer = this._terminal!._core.buffer;
-        const x = pos.x - 33;
-        const y = pos.y - 33;
-        const line = buffer.lines.get(y + buffer.ydisp);
-        if (!line) return;
-        const HAS_EXTENDED = 0x10000000;
-        if (line.getBg(x) & HAS_EXTENDED) {
-          const e: IExtendedAttrsImage = line._extendedAttrs[x];
-          if (!e || !e.imageId) return;
-          const imgData = ((this._storage as any)._images as Map<number, IImageSpec>).get(e.imageId);
-          if (imgData && imgData.orig) (imgData.orig as HTMLCanvasElement).toBlob(callback);
-        }
-      }),
-    100);
   }
 
   // Note: storageLimit is skipped here to not intoduce a surprising side effect.
