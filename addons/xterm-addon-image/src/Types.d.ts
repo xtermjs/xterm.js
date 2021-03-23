@@ -6,6 +6,20 @@
 import { RGBA8888 } from 'sixel/lib/Types';
 import { IDisposable, IMarker, Terminal } from 'xterm';
 
+// private imports from base repo we build against
+import { AttributeData } from 'common/buffer/AttributeData';
+import { IParams, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { IBuffer } from 'common/buffer/Types';
+import { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
+import { BgFlags } from 'common/buffer/Constants';
+import { IOptionsService, IDirtyRowService, ICoreService } from 'common/services/Services';
+import { IColorManager } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderService } from 'browser/services/Services';
+
+// export some privates for local usage
+export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService };
+
 /**
  * Plugin ctor options.
  */
@@ -60,138 +74,55 @@ export type IImageAddonOptions = {
 
 
 /**
- * Private interfaces.
- * Note: Some of the interfaces mimick corresponding private interfaces
- * in the xterm codebase, thus ensure to stay in line with those.
+ * Stub into private interfaces.
+ * This should be kept in line with common libs.
+ * Any change made here should be replayed in the accessors test case to
+ * have a somewhat reliable testing against code changes in the core repo.
  */
 
-// stub symbols needed for private DCS handler support
-
-type ParamsArray = (number | number[])[];
-
-export interface IParams {
-  maxLength: number;
-  maxSubParamsLength: number;
-  params: Int32Array;
-  length: number;
-  clone(): IParams;
-  toArray(): ParamsArray;
-  reset(): void;
-  addParam(value: number): void;
-  addSubParam(value: number): void;
-  hasSubParams(idx: number): boolean;
-  getSubParams(idx: number): Int32Array | null;
-  getSubParamsAll(): {[idx: number]: Int32Array};
+// overloaded IExtendedAttrs to hold image refs
+export interface IExtendedAttrsImage extends IExtendedAttrs {
+  imageId: number;
+  tileId: number;
 }
 
-export interface IDcsHandler {
-  hook(params: IParams): void;
-  put(data: Uint32Array, start: number, end: number): void;
-  unhook(success: boolean): boolean | Promise<boolean>;
-}
-
-export interface IOscHandler {
-  start(): void;
-  put(data: Uint32Array, start: number, end: number): void;
-  end(success: boolean): boolean | Promise<boolean>;
-}
-
-// stub needed symbols from parser
-
-interface IFunctionIdentifier {
-  prefix?: string;
-  intermediates?: string;
-  final: string;
-}
-
-export interface ITerminalParser {
-  registerDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable;
-  registerOscHandler(id: number, handler: IOscHandler): IDisposable;
-}
-
-// stub into xterm core terminal
-// This should be kept in line with common libs.
-// Any change made here should be replayed in the accessors test case to
-// have a somewhat reliable testing against code changes in the core repo.
 /* eslint-disable */
+export interface IBufferLineExt extends IBufferLine {
+  _extendedAttrs: {[index: number]: IExtendedAttrsImage};
+  _data: Uint32Array;
+}
+
+interface IInputHandlerExt extends IInputHandler {
+  _parser: IEscapeSequenceParser;
+  _curAttrData: AttributeData;
+  onRequestReset(handler: () => void): IDisposable;
+}
+
+// we need several private services from core terminal
+// thus stub them here (access is tested by test case)
 export interface ICoreTerminal extends Terminal {
   _core: {
-    buffer: {
-      x: number;
-      y: number;
-      ybase: number;
-      ydisp: number;
-      lines: {
-        get(id: number): {
-          getBg(id: number): number;
-          _extendedAttrs: IExtendedAttrsImage[];
-          _data: Uint32Array;
-        } | undefined;
-      };
-    };
+    buffer: IBuffer;
     cols: number;
     rows: number;
     screenElement: HTMLElement;
-    optionsService: {
-      onOptionChange(handler: (s: string) => void): IDisposable;
-    };
-    _dirtyRowService: {
-      markAllDirty(): void;
-    };
     open(parent: HTMLElement): void;
+
+    // needed sub parts
+    optionsService: IOptionsService;
+    _dirtyRowService: IDirtyRowService;
+    _coreService: ICoreService;
+    _colorManager: IColorManager;
+    _inputHandler: IInputHandlerExt;
     _renderService: IRenderService;
-    _inputHandler: {
-      _parser: ITerminalParser;
-      _curAttrData: {
-        isInverse(): boolean;
-        isFgDefault(): boolean;
-        isFgRGB(): boolean;
-        getFgColor(): number;
-        isBgDefault(): boolean;
-        isBgRGB(): boolean;
-        getBgColor(): number;
-      };
-      lineFeed(): void;
-      onRequestReset(handler: () => void): IDisposable;
-    };
-    _coreService: {
-      triggerDataEvent(s: string): void;
-    };
-    _colorManager: {
-      colors: {
-        ansi: {
-          [key: number]: {
-            rgba: number;
-          };
-        };
-        foreground: {
-          rgba: number;
-        };
-        background: {
-          rgba: number;
-        };
-      };
-    };
   };
 }
 /* eslint-enable */
 
-// stub dimensions
-export interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
-}
 
+/**
+ * Some storage definitions.
+ */
 export interface ICellSize {
   width: number;
   height: number;
@@ -217,7 +148,7 @@ export interface IStorageOptions {
   right: boolean;
   // whether cursor is moved below the first row or to beginning
   below: boolean;
-  // whether image contains alpha parts (to be respected by furture overdrawing composition)
+  // whether image contains alpha parts (to be respected by future overdrawing composition)
   alpha: boolean;
   // fill color to be used to align to full cell coverage
   fill: RGBA8888;
@@ -236,52 +167,4 @@ export const enum Align {
   BOTTOM_LEFT = 6,
   LEFT = 7,
   CENTER = 8
-}
-
-export interface IExtendedAttrsImage {
-  underlineStyle: number;
-  underlineColor: number;
-  imageId: number;
-  tileId: number;
-  clone(): IExtendedAttrsImage;
-  isEmpty(): boolean;
-}
-
-export interface IRenderService {
-  setRenderer(renderer: any): void;
-  dimensions: IRenderDimensions;
-  refreshRows(start: number, end: number): void;
-}
-
-
-/**
- * copied over from node-imgsize
- */
-export type UintTypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray;
-
-/**
- * Supported image types.
- * INVALID is set if the data does not pass the header checks,
- * either being to short or containing invalid bytes.
- */
-export const enum ImageType {
-  JPEG = 0,
-  PNG = 1,
-  GIF = 2,
-  INVALID = 255
-}
-
-/**
- * Returned by ImageSize functions.
- * If the dimensions could not be determined height/width are set to -1.
- * If the header checks fail type is set to INVALID.
- * PNG and GIF have a fixed sized header thus -1 in width/height means that the data
- * did not pass the header checks.
- * JPEG might pass the header checks (type set to JPEG) and still report no width/height,
- * if the SOFx frame was not found within the provided data.
- */
-export interface ISize {
-  width: number;
-  height: number;
-  type: ImageType;
 }

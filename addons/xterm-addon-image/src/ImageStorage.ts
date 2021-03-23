@@ -4,11 +4,11 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IStorageOptions } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IStorageOptions, IBufferLineExt, BgFlags } from './Types';
 
-
-// some constants for bufferline
-const HAS_EXTENDED = 0x10000000;
+// some constants for bufferline access
+const HAS_EXTENDED = BgFlags.HAS_EXTENDED;
+// FIXME: currently not exported from base repo, thus redeclared here
 const CELL_SIZE = 3;
 const enum Cell {
   CONTENT = 0,
@@ -310,11 +310,11 @@ export class ImageStorage implements IDisposable {
 
     // walk all cells in viewport and draw tiles found
     for (let row = start; row <= end; ++row) {
-      const line = buffer.lines.get(row + buffer.ydisp);
+      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
       if (!line) return;
       for (let col = 0; col < cols; ++col) {
         if (line.getBg(col) & HAS_EXTENDED) {
-          let e: ExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
+          let e: IExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
           const imageId = e.imageId;
           const imgSpec = this._images.get(imageId);
           if (e.tileId !== -1) {
@@ -397,7 +397,7 @@ export class ImageStorage implements IDisposable {
     // re-count tiles on whole buffer
     const buffer = this._terminal._core.buffer;
     for (let y = 0; y < this._terminal.rows; ++y) {
-      const line = buffer.lines.get(y);
+      const line = buffer.lines.get(y) as IBufferLineExt;
       if (!line) continue;
       for (let x = 0; x < this._terminal.cols; ++x) {
         if (line._data[x * CELL_SIZE + Cell.BG] & HAS_EXTENDED) {

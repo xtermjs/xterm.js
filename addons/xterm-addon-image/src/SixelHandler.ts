@@ -4,7 +4,7 @@
  */
 
 import { ImageStorage } from './ImageStorage';
-import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, Align } from './Types';
+import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, Align, AttributeData } from './Types';
 import { toRGBA8888, BIG_ENDIAN } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
 import { WorkerManager } from './WorkerManager';
@@ -117,10 +117,7 @@ export class SixelHandler implements IDcsHandler {
 
 // get currently active background color from terminal
 // also respect INVERSE setting
-function extractActiveBg(
-  attr: ICoreTerminal['_core']['_inputHandler']['_curAttrData'],
-  colors: ICoreTerminal['_core']['_colorManager']['colors']
-): RGBA8888 {
+function extractActiveBg(attr: AttributeData, colors: ICoreTerminal['_core']['_colorManager']['colors']): RGBA8888 {
   let bg = 0;
   if (attr.isInverse()) {
     if (attr.isFgDefault()) {
@@ -135,7 +132,7 @@ function extractActiveBg(
     if (attr.isBgDefault()) {
       bg = convertLe(colors.background.rgba);
     } else if (attr.isBgRGB()) {
-      const t = <[number, number, number]>(attr as any).constructor.toColorRGB(attr.getBgColor());
+      const t = (attr.constructor as typeof AttributeData).toColorRGB(attr.getBgColor());
       bg = toRGBA8888(...t);
     } else {
       bg = convertLe(colors.ansi[attr.getBgColor()].rgba);
