@@ -30,11 +30,19 @@ import { WorkerManager } from './WorkerManager';
  * - expose API to access image data
  * - solve cell alignment issue
  * - allow overprinting with composition
+ * - continue cut images to the right on resize
+ * - find some working serialize solution (re-encode?)
  * - investigate in worker based drawing (OffscreenCanvas, createImageBitmap)
+ * - think about additional library like public API endpoints:
+ *    - get image(canvas|blob) under pointer full | line | tile
+ *    - get images in buffer range with cell notion (right expanding?)
+ *    - possible storage events: onAdded(imageSpec), onBeforeEvicted(imageSpec)
+ *    - query addon settings
  *
  * Longterm:
  * - iTerm2 protocol support
  * - a better image protocol
+ * - nodejs support (drawing and export shims)
  */
 
 
