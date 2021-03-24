@@ -9,9 +9,8 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ]
+      "browser/*": [ "../../../src/browser/*" ],
+      "common/*": [ "../../../src/common/*" ]
     },
     "types": [
       "../../../node_modules/@types/mocha",
@@ -24,8 +23,7 @@
     "../../../typings/xterm.d.ts"
   ],
   "references": [
-    {
-      "path": "../../../src/common"
-    }
+    { "path": "../../../src/browser" },
+    { "path": "../../../src/common" }
   ]
 }
