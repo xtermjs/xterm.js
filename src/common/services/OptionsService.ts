@@ -53,7 +53,8 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
-  cancelEvents: false
+  cancelEvents: false,
+  selectionStyle: 'plain'
 });
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];

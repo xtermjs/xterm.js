@@ -13,6 +13,7 @@ interface ISelectionState {
   end?: [number, number];
   columnSelectMode?: boolean;
   ydisp?: number;
+  selectionStyle?: string;
 }
 
 export class SelectionRenderLayer extends BaseRenderLayer {
@@ -35,7 +36,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       start: undefined,
       end: undefined,
       columnSelectMode: undefined,
-      ydisp: undefined
+      ydisp: undefined,
+      selectionStyle: undefined
     };
   }
 
@@ -53,8 +55,10 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    const selectionStyle: string = this._optionsService.getOption('selectionStyle') || 'plain';
+
     // Selection has not changed
-    if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
+    if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp, selectionStyle)) {
       return;
     }
 
@@ -80,6 +84,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.fillStyle = this._colors.selectionTransparent.css;
+    this._ctx.strokeStyle = this._colors.cursor.css;
 
     if (columnSelectMode) {
       const startCol = start[0];
@@ -88,9 +93,23 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       this._fillCells(startCol, viewportCappedStartRow, width, height);
     } else {
       // Draw first row
-      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const startRowEndCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
-      this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
+      let startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      let startRowEndCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
+      switch (selectionStyle) {
+        case 'mark-start':
+          this._strokeRectAtCell(startCol, viewportCappedStartRow, 1, 1);
+          startCol += 1;
+          break;
+        case 'mark-end':
+          if (viewportCappedStartRow === viewportCappedEndRow) {
+            this._strokeRectAtCell(startRowEndCol - 1, viewportCappedStartRow, 1, 1);
+            startRowEndCol -= 1;
+          }
+          break;
+      }
+      if (startRowEndCol - startCol > 0) {
+        this._fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
+      }
 
       // Draw middle rows
       const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
@@ -99,8 +118,14 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
         // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
-        this._fillCells(0, viewportCappedEndRow, endCol, 1);
+        let endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
+        if (selectionStyle === 'mark-end') {
+          this._strokeRectAtCell(endCol - 1, viewportCappedEndRow, 1, 1);
+          endCol -= 1;
+        }
+        if (endCol > 0) {
+          this._fillCells(0, viewportCappedEndRow, endCol, 1);
+        }
       }
     }
 
@@ -109,13 +134,15 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
     this._state.ydisp = this._bufferService.buffer.ydisp;
+    this._state.selectionStyle = selectionStyle;
   }
 
-  private _didStateChange(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean, ydisp: number): boolean {
+  private _didStateChange(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean, ydisp: number, selectionStyle: string): boolean {
     return !this._areCoordinatesEqual(start, this._state.start) ||
       !this._areCoordinatesEqual(end, this._state.end) ||
       columnSelectMode !== this._state.columnSelectMode ||
-      ydisp !== this._state.ydisp;
+      ydisp !== this._state.ydisp ||
+      selectionStyle !== this._state.selectionStyle;
   }
 
   private _areCoordinatesEqual(coord1: [number, number] | undefined, coord2: [number, number] | undefined): boolean {

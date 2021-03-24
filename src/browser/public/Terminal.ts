@@ -174,7 +174,7 @@ export class Terminal implements ITerminalApi {
   public paste(data: string): void {
     this._core.paste(data);
   }
-  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'selectionStyle' | 'rendererType' | 'termName' | 'wordSeparator'): string;
   public getOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell'): boolean;
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
   public getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
@@ -191,6 +191,7 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
   public setOption(key: 'theme', value: ITheme): void;
   public setOption(key: 'cols' | 'rows', value: number): void;
+  public setOption(key: 'selectionStyle', value: 'plain' | 'mark-start' | 'mark-end'): void;
   public setOption(key: string, value: any): void;
   public setOption(key: any, value: any): void {
     this._core.optionsService.setOption(key, value);

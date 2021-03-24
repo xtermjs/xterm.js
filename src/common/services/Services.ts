@@ -258,6 +258,7 @@ export interface ITerminalOptions {
   screenReaderMode: boolean;
   scrollback: number;
   scrollSensitivity: number;
+  selectionStyle: 'plain' | 'mark-start' | 'mark-end';
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;

@@ -226,6 +226,12 @@ declare module 'xterm' {
     scrollSensitivity?: number;
 
     /**
+     * Styling for the text selection shade - plain shading, 
+     *   or add a marker at the start/end of the shade
+     */
+    selectionStyle?: 'plain' | 'mark-start' | 'mark-end';
+
+    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;
@@ -946,7 +952,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'selectionStyle' | 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -1022,6 +1028,12 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: 'cols' | 'rows', value: number): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'selectionStyle', value: 'plain' | 'mark-start' | 'mark-end'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
