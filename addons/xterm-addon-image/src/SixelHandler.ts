@@ -4,10 +4,11 @@
  */
 
 import { ImageStorage } from './ImageStorage';
-import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, AttributeData } from './Types';
+import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, AttributeData, IColorManager } from './Types';
 import { toRGBA8888, BIG_ENDIAN } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
 import { WorkerManager } from './WorkerManager';
+import { ImageRenderer } from './ImageRenderer';
 
 
 export class SixelHandler implements IDcsHandler {
@@ -24,7 +25,7 @@ export class SixelHandler implements IDcsHandler {
 
   // called on new SIXEL DCS sequence
   public hook(params: IParams): void {
-    // NOOP fall-through for all action if worker is in non-working condition
+    // NOOP fall-through for all actions if worker is in non-working condition
     this._aborted = this._workerManager.failed;
     if (this._aborted) {
       return;
@@ -83,18 +84,20 @@ export class SixelHandler implements IDcsHandler {
     if (this._aborted || this._workerManager.failed) {
       return true;
     }
-    const imgData = this._workerManager.sixelEnd(success);
-    if (!imgData) return true;
-    return imgData.then(data => {
+    const imgPromise = this._workerManager.sixelEnd(success);
+    if (!imgPromise) {
+      return true;
+    }
+
+    return imgPromise.then(data => {
       if (!data) {
         return true;
       }
-      // FIXME: how to deal with cell adjustments here?
-      const canvas = this._storage.getCellAdjustedCanvas(data.width, data.height);
+      const canvas = ImageRenderer.createCanvas(data.width, data.height);
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        const imageData = new ImageData(new Uint8ClampedArray(data.buffer), data.width, data.height);
-        ctx.putImageData(imageData, 0, 0);
+        const imageData = ImageRenderer.createImageData(ctx, data.width, data.height, data.buffer);
+        ctx.putImageData(imageData, 0, 0);  // still taking pretty long for big images
         this._storage.addImage(canvas);
       }
       return true;
@@ -110,13 +113,13 @@ export class SixelHandler implements IDcsHandler {
 
 // get currently active background color from terminal
 // also respect INVERSE setting
-function extractActiveBg(attr: AttributeData, colors: ICoreTerminal['_core']['_colorManager']['colors']): RGBA8888 {
+function extractActiveBg(attr: AttributeData, colors: IColorManager['colors']): RGBA8888 {
   let bg = 0;
   if (attr.isInverse()) {
     if (attr.isFgDefault()) {
       bg = convertLe(colors.foreground.rgba);
     } else if (attr.isFgRGB()) {
-      const t = <[number, number, number]>(attr as any).constructor.toColorRGB(attr.getFgColor());
+      const t = (attr.constructor as typeof AttributeData).toColorRGB(attr.getFgColor());
       bg = toRGBA8888(...t);
     } else {
       bg = convertLe(colors.ansi[attr.getFgColor()].rgba);

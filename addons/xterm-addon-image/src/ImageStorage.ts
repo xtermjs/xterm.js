@@ -6,8 +6,7 @@ import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags } from './Types';
 
-// some constants for bufferline access
-const HAS_EXTENDED = BgFlags.HAS_EXTENDED;
+
 // FIXME: currently not exported from base repo, thus redeclared here
 const CELL_SIZE = 3;
 const enum Cell {
@@ -126,14 +125,6 @@ export class ImageStorage implements IDisposable {
     this._hasDrawn = true;
   }
 
-  public getCellAdjustedCanvas(width: number, height: number): HTMLCanvasElement {
-    // FIXME: needs cellSize fallback
-    return ImageRenderer.createCanvas(
-      Math.ceil(width / this._renderer.cellSize.width) * this._renderer.cellSize.width,
-      Math.ceil(height / this._renderer.cellSize.height) * this._renderer.cellSize.height
-    );
-  }
-
   /**
    * Method to add an image to the storage.
    */
@@ -169,7 +160,7 @@ export class ImageStorage implements IDisposable {
       const line = buffer.lines.get(buffer.y + buffer.ybase);
       for (let col = 0; col < cols; ++col) {
         if (offset + col >= termCols) break;
-        this._writeToCell(line, offset + col, imageId, row * cols + col);
+        this._writeToCell(line as IBufferLineExt, offset + col, imageId, row * cols + col);
         tileCount++;
       }
       if (this._opts.sixelScrolling) {
@@ -225,24 +216,6 @@ export class ImageStorage implements IDisposable {
     }
 
     // create storage entry
-    // FIXME: needs cellSize fallback
-    // const imgSpec: IImageSpec = {
-    //   orig: img,
-    //   origCellSize: this._renderer.cellSize,
-    //   actual: img,
-    //   actualCellSize: this._renderer.cellSize,
-    //   bitmap: undefined,
-    //   marker: endMarker || undefined,
-    //   tileCount,
-    //   bufferType: this._terminal.buffer.active.type
-    // };
-
-    // finally add the image and trigger bitmap creation
-    // this._images.set(imageId, imgSpec);
-    // if (createBitmap) {
-    //   ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
-    // }
-
     const imgSpec: IImageSpec = {
       orig: img,
       origCellSize: this._renderer.cellSize,
@@ -263,8 +236,7 @@ export class ImageStorage implements IDisposable {
    * canvas updates.
    */
   public render(range: { start: number, end: number }): void {
-    // exit early if dont have any images to test for
-    // TODO: Should this respect placeholder state && lastId != 0?
+    // exit early if we dont have any images to test for
     if (!this._images.size || !this._renderer.canvas) {
       if (this._hasDrawn) {
         this._renderer.clearAll();
@@ -278,16 +250,17 @@ export class ImageStorage implements IDisposable {
     const cols = this._terminal._core.cols;
     this._hasDrawn = false;
 
-    // rescale if needed and clear drawing area
-    this._renderer.rescaleCanvas();
+    // clear drawing area
     this._renderer.clearLines(start, end);
+    // rescale if needed
+    this._renderer.rescaleCanvas();
 
     // walk all cells in viewport and draw tiles found
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
       if (!line) return;
       for (let col = 0; col < cols; ++col) {
-        if (line.getBg(col) & HAS_EXTENDED) {
+        if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
           let e: IExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
           const imageId = e.imageId;
           const imgSpec = this._images.get(imageId);
@@ -303,7 +276,7 @@ export class ImageStorage implements IDisposable {
              */
             while (
               ++col < cols
-              && (line.getBg(col) & HAS_EXTENDED)
+              && (line.getBg(col) & BgFlags.HAS_EXTENDED)
               && (e = line._extendedAttrs[col] || EMPTY_ATTRS)
               && (e.imageId === imageId)
               && (e.tileId === startTile + count)
@@ -343,21 +316,31 @@ export class ImageStorage implements IDisposable {
     return used - current;
   }
 
-  private _writeToCell(line: any, x: number, imageId: number, tileId: number): void {
-    let old: ExtendedAttrsImage | undefined = undefined;
-    const eAttr = new ExtendedAttrsImage(0, -1, imageId, tileId);
-    if (line._data[x * CELL_SIZE + Cell.BG] & HAS_EXTENDED) {
-      old = line._extendedAttrs[x];
+  private _writeToCell(line: IBufferLineExt, x: number, imageId: number, tileId: number): void {
+    if (line._data[x * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+      const old = line._extendedAttrs[x];
       if (old) {
-        eAttr.underlineStyle = old.underlineStyle;
-        eAttr.underlineColor = old.underlineColor;
-        const oldSpec = this._images.get(old.imageId);
-        if (oldSpec) oldSpec.tileCount--;
+        if (old.imageId !== undefined) {
+          // found an old ExtendedAttrsImage, since we know that
+          // they are always isolated instances (single cell usage),
+          // we can re-use it and just update their id entries
+          const oldSpec = this._images.get(old.imageId);
+          if (oldSpec) {
+            // early eviction for in-viewport overwrites
+            oldSpec.tileCount--;
+          }
+          old.imageId = imageId;
+          old.tileId = tileId;
+          return;
+        }
+        // found a plain ExtendedAttrs instance, clone it to new entry
+        line._extendedAttrs[x] = new ExtendedAttrsImage(old.underlineStyle, old.underlineColor, imageId, tileId);
+        return;
       }
-    } else {
-      line._data[x * CELL_SIZE + Cell.BG] |= HAS_EXTENDED;
     }
-    line._extendedAttrs[x] = eAttr;
+    // fall-through: always create new ExtendedAttrsImage entry
+    line._data[x * CELL_SIZE + Cell.BG] |= BgFlags.HAS_EXTENDED;
+    line._extendedAttrs[x] = new ExtendedAttrsImage(0, -1, imageId, tileId);
   }
 
   private _evictOnAlternate(): void {
@@ -371,11 +354,18 @@ export class ImageStorage implements IDisposable {
     const buffer = this._terminal._core.buffer;
     for (let y = 0; y < this._terminal.rows; ++y) {
       const line = buffer.lines.get(y) as IBufferLineExt;
-      if (!line) continue;
+      if (!line) {
+        continue;
+      }
       for (let x = 0; x < this._terminal.cols; ++x) {
-        if (line._data[x * CELL_SIZE + Cell.BG] & HAS_EXTENDED) {
-          const spec = this._images.get(line._extendedAttrs[x]?.imageId);
-          if (spec) spec.tileCount++;
+        if (line._data[x * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+          const imgId = line._extendedAttrs[x]?.imageId;
+          if (imgId) {
+            const spec = this._images.get(imgId);
+            if (spec) {
+              spec.tileCount++;
+            }
+          }
         }
       }
     }

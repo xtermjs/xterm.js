@@ -18,7 +18,7 @@ import { IRenderDimensions } from 'browser/renderer/Types';
 import { IRenderService } from 'browser/services/Services';
 
 // export some privates for local usage
-export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService };
+export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService, IColorManager };
 
 /**
  * Plugin ctor options.
@@ -88,7 +88,7 @@ export interface IExtendedAttrsImage extends IExtendedAttrs {
 
 /* eslint-disable */
 export interface IBufferLineExt extends IBufferLine {
-  _extendedAttrs: {[index: number]: IExtendedAttrsImage};
+  _extendedAttrs: {[index: number]: IExtendedAttrsImage | undefined};
   _data: Uint32Array;
 }
 

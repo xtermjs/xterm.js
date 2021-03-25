@@ -4,14 +4,14 @@
  */
 
 import { IDisposable } from 'xterm';
-import { IImageWorkerProtocol, ISixelImage } from './WorkerTypes';
+import { IImageWorkerMessage, IImagePixel } from './WorkerTypes';
 
 
 // narrow types for postMessage to our protocol
 interface IImageWorker extends Worker {
   postMessage: {
-    <T extends IImageWorkerProtocol>(message: T, transfer: Transferable[]): void;
-    <T extends IImageWorkerProtocol>(message: T, options?: PostMessageOptions | undefined): void;
+    <T extends IImageWorkerMessage>(message: T, transfer: Transferable[]): void;
+    <T extends IImageWorkerMessage>(message: T, options?: PostMessageOptions | undefined): void;
   };
 }
 
@@ -30,7 +30,7 @@ const CLEANUP_INTERVAL = 20000;
 export class WorkerManager implements IDisposable {
   private _worker: IImageWorker | undefined;
   private _memPool: ArrayBuffer[] = [];
-  private _sixelResolver: ((img: ISixelImage | null) => void) | undefined;
+  private _sixelResolver: ((img: IImagePixel | null) => void) | undefined;
   private _failedToLoad = false;
   private _poolChecker: any | undefined;
   private _lastActive = 0;
@@ -41,7 +41,8 @@ export class WorkerManager implements IDisposable {
     this.dispose();
   };
 
-  private _message(data: IImageWorkerProtocol): void {
+  private _message: (msg: MessageEvent<IImageWorkerMessage>) => void = event => {
+    const data = event.data;
     switch (data.type) {
       case 'CHUNK_TRANSFER':
         this.storeChunk(data.payload);
@@ -55,13 +56,13 @@ export class WorkerManager implements IDisposable {
       case 'ACK':
         this._worker?.removeEventListener('error', this._startupError);
     }
-  }
+  };
 
-  private _setSixelResolver(f?: (img: ISixelImage | null) => void): void {
+  private _setSixelResolver(resolver?: (img: IImagePixel | null) => void): void {
     if (this._sixelResolver) {
       this._sixelResolver(null);
     }
-    this._sixelResolver = f;
+    this._sixelResolver = resolver;
   }
 
   constructor(public url: string, public chunkSize: number = 65536 * 2, public maxPoolSize: number = 50) {}
@@ -84,7 +85,7 @@ export class WorkerManager implements IDisposable {
   public get worker(): IImageWorker | undefined {
     if (!this._worker && !this._failedToLoad) {
       this._worker = new Worker(this.url);
-      this._worker.addEventListener('message', ev => this._message(ev.data), false);
+      this._worker.addEventListener('message', this._message, false);
       this._worker.addEventListener('error', this._startupError, false);
       this._worker.postMessage({type: 'ACK', payload: 'ping'});
     }
@@ -132,10 +133,10 @@ export class WorkerManager implements IDisposable {
       }
     }, [data.buffer]);
   }
-  public sixelEnd(success: boolean): Promise<ISixelImage|null> | void {
-    let result: Promise<ISixelImage|null> | undefined;
+  public sixelEnd(success: boolean): Promise<IImagePixel|null> | void {
+    let result: Promise<IImagePixel|null> | undefined;
     if (success && this.worker) {
-      result = new Promise<ISixelImage|null>(resolve => this._setSixelResolver(resolve));
+      result = new Promise<IImagePixel|null>(resolve => this._setSixelResolver(resolve));
     }
     this.worker?.postMessage({type: 'SIXEL_END', payload: success});
     return result;

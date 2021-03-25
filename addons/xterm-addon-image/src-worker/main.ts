@@ -5,21 +5,21 @@
 
 import { SixelDecoder } from 'sixel/lib/SixelDecoder';
 import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
-import { IImageWorkerProtocol } from '../src/WorkerTypes';
+import { IImageWorkerMessage } from '../src/WorkerTypes';
 
 
 // narrow types for postMessage to our protocol
 declare const postMessage: {
-  <T extends IImageWorkerProtocol>(message: T, transfer: Transferable[]): void;
-  <T extends IImageWorkerProtocol>(message: T, options?: PostMessageOptions | undefined): void;
+  <T extends IImageWorkerMessage>(message: T, transfer: Transferable[]): void;
+  <T extends IImageWorkerMessage>(message: T, options?: PostMessageOptions | undefined): void;
 };
 
 
 let decoder: SixelDecoder | undefined;
 
 
-function messageHandler(event: MessageEvent): void {
-  const data = event.data as IImageWorkerProtocol;
+function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
+  const data = event.data;
   switch (data.type) {
     case 'SIXEL_PUT':
       decoder?.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));

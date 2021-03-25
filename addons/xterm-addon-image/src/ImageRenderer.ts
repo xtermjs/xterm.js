@@ -37,12 +37,18 @@ export class ImageRenderer implements IDisposable {
     return canvas;
   }
 
-  // drawing primitive - ImageData
-  public static createImageData(ctx: CanvasRenderingContext2D, width: number, height: number): ImageData {
+  // drawing primitive - ImageData with optional buffer
+  public static createImageData(ctx: CanvasRenderingContext2D, width: number, height: number, buffer?: ArrayBuffer): ImageData {
     if (typeof ImageData !== 'function') {
-      return ctx.createImageData(width, height);
+      const imgData = ctx.createImageData(width, height);
+      if (buffer) {
+        imgData.data.set(new Uint8ClampedArray(buffer, 0, width * height * 4));
+      }
+      return imgData;
     }
-    return new ImageData(width, height);
+    return buffer
+      ? new ImageData(new Uint8ClampedArray(buffer), width, height)
+      : new ImageData(width, height);
   }
 
   // drawing primitive - ImageBitmap
@@ -207,10 +213,6 @@ export class ImageRenderer implements IDisposable {
 
   /**
    * Rescale image in storage if needed.
-   *
-   * FIXME: Currently rescaled images are not accounted on storage size.
-   * This might create memory issues if the font size get enlarged alot.
-   * (Doubling the font size will increase image memory 5 times!)
    */
   private _rescaleImage(is: IImageSpec, cw: number, ch: number): void {
     const { width: aw, height: ah } = is.actualCellSize;
