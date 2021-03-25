@@ -4,7 +4,7 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IStorageOptions, IBufferLineExt, BgFlags } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags } from './Types';
 
 // some constants for bufferline access
 const HAS_EXTENDED = BgFlags.HAS_EXTENDED;
@@ -75,9 +75,6 @@ export class ImageStorage implements IDisposable {
   }
 
   public reset(): void {
-    for (const spec of this._images.values()) {
-      spec.bitmap?.close();
-    }
     this._images.clear();
     this._renderer.clearAll();
   }
@@ -119,7 +116,6 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.bufferType === 'alternate') {
-        spec.bitmap?.close();
         zero.push(id);
       }
     }
@@ -141,7 +137,7 @@ export class ImageStorage implements IDisposable {
   /**
    * Method to add an image to the storage.
    */
-  public addImage(img: HTMLCanvasElement | HTMLImageElement, options: IStorageOptions, createBitmap: boolean = true): number {
+  public addImage(img: HTMLCanvasElement): void {
     // never allow storage to exceed memory limit
     // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
     this._evictOldest(img.width * img.height);
@@ -161,7 +157,7 @@ export class ImageStorage implements IDisposable {
     let offset = originX;
     let tileCount = 0;
 
-    if (!options.scroll) {
+    if (!this._opts.sixelScrolling) {
       this._terminal._core._dirtyRowService.markAllDirty();
       buffer.x = 0;
       buffer.y = 0;
@@ -176,7 +172,7 @@ export class ImageStorage implements IDisposable {
         this._writeToCell(line, offset + col, imageId, row * cols + col);
         tileCount++;
       }
-      if (options.scroll) {
+      if (this._opts.sixelScrolling) {
         if (row < rows - 1) this._terminal._core._inputHandler.lineFeed();
       } else {
         if (++buffer.y >= termRows) break;
@@ -185,16 +181,16 @@ export class ImageStorage implements IDisposable {
     }
 
     // cursor positioning modes
-    if (options.scroll) {
-      if (options.right) {
+    if (this._opts.sixelScrolling) {
+      if (this._opts.cursorRight) {
         buffer.x = offset + cols;
         if (buffer.x >= termCols) {
           this._terminal._core._inputHandler.lineFeed();
-          buffer.x = (options.below) ? offset : 0;
+          buffer.x = (this._opts.cursorBelow) ? offset : 0;
         }
       } else {
         this._terminal._core._inputHandler.lineFeed();
-        buffer.x = (options.below) ? offset : 0;
+        buffer.x = (this._opts.cursorBelow) ? offset : 0;
       }
     } else {
       buffer.x = originX;
@@ -205,7 +201,6 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.tileCount < 1) {
-        spec.bitmap?.close();
         zero.push(id);
       }
     }
@@ -219,7 +214,6 @@ export class ImageStorage implements IDisposable {
     endMarker?.onDispose(() => {
       const spec = this._images.get(imageId);
       if (spec) {
-        spec.bitmap?.close();
         this._images.delete(imageId);
       }
     });
@@ -249,38 +243,18 @@ export class ImageStorage implements IDisposable {
     //   ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
     // }
 
-    if (createBitmap) {
-      const imgSpec: IImageSpec = {
-        orig: img,
-        origCellSize: this._renderer.cellSize,
-        actual: img,
-        actualCellSize: this._renderer.cellSize,
-        bitmap: undefined,
-        marker: endMarker || undefined,
-        tileCount,
-        bufferType: this._terminal.buffer.active.type
-      };
+    const imgSpec: IImageSpec = {
+      orig: img,
+      origCellSize: this._renderer.cellSize,
+      actual: img,
+      actualCellSize: this._renderer.cellSize,
+      marker: endMarker || undefined,
+      tileCount,
+      bufferType: this._terminal.buffer.active.type
+    };
 
-      // finally add the image and trigger bitmap creation
-      this._images.set(imageId, imgSpec);
-      if (createBitmap) {
-        ImageRenderer.createImageBitmap(img).then((bitmap) => imgSpec.bitmap = bitmap);
-      }
-    } else {
-      const imgSpec: IImageSpec = {
-        orig: undefined,
-        origCellSize: this._renderer.cellSize,
-        actual: undefined,
-        actualCellSize: this._renderer.cellSize,
-        bitmap: undefined,
-        marker: endMarker || undefined,
-        tileCount,
-        bufferType: this._terminal.buffer.active.type
-      };
-      this._images.set(imageId, imgSpec);
-    }
-
-    return imageId;
+    // finally add the image and trigger bitmap creation
+    this._images.set(imageId, imgSpec);
   }
 
 
@@ -338,7 +312,7 @@ export class ImageStorage implements IDisposable {
             }
             col--;
             if (imgSpec) {
-              if (imgSpec.actual || imgSpec.bitmap) {
+              if (imgSpec.actual) {
                 this._renderer.draw(imgSpec, startTile, startCol, row, count);
               }
             } else if (this._opts.showPlaceholder) {
@@ -363,7 +337,6 @@ export class ImageStorage implements IDisposable {
         if (spec.actual && spec.orig !== spec.actual) {
           current -= spec.actual.width * spec.actual.height;
         }
-        spec.bitmap?.close();
         this._images.delete(this._lowestId);
       }
     }
@@ -410,7 +383,6 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.bufferType === 'alternate' && !spec.tileCount) {
-        spec.bitmap?.close();
         zero.push(id);
       }
     }
@@ -418,33 +390,4 @@ export class ImageStorage implements IDisposable {
       this._images.delete(id);
     }
   }
-
-  // FIXME: move to image handlers to avoid canvas reconstruction
-  // private _adjustToFullCells(img: HTMLCanvasElement, opts: IStorageOptions): HTMLCanvasElement {
-  //   const nw = Math.ceil(img.width / this._renderer.currentCellSize.width) * this._renderer.currentCellSize.width;
-  //   const nh = Math.ceil(img.height / this._renderer.currentCellSize.height) * this._renderer.currentCellSize.height;
-  //   const c = ImageRenderer.createCanvas(nw, nh);
-  //   const ctx = c.getContext('2d');
-  //   if (ctx) {
-  //     if (opts.fill) {
-  //       ctx.fillStyle = `rgba(${opts.fill >>> 24}, ${opts.fill >>> 16 & 0xFF}, ${opts.fill >>> 8 & 0xFF}, 1)`;
-  //       ctx.fillRect(0, 0, c.width, c.height);
-  //     }
-  //     let x = 0;
-  //     let y = 0;
-  //     switch (opts.align) {
-  //       case Align.TOP_LEFT:      x = 0; y = 0; break;
-  //       case Align.TOP:           x = (c.width - img.width) / 2; y = 0; break;
-  //       case Align.TOP_RIGHT:     x = c.width - img.width; y = 0; break;
-  //       case Align.RIGHT:         x = c.width - img.width; y = (c.height - img.height) / 2; break;
-  //       case Align.BOTTOM_RIGHT:  x = c.width - img.width; y = c.height - img.height; break;
-  //       case Align.BOTTOM:        x = (c.width - img.width) / 2; y = c.height - img.height; break;
-  //       case Align.BOTTOM_LEFT:   x = 0; y = c.height - img.height; break;
-  //       case Align.LEFT:          x = 0; y = (c.height - img.height) / 2; break;
-  //       case Align.CENTER:        x = (c.width - img.width) / 2; y = (c.height - img.height) / 2; break;
-  //     }
-  //     ctx.drawImage(img, x, y);
-  //   }
-  //   return c;
-  // }
 }

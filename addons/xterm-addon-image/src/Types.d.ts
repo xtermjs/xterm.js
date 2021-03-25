@@ -129,42 +129,11 @@ export interface ICellSize {
 }
 
 export interface IImageSpec {
-  orig: HTMLCanvasElement | undefined | HTMLImageElement;
+  orig: HTMLCanvasElement | undefined;
   origCellSize: ICellSize;
-  actual: HTMLCanvasElement | undefined | HTMLImageElement;
+  actual: HTMLCanvasElement | undefined;
   actualCellSize: ICellSize;
-  bitmap: ImageBitmap | undefined;
   marker: IMarker | undefined;
   tileCount: number;
   bufferType: 'alternate' | 'normal';
-}
-
-
-// image storage options
-export interface IStorageOptions {
-  // whether to scroll on image input
-  scroll: boolean;
-  // whether cursor should be right in the next logical cell
-  right: boolean;
-  // whether cursor is moved below the first row or to beginning
-  below: boolean;
-  // whether image contains alpha parts (to be respected by future overdrawing composition)
-  alpha: boolean;
-  // fill color to be used to align to full cell coverage
-  fill: RGBA8888;
-  // alignment within to covered cells
-  align: Align;
-}
-
-
-export const enum Align {
-  TOP_LEFT = 0,
-  TOP = 1,
-  TOP_RIGHT = 2,
-  RIGHT = 3,
-  BOTTOM_RIGHT = 4,
-  BOTTOM = 5,
-  BOTTOM_LEFT = 6,
-  LEFT = 7,
-  CENTER = 8
 }

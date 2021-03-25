@@ -153,7 +153,7 @@ export class ImageRenderer implements IDisposable {
     }
     const { width, height } = this.cellSize;
     this._rescaleImage(imgSpec, width, height);
-    const img = imgSpec.bitmap || imgSpec.actual!;
+    const img = imgSpec.actual!;
     const cols = Math.ceil(img.width / width);
     this._ctx.drawImage(
       img,
@@ -222,9 +222,6 @@ export class ImageRenderer implements IDisposable {
       is.actual = is.orig;
       is.actualCellSize.width = ow;
       is.actualCellSize.height = oh;
-      is.bitmap?.close();
-      is.bitmap = undefined;
-      ImageRenderer.createImageBitmap(is.actual!).then((bitmap) => is.bitmap = bitmap);
       return;
     }
     const canvas = ImageRenderer.createCanvas(
@@ -237,9 +234,6 @@ export class ImageRenderer implements IDisposable {
       is.actual = canvas;
       is.actualCellSize.width = cw;
       is.actualCellSize.height = ch;
-      is.bitmap?.close();
-      is.bitmap = undefined;
-      ImageRenderer.createImageBitmap(canvas).then((bitmap) => is.bitmap = bitmap);
     }
   }
 

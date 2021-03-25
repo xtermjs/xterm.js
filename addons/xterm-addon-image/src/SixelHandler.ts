@@ -4,7 +4,7 @@
  */
 
 import { ImageStorage } from './ImageStorage';
-import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, Align, AttributeData } from './Types';
+import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, AttributeData } from './Types';
 import { toRGBA8888, BIG_ENDIAN } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
 import { WorkerManager } from './WorkerManager';
@@ -95,14 +95,7 @@ export class SixelHandler implements IDcsHandler {
       if (ctx) {
         const imageData = new ImageData(new Uint8ClampedArray(data.buffer), data.width, data.height);
         ctx.putImageData(imageData, 0, 0);
-        this._storage.addImage(canvas, {
-          scroll: this._opts.sixelScrolling,
-          right: this._opts.cursorRight,
-          below: this._opts.cursorBelow,
-          alpha: true,
-          fill: convertLe(this._fillColor),
-          align: Align.CENTER
-        });
+        this._storage.addImage(canvas);
       }
       return true;
     });
