@@ -4,16 +4,8 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell } from './Types';
 
-
-// FIXME: currently not exported from base repo, thus redeclared here
-const CELL_SIZE = 3;
-const enum Cell {
-  CONTENT = 0,
-  FG = 1,
-  BG = 2
-}
 
 /**
  * Extend extended attribute to also hold image tile information.
@@ -317,7 +309,7 @@ export class ImageStorage implements IDisposable {
   }
 
   private _writeToCell(line: IBufferLineExt, x: number, imageId: number, tileId: number): void {
-    if (line._data[x * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+    if (line._data[x * Cell.SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
       const old = line._extendedAttrs[x];
       if (old) {
         if (old.imageId !== undefined) {
@@ -339,7 +331,7 @@ export class ImageStorage implements IDisposable {
       }
     }
     // fall-through: always create new ExtendedAttrsImage entry
-    line._data[x * CELL_SIZE + Cell.BG] |= BgFlags.HAS_EXTENDED;
+    line._data[x * Cell.SIZE + Cell.BG] |= BgFlags.HAS_EXTENDED;
     line._extendedAttrs[x] = new ExtendedAttrsImage(0, -1, imageId, tileId);
   }
 
@@ -358,7 +350,7 @@ export class ImageStorage implements IDisposable {
         continue;
       }
       for (let x = 0; x < this._terminal.cols; ++x) {
-        if (line._data[x * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+        if (line._data[x * Cell.SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
           const imgId = line._extendedAttrs[x]?.imageId;
           if (imgId) {
             const spec = this._images.get(imgId);

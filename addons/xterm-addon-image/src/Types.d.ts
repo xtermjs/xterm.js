@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { RGBA8888 } from 'sixel/lib/Types';
 import { IDisposable, IMarker, Terminal } from 'xterm';
 
 // private imports from base repo we build against
@@ -11,14 +10,14 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IParams, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
-import { BgFlags } from 'common/buffer/Constants';
+import { Cell, BgFlags } from 'common/buffer/Constants';
 import { IOptionsService, IDirtyRowService, ICoreService } from 'common/services/Services';
 import { IColorManager } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { IRenderService } from 'browser/services/Services';
 
 // export some privates for local usage
-export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService, IColorManager };
+export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService, IColorManager, Cell };
 
 /**
  * Plugin ctor options.
