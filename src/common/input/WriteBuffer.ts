@@ -42,6 +42,7 @@ export class WriteBuffer {
   private _callbacks: ((() => void) | undefined)[] = [];
   private _pendingData = 0;
   private _bufferOffset = 0;
+  private _isWriting = false;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
 
@@ -49,6 +50,12 @@ export class WriteBuffer {
    * @deprecated Unreliable, to be removed soon.
    */
   public writeSync(data: string | Uint8Array): void {
+    // Ensure a write is not already in progress
+    if (this._isWriting) {
+      return;
+    }
+    this._isWriting = true;
+
     // force sync processing on pending data chunks to avoid in-band data scrambling
     // does the same as innerWrite but without event loop
     if (this._writeBuffer.length) {
@@ -67,6 +74,9 @@ export class WriteBuffer {
     }
     // handle current data chunk
     this._action(data);
+
+    // Allow another write to be triggered
+    this._isWriting = false;
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
@@ -114,6 +124,12 @@ export class WriteBuffer {
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+    // Ensure a write is not already in progress
+    if (this._isWriting) {
+      return;
+    }
+    this._isWriting = true;
+
     const startTime = lastTime || Date.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
@@ -196,5 +212,8 @@ export class WriteBuffer {
       this._pendingData = 0;
       this._bufferOffset = 0;
     }
+
+    // Allow another write to be triggered
+    this._isWriting = false;
   }
 }
