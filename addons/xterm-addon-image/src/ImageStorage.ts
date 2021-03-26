@@ -229,6 +229,7 @@ export class ImageStorage implements IDisposable {
    */
   public render(range: { start: number, end: number }): void {
     // exit early if we dont have any images to test for
+    // FIXME: leaves garbage on screen for IL/DL
     if (!this._images.size || !this._renderer.canvas) {
       if (this._hasDrawn) {
         this._renderer.clearAll();
