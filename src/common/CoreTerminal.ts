@@ -137,12 +137,12 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    *
    * @deprecated Unreliable, will be removed soon.
    */
-  public writeSync(data: string | Uint8Array): void {
+  public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
     if (this._logService.logLevel <= LogLevelEnum.WARN && !hasWriteSyncWarnHappened) {
       this._logService.warn('writeSync is unreliable and will be removed soon.');
       hasWriteSyncWarnHappened = true;
     }
-    this._writeBuffer.writeSync(data);
+    this._writeBuffer.writeSync(data, maxSubsequentCalls);
   }
 
   public resize(x: number, y: number): void {
