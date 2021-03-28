@@ -68,7 +68,7 @@ function parseString(context: IParseContext, quoteChar: '\'' | '"'): string {
   while (context.offset < context.input.length) {
     const char = context.input[context.offset++];
     if (escaped) {
-      if (/[0-9a-fA-F]/.test(char)) {
+      if (/[\dA-Fa-f]/.test(char)) {
         // Unicode escape
         context.offset--;
         str += parseUnicode(context);
@@ -107,7 +107,7 @@ function parseIdentifier(context: IParseContext): string {
   while (context.offset < context.input.length) {
     const char = context.input[context.offset++];
     if (escaped) {
-      if (/[0-9a-fA-F]/.test(char)) {
+      if (/[\dA-Fa-f]/.test(char)) {
         // Unicode escape
         context.offset--;
         str += parseUnicode(context);
@@ -156,7 +156,7 @@ function parseUnicode(context: IParseContext): string {
       // of the escape and is swallowed.
       return unicodeToString(str);
     }
-    if (str.length >= 6 || !/[0-9a-fA-F]/.test(char)) {
+    if (str.length >= 6 || !/[\dA-Fa-f]/.test(char)) {
       // If the next character is not a valid hex digit or we have reached the
       // maximum of 6 digits in the escape, terminate the escape.
       context.offset--;

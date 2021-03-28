@@ -2856,7 +2856,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
     const result: IAnsiColorChangeEvent = { colors: [] };
     // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})/gi;
+    const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
     let match;
 
     while ((match = regex.exec(data)) !== null) {

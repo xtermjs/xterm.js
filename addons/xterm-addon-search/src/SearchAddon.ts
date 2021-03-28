@@ -240,8 +240,8 @@ export class SearchAddon implements ITerminalAddon {
    * @param term the substring that starts at searchIndex
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
-    return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
-      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
+    return ((searchIndex === 0) || (NON_WORD_CHARACTERS.includes(line[searchIndex - 1]))) &&
+      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.includes(line[searchIndex + term.length])));
   }
 
   /**
@@ -262,7 +262,7 @@ export class SearchAddon implements ITerminalAddon {
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     const firstLine = terminal.buffer.active.getLine(row);
-    if (firstLine && firstLine.isWrapped) {
+    if (firstLine?.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += terminal.cols;
         return;

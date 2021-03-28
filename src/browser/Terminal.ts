@@ -162,11 +162,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _changeAnsiColor(event: IAnsiColorChangeEvent): void {
     if (!this._colorManager) { return; }
 
-    event.colors.forEach(ansiColor => {
+    for (const ansiColor of event.colors) {
       const color = rgba.toColor(ansiColor.red, ansiColor.green, ansiColor.blue);
 
       this._colorManager!.colors.ansi[ansiColor.colorIndex] = color;
-    });
+    }
 
     this._renderService?.setColors(this._colorManager!.colors);
     this.viewport?.onThemeChange(this._colorManager!.colors);
@@ -834,7 +834,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * Change the cursor style for different selection modes
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
-    if (this._selectionService && this._selectionService.shouldColumnSelect(ev)) {
+    if (this._selectionService?.shouldColumnSelect(ev)) {
       this.element!.classList.add('column-select');
     } else {
       this.element!.classList.remove('column-select');

@@ -41,7 +41,7 @@ import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 
 // Only trigger this warning a single time per session
-let hasWriteSyncWarnHappened: boolean = false;
+let hasWriteSyncWarnHappened = false;
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
