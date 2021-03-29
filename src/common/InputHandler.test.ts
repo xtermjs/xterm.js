@@ -1759,7 +1759,8 @@ describe('InputHandler', () => {
 
       assert.isNotNull(event);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
-    }),
+    });
+
     it('4: should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
       assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
@@ -1767,6 +1768,7 @@ describe('InputHandler', () => {
       assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
       assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
     });
+
     it('4: should parse a list of Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');

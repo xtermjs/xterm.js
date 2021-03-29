@@ -18,7 +18,7 @@ const height = 600;
 
 describe('WebGL Renderer Integration Tests', async () => {
   const browserType = getBrowserType();
-  const isHeadless = process.argv.indexOf('--headless') !== -1;
+  const isHeadless = process.argv.includes('--headless');
   // Firefox works only in non-headless mode https://github.com/microsoft/playwright/issues/1032
   const areTestsEnabled = browserType.name() === 'chromium' || (browserType.name() === 'firefox' && !isHeadless);
   const itWebgl = areTestsEnabled ? it : it.skip;
@@ -893,7 +893,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
   const browserType = getBrowserType();
   browser = await browserType.launch({
-    headless: process.argv.indexOf('--headless') !== -1
+    headless: process.argv.includes('--headless')
   });
   page = await (await browser.newContext()).newPage();
   await page.setViewportSize({ width, height });
