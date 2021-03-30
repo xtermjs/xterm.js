@@ -319,6 +319,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _selectWordAtCursor(event: MouseEvent, allowWhitespaceOnlySelection: boolean): boolean {
+    // Check if there is a link under the cursor first and select that if so
     const range = this._linkifier.currentLink?.link?.range;
     if (range) {
       this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
