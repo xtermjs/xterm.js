@@ -217,7 +217,7 @@ export interface ILinkWithState {
 export interface ILinkifier2 {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
-  currentLink: ILinkWithState | undefined;
+  readonly currentLink: ILinkWithState | undefined;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
