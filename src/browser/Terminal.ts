@@ -482,7 +482,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
-      this.screenElement));
+      this.screenElement,
+      this.linkifier2
+    ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
