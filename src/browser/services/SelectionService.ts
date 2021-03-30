@@ -321,9 +321,8 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _selectWordAtCursor(event: MouseEvent, allowWhitespaceOnlySelection: boolean): boolean {
     const range = this._linkifier.currentLink?.link?.range;
     if (range) {
-      const scrollOffset = this._bufferService.buffer.ydisp;
-      this._model.selectionStart = [range.start.x - 1, range.start.y - scrollOffset - 1];
-      this._model.selectionEnd = [range.end.x, range.end.y - scrollOffset - 1];
+      this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
+      this._model.selectionEnd = [range.end.x, range.end.y - 1];
       return true;
     }
 
