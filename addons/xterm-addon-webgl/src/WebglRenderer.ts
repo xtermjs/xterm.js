@@ -94,7 +94,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public dispose(): void {
-    this._renderLayers.forEach(l => l.dispose());
+    for (const l of this._renderLayers) {
+      l.dispose();
+    }
     this._core.screenElement!.removeChild(this._canvas);
     super.dispose();
   }
@@ -106,10 +108,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render
-    this._renderLayers.forEach(l => {
+    for (const l of this._renderLayers) {
       l.setColors(this._terminal, this._colors);
       l.reset(this._terminal);
-    });
+    }
 
     this._rectangleRenderer.setColors();
     this._glyphRenderer.setColors();
@@ -136,7 +138,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.resize(this._terminal.cols, this._terminal.rows);
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
+    for (const l of this._renderLayers) {
+      l.resize(this._terminal, this.dimensions);
+    }
 
     // Resize the canvas
     this._canvas.width = this.dimensions.scaledCanvasWidth;
@@ -168,15 +172,21 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._renderLayers.forEach(l => l.onBlur(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onBlur(this._terminal);
+    }
   }
 
   public onFocus(): void {
-    this._renderLayers.forEach(l => l.onFocus(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onFocus(this._terminal);
+    }
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
+    for (const l of this._renderLayers) {
+      l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
+    }
 
     this._updateSelectionModel(start, end, columnSelectMode);
 
@@ -184,11 +194,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onCursorMove(): void {
-    this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onCursorMove(this._terminal);
+    }
   }
 
   public onOptionsChanged(): void {
-    this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onOptionsChanged(this._terminal);
+    }
     this._updateDimensions();
     this._refreshCharAtlas();
   }
@@ -222,7 +236,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public clear(): void {
-    this._renderLayers.forEach(l => l.reset(this._terminal));
+    for (const l of this._renderLayers) {
+      l.reset(this._terminal);
+    }
   }
 
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
@@ -245,7 +261,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Update render layers
-    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    for (const l of this._renderLayers) {
+      l.onGridChanged(this._terminal, start, end);
+    }
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {

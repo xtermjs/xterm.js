@@ -252,3 +252,208 @@ describe('DcsParser', () => {
     });
   });
 });
+
+
+class TestHandlerAsync implements IDcsHandler {
+  constructor(public output: any[], public msg: string, public returnFalse: boolean = false) {}
+  public hook(params: IParams): void {
+    this.output.push([this.msg, 'HOOK', params.toArray()]);
+  }
+  public put(data: Uint32Array, start: number, end: number): void {
+    this.output.push([this.msg, 'PUT', utf32ToString(data, start, end)]);
+  }
+  public async unhook(success: boolean): Promise<boolean> {
+    // simple sleep to check in tests whether ordering gets messed up
+    await new Promise(res => setTimeout(res, 20));
+    this.output.push([this.msg, 'UNHOOK', success]);
+    if (this.returnFalse) {
+      return false;
+    }
+    return true;
+  }
+}
+async function unhookP(parser: DcsParser, success: boolean): Promise<void> {
+  let result: void | Promise<boolean>;
+  let prev: boolean | undefined;
+  while (result = parser.unhook(success, prev)) {
+    prev = await result;
+  }
+}
+
+
+describe('DcsParser - async tests', () => {
+  let parser: DcsParser;
+  let reports: any[] = [];
+  beforeEach(() => {
+    reports = [];
+    parser = new DcsParser();
+    parser.setHandlerFallback((id, action, data) => {
+      if (action === 'HOOK') {
+        data = data.toArray();
+      }
+      reports.push([id, action, data]);
+    });
+  });
+  describe('sync and async mixed', () => {
+    describe('sync | async | sync', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's2', false));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 'HOOK', [1, 2, 3]],
+          ['a1', 'HOOK', [1, 2, 3]],
+          ['s1', 'HOOK', [1, 2, 3]],
+          ['s2', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['s2', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['s2', 'UNHOOK', true],
+          ['a1', 'UNHOOK', false],  // important: a1 before s1
+          ['s1', 'UNHOOK', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's2', true));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 'HOOK', [1, 2, 3]],
+          ['a1', 'HOOK', [1, 2, 3]],
+          ['s1', 'HOOK', [1, 2, 3]],
+          ['s2', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['s2', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['s2', 'UNHOOK', true],
+          ['a1', 'UNHOOK', true],  // important: a1 before s1
+          ['s1', 'UNHOOK', true]
+        ]);
+      });
+    });
+    describe('async | sync | async', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a2', false));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['a2', 'HOOK', [1, 2, 3]],
+          ['s1', 'HOOK', [1, 2, 3]],
+          ['a1', 'HOOK', [1, 2, 3]],
+          ['a2', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['a2', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['a2', 'UNHOOK', true],
+          ['s1', 'UNHOOK', false],  // important: s1 between a2 .. a1
+          ['a1', 'UNHOOK', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a2', true));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['a2', 'HOOK', [1, 2, 3]],
+          ['s1', 'HOOK', [1, 2, 3]],
+          ['a1', 'HOOK', [1, 2, 3]],
+          ['a2', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['a2', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['a2', 'UNHOOK', true],
+          ['s1', 'UNHOOK', true],  // important: s1 between a2 .. a1
+          ['a1', 'UNHOOK', true]
+        ]);
+      });
+    });
+    describe('DcsHandlerFactory', () => {
+      it('should be called once on end(true)', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push([params.toArray(), data]); return true; }));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [[[1, 2, 3], 'Here comes the mouse!']]);
+      });
+      it('should not be called on end(false)', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push([params.toArray(), data]); return true; }));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, false);
+        assert.deepEqual(reports, []);
+      });
+      it('should be disposable', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push(['one', params.toArray(), data]); return true; }));
+        const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push(['two', params.toArray(), data]); return true; }));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!']]);
+        dispo.dispose();
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        data = toUtf32('some other');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' data');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'some other data']]);
+      });
+      it('should respect return false', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push(['one', params.toArray(), data]); return true; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler(async (data, params) => { reports.push(['two', params.toArray(), data]); return false; }));
+        parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'Here comes the mouse!']]);
+      });
+    });
+  });
+});

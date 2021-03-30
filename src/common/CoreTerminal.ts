@@ -22,7 +22,7 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
@@ -39,6 +39,9 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+
+// Only trigger this warning a single time per session
+let hasWriteSyncWarnHappened = false;
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
@@ -109,7 +112,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
 
     // Setup WriteBuffer
-    this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
+    this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
   }
 
   public dispose(): void {
@@ -125,8 +128,21 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._writeBuffer.write(data, callback);
   }
 
-  public writeSync(data: string | Uint8Array): void {
-    this._writeBuffer.writeSync(data);
+  /**
+   * Write data to terminal synchonously.
+   *
+   * This method is unreliable with async parser handlers, thus should not
+   * be used anymore. If you need blocking semantics on data input consider
+   * `write` with a callback instead.
+   *
+   * @deprecated Unreliable, will be removed soon.
+   */
+  public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
+    if (this._logService.logLevel <= LogLevelEnum.WARN && !hasWriteSyncWarnHappened) {
+      this._logService.warn('writeSync is unreliable and will be removed soon.');
+      hasWriteSyncWarnHappened = true;
+    }
+    this._writeBuffer.writeSync(data, maxSubsequentCalls);
   }
 
   public resize(x: number, y: number): void {
@@ -268,23 +284,23 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
-    return this._inputHandler.addEscHandler(id, callback);
+  public registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerEscHandler(id, callback);
   }
 
   /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
-    return this._inputHandler.addDcsHandler(id, callback);
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerDcsHandler(id, callback);
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
-    return this._inputHandler.addCsiHandler(id, callback);
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerCsiHandler(id, callback);
   }
 
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._inputHandler.addOscHandler(ident, callback);
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerOscHandler(ident, callback);
   }
 
   protected _setup(): void {
@@ -322,7 +338,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     if (!this._windowsMode) {
       const disposables: IDisposable[] = [];
       disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
-      disposables.push(this.addCsiHandler({ final: 'H' }, () => {
+      disposables.push(this.registerCsiHandler({ final: 'H' }, () => {
         updateWindowsModeWrappedState(this._bufferService);
         return false;
       }));

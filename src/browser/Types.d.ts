@@ -52,10 +52,10 @@ export interface IPublicTerminal extends IDisposable {
   resize(columns: number, rows: number): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
-  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
-  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
