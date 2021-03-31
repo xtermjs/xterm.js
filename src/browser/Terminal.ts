@@ -304,7 +304,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     const viewportRelativeCursorY = cursorY - this.buffer.ydisp;
     const cursorX = Math.min(this.buffer.x, this.cols - 1);
     const cellHeight = this._renderService.dimensions.actualCellHeight;
-    const width = this.buffer.lines.get(cursorY)!.getWidth(cursorX);
+    const bufferLine = this.buffer.lines.get(cursorY);
+    if (!bufferLine) return;
+    const width = bufferLine.getWidth(cursorX);
     const cellWidth = this._renderService.dimensions.actualCellWidth * width;
     const cursorTop = viewportRelativeCursorY * this._renderService.dimensions.actualCellHeight;
     const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
