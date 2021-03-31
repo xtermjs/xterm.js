@@ -297,19 +297,23 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _syncTextArea(): void {
-    if (!this.textarea || !this.buffer.isCursorInViewport || this._compositionHelper!.isComposing) {
+    if (!this.textarea || !this.buffer.isCursorInViewport || this._compositionHelper!.isComposing || !this._renderService) {
       return;
     }
-
-    const cellHeight = Math.ceil(this._charSizeService!.height * this.optionsService.options.lineHeight);
-    const cursorTop = this._bufferService.buffer.y * cellHeight;
-    const cursorLeft = this._bufferService.buffer.x * this._charSizeService!.width;
+    const cursorY = this.buffer.ybase + this.buffer.y;
+    const viewportRelativeCursorY = cursorY - this.buffer.ydisp;
+    const cursorX = Math.min(this.buffer.x, this.cols - 1);
+    const cellHeight = this._renderService.dimensions.actualCellHeight;
+    const width = this.buffer.lines.get(cursorY)!.getWidth(cursorX);
+    const cellWidth = this._renderService.dimensions.actualCellWidth * width;
+    const cursorTop = viewportRelativeCursorY * this._renderService.dimensions.actualCellHeight;
+    const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
     this.textarea.style.left = cursorLeft + 'px';
     this.textarea.style.top = cursorTop + 'px';
-    this.textarea.style.width = this._charSizeService!.width + 'px';
+    this.textarea.style.width = cellWidth +'px';
     this.textarea.style.height = cellHeight + 'px';
     this.textarea.style.lineHeight = cellHeight + 'px';
     this.textarea.style.zIndex = '-5';
@@ -438,14 +442,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
-    this._compositionView = document.createElement('div');
-    this._compositionView.classList.add('composition-view');
-    this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
-    this._helperContainer.appendChild(this._compositionView);
-
-    // Performance: Add viewport and helper elements from the fragment
-    this.element.appendChild(fragment);
-
     this._theme = this.options.theme || this._theme;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
     this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e)));
@@ -456,6 +452,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IRenderService, this._renderService);
     this.register(this._renderService.onRenderedBufferChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
+
+    this._compositionView = document.createElement('div');
+    this._compositionView.classList.add('composition-view');
+    this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
+    this._helperContainer.appendChild(this._compositionView);
+
+    // Performance: Add viewport and helper elements from the fragment
+    this.element.appendChild(fragment);
 
     this._soundService = this._instantiationService.createInstance(SoundService);
     this._instantiationService.setService(ISoundService, this._soundService);
