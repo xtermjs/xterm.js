@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharSizeService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 
 interface IPosition {
@@ -45,8 +45,8 @@ export class CompositionHelper {
     private readonly _compositionView: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
@@ -207,9 +207,11 @@ export class CompositionHelper {
     }
 
     if (this._bufferService.buffer.isCursorInViewport) {
-      const cellHeight = Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
-      const cursorTop = this._bufferService.buffer.y * cellHeight;
-      const cursorLeft = this._bufferService.buffer.x * this._charSizeService.width;
+      const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+
+      const cellHeight = this._renderService.dimensions.actualCellHeight;
+      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.actualCellHeight;
+      const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
