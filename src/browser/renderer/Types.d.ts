@@ -41,6 +41,7 @@ export interface IRenderer extends IDisposable {
    * frame but is _not_ a result of content changing (eg. selection changes).
    */
   readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
+  readonly onRecoverContext: IEvent<any>;
 
   dispose(): void;
   setColors(colors: IColorSet): void;
