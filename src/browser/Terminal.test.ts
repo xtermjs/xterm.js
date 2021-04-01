@@ -56,25 +56,25 @@ describe('Terminal', () => {
     //   term.handler('fake');
     // });
     it('should fire the onCursorMove event', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onCursorMove(() => r());
         await term.writeP('foo');
       });
     });
     it('should fire the onLineFeed event', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onLineFeed(() => r());
         await term.writeP('\n');
       });
     });
     it('should fire a scroll event when scrollback is created', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onScroll(() => r());
         await term.writeP('\n'.repeat(INIT_ROWS));
       });
     });
     it('should fire a scroll event when scrollback is cleared', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         await term.writeP('\n'.repeat(INIT_ROWS));
         term.onScroll(() => r());
         term.clear();
@@ -233,7 +233,7 @@ describe('Terminal', () => {
       term.paste('\r\nfoo\nbar\r');
     });
     it('should respect bracketed paste mode', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onData(e => {
           assert.equal(e, '\x1b[200~foo\x1b[201~');
           r();
