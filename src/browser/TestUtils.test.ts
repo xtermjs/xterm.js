@@ -251,7 +251,6 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
-  public onRecoverContext!: IEvent<any, void>;
   public onRequestRedraw!: IEvent<IRequestRedrawEvent>;
   public onCanvasResize!: IEvent<{ width: number, height: number }>;
   public onRender!: IEvent<{ start: number, end: number }>;
@@ -357,7 +356,6 @@ export class MockRenderService implements IRenderService {
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
   public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public onRecoverContext: IEvent<any, void> = new EventEmitter<any>().event;
   public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,
     scaledCharHeight: 0,
