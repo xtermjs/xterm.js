@@ -224,7 +224,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Flag rows that need updating
     this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
 
-    this._onScroll.fire({position: buffer.ydisp, source: ScrollSource.TERMINAL});
+    this._onScroll.fire({ position: buffer.ydisp, source: ScrollSource.TERMINAL });
   }
 
   /**
@@ -254,7 +254,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }
 
     if (!suppressScrollEvent) {
-      this._onScroll.fire({position: buffer.ydisp, source});
+      this._onScroll.fire({ position: buffer.ydisp, source });
     }
   }
 

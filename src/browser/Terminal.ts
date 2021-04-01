@@ -1194,7 +1194,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
-    this._onScroll.fire({position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
+    this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
   }
 
   /**
