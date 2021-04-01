@@ -33,7 +33,7 @@ export class Viewport extends Disposable implements IViewport {
   private _ignoreNextScrollEvent: boolean = false;
 
   constructor(
-    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
+    private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -156,7 +156,7 @@ export class Viewport extends Disposable implements IViewport {
 
     const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
     const diff = newRow - this._bufferService.buffer.ydisp;
-    this._scrollLines(diff, true);
+    this._scrollLines(diff);
   }
 
   /**
