@@ -240,8 +240,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestScroll = new EventEmitter<IAttributeData, boolean | void>();
-  public get onRequestScroll(): IEvent<IAttributeData, boolean | void> { return this._onRequestScroll.event; }
   private _onRequestSyncScrollBar = new EventEmitter<void>();
   public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
   private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
@@ -651,7 +649,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._onRequestScroll.fire(this._eraseAttrData(), true);
+            this._bufferService.scroll(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
@@ -791,7 +789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onRequestScroll.fire(this._eraseAttrData());
+      this._bufferService.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -2987,7 +2985,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onRequestScroll.fire(this._eraseAttrData());
+      this._bufferService.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
