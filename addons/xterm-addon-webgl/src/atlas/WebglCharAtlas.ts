@@ -367,8 +367,20 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
 
+    // Check if the char is a powerline glyph
+    let isPowerlineGlyph = false;
+    if (chars.length === 1) {
+      const code = chars.charCodeAt(0);
+      if (code >= 0xE0A0 && code <= 0xE0D6) {
+        isPowerlineGlyph = true;
+      }
+    }
+
+    // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
+    const padding = isPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
+
     // Draw the character
-    this._tmpCtx.fillText(chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING + this._config.scaledCharHeight / 2);
+    this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight / 2);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
@@ -391,7 +403,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, padding);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Check if there is enough room in the current row and go to next if needed
@@ -424,7 +436,7 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
     let found = false;
     for (let y = 0; y < this._tmpCanvas.height; y++) {
@@ -497,8 +509,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + TMP_CANVAS_GLYPH_PADDING,
-        y: -boundingBox.top + TMP_CANVAS_GLYPH_PADDING
+        x: -boundingBox.left + padding,
+        y: -boundingBox.top + padding
       }
     };
   }
