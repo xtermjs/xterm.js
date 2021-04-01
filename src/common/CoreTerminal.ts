@@ -58,8 +58,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
-  /** An IBufferline to clone/copy from for new blank lines */
-  private _cachedBlankLine: IBufferLine | undefined;
 
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
