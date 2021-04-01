@@ -202,7 +202,7 @@ export class CompositionHelper {
    *   necessary as the IME events across browsers are not consistently triggered.
    */
   public updateCompositionElements(dontRecurse?: boolean): void {
-    if (!this._isComposing || !this._renderService) {
+    if (!this._isComposing) {
       return;
     }
 
