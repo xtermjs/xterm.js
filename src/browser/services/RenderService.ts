@@ -72,8 +72,6 @@ export class RenderService extends Disposable implements IRenderService {
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
 
-    this._renderer.onRecoverContext(() => this.recoverContext());
-
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.onDevicePixelRatioChange()));
@@ -110,12 +108,6 @@ export class RenderService extends Disposable implements IRenderService {
       this._isNextRenderRedrawOnly = false;
     }
     this._renderDebouncer.refresh(start, end, this._rowCount);
-  }
-
-  public recoverContext(): void {
-    if (!this._isPaused) {
-      this.setRenderer(this._renderer);
-    }
   }
 
   private _renderRows(start: number, end: number): void {
