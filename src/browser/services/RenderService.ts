@@ -154,6 +154,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.dispose();
     this._renderer = renderer;
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+
     // Force a refresh
     this._needsSelectionRefresh = true;
     this._fullRefresh();
