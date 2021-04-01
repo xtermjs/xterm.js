@@ -123,7 +123,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._coreService.onData, this._onData));
     this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
-    this.register(this._bufferService.onScroll(event => this._onScroll.fire(event)));
+    this.register(this._bufferService.onScroll(event => {
+      this._onScroll.fire(event);
+      this._dirtyRowService.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
+    }));
 
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));

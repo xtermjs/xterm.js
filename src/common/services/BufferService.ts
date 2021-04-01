@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import { IBufferService, IDirtyRowService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
-import { DirtyRowService } from 'common/services/DirtyRowService';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -32,8 +31,6 @@ export class BufferService extends Disposable implements IBufferService {
 
   /** An IBufferline to clone/copy from for new blank lines */
   private _cachedBlankLine: IBufferLine | undefined;
-
-  private _dirtyRowService: IDirtyRowService | undefined;
 
   constructor(
     @IOptionsService private _optionsService: IOptionsService
@@ -122,12 +119,6 @@ export class BufferService extends Disposable implements IBufferService {
     if (!this.isUserScrolling) {
       buffer.ydisp = buffer.ybase;
     }
-
-    // Flag rows that need updating
-    if (!this._dirtyRowService) {
-      this._dirtyRowService = new DirtyRowService(this);
-    }
-    this._dirtyRowService?.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
 
     this._onScroll.fire(buffer.ydisp);
   }

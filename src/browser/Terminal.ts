@@ -147,7 +147,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
-    this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this._bufferService.scroll(eraseAttr, isWrapped || undefined)));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
