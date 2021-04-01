@@ -71,10 +71,19 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   protected _onScroll = new EventEmitter<IScrollEvent, void>();
   /**
-   * An emitter for legacy on scroll events that just included the position, and not the source.
-   * Used to maintain API consistency for the onScroll method.
+   * Internally we track the source of the scroll but this is meaningless outside the library so
+   * it's filtered out.
    */
-  protected _legacyOnScroll?: EventEmitter<number, void>;
+  protected _onScrollApi?: EventEmitter<number, void>;
+  public get onScroll(): IEvent<number, void> {
+    if (!this._onScrollApi) {
+      this._onScrollApi = new EventEmitter<number, void>();
+      this.register(this._onScroll.event(ev => {
+        this._onScrollApi?.fire(ev.position);
+      }));
+    }
+    return this._onScrollApi.event;
+  }
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
@@ -285,16 +294,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     if (scrollAmount !== 0) {
       this.scrollLines(scrollAmount);
     }
-  }
-
-  public get onScroll(): IEvent<number, void> {
-    if (!this._legacyOnScroll) {
-      this._legacyOnScroll = new EventEmitter<number, void>();
-      this.register(this._onScroll.event(ev => {
-        this._legacyOnScroll?.fire(ev.position);
-      }));
-    }
-    return this._legacyOnScroll.event;
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
