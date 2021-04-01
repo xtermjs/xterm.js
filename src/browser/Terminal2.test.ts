@@ -74,7 +74,7 @@ describe('Escape Sequence Files', function(): void {
       let content = '';
       const OSC_CODE = 12345;
       await new Promise(resolve => {
-        customHandler = term.addOscHandler(OSC_CODE, () => {
+        customHandler = term.registerOscHandler(OSC_CODE, () => {
           // grab terminal viewport content
           content = terminalToString(term);
           resolve();

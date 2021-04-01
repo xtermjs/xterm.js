@@ -156,9 +156,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _onTooltip(e: MouseEvent): void {
     this._tooltipTimeout = undefined;
     const zone = this._findZoneEventAt(e);
-    if (zone && zone.tooltipCallback) {
-      zone.tooltipCallback(e);
-    }
+    zone?.tooltipCallback(e);
   }
 
   private _onMouseDown(e: MouseEvent): void {
