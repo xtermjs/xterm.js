@@ -301,21 +301,22 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return;
     }
     const cursorY = this.buffer.ybase + this.buffer.y;
-    const viewportRelativeCursorY = cursorY - this.buffer.ydisp;
+    const bufferLine = this.buffer.lines.get(cursorY);
+    if (!bufferLine) {
+      return;
+    }
     const cursorX = Math.min(this.buffer.x, this.cols - 1);
     const cellHeight = this._renderService.dimensions.actualCellHeight;
-    const bufferLine = this.buffer.lines.get(cursorY);
-    if (!bufferLine) return;
     const width = bufferLine.getWidth(cursorX);
     const cellWidth = this._renderService.dimensions.actualCellWidth * width;
-    const cursorTop = viewportRelativeCursorY * this._renderService.dimensions.actualCellHeight;
+    const cursorTop = this.buffer.y * this._renderService.dimensions.actualCellHeight;
     const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
     this.textarea.style.left = cursorLeft + 'px';
     this.textarea.style.top = cursorTop + 'px';
-    this.textarea.style.width = cellWidth +'px';
+    this.textarea.style.width = cellWidth + 'px';
     this.textarea.style.height = cellHeight + 'px';
     this.textarea.style.lineHeight = cellHeight + 'px';
     this.textarea.style.zIndex = '-5';
