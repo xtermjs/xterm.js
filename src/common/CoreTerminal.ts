@@ -124,7 +124,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
     this.register(this._bufferService.onScroll(event => {
-      this._onScroll.fire(event);
+      this._onScroll.fire({position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL});
       this._dirtyRowService.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
 
@@ -188,8 +188,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    this._bufferService.scrollLines(disp, suppressScrollEvent);
+  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
+    this._bufferService.scrollLines(disp, suppressScrollEvent, source);
   }
 
   /**

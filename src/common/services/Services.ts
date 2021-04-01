@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -23,7 +23,7 @@ export interface IBufferService {
   scrollToBottom(): void;
   scrollToTop(): void;
   scrollToLine(line: number): void;
-  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
   scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;

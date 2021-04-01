@@ -8,7 +8,7 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IAttributeData, IBufferLine } from 'common/Types';
+import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -130,7 +130,7 @@ export class BufferService extends Disposable implements IBufferService {
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
     const buffer = this.buffer;
     if (disp < 0) {
       if (buffer.ydisp === 0) {
