@@ -22,7 +22,7 @@ See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/xterm-
 
 ### Handling Context Loss
 
-The browser may drop WebGL contexts for various reasons like OOM or after the system has been suspended. There is an API exposed that fires the `webglcontextlost` event fires on the canvas so embedders can handle it however they wish. An easy way but suboptimal way to handle this is by disposing of WebglAddon when the event fires:
+The browser may drop WebGL contexts for various reasons like OOM or after the system has been suspended. There is an API exposed that fires the `webglcontextlost` event fired on the canvas so embedders can handle it however they wish. An easy, but suboptimal way, to handle this is by disposing of WebglAddon when the event fires:
 
 ```ts
 const terminal = new Terminal();
