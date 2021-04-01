@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 
 interface IPosition {
@@ -45,7 +45,6 @@ export class CompositionHelper {
     private readonly _compositionView: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @ICoreService private readonly _coreService: ICoreService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
