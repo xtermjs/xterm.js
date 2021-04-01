@@ -58,8 +58,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
-  /** An IBufferline to clone/copy from for new blank lines */
-  private _cachedBlankLine: IBufferLine | undefined;
+
 
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
@@ -98,21 +97,20 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService = new InstantiationService();
     this.optionsService = new OptionsService(options);
     this._instantiationService.setService(IOptionsService, this.optionsService);
-    this._bufferService = this.register(this._instantiationService.createInstance(BufferService));
-    this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._instantiationService.createInstance(LogService);
     this._instantiationService.setService(ILogService, this._logService);
-    this._coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
-    this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
-    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
-    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
-    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
     this.unicodeService = this._instantiationService.createInstance(UnicodeService);
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
-
+    this._bufferService = this.register(this._instantiationService.createInstance(BufferService));
+    this._instantiationService.setService(IBufferService, this._bufferService);
+    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
+    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
+    this._coreService = this.register(this._instantiationService.createInstance(CoreService, () => this._bufferService.scrollToBottom()));
+    this._instantiationService.setService(ICoreService, this._coreService);
+    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
+    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
     // Register input handler and handle/forward events
     this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
@@ -135,6 +133,23 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     super.dispose();
     this._windowsMode?.dispose();
     this._windowsMode = undefined;
+  }
+
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+    this._bufferService.scrollLines(disp, suppressScrollEvent);
+  }
+
+  public scrollPages(pageCount: number): void {
+    this._bufferService.scrollPages(pageCount);
+  }
+  public scrollToTop(): void {
+    this._bufferService.scrollToTop();
+  }
+  public scrollToBottom(): void {
+    this._bufferService.scrollToBottom();
+  }
+  public scrollToLine(line: number): void {
+    this._bufferService.scrollToLine(line);
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
