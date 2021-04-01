@@ -207,12 +207,10 @@ export class CompositionHelper {
     }
 
     if (this._bufferService.buffer.isCursorInViewport) {
-      const cursorY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-      const viewportRelativeCursorY = cursorY - this._bufferService.buffer.ydisp;
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
       const cellHeight = this._renderService.dimensions.actualCellHeight;
-      const cursorTop = viewportRelativeCursorY * this._renderService.dimensions.actualCellHeight;
+      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.actualCellHeight;
       const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
 
       this._compositionView.style.left = cursorLeft + 'px';
