@@ -42,8 +42,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
-  private _onRecoverContext = new EventEmitter<void>();
-  public get onRecoverContext(): IEvent<void> { return this._onRecoverContext.event; }
+  private _onContextLoss = new EventEmitter<void>();
+  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -87,7 +87,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
 
     this._core.screenElement!.appendChild(this._canvas);
 
@@ -98,11 +98,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.onCharSizeChanged();
 
     this._isAttached = document.body.contains(this._core.screenElement!);
-  }
-
-  private _onContextLost(e: Event): void {
-    e.preventDefault();
-    this._onRecoverContext.fire();
   }
 
   public dispose(): void {
