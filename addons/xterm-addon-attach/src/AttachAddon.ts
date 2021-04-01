@@ -41,7 +41,9 @@ export class AttachAddon implements ITerminalAddon {
   }
 
   public dispose(): void {
-    this._disposables.forEach(d => d.dispose());
+    for (const d of this._disposables) {
+      d.dispose();
+    }
   }
 
   private _sendData(data: string): void {

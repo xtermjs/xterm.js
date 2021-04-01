@@ -161,6 +161,8 @@ export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
+  logLevel: LogLevelEnum;
+
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
   warn(message: any, ...optionalParams: any[]): void;
@@ -181,6 +183,13 @@ export interface IOptionsService {
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+export enum LogLevelEnum {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  OFF = 4
+}
 export type RendererType = 'dom' | 'canvas';
 
 export interface IPartialTerminalOptions {

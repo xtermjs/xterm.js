@@ -11,6 +11,7 @@ import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
+import { ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -105,6 +106,9 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number = 0;
+  private _oldHasSelection: boolean = false;
+  private _oldSelectionStart: [number, number] | undefined = undefined;
+  private _oldSelectionEnd: [number, number] | undefined = undefined;
 
   private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
@@ -118,6 +122,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   constructor(
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
+    private readonly _linkifier: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
@@ -290,7 +295,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Checks if the current click was inside the current selection
    * @param event The mouse event
    */
-  public isClickInSelection(event: MouseEvent): boolean {
+  private _isClickInSelection(event: MouseEvent): boolean {
     const coords = this._getMouseBufferCoords(event);
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
@@ -313,13 +318,22 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
-  public selectWordAtCursor(event: MouseEvent): void {
+  private _selectWordAtCursor(event: MouseEvent, allowWhitespaceOnlySelection: boolean): boolean {
+    // Check if there is a link under the cursor first and select that if so
+    const range = this._linkifier.currentLink?.link?.range;
+    if (range) {
+      this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
+      this._model.selectionEnd = [range.end.x, range.end.y - 1];
+      return true;
+    }
+
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._selectWordAt(coords, false);
+      this._selectWordAt(coords, allowWhitespaceOnlySelection);
       this._model.selectionEnd = undefined;
-      this.refresh(true);
+      return true;
     }
+    return false;
   }
 
   /**
@@ -524,14 +538,12 @@ export class SelectionService extends Disposable implements ISelectionService {
   }
 
   /**
-   * Performs a double click, selecting the current work.
+   * Performs a double click, selecting the current word.
    * @param event The mouse event.
    */
   private _onDoubleClick(event: MouseEvent): void {
-    const coords = this._getMouseBufferCoords(event);
-    if (coords) {
+    if (this._selectWordAtCursor(event, true)) {
       this._activeSelectionMode = SelectionMode.WORD;
-      this._selectWordAt(coords, true);
     }
   }
 
@@ -681,9 +693,41 @@ export class SelectionService extends Disposable implements ISelectionService {
           this._coreService.triggerDataEvent(sequence, true);
         }
       }
-    } else if (this.hasSelection) {
-      this._onSelectionChange.fire();
+    } else {
+      this._fireEventIfSelectionChanged();
     }
+  }
+
+  private _fireEventIfSelectionChanged(): void {
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    const hasSelection = !!start && !!end && (start[0] !== end[0] || start[1] !== end[1]);
+
+    if (!hasSelection) {
+      if (this._oldHasSelection) {
+        this._fireOnSelectionChange(start, end, hasSelection);
+      }
+      return;
+    }
+
+    // Sanity check, these should not be undefined as there is a selection
+    if (!start || !end) {
+      return;
+    }
+
+    if (!this._oldSelectionStart || !this._oldSelectionEnd || (
+      start[0] !== this._oldSelectionStart[0] || start[1] !== this._oldSelectionStart[1] ||
+      end[0] !== this._oldSelectionEnd[0] || end[1] !== this._oldSelectionEnd[1])) {
+
+      this._fireOnSelectionChange(start, end, hasSelection);
+    }
+  }
+
+  private _fireOnSelectionChange(start: [number, number] | undefined, end: [number, number] | undefined, hasSelection: boolean): void {
+    this._oldSelectionStart = start;
+    this._oldSelectionEnd = end;
+    this._oldHasSelection = hasSelection;
+    this._onSelectionChange.fire();
   }
 
   private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
@@ -725,6 +769,15 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
     this.refresh();
+  }
+
+  public rightClickSelect(ev: MouseEvent): void {
+    if (!this._isClickInSelection(ev)) {
+      if (this._selectWordAtCursor(ev, false)) {
+        this.refresh(true);
+      }
+      this._fireEventIfSelectionChanged();
+    }
   }
 
   /**

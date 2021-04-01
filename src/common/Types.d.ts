@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
@@ -359,8 +359,12 @@ export interface IInputHandler {
   onTitleChange: IEvent<string>;
   onRequestScroll: IEvent<IAttributeData, boolean | void>;
 
-  parse(data: string | Uint8Array): void;
+  parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -436,4 +440,12 @@ export interface IInputHandler {
       ESC }
       ESC ~ */ setgLevel(level: number): void;
   /** ESC # 8 */ screenAlignmentPattern(): void;
+}
+
+interface IParseStack {
+  paused: boolean;
+  cursorStartX: number;
+  cursorStartY: number;
+  decodedLength: number;
+  position: number;
 }

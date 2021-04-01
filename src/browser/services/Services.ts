@@ -91,8 +91,7 @@ export interface ISelectionService {
   selectAll(): void;
   selectLines(start: number, end: number): void;
   clearSelection(): void;
-  isClickInSelection(event: MouseEvent): boolean;
-  selectWordAtCursor(event: MouseEvent): void;
+  rightClickSelect(event: MouseEvent): void;
   shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean;
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;

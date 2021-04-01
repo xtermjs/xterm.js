@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
 import { IBufferLine, IAttributeData, IAnsiColorChangeEvent } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -17,6 +17,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
+import { OscHandler } from 'common/parser/OscParser';
 
 function getCursor(bufferService: IBufferService): number[] {
   return [
@@ -41,6 +42,18 @@ class TestInputHandler extends InputHandler {
   public get windowTitleStack(): string[] { return this._windowTitleStack; }
   public get iconNameStack(): string[] { return this._iconNameStack; }
   public parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null { return this._parseAnsiColorChange(data); }
+
+  /**
+   * Promise based parse call to await the full resolve of given input data.
+   * This is useful to test async handlers in inputhandler directly.
+   */
+  public async parseP(data: string | Uint8Array): Promise<void> {
+    let result: Promise<boolean> | void;
+    let prev: boolean | undefined;
+    while (result = this.parse(data, prev)) {
+      prev = await result;
+    }
+  }
 }
 
 describe('InputHandler', () => {
@@ -118,7 +131,7 @@ describe('InputHandler', () => {
   describe('setMode', () => {
     it('should toggle bracketedPasteMode', () => {
       const coreService = new MockCoreService();
-      const inputHandler = new InputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
       // Set bracketed paste mode
       inputHandler.setModePrivate(Params.fromArray([2004]));
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, true);
@@ -134,123 +147,160 @@ describe('InputHandler', () => {
       return result;
     }
 
-    it('insertChars', function(): void {
+    it('insertChars', async () => {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // insert some data in first and second line
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
+      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('1234567890');
+      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // insert one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + ' 123456789');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + ' 123456789');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '  12345678');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '  12345678');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '    123456');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '    123456');
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
     });
-    it('deleteChars', function(): void {
+    it('deleteChars', async () => {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // insert some data in first and second line
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
-      inputHandler.parse(Array(bufferService.cols - 9).join('a'));
-      inputHandler.parse('1234567890');
+      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('1234567890');
+      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
 
       // delete one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([0]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '234567890 ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '234567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '234567890 ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '234567890');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([1]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '34567890  ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '34567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '34567890  ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '34567890');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([2]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '567890    ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a') + '567890');
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '567890    ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '567890');
+
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([10]));
-      expect(line1.translateToString(false)).equals(Array(bufferService.cols - 9).join('a') + '          ');
-      expect(line1.translateToString(true)).equals(Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
+      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
     });
-    it('eraseInLine', function(): void {
+    it('eraseInLine', async () => {
       const bufferService = new MockBufferService(80, 30);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // fill 6 lines to test 3 different states
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
-      inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params[0] - right erase
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([0]));
-      expect(bufferService.buffer.lines.get(0)!.translateToString(false)).equals(Array(71).join('a') + '          ');
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), Array(71).join('a') + '          ');
 
       // params[1] - left erase
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(1)!.translateToString(false)).equals(Array(71).join(' ') + ' aaaaaaaaa');
+      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(false), Array(71).join(' ') + ' aaaaaaaaa');
 
       // params[1] - left erase
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([2]));
-      expect(bufferService.buffer.lines.get(2)!.translateToString(false)).equals(Array(bufferService.cols + 1).join(' '));
+      assert.equal(bufferService.buffer.lines.get(2)!.translateToString(false), Array(bufferService.cols + 1).join(' '));
 
     });
-    it('eraseInDisplay', function(): void {
+    it('eraseInDisplay', async () => {
       const bufferService = new MockBufferService(80, 7);
-      const inputHandler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
 
       // fill display with a's
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([0]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
@@ -259,7 +309,7 @@ describe('InputHandler', () => {
         Array(40 + 1).join('a') + Array(bufferService.cols - 40 + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
         Array(bufferService.cols + 1).join('a'),
@@ -272,13 +322,13 @@ describe('InputHandler', () => {
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params [1] - left and above
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
@@ -287,7 +337,7 @@ describe('InputHandler', () => {
         Array(41 + 1).join(' ') + Array(bufferService.cols - 41 + 1).join('a'),
         Array(bufferService.cols + 1).join('a')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         '',
         '',
         '',
@@ -300,13 +350,13 @@ describe('InputHandler', () => {
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params [2] - whole screen
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([2]));
-      expect(termContent(bufferService, false)).eql([
+      assert.deepEqual(termContent(bufferService, false), [
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' '),
@@ -315,7 +365,7 @@ describe('InputHandler', () => {
         Array(bufferService.cols + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);
-      expect(termContent(bufferService, true)).eql([
+      assert.deepEqual(termContent(bufferService, true), [
         '',
         '',
         '',
@@ -328,242 +378,251 @@ describe('InputHandler', () => {
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      inputHandler.parse(Array(bufferService.cols + 1).join('a')); // line 0
-      inputHandler.parse(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
+      await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
 
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      inputHandler.parse(Array(bufferService.cols + 1).join('a')); // line 0
-      inputHandler.parse(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) inputHandler.parse(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
+      await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).true;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 90; // Cursor is beyond last column
       inputHandler.eraseInDisplay(Params.fromArray([1]));
-      expect(bufferService.buffer.lines.get(2)!.isWrapped).false;
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
   });
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
-      const inputHandler = new InputHandler(new MockBufferService(80, 30), new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(
+        new MockBufferService(80, 30),
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
       const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
     });
-    it('should clear cells to the right on early wrap-around', () => {
+    it('should clear cells to the right on early wrap-around', async () => {
       bufferService.resize(5, 5);
       optionsService.options.scrollback = 1;
-      inputHandler.parse('12345');
+      await inputHandler.parseP('12345');
       bufferService.buffer.x = 0;
-      inputHandler.parse('￥￥￥');
+      await inputHandler.parseP('￥￥￥');
       assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
     });
   });
 
   describe('alt screen', () => {
     let bufferService: IBufferService;
-    let handler: InputHandler;
+    let handler: TestInputHandler;
 
     beforeEach(() => {
       bufferService = new MockBufferService(80, 30);
-      handler = new InputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
+      handler = new TestInputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockDirtyRowService(), new MockLogService(), new MockOptionsService(), new MockCoreMouseService(), new MockUnicodeService());
     });
-    it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
-      handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
+    it('should handle DECSET/DECRST 47 (alt screen buffer)', async () => {
+      await handler.parseP('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor()), 1);
     });
-    it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
-      handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
+    it('should handle DECSET/DECRST 1047 (alt screen buffer)', async () => {
+      await handler.parseP('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '    TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(4, new CellData()).getFgColor()), 1);
     });
-    it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
-      handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
+    it('should handle DECSET/DECRST 1048 (alt screen cursor)', async () => {
+      await handler.parseP('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), 'JUNK');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
       // Text color of 'JUNK' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor()), 1);
     });
-    it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
-      handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('');
+    it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', async () => {
+      await handler.parseP('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), '');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
     });
-    it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
-      handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
-      expect(bufferService.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
+    it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', async () => {
+      await handler.parseP('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(0, true), 'TEST');
       // Text color of 'TEST' should be default
-      expect(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
-      handler.parse('\x1b[?1049h\x1b[uTEST');
-      expect(bufferService.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
+      assert.equal(bufferService.buffer.lines.get(0)!.loadCell(0, new CellData()).fg, DEFAULT_ATTR_DATA.fg);
+      await handler.parseP('\x1b[?1049h\x1b[uTEST');
+      assert.equal(bufferService.buffer.translateBufferLineToString(1, true), 'TEST');
       // Text color of 'TEST' should be red
-      expect((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor())).to.equal(1);
+      assert.equal((bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getFgColor()), 1);
     });
-    it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
-      handler.parse('\x1b[42m\x1b[?1049h');
+    it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', async () => {
+      await handler.parseP('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(bufferService.buffer.lines.get(20)!.loadCell(10, new CellData()).getBgColor()).to.equal(2);
+      assert.equal(bufferService.buffer.lines.get(20)!.loadCell(10, new CellData()).getBgColor(), 2);
     });
   });
 
   describe('text attributes', () => {
-    it('bold', () => {
-      inputHandler.parse('\x1b[1m');
+    it('bold', async () => {
+      await inputHandler.parseP('\x1b[1m');
       assert.equal(!!inputHandler.curAttrData.isBold(), true);
-      inputHandler.parse('\x1b[22m');
+      await inputHandler.parseP('\x1b[22m');
       assert.equal(!!inputHandler.curAttrData.isBold(), false);
     });
-    it('dim', () => {
-      inputHandler.parse('\x1b[2m');
+    it('dim', async () => {
+      await inputHandler.parseP('\x1b[2m');
       assert.equal(!!inputHandler.curAttrData.isDim(), true);
-      inputHandler.parse('\x1b[22m');
+      await inputHandler.parseP('\x1b[22m');
       assert.equal(!!inputHandler.curAttrData.isDim(), false);
     });
-    it('italic', () => {
-      inputHandler.parse('\x1b[3m');
+    it('italic', async () => {
+      await inputHandler.parseP('\x1b[3m');
       assert.equal(!!inputHandler.curAttrData.isItalic(), true);
-      inputHandler.parse('\x1b[23m');
+      await inputHandler.parseP('\x1b[23m');
       assert.equal(!!inputHandler.curAttrData.isItalic(), false);
     });
-    it('underline', () => {
-      inputHandler.parse('\x1b[4m');
+    it('underline', async () => {
+      await inputHandler.parseP('\x1b[4m');
       assert.equal(!!inputHandler.curAttrData.isUnderline(), true);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(!!inputHandler.curAttrData.isUnderline(), false);
     });
-    it('blink', () => {
-      inputHandler.parse('\x1b[5m');
+    it('blink', async () => {
+      await inputHandler.parseP('\x1b[5m');
       assert.equal(!!inputHandler.curAttrData.isBlink(), true);
-      inputHandler.parse('\x1b[25m');
+      await inputHandler.parseP('\x1b[25m');
       assert.equal(!!inputHandler.curAttrData.isBlink(), false);
     });
-    it('inverse', () => {
-      inputHandler.parse('\x1b[7m');
+    it('inverse', async () => {
+      await inputHandler.parseP('\x1b[7m');
       assert.equal(!!inputHandler.curAttrData.isInverse(), true);
-      inputHandler.parse('\x1b[27m');
+      await inputHandler.parseP('\x1b[27m');
       assert.equal(!!inputHandler.curAttrData.isInverse(), false);
     });
-    it('invisible', () => {
-      inputHandler.parse('\x1b[8m');
+    it('invisible', async () => {
+      await inputHandler.parseP('\x1b[8m');
       assert.equal(!!inputHandler.curAttrData.isInvisible(), true);
-      inputHandler.parse('\x1b[28m');
+      await inputHandler.parseP('\x1b[28m');
       assert.equal(!!inputHandler.curAttrData.isInvisible(), false);
     });
-    it('colormode palette 16', () => {
+    it('colormode palette 16', async () => {
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0); // DEFAULT
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0); // DEFAULT
       // lower 8 colors
       for (let i = 0; i < 8; ++i) {
-        inputHandler.parse(`\x1b[${i + 30};${i + 40}m`);
+        await inputHandler.parseP(`\x1b[${i + 30};${i + 40}m`);
         assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P16);
         assert.equal(inputHandler.curAttrData.getFgColor(), i);
         assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P16);
         assert.equal(inputHandler.curAttrData.getBgColor(), i);
       }
       // reset to DEFAULT
-      inputHandler.parse(`\x1b[39;49m`);
+      await inputHandler.parseP(`\x1b[39;49m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0);
     });
-    it('colormode palette 256', () => {
+    it('colormode palette 256', async () => {
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0); // DEFAULT
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0); // DEFAULT
       // lower 8 colors
       for (let i = 0; i < 256; ++i) {
-        inputHandler.parse(`\x1b[38;5;${i};48;5;${i}m`);
+        await inputHandler.parseP(`\x1b[38;5;${i};48;5;${i}m`);
         assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P256);
         assert.equal(inputHandler.curAttrData.getFgColor(), i);
         assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P256);
         assert.equal(inputHandler.curAttrData.getBgColor(), i);
       }
       // reset to DEFAULT
-      inputHandler.parse(`\x1b[39;49m`);
+      await inputHandler.parseP(`\x1b[39;49m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0);
       assert.equal(inputHandler.curAttrData.getFgColor(), -1);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0);
       assert.equal(inputHandler.curAttrData.getBgColor(), -1);
     });
-    it('colormode RGB', () => {
+    it('colormode RGB', async () => {
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0); // DEFAULT
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0); // DEFAULT
-      inputHandler.parse(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      await inputHandler.parseP(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_RGB);
       assert.equal(inputHandler.curAttrData.getFgColor(), 1 << 16 | 2 << 8 | 3);
       assert.deepEqual(AttributeData.toColorRGB(inputHandler.curAttrData.getFgColor()), [1, 2, 3]);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_RGB);
       assert.deepEqual(AttributeData.toColorRGB(inputHandler.curAttrData.getBgColor()), [4, 5, 6]);
       // reset to DEFAULT
-      inputHandler.parse(`\x1b[39;49m`);
+      await inputHandler.parseP(`\x1b[39;49m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0);
       assert.equal(inputHandler.curAttrData.getFgColor(), -1);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0);
       assert.equal(inputHandler.curAttrData.getBgColor(), -1);
     });
-    it('colormode transition RGB to 256', () => {
+    it('colormode transition RGB to 256', async () => {
       // enter RGB for FG and BG
-      inputHandler.parse(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      await inputHandler.parseP(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
       // enter 256 for FG and BG
-      inputHandler.parse(`\x1b[38;5;255;48;5;255m`);
+      await inputHandler.parseP(`\x1b[38;5;255;48;5;255m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.getFgColor(), 255);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.getBgColor(), 255);
     });
-    it('colormode transition RGB to 16', () => {
+    it('colormode transition RGB to 16', async () => {
       // enter RGB for FG and BG
-      inputHandler.parse(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      await inputHandler.parseP(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
       // enter 16 for FG and BG
-      inputHandler.parse(`\x1b[37;47m`);
+      await inputHandler.parseP(`\x1b[37;47m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P16);
       assert.equal(inputHandler.curAttrData.getFgColor(), 7);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P16);
       assert.equal(inputHandler.curAttrData.getBgColor(), 7);
     });
-    it('colormode transition 16 to 256', () => {
+    it('colormode transition 16 to 256', async () => {
       // enter 16 for FG and BG
-      inputHandler.parse(`\x1b[37;47m`);
+      await inputHandler.parseP(`\x1b[37;47m`);
       // enter 256 for FG and BG
-      inputHandler.parse(`\x1b[38;5;255;48;5;255m`);
+      await inputHandler.parseP(`\x1b[38;5;255;48;5;255m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.getFgColor(), 255);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.getBgColor(), 255);
     });
-    it('colormode transition 256 to 16', () => {
+    it('colormode transition 256 to 16', async () => {
       // enter 256 for FG and BG
-      inputHandler.parse(`\x1b[38;5;255;48;5;255m`);
+      await inputHandler.parseP(`\x1b[38;5;255;48;5;255m`);
       // enter 16 for FG and BG
-      inputHandler.parse(`\x1b[37;47m`);
+      await inputHandler.parseP(`\x1b[37;47m`);
       assert.equal(inputHandler.curAttrData.getFgColorMode(), Attributes.CM_P16);
       assert.equal(inputHandler.curAttrData.getFgColor(), 7);
       assert.equal(inputHandler.curAttrData.getBgColorMode(), Attributes.CM_P16);
       assert.equal(inputHandler.curAttrData.getBgColor(), 7);
     });
-    it('should zero missing RGB values', () => {
-      inputHandler.parse(`\x1b[38;2;1;2;3m`);
-      inputHandler.parse(`\x1b[38;2;5m`);
+    it('should zero missing RGB values', async () => {
+      await inputHandler.parseP(`\x1b[38;2;1;2;3m`);
+      await inputHandler.parseP(`\x1b[38;2;5m`);
       assert.deepEqual(AttributeData.toColorRGB(inputHandler.curAttrData.getFgColor()), [5, 0, 0]);
     });
   });
@@ -573,141 +632,141 @@ describe('InputHandler', () => {
       inputHandler2 = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService(), new MockUnicodeService());
     });
     describe('should equal to semicolon', () => {
-      it('CSI 38:2::50:100:150 m', () => {
+      it('CSI 38:2::50:100:150 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;100;150m');
-        inputHandler.parse('\x1b[38:2::50:100:150m');
+        await inputHandler2.parseP('\x1b[38;2;50;100;150m');
+        await inputHandler.parseP('\x1b[38:2::50:100:150m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:2::50:100: m', () => {
+      it('CSI 38:2::50:100: m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;100;m');
-        inputHandler.parse('\x1b[38:2::50:100:m');
+        await inputHandler2.parseP('\x1b[38;2;50;100;m');
+        await inputHandler.parseP('\x1b[38:2::50:100:m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:2::50:: m', () => {
+      it('CSI 38:2::50:: m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;;m');
-        inputHandler.parse('\x1b[38:2::50::m');
+        await inputHandler2.parseP('\x1b[38;2;50;;m');
+        await inputHandler.parseP('\x1b[38:2::50::m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 0 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:2:::: m', () => {
+      it('CSI 38:2:::: m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;;;m');
-        inputHandler.parse('\x1b[38:2::::m');
+        await inputHandler2.parseP('\x1b[38;2;;;m');
+        await inputHandler.parseP('\x1b[38:2::::m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 0 << 16 | 0 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38;2::50:100:150 m', () => {
+      it('CSI 38;2::50:100:150 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;100;150m');
-        inputHandler.parse('\x1b[38;2::50:100:150m');
+        await inputHandler2.parseP('\x1b[38;2;50;100;150m');
+        await inputHandler.parseP('\x1b[38;2::50:100:150m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38;2;50:100:150 m', () => {
+      it('CSI 38;2;50:100:150 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;100;150m');
-        inputHandler.parse('\x1b[38;2;50:100:150m');
+        await inputHandler2.parseP('\x1b[38;2;50;100;150m');
+        await inputHandler.parseP('\x1b[38;2;50:100:150m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38;2;50;100:150 m', () => {
+      it('CSI 38;2;50;100:150 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2;50;100;150m');
-        inputHandler.parse('\x1b[38;2;50;100:150m');
+        await inputHandler2.parseP('\x1b[38;2;50;100;150m');
+        await inputHandler.parseP('\x1b[38;2;50;100:150m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:5:50 m', () => {
+      it('CSI 38:5:50 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;5;50m');
-        inputHandler.parse('\x1b[38:5:50m');
+        await inputHandler2.parseP('\x1b[38;5;50m');
+        await inputHandler.parseP('\x1b[38:5:50m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFF, 50);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:5: m', () => {
+      it('CSI 38:5: m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;5;m');
-        inputHandler.parse('\x1b[38:5:m');
+        await inputHandler2.parseP('\x1b[38;5;m');
+        await inputHandler.parseP('\x1b[38:5:m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFF, 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38;5:50 m', () => {
+      it('CSI 38;5:50 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;5;50m');
-        inputHandler.parse('\x1b[38;5:50m');
+        await inputHandler2.parseP('\x1b[38;5;50m');
+        await inputHandler.parseP('\x1b[38;5:50m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFF, 50);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
     });
     describe('should fill early sequence end with default of 0', () => {
-      it('CSI 38:2 m', () => {
+      it('CSI 38:2 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;2m');
-        inputHandler.parse('\x1b[38:2m');
+        await inputHandler2.parseP('\x1b[38;2m');
+        await inputHandler.parseP('\x1b[38:2m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 0 << 16 | 0 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 38:5 m', () => {
+      it('CSI 38:5 m', async () => {
         inputHandler.curAttrData.fg = 0xFFFFFFFF;
         inputHandler2.curAttrData.fg = 0xFFFFFFFF;
-        inputHandler2.parse('\x1b[38;5m');
-        inputHandler.parse('\x1b[38:5m');
+        await inputHandler2.parseP('\x1b[38;5m');
+        await inputHandler.parseP('\x1b[38:5m');
         assert.equal(inputHandler2.curAttrData.fg & 0xFF, 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
     });
     describe('should not interfere with leading/following SGR attrs', () => {
-      it('CSI 1 ; 38:2::50:100:150 ; 4 m', () => {
-        inputHandler2.parse('\x1b[1;38;2;50;100;150;4m');
-        inputHandler.parse('\x1b[1;38:2::50:100:150;4m');
+      it('CSI 1 ; 38:2::50:100:150 ; 4 m', async () => {
+        await inputHandler2.parseP('\x1b[1;38;2;50;100;150;4m');
+        await inputHandler.parseP('\x1b[1;38:2::50:100:150;4m');
         assert.equal(!!inputHandler2.curAttrData.isBold(), true);
         assert.equal(!!inputHandler2.curAttrData.isUnderline(), true);
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 1 ; 38:2::50:100: ; 4 m', () => {
-        inputHandler2.parse('\x1b[1;38;2;50;100;;4m');
-        inputHandler.parse('\x1b[1;38:2::50:100:;4m');
+      it('CSI 1 ; 38:2::50:100: ; 4 m', async () => {
+        await inputHandler2.parseP('\x1b[1;38;2;50;100;;4m');
+        await inputHandler.parseP('\x1b[1;38:2::50:100:;4m');
         assert.equal(!!inputHandler2.curAttrData.isBold(), true);
         assert.equal(!!inputHandler2.curAttrData.isUnderline(), true);
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 1 ; 38:2::50:100 ; 4 m', () => {
-        inputHandler2.parse('\x1b[1;38;2;50;100;;4m');
-        inputHandler.parse('\x1b[1;38:2::50:100;4m');
+      it('CSI 1 ; 38:2::50:100 ; 4 m', async () => {
+        await inputHandler2.parseP('\x1b[1;38;2;50;100;;4m');
+        await inputHandler.parseP('\x1b[1;38:2::50:100;4m');
         assert.equal(!!inputHandler2.curAttrData.isBold(), true);
         assert.equal(!!inputHandler2.curAttrData.isUnderline(), true);
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 1 ; 38:2:: ; 4 m', () => {
-        inputHandler2.parse('\x1b[1;38;2;;;;4m');
-        inputHandler.parse('\x1b[1;38:2::;4m');
+      it('CSI 1 ; 38:2:: ; 4 m', async () => {
+        await inputHandler2.parseP('\x1b[1;38;2;;;;4m');
+        await inputHandler.parseP('\x1b[1;38:2::;4m');
         assert.equal(!!inputHandler2.curAttrData.isBold(), true);
         assert.equal(!!inputHandler2.curAttrData.isUnderline(), true);
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 0);
         assert.equal(inputHandler.curAttrData.fg, inputHandler2.curAttrData.fg);
       });
-      it('CSI 1 ; 38;2:: ; 4 m', () => {
-        inputHandler2.parse('\x1b[1;38;2;;;;4m');
-        inputHandler.parse('\x1b[1;38;2::;4m');
+      it('CSI 1 ; 38;2:: ; 4 m', async () => {
+        await inputHandler2.parseP('\x1b[1;38;2;;;;4m');
+        await inputHandler.parseP('\x1b[1;38;2::;4m');
         assert.equal(!!inputHandler2.curAttrData.isBold(), true);
         assert.equal(!!inputHandler2.curAttrData.isUnderline(), true);
         assert.equal(inputHandler2.curAttrData.fg & 0xFFFFFF, 0);
@@ -719,372 +778,372 @@ describe('InputHandler', () => {
     beforeEach(() => {
       bufferService.resize(10, 10);
     });
-    it('cursor forward (CUF)', () => {
-      inputHandler.parse('\x1b[C');
+    it('cursor forward (CUF)', async () => {
+      await inputHandler.parseP('\x1b[C');
       assert.deepEqual(getCursor(bufferService), [1, 0]);
-      inputHandler.parse('\x1b[1C');
+      await inputHandler.parseP('\x1b[1C');
       assert.deepEqual(getCursor(bufferService), [2, 0]);
-      inputHandler.parse('\x1b[4C');
+      await inputHandler.parseP('\x1b[4C');
       assert.deepEqual(getCursor(bufferService), [6, 0]);
-      inputHandler.parse('\x1b[100C');
+      await inputHandler.parseP('\x1b[100C');
       assert.deepEqual(getCursor(bufferService), [9, 0]);
       // should not change y
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 4;
-      inputHandler.parse('\x1b[C');
+      await inputHandler.parseP('\x1b[C');
       assert.deepEqual(getCursor(bufferService), [9, 4]);
     });
-    it('cursor backward (CUB)', () => {
-      inputHandler.parse('\x1b[D');
+    it('cursor backward (CUB)', async () => {
+      await inputHandler.parseP('\x1b[D');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1D');
+      await inputHandler.parseP('\x1b[1D');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // place cursor at end of first line
-      inputHandler.parse('\x1b[100C');
-      inputHandler.parse('\x1b[D');
+      await inputHandler.parseP('\x1b[100C');
+      await inputHandler.parseP('\x1b[D');
       assert.deepEqual(getCursor(bufferService), [8, 0]);
-      inputHandler.parse('\x1b[1D');
+      await inputHandler.parseP('\x1b[1D');
       assert.deepEqual(getCursor(bufferService), [7, 0]);
-      inputHandler.parse('\x1b[4D');
+      await inputHandler.parseP('\x1b[4D');
       assert.deepEqual(getCursor(bufferService), [3, 0]);
-      inputHandler.parse('\x1b[100D');
+      await inputHandler.parseP('\x1b[100D');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // should not change y
       bufferService.buffer.x = 4;
       bufferService.buffer.y = 4;
-      inputHandler.parse('\x1b[D');
+      await inputHandler.parseP('\x1b[D');
       assert.deepEqual(getCursor(bufferService), [3, 4]);
     });
-    it('cursor down (CUD)', () => {
-      inputHandler.parse('\x1b[B');
+    it('cursor down (CUD)', async () => {
+      await inputHandler.parseP('\x1b[B');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
-      inputHandler.parse('\x1b[1B');
+      await inputHandler.parseP('\x1b[1B');
       assert.deepEqual(getCursor(bufferService), [0, 2]);
-      inputHandler.parse('\x1b[4B');
+      await inputHandler.parseP('\x1b[4B');
       assert.deepEqual(getCursor(bufferService), [0, 6]);
-      inputHandler.parse('\x1b[100B');
+      await inputHandler.parseP('\x1b[100B');
       assert.deepEqual(getCursor(bufferService), [0, 9]);
       // should not change x
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 0;
-      inputHandler.parse('\x1b[B');
+      await inputHandler.parseP('\x1b[B');
       assert.deepEqual(getCursor(bufferService), [8, 1]);
     });
-    it('cursor up (CUU)', () => {
-      inputHandler.parse('\x1b[A');
+    it('cursor up (CUU)', async () => {
+      await inputHandler.parseP('\x1b[A');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1A');
+      await inputHandler.parseP('\x1b[1A');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // place cursor at beginning of last row
-      inputHandler.parse('\x1b[100B');
-      inputHandler.parse('\x1b[A');
+      await inputHandler.parseP('\x1b[100B');
+      await inputHandler.parseP('\x1b[A');
       assert.deepEqual(getCursor(bufferService), [0, 8]);
-      inputHandler.parse('\x1b[1A');
+      await inputHandler.parseP('\x1b[1A');
       assert.deepEqual(getCursor(bufferService), [0, 7]);
-      inputHandler.parse('\x1b[4A');
+      await inputHandler.parseP('\x1b[4A');
       assert.deepEqual(getCursor(bufferService), [0, 3]);
-      inputHandler.parse('\x1b[100A');
+      await inputHandler.parseP('\x1b[100A');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // should not change x
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 9;
-      inputHandler.parse('\x1b[A');
+      await inputHandler.parseP('\x1b[A');
       assert.deepEqual(getCursor(bufferService), [8, 8]);
     });
-    it('cursor next line (CNL)', () => {
-      inputHandler.parse('\x1b[E');
+    it('cursor next line (CNL)', async () => {
+      await inputHandler.parseP('\x1b[E');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
-      inputHandler.parse('\x1b[1E');
+      await inputHandler.parseP('\x1b[1E');
       assert.deepEqual(getCursor(bufferService), [0, 2]);
-      inputHandler.parse('\x1b[4E');
+      await inputHandler.parseP('\x1b[4E');
       assert.deepEqual(getCursor(bufferService), [0, 6]);
-      inputHandler.parse('\x1b[100E');
+      await inputHandler.parseP('\x1b[100E');
       assert.deepEqual(getCursor(bufferService), [0, 9]);
       // should reset x to zero
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 0;
-      inputHandler.parse('\x1b[E');
+      await inputHandler.parseP('\x1b[E');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
     });
-    it('cursor previous line (CPL)', () => {
-      inputHandler.parse('\x1b[F');
+    it('cursor previous line (CPL)', async () => {
+      await inputHandler.parseP('\x1b[F');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1F');
+      await inputHandler.parseP('\x1b[1F');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // place cursor at beginning of last row
-      inputHandler.parse('\x1b[100E');
-      inputHandler.parse('\x1b[F');
+      await inputHandler.parseP('\x1b[100E');
+      await inputHandler.parseP('\x1b[F');
       assert.deepEqual(getCursor(bufferService), [0, 8]);
-      inputHandler.parse('\x1b[1F');
+      await inputHandler.parseP('\x1b[1F');
       assert.deepEqual(getCursor(bufferService), [0, 7]);
-      inputHandler.parse('\x1b[4F');
+      await inputHandler.parseP('\x1b[4F');
       assert.deepEqual(getCursor(bufferService), [0, 3]);
-      inputHandler.parse('\x1b[100F');
+      await inputHandler.parseP('\x1b[100F');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       // should reset x to zero
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 9;
-      inputHandler.parse('\x1b[F');
+      await inputHandler.parseP('\x1b[F');
       assert.deepEqual(getCursor(bufferService), [0, 8]);
     });
-    it('cursor character absolute (CHA)', () => {
-      inputHandler.parse('\x1b[G');
+    it('cursor character absolute (CHA)', async () => {
+      await inputHandler.parseP('\x1b[G');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1G');
+      await inputHandler.parseP('\x1b[1G');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[2G');
+      await inputHandler.parseP('\x1b[2G');
       assert.deepEqual(getCursor(bufferService), [1, 0]);
-      inputHandler.parse('\x1b[5G');
+      await inputHandler.parseP('\x1b[5G');
       assert.deepEqual(getCursor(bufferService), [4, 0]);
-      inputHandler.parse('\x1b[100G');
+      await inputHandler.parseP('\x1b[100G');
       assert.deepEqual(getCursor(bufferService), [9, 0]);
     });
-    it('cursor position (CUP)', () => {
+    it('cursor position (CUP)', async () => {
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[H');
+      await inputHandler.parseP('\x1b[H');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[1H');
+      await inputHandler.parseP('\x1b[1H');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[1;1H');
+      await inputHandler.parseP('\x1b[1;1H');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[8H');
+      await inputHandler.parseP('\x1b[8H');
       assert.deepEqual(getCursor(bufferService), [0, 7]);
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[;8H');
+      await inputHandler.parseP('\x1b[;8H');
       assert.deepEqual(getCursor(bufferService), [7, 0]);
       bufferService.buffer.x = 5;
       bufferService.buffer.y = 5;
-      inputHandler.parse('\x1b[100;100H');
+      await inputHandler.parseP('\x1b[100;100H');
       assert.deepEqual(getCursor(bufferService), [9, 9]);
     });
-    it('horizontal position absolute (HPA)', () => {
-      inputHandler.parse('\x1b[`');
+    it('horizontal position absolute (HPA)', async () => {
+      await inputHandler.parseP('\x1b[`');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1`');
+      await inputHandler.parseP('\x1b[1`');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[2`');
+      await inputHandler.parseP('\x1b[2`');
       assert.deepEqual(getCursor(bufferService), [1, 0]);
-      inputHandler.parse('\x1b[5`');
+      await inputHandler.parseP('\x1b[5`');
       assert.deepEqual(getCursor(bufferService), [4, 0]);
-      inputHandler.parse('\x1b[100`');
+      await inputHandler.parseP('\x1b[100`');
       assert.deepEqual(getCursor(bufferService), [9, 0]);
     });
-    it('horizontal position relative (HPR)', () => {
-      inputHandler.parse('\x1b[a');
+    it('horizontal position relative (HPR)', async () => {
+      await inputHandler.parseP('\x1b[a');
       assert.deepEqual(getCursor(bufferService), [1, 0]);
-      inputHandler.parse('\x1b[1a');
+      await inputHandler.parseP('\x1b[1a');
       assert.deepEqual(getCursor(bufferService), [2, 0]);
-      inputHandler.parse('\x1b[4a');
+      await inputHandler.parseP('\x1b[4a');
       assert.deepEqual(getCursor(bufferService), [6, 0]);
-      inputHandler.parse('\x1b[100a');
+      await inputHandler.parseP('\x1b[100a');
       assert.deepEqual(getCursor(bufferService), [9, 0]);
       // should not change y
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 4;
-      inputHandler.parse('\x1b[a');
+      await inputHandler.parseP('\x1b[a');
       assert.deepEqual(getCursor(bufferService), [9, 4]);
     });
-    it('vertical position absolute (VPA)', () => {
-      inputHandler.parse('\x1b[d');
+    it('vertical position absolute (VPA)', async () => {
+      await inputHandler.parseP('\x1b[d');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[1d');
+      await inputHandler.parseP('\x1b[1d');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
-      inputHandler.parse('\x1b[2d');
+      await inputHandler.parseP('\x1b[2d');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
-      inputHandler.parse('\x1b[5d');
+      await inputHandler.parseP('\x1b[5d');
       assert.deepEqual(getCursor(bufferService), [0, 4]);
-      inputHandler.parse('\x1b[100d');
+      await inputHandler.parseP('\x1b[100d');
       assert.deepEqual(getCursor(bufferService), [0, 9]);
       // should not change x
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 4;
-      inputHandler.parse('\x1b[d');
+      await inputHandler.parseP('\x1b[d');
       assert.deepEqual(getCursor(bufferService), [8, 0]);
     });
-    it('vertical position relative (VPR)', () => {
-      inputHandler.parse('\x1b[e');
+    it('vertical position relative (VPR)', async () => {
+      await inputHandler.parseP('\x1b[e');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
-      inputHandler.parse('\x1b[1e');
+      await inputHandler.parseP('\x1b[1e');
       assert.deepEqual(getCursor(bufferService), [0, 2]);
-      inputHandler.parse('\x1b[4e');
+      await inputHandler.parseP('\x1b[4e');
       assert.deepEqual(getCursor(bufferService), [0, 6]);
-      inputHandler.parse('\x1b[100e');
+      await inputHandler.parseP('\x1b[100e');
       assert.deepEqual(getCursor(bufferService), [0, 9]);
       // should not change x
       bufferService.buffer.x = 8;
       bufferService.buffer.y = 4;
-      inputHandler.parse('\x1b[e');
+      await inputHandler.parseP('\x1b[e');
       assert.deepEqual(getCursor(bufferService), [8, 5]);
     });
     describe('should clamp cursor into addressible range', () => {
-      it('CUF', () => {
+      it('CUF', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[C');
+        await inputHandler.parseP('\x1b[C');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[C');
+        await inputHandler.parseP('\x1b[C');
         assert.deepEqual(getCursor(bufferService), [1, 0]);
       });
-      it('CUB', () => {
+      it('CUB', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[D');
+        await inputHandler.parseP('\x1b[D');
         assert.deepEqual(getCursor(bufferService), [8, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[D');
+        await inputHandler.parseP('\x1b[D');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('CUD', () => {
+      it('CUD', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[B');
+        await inputHandler.parseP('\x1b[B');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[B');
+        await inputHandler.parseP('\x1b[B');
         assert.deepEqual(getCursor(bufferService), [0, 1]);
       });
-      it('CUU', () => {
+      it('CUU', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[A');
+        await inputHandler.parseP('\x1b[A');
         assert.deepEqual(getCursor(bufferService), [9, 8]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[A');
+        await inputHandler.parseP('\x1b[A');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('CNL', () => {
+      it('CNL', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[E');
+        await inputHandler.parseP('\x1b[E');
         assert.deepEqual(getCursor(bufferService), [0, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[E');
+        await inputHandler.parseP('\x1b[E');
         assert.deepEqual(getCursor(bufferService), [0, 1]);
       });
-      it('CPL', () => {
+      it('CPL', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[F');
+        await inputHandler.parseP('\x1b[F');
         assert.deepEqual(getCursor(bufferService), [0, 8]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[F');
+        await inputHandler.parseP('\x1b[F');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('CHA', () => {
+      it('CHA', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[5G');
+        await inputHandler.parseP('\x1b[5G');
         assert.deepEqual(getCursor(bufferService), [4, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[5G');
+        await inputHandler.parseP('\x1b[5G');
         assert.deepEqual(getCursor(bufferService), [4, 0]);
       });
-      it('CUP', () => {
+      it('CUP', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[5;5H');
+        await inputHandler.parseP('\x1b[5;5H');
         assert.deepEqual(getCursor(bufferService), [4, 4]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[5;5H');
+        await inputHandler.parseP('\x1b[5;5H');
         assert.deepEqual(getCursor(bufferService), [4, 4]);
       });
-      it('HPA', () => {
+      it('HPA', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[5`');
+        await inputHandler.parseP('\x1b[5`');
         assert.deepEqual(getCursor(bufferService), [4, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[5`');
+        await inputHandler.parseP('\x1b[5`');
         assert.deepEqual(getCursor(bufferService), [4, 0]);
       });
-      it('HPR', () => {
+      it('HPR', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[a');
+        await inputHandler.parseP('\x1b[a');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[a');
+        await inputHandler.parseP('\x1b[a');
         assert.deepEqual(getCursor(bufferService), [1, 0]);
       });
-      it('VPA', () => {
+      it('VPA', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[5d');
+        await inputHandler.parseP('\x1b[5d');
         assert.deepEqual(getCursor(bufferService), [9, 4]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[5d');
+        await inputHandler.parseP('\x1b[5d');
         assert.deepEqual(getCursor(bufferService), [0, 4]);
       });
-      it('VPR', () => {
+      it('VPR', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[e');
+        await inputHandler.parseP('\x1b[e');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[e');
+        await inputHandler.parseP('\x1b[e');
         assert.deepEqual(getCursor(bufferService), [0, 1]);
       });
-      it('DCH', () => {
+      it('DCH', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[P');
+        await inputHandler.parseP('\x1b[P');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[P');
+        await inputHandler.parseP('\x1b[P');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('DCH - should delete last cell', () => {
-        inputHandler.parse('0123456789\x1b[P');
+      it('DCH - should delete last cell', async () => {
+        await inputHandler.parseP('0123456789\x1b[P');
         assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
-      it('ECH', () => {
+      it('ECH', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[X');
+        await inputHandler.parseP('\x1b[X');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[X');
+        await inputHandler.parseP('\x1b[X');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('ECH - should delete last cell', () => {
-        inputHandler.parse('0123456789\x1b[X');
+      it('ECH - should delete last cell', async () => {
+        await inputHandler.parseP('0123456789\x1b[X');
         assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
-      it('ICH', () => {
+      it('ICH', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
-        inputHandler.parse('\x1b[@');
+        await inputHandler.parseP('\x1b[@');
         assert.deepEqual(getCursor(bufferService), [9, 9]);
         bufferService.buffer.x = -10000;
         bufferService.buffer.y = -10000;
-        inputHandler.parse('\x1b[@');
+        await inputHandler.parseP('\x1b[@');
         assert.deepEqual(getCursor(bufferService), [0, 0]);
       });
-      it('ICH - should delete last cell', () => {
-        inputHandler.parse('0123456789\x1b[@');
+      it('ICH - should delete last cell', async () => {
+        await inputHandler.parseP('0123456789\x1b[@');
         assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '012345678 ');
       });
     });
@@ -1093,31 +1152,31 @@ describe('InputHandler', () => {
     beforeEach(() => {
       bufferService.resize(10, 10);
     });
-    it('should default to whole viewport', () => {
-      inputHandler.parse('\x1b[r');
+    it('should default to whole viewport', async () => {
+      await inputHandler.parseP('\x1b[r');
       assert.equal(bufferService.buffer.scrollTop, 0);
       assert.equal(bufferService.buffer.scrollBottom, 9);
-      inputHandler.parse('\x1b[3;7r');
+      await inputHandler.parseP('\x1b[3;7r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 6);
-      inputHandler.parse('\x1b[0;0r');
+      await inputHandler.parseP('\x1b[0;0r');
       assert.equal(bufferService.buffer.scrollTop, 0);
       assert.equal(bufferService.buffer.scrollBottom, 9);
     });
-    it('should clamp bottom', () => {
-      inputHandler.parse('\x1b[3;1000r');
+    it('should clamp bottom', async () => {
+      await inputHandler.parseP('\x1b[3;1000r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 9);
     });
-    it('should only apply for top < bottom', () => {
-      inputHandler.parse('\x1b[7;2r');
+    it('should only apply for top < bottom', async () => {
+      await inputHandler.parseP('\x1b[7;2r');
       assert.equal(bufferService.buffer.scrollTop, 0);
       assert.equal(bufferService.buffer.scrollBottom, 9);
     });
-    it('should home cursor', () => {
+    it('should home cursor', async () => {
       bufferService.buffer.x = 10000;
       bufferService.buffer.y = 10000;
-      inputHandler.parse('\x1b[2;7r');
+      await inputHandler.parseP('\x1b[2;7r');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
     });
   });
@@ -1125,76 +1184,76 @@ describe('InputHandler', () => {
     beforeEach(() => {
       bufferService.resize(10, 10);
     });
-    it('scrollUp', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
+    it('scrollUp', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
       assert.deepEqual(getLines(bufferService), ['m', '3', '', '', '4', '5', '6', '7', '8', '9']);
     });
-    it('scrollDown', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
+    it('scrollDown', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
       assert.deepEqual(getLines(bufferService), ['m', '', '', '1', '4', '5', '6', '7', '8', '9']);
     });
-    it('insertLines - out of margins', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+    it('insertLines - out of margins', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 5);
-      inputHandler.parse('\x1b[2Lm');
+      await inputHandler.parseP('\x1b[2Lm');
       assert.deepEqual(getLines(bufferService), ['m', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-      inputHandler.parse('\x1b[2H\x1b[2Ln');
+      await inputHandler.parseP('\x1b[2H\x1b[2Ln');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', '6', '7', '8', '9']);
       // skip below scrollbottom
-      inputHandler.parse('\x1b[7H\x1b[2Lo');
+      await inputHandler.parseP('\x1b[7H\x1b[2Lo');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', '7', '8', '9']);
-      inputHandler.parse('\x1b[8H\x1b[2Lp');
+      await inputHandler.parseP('\x1b[8H\x1b[2Lp');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', '9']);
-      inputHandler.parse('\x1b[100H\x1b[2Lq');
+      await inputHandler.parseP('\x1b[100H\x1b[2Lq');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', 'q']);
     });
-    it('insertLines - within margins', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+    it('insertLines - within margins', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 5);
-      inputHandler.parse('\x1b[3H\x1b[2Lm');
+      await inputHandler.parseP('\x1b[3H\x1b[2Lm');
       assert.deepEqual(getLines(bufferService), ['0', '1', 'm', '', '2', '3', '6', '7', '8', '9']);
-      inputHandler.parse('\x1b[6H\x1b[2Ln');
+      await inputHandler.parseP('\x1b[6H\x1b[2Ln');
       assert.deepEqual(getLines(bufferService), ['0', '1', 'm', '', '2', 'n', '6', '7', '8', '9']);
     });
-    it('deleteLines - out of margins', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+    it('deleteLines - out of margins', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 5);
-      inputHandler.parse('\x1b[2Mm');
+      await inputHandler.parseP('\x1b[2Mm');
       assert.deepEqual(getLines(bufferService), ['m', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-      inputHandler.parse('\x1b[2H\x1b[2Mn');
+      await inputHandler.parseP('\x1b[2H\x1b[2Mn');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', '6', '7', '8', '9']);
       // skip below scrollbottom
-      inputHandler.parse('\x1b[7H\x1b[2Mo');
+      await inputHandler.parseP('\x1b[7H\x1b[2Mo');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', '7', '8', '9']);
-      inputHandler.parse('\x1b[8H\x1b[2Mp');
+      await inputHandler.parseP('\x1b[8H\x1b[2Mp');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', '9']);
-      inputHandler.parse('\x1b[100H\x1b[2Mq');
+      await inputHandler.parseP('\x1b[100H\x1b[2Mq');
       assert.deepEqual(getLines(bufferService), ['m', 'n', '2', '3', '4', '5', 'o', 'p', '8', 'q']);
     });
-    it('deleteLines - within margins', () => {
-      inputHandler.parse('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
+    it('deleteLines - within margins', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
       assert.equal(bufferService.buffer.scrollTop, 2);
       assert.equal(bufferService.buffer.scrollBottom, 5);
-      inputHandler.parse('\x1b[6H\x1b[2Mm');
+      await inputHandler.parseP('\x1b[6H\x1b[2Mm');
       assert.deepEqual(getLines(bufferService), ['0', '1', '2', '3', '4', 'm', '6', '7', '8', '9']);
-      inputHandler.parse('\x1b[3H\x1b[2Mn');
+      await inputHandler.parseP('\x1b[3H\x1b[2Mn');
       assert.deepEqual(getLines(bufferService), ['0', '1', 'n', 'm',  '',  '', '6', '7', '8', '9']);
     });
   });
-  it('should parse big chunks in smaller subchunks', () => {
+  it('should parse big chunks in smaller subchunks', async () => {
     // max single chunk size is hardcoded as 131072
     const calls: any[] = [];
     bufferService.resize(10, 10);
     (inputHandler as any)._parser.parse = (data: Uint32Array, length: number) => {
       calls.push([data.length, length]);
     };
-    inputHandler.parse('12345');
-    inputHandler.parse('a'.repeat(10000));
-    inputHandler.parse('a'.repeat(200000));
-    inputHandler.parse('a'.repeat(300000));
+    await inputHandler.parseP('12345');
+    await inputHandler.parseP('a'.repeat(10000));
+    await inputHandler.parseP('a'.repeat(200000));
+    await inputHandler.parseP('a'.repeat(300000));
     assert.deepEqual(calls, [
       [4096, 5],
       [10000, 10000],
@@ -1203,187 +1262,187 @@ describe('InputHandler', () => {
     ]);
   });
   describe('windowOptions', () => {
-    it('all should be disabled by default and not report', () => {
+    it('all should be disabled by default and not report', async () => {
       bufferService.resize(10, 10);
       const stack: string[] = [];
       coreService.onData(data => stack.push(data));
-      inputHandler.parse('\x1b[14t');
-      inputHandler.parse('\x1b[16t');
-      inputHandler.parse('\x1b[18t');
-      inputHandler.parse('\x1b[20t');
-      inputHandler.parse('\x1b[21t');
+      await inputHandler.parseP('\x1b[14t');
+      await inputHandler.parseP('\x1b[16t');
+      await inputHandler.parseP('\x1b[18t');
+      await inputHandler.parseP('\x1b[20t');
+      await inputHandler.parseP('\x1b[21t');
       assert.deepEqual(stack, []);
     });
-    it('14 - GetWinSizePixels', () => {
+    it('14 - GetWinSizePixels', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.getWinSizePixels = true;
       const stack: string[] = [];
       coreService.onData(data => stack.push(data));
-      inputHandler.parse('\x1b[14t');
+      await inputHandler.parseP('\x1b[14t');
       // does not report in test terminal due to missing renderer
       assert.deepEqual(stack, []);
     });
-    it('16 - GetCellSizePixels', () => {
+    it('16 - GetCellSizePixels', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.getCellSizePixels = true;
       const stack: string[] = [];
       coreService.onData(data => stack.push(data));
-      inputHandler.parse('\x1b[16t');
+      await inputHandler.parseP('\x1b[16t');
       // does not report in test terminal due to missing renderer
       assert.deepEqual(stack, []);
     });
-    it('18 - GetWinSizeChars', () => {
+    it('18 - GetWinSizeChars', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.getWinSizeChars = true;
       const stack: string[] = [];
       coreService.onData(data => stack.push(data));
-      inputHandler.parse('\x1b[18t');
+      await inputHandler.parseP('\x1b[18t');
       assert.deepEqual(stack, ['\x1b[8;10;10t']);
       bufferService.resize(50, 20);
-      inputHandler.parse('\x1b[18t');
+      await inputHandler.parseP('\x1b[18t');
       assert.deepEqual(stack, ['\x1b[8;10;10t', '\x1b[8;20;50t']);
     });
-    it('22/23 - PushTitle/PopTitle', () => {
+    it('22/23 - PushTitle/PopTitle', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.pushTitle = true;
       optionsService.options.windowOptions.popTitle = true;
       const stack: string[] = [];
       inputHandler.onTitleChange(data => stack.push(data));
-      inputHandler.parse('\x1b]0;1\x07');
-      inputHandler.parse('\x1b[22t');
-      inputHandler.parse('\x1b]0;2\x07');
-      inputHandler.parse('\x1b[22t');
-      inputHandler.parse('\x1b]0;3\x07');
-      inputHandler.parse('\x1b[22t');
+      await inputHandler.parseP('\x1b]0;1\x07');
+      await inputHandler.parseP('\x1b[22t');
+      await inputHandler.parseP('\x1b]0;2\x07');
+      await inputHandler.parseP('\x1b[22t');
+      await inputHandler.parseP('\x1b]0;3\x07');
+      await inputHandler.parseP('\x1b[22t');
       assert.deepEqual(inputHandler.windowTitleStack, ['1', '2', '3']);
       assert.deepEqual(inputHandler.iconNameStack, ['1', '2', '3']);
       assert.deepEqual(stack, ['1', '2', '3']);
-      inputHandler.parse('\x1b[23t');
-      inputHandler.parse('\x1b[23t');
-      inputHandler.parse('\x1b[23t');
-      inputHandler.parse('\x1b[23t'); // one more to test "overflow"
+      await inputHandler.parseP('\x1b[23t');
+      await inputHandler.parseP('\x1b[23t');
+      await inputHandler.parseP('\x1b[23t');
+      await inputHandler.parseP('\x1b[23t'); // one more to test "overflow"
       assert.deepEqual(inputHandler.windowTitleStack, []);
       assert.deepEqual(inputHandler.iconNameStack, []);
       assert.deepEqual(stack, ['1', '2', '3', '3', '2', '1']);
     });
-    it('22/23 - PushTitle/PopTitle with ;1', () => {
+    it('22/23 - PushTitle/PopTitle with ;1', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.pushTitle = true;
       optionsService.options.windowOptions.popTitle = true;
       const stack: string[] = [];
       inputHandler.onTitleChange(data => stack.push(data));
-      inputHandler.parse('\x1b]0;1\x07');
-      inputHandler.parse('\x1b[22;1t');
-      inputHandler.parse('\x1b]0;2\x07');
-      inputHandler.parse('\x1b[22;1t');
-      inputHandler.parse('\x1b]0;3\x07');
-      inputHandler.parse('\x1b[22;1t');
+      await inputHandler.parseP('\x1b]0;1\x07');
+      await inputHandler.parseP('\x1b[22;1t');
+      await inputHandler.parseP('\x1b]0;2\x07');
+      await inputHandler.parseP('\x1b[22;1t');
+      await inputHandler.parseP('\x1b]0;3\x07');
+      await inputHandler.parseP('\x1b[22;1t');
       assert.deepEqual(inputHandler.windowTitleStack, []);
       assert.deepEqual(inputHandler.iconNameStack, ['1', '2', '3']);
       assert.deepEqual(stack, ['1', '2', '3']);
-      inputHandler.parse('\x1b[23;1t');
-      inputHandler.parse('\x1b[23;1t');
-      inputHandler.parse('\x1b[23;1t');
-      inputHandler.parse('\x1b[23;1t'); // one more to test "overflow"
+      await inputHandler.parseP('\x1b[23;1t');
+      await inputHandler.parseP('\x1b[23;1t');
+      await inputHandler.parseP('\x1b[23;1t');
+      await inputHandler.parseP('\x1b[23;1t'); // one more to test "overflow"
       assert.deepEqual(inputHandler.windowTitleStack, []);
       assert.deepEqual(inputHandler.iconNameStack, []);
       assert.deepEqual(stack, ['1', '2', '3']);
     });
-    it('22/23 - PushTitle/PopTitle with ;2', () => {
+    it('22/23 - PushTitle/PopTitle with ;2', async () => {
       bufferService.resize(10, 10);
       optionsService.options.windowOptions.pushTitle = true;
       optionsService.options.windowOptions.popTitle = true;
       const stack: string[] = [];
       inputHandler.onTitleChange(data => stack.push(data));
-      inputHandler.parse('\x1b]0;1\x07');
-      inputHandler.parse('\x1b[22;2t');
-      inputHandler.parse('\x1b]0;2\x07');
-      inputHandler.parse('\x1b[22;2t');
-      inputHandler.parse('\x1b]0;3\x07');
-      inputHandler.parse('\x1b[22;2t');
+      await inputHandler.parseP('\x1b]0;1\x07');
+      await inputHandler.parseP('\x1b[22;2t');
+      await inputHandler.parseP('\x1b]0;2\x07');
+      await inputHandler.parseP('\x1b[22;2t');
+      await inputHandler.parseP('\x1b]0;3\x07');
+      await inputHandler.parseP('\x1b[22;2t');
       assert.deepEqual(inputHandler.windowTitleStack, ['1', '2', '3']);
       assert.deepEqual(inputHandler.iconNameStack, []);
       assert.deepEqual(stack, ['1', '2', '3']);
-      inputHandler.parse('\x1b[23;2t');
-      inputHandler.parse('\x1b[23;2t');
-      inputHandler.parse('\x1b[23;2t');
-      inputHandler.parse('\x1b[23;2t'); // one more to test "overflow"
+      await inputHandler.parseP('\x1b[23;2t');
+      await inputHandler.parseP('\x1b[23;2t');
+      await inputHandler.parseP('\x1b[23;2t');
+      await inputHandler.parseP('\x1b[23;2t'); // one more to test "overflow"
       assert.deepEqual(inputHandler.windowTitleStack, []);
       assert.deepEqual(inputHandler.iconNameStack, []);
       assert.deepEqual(stack, ['1', '2', '3', '3', '2', '1']);
     });
-    it('DECCOLM - should only work with "SetWinLines" (24) enabled', () => {
+    it('DECCOLM - should only work with "SetWinLines" (24) enabled', async () => {
       // disabled
       bufferService.resize(10, 10);
-      inputHandler.parse('\x1b[?3l');
+      await inputHandler.parseP('\x1b[?3l');
       assert.equal(bufferService.cols, 10);
-      inputHandler.parse('\x1b[?3h');
+      await inputHandler.parseP('\x1b[?3h');
       assert.equal(bufferService.cols, 10);
       // enabled
       inputHandler.reset();
       optionsService.options.windowOptions.setWinLines = true;
-      inputHandler.parse('\x1b[?3l');
+      await inputHandler.parseP('\x1b[?3l');
       assert.equal(bufferService.cols, 80);
-      inputHandler.parse('\x1b[?3h');
+      await inputHandler.parseP('\x1b[?3h');
       assert.equal(bufferService.cols, 132);
     });
   });
   describe('should correctly reset cells taken by wide chars', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       bufferService.resize(10, 5);
       optionsService.options.scrollback = 1;
-      inputHandler.parse('￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥');
+      await inputHandler.parseP('￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥');
     });
-    it('print', () => {
-      inputHandler.parse('\x1b[H#');
+    it('print', async () => {
+      await inputHandler.parseP('\x1b[H#');
       assert.deepEqual(getLines(bufferService), ['# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[1;6H######');
+      await inputHandler.parseP('\x1b[1;6H######');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '# ￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('#');
+      await inputHandler.parseP('#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '##￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('#');
+      await inputHandler.parseP('#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[3;9H#');
+      await inputHandler.parseP('\x1b[3;9H#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥#', '￥￥￥￥￥', '']);
-      inputHandler.parse('#');
+      await inputHandler.parseP('#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '￥￥￥￥￥', '']);
-      inputHandler.parse('#');
+      await inputHandler.parseP('#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥￥', '']);
-      inputHandler.parse('\x1b[4;10H#');
+      await inputHandler.parseP('\x1b[4;10H#');
       assert.deepEqual(getLines(bufferService), ['# ￥ #####', '### ￥￥￥', '￥￥￥￥##', '# ￥￥￥ #', '']);
     });
-    it('EL', () => {
-      inputHandler.parse('\x1b[1;6H\x1b[K#');
+    it('EL', async () => {
+      await inputHandler.parseP('\x1b[1;6H\x1b[K#');
       assert.deepEqual(getLines(bufferService), ['￥￥ #', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[2;5H\x1b[1K');
+      await inputHandler.parseP('\x1b[2;5H\x1b[1K');
       assert.deepEqual(getLines(bufferService), ['￥￥ #', '      ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[3;6H\x1b[1K');
+      await inputHandler.parseP('\x1b[3;6H\x1b[1K');
       assert.deepEqual(getLines(bufferService), ['￥￥ #', '      ￥￥', '      ￥￥', '￥￥￥￥￥', '']);
     });
-    it('ICH', () => {
-      inputHandler.parse('\x1b[1;6H\x1b[@');
+    it('ICH', async () => {
+      await inputHandler.parseP('\x1b[1;6H\x1b[@');
       assert.deepEqual(getLines(bufferService), ['￥￥   ￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[2;4H\x1b[2@');
+      await inputHandler.parseP('\x1b[2;4H\x1b[2@');
       assert.deepEqual(getLines(bufferService), ['￥￥   ￥', '￥    ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[3;4H\x1b[3@');
+      await inputHandler.parseP('\x1b[3;4H\x1b[3@');
       assert.deepEqual(getLines(bufferService), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[4;4H\x1b[4@');
+      await inputHandler.parseP('\x1b[4;4H\x1b[4@');
       assert.deepEqual(getLines(bufferService), ['￥￥   ￥', '￥    ￥￥', '￥     ￥', '￥      ￥', '']);
     });
-    it('DCH', () => {
-      inputHandler.parse('\x1b[1;6H\x1b[P');
+    it('DCH', async () => {
+      await inputHandler.parseP('\x1b[1;6H\x1b[P');
       assert.deepEqual(getLines(bufferService), ['￥￥ ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[2;6H\x1b[2P');
+      await inputHandler.parseP('\x1b[2;6H\x1b[2P');
       assert.deepEqual(getLines(bufferService), ['￥￥ ￥￥', '￥￥  ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[3;6H\x1b[3P');
+      await inputHandler.parseP('\x1b[3;6H\x1b[3P');
       assert.deepEqual(getLines(bufferService), ['￥￥ ￥￥', '￥￥  ￥', '￥￥ ￥', '￥￥￥￥￥', '']);
     });
-    it('ECH', () => {
-      inputHandler.parse('\x1b[1;6H\x1b[X');
+    it('ECH', async () => {
+      await inputHandler.parseP('\x1b[1;6H\x1b[X');
       assert.deepEqual(getLines(bufferService), ['￥￥  ￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[2;6H\x1b[2X');
+      await inputHandler.parseP('\x1b[2;6H\x1b[2X');
       assert.deepEqual(getLines(bufferService), ['￥￥  ￥￥', '￥￥    ￥', '￥￥￥￥￥', '￥￥￥￥￥', '']);
-      inputHandler.parse('\x1b[3;6H\x1b[3X');
+      await inputHandler.parseP('\x1b[3;6H\x1b[3X');
       assert.deepEqual(getLines(bufferService), ['￥￥  ￥￥', '￥￥    ￥', '￥￥    ￥', '￥￥￥￥￥', '']);
     });
   });
@@ -1395,74 +1454,74 @@ describe('InputHandler', () => {
       optionsService.options.scrollback = 1;
     });
     describe('reverseWraparound unset (default)', () => {
-      it('cannot delete last cell', () => {
-        inputHandler.parse('12345');
-        inputHandler.parse(ttyBS);
+      it('cannot delete last cell', async () => {
+        await inputHandler.parseP('12345');
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 1), ['123 5']);
-        inputHandler.parse(ttyBS.repeat(10));
+        await inputHandler.parseP(ttyBS.repeat(10));
         assert.deepEqual(getLines(bufferService, 1), ['    5']);
       });
-      it('cannot access prev line', () => {
-        inputHandler.parse('12345'.repeat(2));
-        inputHandler.parse(ttyBS);
+      it('cannot access prev line', async () => {
+        await inputHandler.parseP('12345'.repeat(2));
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['12345', '123 5']);
-        inputHandler.parse(ttyBS.repeat(10));
+        await inputHandler.parseP(ttyBS.repeat(10));
         assert.deepEqual(getLines(bufferService, 2), ['12345', '    5']);
       });
     });
     describe('reverseWraparound set', () => {
-      it('can delete last cell', () => {
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('12345');
-        inputHandler.parse(ttyBS);
+      it('can delete last cell', async () => {
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('12345');
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 1), ['1234 ']);
-        inputHandler.parse(ttyBS.repeat(7));
+        await inputHandler.parseP(ttyBS.repeat(7));
         assert.deepEqual(getLines(bufferService, 1), ['     ']);
       });
-      it('can access prev line if wrapped', () => {
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('12345'.repeat(2));
-        inputHandler.parse(ttyBS);
+      it('can access prev line if wrapped', async () => {
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('12345'.repeat(2));
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['12345', '1234 ']);
-        inputHandler.parse(ttyBS.repeat(7));
+        await inputHandler.parseP(ttyBS.repeat(7));
         assert.deepEqual(getLines(bufferService, 2), ['12   ', '     ']);
       });
-      it('should lift isWrapped', () => {
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('12345'.repeat(2));
+      it('should lift isWrapped', async () => {
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('12345'.repeat(2));
         assert.equal(bufferService.buffer.lines.get(1)?.isWrapped, true);
-        inputHandler.parse(ttyBS.repeat(7));
+        await inputHandler.parseP(ttyBS.repeat(7));
         assert.equal(bufferService.buffer.lines.get(1)?.isWrapped, false);
       });
-      it('stops at hard NLs', () => {
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('12345\r\n');
-        inputHandler.parse('12345'.repeat(2));
-        inputHandler.parse(ttyBS.repeat(50));
+      it('stops at hard NLs', async () => {
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('12345\r\n');
+        await inputHandler.parseP('12345'.repeat(2));
+        await inputHandler.parseP(ttyBS.repeat(50));
         assert.deepEqual(getLines(bufferService, 3), ['12345', '     ', '     ']);
         assert.equal(bufferService.buffer.x, 0);
         assert.equal(bufferService.buffer.y, 1);
       });
-      it('handles wide chars correctly', () => {
-        inputHandler.parse('\x1b[?45h');
-        inputHandler.parse('￥￥￥');
+      it('handles wide chars correctly', async () => {
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('￥￥￥');
         assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['￥￥', '  ']);
         assert.equal(bufferService.buffer.x, 1);
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['￥￥', '  ']);
         assert.equal(bufferService.buffer.x, 0);
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['￥  ', '  ']);
         assert.equal(bufferService.buffer.x, 3);  // x=4 skipped due to early wrap-around
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['￥  ', '  ']);
         assert.equal(bufferService.buffer.x, 2);
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
         assert.equal(bufferService.buffer.x, 1);
-        inputHandler.parse(ttyBS);
+        await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
         assert.equal(bufferService.buffer.x, 0);
       });
@@ -1473,72 +1532,72 @@ describe('InputHandler', () => {
     beforeEach(() => {
       bufferService.resize(10, 5);
     });
-    it('4 | 24', () => {
-      inputHandler.parse('\x1b[4m');
+    it('4 | 24', async () => {
+      await inputHandler.parseP('\x1b[4m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('21 | 24', () => {
-      inputHandler.parse('\x1b[21m');
+    it('21 | 24', async () => {
+      await inputHandler.parseP('\x1b[21m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:1 | 4:0', () => {
-      inputHandler.parse('\x1b[4:1m');
+    it('4:1 | 4:0', async () => {
+      await inputHandler.parseP('\x1b[4:1m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
-      inputHandler.parse('\x1b[4:1m');
+      await inputHandler.parseP('\x1b[4:1m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:2 | 4:0', () => {
-      inputHandler.parse('\x1b[4:2m');
+    it('4:2 | 4:0', async () => {
+      await inputHandler.parseP('\x1b[4:2m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
-      inputHandler.parse('\x1b[4:2m');
+      await inputHandler.parseP('\x1b[4:2m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DOUBLE);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:3 | 4:0', () => {
-      inputHandler.parse('\x1b[4:3m');
+    it('4:3 | 4:0', async () => {
+      await inputHandler.parseP('\x1b[4:3m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.CURLY);
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
-      inputHandler.parse('\x1b[4:3m');
+      await inputHandler.parseP('\x1b[4:3m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.CURLY);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:4 | 4:0', () => {
-      inputHandler.parse('\x1b[4:4m');
+    it('4:4 | 4:0', async () => {
+      await inputHandler.parseP('\x1b[4:4m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DOTTED);
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
-      inputHandler.parse('\x1b[4:4m');
+      await inputHandler.parseP('\x1b[4:4m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DOTTED);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:5 | 4:0', () => {
-      inputHandler.parse('\x1b[4:5m');
+    it('4:5 | 4:0', async () => {
+      await inputHandler.parseP('\x1b[4:5m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
-      inputHandler.parse('\x1b[4:5m');
+      await inputHandler.parseP('\x1b[4:5m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('\x1b[24m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.NONE);
     });
-    it('4:x --> 4 should revert to single underline', () => {
-      inputHandler.parse('\x1b[4:5m');
+    it('4:x --> 4 should revert to single underline', async () => {
+      await inputHandler.parseP('\x1b[4:5m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.DASHED);
-      inputHandler.parse('\x1b[4m');
+      await inputHandler.parseP('\x1b[4m');
       assert.equal(inputHandler.curAttrData.getUnderlineStyle(), UnderlineStyle.SINGLE);
     });
   });
@@ -1546,9 +1605,9 @@ describe('InputHandler', () => {
     beforeEach(() => {
       bufferService.resize(10, 5);
     });
-    it('defaults to FG color', () => {
+    it('defaults to FG color', async () => {
       for (const s of ['', '\x1b[30m', '\x1b[38;510m', '\x1b[38;2;1;2;3m']) {
-        inputHandler.parse(s);
+        await inputHandler.parseP(s);
         assert.equal(inputHandler.curAttrData.getUnderlineColor(), inputHandler.curAttrData.getFgColor());
         assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), inputHandler.curAttrData.getFgColorMode());
         assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), inputHandler.curAttrData.isFgRGB());
@@ -1556,31 +1615,31 @@ describe('InputHandler', () => {
         assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), inputHandler.curAttrData.isFgDefault());
       }
     });
-    it('correctly sets P256/RGB colors', () => {
-      inputHandler.parse('\x1b[4m');
-      inputHandler.parse('\x1b[58;5;123m');
+    it('correctly sets P256/RGB colors', async () => {
+      await inputHandler.parseP('\x1b[4m');
+      await inputHandler.parseP('\x1b[58;5;123m');
       assert.equal(inputHandler.curAttrData.getUnderlineColor(), 123);
       assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), false);
       assert.equal(inputHandler.curAttrData.isUnderlineColorPalette(), true);
       assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), false);
-      inputHandler.parse('\x1b[58;2::1:2:3m');
+      await inputHandler.parseP('\x1b[58;2::1:2:3m');
       assert.equal(inputHandler.curAttrData.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
       assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), Attributes.CM_RGB);
       assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), true);
       assert.equal(inputHandler.curAttrData.isUnderlineColorPalette(), false);
       assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), false);
     });
-    it('P256/RGB persistence', () => {
+    it('P256/RGB persistence', async () => {
       const cell = new CellData();
-      inputHandler.parse('\x1b[4m');
-      inputHandler.parse('\x1b[58;5;123m');
+      await inputHandler.parseP('\x1b[4m');
+      await inputHandler.parseP('\x1b[58;5;123m');
       assert.equal(inputHandler.curAttrData.getUnderlineColor(), 123);
       assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), Attributes.CM_P256);
       assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), false);
       assert.equal(inputHandler.curAttrData.isUnderlineColorPalette(), true);
       assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), false);
-      inputHandler.parse('ab');
+      await inputHandler.parseP('ab');
       bufferService.buffer!.lines.get(0)!.loadCell(1, cell);
       assert.equal(cell.getUnderlineColor(), 123);
       assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
@@ -1588,13 +1647,13 @@ describe('InputHandler', () => {
       assert.equal(cell.isUnderlineColorPalette(), true);
       assert.equal(cell.isUnderlineColorDefault(), false);
 
-      inputHandler.parse('\x1b[4:0m');
+      await inputHandler.parseP('\x1b[4:0m');
       assert.equal(inputHandler.curAttrData.getUnderlineColor(), inputHandler.curAttrData.getFgColor());
       assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), inputHandler.curAttrData.getFgColorMode());
       assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), inputHandler.curAttrData.isFgRGB());
       assert.equal(inputHandler.curAttrData.isUnderlineColorPalette(), inputHandler.curAttrData.isFgPalette());
       assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), inputHandler.curAttrData.isFgDefault());
-      inputHandler.parse('a');
+      await inputHandler.parseP('a');
       bufferService.buffer!.lines.get(0)!.loadCell(1, cell);
       assert.equal(cell.getUnderlineColor(), 123);
       assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
@@ -1608,15 +1667,15 @@ describe('InputHandler', () => {
       assert.equal(cell.isUnderlineColorPalette(), inputHandler.curAttrData.isFgPalette());
       assert.equal(cell.isUnderlineColorDefault(), inputHandler.curAttrData.isFgDefault());
 
-      inputHandler.parse('\x1b[4m');
-      inputHandler.parse('\x1b[58;2::1:2:3m');
+      await inputHandler.parseP('\x1b[4m');
+      await inputHandler.parseP('\x1b[58;2::1:2:3m');
       assert.equal(inputHandler.curAttrData.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
       assert.equal(inputHandler.curAttrData.getUnderlineColorMode(), Attributes.CM_RGB);
       assert.equal(inputHandler.curAttrData.isUnderlineColorRGB(), true);
       assert.equal(inputHandler.curAttrData.isUnderlineColorPalette(), false);
       assert.equal(inputHandler.curAttrData.isUnderlineColorDefault(), false);
-      inputHandler.parse('a');
-      inputHandler.parse('\x1b[24m');
+      await inputHandler.parseP('a');
+      await inputHandler.parseP('\x1b[24m');
       bufferService.buffer!.lines.get(0)!.loadCell(1, cell);
       assert.equal(cell.getUnderlineColor(), 123);
       assert.equal(cell.getUnderlineColorMode(), Attributes.CM_P256);
@@ -1645,51 +1704,51 @@ describe('InputHandler', () => {
     });
   });
   describe('DECSTR', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       bufferService.resize(10, 5);
       optionsService.options.scrollback = 1;
-      inputHandler.parse('01234567890123');
+      await inputHandler.parseP('01234567890123');
     });
-    it('should reset IRM', () => {
-      inputHandler.parse('\x1b[4h');
+    it('should reset IRM', async () => {
+      await inputHandler.parseP('\x1b[4h');
       assert.equal(coreService.modes.insertMode, true);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(coreService.modes.insertMode, false);
     });
-    it('should reset cursor visibility', () => {
-      inputHandler.parse('\x1b[?25l');
+    it('should reset cursor visibility', async () => {
+      await inputHandler.parseP('\x1b[?25l');
       assert.equal(coreService.isCursorHidden, true);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(coreService.isCursorHidden, false);
     });
-    it('should reset scroll margins', () => {
-      inputHandler.parse('\x1b[2;4r');
+    it('should reset scroll margins', async () => {
+      await inputHandler.parseP('\x1b[2;4r');
       assert.equal(bufferService.buffer.scrollTop, 1);
       assert.equal(bufferService.buffer.scrollBottom, 3);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(bufferService.buffer.scrollTop, 0);
       assert.equal(bufferService.buffer.scrollBottom, bufferService.rows - 1);
     });
-    it('should reset text attributes', () => {
-      inputHandler.parse('\x1b[1;2;32;43m');
+    it('should reset text attributes', async () => {
+      await inputHandler.parseP('\x1b[1;2;32;43m');
       assert.equal(!!inputHandler.curAttrData.isBold(), true);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(!!inputHandler.curAttrData.isBold(), false);
       assert.equal(inputHandler.curAttrData.fg, 0);
       assert.equal(inputHandler.curAttrData.bg, 0);
     });
-    it('should reset DECSC data', () => {
-      inputHandler.parse('\x1b7');
+    it('should reset DECSC data', async () => {
+      await inputHandler.parseP('\x1b7');
       assert.equal(bufferService.buffer.savedX, 4);
       assert.equal(bufferService.buffer.savedY, 1);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(bufferService.buffer.savedX, 0);
       assert.equal(bufferService.buffer.savedY, 0);
     });
-    it('should reset DECOM', () => {
-      inputHandler.parse('\x1b[?6h');
+    it('should reset DECOM', async () => {
+      await inputHandler.parseP('\x1b[?6h');
       assert.equal(coreService.decPrivateModes.origin, true);
-      inputHandler.parse('\x1b[!p');
+      await inputHandler.parseP('\x1b[!p');
       assert.equal(coreService.decPrivateModes.origin, false);
     });
   });
@@ -1700,7 +1759,8 @@ describe('InputHandler', () => {
 
       assert.isNotNull(event);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
-    }),
+    });
+
     it('4: should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
       assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
@@ -1708,6 +1768,7 @@ describe('InputHandler', () => {
       assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
       assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
     });
+
     it('4: should parse a list of Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');
@@ -1733,15 +1794,75 @@ describe('InputHandler', () => {
       assert.equal(event!.colors.length, 1);
       assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
     });
-    it('4: should fire event on Ansi color change', (done) => {
-      inputHandler.onAnsiColorChange(e => {
-        assert.isNotNull(e);
-        assert.isNotNull(e!.colors);
-        assert.deepEqual(e!.colors[0], { colorIndex: 17, red: 0x1a, green: 0x2b, blue: 0x3c });
-        assert.deepEqual(e!.colors[1], { colorIndex: 12, red: 0x11, green: 0x22, blue: 0x33 });
-        done();
+    it('4: should fire event on Ansi color change', async () => {
+      return new Promise(async r => {
+        inputHandler.onAnsiColorChange(e => {
+          assert.isNotNull(e);
+          assert.isNotNull(e!.colors);
+          assert.deepEqual(e!.colors[0], { colorIndex: 17, red: 0x1a, green: 0x2b, blue: 0x3c });
+          assert.deepEqual(e!.colors[1], { colorIndex: 12, red: 0x11, green: 0x22, blue: 0x33 });
+          r();
+        });
+        await inputHandler.parseP('\x1b]4;17;rgb:1a/2b/3c;12;rgb:11/22/33\x1b\\');
       });
-      inputHandler.parse('\x1b]4;17;rgb:1a/2b/3c;12;rgb:11/22/33\x1b\\');
     });
+  });
+});
+
+
+describe('InputHandler - async handlers', () => {
+  let bufferService: IBufferService;
+  let coreService: ICoreService;
+  let optionsService: MockOptionsService;
+  let inputHandler: TestInputHandler;
+
+  beforeEach(() => {
+    optionsService = new MockOptionsService();
+    bufferService = new BufferService(optionsService);
+    bufferService.resize(80, 30);
+    coreService = new CoreService(() => {}, bufferService, new MockLogService(), optionsService);
+    coreService.onData(data => { console.log(data); });
+
+    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService(), new MockUnicodeService());
+  });
+
+  it('async CUP with CPR check', async () => {
+    const cup: number[][] = [];
+    const cpr: number[][] = [];
+    inputHandler.registerCsiHandler({final: 'H'}, async params => {
+      cup.push(params.toArray() as number[]);
+      await new Promise(res => setTimeout(res, 50));
+      // late call of real repositioning
+      return inputHandler.cursorPosition(params);
+    });
+    coreService.onData(data => {
+      const m = data.match(/\x1b\[(.*?);(.*?)R/);
+      if (m) {
+        cpr.push([parseInt(m[1]), parseInt(m[2])]);
+      }
+    });
+    await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
+    assert.deepEqual(cup, cpr);
+  });
+  it('async OSC between', async () => {
+    inputHandler.registerOscHandler(1000, async data => {
+      await new Promise(res => setTimeout(res, 50));
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+      assert.equal(data, 'some data');
+      return true;
+    });
+    await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
+    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
+  });
+  it('async DCS between', async () => {
+    inputHandler.registerDcsHandler({final: 'a'}, async (data, params) => {
+      await new Promise(res => setTimeout(res, 50));
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+      assert.equal(data, 'some data');
+      assert.deepEqual(params.toArray(), [1, 2]);
+      return true;
+    });
+    await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
+    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
   });
 });
