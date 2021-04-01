@@ -211,14 +211,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * Scrolls the display of the terminal to the bottom.
    */
   public scrollToBottom(): void {
-    this._bufferService.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    this._bufferService.scrollToBottom();
   }
 
   public scrollToLine(line: number): void {
-    const scrollAmount = line - this._bufferService.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this._bufferService.scrollLines(scrollAmount);
-    }
+    this._bufferService.scrollToLine(line);
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
