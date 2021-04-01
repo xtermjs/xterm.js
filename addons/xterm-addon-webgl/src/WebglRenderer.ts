@@ -19,7 +19,6 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/rende
 import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
-import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -41,9 +40,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
-
-  private _onRecoverContext = new EventEmitter();
-  public get onRecoverContext(): IEvent<any> { return this._onRecoverContext.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -86,9 +82,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLost(e); }));
-    // this.register(addDisposableDomListener(this._canvas, 'keydown', () => this._gl.getExtension('WEBGL_lose_context')?.loseContext()));
-
     this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
@@ -98,12 +91,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.onCharSizeChanged();
 
     this._isAttached = document.body.contains(this._core.screenElement!);
-  }
-
-  private _onContextLost(e: Event): void {
-    console.log('lost context');
-    e.preventDefault();
-    this._onRecoverContext.fire(this);
   }
 
   public dispose(): void {

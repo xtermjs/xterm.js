@@ -14,7 +14,7 @@ export class WebglAddon implements ITerminalAddon {
 
   constructor(
     private _preserveDrawingBuffer?: boolean
-  ) {}
+  ) { }
 
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
