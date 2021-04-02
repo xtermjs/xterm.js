@@ -36,6 +36,7 @@ module.exports = {
     'util': 'util'
   },
   resolve: {
+    // The ligature modules contains fallbacks for node environments, we never want to browserify them
     fallback: {
       stream: false,
       util: false,
