@@ -42,7 +42,6 @@ export class DomRendererRowFactory {
     const fragment = this._document.createDocumentFragment();
 
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
-    console.log('joinedRanges', joinedRanges.map(e => e[0] + '->' + e[1]).join(','));
     // Find the line length first, this prevents the need to output a bunch of
     // empty cells at the end. This cannot easily be integrated into the main
     // loop below because of the colCount feature (which can be removed after we
@@ -79,7 +78,6 @@ export class DomRendererRowFactory {
 
         // We already know the exact start and end column of the joined range,
         // so we get the string and width representing it directly
-
         cell = new JoinedCellData(
           this._workCell,
           lineData.translateToString(true, range[0], range[1]),

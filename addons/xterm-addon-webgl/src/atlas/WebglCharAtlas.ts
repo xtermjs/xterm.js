@@ -83,7 +83,7 @@ export class WebglCharAtlas implements IDisposable {
     this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.width = this._config.scaledCharWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
   }
@@ -317,6 +317,13 @@ export class WebglCharAtlas implements IDisposable {
 
     this.hasCanvasChanged = true;
 
+    // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
+    // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
+    // giant ligatures (eg. =====>) don't impact overall performance.
+    const allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    if (this._tmpCanvas.width < allowedWidth) {
+      this._tmpCanvas.width = allowedWidth;
+    }
     this._tmpCtx.save();
 
     this._workAttributeData.fg = fg;
@@ -405,7 +412,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, isPowerlineGlyph);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, isPowerlineGlyph);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Check if there is enough room in the current row and go to next if needed
@@ -438,14 +445,14 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, restrictedGlyph: boolean): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.scaledCharHeight : this._tmpCanvas.height;
-    const width = restrictedGlyph ? this._config.scaledCharWidth : this._tmpCanvas.width;
+    const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const alphaOffset = y * width * 4 + x * 4 + 3;
+        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.top = y;
           found = true;
@@ -460,7 +467,7 @@ export class WebglCharAtlas implements IDisposable {
     found = false;
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
-        const alphaOffset = y * width * 4 + x * 4 + 3;
+        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.left = x;
           found = true;
@@ -475,7 +482,7 @@ export class WebglCharAtlas implements IDisposable {
     found = false;
     for (let x = width - 1; x >= 0; x--) {
       for (let y = 0; y < height; y++) {
-        const alphaOffset = y * width * 4 + x * 4 + 3;
+        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.right = x;
           found = true;
@@ -490,7 +497,7 @@ export class WebglCharAtlas implements IDisposable {
     found = false;
     for (let y = height - 1; y >= 0; y--) {
       for (let x = 0; x < width; x++) {
-        const alphaOffset = y * width * 4 + x * 4 + 3;
+        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.bottom = y;
           found = true;

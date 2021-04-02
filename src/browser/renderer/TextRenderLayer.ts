@@ -99,7 +99,6 @@ export class TextRenderLayer extends BaseRenderLayer {
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly
-
           cell = new JoinedCellData(
             this._workCell,
             line!.translateToString(true, range[0], range[1]),
