@@ -166,7 +166,6 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
-  addons.ligatures.instance = new LigaturesAddon();
   // TODO: Remove arguments when link provider API is the default
   addons['web-links'].instance = new WebLinksAddon(undefined, undefined, true);
   typedTerm.loadAddon(addons.fit.instance);
@@ -190,7 +189,6 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  typedTerm.loadAddon(addons.ligatures.instance);
   addons.fit.instance!.fit();
   term.focus();
 
