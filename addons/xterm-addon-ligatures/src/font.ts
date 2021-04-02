@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import {FontList} from 'font-finder';
-import {Font, loadBuffer, loadFile} from 'font-ligatures';
+import { FontList } from 'font-finder';
+import { Font, loadBuffer, loadFile } from 'font-ligatures';
 
 import parse from './parse';
 
@@ -74,9 +74,9 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     if (fonts.hasOwnProperty(family) && fonts[family].length > 0) {
       const font = fonts[family][0];
       if ('blob' in font) {
-        return loadBuffer(await (await font.blob()).arrayBuffer(), {cacheSize});
+        return loadBuffer(await (await font.blob()).arrayBuffer(), { cacheSize });
       }
-      return await loadFile(font.path, {cacheSize});
+      return await loadFile(font.path, { cacheSize });
     }
   }
 
