@@ -36,7 +36,7 @@ export class Renderer extends Disposable implements IRenderer {
     instantiationService: IInstantiationService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
