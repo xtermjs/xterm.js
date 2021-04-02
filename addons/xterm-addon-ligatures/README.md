@@ -51,3 +51,4 @@ This package makes use of the following fonts for testing:
 [Fira Code License]: https://github.com/tonsky/FiraCode/blob/master/LICENSE
 [Iosevka]: https://github.com/be5invis/Iosevka
 [Iosevka License]: https://github.com/be5invis/Iosevka/blob/master/LICENSE.md
+
