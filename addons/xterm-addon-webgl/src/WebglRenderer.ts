@@ -335,8 +335,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workCell.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workCell.fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
           continue;
         }
 
@@ -347,11 +347,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = cell.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = cell.fg;
 
-        console.log('updateCell', x, y, code, chars);
-        this._glyphRenderer.updateCell(x, y, code, this._workCell.bg, this._workCell.fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, cell.bg, cell.fg, chars);
 
         if (isJoined) {
           // Restore work cell
@@ -359,7 +358,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
+            const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
+            this._model.cells[j] = NULL_CELL_CODE;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
           }
         }
       }
