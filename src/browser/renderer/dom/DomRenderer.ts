@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
@@ -371,9 +371,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   private get _terminalSelector(): string {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
-
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
-  public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 
   private _onLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
