@@ -6,8 +6,8 @@
 import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { IRenderDimensions, IRenderer, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper } from 'browser/Types';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -284,8 +284,6 @@ export class MockRenderer implements IRenderer {
   public onDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
-  public deregisterCharacterJoiner(): boolean { return true; }
 }
 
 export class MockViewport implements IViewport {
@@ -407,12 +405,6 @@ export class MockRenderService implements IRenderService {
     throw new Error('Method not implemented.');
   }
   public clear(): void {
-    throw new Error('Method not implemented.');
-  }
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    throw new Error('Method not implemented.');
-  }
-  public deregisterCharacterJoiner(joinerId: number): boolean {
     throw new Error('Method not implemented.');
   }
   public dispose(): void {
