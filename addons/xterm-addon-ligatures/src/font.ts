@@ -24,40 +24,47 @@ let fontsPromise: Promise<FontList | Record<string, IFontMetadata[]>> | undefine
  * @param cacheSize The size of the ligature cache to maintain if the font is resolved
  */
 export default async function load(fontFamily: string, cacheSize: number): Promise<Font | undefined> {
-  if (!fontsPromise && 'fonts' in navigator) {
-    try {
-      const status = await (navigator as any).permissions.request?.({
-        name: 'local-fonts'
-      });
-      if (status && status.state !== 'granted') {
-        throw new Error('Permission to access local fonts not granted.');
-      }
-    } catch (err) {
-      // A `TypeError` indicates the 'local-fonts'
-      // permission is not yet implemented, so
-      // only `throw` if this is _not_ the problem.
-      if (err.name !== 'TypeError') {
-        throw err;
-      }
-    }
-    const fonts: Record<string, IFontMetadata[]> = {};
-    try {
-      const fontsIterator: AsyncIterableIterator<IFontMetadata> = (navigator as any).fonts.query();
-      for await (const metadata of fontsIterator) {
-        if (!fonts.hasOwnProperty(metadata.family)) {
-          fonts[metadata.family] = [];
-        }
-        fonts[metadata.family].push(metadata);
-      }
-      fontsPromise = Promise.resolve(fonts);
-    } catch (err) {
-      console.error(err.name, err.message);
-    }
-  }
   if (!fontsPromise) {
-    try {
-      fontsPromise = (await import('font-finder')).list();
-    } catch (err) {
+    // Web environment that supports font access API
+    if (typeof navigator !== 'undefined' && 'fonts' in navigator) {
+      try {
+        const status = await (navigator as any).permissions.request?.({
+          name: 'local-fonts'
+        });
+        if (status && status.state !== 'granted') {
+          throw new Error('Permission to access local fonts not granted.');
+        }
+      } catch (err) {
+        // A `TypeError` indicates the 'local-fonts'
+        // permission is not yet implemented, so
+        // only `throw` if this is _not_ the problem.
+        if (err.name !== 'TypeError') {
+          throw err;
+        }
+      }
+      const fonts: Record<string, IFontMetadata[]> = {};
+      try {
+        const fontsIterator: AsyncIterableIterator<IFontMetadata> = (navigator as any).fonts.query();
+        for await (const metadata of fontsIterator) {
+          if (!fonts.hasOwnProperty(metadata.family)) {
+            fonts[metadata.family] = [];
+          }
+          fonts[metadata.family].push(metadata);
+        }
+        fontsPromise = Promise.resolve(fonts);
+      } catch (err) {
+        console.error(err.name, err.message);
+      }
+    }
+    // Node environment or no font access API
+    else {
+      try {
+        fontsPromise = (await import('font-finder')).list();
+      } catch (err) {
+        // No-op
+      }
+    }
+    if (!fontsPromise) {
       fontsPromise = Promise.resolve({});
     }
   }
