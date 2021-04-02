@@ -6,13 +6,12 @@
 import { TextRenderLayer } from 'browser/renderer/TextRenderLayer';
 import { SelectionRenderLayer } from 'browser/renderer/SelectionRenderLayer';
 import { CursorRenderLayer } from 'browser/renderer/CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, CharacterJoinerHandler, ICharacterJoinerRegistry, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderLayer, IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
-import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
@@ -23,7 +22,6 @@ export class Renderer extends Disposable implements IRenderer {
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
-  private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public dimensions: IRenderDimensions;
 
@@ -35,20 +33,18 @@ export class Renderer extends Disposable implements IRenderer {
     private readonly _screenElement: HTMLElement,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
+    instantiationService: IInstantiationService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService coreService: ICoreService,
-    @ICoreBrowserService coreBrowserService: ICoreBrowserService
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
-    this._characterJoinerRegistry = new CharacterJoinerRegistry(this._bufferService);
     this._renderLayers = [
-      new TextRenderLayer(this._screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency, this._id, this._bufferService, _optionsService),
-      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, _optionsService),
-      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier, linkifier2, this._bufferService, _optionsService),
-      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, _optionsService, coreService, coreBrowserService)
+      instantiationService.createInstance(TextRenderLayer, this._screenElement, 0, this._colors, allowTransparency, this._id),
+      instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
+      instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier, linkifier2),
+      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 3, this._colors, this._id, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -209,13 +205,5 @@ export class Renderer extends Disposable implements IRenderer {
     // in CSS pixels, but the actual char size on the canvas can differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
-  }
-
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    return this._characterJoinerRegistry.registerCharacterJoiner(handler);
-  }
-
-  public deregisterCharacterJoiner(joinerId: number): boolean {
-    return this._characterJoinerRegistry.deregisterCharacterJoiner(joinerId);
   }
 }

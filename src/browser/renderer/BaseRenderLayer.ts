@@ -66,7 +66,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', { alpha: this._alpha }));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();

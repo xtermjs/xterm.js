@@ -4,7 +4,7 @@
  */
 
 import { IEvent } from 'common/EventEmitter';
-import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -66,8 +66,6 @@ export interface IRenderService extends IDisposable {
   onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   onCursorMove(): void;
   clear(): void;
-  registerCharacterJoiner(handler: CharacterJoinerHandler): number;
-  deregisterCharacterJoiner(joinerId: number): boolean;
 }
 
 export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
@@ -103,4 +101,14 @@ export interface ISoundService {
   serviceBrand: undefined;
 
   playBellSound(): void;
+}
+
+
+export const ICharacterJoinerService = createDecorator<ICharacterJoinerService>('CharacterJoinerService');
+export interface ICharacterJoinerService {
+  serviceBrand: undefined;
+
+  register(handler: (text: string) => [number, number][]): number;
+  deregister(joinerId: number): boolean;
+  getJoinedCharacters(row: number): [number, number][];
 }

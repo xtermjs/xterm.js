@@ -80,12 +80,12 @@ export class WebglCharAtlas implements IDisposable {
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
-    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', {alpha: true}));
+    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
     this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
+    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
   }
 
   public dispose(): void {
