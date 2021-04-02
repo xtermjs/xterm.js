@@ -24,7 +24,7 @@ import { DcsHandler } from 'common/parser/DcsParser';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
@@ -174,7 +174,7 @@ class DECRQSS implements IDcsHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
         break;
       case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
+        const STYLES: {[key: string]: number} = { 'block': 2, 'underline': 4, 'bar': 6 };
         let style = STYLES[this._optionsService.options.cursorStyle];
         style -= this._optionsService.options.cursorBlink ? 1 : 0;
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
@@ -314,53 +314,53 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * CSI handler
      */
-    this._parser.registerCsiHandler({final: '@'}, params => this.insertChars(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
-    this._parser.registerCsiHandler({final: 'A'}, params => this.cursorUp(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
-    this._parser.registerCsiHandler({final: 'B'}, params => this.cursorDown(params));
-    this._parser.registerCsiHandler({final: 'C'}, params => this.cursorForward(params));
-    this._parser.registerCsiHandler({final: 'D'}, params => this.cursorBackward(params));
-    this._parser.registerCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
-    this._parser.registerCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
-    this._parser.registerCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
-    this._parser.registerCsiHandler({final: 'H'}, params => this.cursorPosition(params));
-    this._parser.registerCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
-    this._parser.registerCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({final: 'K'}, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({final: 'L'}, params => this.insertLines(params));
-    this._parser.registerCsiHandler({final: 'M'}, params => this.deleteLines(params));
-    this._parser.registerCsiHandler({final: 'P'}, params => this.deleteChars(params));
-    this._parser.registerCsiHandler({final: 'S'}, params => this.scrollUp(params));
-    this._parser.registerCsiHandler({final: 'T'}, params => this.scrollDown(params));
-    this._parser.registerCsiHandler({final: 'X'}, params => this.eraseChars(params));
-    this._parser.registerCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
-    this._parser.registerCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
-    this._parser.registerCsiHandler({final: 'a'}, params => this.hPositionRelative(params));
-    this._parser.registerCsiHandler({final: 'b'}, params => this.repeatPrecedingCharacter(params));
-    this._parser.registerCsiHandler({final: 'c'}, params => this.sendDeviceAttributesPrimary(params));
-    this._parser.registerCsiHandler({prefix: '>', final: 'c'}, params => this.sendDeviceAttributesSecondary(params));
-    this._parser.registerCsiHandler({final: 'd'}, params => this.linePosAbsolute(params));
-    this._parser.registerCsiHandler({final: 'e'}, params => this.vPositionRelative(params));
-    this._parser.registerCsiHandler({final: 'f'}, params => this.hVPosition(params));
-    this._parser.registerCsiHandler({final: 'g'}, params => this.tabClear(params));
-    this._parser.registerCsiHandler({final: 'h'}, params => this.setMode(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
-    this._parser.registerCsiHandler({final: 'l'}, params => this.resetMode(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
-    this._parser.registerCsiHandler({final: 'm'}, params => this.charAttributes(params));
-    this._parser.registerCsiHandler({final: 'n'}, params => this.deviceStatus(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
-    this._parser.registerCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
-    this._parser.registerCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
-    this._parser.registerCsiHandler({final: 's'}, params => this.saveCursor(params));
-    this._parser.registerCsiHandler({final: 't'}, params => this.windowOptions(params));
-    this._parser.registerCsiHandler({final: 'u'}, params => this.restoreCursor(params));
-    this._parser.registerCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
-    this._parser.registerCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ final: '@' }, params => this.insertChars(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: '@' }, params => this.scrollLeft(params));
+    this._parser.registerCsiHandler({ final: 'A' }, params => this.cursorUp(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: 'A' }, params => this.scrollRight(params));
+    this._parser.registerCsiHandler({ final: 'B' }, params => this.cursorDown(params));
+    this._parser.registerCsiHandler({ final: 'C' }, params => this.cursorForward(params));
+    this._parser.registerCsiHandler({ final: 'D' }, params => this.cursorBackward(params));
+    this._parser.registerCsiHandler({ final: 'E' }, params => this.cursorNextLine(params));
+    this._parser.registerCsiHandler({ final: 'F' }, params => this.cursorPrecedingLine(params));
+    this._parser.registerCsiHandler({ final: 'G' }, params => this.cursorCharAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
+    this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
+    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
+    this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
+    this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
+    this._parser.registerCsiHandler({ final: 'S' }, params => this.scrollUp(params));
+    this._parser.registerCsiHandler({ final: 'T' }, params => this.scrollDown(params));
+    this._parser.registerCsiHandler({ final: 'X' }, params => this.eraseChars(params));
+    this._parser.registerCsiHandler({ final: 'Z' }, params => this.cursorBackwardTab(params));
+    this._parser.registerCsiHandler({ final: '`' }, params => this.charPosAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'a' }, params => this.hPositionRelative(params));
+    this._parser.registerCsiHandler({ final: 'b' }, params => this.repeatPrecedingCharacter(params));
+    this._parser.registerCsiHandler({ final: 'c' }, params => this.sendDeviceAttributesPrimary(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'c' }, params => this.sendDeviceAttributesSecondary(params));
+    this._parser.registerCsiHandler({ final: 'd' }, params => this.linePosAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'e' }, params => this.vPositionRelative(params));
+    this._parser.registerCsiHandler({ final: 'f' }, params => this.hVPosition(params));
+    this._parser.registerCsiHandler({ final: 'g' }, params => this.tabClear(params));
+    this._parser.registerCsiHandler({ final: 'h' }, params => this.setMode(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'h' }, params => this.setModePrivate(params));
+    this._parser.registerCsiHandler({ final: 'l' }, params => this.resetMode(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'l' }, params => this.resetModePrivate(params));
+    this._parser.registerCsiHandler({ final: 'm' }, params => this.charAttributes(params));
+    this._parser.registerCsiHandler({ final: 'n' }, params => this.deviceStatus(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'n' }, params => this.deviceStatusPrivate(params));
+    this._parser.registerCsiHandler({ intermediates: '!', final: 'p' }, params => this.softReset(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: 'q' }, params => this.setCursorStyle(params));
+    this._parser.registerCsiHandler({ final: 'r' }, params => this.setScrollRegion(params));
+    this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
+    this._parser.registerCsiHandler({ final: 't' }, params => this.windowOptions(params));
+    this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
+    this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
 
     /**
      * execute handler
@@ -426,32 +426,32 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * ESC handlers
      */
-    this._parser.registerEscHandler({final: '7'}, () => this.saveCursor());
-    this._parser.registerEscHandler({final: '8'}, () => this.restoreCursor());
-    this._parser.registerEscHandler({final: 'D'}, () => this.index());
-    this._parser.registerEscHandler({final: 'E'}, () => this.nextLine());
-    this._parser.registerEscHandler({final: 'H'}, () => this.tabSet());
-    this._parser.registerEscHandler({final: 'M'}, () => this.reverseIndex());
-    this._parser.registerEscHandler({final: '='}, () => this.keypadApplicationMode());
-    this._parser.registerEscHandler({final: '>'}, () => this.keypadNumericMode());
-    this._parser.registerEscHandler({final: 'c'}, () => this.fullReset());
-    this._parser.registerEscHandler({final: 'n'}, () => this.setgLevel(2));
-    this._parser.registerEscHandler({final: 'o'}, () => this.setgLevel(3));
-    this._parser.registerEscHandler({final: '|'}, () => this.setgLevel(3));
-    this._parser.registerEscHandler({final: '}'}, () => this.setgLevel(2));
-    this._parser.registerEscHandler({final: '~'}, () => this.setgLevel(1));
-    this._parser.registerEscHandler({intermediates: '%', final: '@'}, () => this.selectDefaultCharset());
-    this._parser.registerEscHandler({intermediates: '%', final: 'G'}, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({ final: '7' }, () => this.saveCursor());
+    this._parser.registerEscHandler({ final: '8' }, () => this.restoreCursor());
+    this._parser.registerEscHandler({ final: 'D' }, () => this.index());
+    this._parser.registerEscHandler({ final: 'E' }, () => this.nextLine());
+    this._parser.registerEscHandler({ final: 'H' }, () => this.tabSet());
+    this._parser.registerEscHandler({ final: 'M' }, () => this.reverseIndex());
+    this._parser.registerEscHandler({ final: '=' }, () => this.keypadApplicationMode());
+    this._parser.registerEscHandler({ final: '>' }, () => this.keypadNumericMode());
+    this._parser.registerEscHandler({ final: 'c' }, () => this.fullReset());
+    this._parser.registerEscHandler({ final: 'n' }, () => this.setgLevel(2));
+    this._parser.registerEscHandler({ final: 'o' }, () => this.setgLevel(3));
+    this._parser.registerEscHandler({ final: '|' }, () => this.setgLevel(3));
+    this._parser.registerEscHandler({ final: '}' }, () => this.setgLevel(2));
+    this._parser.registerEscHandler({ final: '~' }, () => this.setgLevel(1));
+    this._parser.registerEscHandler({ intermediates: '%', final: '@' }, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({ intermediates: '%', final: 'G' }, () => this.selectDefaultCharset());
     for (const flag in CHARSETS) {
-      this._parser.registerEscHandler({intermediates: '(', final: flag}, () => this.selectCharset('(' + flag));
-      this._parser.registerEscHandler({intermediates: ')', final: flag}, () => this.selectCharset(')' + flag));
-      this._parser.registerEscHandler({intermediates: '*', final: flag}, () => this.selectCharset('*' + flag));
-      this._parser.registerEscHandler({intermediates: '+', final: flag}, () => this.selectCharset('+' + flag));
-      this._parser.registerEscHandler({intermediates: '-', final: flag}, () => this.selectCharset('-' + flag));
-      this._parser.registerEscHandler({intermediates: '.', final: flag}, () => this.selectCharset('.' + flag));
-      this._parser.registerEscHandler({intermediates: '/', final: flag}, () => this.selectCharset('/' + flag)); // TODO: supported?
+      this._parser.registerEscHandler({ intermediates: '(', final: flag }, () => this.selectCharset('(' + flag));
+      this._parser.registerEscHandler({ intermediates: ')', final: flag }, () => this.selectCharset(')' + flag));
+      this._parser.registerEscHandler({ intermediates: '*', final: flag }, () => this.selectCharset('*' + flag));
+      this._parser.registerEscHandler({ intermediates: '+', final: flag }, () => this.selectCharset('+' + flag));
+      this._parser.registerEscHandler({ intermediates: '-', final: flag }, () => this.selectCharset('-' + flag));
+      this._parser.registerEscHandler({ intermediates: '.', final: flag }, () => this.selectCharset('.' + flag));
+      this._parser.registerEscHandler({ intermediates: '/', final: flag }, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
-    this._parser.registerEscHandler({intermediates: '#', final: '8'}, () => this.screenAlignmentPattern());
+    this._parser.registerEscHandler({ intermediates: '#', final: '8' }, () => this.screenAlignmentPattern());
 
     /**
      * error handler
@@ -464,7 +464,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({intermediates: '$', final: 'q'}, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
   }
 
   public dispose(): void {
