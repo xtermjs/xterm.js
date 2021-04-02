@@ -919,13 +919,19 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    const joinerId = this._characterJoinerService!.register(handler);
+    if (!this._characterJoinerService) {
+      throw new Error('Terminal must be opened first');
+    }
+    const joinerId = this._characterJoinerService.register(handler);
     this.refresh(0, this.rows - 1);
     return joinerId;
   }
 
   public deregisterCharacterJoiner(joinerId: number): void {
-    if (this._characterJoinerService!.deregister(joinerId)) {
+    if (!this._characterJoinerService) {
+      throw new Error('Terminal must be opened first');
+    }
+    if (this._characterJoinerService.deregister(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }
