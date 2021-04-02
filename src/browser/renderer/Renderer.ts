@@ -33,7 +33,7 @@ export class Renderer extends Disposable implements IRenderer {
     private readonly _screenElement: HTMLElement,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
-    instantiationService: IInstantiationService,
+    @IInstantiationService instantiationService: IInstantiationService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService
