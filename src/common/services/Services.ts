@@ -157,6 +157,8 @@ type GetLeadingNonServiceArgs<Args> =
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
+  serviceBrand: undefined;
+
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
   getService<T>(id: IServiceIdentifier<T>): T | undefined;
   createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;

@@ -5,7 +5,7 @@
 
 import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
@@ -409,5 +409,18 @@ export class MockRenderService implements IRenderService {
   }
   public dispose(): void {
     throw new Error('Method not implemented.');
+  }
+}
+
+export class MockCharacterJoinerService implements ICharacterJoinerService {
+  public serviceBrand: undefined;
+  public register(handler: (text: string) => [number, number][]): number {
+    return 0;
+  }
+  public deregister(joinerId: number): boolean {
+    return true;
+  }
+  public getJoinedCharacters(row: number): [number, number][] {
+    return [];
   }
 }

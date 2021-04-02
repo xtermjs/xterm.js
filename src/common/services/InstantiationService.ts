@@ -42,6 +42,8 @@ export class ServiceCollection {
 }
 
 export class InstantiationService implements IInstantiationService {
+  public serviceBrand: undefined;
+
   private readonly _services: ServiceCollection = new ServiceCollection();
 
   constructor() {
