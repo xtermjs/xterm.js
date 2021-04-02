@@ -358,7 +358,7 @@ export class WebglCharAtlas implements IDisposable {
     const fontStyle = italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'middle';
+    this._tmpCtx.textBaseline = 'ideographic';
 
     this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
@@ -382,7 +382,7 @@ export class WebglCharAtlas implements IDisposable {
     const padding = isPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
 
     // Draw the character
-    this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight / 2);
+    this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
