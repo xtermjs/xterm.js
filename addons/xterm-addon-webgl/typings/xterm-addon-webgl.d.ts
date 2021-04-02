@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { IEvent } from 'node-pty';
 import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-webgl' {
@@ -29,5 +30,10 @@ declare module 'xterm-addon-webgl' {
      * Clears the terminal's texture atlas and triggers a redraw.
      */
     public clearTextureAtlas(): void;
+
+    /**
+     * Fired when the WebglRenderer loses context
+     */
+    public get onContextLoss(): IEvent<void>;
   }
 }

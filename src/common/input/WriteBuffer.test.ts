@@ -85,5 +85,26 @@ describe('WriteBuffer', () => {
         done();
       });
     });
+    it('writeSync called from action does not overflow callstack - issue #3265', () => {
+      wb = new WriteBuffer(data => {
+        const num = parseInt(data as string);
+        if (num < 1000000) {
+          wb.writeSync('' + (num + 1));
+        }
+      });
+      wb.writeSync('1');
+    });
+    it('writeSync maxSubsequentCalls argument', () => {
+      let last: string = '';
+      wb = new WriteBuffer(data => {
+        last = data as string;
+        const num = parseInt(data as string);
+        if (num < 1000000) {
+          wb.writeSync('' + (num + 1), 10);
+        }
+      });
+      wb.writeSync('1', 10);
+      assert.equal(last, '11'); // 1 + 10 sub calls = 11
+    });
   });
 });

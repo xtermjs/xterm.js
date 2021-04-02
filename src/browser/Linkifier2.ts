@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations } from 'browser/Types';
+import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations, ILinkWithState } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
@@ -11,21 +11,12 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 
-interface ILinkState {
-  decorations: ILinkDecorations;
-  isHovered: boolean;
-}
-
-interface ILinkWithState {
-  link: ILink;
-  state?: ILinkState;
-}
-
 export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _element: HTMLElement | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _linkProviders: ILinkProvider[] = [];
+  public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];

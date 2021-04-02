@@ -42,6 +42,16 @@ export interface IKeyboardEvent {
   type: string;
 }
 
+export interface IScrollEvent {
+  position: number;
+  source: ScrollSource;
+}
+
+export const enum ScrollSource {
+  TERMINAL,
+  VIEWPORT,
+}
+
 export interface ICircularList<T> {
   length: number;
   maxLength: number;
@@ -347,7 +357,6 @@ export interface IAnsiColorChangeEvent {
  */
 export interface IInputHandler {
   onTitleChange: IEvent<string>;
-  onRequestScroll: IEvent<IAttributeData, boolean | void>;
 
   parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;

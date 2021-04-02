@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData, ICoreTerminal } from 'common/Types';
+import { ITerminalOptions, IDisposable, IBufferLine, IAttributeData, ICoreTerminal, IKeyboardEvent, IScrollEvent, ScrollSource } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -41,7 +41,7 @@ import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 
 // Only trigger this warning a single time per session
-let hasWriteSyncWarnHappened: boolean = false;
+let hasWriteSyncWarnHappened = false;
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
@@ -58,8 +58,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
-  /** An IBufferline to clone/copy from for new blank lines */
-  private _cachedBlankLine: IBufferLine | undefined;
 
   private _onBinary = new EventEmitter<string>();
   public get onBinary(): IEvent<string> { return this._onBinary.event; }
@@ -69,8 +67,21 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  protected _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  protected _onScroll = new EventEmitter<IScrollEvent, void>();
+  /**
+   * Internally we track the source of the scroll but this is meaningless outside the library so
+   * it's filtered out.
+   */
+  protected _onScrollApi?: EventEmitter<number, void>;
+  public get onScroll(): IEvent<number, void> {
+    if (!this._onScrollApi) {
+      this._onScrollApi = new EventEmitter<number, void>();
+      this.register(this._onScroll.event(ev => {
+        this._onScrollApi?.fire(ev.position);
+      }));
+    }
+    return this._onScrollApi.event;
+  }
 
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
@@ -110,6 +121,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._coreService.onData, this._onData));
     this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
+    this.register(this._bufferService.onScroll(event => {
+      this._onScroll.fire({position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL});
+      this._dirtyRowService.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
+    }));
 
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
@@ -137,12 +152,12 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    *
    * @deprecated Unreliable, will be removed soon.
    */
-  public writeSync(data: string | Uint8Array): void {
+  public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
     if (this._logService.logLevel <= LogLevelEnum.WARN && !hasWriteSyncWarnHappened) {
       this._logService.warn('writeSync is unreliable and will be removed soon.');
       hasWriteSyncWarnHappened = true;
     }
-    this._writeBuffer.writeSync(data);
+    this._writeBuffer.writeSync(data, maxSubsequentCalls);
   }
 
   public resize(x: number, y: number): void {
@@ -161,66 +176,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
-    const buffer = this._bufferService.buffer;
-
-    let newLine: IBufferLine | undefined;
-    newLine = this._cachedBlankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
-      newLine = buffer.getBlankLine(eraseAttr, isWrapped);
-      this._cachedBlankLine = newLine;
-    }
-    newLine.isWrapped = isWrapped;
-
-    const topRow = buffer.ybase + buffer.scrollTop;
-    const bottomRow = buffer.ybase + buffer.scrollBottom;
-
-    if (buffer.scrollTop === 0) {
-      // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = buffer.lines.isFull;
-
-      // Insert the line using the fastest method
-      if (bottomRow === buffer.lines.length - 1) {
-        if (willBufferBeTrimmed) {
-          buffer.lines.recycle().copyFrom(newLine);
-        } else {
-          buffer.lines.push(newLine.clone());
-        }
-      } else {
-        buffer.lines.splice(bottomRow + 1, 0, newLine.clone());
-      }
-
-      // Only adjust ybase and ydisp when the buffer is not trimmed
-      if (!willBufferBeTrimmed) {
-        buffer.ybase++;
-        // Only scroll the ydisp with ybase if the user has not scrolled up
-        if (!this._bufferService.isUserScrolling) {
-          buffer.ydisp++;
-        }
-      } else {
-        // When the buffer is full and the user has scrolled up, keep the text
-        // stable unless ydisp is right at the top
-        if (this._bufferService.isUserScrolling) {
-          buffer.ydisp = Math.max(buffer.ydisp - 1, 0);
-        }
-      }
-    } else {
-      // scrollTop is non-zero which means no line will be going to the
-      // scrollback, instead we can just shift them in-place.
-      const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
-      buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      buffer.lines.set(bottomRow, newLine.clone());
-    }
-
-    // Move the viewport to the bottom of the buffer unless the user is
-    // scrolling.
-    if (!this._bufferService.isUserScrolling) {
-      buffer.ydisp = buffer.ybase;
-    }
-
-    // Flag rows that need updating
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
-
-    this._onScroll.fire(buffer.ydisp);
+    this._bufferService.scroll(eraseAttr, isWrapped);
   }
 
   /**
@@ -230,28 +186,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    const buffer = this._bufferService.buffer;
-    if (disp < 0) {
-      if (buffer.ydisp === 0) {
-        return;
-      }
-      this._bufferService.isUserScrolling = true;
-    } else if (disp + buffer.ydisp >= buffer.ybase) {
-      this._bufferService.isUserScrolling = false;
-    }
-
-    const oldYdisp = buffer.ydisp;
-    buffer.ydisp = Math.max(Math.min(buffer.ydisp + disp, buffer.ybase), 0);
-
-    // No change occurred, don't trigger scroll/refresh
-    if (oldYdisp === buffer.ydisp) {
-      return;
-    }
-
-    if (!suppressScrollEvent) {
-      this._onScroll.fire(buffer.ydisp);
-    }
+  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
+    this._bufferService.scrollLines(disp, suppressScrollEvent, source);
   }
 
   /**
@@ -259,28 +195,25 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @param pageCount The number of pages to scroll (negative scrolls up).
    */
   public scrollPages(pageCount: number): void {
-    this.scrollLines(pageCount * (this.rows - 1));
+    this._bufferService.scrollPages(pageCount);
   }
 
   /**
    * Scrolls the display of the terminal to the top.
    */
   public scrollToTop(): void {
-    this.scrollLines(-this._bufferService.buffer.ydisp);
+    this._bufferService.scrollToTop();
   }
 
   /**
    * Scrolls the display of the terminal to the bottom.
    */
   public scrollToBottom(): void {
-    this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    this._bufferService.scrollToBottom();
   }
 
   public scrollToLine(line: number): void {
-    const scrollAmount = line - this._bufferService.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this.scrollLines(scrollAmount);
-    }
+    this._bufferService.scrollToLine(line);
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */

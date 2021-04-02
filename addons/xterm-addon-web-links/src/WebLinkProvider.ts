@@ -41,7 +41,7 @@ export class WebLinkProvider implements ILinkProvider {
 }
 
 export class LinkComputer {
-  public static computeLink(y: number, regex: RegExp, terminal: Terminal, handler: (event: MouseEvent, uri: string) => void): ILink[] {
+  public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
     const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
@@ -89,7 +89,7 @@ export class LinkComputer {
         }
       };
 
-      result.push({ range, text, activate: handler });
+      result.push({ range, text, activate });
     }
 
     return result;
