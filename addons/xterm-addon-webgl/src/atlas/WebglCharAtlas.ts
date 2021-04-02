@@ -513,8 +513,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + (restrictedGlyph ? TMP_CANVAS_GLYPH_PADDING : 0),
-        y: -boundingBox.top + (restrictedGlyph ? TMP_CANVAS_GLYPH_PADDING : 0)
+        x: -boundingBox.left + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING),
+        y: -boundingBox.top + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING)
       }
     };
   }
