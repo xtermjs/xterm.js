@@ -66,9 +66,115 @@ describe('InputHandler', () => {
     optionsService = new MockOptionsService();
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
-    coreService = new CoreService(() => {}, bufferService, new MockLogService(), optionsService);
+    coreService = new CoreService(() => { }, bufferService, new MockLogService(), optionsService);
 
     inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService(), new MockUnicodeService());
+  });
+
+  describe('SL/SR/DECIC/DECDC', () => {
+    beforeEach(() => {
+      bufferService.resize(5, 5);
+      optionsService.options.scrollback = 1;
+      bufferService.reset();
+    });
+    it('SL (scrollLeft)', async () => {
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[ @');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '2345', '2345', '2345', '2345', '2345']);
+      inputHandler.parseP('\x1b[0 @');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '345', '345', '345', '345', '345']);
+      inputHandler.parseP('\x1b[2 @');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '5', '5', '5', '5', '5']);
+    });
+    it('SR (scrollRight)', async () => {
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[ A');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
+      inputHandler.parseP('\x1b[0 A');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '  123', '  123', '  123', '  123', '  123']);
+      inputHandler.parseP('\x1b[2 A');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '    1', '    1', '    1', '    1', '    1']);
+    });
+    it('insertColumns (DECIC)', async () => {
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[\'}');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+      bufferService.reset();
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[1\'}');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
+      bufferService.reset();
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[2\'}');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
+    });
+    it('deleteColumns (DECDC)', async () => {
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[\'~');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '1245', '1245', '1245', '1245', '1245']);
+      bufferService.reset();
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[1\'~');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '1245', '1245', '1245', '1245', '1245']);
+      bufferService.reset();
+      inputHandler.parseP('12345'.repeat(6));
+      inputHandler.parseP('\x1b[3;3H');
+      inputHandler.parseP('\x1b[2\'~');
+      assert.deepEqual(getLines(bufferService, 6), ['12345', '125', '125', '125', '125', '125']);
+    });
+  });
+
+  describe('BS with reverseWraparound set/unset', () => {
+    const ttyBS = '\x08 \x08';  // tty ICANON sends <BS SP BS> on pressing BS
+    beforeEach(() => {
+      bufferService.resize(5, 5);
+      optionsService.options.scrollback = 1;
+      bufferService.reset();
+    });
+    describe('reverseWraparound set', () => {
+      it('should not reverse outside of scroll margins', async () => {
+        // prepare buffer content
+        inputHandler.parseP('#####abcdefghijklmnopqrstuvwxy');
+        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
+        assert.equal(bufferService.buffers.active.ydisp, 1);
+        assert.equal(bufferService.buffers.active.x, 5);
+        assert.equal(bufferService.buffers.active.y, 4);
+        inputHandler.parseP(ttyBS.repeat(100));
+        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
+
+        inputHandler.parseP('\x1b[?45h');
+        inputHandler.parseP('uvwxy');
+
+        // set top/bottom to 1/3 (0-based)
+        inputHandler.parseP('\x1b[2;4r');
+        // place cursor below scroll bottom
+        bufferService.buffers.active.x = 5;
+        bufferService.buffers.active.y = 4;
+        inputHandler.parseP(ttyBS.repeat(100));
+        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
+
+        inputHandler.parseP('uvwxy');
+        // place cursor within scroll margins
+        bufferService.buffers.active.x = 5;
+        bufferService.buffers.active.y = 3;
+        inputHandler.parseP(ttyBS.repeat(100));
+        assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
+        assert.equal(bufferService.buffers.active.x, 0);
+        assert.equal(bufferService.buffers.active.y, bufferService.buffers.active.scrollTop);  // stops at 0, scrollTop
+
+        inputHandler.parseP('fghijklmnopqrst');
+        // place cursor above scroll top
+        bufferService.buffers.active.x = 5;
+        bufferService.buffers.active.y = 0;
+        inputHandler.parseP(ttyBS.repeat(100));
+        assert.deepEqual(getLines(bufferService, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
+      });
+    });
   });
 
   it('save and restore cursor', () => {
@@ -140,7 +246,7 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, false);
     });
   });
-  describe('regression tests', function(): void {
+  describe('regression tests', function (): void {
     function termContent(bufferService: IBufferService, trim: boolean): string[] {
       const result = [];
       for (let i = 0; i < bufferService.rows; ++i) result.push(bufferService.buffer.lines.get(i)!.translateToString(trim));
@@ -1240,7 +1346,7 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[6H\x1b[2Mm');
       assert.deepEqual(getLines(bufferService), ['0', '1', '2', '3', '4', 'm', '6', '7', '8', '9']);
       await inputHandler.parseP('\x1b[3H\x1b[2Mn');
-      assert.deepEqual(getLines(bufferService), ['0', '1', 'n', 'm',  '',  '', '6', '7', '8', '9']);
+      assert.deepEqual(getLines(bufferService), ['0', '1', 'n', 'm', '', '', '6', '7', '8', '9']);
     });
   });
   it('should parse big chunks in smaller subchunks', async () => {
@@ -1820,7 +1926,7 @@ describe('InputHandler - async handlers', () => {
     optionsService = new MockOptionsService();
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
-    coreService = new CoreService(() => {}, bufferService, new MockLogService(), optionsService);
+    coreService = new CoreService(() => { }, bufferService, new MockLogService(), optionsService);
     coreService.onData(data => { console.log(data); });
 
     inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockDirtyRowService(), new MockLogService(), optionsService, new MockCoreMouseService(), new MockUnicodeService());
@@ -1829,7 +1935,7 @@ describe('InputHandler - async handlers', () => {
   it('async CUP with CPR check', async () => {
     const cup: number[][] = [];
     const cpr: number[][] = [];
-    inputHandler.registerCsiHandler({final: 'H'}, async params => {
+    inputHandler.registerCsiHandler({ final: 'H' }, async params => {
       cup.push(params.toArray() as number[]);
       await new Promise(res => setTimeout(res, 50));
       // late call of real repositioning
@@ -1855,7 +1961,7 @@ describe('InputHandler - async handlers', () => {
     assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
   });
   it('async DCS between', async () => {
-    inputHandler.registerDcsHandler({final: 'a'}, async (data, params) => {
+    inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
       await new Promise(res => setTimeout(res, 50));
       assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
       assert.equal(data, 'some data');

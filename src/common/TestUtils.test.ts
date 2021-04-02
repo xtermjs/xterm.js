@@ -9,7 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
@@ -17,6 +17,7 @@ export class MockBufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
+  public onScroll: IEvent<number> = new EventEmitter<number>().event;
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -25,23 +26,41 @@ export class MockBufferService implements IBufferService {
   ) {
     this.buffers = new BufferSet(optionsService, this);
   }
+  public scrollPages(pageCount: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public scrollToTop(): void {
+    throw new Error('Method not implemented.');
+  }
+  public scrollToLine(line: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public scroll(eraseAttr: IAttributeData, isWrapped: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public scrollToBottom(): void {
+    throw new Error('Method not implemented.');
+  }
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+    throw new Error('Method not implemented.');
+  }
   public resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;
   }
-  public reset(): void {}
+  public reset(): void { }
 }
 
 export class MockCoreMouseService implements ICoreMouseService {
   public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';
   public activeProtocol: string = '';
-  public addEncoding(name: string): void {}
-  public addProtocol(name: string): void {}
-  public reset(): void {}
+  public addEncoding(name: string): void { }
+  public addProtocol(name: string): void { }
+  public reset(): void { }
   public triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
   public onProtocolChange: IEvent<CoreMouseEventType> = new EventEmitter<CoreMouseEventType>().event;
-  public explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+  public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
   }
 }
@@ -50,9 +69,9 @@ export class MockCharsetService implements ICharsetService {
   public serviceBrand: any;
   public charset: ICharset | undefined;
   public glevel: number = 0;
-  public reset(): void {}
-  public setgLevel(g: number): void {}
-  public setgCharset(g: number, charset: ICharset): void {}
+  public reset(): void { }
+  public setgLevel(g: number): void { }
+  public setgCharset(g: number, charset: ICharset): void { }
 }
 
 export class MockCoreService implements ICoreService {
@@ -75,28 +94,28 @@ export class MockCoreService implements ICoreService {
   public onData: IEvent<string> = new EventEmitter<string>().event;
   public onUserInput: IEvent<void> = new EventEmitter<void>().event;
   public onBinary: IEvent<string> = new EventEmitter<string>().event;
-  public reset(): void {}
-  public triggerDataEvent(data: string, wasUserInput?: boolean): void {}
-  public triggerBinaryEvent(data: string): void {}
+  public reset(): void { }
+  public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
+  public triggerBinaryEvent(data: string): void { }
 }
 
 export class MockDirtyRowService implements IDirtyRowService {
   public serviceBrand: any;
   public start: number = 0;
   public end: number = 0;
-  public clearRange(): void {}
-  public markDirty(y: number): void {}
-  public markRangeDirty(y1: number, y2: number): void {}
-  public markAllDirty(): void {}
+  public clearRange(): void { }
+  public markDirty(y: number): void { }
+  public markRangeDirty(y1: number, y2: number): void { }
+  public markAllDirty(): void { }
 }
 
 export class MockLogService implements ILogService {
   public serviceBrand: any;
   public logLevel = LogLevelEnum.DEBUG;
-  public debug(message: any, ...optionalParams: any[]): void {}
-  public info(message: any, ...optionalParams: any[]): void {}
-  public warn(message: any, ...optionalParams: any[]): void {}
-  public error(message: any, ...optionalParams: any[]): void {}
+  public debug(message: any, ...optionalParams: any[]): void { }
+  public info(message: any, ...optionalParams: any[]): void { }
+  public warn(message: any, ...optionalParams: any[]): void { }
+  public error(message: any, ...optionalParams: any[]): void { }
 }
 
 export class MockOptionsService implements IOptionsService {

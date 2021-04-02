@@ -19,6 +19,7 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/rende
 import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -40,6 +41,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
+
+  private _onContextLoss = new EventEmitter<void>();
+  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -82,6 +86,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
+
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+
     this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
