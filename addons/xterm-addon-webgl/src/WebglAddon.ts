@@ -3,14 +3,17 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
 import { IRenderService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
+import { EventEmitter } from 'common/EventEmitter';
 
 export class WebglAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
+  private _onContextLoss = new EventEmitter<void>();
+  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
 
   constructor(
     private _preserveDrawingBuffer?: boolean
@@ -24,6 +27,7 @@ export class WebglAddon implements ITerminalAddon {
     const renderService: IRenderService = (<any>terminal)._core._renderService;
     const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
     this._renderer = new WebglRenderer(terminal, colors, this._preserveDrawingBuffer);
+    this._renderer.onContextLoss(() => this._onContextLoss.fire());
     renderService.setRenderer(this._renderer);
   }
 
