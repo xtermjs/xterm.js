@@ -708,6 +708,12 @@ declare module 'xterm' {
      * @returns an `IDisposable` to stop listening.
      */
     onTitleChange: IEvent<string>;
+    
+    /**
+     * Adds an event listener for when the bell sound.
+     * @returns an `IDisposable` to stop listening.
+     */
+     onBell: IEvent<void>;
 
     /**
      * Unfocus the terminal.

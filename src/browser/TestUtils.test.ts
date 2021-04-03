@@ -37,6 +37,7 @@ export class MockTerminal implements ITerminal {
   public onData!: IEvent<string>;
   public onBinary!: IEvent<string>;
   public onTitleChange!: IEvent<string>;
+  public onBell!: IEvent<void>;
   public onScroll!: IEvent<number>;
   public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   public onRender!: IEvent<{ start: number, end: number }>;
