@@ -49,6 +49,14 @@ const clientConfig = {
     alias: {
       common: path.resolve('./out/common'),
       browser: path.resolve('./out/browser')
+    },
+    fallback: {
+      // The ligature modules contains fallbacks for node environments, we never want to browserify them
+      stream: false,
+      util: false,
+      os: false,
+      path: false,
+      fs: false
     }
   },
   output: {

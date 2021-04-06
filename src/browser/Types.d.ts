@@ -303,3 +303,10 @@ interface IBufferCellPosition {
   x: number;
   y: number;
 }
+
+export type CharacterJoinerHandler = (text: string) => [number, number][];
+
+export interface ICharacterJoiner {
+  id: number;
+  handler: CharacterJoinerHandler;
+}

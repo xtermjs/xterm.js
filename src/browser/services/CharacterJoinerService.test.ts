@@ -4,15 +4,15 @@
  */
 
 import { assert } from 'chai';
-import { ICharacterJoinerRegistry } from 'browser/renderer/Types';
-import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
+import { ICharacterJoinerService } from 'browser/services/Services';
+import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockBufferService } from 'common/TestUtils.test';
 
-describe('CharacterJoinerRegistry', () => {
-  let registry: ICharacterJoinerRegistry;
+describe('CharacterJoinerService', () => {
+  let service: ICharacterJoinerService;
 
   beforeEach(() => {
     const bufferService = new MockBufferService(16, 10);
@@ -39,225 +39,225 @@ describe('CharacterJoinerRegistry', () => {
     for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     lines.set(6, line6);
 
-    registry = new CharacterJoinerRegistry(bufferService);
+    service = new CharacterJoinerService(bufferService);
   });
 
   it('has no joiners upon creation', () => {
-    assert.deepEqual(registry.getJoinedCharacters(0), []);
+    assert.deepEqual(service.getJoinedCharacters(0), []);
   });
 
   it('returns ranges matched by the registered joiners', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
+    service.register(substringJoiner('->'));
     assert.deepEqual(
-      registry.getJoinedCharacters(0),
+      service.getJoinedCharacters(0),
       [[2, 4], [7, 9], [12, 14]]
     );
   });
 
   it('processes the input using all provided joiners', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
+    service.register(substringJoiner('->'));
     assert.deepEqual(
-      registry.getJoinedCharacters(1),
+      service.getJoinedCharacters(1),
       [[2, 4], [12, 14]]
     );
 
-    registry.registerCharacterJoiner(substringJoiner('=>'));
+    service.register(substringJoiner('=>'));
     assert.deepEqual(
-      registry.getJoinedCharacters(1),
+      service.getJoinedCharacters(1),
       [[2, 4], [7, 9], [12, 14]]
     );
   });
 
   it('removes deregistered joiners from future calls', () => {
-    const joiner1 = registry.registerCharacterJoiner(substringJoiner('->'));
-    const joiner2 = registry.registerCharacterJoiner(substringJoiner('=>'));
+    const joiner1 = service.register(substringJoiner('->'));
+    const joiner2 = service.register(substringJoiner('=>'));
     assert.deepEqual(
-      registry.getJoinedCharacters(1),
+      service.getJoinedCharacters(1),
       [[2, 4], [7, 9], [12, 14]]
     );
 
-    registry.deregisterCharacterJoiner(joiner1);
+    service.deregister(joiner1);
     assert.deepEqual(
-      registry.getJoinedCharacters(1),
+      service.getJoinedCharacters(1),
       [[7, 9]]
     );
 
-    registry.deregisterCharacterJoiner(joiner2);
+    service.deregister(joiner2);
     assert.deepEqual(
-      registry.getJoinedCharacters(1),
+      service.getJoinedCharacters(1),
       []
     );
   });
 
   it('doesn\'t process joins on differently-styled characters', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
+    service.register(substringJoiner('->'));
     assert.deepEqual(
-      registry.getJoinedCharacters(2),
+      service.getJoinedCharacters(2),
       [[2, 4], [12, 14]]
     );
   });
 
   it('returns an empty list of ranges if there is nothing to be joined', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
+    service.register(substringJoiner('->'));
     assert.deepEqual(
-      registry.getJoinedCharacters(3),
+      service.getJoinedCharacters(3),
       []
     );
   });
 
   it('returns an empty list of ranges if the line is empty', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
+    service.register(substringJoiner('->'));
     assert.deepEqual(
-      registry.getJoinedCharacters(4),
+      service.getJoinedCharacters(4),
       []
     );
   });
 
   it('returns false when trying to deregister a joiner that does not exist', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
-    assert.deepEqual(registry.deregisterCharacterJoiner(123), false);
+    service.register(substringJoiner('->'));
+    assert.deepEqual(service.deregister(123), false);
     assert.deepEqual(
-      registry.getJoinedCharacters(0),
+      service.getJoinedCharacters(0),
       [[2, 4], [7, 9], [12, 14]]
     );
   });
 
   it('doesn\'t process same-styled ranges that only have one character', () => {
-    registry.registerCharacterJoiner(substringJoiner('a'));
-    registry.registerCharacterJoiner(substringJoiner('b'));
-    registry.registerCharacterJoiner(substringJoiner('d'));
+    service.register(substringJoiner('a'));
+    service.register(substringJoiner('b'));
+    service.register(substringJoiner('d'));
     assert.deepEqual(
-      registry.getJoinedCharacters(5),
+      service.getJoinedCharacters(5),
       [[5, 6]]
     );
   });
 
   it('handles ranges that extend all the way to the end of the line', () => {
-    registry.registerCharacterJoiner(substringJoiner('-> d'));
+    service.register(substringJoiner('-> d'));
     assert.deepEqual(
-      registry.getJoinedCharacters(2),
+      service.getJoinedCharacters(2),
       [[12, 16]]
     );
   });
 
   it('handles adjacent ranges', () => {
-    registry.registerCharacterJoiner(substringJoiner('->'));
-    registry.registerCharacterJoiner(substringJoiner('> c '));
+    service.register(substringJoiner('->'));
+    service.register(substringJoiner('> c '));
     assert.deepEqual(
-      registry.getJoinedCharacters(2),
+      service.getJoinedCharacters(2),
       [[2, 4], [8, 12], [12, 14]]
     );
   });
 
   it('handles fullwidth characters in the middle of ranges', () => {
-    registry.registerCharacterJoiner(substringJoiner('wi￥de'));
+    service.register(substringJoiner('wi￥de'));
     assert.deepEqual(
-      registry.getJoinedCharacters(6),
+      service.getJoinedCharacters(6),
       [[0, 6]]
     );
   });
 
   it('handles fullwidth characters at the end of ranges', () => {
-    registry.registerCharacterJoiner(substringJoiner('wi￥'));
+    service.register(substringJoiner('wi￥'));
     assert.deepEqual(
-      registry.getJoinedCharacters(6),
+      service.getJoinedCharacters(6),
       [[0, 4]]
     );
   });
 
   it('handles emojis in the middle of ranges', () => {
-    registry.registerCharacterJoiner(substringJoiner('emo\xf0\x9f\x98\x81 ji'));
+    service.register(substringJoiner('emo\xf0\x9f\x98\x81 ji'));
     assert.deepEqual(
-      registry.getJoinedCharacters(6),
+      service.getJoinedCharacters(6),
       [[6, 13]]
     );
   });
 
   it('handles emojis at the end of ranges', () => {
-    registry.registerCharacterJoiner(substringJoiner('emo\xf0\x9f\x98\x81 '));
+    service.register(substringJoiner('emo\xf0\x9f\x98\x81 '));
     assert.deepEqual(
-      registry.getJoinedCharacters(6),
+      service.getJoinedCharacters(6),
       [[6, 11]]
     );
   });
 
   it('handles ranges after wide and emoji characters', () => {
-    registry.registerCharacterJoiner(substringJoiner('abc'));
+    service.register(substringJoiner('abc'));
     assert.deepEqual(
-      registry.getJoinedCharacters(6),
+      service.getJoinedCharacters(6),
       [[13, 16]]
     );
   });
 
   describe('range merging', () => {
     it('inserts a new range before the existing ones', () => {
-      registry.registerCharacterJoiner(() => [[1, 2], [2, 3]]);
-      registry.registerCharacterJoiner(() => [[0, 1]]);
+      service.register(() => [[1, 2], [2, 3]]);
+      service.register(() => [[0, 1]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 1], [1, 2], [2, 3]]
       );
     });
 
     it('inserts in between two ranges', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[2, 4]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[2, 4]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 2], [2, 4], [4, 6]]
       );
     });
 
     it('inserts after the last range', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[6, 8]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[6, 8]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 2], [4, 6], [6, 8]]
       );
     });
 
     it('extends the beginning of a range', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[3, 5]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[3, 5]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 2], [3, 6]]
       );
     });
 
     it('extends the end of a range', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[1, 4]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[1, 4]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 4], [4, 6]]
       );
     });
 
     it('extends the last range', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[5, 7]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[5, 7]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 2], [4, 7]]
       );
     });
 
     it('connects two ranges', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6]]);
-      registry.registerCharacterJoiner(() => [[1, 5]]);
+      service.register(() => [[0, 2], [4, 6]]);
+      service.register(() => [[1, 5]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 6]]
       );
     });
 
     it('connects more than two ranges', () => {
-      registry.registerCharacterJoiner(() => [[0, 2], [4, 6], [8, 10], [12, 14]]);
-      registry.registerCharacterJoiner(() => [[1, 10]]);
+      service.register(() => [[0, 2], [4, 6], [8, 10], [12, 14]]);
+      service.register(() => [[1, 10]]);
       assert.deepEqual(
-        registry.getJoinedCharacters(0),
+        service.getJoinedCharacters(0),
         [[0, 10], [12, 14]]
       );
     });
