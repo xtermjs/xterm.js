@@ -39,21 +39,26 @@ env.PORT = 3001;
 const server = cp.spawn('node', ['demo/start'], {
   cwd: path.resolve(__dirname, '..'),
   env,
-  stdio: 'inherit'
+  stdio: 'pipe'
 })
 
-const run = cp.spawnSync(
-  npmBinScript('mocha'),
-  [...testFiles, ...flagArgs],
-  {
-    cwd: path.resolve(__dirname, '..'),
-    env,
-    stdio: 'inherit'
+server.stdout.on('data', (data) => {
+  // await for the server to fully start
+  if (data.indexOf("successfully") !== -1) {
+    const run = cp.spawnSync(
+      npmBinScript('mocha'),
+      [...testFiles, ...flagArgs], {
+        cwd: path.resolve(__dirname, '..'),
+        env,
+        stdio: 'inherit'
+      }
+    );
+
+    function npmBinScript(script) {
+      return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ?
+        `${script}.cmd` : script));
+    }
+
+    process.exit(run.status);
   }
-);
-
-function npmBinScript(script) {
-  return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ? `${script}.cmd` : script));
-}
-
-process.exit(run.status);
+});
