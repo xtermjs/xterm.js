@@ -31,13 +31,6 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   }
 }
 
-function formatValue(value: any): string {
-  if (Array.isArray(value) || typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return value + '';
-}
-
 export async function writeSync(page: playwright.Page, data: string): Promise<void> {
   await page.evaluate(`
     window.ready = false;
