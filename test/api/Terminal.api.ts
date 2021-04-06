@@ -297,7 +297,7 @@ describe('API Integration Tests', function(): void {
     });
   });
 
-  describe.only('Events', () => {
+  describe('Events', () => {
     it('onCursorMove', async () => {
       await openTerminal(page);
       await page.evaluate(`
