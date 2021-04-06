@@ -713,7 +713,7 @@ declare module 'xterm' {
      * Adds an event listener for when the bell is triggered.
      * @returns an `IDisposable` to stop listening.
      */
-     onBell: IEvent<void>;
+    onBell: IEvent<void>;
 
     /**
      * Unfocus the terminal.
