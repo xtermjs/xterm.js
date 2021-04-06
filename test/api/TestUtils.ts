@@ -6,8 +6,9 @@
 import * as playwright from 'playwright';
 import deepEqual = require('deep-equal');
 import { ITerminalOptions } from 'xterm';
+import { deepStrictEqual, fail } from 'assert';
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number): Promise<void> {
   if (preFn) {
     await preFn();
   }
@@ -18,10 +19,23 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   }
 
   if (!deepEqual(result, val)) {
+    if (maxDuration === undefined) {
+      maxDuration = 2000;
+    }
+    if (maxDuration <= 0) {
+      deepStrictEqual(result, val, 'pollFor max duration exceeded');
+    }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 1);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10)), 10);
     });
   }
+}
+
+function formatValue(value: any): string {
+  if (Array.isArray(value) || typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return value + '';
 }
 
 export async function writeSync(page: playwright.Page, data: string): Promise<void> {
