@@ -100,10 +100,6 @@ jobs:
     displayName: 'Install Yarn'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn start &
-      sleep 10
-    displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
@@ -119,10 +115,6 @@ jobs:
     displayName: 'Install Node.js'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: |
-      yarn start &
-      sleep 10
-    displayName: 'Start test server'
   - script: yarn test-api-chromium --headless --forbid-only
     displayName: 'Integration tests (Chromium)'
   - script: yarn test-api-firefox --headless --forbid-only
