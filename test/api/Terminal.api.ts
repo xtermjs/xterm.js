@@ -410,6 +410,16 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
       await pollFor(page, `window.calls`, ['foo']);
     });
+    it('onBell', async () => {
+      await openTerminal(page);
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onBell(() => window.calls.push(true));
+      `);
+      await pollFor(page, `window.calls`, []);
+      await page.evaluate(`window.term.write('\\x07')`);
+      await pollFor(page, `window.calls`, [true]);
+    });
   });
 
   describe('buffer', () => {

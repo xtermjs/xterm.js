@@ -131,6 +131,12 @@ describe('Terminal', () => {
       });
       term.write('\x1b]2;title\x07');
     });
+    it('should fire the onBell event', (done) => {
+      term.onBell(e => {
+        done();
+      });
+      term.write('\x07');
+    });
   });
 
   describe('attachCustomKeyEventHandler', () => {
