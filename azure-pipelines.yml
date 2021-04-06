@@ -122,6 +122,21 @@ jobs:
   - script: yarn test-api-webkit --headless --forbid-only
     displayName: 'Integration tests (Webkit)'
 
+- job: Windows_IntegrationTests
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '10.x'
+    displayName: 'Install Node.js'
+  - script: yarn --frozen-lockfile
+    displayName: 'Install dependencies and build'
+  - script: yarn test-api-chromium --headless --forbid-only
+    displayName: 'Integration tests (Chromium)'
+  - script: yarn test-api-firefox --headless --forbid-only
+    displayName: 'Integration tests (Firefox)'
+
 - job: Release
   dependsOn:
   - Linux
@@ -129,6 +144,7 @@ jobs:
   - Windows
   - Linux_IntegrationTests
   - macOS_IntegrationTests
+  - Windows_IntegrationTests
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
     vmImage: 'ubuntu-16.04'
