@@ -635,11 +635,11 @@ describe('API Integration Tests', function(): void {
       `);
       const dims = await getDimensions();
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 4, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
       await moveMouseCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 8, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
       await page.evaluate(`window.disposable.dispose()`);
