@@ -34,6 +34,13 @@ if (process.argv.length > 2) {
 
 
 env.DEBUG = flagArgs.indexOf('--debug') >= 0 ? 'debug' : '';
+env.PORT = 3001;
+
+const server = cp.spawn('node', ['demo/start'], {
+  cwd: path.resolve(__dirname, '..'),
+  env,
+  stdio: 'inherit'
+})
 
 const run = cp.spawnSync(
   npmBinScript('mocha'),
