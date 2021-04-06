@@ -357,7 +357,6 @@ export interface IAnsiColorChangeEvent {
  */
 export interface IInputHandler {
   onTitleChange: IEvent<string>;
-  onRequestBell: IEvent<void>;
 
   parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;

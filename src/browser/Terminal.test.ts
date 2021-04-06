@@ -132,10 +132,10 @@ describe('Terminal', () => {
       term.write('\x1b]2;title\x07');
     });
     it('should fire the onBell event', (done) => {
-      term.onBell(e => {       
+      term.onBell(e => {
         done();
       });
-      term.write('\a');
+      term.write('\x07');
     });
   });
 

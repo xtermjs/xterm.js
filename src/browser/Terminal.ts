@@ -1155,7 +1155,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     this._onBell.fire();
-    
+
     // if (this._visualBell()) {
     //   this.element.classList.add('visual-bell-active');
     //   clearTimeout(this._visualBellTimer);
