@@ -297,7 +297,7 @@ describe('API Integration Tests', function(): void {
     });
   });
 
-  describe('Events', () => {
+  describe.only('Events', () => {
     it('onCursorMove', async () => {
       await openTerminal(page);
       await page.evaluate(`
@@ -414,11 +414,11 @@ describe('API Integration Tests', function(): void {
       await openTerminal(page);
       await page.evaluate(`
         window.calls = [];
-        window.term.onBell(e => window.calls.push(e));
+        window.term.onBell(() => window.calls.push(true));
       `);
       await pollFor(page, `window.calls`, []);
-      await page.evaluate(`window.term.write('\\a')`);
-      await pollFor(page, `window.calls`, ['foo']);
+      await page.evaluate(`window.term.write('\\x07')`);
+      await pollFor(page, `window.calls`, [true]);
     });
   });
 
