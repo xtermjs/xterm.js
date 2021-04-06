@@ -6,7 +6,7 @@
 import { pollFor, writeSync, openTerminal, getBrowserType } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;
