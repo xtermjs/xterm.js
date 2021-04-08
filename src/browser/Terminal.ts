@@ -520,7 +520,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
         this.viewport!.syncScrollArea();
       }
       this._selectionService!.refresh();
-      console.log('SCROLL');
       this._renderService!.onDecorationsChanged();
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
