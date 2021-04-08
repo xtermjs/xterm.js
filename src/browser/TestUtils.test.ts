@@ -412,6 +412,9 @@ export class MockRenderService implements IRenderService {
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     throw new Error('Method not implemented.');
   }
+  public onDecorationsChanged(): void {
+    throw new Error('Method not implemented.');
+  }
   public onCursorMove(): void {
     throw new Error('Method not implemented.');
   }

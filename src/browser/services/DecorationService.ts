@@ -3,15 +3,8 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet } from 'browser/Types';
-import { IOptionsService, IBufferService } from 'common/services/Services';
-import { ICharSizeService, IDecorationService } from 'browser/services/Services';
+import { IDecorationService } from 'browser/services/Services';
 import { IDecorationElement, IDecorationHandle } from 'common/Types';
 
 interface IDecorationRegistration {
@@ -22,6 +15,7 @@ interface IDecorationRegistration {
 
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: undefined;
+  private _handle = 0;
 
   private _activeDecorations: IDecorationRegistration[] = [];
 
@@ -30,12 +24,13 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public addDecoration(element: IDecorationElement): number {
+    this._handle += 1;
     const registration: IDecorationRegistration = {
-      handle: this._activeDecorations.length,
+      handle: this._handle,
       element: element
     };
-    this._activeDecorations[registration.handle] = registration;
-    return registration.handle;
+    this._activeDecorations.push(registration);
+    return this._handle;
   }
 
   public removeDeoration(handle: IDecorationHandle): boolean {

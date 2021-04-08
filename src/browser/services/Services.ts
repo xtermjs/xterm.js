@@ -64,6 +64,7 @@ export interface IRenderService extends IDisposable {
   onBlur(): void;
   onFocus(): void;
   onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  onDecorationsChanged(): void;
   onCursorMove(): void;
   clear(): void;
 }

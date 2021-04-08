@@ -118,6 +118,7 @@ export class RenderService extends Disposable implements IRenderService {
       this._renderer.onSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
       this._needsSelectionRefresh = false;
     }
+    this._renderer.onDecorationsChanged();
 
     // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {

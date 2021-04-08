@@ -458,6 +458,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
     this._instantiationService.setService(ICharacterJoinerService, this._characterJoinerService);
 
+    this._decorationService = this.register(this._instantiationService.createInstance(DecorationService));
+    this._instantiationService.setService(IDecorationService, this._decorationService);
+
     const renderer = this._createRenderer();
     this._renderService = this.register(this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
@@ -517,11 +520,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
         this.viewport!.syncScrollArea();
       }
       this._selectionService!.refresh();
+      console.log('SCROLL');
+      this._renderService!.onDecorationsChanged();
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
-
-    this._decorationService = this.register(this._instantiationService.createInstance(DecorationService));
-    this._instantiationService.setService(IDecorationService, this._decorationService);
 
     this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
@@ -1287,13 +1289,19 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public addDecoration(element: IDecorationElement): IDecorationHandle | undefined{
-    return this._decorationService?.addDecoration(element);
+    const ret = this._decorationService?.addDecoration(element);
+    this._renderService?.onDecorationsChanged();
+    return ret;
   }
   public removeDeoration(handle: IDecorationHandle): boolean {
-    return !!(this._decorationService?.removeDeoration(handle));
+    const ret = !!(this._decorationService?.removeDeoration(handle));
+    this._renderService?.onDecorationsChanged();
+    return ret;
   }
   public clearDecorations(): number {
-    return this._decorationService?.clearDecorations() || 0;
+    const ret = this._decorationService?.clearDecorations() || 0;
+    this._renderService?.onDecorationsChanged();
+    return ret;
   }
 }
 
