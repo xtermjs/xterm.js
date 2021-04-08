@@ -37,7 +37,7 @@ export class Renderer extends Disposable implements IRenderer {
     @IInstantiationService instantiationService: IInstantiationService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._optionsService.options.allowTransparency;
@@ -46,7 +46,7 @@ export class Renderer extends Disposable implements IRenderer {
       instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
       instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier, linkifier2),
       instantiationService.createInstance(DecorationRenderLayer, this._screenElement, 3, this._colors, this._id),
-      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 4, this._colors, this._id, this._onRequestRedraw),
+      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 4, this._colors, this._id, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,

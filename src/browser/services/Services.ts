@@ -119,6 +119,6 @@ export interface IDecorationService {
 
   addDecoration(element: IDecorationElement): IDecorationHandle;
   removeDeoration(handle: IDecorationHandle): boolean;
-  forEachDecoration(callback: (decoration: IDecorationElement) => boolean) : void;
+  forEachDecoration(callback: (decoration: IDecorationElement) => boolean): void;
   clearDecorations(): number;
 }

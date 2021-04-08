@@ -21,7 +21,7 @@ export class DecorationRenderLayer extends BaseRenderLayer {
     rendererId: number,
     @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService,
-    @IOptionsService optionsService: IOptionsService,
+    @IOptionsService optionsService: IOptionsService
   ) {
     super(container, 'decorations', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._decorationService = decorationService;
