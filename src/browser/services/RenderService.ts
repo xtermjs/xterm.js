@@ -207,6 +207,10 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.onSelectionChanged(start, end, columnSelectMode);
   }
 
+  public onDecorationsChanged(): void {
+    this._renderer.onDecorationsChanged();
+  }
+
   public onCursorMove(): void {
     this._renderer.onCursorMove();
   }
