@@ -149,7 +149,7 @@ export class BufferService extends Disposable implements IBufferService {
       return;
     }
 
-    if (!suppressScrollEvent || source === ScrollSource.VIEWPORT) {
+    if (!suppressScrollEvent) {
       this._onScroll.fire(buffer.ydisp);
     }
   }
