@@ -9,7 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IScrollEvent } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
@@ -17,7 +17,7 @@ export class MockBufferService implements IBufferService {
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
-  public onScroll: IEvent<number> = new EventEmitter<number>().event;
+  public onScroll: IEvent<IScrollEvent> = new EventEmitter<IScrollEvent>().event;
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
