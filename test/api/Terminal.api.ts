@@ -454,9 +454,9 @@ describe('API Integration Tests', function(): void {
       await writeSync(page, '\\n\\n\\n\\n');
       assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 5);
       await page.evaluate(`window.term.scrollLines(-1)`);
-      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 4);
+      await pollFor(page, `window.term.buffer.active.viewportY`, 4);
       await page.evaluate(`window.term.scrollToTop()`);
-      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
+      await pollFor(page, `window.term.buffer.active.viewportY`, 0);
     });
 
     it('baseY', async () => {
