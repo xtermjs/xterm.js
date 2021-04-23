@@ -476,7 +476,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number) => this.scrollLines(amount, false, ScrollSource.VIEWPORT),
+      (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
       this._viewportElement,
       this._viewportScrollArea
     );

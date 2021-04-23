@@ -8,7 +8,7 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { IAttributeData, IBufferLine, IScrollEvent, ScrollSource } from 'common/Types';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -24,8 +24,8 @@ export class BufferService extends Disposable implements IBufferService {
 
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onScroll = new EventEmitter<IScrollEvent>();
+  public get onScroll(): IEvent<IScrollEvent> { return this._onScroll.event; }
 
   public get buffer(): IBuffer { return this.buffers.active; }
 
@@ -120,7 +120,7 @@ export class BufferService extends Disposable implements IBufferService {
       buffer.ydisp = buffer.ybase;
     }
 
-    this._onScroll.fire(buffer.ydisp);
+    this._onScroll.fire({ position: buffer.ydisp, source: ScrollSource.TERMINAL });
   }
 
   /**
@@ -150,7 +150,7 @@ export class BufferService extends Disposable implements IBufferService {
     }
 
     if (!suppressScrollEvent) {
-      this._onScroll.fire(buffer.ydisp);
+      this._onScroll.fire({ position: buffer.ydisp, source: source || ScrollSource.TERMINAL });
     }
   }
 
