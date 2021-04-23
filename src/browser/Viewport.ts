@@ -30,7 +30,6 @@ export class Viewport extends Disposable implements IViewport {
   private _wheelPartialScroll: number = 0;
 
   private _refreshAnimationFrame: number | null = null;
-  private _ignoreNextScrollEvent: boolean = false;
 
   constructor(
     private readonly _scrollLines: (amount: number) => void,
