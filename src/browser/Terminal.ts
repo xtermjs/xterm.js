@@ -1149,7 +1149,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public bell(): void {
     if (this._soundBell()) {
-      this._soundService!.playBellSound();
+      this._soundService?.playBellSound();
     }
 
     this._onBell.fire();
