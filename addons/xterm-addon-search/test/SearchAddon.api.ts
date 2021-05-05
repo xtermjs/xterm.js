@@ -192,6 +192,38 @@ describe('Search Tests', function(): void {
       });
     });
   });
+  describe.only('#3262 cached data breaking on trim', () => {
+    it('should give correct results when a buffer trim occurs', async () => {
+      let fixture: string;
+      const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-3262'), (err, data) => r(data)));
+      if (process.platform === 'win32') {
+        fixture = rawFixture.toString()
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r');
+      } else {
+        fixture = rawFixture.toString()
+          .replace(/\n/g, '\\n\\r');
+      }
+      fixture = fixture
+        .replace(/'/g, '\\\'');
+
+      await page.evaluate(`window.term.setOption('scrollback', 1)`);
+      await page.evaluate(`window.term.resize(80, 20)`);
+      await writeSync(page, fixture);
+      for (let x = 0; x < 4; x += 4) {
+        assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
+        const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: x, startRow: 0, endColumn: x + 4, endRow: 0 });
+      }
+      // Write the fixture again, triggering several trim events
+      await writeSync(page, fixture);
+      for (let x = 0; x < 4; x += 4) {
+        assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
+        const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
+        assert.deepEqual(selectionPosition, { startColumn: x, startRow: 0, endColumn: x + 4, endRow: 0 });
+      }
+    });
+  });
 });
 
 function makeData(length: number): string {
