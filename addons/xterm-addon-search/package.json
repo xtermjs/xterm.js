@@ -18,7 +18,7 @@
   "peerDependencies": {
     "xterm": "^4.0.0"
   },
-  "dependencies": {
+  "devDependencies": {
     "@tyriar/avl-tree": "^2.0.6"
   }
 }
