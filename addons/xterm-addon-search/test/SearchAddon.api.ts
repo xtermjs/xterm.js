@@ -213,14 +213,14 @@ describe('Search Tests', function(): void {
       for (let y = 0; y < 20; y++) {
         assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
         const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: y * 4, startRow: y, endColumn: y * 4 + 4, endRow: y });
+        assert.deepEqual(selectionPosition, { startColumn: y * 2, startRow: y, endColumn: y * 2 + 4, endRow: y });
       }
       // Write the fixture again, triggering several trim events
       await writeSync(page, fixture);
       for (let y = 0; y < 20; y++) {
         assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
         const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: y * 4, startRow: y, endColumn: y * 4 + 4, endRow: y });
+        assert.deepEqual(selectionPosition, { startColumn: y * 2, startRow: y, endColumn: y * 2 + 4, endRow: y });
       }
     });
   });
