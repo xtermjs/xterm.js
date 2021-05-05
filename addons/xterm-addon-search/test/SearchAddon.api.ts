@@ -192,7 +192,7 @@ describe('Search Tests', function(): void {
       });
     });
   });
-  describe.only('#3262 cached data breaking on trim', () => {
+  describe('#3262 cached data breaking on trim', () => {
     it('should give correct results when a buffer trim occurs', async () => {
       let fixture: string;
       const rawFixture = await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-3262'), (err, data) => r(data)));
