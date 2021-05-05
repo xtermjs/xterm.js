@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { IBufferRange } from 'xterm';
 
-describe.only('BufferRange', () => {
+describe('BufferRange', () => {
   describe('getRangeLength', () => {
     it('should get range for single line', () => {
       assert.equal(getRangeLength(createRange(1, 1, 4, 1), 0), 3);
