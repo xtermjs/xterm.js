@@ -210,17 +210,17 @@ describe('Search Tests', function(): void {
       await page.evaluate(`window.term.setOption('scrollback', 1)`);
       await page.evaluate(`window.term.resize(80, 20)`);
       await writeSync(page, fixture);
-      for (let x = 0; x < 4; x += 4) {
+      for (let y = 0; y < 20; y++) {
         assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
         const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: x, startRow: 0, endColumn: x + 4, endRow: 0 });
+        assert.deepEqual(selectionPosition, { startColumn: y * 4, startRow: y, endColumn: y * 4 + 4, endRow: y });
       }
       // Write the fixture again, triggering several trim events
       await writeSync(page, fixture);
-      for (let x = 0; x < 4; x += 4) {
+      for (let y = 0; y < 20; y++) {
         assert.deepEqual(await page.evaluate(`window.search.findNext('test')`), true);
         const selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: x, startRow: 0, endColumn: x + 4, endRow: 0 });
+        assert.deepEqual(selectionPosition, { startColumn: y * 4, startRow: y, endColumn: y * 4 + 4, endRow: y });
       }
     });
   });
