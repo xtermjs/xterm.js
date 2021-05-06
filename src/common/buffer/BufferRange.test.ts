@@ -10,7 +10,7 @@ import { IBufferRange } from 'xterm';
 describe('BufferRange', () => {
   describe('getRangeLength', () => {
     it('should get range for single line', () => {
-      assert.equal(getRangeLength(createRange(1, 1, 4, 1), 0), 3);
+      assert.equal(getRangeLength(createRange(1, 1, 4, 1), 0), 4);
     });
     it('should throw for invalid range', () => {
       assert.throws(() => getRangeLength(createRange(1, 3, 1, 1), 0));
