@@ -11,7 +11,7 @@ import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { readFileSync } from 'fs';
 import PNG from 'png-ts';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;
