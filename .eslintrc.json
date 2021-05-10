@@ -43,7 +43,7 @@
     "@typescript-eslint/array-type": [
       "warn",
       {
-        "default": "array-simple",
+        "default": "array",
         "readonly": "generic"
       }
     ],
