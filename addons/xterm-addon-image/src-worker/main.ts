@@ -23,13 +23,13 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
   switch (data.type) {
     case 'SIXEL_PUT':
       decoder?.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));
-      postMessage({type: 'CHUNK_TRANSFER', payload: data.payload.buffer}, [data.payload.buffer]);
+      postMessage({ type: 'CHUNK_TRANSFER', payload: data.payload.buffer }, [data.payload.buffer]);
       break;
     case 'SIXEL_END':
       const success = data.payload;
       if (success) {
         if (!decoder || !decoder.width || !decoder.height) {
-          postMessage({type: 'SIXEL_IMAGE', payload: null});
+          postMessage({ type: 'SIXEL_IMAGE', payload: null });
         } else {
           const width = decoder.width;
           const height = decoder.height;
@@ -58,7 +58,7 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
       decoder = new SixelDecoder(fillColor, Object.assign([], palette), limit);
       break;
     case 'ACK':
-      postMessage({type: 'ACK', payload: 'alive'});
+      postMessage({ type: 'ACK', payload: 'alive' });
       break;
   }
 }

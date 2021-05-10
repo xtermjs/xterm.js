@@ -136,8 +136,8 @@ export class ImageAddon implements ITerminalAddon {
        * - RIS
        * - Terminal.reset()
        */
-      terminal.parser.registerCsiHandler({intermediates: '!', final: 'p'}, () => this.reset()),
-      terminal.parser.registerEscHandler({final: 'c'}, () => this.reset()),
+      terminal.parser.registerCsiHandler({ intermediates: '!', final: 'p' }, () => this.reset()),
+      terminal.parser.registerEscHandler({ final: 'c' }, () => this.reset()),
       (<ICoreTerminal>terminal)._core._inputHandler.onRequestReset(() => this.reset()),
 
       // wipe canvas and delete alternate images on buffer switch

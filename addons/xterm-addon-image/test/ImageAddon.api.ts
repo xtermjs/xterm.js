@@ -305,7 +305,7 @@ describe('ImageAddon', () => {
       // hard coded default
       assert.equal(await execOnManager('url'), '/workers/xterm-addon-image-worker.js');
       // custom
-      const customSettings: IImageAddonOptionalOptions = {workerPath: 'xyz.js'};
+      const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
       await page.evaluate(opts => {
         (<any>window).imageAddonCustom = new ImageAddon(opts);
         (<any>window).term.loadAddon((<any>window).imageAddonCustom);
@@ -357,7 +357,7 @@ describe('ImageAddon', () => {
     });
     describe('handle worker loading error gracefully', () => {
       beforeEach(async () => {
-        const customSettings: IImageAddonOptionalOptions = {workerPath: 'xyz.js'};
+        const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
         await page.evaluate(opts => {
           (<any>window).imageAddonCustom = new ImageAddon(opts);
           (<any>window).term.loadAddon((<any>window).imageAddonCustom);

@@ -87,7 +87,7 @@ export class WorkerManager implements IDisposable {
       this._worker = new Worker(this.url);
       this._worker.addEventListener('message', this._message, false);
       this._worker.addEventListener('error', this._startupError, false);
-      this._worker.postMessage({type: 'ACK', payload: 'ping'});
+      this._worker.postMessage({ type: 'ACK', payload: 'ping' });
     }
     return this._worker;
   }
@@ -121,7 +121,7 @@ export class WorkerManager implements IDisposable {
     this._setSixelResolver();
     this.worker?.postMessage({
       type: 'SIXEL_INIT',
-      payload: {fillColor, paletteName, limit}
+      payload: { fillColor, paletteName, limit }
     });
   }
   public sixelPut(data: Uint8Array, length: number): void {
@@ -138,7 +138,7 @@ export class WorkerManager implements IDisposable {
     if (success && this.worker) {
       result = new Promise<IImagePixel|null>(resolve => this._setSixelResolver(resolve));
     }
-    this.worker?.postMessage({type: 'SIXEL_END', payload: success});
+    this.worker?.postMessage({ type: 'SIXEL_END', payload: success });
     return result;
   }
 }

@@ -274,7 +274,7 @@ export class ImageRenderer implements IDisposable {
     // create blueprint to fill placeholder with
     const bWidth = 32;  // must be 2^n
     const blueprint = ImageRenderer.createCanvas(bWidth, height);
-    const ctx = blueprint.getContext('2d', {alpha: false});
+    const ctx = blueprint.getContext('2d', { alpha: false });
     if (!ctx) return;
     const imgData = ImageRenderer.createImageData(ctx, bWidth, height);
     const d32 = new Uint32Array(imgData.data.buffer);
@@ -293,7 +293,7 @@ export class ImageRenderer implements IDisposable {
     // create placeholder line, width aligned to blueprint width
     const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || PLACEHOLDER_LENGTH;
     this._placeholder = ImageRenderer.createCanvas(width, height);
-    const ctx2 = this._placeholder.getContext('2d', {alpha: false});
+    const ctx2 = this._placeholder.getContext('2d', { alpha: false });
     if (!ctx2) {
       this._placeholder = undefined;
       return;
