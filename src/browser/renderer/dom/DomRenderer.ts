@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
@@ -49,6 +49,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _viewportElement: HTMLElement,
     private readonly _linkifier: ILinkifier,
     private readonly _linkifier2: ILinkifier2,
+    @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService
@@ -80,7 +81,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = new DomRendererRowFactory(document, this._optionsService, this._colors);
+    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
@@ -364,16 +365,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData!, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
     }
   }
 
   private get _terminalSelector(): string {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
-
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
-  public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 
   private _onLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);

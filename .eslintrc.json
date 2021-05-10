@@ -147,6 +147,10 @@
       "warn",
       "never"
     ],
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
     "prefer-const": "warn",
     "spaced-comment": [
       "warn",
@@ -156,5 +160,13 @@
         "exceptions": ["-"]
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "object-curly-spacing": "off"
+      }
+    }
+  ]
 }

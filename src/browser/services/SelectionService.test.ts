@@ -21,7 +21,7 @@ class TestSelectionService extends SelectionService {
     optionsService: IOptionsService,
     renderService: IRenderService
   ) {
-    super(null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService);
+    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService);
   }
 
   public get model(): SelectionModel { return this._model; }

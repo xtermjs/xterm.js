@@ -8,7 +8,7 @@ import { pollFor, openTerminal, getBrowserType } from './TestUtils';
 import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;

@@ -56,25 +56,25 @@ describe('Terminal', () => {
     //   term.handler('fake');
     // });
     it('should fire the onCursorMove event', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onCursorMove(() => r());
         await term.writeP('foo');
       });
     });
     it('should fire the onLineFeed event', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onLineFeed(() => r());
         await term.writeP('\n');
       });
     });
     it('should fire a scroll event when scrollback is created', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onScroll(() => r());
         await term.writeP('\n'.repeat(INIT_ROWS));
       });
     });
     it('should fire a scroll event when scrollback is cleared', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         await term.writeP('\n'.repeat(INIT_ROWS));
         term.onScroll(() => r());
         term.clear();
@@ -130,6 +130,12 @@ describe('Terminal', () => {
         done();
       });
       term.write('\x1b]2;title\x07');
+    });
+    it('should fire the onBell event', (done) => {
+      term.onBell(e => {
+        done();
+      });
+      term.write('\x07');
     });
   });
 
@@ -233,7 +239,7 @@ describe('Terminal', () => {
       term.paste('\r\nfoo\nbar\r');
     });
     it('should respect bracketed paste mode', () => {
-      return new Promise(async r => {
+      return new Promise<void>(async r => {
         term.onData(e => {
           assert.equal(e, '\x1b[200~foo\x1b[201~');
           r();
@@ -1054,10 +1060,10 @@ describe('Terminal', () => {
       linkifier.attachToDom({} as any, mouseZoneManager);
     });
 
-    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[]): Promise<void> {
+    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: { x1: number, y1: number, x2: number, y2: number }[]): Promise<void> {
       return new Promise(async r => {
         await terminal.writeP(rowText);
-        linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+        linkifier.registerLinkMatcher(linkMatcherRegex, () => { });
         linkifier.linkifyRows();
         // Allow linkify to happen
         setTimeout(() => {
@@ -1075,66 +1081,66 @@ describe('Terminal', () => {
 
     describe('unicode before the match', () => {
       it('combining - match within one line', () => {
-        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{ x1: 4, x2: 7, y1: 0, y2: 0 }]);
       });
       it('combining - match over two lines', () => {
-        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{ x1: 8, x2: 1, y1: 0, y2: 1 }]);
       });
       it('surrogate - match within one line', () => {
-        return assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{ x1: 4, x2: 7, y1: 0, y2: 0 }]);
       });
       it('surrogate - match over two lines', () => {
-        return assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{ x1: 8, x2: 1, y1: 0, y2: 1 }]);
       });
       it('combining surrogate - match within one line', () => {
-        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{ x1: 4, x2: 7, y1: 0, y2: 0 }]);
       });
       it('combining surrogate - match over two lines', () => {
-        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{ x1: 8, x2: 1, y1: 0, y2: 1 }]);
       });
       it('fullwidth - match within one line', () => {
-        return assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('１２ foo', /foo/, [{ x1: 5, x2: 8, y1: 0, y2: 0 }]);
       });
       it('fullwidth - match over two lines', () => {
-        return assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('１２    foo', /foo/, [{ x1: 8, x2: 1, y1: 0, y2: 1 }]);
       });
       it('combining fullwidth - match within one line', () => {
-        return assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{ x1: 5, x2: 8, y1: 0, y2: 0 }]);
       });
       it('combining fullwidth - match over two lines', () => {
-        return assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{ x1: 8, x2: 1, y1: 0, y2: 1 }]);
       });
     });
     describe('unicode within the match', () => {
       it('combining - match within one line', () => {
-        return assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{ x1: 5, x2: 9, y1: 0, y2: 0 }]);
       });
       it('combining - match over two lines', () => {
-        return assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{ x1: 9, x2: 3, y1: 0, y2: 1 }]);
       });
       it('surrogate - match within one line', () => {
-        return assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{ x1: 5, x2: 8, y1: 0, y2: 0 }]);
       });
       it('surrogate - match over two lines', () => {
-        return assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{ x1: 9, x2: 2, y1: 0, y2: 1 }]);
       });
       it('combining surrogate - match within one line', () => {
-        return assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{ x1: 5, x2: 8, y1: 0, y2: 0 }]);
       });
       it('combining surrogate - match over two lines', () => {
-        return assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{ x1: 9, x2: 2, y1: 0, y2: 1 }]);
       });
       it('fullwidth - match within one line', () => {
-        return assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('test a１b', /a１b/, [{ x1: 5, x2: 9, y1: 0, y2: 0 }]);
       });
       it('fullwidth - match over two lines', () => {
-        return assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('testtest a１b', /a１b/, [{ x1: 9, x2: 3, y1: 0, y2: 1 }]);
       });
       it('combining fullwidth - match within one line', () => {
-        return assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}]);
+        return assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{ x1: 5, x2: 9, y1: 0, y2: 0 }]);
       });
       it('combining fullwidth - match over two lines', () => {
-        return assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}]);
+        return assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{ x1: 9, x2: 3, y1: 0, y2: 1 }]);
       });
     });
   });
@@ -1143,7 +1149,7 @@ describe('Terminal', () => {
     let terminal: TestTerminal;
 
     beforeEach(() => {
-      terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+      terminal = new TestTerminal({ rows: 5, cols: 10, scrollback: 5 });
     });
 
     it('multiline ascii', async () => {
@@ -1318,7 +1324,7 @@ describe('Terminal', () => {
 
     it('test fully wrapped buffer up to last char with full width odd', async () => {
       const input = 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301'
-                    + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
+        + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
       await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
@@ -1342,9 +1348,9 @@ describe('Terminal', () => {
     });
   });
 
-  describe('BufferStringIterator', function(): void {
+  describe('BufferStringIterator', function (): void {
     it('iterator does not overflow buffer limits', async () => {
-      const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+      const terminal = new TestTerminal({ rows: 5, cols: 10, scrollback: 5 });
       const data = [
         'aaaaaaaaaa',
         'aaaaaaaaa\n',
@@ -1382,13 +1388,13 @@ describe('Terminal', () => {
         'aaaaaaaaa'       // not wrapped
       ];
 
-      const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
+      const normalTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: false });
       await normalTerminal.writeP(data.join(''));
       assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
-      const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
+      const windowsModeTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: true });
       await windowsModeTerminal.writeP(data.join(''));
       assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
@@ -1402,13 +1408,13 @@ describe('Terminal', () => {
         'aaaaaaaaa'             // not wrapped
       ];
 
-      const normalTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: false});
+      const normalTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: false });
       await normalTerminal.writeP(data.join(''));
       assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
       assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
 
-      const windowsModeTerminal = new TestTerminal({rows: 5, cols: 10, windowsMode: true});
+      const windowsModeTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: true });
       await windowsModeTerminal.writeP(data.join(''));
       assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
       assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
@@ -1417,7 +1423,7 @@ describe('Terminal', () => {
   });
   it('convertEol setting', async () => {
     // not converting
-    const termNotConverting = new TestTerminal({cols: 15, rows: 10});
+    const termNotConverting = new TestTerminal({ cols: 15, rows: 10 });
     await termNotConverting.writeP('Hello\nWorld');
     assert.equal(termNotConverting.buffer.lines.get(0)!.translateToString(false), 'Hello          ');
     assert.equal(termNotConverting.buffer.lines.get(1)!.translateToString(false), '     World     ');
@@ -1425,127 +1431,12 @@ describe('Terminal', () => {
     assert.equal(termNotConverting.buffer.lines.get(1)!.translateToString(true), '     World');
 
     // converting
-    const termConverting = new TestTerminal({cols: 15, rows: 10, convertEol: true});
+    const termConverting = new TestTerminal({ cols: 15, rows: 10, convertEol: true });
     await termConverting.writeP('Hello\nWorld');
     assert.equal(termConverting.buffer.lines.get(0)!.translateToString(false), 'Hello          ');
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(false), 'World          ');
     assert.equal(termConverting.buffer.lines.get(0)!.translateToString(true), 'Hello');
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
-  });
-  describe('Terminal InputHandler integration', () => {
-    function getLines(term: TestTerminal, limit: number = term.rows): string[] {
-      const res: string[] = [];
-      for (let i = 0; i < limit; ++i) {
-        res.push(term.buffer.lines.get(i)!.translateToString(true));
-      }
-      return res;
-    }
-
-    // This suite cannot live in InputHandler unless Terminal.scroll moved into IBufferService
-    describe('SL/SR/DECIC/DECDC', () => {
-      let term: TestTerminal;
-      beforeEach(() => {
-        term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
-      });
-      it('SL (scrollLeft)', async () => {
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[ @');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '2345', '2345', '2345', '2345', '2345']);
-        await term.writeP('\x1b[0 @');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '345', '345', '345', '345', '345']);
-        await term.writeP('\x1b[2 @');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '5', '5', '5', '5', '5']);
-      });
-      it('SR (scrollRight)', async () => {
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[ A');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
-        await term.writeP('\x1b[0 A');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '  123', '  123', '  123', '  123', '  123']);
-        await term.writeP('\x1b[2 A');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '    1', '    1', '    1', '    1', '    1']);
-      });
-      it('insertColumns (DECIC)', async () => {
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[\'}');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
-        term.reset();
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[1\'}');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
-        term.reset();
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[2\'}');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
-      });
-      it('deleteColumns (DECDC)', async () => {
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[\'~');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
-        term.reset();
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[1\'~');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '1245', '1245', '1245', '1245', '1245']);
-        term.reset();
-        await term.writeP('12345'.repeat(6));
-        await term.writeP('\x1b[3;3H');
-        await term.writeP('\x1b[2\'~');
-        assert.deepEqual(getLines(term, term.rows + 1), ['12345', '125', '125', '125', '125', '125']);
-      });
-    });
-
-    describe('BS with reverseWraparound set/unset', () => {
-      const ttyBS = '\x08 \x08';  // tty ICANON sends <BS SP BS> on pressing BS
-
-      beforeEach(() => {
-        term = new TestTerminal({cols: 5, rows: 5, scrollback: 1});
-      });
-
-      describe('reverseWraparound set', () => {
-        it('should not reverse outside of scroll margins', async () => {
-          // prepare buffer content
-          await term.writeP('#####abcdefghijklmnopqrstuvwxy');
-          assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
-          assert.equal(term.buffer.ydisp, 1);
-          assert.equal(term.buffer.x, 5);
-          assert.equal(term.buffer.y, 4);
-          await term.writeP(ttyBS.repeat(100));
-          assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
-
-          await term.writeP('\x1b[?45h');
-          await term.writeP('uvwxy');
-
-          // set top/bottom to 1/3 (0-based)
-          await term.writeP('\x1b[2;4r');
-          // place cursor below scroll bottom
-          term.buffer.x = 5;
-          term.buffer.y = 4;
-          await term.writeP(ttyBS.repeat(100));
-          assert.deepEqual(getLines(term, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
-
-          await term.writeP('uvwxy');
-          // place cursor within scroll margins
-          term.buffer.x = 5;
-          term.buffer.y = 3;
-          await term.writeP(ttyBS.repeat(100));
-          assert.deepEqual(getLines(term, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
-          assert.equal(term.buffer.x, 0);
-          assert.equal(term.buffer.y, term.buffer.scrollTop);  // stops at 0, scrollTop
-
-          await term.writeP('fghijklmnopqrst');
-          // place cursor above scroll top
-          term.buffer.x = 5;
-          term.buffer.y = 0;
-          await term.writeP(ttyBS.repeat(100));
-          assert.deepEqual(getLines(term, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
-        });
-      });
-    });
   });
 
   // FIXME: move to common/CoreTerminal.test once the trimming is moved over

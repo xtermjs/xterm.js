@@ -4,11 +4,12 @@
  */
 
 import { IBufferLine, ICellData, CharData } from 'common/Types';
-import { ICharacterJoinerRegistry, ICharacterJoiner } from 'browser/renderer/Types';
+import { ICharacterJoiner } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService } from 'common/services/Services';
+import { ICharacterJoinerService } from 'browser/services/Services';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
@@ -55,15 +56,18 @@ export class JoinedCellData extends AttributeData implements ICellData {
   }
 }
 
-export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
+export class CharacterJoinerService implements ICharacterJoinerService {
+  public serviceBrand: undefined;
 
   private _characterJoiners: ICharacterJoiner[] = [];
   private _nextCharacterJoinerId: number = 0;
   private _workCell: CellData = new CellData();
 
-  constructor(private _bufferService: IBufferService) { }
+  constructor(
+    @IBufferService private _bufferService: IBufferService
+  ) { }
 
-  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+  public register(handler: (text: string) => [number, number][]): number {
     const joiner: ICharacterJoiner = {
       id: this._nextCharacterJoinerId++,
       handler
@@ -73,7 +77,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     return joiner.id;
   }
 
-  public deregisterCharacterJoiner(joinerId: number): boolean {
+  public deregister(joinerId: number): boolean {
     for (let i = 0; i < this._characterJoiners.length; i++) {
       if (this._characterJoiners[i].id === joinerId) {
         this._characterJoiners.splice(i, 1);
@@ -177,7 +181,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
       // We merge any overlapping ranges across the different joiners
       const joinerRanges = this._characterJoiners[i].handler(text);
       for (let j = 0; j < joinerRanges.length; j++) {
-        CharacterJoinerRegistry._mergeRanges(joinedRanges, joinerRanges[j]);
+        CharacterJoinerService._mergeRanges(joinedRanges, joinerRanges[j]);
       }
     }
     this._stringRangesToCellRanges(joinedRanges, lineData, startCol);

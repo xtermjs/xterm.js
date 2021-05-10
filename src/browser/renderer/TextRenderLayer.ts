@@ -3,16 +3,17 @@
  * @license MIT
  */
 
-import { ICharacterJoinerRegistry, IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { CharData, ICellData } from 'common/Types';
 import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
-import { JoinedCellData } from 'browser/renderer/CharacterJoinerRegistry';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService } from 'common/services/Services';
+import { ICharacterJoinerService } from 'browser/services/Services';
+import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -26,22 +27,20 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterWidth: number = 0;
   private _characterFont: string = '';
   private _characterOverlapCache: { [key: string]: boolean } = {};
-  private _characterJoinerRegistry: ICharacterJoinerRegistry;
   private _workCell = new CellData();
 
   constructor(
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    characterJoinerRegistry: ICharacterJoinerRegistry,
     alpha: boolean,
     rendererId: number,
-    bufferService: IBufferService,
-    optionsService: IOptionsService
+    @IBufferService bufferService: IBufferService,
+    @IOptionsService optionsService: IOptionsService,
+    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService
   ) {
     super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
     this._state = new GridCache<CharData>();
-    this._characterJoinerRegistry = characterJoinerRegistry;
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -67,7 +66,6 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _forEachCell(
     firstRow: number,
     lastRow: number,
-    joinerRegistry: ICharacterJoinerRegistry | null,
     callback: (
       cell: ICellData,
       x: number,
@@ -77,7 +75,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     for (let y = firstRow; y <= lastRow; y++) {
       const row = y + this._bufferService.buffer.ydisp;
       const line = this._bufferService.buffer.lines.get(row);
-      const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
+      const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < this._bufferService.cols; x++) {
         line!.loadCell(x, this._workCell);
         let cell = this._workCell;
@@ -101,7 +99,6 @@ export class TextRenderLayer extends BaseRenderLayer {
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly
-
           cell = new JoinedCellData(
             this._workCell,
             line!.translateToString(true, range[0], range[1]),
@@ -160,7 +157,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     ctx.save();
 
-    this._forEachCell(firstRow, lastRow, null, (cell, x, y) => {
+    this._forEachCell(firstRow, lastRow, (cell, x, y) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       let nextFillStyle = null; // null represents default background color
@@ -213,7 +210,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(firstRow: number, lastRow: number): void {
-    this._forEachCell(firstRow, lastRow, this._characterJoinerRegistry, (cell, x, y) => {
+    this._forEachCell(firstRow, lastRow, (cell, x, y) => {
       if (cell.isInvisible()) {
         return;
       }

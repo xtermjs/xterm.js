@@ -47,6 +47,7 @@ export interface IPublicTerminal extends IDisposable {
   onRender: IEvent<{ start: number, end: number }>;
   onResize: IEvent<{ cols: number, rows: number }>;
   onTitleChange: IEvent<string>;
+  onBell: IEvent<void>;
   blur(): void;
   focus(): void;
   resize(columns: number, rows: number): void;
@@ -205,9 +206,19 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
+interface ILinkState {
+  decorations: ILinkDecorations;
+  isHovered: boolean;
+}
+export interface ILinkWithState {
+  link: ILink;
+  state?: ILinkState;
+}
+
 export interface ILinkifier2 {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
+  readonly currentLink: ILinkWithState | undefined;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -291,4 +302,11 @@ interface IBufferRange {
 interface IBufferCellPosition {
   x: number;
   y: number;
+}
+
+export type CharacterJoinerHandler = (text: string) => [number, number][];
+
+export interface ICharacterJoiner {
+  id: number;
+  handler: CharacterJoinerHandler;
 }

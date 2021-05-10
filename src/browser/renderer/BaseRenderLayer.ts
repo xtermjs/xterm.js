@@ -66,7 +66,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', { alpha: this._alpha }));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();
@@ -242,12 +242,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
-    this._ctx.textBaseline = 'middle';
+    this._ctx.textBaseline = 'ideographic';
     this._clipRow(y);
     this._ctx.fillText(
       cell.getChars(),
       x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
   }
 
   /**
@@ -320,7 +320,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = 'middle';
+    this._ctx.textBaseline = 'ideographic';
 
     if (cell.isInverse()) {
       if (fgOverride) {
@@ -362,7 +362,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
       cell.getChars(),
       x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
     this._ctx.restore();
   }
 

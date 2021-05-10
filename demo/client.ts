@@ -17,6 +17,7 @@ import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { ImageAddon } from '../addons/xterm-addon-image/out/ImageAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
+import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -27,6 +28,7 @@ import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Add
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
+// import { LigaturesAddon } from 'xterm-addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -43,6 +45,7 @@ export interface IWindowWithTerminal extends Window {
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
   Unicode11Addon?: typeof Unicode11Addon;
+  LigaturesAddon?: typeof LigaturesAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -52,7 +55,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'image';
+type AddonType = 'attach' | 'fit' | 'image' | 'ligatures' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -65,8 +68,9 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'serialize' ? typeof SerializeAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
+    T extends 'ligatures' ? typeof LigaturesAddon :
     typeof WebglAddon;
-  instance?:
+    instance?:
     T extends 'attach' ? AttachAddon :
     T extends 'fit' ? FitAddon :
     T extends 'image' ? typeof ImageAddon :
@@ -75,6 +79,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
+    T extends 'ligatures' ? typeof LigaturesAddon :
     never;
 }
 
@@ -82,11 +87,12 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
+  ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
-  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true }
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -123,6 +129,7 @@ const disposeRecreateButtonHandler = () => {
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
+    addons.ligatures.instance = undefined;
     addons['web-links'].instance = undefined;
     addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
@@ -140,6 +147,7 @@ if (document.location.pathname === '/test') {
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
+  window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
@@ -157,7 +165,8 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
-    windowsMode: isWindows
+    windowsMode: isWindows,
+    fontFamily: 'Fira Code, courier-new, courier, monospace'
   } as ITerminalOptions);
 
   // Load addons

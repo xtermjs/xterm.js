@@ -10,6 +10,8 @@ import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
+import { ICharacterJoinerService } from 'browser/services/Services';
+import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -26,8 +28,9 @@ export class DomRendererRowFactory {
 
   constructor(
     private readonly _document: Document,
-    private readonly _optionsService: IOptionsService,
-    private _colors: IColorSet
+    private _colors: IColorSet,
+    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
   }
 
@@ -35,9 +38,10 @@ export class DomRendererRowFactory {
     this._colors = colors;
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
+    const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     // Find the line length first, this prevents the need to output a bunch of
     // empty cells at the end. This cannot easily be integrated into the main
     // loop below because of the colCount feature (which can be removed after we
@@ -53,16 +57,56 @@ export class DomRendererRowFactory {
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
-      const width = this._workCell.getWidth();
+      let width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
         continue;
       }
 
+      // If true, indicates that the current character(s) to draw were joined.
+      let isJoined = false;
+      let lastCharX = x;
+
+      // Process any joined character ranges as needed. Because of how the
+      // ranges are produced, we know that they are valid for the characters
+      // and attributes of our input.
+      let cell = this._workCell;
+      if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
+        isJoined = true;
+        const range = joinedRanges.shift()!;
+
+        // We already know the exact start and end column of the joined range,
+        // so we get the string and width representing it directly
+        cell = new JoinedCellData(
+          this._workCell,
+          lineData.translateToString(true, range[0], range[1]),
+          range[1] - range[0]
+        );
+
+        // Skip over the cells occupied by this range in the loop
+        lastCharX = range[1] - 1;
+
+        // Recalculate width
+        width = cell.getWidth();
+      }
+
       const charElement = this._document.createElement('span');
       if (width > 1) {
         charElement.style.width = `${cellWidth * width}px`;
+      }
+
+      if (isJoined) {
+        // Ligatures in the DOM renderer must use display inline, as they may not show with
+        // inline-block if they are outside the bounds of the element
+        charElement.style.display = 'inline';
+
+        // The DOM renderer colors the background of the cursor but for ligatures all cells are
+        // joined. The workaround here is to show a cursor around the whole ligature so it shows up,
+        // the cursor looks the same when on any character of the ligature though
+        if (cursorX >= x && cursorX <= lastCharX) {
+          cursorX = x;
+        }
       }
 
       if (isCursorRow && x === cursorX) {
@@ -85,33 +129,33 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (this._workCell.isBold()) {
+      if (cell.isBold()) {
         charElement.classList.add(BOLD_CLASS);
       }
 
-      if (this._workCell.isItalic()) {
+      if (cell.isItalic()) {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      if (this._workCell.isDim()) {
+      if (cell.isDim()) {
         charElement.classList.add(DIM_CLASS);
       }
 
-      if (this._workCell.isUnderline()) {
+      if (cell.isUnderline()) {
         charElement.classList.add(UNDERLINE_CLASS);
       }
 
-      if (this._workCell.isInvisible()) {
+      if (cell.isInvisible()) {
         charElement.textContent = WHITESPACE_CELL_CHAR;
       } else {
-        charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
+        charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
       }
 
-      let fg = this._workCell.getFgColor();
-      let fgColorMode = this._workCell.getFgColorMode();
-      let bg = this._workCell.getBgColor();
-      let bgColorMode = this._workCell.getBgColorMode();
-      const isInverse = !!this._workCell.isInverse();
+      let fg = cell.getFgColor();
+      let fgColorMode = cell.getFgColorMode();
+      let bg = cell.getBgColor();
+      let bgColorMode = cell.getBgColorMode();
+      const isInverse = !!cell.isInverse();
       if (isInverse) {
         const temp = fg;
         fg = bg;
@@ -125,7 +169,7 @@ export class DomRendererRowFactory {
       switch (fgColorMode) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          if (this._workCell.isBold() && fg < 8 && this._optionsService.options.drawBoldTextInBrightColors) {
+          if (cell.isBold() && fg < 8 && this._optionsService.options.drawBoldTextInBrightColors) {
             fg += 8;
           }
           if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg])) {
@@ -168,6 +212,8 @@ export class DomRendererRowFactory {
       }
 
       fragment.appendChild(charElement);
+
+      x = lastCharX;
     }
     return fragment;
   }
