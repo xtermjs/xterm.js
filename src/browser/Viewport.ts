@@ -30,7 +30,6 @@ export class Viewport extends Disposable implements IViewport {
   private _wheelPartialScroll: number = 0;
 
   private _refreshAnimationFrame: number | null = null;
-  private _ignoreNextScrollEvent: boolean = false;
 
   constructor(
     private readonly _scrollLines: (amount: number) => void,
@@ -88,14 +87,12 @@ export class Viewport extends Disposable implements IViewport {
     // Sync scrollTop
     const scrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
     if (this._viewportElement.scrollTop !== scrollTop) {
-      // Ignore the next scroll event which will be triggered by setting the scrollTop as we do not
-      // want this event to scroll the terminal
-      this._ignoreNextScrollEvent = true;
       this._viewportElement.scrollTop = scrollTop;
     }
 
     this._refreshAnimationFrame = null;
   }
+
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
@@ -145,12 +142,6 @@ export class Viewport extends Disposable implements IViewport {
     // Don't attempt to scroll if the element is not visible, otherwise scrollTop will be corrupt
     // which causes the terminal to scroll the buffer to the top
     if (!this._viewportElement.offsetParent) {
-      return;
-    }
-
-    // Ignore the event if it was flagged to ignore (when the source of the event is from Viewport)
-    if (this._ignoreNextScrollEvent) {
-      this._ignoreNextScrollEvent = false;
       return;
     }
 
