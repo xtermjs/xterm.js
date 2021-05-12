@@ -151,6 +151,8 @@ export class Viewport extends Disposable implements IViewport {
     // Ignore the event if it was flagged to ignore (when the source of the event is from Viewport)
     if (this._ignoreNextScrollEvent) {
       this._ignoreNextScrollEvent = false;
+      // Still trigger the scroll so lines get refreshed
+      this._scrollLines(0);
       return;
     }
 
