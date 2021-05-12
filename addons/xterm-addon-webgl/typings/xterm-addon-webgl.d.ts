@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IEvent } from 'node-pty';
-import { Terminal, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 
 declare module 'xterm-addon-webgl' {
   /**
