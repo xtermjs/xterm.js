@@ -44,8 +44,8 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
       }
       const fonts: Record<string, IFontMetadata[]> = {};
       try {
-        const fontsIterator: AsyncIterableIterator<IFontMetadata> = (navigator as any).fonts.query();
-        for await (const metadata of fontsIterator) {
+        const fontsIterator: IFontMetadata[] = await (navigator as any).fonts.query();
+        for (const metadata of fontsIterator) {
           if (!fonts.hasOwnProperty(metadata.family)) {
             fonts[metadata.family] = [];
           }
