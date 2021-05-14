@@ -89,7 +89,7 @@ export class Linkifier implements ILinkifier {
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
     }
-    this._rowsTimeoutId = <number><any>setTimeout(() => this._linkifyRows(), Linkifier._timeBeforeLatency);
+    this._rowsTimeoutId = setTimeout(() => this._linkifyRows(), Linkifier._timeBeforeLatency) as any as number;
   }
 
   /**

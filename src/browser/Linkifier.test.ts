@@ -174,7 +174,7 @@ describe('Linkifier', () => {
             assert.equal(mouseZoneManager.zones[0].y1, 1);
             assert.equal(mouseZoneManager.zones[0].y2, 1);
             // Fires done()
-            mouseZoneManager.zones[0].clickCallback(<any>{});
+            mouseZoneManager.zones[0].clickCallback({} as any);
           }
         });
         linkifier.linkifyRows();
@@ -210,7 +210,7 @@ describe('Linkifier', () => {
         let count = 0;
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
           validationCallback: (url, cb) => {
-            count += 1;
+            ++count;
             if (count === 2) {
               done();
             }

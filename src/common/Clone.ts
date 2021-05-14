@@ -16,7 +16,7 @@ export function clone<T>(val: T, depth: number = 5): T {
 
   for (const key in val) {
     // Recursively clone eack item unless we're at the maximum depth
-    clonedObject[key] = depth <= 1 ? val[key] : (val[key] ? clone(val[key], depth - 1) : val[key]);
+    clonedObject[key] = depth <= 1 ? val[key] : (val[key] && clone(val[key], depth - 1));
   }
 
   return clonedObject as T;
