@@ -2478,6 +2478,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 8) {
         // invisible
         attr.fg |= FgFlags.INVISIBLE;
+      } else if (p === 9) {
+        // strikethrough
+        attr.fg |= FgFlags.STRIKETHROUGH;
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
@@ -2503,6 +2506,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 28) {
         // not invisible
         attr.fg &= ~FgFlags.INVISIBLE;
+      } else if (p === 29) {
+        // not strikethrough
+        attr.fg &= ~FgFlags.STRIKETHROUGH;
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);

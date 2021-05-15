@@ -117,6 +117,7 @@ export interface IAttributeData {
   isInvisible(): number;
   isItalic(): number;
   isDim(): number;
+  isStrikethrough(): number;
 
   // color modes
   getFgColorMode(): number;

@@ -215,7 +215,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         return;
       }
       this._drawChars(cell, x, y);
-      if (cell.isUnderline()) {
+      if (cell.isUnderline() || cell.isStrikethrough()) {
         this._ctx.save();
 
         if (cell.isInverse()) {
@@ -244,7 +244,12 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        this._fillBottomLineAtCells(x, y, cell.getWidth());
+        if (cell.isStrikethrough()) {
+          this._fillMiddleLineAtCells(x, y, cell.getWidth());
+        }
+        if (cell.isUnderline()) {
+          this._fillBottomLineAtCells(x, y, cell.getWidth());
+        }
         this._ctx.restore();
       }
     });
