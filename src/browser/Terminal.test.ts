@@ -746,7 +746,8 @@ describe('Terminal', () => {
         term.reset();
       }
     });
-    it('2 characters at last cell', async () => {
+    it('2 characters at last cell', async function (): Promise<void> {
+      this.timeout(10000);
       const high = String.fromCharCode(0xD800);
       const cell = new CellData();
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
