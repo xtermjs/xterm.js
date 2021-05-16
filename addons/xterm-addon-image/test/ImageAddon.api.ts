@@ -336,7 +336,7 @@ describe('ImageAddon', () => {
       const lastActive = await execOnManager('_lastActive');
       assert.notEqual(lastActive, 0);
       // should drop back to 0 after 20000
-      await new Promise(res => setTimeout(async () => {
+      await new Promise<void>(res => setTimeout(async () => {
         assert.equal(await execOnManager('_memPool.length'), 0);
         assert.equal(await execOnManager('_poolChecker'), undefined);
         res();
