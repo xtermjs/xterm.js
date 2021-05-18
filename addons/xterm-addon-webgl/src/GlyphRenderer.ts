@@ -199,8 +199,8 @@ export class GlyphRenderer {
     }
 
     // a_origin
-    array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
-    array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+    array[i    ] = rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
+    array[i + 1] = rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
     // a_size
     array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
     array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
