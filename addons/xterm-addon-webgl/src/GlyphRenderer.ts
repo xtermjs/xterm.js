@@ -152,6 +152,7 @@ export class GlyphRenderer {
     this._atlasTexture = throwIfFalsy(gl.createTexture());
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -367,7 +368,6 @@ export class GlyphRenderer {
       gl.activeTexture(gl.TEXTURE0 + 0);
       gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
-      gl.generateMipmap(gl.TEXTURE_2D);
     }
 
     // Set uniforms
@@ -384,7 +384,6 @@ export class GlyphRenderer {
 
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas);
-    gl.generateMipmap(gl.TEXTURE_2D);
   }
 
   public setDimensions(dimensions: IRenderDimensions): void {
