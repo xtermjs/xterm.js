@@ -351,12 +351,14 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
+    // const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
-    this._tmpCtx.globalCompositeOperation = 'copy';
-    this._tmpCtx.fillStyle = backgroundColor.css;
-    this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+    // this._tmpCtx.globalCompositeOperation = 'copy';
+    // this._tmpCtx.fillStyle = backgroundColor.css + '00';
+    // this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+
+    this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
     this._tmpCtx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
@@ -393,17 +395,21 @@ export class WebglCharAtlas implements IDisposable {
     // }
 
     // Clear out the background color and determine if the glyph is empty.
-    const isEmpty = clearColor(imageData, backgroundColor);
+    // const isEmpty = clearColor(imageData, backgroundColor);
 
-    // Handle empty glyphs
-    if (isEmpty) {
-      return NULL_RASTERIZED_GLYPH;
-    }
+    // // Handle empty glyphs
+    // if (isEmpty) {
+    //   return NULL_RASTERIZED_GLYPH;
+    // }
 
     const glyphLeft = Math.floor(-metrics.actualBoundingBoxLeft + padding);
     const glyphTop = Math.floor(-metrics.actualBoundingBoxAscent + padding + this._config.scaledCharHeight);
     const glyphWidth = Math.ceil(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight);
     const glyphHeight = Math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent);
+
+    if (glyphWidth === 0 && glyphHeight === 0) {
+      return NULL_RASTERIZED_GLYPH;
+    }
 
     // Check if there is enough room in the current row and go to next if needed
     if (this._currentRowX + Math.max(glyphWidth, this._config.scaledCharWidth) > TEXTURE_WIDTH) {
