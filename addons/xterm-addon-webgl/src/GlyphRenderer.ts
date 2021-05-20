@@ -158,7 +158,7 @@ export class GlyphRenderer {
 
     // Allow drawing of transparent texture
     gl.enable(gl.BLEND);
-    gl.blendEquationSeparate(gl.FUNC_ADD, (gl as any).MAX);
+    gl.blendEquation(gl.FUNC_ADD);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
 
     // Set viewport
