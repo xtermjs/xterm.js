@@ -58,6 +58,11 @@ const BYTES_PER_RECTANGLE = INDICES_PER_RECTANGLE * Float32Array.BYTES_PER_ELEME
 
 const INITIAL_BUFFER_RECTANGLE_CAPACITY = 20 * INDICES_PER_RECTANGLE;
 
+const TRANSPARENT_COLOR = {
+  css: 'rgba(0, 0, 0, 0)',
+  rgba: 0
+};
+
 export class RectangleRenderer {
 
   private _program: WebGLProgram;
@@ -154,7 +159,8 @@ export class RectangleRenderer {
   }
 
   private _updateCachedColors(): void {
-    this._bgFloat = this._colorToFloat32Array(this._colors.background);
+    // this._bgFloat = this._colorToFloat32Array(this._colors.background);
+    this._bgFloat = this._colorToFloat32Array(TRANSPARENT_COLOR);
     this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
   }
 
