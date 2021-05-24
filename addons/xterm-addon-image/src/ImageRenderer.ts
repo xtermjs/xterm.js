@@ -161,16 +161,20 @@ export class ImageRenderer implements IDisposable {
     this._rescaleImage(imgSpec, width, height);
     const img = imgSpec.actual!;
     const cols = Math.ceil(img.width / width);
+
+    const sx = (tileId % cols) * width;
+    const sy = Math.floor(tileId / cols) * height;
+    const dx = col * width;
+    const dy = row * height;
+
+    // safari bug: never access image source out of bounds
+    const finalWidth = count * width + sx > img.width ? img.width - sx : count * width;
+    const finalHeight = sy + height > img.height ? img.height - sy : height;
+
     this._ctx.drawImage(
       img,
-      (tileId % cols) * width,
-      Math.floor(tileId / cols) * height,
-      width * count,
-      height,
-      col * width,
-      row * height,
-      width * count,
-      height
+      sx, sy, finalWidth, finalHeight,
+      dx, dy, finalWidth, finalHeight
     );
   }
 
