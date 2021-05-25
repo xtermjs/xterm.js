@@ -125,6 +125,19 @@ export class ImageStorage implements IDisposable {
     // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
     this._evictOldest(img.width * img.height);
 
+    if (this._opts.fitOversizedToViewportWidth) {
+      const maxWidth = this._renderer.cellSize.width * this._terminal.cols;
+      if (maxWidth < img.width) {
+        const factor = maxWidth / img.width;
+        const resized = ImageRenderer.createCanvas(maxWidth, Math.ceil(img.height * factor));
+        const ctx = resized.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, maxWidth, resized.height);
+          img = resized;
+        }
+      }
+    }
+
     // calc rows x cols needed to display the image
     // FIXME: needs cellSize fallback
     const cols = Math.ceil(img.width / this._renderer.cellSize.width);

@@ -65,6 +65,8 @@ export interface IImageAddonOptionalOptions {
   storageLimit?: number;
   // whether to show a placeholder for evicted images
   showPlaceholder?: boolean;
+  // fit oversized images to viewport width
+  fitOversizedToViewportWidth?: boolean;
 }
 
 export type IImageAddonOptions = {
