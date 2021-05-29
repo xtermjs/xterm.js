@@ -10,14 +10,14 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IParams, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
-import { Cell, BgFlags } from 'common/buffer/Constants';
+import { Cell, BgFlags, Content } from 'common/buffer/Constants';
 import { IOptionsService, IDirtyRowService, ICoreService } from 'common/services/Services';
 import { IColorManager } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { IRenderService } from 'browser/services/Services';
 
 // export some privates for local usage
-export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService, IColorManager, Cell };
+export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRenderService, IColorManager, Cell, Content };
 
 /**
  * Plugin ctor options.

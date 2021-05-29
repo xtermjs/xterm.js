@@ -4,7 +4,7 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content } from './Types';
 
 
 /**
@@ -48,6 +48,8 @@ export class ImageStorage implements IDisposable {
   // hard limit of stored pixels (fallback limit of 10 MB)
   private _pixelLimit: number = 2500000;
 
+  private _viewportMetrics: {cols: number; rows: number};
+
   constructor(
     private _terminal: ICoreTerminal,
     private _renderer: ImageRenderer,
@@ -59,6 +61,10 @@ export class ImageStorage implements IDisposable {
       console.error(e.message);
       console.warn(`storageLimit is set to ${this.getLimit()} MB`);
     }
+    this._viewportMetrics = {
+      cols: this._terminal.cols,
+      rows: this._terminal.rows
+    };
   }
 
   public dispose(): void {
@@ -307,6 +313,68 @@ export class ImageStorage implements IDisposable {
         }
       }
     }
+  }
+
+  public viewportResize(metrics: {cols: number; rows: number;}): void {
+    // exit early if we have nothing in storage
+    if (!this._images.size) {
+      this._viewportMetrics = metrics;
+      return;
+    }
+
+    // handle only viewport width enlargements, exit all other cases
+    // FIXME: needs patch for tile counter
+    if (this._viewportMetrics.cols >= metrics.cols) {
+      this._viewportMetrics = metrics;
+      return;
+    }
+
+    // walk scrollbuffer at old col width to find all possible expansion matches
+    const buffer = this._terminal._core.buffer;
+    const rows = buffer.lines.length;
+    const oldCol = this._viewportMetrics.cols - 1;
+    for (let row = 0; row < rows; ++row) {
+      const line = buffer.lines.get(row) as IBufferLineExt;
+      if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
+        let e: IExtendedAttrsImage = line._extendedAttrs[oldCol] || EMPTY_ATTRS;
+        const imageId = e.imageId;
+        if (imageId === undefined || imageId === -1) {
+          continue;
+        }
+        const imgSpec = this._images.get(imageId);
+        if (!imgSpec) {
+          continue;
+        }
+        // found an image tile at oldCol, check if it qualifies for right exapansion
+        const tilesPerRow = Math.ceil((imgSpec.actual?.width || 0) / imgSpec.actualCellSize.width);
+        if ((e.tileId % tilesPerRow) + 1 >= tilesPerRow) {
+          continue;
+        }
+
+        // expand only if right side is empty (nothing got wrapped from below)
+        let hasData = false;
+        for (let rightCol = oldCol + 1; rightCol > metrics.cols; ++rightCol) {
+          if (line._data[rightCol * Cell.SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK) {
+            hasData = true;
+            break;
+          }
+        }
+        if (hasData) {
+          continue;
+        }
+
+        // do right expansion on terminal buffer
+        const end = Math.min(metrics.cols, tilesPerRow - (e.tileId % tilesPerRow) + oldCol);
+        let lastTile = e.tileId;
+        for (let expandCol = oldCol + 1; expandCol < end; ++expandCol) {
+          this._writeToCell(line as IBufferLineExt, expandCol, imageId, ++lastTile);
+          imgSpec.tileCount++;
+        }
+      }
+    }
+
+    // store new viewport metrics
+    this._viewportMetrics = metrics;
   }
 
   // FIXME: Do we need some blob offloading tricks here to avoid early eviction?

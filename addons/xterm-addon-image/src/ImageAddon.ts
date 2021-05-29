@@ -142,7 +142,10 @@ export class ImageAddon implements ITerminalAddon {
       (<ICoreTerminal>terminal)._core._inputHandler.onRequestReset(() => this.reset()),
 
       // wipe canvas and delete alternate images on buffer switch
-      this._terminal.buffer.onBufferChange(() => this._storage?.wipeAlternate())
+      this._terminal.buffer.onBufferChange(() => this._storage?.wipeAlternate()),
+
+      // extend images to the right on resize
+      this._terminal.onResize(metrics => this._storage?.viewportResize(metrics))
     );
 
     // SIXEL handler
