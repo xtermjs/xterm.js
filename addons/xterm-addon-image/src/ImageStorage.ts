@@ -121,10 +121,8 @@ export class ImageStorage implements IDisposable {
    * Method to add an image to the storage.
    */
   public addImage(img: HTMLCanvasElement): void {
-    // never allow storage to exceed memory limit
-    // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
-    this._evictOldest(img.width * img.height);
-
+    // TODO:  This is just a playground feature atm,
+    //        needs proper shaping...
     if (this._opts.fitOversizedToViewportWidth) {
       const maxWidth = this._renderer.cellSize.width * this._terminal.cols;
       if (maxWidth < img.width) {
@@ -137,6 +135,10 @@ export class ImageStorage implements IDisposable {
         }
       }
     }
+
+    // never allow storage to exceed memory limit
+    // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
+    this._evictOldest(img.width * img.height);
 
     // calc rows x cols needed to display the image
     // FIXME: needs cellSize fallback
