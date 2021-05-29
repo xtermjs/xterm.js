@@ -48,7 +48,7 @@ export class ImageStorage implements IDisposable {
   // hard limit of stored pixels (fallback limit of 10 MB)
   private _pixelLimit: number = 2500000;
 
-  private _viewportMetrics: {cols: number; rows: number};
+  private _viewportMetrics: { cols: number, rows: number };
 
   constructor(
     private _terminal: ICoreTerminal,
@@ -315,7 +315,7 @@ export class ImageStorage implements IDisposable {
     }
   }
 
-  public viewportResize(metrics: {cols: number; rows: number;}): void {
+  public viewportResize(metrics: { cols: number, rows: number }): void {
     // exit early if we have nothing in storage
     if (!this._images.size) {
       this._viewportMetrics = metrics;
@@ -336,7 +336,7 @@ export class ImageStorage implements IDisposable {
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(row) as IBufferLineExt;
       if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
-        let e: IExtendedAttrsImage = line._extendedAttrs[oldCol] || EMPTY_ATTRS;
+        const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] || EMPTY_ATTRS;
         const imageId = e.imageId;
         if (imageId === undefined || imageId === -1) {
           continue;
