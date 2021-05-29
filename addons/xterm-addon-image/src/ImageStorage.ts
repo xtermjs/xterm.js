@@ -271,6 +271,9 @@ export class ImageStorage implements IDisposable {
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
           let e: IExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
           const imageId = e.imageId;
+          if (imageId === undefined || imageId === -1) {
+            continue;
+          }
           const imgSpec = this._images.get(imageId);
           if (e.tileId !== -1) {
             const startTile = e.tileId;
