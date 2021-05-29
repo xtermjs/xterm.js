@@ -126,8 +126,8 @@ export class ImageRenderer implements IDisposable {
    */
   public get cellSize(): ICellSize {
     return {
-      width: Math.round(this.dimensions?.actualCellWidth || -1),
-      height: Math.round(this.dimensions?.actualCellHeight || -1)
+      width: this.dimensions?.actualCellWidth || -1,
+      height: this.dimensions?.actualCellHeight || -1
     };
   }
 
@@ -158,6 +158,12 @@ export class ImageRenderer implements IDisposable {
       return;
     }
     const { width, height } = this.cellSize;
+
+    // Don't try to draw anything, if we cannot get valid renderer metrics.
+    if (width === -1 || height === -1) {
+      return;
+    }
+
     this._rescaleImage(imgSpec, width, height);
     const img = imgSpec.actual!;
     const cols = Math.ceil(img.width / width);
@@ -171,10 +177,13 @@ export class ImageRenderer implements IDisposable {
     const finalWidth = count * width + sx > img.width ? img.width - sx : count * width;
     const finalHeight = sy + height > img.height ? img.height - sy : height;
 
+    // Floor all pixel offsets to get stable tile mapping without any overflows.
+    // Note: For not pixel perfect aligned cells like in the DOM renderer
+    // this will move a tile slightly to the top/left (subpixel range, thus ignore it).
     this._ctx.drawImage(
       img,
-      sx, sy, finalWidth, finalHeight,
-      dx, dy, finalWidth, finalHeight
+      Math.floor(sx), Math.floor(sy), Math.floor(finalWidth), Math.floor(finalHeight),
+      Math.floor(dx), Math.floor(dy), Math.floor(finalWidth), Math.floor(finalHeight)
     );
   }
 
@@ -184,6 +193,12 @@ export class ImageRenderer implements IDisposable {
   public drawPlaceholder(col: number, row: number, count: number = 1): void {
     if ((this._placeholderBitmap || this._placeholder) && this._ctx) {
       const { width, height } = this.cellSize;
+
+      // Don't try to draw anything, if we cannot get valid renderer metrics.
+      if (width === -1 || height === -1) {
+        return;
+      }
+
       if (height >= this._placeholder!.height) {
         this._createPlaceHolder(height + 1);
       }

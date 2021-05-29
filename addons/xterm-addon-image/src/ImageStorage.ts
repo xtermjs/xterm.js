@@ -141,7 +141,7 @@ export class ImageStorage implements IDisposable {
     this._evictOldest(img.width * img.height);
 
     // calc rows x cols needed to display the image
-    // FIXME: needs cellSize fallback
+    // FIXME: needs cellSize fallback/workaround, if renderer metrics are not available
     const cols = Math.ceil(img.width / this._renderer.cellSize.width);
     const rows = Math.ceil(img.height / this._renderer.cellSize.height);
 
