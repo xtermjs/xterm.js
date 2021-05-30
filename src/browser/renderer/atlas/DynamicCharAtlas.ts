@@ -256,7 +256,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     const fontStyle = glyph.italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'ideographic';
+    this._tmpCtx.textBaseline = 'bottom';
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
 

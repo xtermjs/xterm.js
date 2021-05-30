@@ -224,7 +224,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(terminal: Terminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
-    this._ctx.textBaseline = 'ideographic';
+    this._ctx.textBaseline = 'bottom';
     this._clipRow(terminal, y);
     this._ctx.fillText(
       cell.getChars(),

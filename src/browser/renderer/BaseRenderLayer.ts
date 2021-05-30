@@ -242,7 +242,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
-    this._ctx.textBaseline = 'ideographic';
+    this._ctx.textBaseline = 'bottom';
     this._clipRow(y);
     this._ctx.fillText(
       cell.getChars(),
@@ -320,7 +320,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = 'ideographic';
+    this._ctx.textBaseline = 'bottom';
 
     if (cell.isInverse()) {
       if (fgOverride) {
