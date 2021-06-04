@@ -20,7 +20,7 @@ export class AttachAddon implements ITerminalAddon {
     this._socket = socket;
     // always set binary type to arraybuffer, we do not handle blobs
     this._socket.binaryType = 'arraybuffer';
-    this._bidirectional = (options && options.bidirectional === false) ? false : true;
+    this._bidirectional = !(options && options.bidirectional === false);
   }
 
   public activate(terminal: Terminal): void {

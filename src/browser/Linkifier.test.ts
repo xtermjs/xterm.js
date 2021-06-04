@@ -210,7 +210,7 @@ describe('Linkifier', () => {
         let count = 0;
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
           validationCallback: (url, cb) => {
-            count += 1;
+            count++;
             if (count === 2) {
               done();
             }
