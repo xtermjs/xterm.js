@@ -105,7 +105,7 @@ function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
     return (s: string): string => {
-      ++counter;
+      counter++;
       return '\x1b[33m' + (' ' + counter).slice(-2) + color + s;
     };
   }
