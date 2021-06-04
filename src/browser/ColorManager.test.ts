@@ -17,7 +17,7 @@ describe('ColorManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    (<any>window).HTMLCanvasElement.prototype.getContext = () => ({
+    (window as any).HTMLCanvasElement.prototype.getContext = () => ({
       createLinearGradient(): any {
         return null;
       },
@@ -36,7 +36,7 @@ describe('ColorManager', () => {
       for (const key of Object.keys(cm.colors)) {
         if (key !== 'ansi' && key !== 'contrastCache') {
           // A #rrggbb or rgba(...)
-          assert.ok((<any>cm.colors)[key].css.length >= 7);
+          assert.ok((cm.colors as any)[key].css.length >= 7);
         }
       }
       assert.equal(cm.colors.ansi.length, 256);

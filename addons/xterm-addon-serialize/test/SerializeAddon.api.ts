@@ -487,9 +487,9 @@ function newArray<T>(initial: T | ((index: number) => T), count: number): T[] {
   const array: T[] = new Array<T>(count);
   for (let i = 0; i < array.length; i++) {
     if (typeof initial === 'function') {
-      array[i] = (<(index: number) => T>initial)(i);
+      array[i] = (initial as (index: number) => T)(i);
     } else {
-      array[i] = <T>initial;
+      array[i] = initial as T;
     }
   }
   return array;
