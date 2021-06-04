@@ -403,7 +403,7 @@ describe('Terminal', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
         term.scrollLines(-1);
         assert.equal(term.buffer.ydisp, startYDisp - 1);
-        term.keyPress({ keyCode: 0 } as KeyboardEvent);
+        term.keyPress({ keyCode: 0 });
         assert.equal(term.buffer.ydisp, startYDisp - 1);
       });
     });
