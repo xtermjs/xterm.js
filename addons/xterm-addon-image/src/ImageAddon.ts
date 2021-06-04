@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
+import { ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
@@ -111,12 +111,12 @@ export class ImageAddon implements ITerminalAddon {
     }
   }
 
-  public activate(terminal: Terminal): void {
-    this._terminal = <ICoreTerminal>terminal;
+  public activate(terminal: ICoreTerminal): void {
+    this._terminal = terminal;
 
     // internal data structures
-    this._renderer = new ImageRenderer(<ICoreTerminal>terminal, this._opts.showPlaceholder);
-    this._storage = new ImageStorage(<ICoreTerminal>terminal, this._renderer, this._opts);
+    this._renderer = new ImageRenderer(terminal, this._opts.showPlaceholder);
+    this._storage = new ImageStorage(terminal, this._renderer, this._opts);
 
     this._disposeLater(
       this._renderer,
@@ -139,20 +139,20 @@ export class ImageAddon implements ITerminalAddon {
        */
       terminal.parser.registerCsiHandler({ intermediates: '!', final: 'p' }, () => this.reset()),
       terminal.parser.registerEscHandler({ final: 'c' }, () => this.reset()),
-      (<ICoreTerminal>terminal)._core._inputHandler.onRequestReset(() => this.reset()),
+      terminal._core._inputHandler.onRequestReset(() => this.reset()),
 
       // wipe canvas and delete alternate images on buffer switch
-      this._terminal.buffer.onBufferChange(() => this._storage?.wipeAlternate()),
+      terminal.buffer.onBufferChange(() => this._storage?.wipeAlternate()),
 
       // extend images to the right on resize
-      this._terminal.onResize(metrics => this._storage?.viewportResize(metrics))
+      terminal.onResize(metrics => this._storage?.viewportResize(metrics))
     );
 
     // SIXEL handler
     if (this._opts.sixelSupport) {
       this._disposeLater(
-        (<ICoreTerminal>terminal)._core._inputHandler._parser.registerDcsHandler(
-          { final: 'q' }, new SixelHandler(this._opts, this._storage, <ICoreTerminal>terminal, this._workerManager))
+        terminal._core._inputHandler._parser.registerDcsHandler(
+          { final: 'q' }, new SixelHandler(this._opts, this._storage, terminal, this._workerManager))
       );
     }
   }
