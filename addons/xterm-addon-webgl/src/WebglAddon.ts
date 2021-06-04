@@ -24,9 +24,9 @@ export class WebglAddon implements ITerminalAddon {
       throw new Error('Cannot activate WebglAddon before Terminal.open');
     }
     this._terminal = terminal;
-    const renderService: IRenderService = (<any>terminal)._core._renderService;
-    const characterJoinerService: ICharacterJoinerService = (<any>terminal)._core._characterJoinerService;
-    const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
+    const renderService: IRenderService = (terminal as any)._core._renderService;
+    const characterJoinerService: ICharacterJoinerService = (terminal as any)._core._characterJoinerService;
+    const colors: IColorSet = (terminal as any)._core._colorManager.colors;
     this._renderer = new WebglRenderer(terminal, colors, characterJoinerService, this._preserveDrawingBuffer);
     this._renderer.onContextLoss(() => this._onContextLoss.fire());
     renderService.setRenderer(this._renderer);

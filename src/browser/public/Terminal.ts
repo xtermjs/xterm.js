@@ -280,7 +280,7 @@ class BufferLineApiView implements IBufferLineApi {
     }
 
     if (cell) {
-      this._line.loadCell(x, <ICellData>cell);
+      this._line.loadCell(x, cell as ICellData);
       return cell;
     }
     return this._line.loadCell(x, new CellData());

@@ -47,6 +47,7 @@
         "readonly": "generic"
       }
     ],
+    "@typescript-eslint/consistent-type-assertions": "warn",
     "@typescript-eslint/consistent-type-definitions": "warn",
     "@typescript-eslint/explicit-function-return-type": [
       "warn",

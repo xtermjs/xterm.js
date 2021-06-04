@@ -13,7 +13,7 @@ export class SoundService implements ISoundService {
 
   public static get audioContext(): AudioContext | null {
     if (!SoundService._audioContext) {
-      const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
+      const audioContextCtor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!audioContextCtor) {
         console.warn('Web Audio API is not supported by this browser. Consider upgrading to the latest version');
         return null;
