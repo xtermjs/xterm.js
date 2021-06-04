@@ -133,8 +133,8 @@ export class SelectionService extends Disposable implements ISelectionService {
     super();
 
     // Init listeners
-    this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
-    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._mouseMoveListener = event => this._onMouseMove(event as MouseEvent);
+    this._mouseUpListener = event => this._onMouseUp(event as MouseEvent);
     this._coreService.onUserInput(() => {
       if (this.hasSelection) {
         this.clearSelection();

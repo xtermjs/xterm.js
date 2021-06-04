@@ -69,7 +69,7 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param ev The event.
    */
-  public compositionupdate(ev: CompositionEvent): void {
+  public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
     this._compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {

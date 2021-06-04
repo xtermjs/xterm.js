@@ -387,7 +387,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       if (!row) {
         return;
       }
-      const span = <HTMLElement>row.children[x];
+      const span = row.children[x] as HTMLElement;
       if (span) {
         span.style.textDecoration = enabled ? 'underline' : 'none';
       }

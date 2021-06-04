@@ -125,7 +125,7 @@ export class MockOptionsService implements IOptionsService {
   constructor(testOptions?: IPartialTerminalOptions) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
-        this.options[key] = (<any>testOptions)[key];
+        this.options[key] = (testOptions as any)[key];
       }
     }
   }

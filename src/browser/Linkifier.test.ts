@@ -174,7 +174,7 @@ describe('Linkifier', () => {
             assert.equal(mouseZoneManager.zones[0].y1, 1);
             assert.equal(mouseZoneManager.zones[0].y2, 1);
             // Fires done()
-            mouseZoneManager.zones[0].clickCallback(<any>{});
+            mouseZoneManager.zones[0].clickCallback({} as any);
           }
         });
         linkifier.linkifyRows();
