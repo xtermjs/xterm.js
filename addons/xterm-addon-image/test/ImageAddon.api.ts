@@ -168,8 +168,8 @@ describe('ImageAddon', () => {
         showPlaceholder: false
       };
       await page.evaluate(opts => {
-        (<any>window).imageAddonCustom = new ImageAddon(opts);
-        (<any>window).term.loadAddon((<any>window).imageAddonCustom);
+        (window as any).imageAddonCustom = new ImageAddon(opts);
+        (window as any).term.loadAddon((window as any).imageAddonCustom);
       }, customSettings);
       assert.deepEqual(await page.evaluate(`window.imageAddonCustom._opts`), customSettings);
     });
@@ -307,8 +307,8 @@ describe('ImageAddon', () => {
       // custom
       const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
       await page.evaluate(opts => {
-        (<any>window).imageAddonCustom = new ImageAddon(opts);
-        (<any>window).term.loadAddon((<any>window).imageAddonCustom);
+        (window as any).imageAddonCustom = new ImageAddon(opts);
+        (window as any).term.loadAddon((window as any).imageAddonCustom);
       }, customSettings);
       assert.equal(await page.evaluate(`window.imageAddonCustom._workerManager.url`), 'xyz.js');
     });
@@ -359,8 +359,8 @@ describe('ImageAddon', () => {
       beforeEach(async () => {
         const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
         await page.evaluate(opts => {
-          (<any>window).imageAddonCustom = new ImageAddon(opts);
-          (<any>window).term.loadAddon((<any>window).imageAddonCustom);
+          (window as any).imageAddonCustom = new ImageAddon(opts);
+          (window as any).term.loadAddon((window as any).imageAddonCustom);
         }, customSettings);
       });
       it('failed is set upon first worker access', async () => {
