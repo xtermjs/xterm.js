@@ -25,12 +25,8 @@ import { WorkerManager } from './WorkerManager';
 
 /**
  * TODOs / next steps:
- * - lower private member access + better type checks
- * - opt-in for FastSixelDecoder
- * - expose API to access image data
- * - solve cell alignment issue
- * - allow overprinting with composition
- * - continue cut images to the right on resize
+ * - update sixel lib to FastSixelDecoder
+ * - allow overprinting with blending? (needed for correct handling of transparent pixels)
  * - find some working serialize solution (re-encode?)
  * - investigate in worker based drawing (OffscreenCanvas, createImageBitmap)
  * - think about additional library like public API endpoints:
@@ -58,8 +54,7 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelPrivatePalette: true,
   sixelDefaultPalette: 'VT340-COLOR',
   storageLimit: 100,
-  showPlaceholder: true,
-  fitOversizedToViewportWidth: false
+  showPlaceholder: true
 };
 
 // definitions for _xtermGraphicsAttributes sequence

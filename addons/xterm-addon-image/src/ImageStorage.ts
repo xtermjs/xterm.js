@@ -131,21 +131,6 @@ export class ImageStorage implements IDisposable {
    * Method to add an image to the storage.
    */
   public addImage(img: HTMLCanvasElement): void {
-    // TODO:  This is just a playground feature atm,
-    //        needs proper shaping...
-    if (this._opts.fitOversizedToViewportWidth) {
-      const maxWidth = this._renderer.cellSize.width * this._terminal.cols;
-      if (maxWidth < img.width) {
-        const factor = maxWidth / img.width;
-        const resized = ImageRenderer.createCanvas(maxWidth, Math.ceil(img.height * factor));
-        const ctx = resized.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, maxWidth, resized.height);
-          img = resized;
-        }
-      }
-    }
-
     // never allow storage to exceed memory limit
     // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
     this._evictOldest(img.width * img.height);
