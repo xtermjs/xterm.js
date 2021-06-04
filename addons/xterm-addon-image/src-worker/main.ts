@@ -16,6 +16,7 @@ declare const postMessage: {
 
 
 let decoder: SixelDecoder | undefined;
+let imageBuffer: ArrayBuffer | undefined;
 
 
 function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
@@ -33,19 +34,26 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
         } else {
           const width = decoder.width;
           const height = decoder.height;
-          const result = new Uint8ClampedArray(width * height * 4);
-          decoder.toPixelData(result, width, height);
+          const bytes = width * height * 4; // FIXME: needs size limit
+          if (!imageBuffer || imageBuffer.byteLength < bytes) {
+            imageBuffer = new ArrayBuffer(bytes);
+          }
+          decoder.toPixelData(new Uint8ClampedArray(imageBuffer, 0, bytes), width, height);
           postMessage({
             type: 'SIXEL_IMAGE',
             payload: {
-              buffer: result.buffer,
+              buffer: imageBuffer,
               width,
               height
             }
-          }, [result.buffer]);
+          }, [imageBuffer]);
+          imageBuffer = undefined;
         }
       }
       decoder = undefined;
+      break;
+    case 'CHUNK_TRANSFER':
+      imageBuffer = data.payload;
       break;
     case 'SIXEL_INIT':
       const { fillColor, paletteName, limit } = data.payload;

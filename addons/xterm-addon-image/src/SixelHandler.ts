@@ -61,10 +61,9 @@ export class SixelHandler implements IDcsHandler {
     let p = start;
     while (p < end) {
       const chunk = new Uint8Array(this._workerManager.getChunk());
-      const length = end - p > chunk.length ? chunk.length : end - p;
-      chunk.set(data.subarray(p, p + length));
+      const length = Math.min(end - p, chunk.length);
+      chunk.set(data.subarray(p, p += length));
       this._workerManager.sixelPut(chunk, length);
-      p += length;
     }
   }
 
@@ -100,6 +99,7 @@ export class SixelHandler implements IDcsHandler {
         ctx.putImageData(imageData, 0, 0);  // still taking pretty long for big images
         this._storage.addImage(canvas);
       }
+      this._workerManager.sixelSendBuffer(data.buffer);
       return true;
     });
   }

@@ -141,4 +141,7 @@ export class WorkerManager implements IDisposable {
     this.worker?.postMessage({ type: 'SIXEL_END', payload: success });
     return result;
   }
+  public sixelSendBuffer(buffer: ArrayBuffer): void {
+    this.worker?.postMessage({ type: 'CHUNK_TRANSFER', payload: buffer }, [buffer]);
+  }
 }
