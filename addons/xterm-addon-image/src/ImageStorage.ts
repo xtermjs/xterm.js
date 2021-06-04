@@ -72,6 +72,9 @@ export class ImageStorage implements IDisposable {
   }
 
   public reset(): void {
+    for (const spec of this._images.values()) {
+      spec.marker?.dispose();
+    }
     this._images.clear();
     this._renderer.clearAll();
   }
@@ -113,6 +116,7 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.bufferType === 'alternate') {
+        spec.marker?.dispose();
         zero.push(id);
       }
     }
@@ -205,6 +209,7 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.tileCount < 1) {
+        spec.marker?.dispose();
         zero.push(id);
       }
     }
@@ -389,6 +394,7 @@ export class ImageStorage implements IDisposable {
         if (spec.actual && spec.orig !== spec.actual) {
           current -= spec.actual.width * spec.actual.height;
         }
+        spec.marker?.dispose();
         this._images.delete(this._lowestId);
       }
     }
@@ -452,6 +458,7 @@ export class ImageStorage implements IDisposable {
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
       if (spec.bufferType === 'alternate' && !spec.tileCount) {
+        spec.marker?.dispose();
         zero.push(id);
       }
     }
