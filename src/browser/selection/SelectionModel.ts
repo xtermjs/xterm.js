@@ -32,6 +32,11 @@ export class SelectionModel {
    */
   public selectionEnd: [number, number] | undefined;
 
+  /**
+   * The [x, y] dimension of the terminal.
+   */
+  public terminalDimensions: [ number, number ] | undefined;
+
   constructor(
     private _bufferService: IBufferService
   ) {
@@ -43,6 +48,7 @@ export class SelectionModel {
   public clearSelection(): void {
     this.selectionStart = undefined;
     this.selectionEnd = undefined;
+    this.terminalDimensions = undefined;
     this.isSelectAllActive = false;
     this.selectionStartLength = 0;
   }

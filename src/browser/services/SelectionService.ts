@@ -310,9 +310,9 @@ export class SelectionService extends Disposable implements ISelectionService {
 
   protected _areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
     return (coords[1] > start[1] && coords[1] < end[1]) ||
-        (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
+      (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
+      (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
+      (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
   }
 
   /**
@@ -326,6 +326,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
       this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
       this._model.selectionEnd = undefined;
+      this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
       return true;
     }
 
@@ -353,6 +354,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     end = Math.min(end, this._bufferService.buffer.lines.length - 1);
     this._model.selectionStart = [0, start];
     this._model.selectionEnd = [this._bufferService.cols, end];
+    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this.refresh();
     this._onSelectionChange.fire();
   }
@@ -520,6 +522,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
     this._model.selectionEnd = undefined;
+    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
 
     // Ensure the line exists
     const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
@@ -732,7 +735,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._onSelectionChange.fire();
   }
 
-  private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
+  private _onBufferActivate(e: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }): void {
     this.clearSelection();
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
@@ -770,6 +773,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._removeMouseDownListeners();
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
+    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this.refresh();
   }
 
@@ -886,10 +890,10 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Calculate the start _column_, converting the the string indexes back to
     // column coordinates.
     let start =
-        startIndex // The index of the selection's start char in the line string
-        + charOffset // The difference between the initial char's column and index
-        - leftWideCharCount // The number of wide chars left of the initial char
-        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      startIndex // The index of the selection's start char in the line string
+      + charOffset // The difference between the initial char's column and index
+      - leftWideCharCount // The number of wide chars left of the initial char
+      + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
@@ -951,6 +955,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
+      this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     }
   }
 
@@ -1004,6 +1009,42 @@ export class SelectionService extends Disposable implements ISelectionService {
     const wrappedRange = this._bufferService.buffer.getWrappedRangeForLine(line);
     this._model.selectionStart = [0, wrappedRange.first];
     this._model.selectionEnd = [this._bufferService.cols, wrappedRange.last];
+    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this._model.selectionStartLength = 0;
+  }
+
+  public resize(cols: number, rows: number): void {
+    if (this._model.selectionStart !== undefined && this._model.terminalDimensions !== undefined) {
+      const start = this._model.selectionStart[0] + this._model.selectionStart[1] * this._model.terminalDimensions[0];
+      const end = this._model.selectionEnd === undefined ?
+        start + this._model.selectionStartLength :
+        this._model.selectionEnd[0] + this._model.selectionEnd[1] * this._model.terminalDimensions[0];
+
+      const selectionStart: [number, number] = [start % cols, Math.floor(start / cols)];
+      const selectionEnd: [number, number] = [end % cols, Math.floor(end / cols)];
+      const terminalDimensions: [number, number] = [cols, rows];
+
+      if (this._didStateChange(selectionStart, selectionEnd)) {
+        this._model.selectionStart = selectionStart;
+        this._model.selectionEnd = selectionEnd;
+        this._model.terminalDimensions = terminalDimensions;
+
+        this.refresh();
+        this._onSelectionChange.fire();
+      }
+    }
+  }
+
+  private _didStateChange(start: [number, number] | undefined, end: [number, number] | undefined): boolean {
+    return !this._areCoordinatesEqual(start, this._model.selectionStart) ||
+      !this._areCoordinatesEqual(end, this._model.selectionEnd);
+  }
+
+  private _areCoordinatesEqual(coord1: [number, number] | undefined, coord2: [number, number] | undefined): boolean {
+    if (!coord1 || !coord2) {
+      return false;
+    }
+
+    return coord1[0] === coord2[0] && coord1[1] === coord2[1];
   }
 }
