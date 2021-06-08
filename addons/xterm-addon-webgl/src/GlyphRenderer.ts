@@ -263,7 +263,7 @@ export class GlyphRenderer {
         // Get attributes from fg (excluding inverse) and resolve inverse by pullibng rgb colors
         // from bg. This is needed since the inverse fg color should be based on the original bg
         // color, not on the selection color
-        fg = (fg & ~(Attributes.CM_MASK | Attributes.RGB_MASK | FgFlags.INVERSE));
+        fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK | FgFlags.INVERSE);
         switch (workCell.getBgColorMode()) {
           case Attributes.CM_P16:
           case Attributes.CM_P256:

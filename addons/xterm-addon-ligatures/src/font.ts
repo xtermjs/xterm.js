@@ -15,6 +15,15 @@ interface IFontMetadata {
   blob: () => Promise<Blob>;
 }
 
+interface IFontAccessNavigator {
+  fonts: {
+    query: () => Promise<IFontMetadata[]>;
+  };
+  permissions: {
+    request?: (permission: { name: string }) => Promise<{state: string}>;
+  };
+}
+
 let fontsPromise: Promise<FontList | Record<string, IFontMetadata[]>> | undefined = undefined;
 
 /**
@@ -28,7 +37,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     // Web environment that supports font access API
     if (typeof navigator !== 'undefined' && 'fonts' in navigator) {
       try {
-        const status = await (navigator as any).permissions.request?.({
+        const status = await (navigator as IFontAccessNavigator).permissions.request?.({
           name: 'local-fonts'
         });
         if (status && status.state !== 'granted') {
@@ -44,8 +53,8 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
       }
       const fonts: Record<string, IFontMetadata[]> = {};
       try {
-        const fontsIterator: AsyncIterableIterator<IFontMetadata> = (navigator as any).fonts.query();
-        for await (const metadata of fontsIterator) {
+        const fontsIterator = await (navigator as IFontAccessNavigator).fonts.query();
+        for (const metadata of fontsIterator) {
           if (!fonts.hasOwnProperty(metadata.family)) {
             fonts[metadata.family] = [];
           }

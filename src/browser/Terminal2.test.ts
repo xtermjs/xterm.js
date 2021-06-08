@@ -73,7 +73,7 @@ describe('Escape Sequence Files', function(): void {
       // register handler to trigger viewport scraping, wait for it to finish
       let content = '';
       const OSC_CODE = 12345;
-      await new Promise(resolve => {
+      await new Promise<void>(resolve => {
         customHandler = term.registerOscHandler(OSC_CODE, () => {
           // grab terminal viewport content
           content = terminalToString(term);
@@ -105,7 +105,7 @@ function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
     return (s: string): string => {
-      counter += 1;
+      counter++;
       return '\x1b[33m' + (' ' + counter).slice(-2) + color + s;
     };
   }

@@ -77,7 +77,7 @@ describe('InputHandler', () => {
       optionsService.options.scrollback = 1;
       bufferService.reset();
     });
-    it('SL (scrollLeft)', async () => {
+    it('SL (scrollLeft)', () => {
       inputHandler.parseP('12345'.repeat(6));
       inputHandler.parseP('\x1b[ @');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '2345', '2345', '2345', '2345', '2345']);
@@ -86,7 +86,7 @@ describe('InputHandler', () => {
       inputHandler.parseP('\x1b[2 @');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '5', '5', '5', '5', '5']);
     });
-    it('SR (scrollRight)', async () => {
+    it('SR (scrollRight)', () => {
       inputHandler.parseP('12345'.repeat(6));
       inputHandler.parseP('\x1b[ A');
       assert.deepEqual(getLines(bufferService, 6), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
@@ -95,7 +95,7 @@ describe('InputHandler', () => {
       inputHandler.parseP('\x1b[2 A');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '    1', '    1', '    1', '    1', '    1']);
     });
-    it('insertColumns (DECIC)', async () => {
+    it('insertColumns (DECIC)', () => {
       inputHandler.parseP('12345'.repeat(6));
       inputHandler.parseP('\x1b[3;3H');
       inputHandler.parseP('\x1b[\'}');
@@ -111,7 +111,7 @@ describe('InputHandler', () => {
       inputHandler.parseP('\x1b[2\'}');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
     });
-    it('deleteColumns (DECDC)', async () => {
+    it('deleteColumns (DECDC)', () => {
       inputHandler.parseP('12345'.repeat(6));
       inputHandler.parseP('\x1b[3;3H');
       inputHandler.parseP('\x1b[\'~');
@@ -137,7 +137,7 @@ describe('InputHandler', () => {
       bufferService.reset();
     });
     describe('reverseWraparound set', () => {
-      it('should not reverse outside of scroll margins', async () => {
+      it('should not reverse outside of scroll margins', () => {
         // prepare buffer content
         inputHandler.parseP('#####abcdefghijklmnopqrstuvwxy');
         assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
