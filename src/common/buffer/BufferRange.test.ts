@@ -16,10 +16,10 @@ describe('BufferRange', () => {
       assert.throws(() => getRangeLength(createRange(1, 3, 1, 1), 0));
     });
     it('should get range multiple lines', () => {
-      assert.equal(getRangeLength(createRange(1, 1, 4, 5), 5), 23);
+      assert.equal(getRangeLength(createRange(1, 1, 4, 5), 5), 24);
     });
     it('should get range for end line right after start line', () => {
-      assert.equal(getRangeLength(createRange(1, 1, 7, 2), 5), 11);
+      assert.equal(getRangeLength(createRange(1, 1, 7, 2), 5), 12);
     });
   });
 });
