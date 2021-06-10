@@ -1915,7 +1915,7 @@ describe('InputHandler', () => {
   });
 
   // issue #3362 and #2979
-  describe.only('EL/ED cursor at buffer.cols', () => {
+  describe('EL/ED cursor at buffer.cols', () => {
     beforeEach(() => {
       bufferService.resize(10, 5);
     });
