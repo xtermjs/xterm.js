@@ -1913,6 +1913,92 @@ describe('InputHandler', () => {
       });
     });
   });
+
+  // issue #3362 and #2979
+  describe('EL/ED cursor at buffer.cols', () => {
+    beforeEach(() => {
+      bufferService.resize(10, 5);
+    });
+    describe('cursor should stay at cols / does not overflow', () => {
+      it('EL0', async () => {
+        await inputHandler.parseP('##########\x1b[0K');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['#'.repeat(10), '', '', '', '']);
+      });
+      it('EL1', async () => {
+        await inputHandler.parseP('##########\x1b[1K');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['', '', '', '', '']);
+      });
+      it('EL2', async () => {
+        await inputHandler.parseP('##########\x1b[2K');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['', '', '', '', '']);
+      });
+      it('ED0', async () => {
+        await inputHandler.parseP('##########\x1b[0J');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['#'.repeat(10), '', '', '', '']);
+      });
+      it('ED1', async () => {
+        await inputHandler.parseP('##########\x1b[1J');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['', '', '', '', '']);
+      });
+      it('ED2', async () => {
+        await inputHandler.parseP('##########\x1b[2J');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['', '', '', '', '']);
+      });
+      it('ED3', async () => {
+        await inputHandler.parseP('##########\x1b[3J');
+        assert.equal(bufferService.buffer.x, 10);
+        assert.deepEqual(getLines(bufferService), ['#'.repeat(10), '', '', '', '']);
+      });
+    });
+    describe('following sequence keeps working', () => {
+      // sequences to test (cursor related ones)
+      const SEQ = [
+        /* ICH */   '\x1b[10@',
+        /* SL */    '\x1b[10 @',
+        /* CUU */   '\x1b[10A',
+        /* SR */    '\x1b[10 A',
+        /* CUD */   '\x1b[10B',
+        /* CUF */   '\x1b[10C',
+        /* CUB */   '\x1b[10D',
+        /* CNL */   '\x1b[10E',
+        /* CPL */   '\x1b[10F',
+        /* CHA */   '\x1b[10G',
+        /* CUP */   '\x1b[10;10H',
+        /* CHT */   '\x1b[10I',
+        /* IL */    '\x1b[10L',
+        /* DL */    '\x1b[10M',
+        /* DCH */   '\x1b[10P',
+        /* SU */    '\x1b[10S',
+        /* SD */    '\x1b[10T',
+        /* ECH */   '\x1b[10X',
+        /* CBT */   '\x1b[10Z',
+        /* HPA */   '\x1b[10`',
+        /* HPR */   '\x1b[10a',
+        /* REP */   '\x1b[10b',
+        /* VPA */   '\x1b[10d',
+        /* VPR */   '\x1b[10e',
+        /* HVP */   '\x1b[10;10f',
+        /* TBC */   '\x1b[0g',
+        /* SCOSC */ '\x1b[s',
+        /* DECIC */ '\x1b[10\'}',
+        /* DECDC */ '\x1b[10\'~'
+      ];
+      it('cursor never advances beyond cols', async () => {
+        for (const seq of SEQ) {
+          await inputHandler.parseP('##########\x1b[2J' + seq);
+          assert.equal(bufferService.buffer.x <= bufferService.cols, true);
+          inputHandler.reset();
+          bufferService.reset();
+        }
+      });
+    });
+  });
 });
 
 

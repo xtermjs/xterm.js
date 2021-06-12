@@ -1247,7 +1247,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
   public eraseInDisplay(params: IParams): boolean {
-    this._restrictCursor();
+    this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
@@ -1319,7 +1319,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
   public eraseInLine(params: IParams): boolean {
-    this._restrictCursor();
+    this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
         this._eraseInBufferLine(this._bufferService.buffer.y, this._bufferService.buffer.x, this._bufferService.cols);
