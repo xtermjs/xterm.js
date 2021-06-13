@@ -150,7 +150,7 @@ describe('ImageAddon', () => {
         sixelSizeLimit: 25000000,
         sixelPrivatePalette: true,
         sixelDefaultPalette: 'VT340-COLOR',
-        storageLimit: 100,
+        storageLimit: 128,
         showPlaceholder: true
       };
       assert.deepEqual(await page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
@@ -246,7 +246,7 @@ describe('ImageAddon', () => {
       assert.closeTo(await page.evaluate('imageAddon.storageUsage'), 640 * 80 * 4 / 1000000, 0.05);
     });
     it('get/set storageLimit', async () => {
-      assert.equal(await page.evaluate('imageAddon.storageLimit'), 100);
+      assert.equal(await page.evaluate('imageAddon.storageLimit'), 128);
       assert.equal(await page.evaluate('imageAddon.storageLimit = 1'), 1);
       assert.equal(await page.evaluate('imageAddon.storageLimit'), 1);
     });
