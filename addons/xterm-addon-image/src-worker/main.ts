@@ -79,7 +79,7 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
         : paletteName === 'VT340-GREY'
           ? PALETTE_VT340_GREY
           : PALETTE_ANSI_256;
-      // FIXME: non private palette? (not really supported) - needs upstream fix in sixel lib
+      // TODO: non private palette? (not really supported) - needs upstream fix in sixel lib
       decoder = new SixelDecoder(fillColor, Object.assign([], palette), limit);
       break;
     case 'ACK':

@@ -132,11 +132,10 @@ export class ImageStorage implements IDisposable {
    */
   public addImage(img: HTMLCanvasElement): void {
     // never allow storage to exceed memory limit
-    // FIXME: skip image at protocol handler if it is too big as single fit or reject save here
     this._evictOldest(img.width * img.height);
 
     // calc rows x cols needed to display the image
-    // FIXME: needs cellSize fallback/workaround, if renderer metrics are not available
+    // TODO: cellSize fallback/workaround, if renderer metrics are not available
     const cols = Math.ceil(img.width / this._renderer.cellSize.width);
     const rows = Math.ceil(img.height / this._renderer.cellSize.height);
 
@@ -157,7 +156,7 @@ export class ImageStorage implements IDisposable {
       offset = 0;
     }
 
-    // FIXME: how to go with origin mode / scroll margins here?
+    // TODO: how to go with origin mode / scroll margins here?
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(buffer.y + buffer.ybase);
       for (let col = 0; col < cols; ++col) {
@@ -229,7 +228,7 @@ export class ImageStorage implements IDisposable {
       bufferType: this._terminal.buffer.active.type
     };
 
-    // finally add the image and trigger bitmap creation
+    // finally add the image
     this._images.set(imageId, imgSpec);
   }
 
@@ -313,7 +312,7 @@ export class ImageStorage implements IDisposable {
     }
 
     // handle only viewport width enlargements, exit all other cases
-    // FIXME: needs patch for tile counter
+    // TODO: needs patch for tile counter
     if (this._viewportMetrics.cols >= metrics.cols) {
       this._viewportMetrics = metrics;
       return;
@@ -392,7 +391,7 @@ export class ImageStorage implements IDisposable {
     }
   }
 
-  // FIXME: Do we need some blob offloading tricks here to avoid early eviction?
+  // TODO: Do we need some blob offloading tricks here to avoid early eviction?
   // also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
   private _evictOldest(room: number): number {
     const used = this._getStoredPixels();
