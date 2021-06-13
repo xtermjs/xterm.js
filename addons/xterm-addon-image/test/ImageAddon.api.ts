@@ -140,6 +140,7 @@ describe('ImageAddon', () => {
     it('empty settings should load defaults', async () => {
       const DEFAULT_OPTIONS: IImageAddonOptions = {
         workerPath: '/workers/xterm-addon-image-worker.js',
+        enableSizeReports: true,
         cursorRight: false,
         cursorBelow: false,
         sixelSupport: true,
@@ -156,6 +157,7 @@ describe('ImageAddon', () => {
     it('custom settings should overload defaults', async () => {
       const customSettings: IImageAddonOptions = {
         workerPath: 'xyz.js',
+        enableSizeReports: false,
         cursorRight: true,
         cursorBelow: true,
         sixelSupport: false,

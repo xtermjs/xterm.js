@@ -45,6 +45,7 @@ import { WorkerManager } from './WorkerManager';
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
   workerPath: '/workers/xterm-addon-image-worker.js',
+  enableSizeReports: true,
   cursorRight: false,
   cursorBelow: false,
   sixelSupport: true,
@@ -112,6 +113,15 @@ export class ImageAddon implements ITerminalAddon {
     // internal data structures
     this._renderer = new ImageRenderer(terminal, this._opts.showPlaceholder);
     this._storage = new ImageStorage(terminal, this._renderer, this._opts);
+
+    // enable size reports
+    if (this._opts.enableSizeReports) {
+      const windowOptions = terminal.getOption('windowOptions');
+      windowOptions.getWinSizePixels = true;
+      windowOptions.getCellSizePixels = true;
+      windowOptions.getWinSizeChars = true;
+      terminal.setOption('windowOptions', windowOptions);
+    }
 
     this._disposeLater(
       this._renderer,

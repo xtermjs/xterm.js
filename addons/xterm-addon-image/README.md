@@ -1,6 +1,6 @@
 ## xterm-addon-image
 
-Image support for xterm.js.
+Image output in xterm.js.
 
 **Note:** This addon is still alpha, expect all sorts of weird errors at the current stage.
 It only supports SIXEL at the moment.
@@ -20,6 +20,7 @@ import { ImageAddon, IImageAddonOptions } from 'xterm-addon-image';
 
 // customize as needed
 const customSettings: IImageAddonOptions = {
+  workerPath: '/path/to/xterm-addon-image-worker.js',
   sixelSupport: true,
   ...
 }
@@ -33,14 +34,22 @@ terminal.loadAddon(imageAddon);
 imageAddon.dispose();
 ```
 
-**Note:** The image decoding is done with a worker internally, therefore the addon will only work
-if you expose the worker file as well (distributed under `lib/xterm-addon-image-worker.js`).
+### General Notes
+
+- The image decoding is done with a worker, therefore the addon will only work, if you expose the worker file as well, which is distributed under `lib/xterm-addon-image-worker.js`. To customize the worker path, set `workerPath` in the constructor options to your needs (default is `'/workers/xterm-addon-image-worker.js'`).
+
+- By default the addon will activate these `windowOptions` reports on the terminal:
+  - getWinSizePixels (CSI 14 t)
+  - getCellSizePixels (CSI 16 t)
+  - getWinSizeChars (CSI 18 t)
+  
+  to help applications getting useful terminal metrics for their image preparations. Set `enableSizeReports` in the constructor options to `false`, if you dont want the addon to alter these terminal settings. This is especially useful, if you have very strict security needs not allowing any terminal reports, or deal with `windowOptions` by other means.
 
 
 ### Operation Modes
 
 - **SIXEL Support**  
-  On by default, change it with `{sixelSupport: true}`.
+  Set by default, change it with `{sixelSupport: true}`.
 
 - **Scrolling On | Off**  
   By default scrolling is on, thus an image will advance the cursor at the bottom if needed.
@@ -59,7 +68,7 @@ if you expose the worker file as well (distributed under `lib/xterm-addon-image-
   If scrolling is set, the cursor will be placed at the beginning of the next row by default.
   You can change this behavior with the following terminal sequences:
   - `DECSET 8452` (binary: `\x1b [ ? 8452 h`)  
-    For images not overflowing to the right, the cursor will move right to the last image cell.
+    For images not overflowing to the right, the cursor will move to the next right cell of the last image cell.
     Images overflowing to the right, move the cursor to the next line.
     Same as the constructor option `{cursorRight: true}`.
 
@@ -74,7 +83,7 @@ if you expose the worker file as well (distributed under `lib/xterm-addon-image-
   - `DECRST 7730` (binary: `\x1b [ ? 7730 l`)  
     Keep the cursor on the next line at the beginning (default). Same as the constructor option `{cursorBelow: false}`.
 
-- **SIXEL Palette Handling**
+- **SIXEL Palette Handling**  
   By default the addon limits the palette size to 256 registers (as demanded by the DEC specification).
   The limit can be increased to a maximum of 65536 registers (via `sixelPaletteLimit`).
 
@@ -82,12 +91,16 @@ if you expose the worker file as well (distributed under `lib/xterm-addon-image-
   (default `{sixelDefaultPalette: 'ANSI256'}`). Support for non-private palette is currently broken
   and falls back to private palette mode.
 
+  Note that the underlying SIXEL library currently handles palette colors in *printer mode*, thus color changes are applied immediately at SIXEL cursor position, but never backwards for earlier pixels of the same color register. While this makes the SIXEL processing much faster and more flexible (in fact one can use more colors than given by the palette limit by dynamically redefining them), it is technically incompatible to older VTs, where a color change would always change earlier pixels (*terminal mode*). Practically it makes no difference for fully pre-quantitized images, still a future version may provide a dedicated *terminal mode* setting, to be more in line with old VTs.
+
+- **SIXEL Raster Attributes Handling**  
+  If raster attributes were found in the SIXEL data (level 2), the image will always be limited to the given height/width extend. We deviate here from the specification on purpose, as it allows several processing optimizations. For level 1 SIXEL data without any raster attributes the image can freely grow in width and height up to the last data byte, which has a much higher processing penalty. In general encoding libraries should not created level 1 data anymore and not produce pixel information beyond the announced height/width extend. Both is discouraged by the >30 years old specification.
+
+  Currently the SIXEL implementation of the addon does not take custom pixel sizes into account, a SIXEL pixel will map 1:1 to a screen pixel.
 
 ### Storage and Drawing Settings
 
-The internal storage holds images up to `storageLimit` (in MB, calculated as 4-channel RBGA unpacked).
-Once hit images get evicted by FIFO. Furthermore images on the alternate buffer will always
-be erased on buffer changes.
+The internal storage holds images up to `storageLimit` (in MB, calculated as 4-channel RBGA unpacked, default 100 MB). Once hit images get evicted by FIFO rules. Furthermore images on the alternate buffer will always be erased on buffer changes.
 
 The addon exposes two properties to interact with the storage limits at runtime:
 - `storageLimit`  

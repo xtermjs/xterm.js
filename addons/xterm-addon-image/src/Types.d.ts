@@ -25,8 +25,26 @@ export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRende
 export interface IImageAddonOptionalOptions {
   /**
    * Path to the worker file.
+   * Must be the path to the worker JS file directly loadable
+   * in the integration as with `new Worker(path)`.
+   *
+   * You most likely want to customize this,
+   * the hardcoded default '/workers/xterm-addon-image-worker.js'
+   * is derived from demo integration of the xterm.js repo.
    */
   workerPath?: string;
+  /**
+   * Enable size reports in windowOptions:
+   * - getWinSizePixels (CSI 14 t)
+   * - getCellSizePixels (CSI 16 t)
+   * - getWinSizeChars (CSI 18 t)
+   *
+   * If `true` (default), the reports will be activated during addon loading.
+   * If `false`, no settings will be touched. Use this, if you have high
+   * security constraints and/or deal with windowOptions by other means.
+   * On addon disposal, the settings will not change.
+   */
+  enableSizeReports?: boolean;
   /**
    * Leave cursor to right of image.
    * This has no effect, if an image covers all cells to the right.
