@@ -111,3 +111,16 @@ The addon exposes two properties to interact with the storage limits at runtime:
 
 By default the addon will show a placeholder pattern for evicted images that are still part
 of the terminal (e.g. in the scrollback). The pattern can be deactivated by toggling `showPlaceholder`.
+
+### Image Data Retrieval
+
+The addon provides the following API endpoints to retrieve raw image data as canvas:
+
+- `getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined`  
+  Returns the canvas containing the original image data (not resized) at the given buffer position.
+  The buffer position is the 0-based absolute index (including scrollback at top).
+
+- `extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined`  
+  Returns a canvas containing the actual single tile image data (maybe resized) at the given buffer position.
+  The buffer position is the 0-based absolute index (including scrollback at top).
+  Note that the canvas gets created and data copied over for every call, thus it is not suitable for performance critical actions.

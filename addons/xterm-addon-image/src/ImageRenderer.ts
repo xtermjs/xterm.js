@@ -188,6 +188,35 @@ export class ImageRenderer implements IDisposable {
   }
 
   /**
+   * Extract a single tile from an image.
+   */
+  public extractTile(imgSpec: IImageSpec, tileId: number): HTMLCanvasElement | undefined {
+    const { width, height } = this.cellSize;
+    // Don't try to draw anything, if we cannot get valid renderer metrics.
+    if (width === -1 || height === -1) {
+      return;
+    }
+    this._rescaleImage(imgSpec, width, height);
+    const img = imgSpec.actual!;
+    const cols = Math.ceil(img.width / width);
+    const sx = (tileId % cols) * width;
+    const sy = Math.floor(tileId / cols) * height;
+    const finalWidth = width + sx > img.width ? img.width - sx : width;
+    const finalHeight = sy + height > img.height ? img.height - sy : height;
+
+    const canvas = ImageRenderer.createCanvas(finalWidth, finalHeight);
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(
+        img,
+        Math.floor(sx), Math.floor(sy), Math.floor(finalWidth), Math.floor(finalHeight),
+        0, 0, Math.floor(finalWidth), Math.floor(finalHeight)
+      );
+      return canvas;
+    }
+  }
+
+  /**
    * Draw a line with placeholder on the image layer canvas.
    */
   public drawPlaceholder(col: number, row: number, count: number = 1): void {

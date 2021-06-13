@@ -200,6 +200,14 @@ export class ImageAddon implements ITerminalAddon {
     this._renderer?.showPlaceholder(value);
   }
 
+  public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
+    return this._storage?.getImageAtBufferCell(x, y);
+  }
+
+  public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
+    return this._storage?.extractTileAtBufferCell(x, y);
+  }
+
   private _report(s: string): void {
     this._terminal?._core._coreService.triggerDataEvent(s);
   }

@@ -367,6 +367,31 @@ export class ImageStorage implements IDisposable {
     this._viewportMetrics = metrics;
   }
 
+  public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
+    const buffer = this._terminal._core.buffer;
+    const line = buffer.lines.get(y) as IBufferLineExt;
+    if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
+      const e: IExtendedAttrsImage = line._extendedAttrs[x] || EMPTY_ATTRS;
+      if (e.imageId && e.imageId !== -1) {
+        return this._images.get(e.imageId)?.orig;
+      }
+    }
+  }
+
+  public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
+    const buffer = this._terminal._core.buffer;
+    const line = buffer.lines.get(y) as IBufferLineExt;
+    if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
+      const e: IExtendedAttrsImage = line._extendedAttrs[x] || EMPTY_ATTRS;
+      if (e.imageId && e.imageId !== -1 && e.tileId !== -1) {
+        const spec = this._images.get(e.imageId);
+        if (spec) {
+          return this._renderer.extractTile(spec, e.tileId);
+        }
+      }
+    }
+  }
+
   // FIXME: Do we need some blob offloading tricks here to avoid early eviction?
   // also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
   private _evictOldest(room: number): number {
