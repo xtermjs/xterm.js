@@ -42,6 +42,11 @@ export class SixelHandler implements IDcsHandler {
     if (this._aborted || this._workerManager.failed) {
       return;
     }
+    if (this._workerManager.sizeExceeded) {
+      this._workerManager.sixelEnd(false);
+      this._aborted = true;
+      return;
+    }
     this._size += end - start;
     if (this._size > this._opts.sixelSizeLimit) {
       console.warn(`SIXEL: too much data, aborting`);

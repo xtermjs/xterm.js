@@ -47,7 +47,7 @@ export class ImageRenderer implements IDisposable {
       return imgData;
     }
     return buffer
-      ? new ImageData(new Uint8ClampedArray(buffer), width, height)
+      ? new ImageData(new Uint8ClampedArray(buffer, 0, width * height * 4), width, height)
       : new ImageData(width, height);
   }
 

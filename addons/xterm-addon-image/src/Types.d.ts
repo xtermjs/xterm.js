@@ -33,6 +33,7 @@ export interface IImageAddonOptionalOptions {
    * is derived from demo integration of the xterm.js repo.
    */
   workerPath?: string;
+
   /**
    * Enable size reports in windowOptions:
    * - getWinSizePixels (CSI 14 t)
@@ -45,12 +46,47 @@ export interface IImageAddonOptionalOptions {
    * On addon disposal, the settings will not change.
    */
   enableSizeReports?: boolean;
+
+  /**
+   * Maximum pixels a single image may hold. Images exceeding this number will
+   * be discarded during processing with no changes to the terminal buffer
+   * (no cursor advance, no placeholder).
+   * This setting is mainly used to restrict images sizes during initial decoding
+   * including the final canvas creation.
+   *
+   * Note: The image worker decoder may hold additional memory up to `pixelLimit` * 4
+   * permanently, plus the same amount on top temporarily for pixel transfers,
+   * which should be taken into account under memory pressure conditions.
+   *
+   * Note: Browsers restrict allowed canvas dimensions further. We dont reflect those
+   * limits here, thus the construction of an oddly shaped image having most pixels
+   * in one dimension still can fail.
+   *
+   * Note:`pixelLimit` * 4 should not exceed `storageLimit` in bytes.
+   * Default is 2^16 (4096 x 4096 pixels).
+   */
+  pixelLimit?: number;
+
+  /**
+   * Storage limit in MB.
+   * The storage implements a FIFO cache removing old images, when the limit gets hit.
+   * Also exposed as addon property for runtime adjustments.
+   * Default is 128 MB.
+   */
+  storageLimit?: number;
+
+  /**
+   * Whether to show a placeholder for images removed from cache, default is true.
+   */
+  showPlaceholder?: boolean;
+
   /**
    * Leave cursor to right of image.
    * This has no effect, if an image covers all cells to the right.
    * Same as DECSET 8452, default is false.
    */
   cursorRight?: boolean;
+
   /**
    * Leave cursor below the first row of an image, scrolling if needed.
    * If disabled, the cursor is left at the beginning of the next line.
@@ -75,14 +111,6 @@ export interface IImageAddonOptionalOptions {
   sixelPrivatePalette?: boolean;
   // Default start palette (default 'ANSI256').
   sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
-
-  /**
-   * TODO: storage settings
-   */
-  // storage limit in MBs (default 100 MB)
-  storageLimit?: number;
-  // whether to show a placeholder for evicted images
-  showPlaceholder?: boolean;
 }
 
 export type IImageAddonOptions = {

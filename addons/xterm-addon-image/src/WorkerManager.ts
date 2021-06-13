@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { IImageAddonOptions } from './Types';
 import { IDisposable } from 'xterm';
 import { IImageWorkerMessage, IImagePixel } from './WorkerTypes';
 
@@ -34,6 +35,7 @@ export class WorkerManager implements IDisposable {
   private _failedToLoad = false;
   private _poolChecker: any | undefined;
   private _lastActive = 0;
+  public sizeExceeded = false;
 
   private _startupError: () => void = () => {
     console.warn('ImageAddon worker failed to load, image output is disabled.');
@@ -55,6 +57,10 @@ export class WorkerManager implements IDisposable {
         break;
       case 'ACK':
         this._worker?.removeEventListener('error', this._startupError);
+        break;
+      case 'SIZE_EXCEEDED':
+        this.sizeExceeded = true;
+        break;
     }
   };
 
@@ -65,7 +71,12 @@ export class WorkerManager implements IDisposable {
     this._sixelResolver = resolver;
   }
 
-  constructor(public url: string, public chunkSize: number = 65536 * 2, public maxPoolSize: number = 50) {}
+  constructor(
+    public url: string,
+    private _opts: IImageAddonOptions,
+    public chunkSize: number = 65536 * 2,
+    public maxPoolSize: number = 50
+  ) {}
 
   public dispose(): void {
     this._worker?.terminate();
@@ -87,7 +98,11 @@ export class WorkerManager implements IDisposable {
       this._worker = new Worker(this.url);
       this._worker.addEventListener('message', this._message, false);
       this._worker.addEventListener('error', this._startupError, false);
-      this._worker.postMessage({ type: 'ACK', payload: 'ping' });
+      this._worker.postMessage({
+        type: 'ACK',
+        payload: 'ping',
+        options: { pixelLimit: this._opts.pixelLimit }
+      });
     }
     return this._worker;
   }
@@ -119,6 +134,7 @@ export class WorkerManager implements IDisposable {
   // SIXEL message interface
   public sixelInit(fillColor: number, paletteName: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI-256' | 'private', limit: number): void {
     this._setSixelResolver();
+    this.sizeExceeded = false;
     this.worker?.postMessage({
       type: 'SIXEL_INIT',
       payload: { fillColor, paletteName, limit }

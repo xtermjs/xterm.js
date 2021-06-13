@@ -141,6 +141,7 @@ describe('ImageAddon', () => {
       const DEFAULT_OPTIONS: IImageAddonOptions = {
         workerPath: '/workers/xterm-addon-image-worker.js',
         enableSizeReports: true,
+        pixelLimit: 16777216,
         cursorRight: false,
         cursorBelow: false,
         sixelSupport: true,
@@ -158,6 +159,7 @@ describe('ImageAddon', () => {
       const customSettings: IImageAddonOptions = {
         workerPath: 'xyz.js',
         enableSizeReports: false,
+        pixelLimit: 5,
         cursorRight: true,
         cursorBelow: true,
         sixelSupport: false,

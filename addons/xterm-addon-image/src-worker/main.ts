@@ -17,24 +17,37 @@ declare const postMessage: {
 
 let decoder: SixelDecoder | undefined;
 let imageBuffer: ArrayBuffer | undefined;
+let sizeExceeded = false;
+
+// setup options loaded from ACK
+let pixelLimit = 0;
 
 
 function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
   const data = event.data;
   switch (data.type) {
     case 'SIXEL_PUT':
-      decoder?.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));
+      if (!sizeExceeded) {
+        if (decoder) {
+          decoder.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));
+          if (decoder.height * decoder.width > pixelLimit) {
+            sizeExceeded = true;
+            console.warn('image worker: pixelLimit exceeded, aborting');
+            postMessage({ type: 'SIZE_EXCEEDED' });
+          }
+        }
+      }
       postMessage({ type: 'CHUNK_TRANSFER', payload: data.payload.buffer }, [data.payload.buffer]);
       break;
     case 'SIXEL_END':
       const success = data.payload;
       if (success) {
-        if (!decoder || !decoder.width || !decoder.height) {
+        if (!decoder || !decoder.width || !decoder.height || sizeExceeded) {
           postMessage({ type: 'SIXEL_IMAGE', payload: null });
         } else {
           const width = decoder.width;
           const height = decoder.height;
-          const bytes = width * height * 4; // FIXME: needs size limit
+          const bytes = width * height * 4;
           if (!imageBuffer || imageBuffer.byteLength < bytes) {
             imageBuffer = new ArrayBuffer(bytes);
           }
@@ -51,22 +64,27 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
         }
       }
       decoder = undefined;
+      sizeExceeded = false;
       break;
     case 'CHUNK_TRANSFER':
-      imageBuffer = data.payload;
+      if (!imageBuffer) {
+        imageBuffer = data.payload;
+      }
       break;
     case 'SIXEL_INIT':
+      sizeExceeded = false;
       const { fillColor, paletteName, limit } = data.payload;
       const palette = paletteName === 'VT340-COLOR'
         ? PALETTE_VT340_COLOR
         : paletteName === 'VT340-GREY'
           ? PALETTE_VT340_GREY
           : PALETTE_ANSI_256;
-      // FIXME: non private palette? (not really supported)
+      // FIXME: non private palette? (not really supported) - needs upstream fix in sixel lib
       decoder = new SixelDecoder(fillColor, Object.assign([], palette), limit);
       break;
     case 'ACK':
-      postMessage({ type: 'ACK', payload: 'alive' });
+      pixelLimit = data.options?.pixelLimit || 0;
+      postMessage({ type: 'ACK', payload: 'alive', options: null });
       break;
   }
 }

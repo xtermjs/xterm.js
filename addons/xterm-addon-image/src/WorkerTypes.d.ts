@@ -3,6 +3,11 @@
  * @license MIT
  */
 
+// setup options
+export interface ISetupOptions {
+  pixelLimit: number;
+}
+
 // pixel data from worker
 export interface IImagePixel {
   buffer: ArrayBuffer;
@@ -16,6 +21,7 @@ export interface IImagePixel {
 export interface IAckMessage {
   type: 'ACK';
   payload: 'ping' | 'alive';
+  options: ISetupOptions | null;
 }
 // outgoing
 export interface ISixelInitMessage {
@@ -46,5 +52,11 @@ export interface IChunkTransferMessage {
   type: 'CHUNK_TRANSFER';
   payload: ArrayBuffer;
 }
+export interface ISizeExceededMessage {
+  type: 'SIZE_EXCEEDED';
+}
 
-export type IImageWorkerMessage = IAckMessage | ISixelInitMessage | ISixelPutMessage | ISixelEndMessage | ISixelImageMessage | IChunkTransferMessage;
+export type IImageWorkerMessage = (
+  IAckMessage | ISixelInitMessage | ISixelPutMessage | ISixelEndMessage |
+  ISixelImageMessage | IChunkTransferMessage | ISizeExceededMessage
+);

@@ -46,6 +46,7 @@ import { WorkerManager } from './WorkerManager';
 const DEFAULT_OPTIONS: IImageAddonOptions = {
   workerPath: '/workers/xterm-addon-image-worker.js',
   enableSizeReports: true,
+  pixelLimit: 16777216, // limit to 4096 x 4096 images
   cursorRight: false,
   cursorBelow: false,
   sixelSupport: true,
@@ -54,7 +55,7 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   sixelSizeLimit: 25000000,
   sixelPrivatePalette: true,
   sixelDefaultPalette: 'VT340-COLOR',
-  storageLimit: 100,
+  storageLimit: 128,
   showPlaceholder: true
 };
 
@@ -90,7 +91,7 @@ export class ImageAddon implements ITerminalAddon {
   constructor(opts: IImageAddonOptionalOptions = DEFAULT_OPTIONS) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
-    this._workerManager = new WorkerManager(this._opts.workerPath);
+    this._workerManager = new WorkerManager(this._opts.workerPath, this._opts);
     this._disposeLater(this._workerManager);
   }
 
