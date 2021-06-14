@@ -186,7 +186,10 @@ export class ImageAddon implements ITerminalAddon {
   }
 
   public get storageUsage(): number {
-    return this._storage?.getUsage() || -1;
+    if (this._storage) {
+      return this._storage.getUsage();
+    }
+    return -1;
   }
 
   public get showPlaceholder(): boolean {
