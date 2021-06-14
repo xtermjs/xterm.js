@@ -2,8 +2,7 @@
 
 Image output in xterm.js.
 
-**Note:** This addon is still alpha, expect all sorts of weird errors at the current stage.
-It only supports SIXEL at the moment.
+⚠️ This is an experimental addon that is still under construction. ⚠️
 
 
 ### Install
