@@ -51,7 +51,9 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
           if (!imageBuffer || imageBuffer.byteLength < bytes) {
             imageBuffer = new ArrayBuffer(bytes);
           }
-          decoder.toPixelData(new Uint8ClampedArray(imageBuffer, 0, bytes), width, height);
+          const container = new Uint8ClampedArray(imageBuffer, 0, bytes);
+          container.fill(0);  // TODO: should clearing be done by sixel lib?
+          decoder.toPixelData(container, width, height);
           postMessage({
             type: 'SIXEL_IMAGE',
             payload: {

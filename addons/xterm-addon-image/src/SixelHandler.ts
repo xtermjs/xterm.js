@@ -113,7 +113,6 @@ export class SixelHandler implements IDcsHandler {
 
 /**
  * Some helpers to extract current terminal colors.
- * (quite hacky for now)
  */
 
 // get currently active background color from terminal

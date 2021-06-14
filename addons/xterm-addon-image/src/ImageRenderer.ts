@@ -16,8 +16,6 @@ const PLACEHOLDER_HEIGHT = 24;
  * - provide primitives for canvas, ImageData, Bitmap (static)
  * - add canvas layer to DOM (browser only for now)
  * - draw image tiles onRender
- *
- * FIXME: needs overload of Terminal.setOption('fontSize')
  */
 export class ImageRenderer implements IDisposable {
   public canvas: HTMLCanvasElement | undefined;
@@ -26,7 +24,7 @@ export class ImageRenderer implements IDisposable {
   private _placeholderBitmap: ImageBitmap | undefined;
   private _optionsRefresh: IDisposable | undefined;
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
-  private _rs: IRenderService | undefined;
+  private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
 
   // drawing primitive - canvas
@@ -73,7 +71,7 @@ export class ImageRenderer implements IDisposable {
     this._optionsRefresh = this._terminal._core.optionsService.onOptionChange(option => {
       if (option === 'fontSize') {
         this.rescaleCanvas();
-        this._rs?.refreshRows(0, this._terminal.rows);
+        this._renderService?.refreshRows(0, this._terminal.rows);
       }
     });
   }
@@ -86,11 +84,11 @@ export class ImageRenderer implements IDisposable {
       this._terminal._core.open = this._oldOpen;
       this._oldOpen = undefined;
     }
-    if (this._rs && this._oldSetRenderer) {
-      this._rs.setRenderer = this._oldSetRenderer;
+    if (this._renderService && this._oldSetRenderer) {
+      this._renderService.setRenderer = this._oldSetRenderer;
       this._oldSetRenderer = undefined;
     }
-    this._rs = undefined;
+    this._renderService = undefined;
     this.canvas = undefined;
     this._ctx = undefined;
     this._placeholderBitmap?.close();
@@ -99,7 +97,7 @@ export class ImageRenderer implements IDisposable {
   }
 
   /**
-   * Enable the placeholder (shown on next screen update).
+   * Enable the placeholder.
    */
   public showPlaceholder(value: boolean): void {
     if (value) {
@@ -111,6 +109,7 @@ export class ImageRenderer implements IDisposable {
       this._placeholderBitmap = undefined;
       this._placeholder = undefined;
     }
+    this._renderService?.refreshRows(0, this._terminal.rows);
   }
 
   /**
@@ -118,11 +117,11 @@ export class ImageRenderer implements IDisposable {
    * Forwarded from internal render service.
    */
   public get dimensions(): IRenderDimensions | undefined {
-    return this._rs?.dimensions;
+    return this._renderService?.dimensions;
   }
 
   /**
-   * Rounded current cell size.
+   * Current cell size (float).
    */
   public get cellSize(): ICellSize {
     return {
@@ -262,28 +261,27 @@ export class ImageRenderer implements IDisposable {
   /**
    * Rescale image in storage if needed.
    */
-  private _rescaleImage(is: IImageSpec, cw: number, ch: number): void {
-    const { width: aw, height: ah } = is.actualCellSize;
-    if (cw === aw && ch === ah) {
+  private _rescaleImage(spec: IImageSpec, currentWidth: number, currentHeight: number): void {
+    if (currentWidth === spec.actualCellSize.width && currentHeight === spec.actualCellSize.height) {
       return;
     }
-    const { width: ow, height: oh } = is.origCellSize;
-    if (cw === ow && ch === oh) {
-      is.actual = is.orig;
-      is.actualCellSize.width = ow;
-      is.actualCellSize.height = oh;
+    const { width: originalWidth, height: originalHeight } = spec.origCellSize;
+    if (currentWidth === originalWidth && currentHeight === originalHeight) {
+      spec.actual = spec.orig;
+      spec.actualCellSize.width = originalWidth;
+      spec.actualCellSize.height = originalHeight;
       return;
     }
     const canvas = ImageRenderer.createCanvas(
-      Math.ceil(is.orig!.width * cw / ow),
-      Math.ceil(is.orig!.height * ch / oh)
+      Math.ceil(spec.orig!.width * currentWidth / originalWidth),
+      Math.ceil(spec.orig!.height * currentHeight / originalHeight)
     );
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(is.orig!, 0, 0, canvas.width, canvas.height);
-      is.actual = canvas;
-      is.actualCellSize.width = cw;
-      is.actualCellSize.height = ch;
+      ctx.drawImage(spec.orig!, 0, 0, canvas.width, canvas.height);
+      spec.actual = canvas;
+      spec.actualCellSize.width = currentWidth;
+      spec.actualCellSize.height = currentHeight;
     }
   }
 
@@ -291,11 +289,11 @@ export class ImageRenderer implements IDisposable {
    * Lazy init for the renderer.
    */
   private _open(): void {
-    this._rs = this._terminal._core._renderService;
-    this._oldSetRenderer = this._rs.setRenderer.bind(this._rs);
-    this._rs.setRenderer = (renderer: any) => {
+    this._renderService = this._terminal._core._renderService;
+    this._oldSetRenderer = this._renderService.setRenderer.bind(this._renderService);
+    this._renderService.setRenderer = (renderer: any) => {
       this._removeLayerFromDom();
-      this._oldSetRenderer?.call(this._rs, renderer);
+      this._oldSetRenderer?.call(this._renderService, renderer);
       this._insertLayerToDom();
     };
     this._insertLayerToDom();
@@ -349,7 +347,6 @@ export class ImageRenderer implements IDisposable {
     for (let i = 0; i < width; i += bWidth) {
       ctx2.drawImage(blueprint, i, 0);
     }
-
     ImageRenderer.createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
   }
 }

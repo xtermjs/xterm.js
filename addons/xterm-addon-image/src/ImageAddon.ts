@@ -171,7 +171,7 @@ export class ImageAddon implements ITerminalAddon {
     this._opts.cursorBelow = this._defaultOpts.cursorBelow;
     this._opts.sixelPrivatePalette = this._defaultOpts.sixelPrivatePalette;
     this._opts.sixelPaletteLimit = this._defaultOpts.sixelPaletteLimit;
-    // clear image storage
+    // also clear image storage
     this._storage?.reset();
     return false;
   }
@@ -186,10 +186,7 @@ export class ImageAddon implements ITerminalAddon {
   }
 
   public get storageUsage(): number {
-    if (this._storage) {
-      return this._storage.getUsage();
-    }
-    return -1;
+    return this._storage?.getUsage() || -1;
   }
 
   public get showPlaceholder(): boolean {
@@ -272,16 +269,12 @@ export class ImageAddon implements ITerminalAddon {
 
   /**
    * Implementation of xterm's graphics attribute sequence.
-   * Most things are stubbed out as we don't support setting up a canvas directly:
-   *
-   * We do not hard limit the canvas size of a single SIXEL sequence nor to change that.
-   * FIXME: Apply at least some sane upper limits to avoid OOM in the browser.
-   *
-   * ReGIS is not supported at all.
    *
    * Supported features:
-   * - read/change palette limits
-   * - read SIXEL canvas geometry (always reports current viewport pixel size)
+   * - read/change palette limits (max 65536 by sixel lib)
+   * - read SIXEL canvas geometry (always reports pixelLimit as square)
+   *
+   * Everything else is deactivated.
    */
   private _xtermGraphicsAttributes(params: (number | number[])[]): boolean {
     if (params.length < 2) {
@@ -302,7 +295,7 @@ export class ImageAddon implements ITerminalAddon {
           this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
           return true;
         case GaAction.SET:
-          if (params.length > 2 && !(params[2] instanceof Array)) {
+          if (params.length > 2 && !(params[2] instanceof Array) && params[2] <= 65536) {
             this._opts.sixelPaletteLimit = params[2];
             this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
           } else {
@@ -310,7 +303,7 @@ export class ImageAddon implements ITerminalAddon {
           }
           return true;
         case GaAction.READ_MAX:
-          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};65536S`);  // hardlinked in sixel lib
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};65536S`);
           return true;
         default:
           this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
@@ -319,14 +312,10 @@ export class ImageAddon implements ITerminalAddon {
     }
     if (params[0] === GaItem.SIXEL_GEO) {
       switch (params[1]) {
+        // we only implement read here (returns pixelLimit as square)
         case GaAction.READ:
-          const width = this._renderer?.canvas?.width || 0;
-          const height = this._renderer?.canvas?.height || 0;
-          if (width && height) {
-            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${width};${height}S`);
-          } else {
-            this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);
-          }
+          const x = Math.floor(Math.sqrt(this._opts.pixelLimit));
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${x};${x}S`);
           return true;
         default:
           this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);

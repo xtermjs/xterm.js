@@ -70,15 +70,15 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'unicode11' ? typeof Unicode11Addon :
     T extends 'ligatures' ? typeof LigaturesAddon :
     typeof WebglAddon;
-    instance?:
+  instance?:
     T extends 'attach' ? AttachAddon :
     T extends 'fit' ? FitAddon :
-    T extends 'image' ? typeof ImageAddon :
+    T extends 'image' ? ImageAddon :
     T extends 'search' ? SearchAddon :
     T extends 'serialize' ? SerializeAddon :
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
+    T extends 'unicode11' ? Unicode11Addon :
     T extends 'ligatures' ? typeof LigaturesAddon :
     never;
 }
@@ -456,14 +456,14 @@ function serializeButtonHandler(): void {
 function initImageAddonExposed(): void {
   const DEFAULT_OPTIONS: any = (addons.image.instance as any)._defaultOpts;
   const limitStorageElement = (<HTMLInputElement>document.getElementById('image-storagelimit'));
-  limitStorageElement.value = addons.image.instance.storageLimit;
+  limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
   addDomListener(limitStorageElement, 'change', () => {
     try {
-      addons.image.instance.storageLimit = limitStorageElement.value;
-      limitStorageElement.value = addons.image.instance.storageLimit;
+      addons.image.instance.storageLimit = limitStorageElement.valueAsNumber;
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
       console.log('changed storageLimit to', addons.image.instance.storageLimit);
     } catch (e) {
-      limitStorageElement.value = addons.image.instance.storageLimit;
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
       console.log('storageLimit at', addons.image.instance.storageLimit);
       throw e;
     }
@@ -475,4 +475,18 @@ function initImageAddonExposed(): void {
   });
   const ctorOptionsElement = (<HTMLTextAreaElement>document.getElementById('image-options'));
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
+
+  // demo for image retrieval API
+  term.element.addEventListener('click', (ev: MouseEvent) => {
+    if (!ev.ctrlKey || !addons.image.instance) return;
+    const pos = term._core._mouseService!.getCoords(ev, term._core.screenElement!, term.cols, term.rows);
+    const x = pos[0] - 1;
+    const y = pos[1] - 1;
+    const canvas = ev.shiftKey
+      // ctrl+shift+click: get single tile
+      ? addons.image.instance.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
+      // ctrl+click: get original image
+      : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
+    canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+  });
 }

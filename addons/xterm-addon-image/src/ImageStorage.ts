@@ -4,8 +4,14 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content } from './Types';
+import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize } from './Types';
 
+
+// fallback default cell size
+const CELL_SIZE_DEFAULT: ICellSize = {
+  width: 7,
+  height: 14
+};
 
 /**
  * Extend extended attribute to also hold image tile information.
@@ -32,9 +38,7 @@ const EMPTY_ATTRS = new ExtendedAttrsImage();
  * - hold image data
  * - write/read image data to/from buffer
  *
- * TODO:
- * - allow right expansion onResize
- * - image composition for overwrites
+ * TODO: image composition for overwrites
  */
 export class ImageStorage implements IDisposable {
   // storage
@@ -135,9 +139,12 @@ export class ImageStorage implements IDisposable {
     this._evictOldest(img.width * img.height);
 
     // calc rows x cols needed to display the image
-    // TODO: cellSize fallback/workaround, if renderer metrics are not available
-    const cols = Math.ceil(img.width / this._renderer.cellSize.width);
-    const rows = Math.ceil(img.height / this._renderer.cellSize.height);
+    let cellSize = this._renderer.cellSize;
+    if (cellSize.width === -1 || cellSize.height === -1) {
+      cellSize = CELL_SIZE_DEFAULT;
+    }
+    const cols = Math.ceil(img.width / cellSize.width);
+    const rows = Math.ceil(img.height / cellSize.height);
 
     const imageId = ++this._lastId;
 
@@ -220,9 +227,9 @@ export class ImageStorage implements IDisposable {
     // create storage entry
     const imgSpec: IImageSpec = {
       orig: img,
-      origCellSize: this._renderer.cellSize,
+      origCellSize: cellSize,
       actual: img,
-      actualCellSize: this._renderer.cellSize,
+      actualCellSize: { ...cellSize },  // clone needed, since later modified
       marker: endMarker || undefined,
       tileCount,
       bufferType: this._terminal.buffer.active.type
@@ -237,6 +244,7 @@ export class ImageStorage implements IDisposable {
    * Render method. Collects buffer information and triggers
    * canvas updates.
    */
+  // TODO: Should we move this to the ImageRenderer?
   public render(range: { start: number, end: number }): void {
     // exit early if we dont have any images to test for
     // FIXME: leaves garbage on screen for IL/DL
@@ -339,7 +347,6 @@ export class ImageStorage implements IDisposable {
         if ((e.tileId % tilesPerRow) + 1 >= tilesPerRow) {
           continue;
         }
-
         // expand only if right side is empty (nothing got wrapped from below)
         let hasData = false;
         for (let rightCol = oldCol + 1; rightCol > metrics.cols; ++rightCol) {
@@ -351,7 +358,6 @@ export class ImageStorage implements IDisposable {
         if (hasData) {
           continue;
         }
-
         // do right expansion on terminal buffer
         const end = Math.min(metrics.cols, tilesPerRow - (e.tileId % tilesPerRow) + oldCol);
         let lastTile = e.tileId;
@@ -361,11 +367,13 @@ export class ImageStorage implements IDisposable {
         }
       }
     }
-
     // store new viewport metrics
     this._viewportMetrics = metrics;
   }
 
+  /**
+   * Retrieve original canvas at buffer position.
+   */
   public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
@@ -377,6 +385,9 @@ export class ImageStorage implements IDisposable {
     }
   }
 
+  /**
+   * Extract active single tile at buffer position.
+   */
   public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
