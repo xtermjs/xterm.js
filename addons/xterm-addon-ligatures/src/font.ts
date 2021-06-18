@@ -37,7 +37,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     // Web environment that supports font access API
     if (typeof navigator !== 'undefined' && 'fonts' in navigator) {
       try {
-        const status = await (navigator as IFontAccessNavigator).permissions.request?.({
+        const status = await (navigator as unknown as IFontAccessNavigator).permissions.request?.({
           name: 'local-fonts'
         });
         if (status && status.state !== 'granted') {
@@ -53,7 +53,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
       }
       const fonts: Record<string, IFontMetadata[]> = {};
       try {
-        const fontsIterator = await (navigator as IFontAccessNavigator).fonts.query();
+        const fontsIterator = await (navigator as unknown as IFontAccessNavigator).fonts.query();
         for (const metadata of fontsIterator) {
           if (!fonts.hasOwnProperty(metadata.family)) {
             fonts[metadata.family] = [];
