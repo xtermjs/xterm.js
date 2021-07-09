@@ -339,6 +339,7 @@ export class WebglCharAtlas implements IDisposable {
     const dim = !!this._workAttributeData.isDim();
     const italic = !!this._workAttributeData.isItalic();
     const underline = !!this._workAttributeData.isUnderline();
+    const strikethrough = !!this._workAttributeData.isStrikethrough();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -393,9 +394,19 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     if (underline) {
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
-      this._tmpCtx.moveTo(0, this._config.scaledCharHeight - 1);
-      this._tmpCtx.lineTo(this._config.scaledCharWidth, this._config.scaledCharHeight - 1);
+      this._tmpCtx.beginPath();
+      this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - 0.5);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - 0.5);
       this._tmpCtx.stroke();
+      this._tmpCtx.closePath();
+    }
+    if (strikethrough) {
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) + 0.5);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) + 0.5);
+      this._tmpCtx.stroke();
+      this._tmpCtx.closePath();
     }
     this._tmpCtx.restore();
 
