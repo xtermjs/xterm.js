@@ -5,12 +5,9 @@
 
 import { IBufferRange } from 'xterm';
 
-export function getRangeLength(range: IBufferRange, cols: number): number {
-  if (range.start.y === range.end.y) {
-    return range.end.x - range.start.x + 1;
-  }
+export function getRangeLength(range: IBufferRange, bufferCols: number): number {
   if (range.start.y > range.end.y) {
     throw new Error(`Buffer range end (${range.end.x}, ${range.end.y}) cannot be before start (${range.start.x}, ${range.start.y})`);
   }
-  return cols * (range.end.y - range.start.y - 1) + cols - range.start.x + range.end.x;
+  return bufferCols * (range.end.y - range.start.y) + (range.end.x - range.start.x + 1);
 }
