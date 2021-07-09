@@ -338,6 +338,7 @@ export class WebglCharAtlas implements IDisposable {
     const inverse = !!this._workAttributeData.isInverse();
     const dim = !!this._workAttributeData.isDim();
     const italic = !!this._workAttributeData.isItalic();
+    const underline = !!this._workAttributeData.isUnderline();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -390,6 +391,12 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw the character
     this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    if (underline) {
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.moveTo(0, this._config.scaledCharHeight - 1);
+      this._tmpCtx.lineTo(this._config.scaledCharWidth, this._config.scaledCharHeight - 1);
+      this._tmpCtx.stroke();
+    }
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
