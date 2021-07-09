@@ -2360,12 +2360,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1         | Bold. (also see `options.drawBoldTextInBrightColors`)    | #Y      |
    * | 2         | Faint, decreased intensity.                              | #Y      |
    * | 3         | Italic.                                                  | #Y      |
-   * | 4         | Underlined (see below for style support).                | #P[Support in DOM and Canvas renderers, not WebGL] |
+   * | 4         | Underlined (see below for style support).                | #Y      |
    * | 5         | Slowly blinking.                                         | #N      |
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
-   * | 9         | Crossed-out characters (strikethrough).                  | #P[Support in DOM and Canvas renderers, not WebGL] |
+   * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
    * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
