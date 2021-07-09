@@ -392,22 +392,26 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw the character
     this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
-    if (underline) {
+
+    // Draw underline and strikethrough
+    if (underline || strikethrough) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - 0.5);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - 0.5);
+      if (underline) {
+        this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+      }
+      if (strikethrough) {
+        this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      }
       this._tmpCtx.stroke();
       this._tmpCtx.closePath();
     }
-    if (strikethrough) {
-      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
-      this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) + 0.5);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) + 0.5);
-      this._tmpCtx.stroke();
-      this._tmpCtx.closePath();
-    }
+
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
