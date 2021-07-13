@@ -72,7 +72,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   // private _visualBellTimer: number;
 
-  public browser: IBrowser = <any>Browser;
+  public browser: IBrowser = Browser as any;
 
   // TODO: We should remove options once components adopt optionsService
   public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
@@ -606,7 +606,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       let but: CoreMouseButton;
       let action: CoreMouseAction | undefined;
-      switch ((<any>ev).overrideType || ev.type) {
+      switch ((ev as any).overrideType || ev.type) {
         case 'mousemove':
           action = CoreMouseAction.MOVE;
           if (ev.buttons === undefined) {

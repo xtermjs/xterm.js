@@ -337,6 +337,8 @@ export class WebglCharAtlas implements IDisposable {
     const inverse = !!this._workAttributeData.isInverse();
     const dim = !!this._workAttributeData.isDim();
     const italic = !!this._workAttributeData.isItalic();
+    const underline = !!this._workAttributeData.isUnderline();
+    const strikethrough = !!this._workAttributeData.isStrikethrough();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -380,6 +382,26 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw the character
     this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+
+    // Draw underline and strikethrough
+    if (underline || strikethrough) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      if (underline) {
+        this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+      }
+      if (strikethrough) {
+        this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      }
+      this._tmpCtx.stroke();
+      this._tmpCtx.closePath();
+    }
+
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous

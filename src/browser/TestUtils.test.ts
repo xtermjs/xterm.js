@@ -153,7 +153,7 @@ export class MockTerminal implements ITerminal {
   public textarea!: HTMLTextAreaElement;
   public rows!: number;
   public cols!: number;
-  public browser: IBrowser = <any>Browser;
+  public browser: IBrowser = Browser as any;
   public writeBuffer!: string[];
   public children!: HTMLElement[];
   public cursorHidden!: boolean;

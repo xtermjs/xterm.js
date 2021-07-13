@@ -344,7 +344,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {
-          code = code | COMBINED_CHAR_BIT_MASK;
+          code |= COMBINED_CHAR_BIT_MASK;
         }
 
         // Cache the results in the model

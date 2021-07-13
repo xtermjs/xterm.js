@@ -10,7 +10,7 @@ import { ITerminalOptions } from 'common/services/Services';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: ITerminalOptions, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
-  const clonedColors = <IPartialColorSet>{
+  const clonedColors: IPartialColorSet = {
     foreground: colors.foreground,
     background: colors.background,
     cursor: undefined,

@@ -112,7 +112,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
-    const boundaryElement = <HTMLElement>e.target;
+    const boundaryElement = e.target as HTMLElement;
     const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.TOP ? 1 : this._rowElements.length - 2];
 
     // Don't scroll if the buffer top has reached the end in that direction
