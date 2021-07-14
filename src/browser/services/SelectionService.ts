@@ -85,6 +85,12 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   protected _activeSelectionMode: SelectionMode;
 
+
+  /**
+   * The [x, y] dimension of the terminal.
+   */
+  private _terminalDimensions: [number, number] | undefined;
+
   /**
    * A setInterval timer that is active while the mouse is down whose callback
    * scrolls the viewport when necessary.
@@ -147,6 +153,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._model = new SelectionModel(this._bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
+    this._terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
   }
 
   public dispose(): void {
@@ -326,7 +333,6 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
       this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
       this._model.selectionEnd = undefined;
-      this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
       return true;
     }
 
@@ -354,7 +360,6 @@ export class SelectionService extends Disposable implements ISelectionService {
     end = Math.min(end, this._bufferService.buffer.lines.length - 1);
     this._model.selectionStart = [0, start];
     this._model.selectionEnd = [this._bufferService.cols, end];
-    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this.refresh();
     this._onSelectionChange.fire();
   }
@@ -522,7 +527,6 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
     this._model.selectionEnd = undefined;
-    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
 
     // Ensure the line exists
     const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
@@ -773,7 +777,6 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._removeMouseDownListeners();
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
-    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this.refresh();
   }
 
@@ -955,7 +958,6 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
-      this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     }
   }
 
@@ -1009,29 +1011,48 @@ export class SelectionService extends Disposable implements ISelectionService {
     const wrappedRange = this._bufferService.buffer.getWrappedRangeForLine(line);
     this._model.selectionStart = [0, wrappedRange.first];
     this._model.selectionEnd = [this._bufferService.cols, wrappedRange.last];
-    this._model.terminalDimensions = [this._bufferService.cols, this._bufferService.rows];
     this._model.selectionStartLength = 0;
   }
 
   public resize(cols: number, rows: number): void {
-    if (this._model.selectionStart !== undefined && this._model.terminalDimensions !== undefined) {
-      const start = this._model.selectionStart[0] + this._model.selectionStart[1] * this._model.terminalDimensions[0];
-      const end = this._model.selectionEnd === undefined ?
-        start + this._model.selectionStartLength :
-        this._model.selectionEnd[0] + this._model.selectionEnd[1] * this._model.terminalDimensions[0];
+    const newTerminalDimensions: [number, number] = [cols, rows];
+    if (this._model.selectionStart === undefined || this._terminalDimensions === undefined) {
+      this._terminalDimensions = newTerminalDimensions;
+      return;
+    }
 
-      const selectionStart: [number, number] = [start % cols, Math.floor(start / cols)];
-      const selectionEnd: [number, number] = [end % cols, Math.floor(end / cols)];
-      const terminalDimensions: [number, number] = [cols, rows];
+    let startLine = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
+    let startLineIndex = this._model.selectionStart[1];
+    while (startLineIndex > 0 && startLine?.isWrapped) {
+      startLineIndex--;
+      startLine = this._bufferService.buffer.lines.get(startLineIndex);
+    }
 
-      if (this._didStateChange(selectionStart, selectionEnd)) {
-        this._model.selectionStart = selectionStart;
-        this._model.selectionEnd = selectionEnd;
-        this._model.terminalDimensions = terminalDimensions;
-
-        this.refresh();
-        this._onSelectionChange.fire();
+    let endLineIndex = startLineIndex;
+    if (this._model.selectionEnd !== undefined) {
+      let endLine = this._bufferService.buffer.lines.get(this._model.selectionEnd[1]);
+      endLineIndex = this._model.selectionEnd[1];
+      while (endLineIndex > 0 && endLine?.isWrapped) {
+        endLineIndex--;
+        endLine = this._bufferService.buffer.lines.get(endLineIndex);
       }
+    }
+
+    const start = this._model.selectionStart[0] + ((this._model.selectionStart[1] - startLineIndex) * this._terminalDimensions[0]);
+    const end = this._model.selectionEnd === undefined ?
+      start + this._model.selectionStartLength :
+      this._model.selectionEnd[0] + ((this._model.selectionEnd[1] - endLineIndex) * this._terminalDimensions[0]);
+
+    const selectionStart: [number, number] = [start % cols, startLineIndex + Math.floor(start / cols)];
+    const selectionEnd: [number, number] = [end % cols, endLineIndex + Math.floor(end / cols)];
+
+    this._terminalDimensions = newTerminalDimensions;
+    if (this._didStateChange(selectionStart, selectionEnd)) {
+      this._model.selectionStart = selectionStart;
+      this._model.selectionEnd = selectionEnd;
+
+      this.refresh();
+      this._onSelectionChange.fire();
     }
   }
 
