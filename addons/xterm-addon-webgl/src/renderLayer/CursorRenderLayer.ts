@@ -193,8 +193,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      // Avoid potential rounding errors when device pixel ratio is an odd number
-      if (window.devicePixelRatio % 1 !== 0) {
+      // Avoid potential rounding errors when device pixel ratio is less than 1
+      if (window.devicePixelRatio < 1) {
         this._clearAll();
       } else {
         this._clearCells(this._state.x, this._state.y, this._state.width, 1);
