@@ -78,20 +78,28 @@ follow-redirects@1.5.10:
   dependencies:
     debug "=3.1.0"
 
-font-finder@^1.0.3, font-finder@^1.0.4:
+font-finder@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/font-finder/-/font-finder-1.0.4.tgz#2ca944954dd8d0e1b5bdc4c596cc08607761d89b"
   dependencies:
     get-system-fonts "^2.0.0"
     promise-stream-reader "^1.0.1"
 
-font-ligatures@^1.3.3:
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/font-ligatures/-/font-ligatures-1.3.3.tgz#63fff18dc8adb3a11fe5eec1f4e8d7edfa8075b9"
-  integrity sha512-NSGpHgVNX81M7AWS1XylK1UZbN3QllfUIDAAuPv6TUcl5O2b781JcKS5L2RopAU0AqlTyX3ZuX/04eaMpbVrHA==
+font-finder@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/font-finder/-/font-finder-1.1.0.tgz#2bff2b2762acba720239c8bec898a96daae90858"
+  integrity sha512-wpCL2uIbi6GurJbU7ZlQ3nGd61Ho+dSU6U83/xJT5UPFfN35EeCW/rOtS+5k+IuEZu2SYmHzDIPL9eA5tSYRAw==
+  dependencies:
+    get-system-fonts "^2.0.0"
+    promise-stream-reader "^1.0.1"
+
+font-ligatures@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/font-ligatures/-/font-ligatures-1.4.0.tgz#6a7b370d96be1358dddfad67830e82fbfd59e6dc"
+  integrity sha512-n7DFnnEpJ0NrVoLqZIL4tMGVs+CnFwQc92m80LWyrbgAFO4x234+t2/H9o4eOYA1eh6ta9dZAEEsJAwsBdNezA==
   dependencies:
     font-finder "^1.0.3"
-    lru-cache "^4.1.3"
+    lru-cache "^6.0.0"
     opentype.js "^0.8.0"
 
 get-system-fonts@^2.0.0:
@@ -120,9 +128,9 @@ lodash.get@^4.4.2:
   resolved "https://registry.yarnpkg.com/lodash.get/-/lodash.get-4.4.2.tgz#2d177f652fa31e939b4438d5341499dfa3825e99"
 
 lodash@^4.17.15:
-  version "4.17.19"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
-  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 lolex@^2.7.5:
   version "2.7.5"
@@ -136,12 +144,12 @@ lolex@^5.0.1:
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-lru-cache@^4.1.3:
-  version "4.1.3"
-  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-4.1.3.tgz#a1175cf3496dfc8436c156c334b4955992bce69c"
+lru-cache@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-6.0.0.tgz#6d6fe6570ebd96aaf90fcad1dafa3b2566db3a94"
+  integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
   dependencies:
-    pseudomap "^1.0.2"
-    yallist "^2.1.2"
+    yallist "^4.0.0"
 
 minimist@^1.2.5:
   version "1.2.5"
@@ -190,10 +198,6 @@ promise-stream-reader@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/promise-stream-reader/-/promise-stream-reader-1.0.1.tgz#4e793a79c9d49a73ccd947c6da9c127f12923649"
 
-pseudomap@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/pseudomap/-/pseudomap-1.0.2.tgz#f052a28da70e618917ef0a8ac34c1ae5a68286b3"
-
 sinon@6.3.5:
   version "6.3.5"
   resolved "https://registry.yarnpkg.com/sinon/-/sinon-6.3.5.tgz#0f6d6a5b4ebaad1f6e8e019395542d1d02c144a0"
@@ -224,9 +228,10 @@ type-detect@4.0.8, type-detect@^4.0.8:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.8.tgz#7646fb5f18871cfbb7749e69bd39a6388eb7450c"
 
-yallist@^2.1.2:
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/yallist/-/yallist-2.1.2.tgz#1c11f9218f076089a47dd512f93c6699a6a81d52"
+yallist@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
+  integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
 
 yauzl@^2.10.0:
   version "2.10.0"

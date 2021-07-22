@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { clone } from 'common/Clone';
 
 describe('clone', () => {
@@ -124,6 +124,6 @@ describe('clone', () => {
 
     test.a.b.c = test;
 
-    expect(() => clone(test)).to.not.throw();
+    assert.doesNotThrow(() => clone(test));
   });
 });

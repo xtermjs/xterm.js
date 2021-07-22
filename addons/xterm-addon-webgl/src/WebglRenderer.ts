@@ -12,13 +12,17 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
+import { addDisposableDomListener } from 'browser/Lifecycle';
+import { ICharacterJoinerService } from 'browser/services/Services';
+import { CharData, ICellData } from 'common/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -41,9 +45,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
+  private _onContextLoss = new EventEmitter<void>();
+  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
+
   constructor(
     private _terminal: Terminal,
     private _colors: IColorSet,
+    private readonly _characterJoinerService: ICharacterJoinerService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -82,6 +90,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
+
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+
     this._core.screenElement!.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
@@ -94,7 +105,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public dispose(): void {
-    this._renderLayers.forEach(l => l.dispose());
+    for (const l of this._renderLayers) {
+      l.dispose();
+    }
     this._core.screenElement!.removeChild(this._canvas);
     super.dispose();
   }
@@ -106,22 +119,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render
-    this._renderLayers.forEach(l => {
+    for (const l of this._renderLayers) {
       l.setColors(this._terminal, this._colors);
       l.reset(this._terminal);
-    });
+    }
 
     this._rectangleRenderer.setColors();
     this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
 
-    this._rectangleRenderer.updateSelection(this._model.selection);
-    this._glyphRenderer.updateSelection(this._model);
-
     // Force a full refresh
     this._model.clear();
-    this._model.clearSelection();
   }
 
   public onDevicePixelRatioChange(): void {
@@ -138,10 +147,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
-    this._rectangleRenderer.onResize();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
+    for (const l of this._renderLayers) {
+      l.resize(this._terminal, this.dimensions);
+    }
 
     // Resize the canvas
     this._canvas.width = this.dimensions.scaledCanvasWidth;
@@ -152,6 +162,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Resize the screen
     this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
+
+    this._rectangleRenderer.onResize();
+    if (this._model.selection.hasSelection) {
+      // Update selection as dimensions have changed
+      this._rectangleRenderer.updateSelection(this._model.selection);
+    }
+
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -159,7 +176,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Force a full refresh
     this._model.clear();
-    this._model.clearSelection();
   }
 
   public onCharSizeChanged(): void {
@@ -167,30 +183,37 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._renderLayers.forEach(l => l.onBlur(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onBlur(this._terminal);
+    }
   }
 
   public onFocus(): void {
-    this._renderLayers.forEach(l => l.onFocus(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onFocus(this._terminal);
+    }
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
+    for (const l of this._renderLayers) {
+      l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
+    }
 
     this._updateSelectionModel(start, end, columnSelectMode);
-
-    this._rectangleRenderer.updateSelection(this._model.selection);
-    this._glyphRenderer.updateSelection(this._model);
 
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public onCursorMove(): void {
-    this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onCursorMove(this._terminal);
+    }
   }
 
   public onOptionsChanged(): void {
-    this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
+    for (const l of this._renderLayers) {
+      l.onOptionsChanged(this._terminal);
+    }
     this._updateDimensions();
     this._refreshCharAtlas();
   }
@@ -220,12 +243,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._charAtlas?.clearTexture();
     this._model.clear();
     this._updateModel(0, this._terminal.rows - 1);
-    this._glyphRenderer.updateSelection(this._model);
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public clear(): void {
-    this._renderLayers.forEach(l => l.reset(this._terminal));
+    for (const l of this._renderLayers) {
+      l.reset(this._terminal);
+    }
   }
 
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
@@ -248,12 +272,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Update render layers
-    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    for (const l of this._renderLayers) {
+      l.onGridChanged(this._terminal, start, end);
+    }
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._model.clear();
-      this._model.clearSelection();
+      this._updateSelectionModel(undefined, undefined);
     }
 
     // Update model to reflect what's drawn
@@ -266,16 +292,41 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
+    let cell: ICellData = this._workCell;
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
+      const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < terminal.cols; x++) {
-        line.loadCell(x, this._workCell);
+        line.loadCell(x, cell);
 
-        const chars = this._workCell.getChars();
-        let code = this._workCell.getCode();
+        // If true, indicates that the current character(s) to draw were joined.
+        let isJoined = false;
+        let lastCharX = x;
+
+        // Process any joined character ranges as needed. Because of how the
+        // ranges are produced, we know that they are valid for the characters
+        // and attributes of our input.
+        if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
+          isJoined = true;
+          const range = joinedRanges.shift()!;
+
+          // We already know the exact start and end column of the joined range,
+          // so we get the string and width representing it directly
+          cell = new JoinedCellData(
+            cell,
+            line!.translateToString(true, range[0], range[1]),
+            range[1] - range[0]
+          );
+
+          // Skip over the cells occupied by this range in the loop
+          lastCharX = range[1] - 1;
+        }
+
+        const chars = cell.getChars();
+        let code = cell.getCode();
         const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
@@ -284,33 +335,52 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workCell.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workCell.fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
           continue;
         }
 
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {
-          code = code | COMBINED_CHAR_BIT_MASK;
+          code |= COMBINED_CHAR_BIT_MASK;
         }
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = cell.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = cell.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, this._workCell.bg, this._workCell.fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, cell.bg, cell.fg, chars);
+
+        if (isJoined) {
+          // Restore work cell
+          cell = this._workCell;
+
+          // Null out non-first cells
+          for (x++; x < lastCharX; x++) {
+            const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
+            this._model.cells[j] = NULL_CELL_CODE;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
+          }
+        }
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
+    if (this._model.selection.hasSelection) {
+      // Model could be updated but the selection is unchanged
+      this._glyphRenderer.updateSelection(this._model);
+    }
   }
 
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     const terminal = this._terminal;
 
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
       this._model.clearSelection();
+      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -323,6 +393,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // No need to draw the selection
     if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
       this._model.clearSelection();
+      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -334,6 +405,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
     this._model.selection.startCol = start[0];
     this._model.selection.endCol = end[0];
+
+    this._rectangleRenderer.updateSelection(this._model.selection);
   }
 
   /**
@@ -406,5 +479,51 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // This fixes 110% and 125%, not 150% or 175% though
     this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
     this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+  }
+}
+
+// TODO: Share impl with core
+export class JoinedCellData extends AttributeData implements ICellData {
+  private _width: number;
+  // .content carries no meaning for joined CellData, simply nullify it
+  // thus we have to overload all other .content accessors
+  public content: number = 0;
+  public fg: number;
+  public bg: number;
+  public combinedData: string = '';
+
+  constructor(firstCell: ICellData, chars: string, width: number) {
+    super();
+    this.fg = firstCell.fg;
+    this.bg = firstCell.bg;
+    this.combinedData = chars;
+    this._width = width;
+  }
+
+  public isCombined(): number {
+    // always mark joined cell data as combined
+    return Content.IS_COMBINED_MASK;
+  }
+
+  public getWidth(): number {
+    return this._width;
+  }
+
+  public getChars(): string {
+    return this.combinedData;
+  }
+
+  public getCode(): number {
+    // code always gets the highest possible fake codepoint (read as -1)
+    // this is needed as code is used by caches as identifier
+    return 0x1FFFFF;
+  }
+
+  public setFromCharData(value: CharData): void {
+    throw new Error('not implemented');
+  }
+
+  public getAsCharData(): CharData {
+    return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
 }

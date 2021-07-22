@@ -37,10 +37,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     rendererId: number,
     private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
-    bufferService: IBufferService,
-    optionsService: IOptionsService,
-    private readonly _coreService: ICoreService,
-    private readonly _coreBrowserService: ICoreBrowserService
+    @IBufferService bufferService: IBufferService,
+    @IOptionsService optionsService: IOptionsService,
+    @ICoreService private readonly _coreService: ICoreService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService);
     this._state = {
@@ -197,7 +197,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      // Avoid potential rounding errors when device pixel ratio is less than 1
+      if (window.devicePixelRatio < 1) {
+        this._clearAll();
+      } else {
+        this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      }
       this._state = {
         x: 0,
         y: 0,

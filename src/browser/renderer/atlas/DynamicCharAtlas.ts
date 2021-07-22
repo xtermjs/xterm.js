@@ -91,12 +91,12 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
-    this._cacheCtx = throwIfFalsy(this._cacheCanvas.getContext('2d', {alpha: true}));
+    this._cacheCtx = throwIfFalsy(this._cacheCanvas.getContext('2d', { alpha: true }));
 
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = this._config.scaledCharWidth;
     tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
+    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
@@ -256,7 +256,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     const fontStyle = glyph.italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'middle';
+    this._tmpCtx.textBaseline = 'ideographic';
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
 
@@ -265,7 +265,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight / 2);
+    this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous

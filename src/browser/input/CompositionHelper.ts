@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharSizeService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 
 interface IPosition {
@@ -35,17 +35,23 @@ export class CompositionHelper {
    */
   private _isSendingComposition: boolean;
 
+  /**
+   * Data already sent due to keydown event.
+   */
+  private _dataAlreadySent: string;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
     this._compositionPosition = { start: 0, end: 0 };
+    this._dataAlreadySent = '';
   }
 
   /**
@@ -55,6 +61,7 @@ export class CompositionHelper {
     this._isComposing = true;
     this._compositionPosition.start = this._textarea.value.length;
     this._compositionView.textContent = '';
+    this._dataAlreadySent = '';
     this._compositionView.classList.add('active');
   }
 
@@ -62,7 +69,7 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param ev The event.
    */
-  public compositionupdate(ev: CompositionEvent): void {
+  public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
     this._compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -147,6 +154,9 @@ export class CompositionHelper {
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
           let input;
+          // Add length of data already sent due to keydown event,
+          // otherwise input characters can be duplicated. (Issue #3191)
+          currentCompositionPosition.start += this._dataAlreadySent.length;
           if (this._isComposing) {
             // Use the end position to get the string if a new composition has started.
             input = this._textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
@@ -156,7 +166,9 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._coreService.triggerDataEvent(input, true);
+          if (input.length > 0) {
+            this._coreService.triggerDataEvent(input, true);
+          }
         }
       }, 0);
     }
@@ -176,6 +188,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
+          this._dataAlreadySent = diff;
           this._coreService.triggerDataEvent(diff, true);
         }
       }
@@ -194,9 +207,11 @@ export class CompositionHelper {
     }
 
     if (this._bufferService.buffer.isCursorInViewport) {
-      const cellHeight = Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
-      const cursorTop = this._bufferService.buffer.y * cellHeight;
-      const cursorLeft = this._bufferService.buffer.x * this._charSizeService.width;
+      const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+
+      const cellHeight = this._renderService.dimensions.actualCellHeight;
+      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.actualCellHeight;
+      const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
@@ -209,8 +224,9 @@ export class CompositionHelper {
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
       this._textarea.style.left = cursorLeft + 'px';
       this._textarea.style.top = cursorTop + 'px';
-      this._textarea.style.width = compositionViewBounds.width + 'px';
-      this._textarea.style.height = compositionViewBounds.height + 'px';
+      // Ensure the text area is at least 1x1, otherwise certain IMEs may break
+      this._textarea.style.width = Math.max(compositionViewBounds.width, 1) + 'px';
+      this._textarea.style.height = Math.max(compositionViewBounds.height, 1) + 'px';
       this._textarea.style.lineHeight = compositionViewBounds.height + 'px';
     }
 

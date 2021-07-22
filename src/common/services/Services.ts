@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -17,9 +17,14 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
-
   onResize: IEvent<{ cols: number, rows: number }>;
-
+  onScroll: IEvent<number>;
+  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
+  scrollToBottom(): void;
+  scrollToTop(): void;
+  scrollToLine(line: number): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
+  scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
@@ -152,6 +157,8 @@ type GetLeadingNonServiceArgs<Args> =
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
+  serviceBrand: undefined;
+
   setService<T>(id: IServiceIdentifier<T>, instance: T): void;
   getService<T>(id: IServiceIdentifier<T>): T | undefined;
   createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
@@ -160,6 +167,8 @@ export interface IInstantiationService {
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
+
+  logLevel: LogLevelEnum;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -181,6 +190,13 @@ export interface IOptionsService {
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+export enum LogLevelEnum {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  OFF = 4
+}
 export type RendererType = 'dom' | 'canvas';
 
 export interface IPartialTerminalOptions {
