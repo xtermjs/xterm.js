@@ -1,8 +1,8 @@
-import { ITerminal } from 'browser/Types';
+import { CoreTerminal } from 'common/CoreTerminal';
 import { IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 
 export class UnicodeApi implements IUnicodeHandling {
-  constructor(private _core: ITerminal) { }
+  constructor(private _core: CoreTerminal) { }
 
   public register(provider: IUnicodeVersionProvider): void {
     this._core.unicodeService.register(provider);

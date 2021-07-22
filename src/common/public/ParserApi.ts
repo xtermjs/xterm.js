@@ -1,9 +1,9 @@
 import { IParams } from 'common/parser/Types';
-import { ITerminal } from 'browser/Types';
+import { CoreTerminal } from 'common/CoreTerminal';
 import { IDisposable, IFunctionIdentifier, IParser } from 'xterm';
 
 export class ParserApi implements IParser {
-  constructor(private _core: ITerminal) { }
+  constructor(private _core: CoreTerminal) { }
 
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable {
     return this._core.registerCsiHandler(id, (params: IParams) => callback(params.toArray()));
