@@ -2,8 +2,8 @@ Cursory test that 'xterm-core' works:
 
 ```
 # From root of this repo
-npm run compile # Outputs to xterm-core
-npx webpack --config webpack.config.core.js # Outputs to lib
+npm run compile # Outputs to out/headless
+npx webpack --config webpack.config.headless.js # Outputs to lib
 cd node-test
 npm link ../lib/
 node index.js

@@ -2,6 +2,7 @@ node_modules/
 *.swp
 .lock-wscript
 lib/
+lib-headless/
 out/
 out-test/
 .nyc_output/

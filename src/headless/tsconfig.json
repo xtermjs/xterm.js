@@ -5,7 +5,7 @@
       "es2015",
       "es2016.Array.Include"
     ],
-    "outDir": "../../out/headless", // Temporary outdir to avoid collisions with 'xterm'
+    "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha",
       "../../node_modules/@types/node"
