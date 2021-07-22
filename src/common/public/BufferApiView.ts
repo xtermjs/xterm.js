@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBuffer as IBufferApi, IBufferLine as IBufferLineApi,  IBufferCell as IBufferCellApi } from 'xterm';
+import { IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { IBuffer } from 'common/buffer/Types';
 import { BufferLineApiView } from 'common/public/BufferLineApiView';
 import { CellData } from 'common/buffer/CellData';

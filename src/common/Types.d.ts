@@ -8,7 +8,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBufferSet } from 'common/buffer/Types';
 
 export interface ICoreTerminal {
   optionsService: IOptionsService;
