@@ -8,10 +8,16 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
 import { IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferSet } from 'common/buffer/Types';
 
 export interface ICoreTerminal {
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
+  buffers: IBufferSet;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 }
 
 export interface IDisposable {

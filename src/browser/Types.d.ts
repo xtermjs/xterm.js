@@ -15,7 +15,6 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
-  buffers: IBufferSet;
   viewport: IViewport | undefined;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
