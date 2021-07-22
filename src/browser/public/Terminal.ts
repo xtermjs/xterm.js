@@ -36,6 +36,7 @@ export class Terminal implements ITerminalApi {
   public get onData(): IEvent<string> { return this._core.onData; }
   public get onBinary(): IEvent<string> { return this._core.onBinary; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onBell(): IEvent<void> { return this._core.onBell; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }

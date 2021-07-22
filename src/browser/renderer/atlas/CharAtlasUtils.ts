@@ -10,15 +10,13 @@ import { ITerminalOptions } from 'common/services/Services';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: ITerminalOptions, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
-  const clonedColors = <IPartialColorSet>{
+  const clonedColors: IPartialColorSet = {
     foreground: colors.foreground,
     background: colors.background,
     cursor: undefined,
     cursorAccent: undefined,
     selection: undefined,
-    // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
-    // dynamic character atlas.
-    ansi: colors.ansi.slice(0, 16)
+    ansi: colors.ansi
   };
   return {
     devicePixelRatio: window.devicePixelRatio,

@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType } from 'common/parser/Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { PAYLOAD_LIMIT } from 'common/parser/Constants';
@@ -15,14 +15,20 @@ export class DcsParser implements IDcsParser {
   private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
   private _active: IDcsHandler[] = EMPTY_HANDLERS;
   private _ident: number = 0;
-  private _handlerFb: DcsFallbackHandlerType = () => {};
+  private _handlerFb: DcsFallbackHandlerType = () => { };
+  private _stack: ISubParserStackState = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
 
   public dispose(): void {
     this._handlers = Object.create(null);
-    this._handlerFb = () => {};
+    this._handlerFb = () => { };
+    this._active = EMPTY_HANDLERS;
   }
 
-  public addHandler(ident: number, handler: IDcsHandler): IDisposable {
+  public registerHandler(ident: number, handler: IDcsHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -38,10 +44,6 @@ export class DcsParser implements IDcsParser {
     };
   }
 
-  public setHandler(ident: number, handler: IDcsHandler): void {
-    this._handlers[ident] = [handler];
-  }
-
   public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
@@ -51,9 +53,13 @@ export class DcsParser implements IDcsParser {
   }
 
   public reset(): void {
+    // force cleanup leftover handlers
     if (this._active.length) {
-      this.unhook(false);
+      for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
+        this._active[j].unhook(false);
+      }
     }
+    this._stack.paused = false;
     this._active = EMPTY_HANDLERS;
     this._ident = 0;
   }
@@ -82,20 +88,42 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  public unhook(success: boolean): void {
+  public unhook(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'UNHOOK', success);
     } else {
+      let handlerResult: boolean | Promise<boolean> = false;
       let j = this._active.length - 1;
-      for (; j >= 0; j--) {
-        if (this._active[j].unhook(success) !== false) {
-          break;
-        }
+      let fallThrough = false;
+      if (this._stack.paused) {
+        j = this._stack.loopPosition - 1;
+        handlerResult = promiseResult;
+        fallThrough = this._stack.fallThrough;
+        this._stack.paused = false;
       }
-      j--;
-      // cleanup left over handlers
+      if (!fallThrough && handlerResult === false) {
+        for (; j >= 0; j--) {
+          handlerResult = this._active[j].unhook(success);
+          if (handlerResult === true) {
+            break;
+          } else if (handlerResult instanceof Promise) {
+            this._stack.paused = true;
+            this._stack.loopPosition = j;
+            this._stack.fallThrough = false;
+            return handlerResult;
+          }
+        }
+        j--;
+      }
+      // cleanup left over handlers (fallThrough for async)
       for (; j >= 0; j--) {
-        this._active[j].unhook(false);
+        handlerResult = this._active[j].unhook(false);
+        if (handlerResult instanceof Promise) {
+          this._stack.paused = true;
+          this._stack.loopPosition = j;
+          this._stack.fallThrough = true;
+          return handlerResult;
+        }
       }
     }
     this._active = EMPTY_HANDLERS;
@@ -103,19 +131,27 @@ export class DcsParser implements IDcsParser {
   }
 }
 
+// predefine empty params as [0] (ZDM)
+const EMPTY_PARAMS = new Params();
+EMPTY_PARAMS.addParam(0);
+
 /**
  * Convenient class to create a DCS handler from a single callback function.
  * Note: The payload is currently limited to 50 MB (hardcoded).
  */
 export class DcsHandler implements IDcsHandler {
   private _data = '';
-  private _params: IParams | undefined;
+  private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string, params: IParams) => any) {}
+  constructor(private _handler: (data: string, params: IParams) => boolean | Promise<boolean>) { }
 
   public hook(params: IParams): void {
-    this._params = params.clone();
+    // since we need to preserve params until `unhook`, we have to clone it
+    // (only borrowed from parser and spans multiple parser states)
+    // perf optimization:
+    // clone only, if we have non empty params, otherwise stick with default
+    this._params = (params.length > 1 || params.params[0]) ? params.clone() : EMPTY_PARAMS;
     this._data = '';
     this._hitLimit = false;
   }
@@ -131,14 +167,24 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): any {
-    let ret;
+  public unhook(success: boolean): boolean | Promise<boolean> {
+    let ret: boolean | Promise<boolean> = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data, this._params || new Params());
+      ret = this._handler(this._data, this._params);
+      if (ret instanceof Promise) {
+        // need to hold data and params until `ret` got resolved
+        // dont care for errors, data will be freed anyway on next start
+        return ret.then(res => {
+          this._params = EMPTY_PARAMS;
+          this._data = '';
+          this._hitLimit = false;
+          return res;
+        });
+      }
     }
-    this._params = undefined;
+    this._params = EMPTY_PARAMS;
     this._data = '';
     this._hitLimit = false;
     return ret;

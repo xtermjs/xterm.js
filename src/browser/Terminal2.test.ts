@@ -17,6 +17,7 @@ const ROWS = 25;
 
 const TESTFILES = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '../..')});
 const SKIP_FILES = [
+  't0055-EL.in',            // EL/ED handle cursor at cols differently (see #3362)
   't0084-CBT.in',
   't0101-NLM.in',
   't0103-reverse_wrap.in',  // not comparable, we deviate from xterm reverse wrap on purpose
@@ -73,8 +74,8 @@ describe('Escape Sequence Files', function(): void {
       // register handler to trigger viewport scraping, wait for it to finish
       let content = '';
       const OSC_CODE = 12345;
-      await new Promise(resolve => {
-        customHandler = term.addOscHandler(OSC_CODE, () => {
+      await new Promise<void>(resolve => {
+        customHandler = term.registerOscHandler(OSC_CODE, () => {
           // grab terminal viewport content
           content = terminalToString(term);
           resolve();
@@ -105,7 +106,7 @@ function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
     return (s: string): string => {
-      counter += 1;
+      counter++;
       return '\x1b[33m' + (' ' + counter).slice(-2) + color + s;
     };
   }

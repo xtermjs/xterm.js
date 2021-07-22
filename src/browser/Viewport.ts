@@ -33,7 +33,7 @@ export class Viewport extends Disposable implements IViewport {
   private _ignoreNextScrollEvent: boolean = false;
 
   constructor(
-    private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
+    private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -151,12 +151,14 @@ export class Viewport extends Disposable implements IViewport {
     // Ignore the event if it was flagged to ignore (when the source of the event is from Viewport)
     if (this._ignoreNextScrollEvent) {
       this._ignoreNextScrollEvent = false;
+      // Still trigger the scroll so lines get refreshed
+      this._scrollLines(0);
       return;
     }
 
     const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
     const diff = newRow - this._bufferService.buffer.ydisp;
-    this._scrollLines(diff, true);
+    this._scrollLines(diff);
   }
 
   /**

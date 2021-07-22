@@ -3,25 +3,45 @@
  * @license MIT
  */
 
-import { ILinkProvider, IBufferCellPosition, ILink, Terminal } from 'xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
+
+interface ILinkProviderOptions {
+  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+  leave?(event: MouseEvent, text: string): void;
+}
 
 export class WebLinkProvider implements ILinkProvider {
 
   constructor(
     private readonly _terminal: Terminal,
     private readonly _regex: RegExp,
-    private readonly _handler: (event: MouseEvent, uri: string) => void
+    private readonly _handler: (event: MouseEvent, uri: string) => void,
+    private readonly _options: ILinkProviderOptions = {}
   ) {
 
   }
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
-    callback(LinkComputer.computeLink(y, this._regex, this._terminal, this._handler));
+    const links = LinkComputer.computeLink(y, this._regex, this._terminal, this._handler);
+    callback(this._addCallbacks(links));
+  }
+
+  private _addCallbacks(links: ILink[]): ILink[] {
+    return links.map(link => {
+      link.leave = this._options.leave;
+      link.hover = (event: MouseEvent, uri: string): void => {
+        if (this._options.hover) {
+          const { range } = link;
+          this._options.hover(event, uri, range);
+        }
+      };
+      return link;
+    });
   }
 }
 
 export class LinkComputer {
-  public static computeLink(y: number, regex: RegExp, terminal: Terminal, handler: (event: MouseEvent, uri: string) => void): ILink[] {
+  public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
     const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
@@ -69,7 +89,7 @@ export class LinkComputer {
         }
       };
 
-      result.push({ range, text, activate: handler });
+      result.push({ range, text, activate });
     }
 
     return result;

@@ -3,19 +3,26 @@
  * @license MIT
  */
 
-import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser } from 'common/parser/Types';
+import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
 import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
+const EMPTY_HANDLERS: IOscHandler[] = [];
 
 export class OscParser implements IOscParser {
   private _state = OscState.START;
+  private _active = EMPTY_HANDLERS;
   private _id = -1;
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandlerType = () => { };
+  private _stack: ISubParserStackState = {
+    paused: false,
+    loopPosition: 0,
+    fallThrough: false
+  };
 
-  public addHandler(ident: number, handler: IOscHandler): IDisposable {
+  public registerHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -30,9 +37,6 @@ export class OscParser implements IOscParser {
       }
     };
   }
-  public setHandler(ident: number, handler: IOscHandler): void {
-    this._handlers[ident] = [handler];
-  }
   public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
@@ -42,58 +46,40 @@ export class OscParser implements IOscParser {
 
   public dispose(): void {
     this._handlers = Object.create(null);
-    this._handlerFb = () => {};
+    this._handlerFb = () => { };
+    this._active = EMPTY_HANDLERS;
   }
 
   public reset(): void {
-    // cleanup handlers if payload was already sent
+    // force cleanup handlers if payload was already sent
     if (this._state === OscState.PAYLOAD) {
-      this.end(false);
+      for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
+        this._active[j].end(false);
+      }
     }
+    this._stack.paused = false;
+    this._active = EMPTY_HANDLERS;
     this._id = -1;
     this._state = OscState.START;
   }
 
   private _start(): void {
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
+    this._active = this._handlers[this._id] || EMPTY_HANDLERS;
+    if (!this._active.length) {
       this._handlerFb(this._id, 'START');
     } else {
-      for (let j = handlers.length - 1; j >= 0; j--) {
-        handlers[j].start();
+      for (let j = this._active.length - 1; j >= 0; j--) {
+        this._active[j].start();
       }
     }
   }
 
   private _put(data: Uint32Array, start: number, end: number): void {
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
+    if (!this._active.length) {
       this._handlerFb(this._id, 'PUT', utf32ToString(data, start, end));
     } else {
-      for (let j = handlers.length - 1; j >= 0; j--) {
-        handlers[j].put(data, start, end);
-      }
-    }
-  }
-
-  private _end(success: boolean): void {
-    // other than the old code we always have to call .end
-    // to keep the bubbling we use `success` to indicate
-    // whether a handler should execute
-    const handlers = this._handlers[this._id];
-    if (!handlers) {
-      this._handlerFb(this._id, 'END', success);
-    } else {
-      let j = handlers.length - 1;
-      for (; j >= 0; j--) {
-        if (handlers[j].end(success) !== false) {
-          break;
-        }
-      }
-      j--;
-      // cleanup left over handlers
-      for (; j >= 0; j--) {
-        handlers[j].end(false);
+      for (let j = this._active.length - 1; j >= 0; j--) {
+        this._active[j].put(data, start, end);
       }
     }
   }
@@ -101,7 +87,6 @@ export class OscParser implements IOscParser {
   public start(): void {
     // always reset leftover handlers
     this.reset();
-    this._id = -1;
     this._state = OscState.ID;
   }
 
@@ -144,7 +129,7 @@ export class OscParser implements IOscParser {
    * Whether the OSC got aborted or finished normally
    * is indicated by `success`.
    */
-  public end(success: boolean): void {
+  public end(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (this._state === OscState.START) {
       return;
     }
@@ -156,8 +141,49 @@ export class OscParser implements IOscParser {
       if (this._state === OscState.ID) {
         this._start();
       }
-      this._end(success);
+
+      if (!this._active.length) {
+        this._handlerFb(this._id, 'END', success);
+      } else {
+        let handlerResult: boolean | Promise<boolean> = false;
+        let j = this._active.length - 1;
+        let fallThrough = false;
+        if (this._stack.paused) {
+          j = this._stack.loopPosition - 1;
+          handlerResult = promiseResult;
+          fallThrough = this._stack.fallThrough;
+          this._stack.paused = false;
+        }
+        if (!fallThrough && handlerResult === false) {
+          for (; j >= 0; j--) {
+            handlerResult = this._active[j].end(success);
+            if (handlerResult === true) {
+              break;
+            } else if (handlerResult instanceof Promise) {
+              this._stack.paused = true;
+              this._stack.loopPosition = j;
+              this._stack.fallThrough = false;
+              return handlerResult;
+            }
+          }
+          j--;
+        }
+        // cleanup left over handlers
+        // we always have to call .end for proper cleanup,
+        // here we use `success` to indicate whether a handler should execute
+        for (; j >= 0; j--) {
+          handlerResult = this._active[j].end(false);
+          if (handlerResult instanceof Promise) {
+            this._stack.paused = true;
+            this._stack.loopPosition = j;
+            this._stack.fallThrough = true;
+            return handlerResult;
+          }
+        }
+      }
+
     }
+    this._active = EMPTY_HANDLERS;
     this._id = -1;
     this._state = OscState.START;
   }
@@ -171,7 +197,7 @@ export class OscHandler implements IOscHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string) => any) {}
+  constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
 
   public start(): void {
     this._data = '';
@@ -189,12 +215,21 @@ export class OscHandler implements IOscHandler {
     }
   }
 
-  public end(success: boolean): any {
-    let ret;
+  public end(success: boolean): boolean | Promise<boolean> {
+    let ret: boolean | Promise<boolean> = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
       ret = this._handler(this._data);
+      if (ret instanceof Promise) {
+        // need to hold data until `ret` got resolved
+        // dont care for errors, data will be freed anyway on next start
+        return ret.then(res => {
+          this._data = '';
+          this._hitLimit = false;
+          return res;
+        });
+      }
     }
     this._data = '';
     this._hitLimit = false;

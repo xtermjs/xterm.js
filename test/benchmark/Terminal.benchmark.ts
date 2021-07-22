@@ -29,7 +29,7 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
       chunks.push(data as unknown as Buffer);
       length += data.length;
     });
-    await new Promise(resolve => p.on('exit', () => resolve()));
+    await new Promise<void>(resolve => p.on('exit', () => resolve()));
     contentUtf8 = Buffer.concat(chunks, length);
     // translate to content string
     const buffer = new Uint32Array(contentUtf8.length);
@@ -44,24 +44,24 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     }
   });
 
-  perfContext('write', () => {
+  perfContext('write/string/async', () => {
     let terminal: Terminal;
     before(() => {
       terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
-    new ThroughputRuntimeCase('', () => {
-      terminal.writeSync(content);
+    new ThroughputRuntimeCase('', async () => {
+      await new Promise<void>(res => terminal.write(content, res));
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });
 
-  perfContext('writeUtf8', () => {
+  perfContext('write/Utf8/async', () => {
     let terminal: Terminal;
     before(() => {
       terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
     });
-    new ThroughputRuntimeCase('', () => {
-      terminal.writeSync(content);
+    new ThroughputRuntimeCase('', async () => {
+      await new Promise<void>(res => terminal.write(content, res));
       return {payloadSize: contentUtf8.length};
     }, {fork: false}).showAverageThroughput();
   });

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions } from 'browser/renderer/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
@@ -174,6 +174,10 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public onDevicePixelRatioChange(): void {
+    // Force char size measurement as DomMeasureStrategy(getBoundingClientRect) is not stable
+    // when devicePixelRatio changes
+    this._charSizeService.measure();
+
     this._renderer.onDevicePixelRatioChange();
     this.refreshRows(0, this._rowCount - 1);
   }
@@ -209,13 +213,5 @@ export class RenderService extends Disposable implements IRenderService {
 
   public clear(): void {
     this._renderer.clear();
-  }
-
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    return this._renderer.registerCharacterJoiner(handler);
-  }
-
-  public deregisterCharacterJoiner(joinerId: number): boolean {
-    return this._renderer.deregisterCharacterJoiner(joinerId);
   }
 }

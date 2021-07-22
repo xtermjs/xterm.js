@@ -43,10 +43,11 @@
     "@typescript-eslint/array-type": [
       "warn",
       {
-        "default": "array-simple",
+        "default": "array",
         "readonly": "generic"
       }
     ],
+    "@typescript-eslint/consistent-type-assertions": "warn",
     "@typescript-eslint/consistent-type-definitions": "warn",
     "@typescript-eslint/explicit-function-return-type": [
       "warn",
@@ -151,6 +152,10 @@
       "warn",
       "never"
     ],
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
     "prefer-const": "warn",
     "spaced-comment": [
       "warn",
@@ -160,5 +165,13 @@
         "exceptions": ["-"]
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "object-curly-spacing": "off"
+      }
+    }
+  ]
 }

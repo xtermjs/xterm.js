@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { pollFor, timeout, writeSync, openTerminal, getBrowserType } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;
@@ -410,6 +410,16 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
       await pollFor(page, `window.calls`, ['foo']);
     });
+    it('onBell', async () => {
+      await openTerminal(page);
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onBell(() => window.calls.push(true));
+      `);
+      await pollFor(page, `window.calls`, []);
+      await page.evaluate(`window.term.write('\\x07')`);
+      await pollFor(page, `window.calls`, [true]);
+    });
   });
 
   describe('buffer', () => {
@@ -625,11 +635,11 @@ describe('API Integration Tests', function(): void {
       `);
       const dims = await getDimensions();
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 4, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
       await moveMouseCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 8, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
       await page.evaluate(`window.disposable.dispose()`);
