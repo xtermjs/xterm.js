@@ -32,9 +32,8 @@ export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
   public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
-
-  private _onBell  = new EventEmitter<void>();
-  public get onBell (): IEvent<void> { return this._onBell.event; }
+  private _onBell = new EventEmitter<void>();
+  public get onBell(): IEvent<void> { return this._onBell.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -87,6 +86,17 @@ export class Terminal extends CoreTerminal {
   public get buffer(): IBuffer {
     return this.buffers.active;
   }
+
+  protected _updateOptions(key: string): void {
+    super._updateOptions(key);
+
+    // TODO: These listeners should be owned by individual components
+    switch (key) {
+      case 'tabStopWidth': this.buffers.setupTabStops(); break;
+    }
+  }
+
+  // TODO: Support paste here?
 
   public get markers(): IMarker[] {
     return this.buffer.markers;
