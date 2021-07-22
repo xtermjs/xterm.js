@@ -21,19 +21,20 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICoreTerminal, IDisposable, IMarker, ITerminalOptions } from 'common/Types';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
+import { EventEmitter, forwardEvent, IEvent } from 'common/EventEmitter';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
-import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
 
 export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
   public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
 
+  private _onBell  = new EventEmitter<void>();
+  public get onBell (): IEvent<void> { return this._onBell.event; }
   private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -64,8 +65,8 @@ export class Terminal extends CoreTerminal {
     this._setup();
 
     // Setup InputHandler listeners
+    this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
-    this.register(this._inputHandler.onRequestScroll((eraseAttr, isWrapped) => this.scroll(eraseAttr, isWrapped || undefined)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
@@ -100,6 +101,10 @@ export class Terminal extends CoreTerminal {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
+  public bell(): void {
+    this._onBell.fire();
+  }
+
   /**
    * Resizes the terminal.
    *
@@ -130,7 +135,7 @@ export class Terminal extends CoreTerminal {
     for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this._onScroll.fire(this.buffer.ydisp);
+    this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
   }
 
   /**

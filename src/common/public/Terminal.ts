@@ -8,7 +8,7 @@ import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
 import { IBufferNamespace as IBufferNamespaceApi, IMarker, IParser, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-core';
-import { Terminal as TerminalCore } from './TerminalCore';
+import { Terminal as TerminalCore } from '../Terminal';
 
 export class Terminal implements ITerminalApi {
   private _core: TerminalCore;
