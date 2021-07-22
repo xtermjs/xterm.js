@@ -35,7 +35,9 @@ module.exports = {
   output: {
     filename: 'xterm.js',
     path: path.resolve('./lib-headless'),
-    libraryTarget: 'umd'
+    library: {
+      type: 'commonjs'
+    }
   },
   mode: 'production'
 };
