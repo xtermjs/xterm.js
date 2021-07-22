@@ -1,8 +1,13 @@
-import { CoreTerminal } from 'common/CoreTerminal';
+/**
+ * Copyright (c) 2021 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { ICoreTerminal } from 'common/Types';
 import { IUnicodeHandling, IUnicodeVersionProvider } from 'xterm';
 
 export class UnicodeApi implements IUnicodeHandling {
-  constructor(private _core: CoreTerminal) { }
+  constructor(private _core: ICoreTerminal) { }
 
   public register(provider: IUnicodeVersionProvider): void {
     this._core.unicodeService.register(provider);

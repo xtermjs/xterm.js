@@ -1,9 +1,14 @@
+/**
+ * Copyright (c) 2021 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { IParams } from 'common/parser/Types';
-import { CoreTerminal } from 'common/CoreTerminal';
 import { IDisposable, IFunctionIdentifier, IParser } from 'xterm';
+import { ICoreTerminal } from 'common/Types';
 
 export class ParserApi implements IParser {
-  constructor(private _core: CoreTerminal) { }
+  constructor(private _core: ICoreTerminal) { }
 
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable {
     return this._core.registerCsiHandler(id, (params: IParams) => callback(params.toArray()));

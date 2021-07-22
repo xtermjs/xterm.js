@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2021 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { CellData } from 'common/buffer/CellData';
 import { IBufferLine, ICellData } from 'common/Types';
 import { IBufferCell as IBufferCellApi, IBufferLine as IBufferLineApi } from 'xterm';
