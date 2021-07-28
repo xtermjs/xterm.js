@@ -93,7 +93,12 @@ export class Viewport extends Disposable implements IViewport {
       this._ignoreNextScrollEvent = true;
       this._viewportElement.scrollTop = scrollTop;
     }
-
+    if (this._optionsService.getOption('scrollback') === 0) {
+      this.scrollBarWidth = 0;
+    } else {
+      this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
+    }
+    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
   /**
@@ -131,6 +136,9 @@ export class Viewport extends Disposable implements IViewport {
       this._refresh(immediate);
       return;
     }
+    // This is for refreshing the viewport if scrollBarWidth has to be updated
+    this._refresh(immediate);
+    return;
   }
 
   /**
