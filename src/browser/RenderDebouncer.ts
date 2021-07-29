@@ -5,6 +5,8 @@
 
 import { IDisposable } from 'common/Types';
 
+const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
+
 /**
  * Debounces calls to render terminal rows using animation frames.
  */
@@ -14,17 +16,17 @@ export class RenderDebouncer implements IDisposable {
   private _rowCount: number | undefined;
   private _animationFrame: number | undefined;
 
+  // The last moment that the Terminal was refreshed at
+  private _lastRefreshMs = 0;
+  // Whether a trailing refresh should be triggered due to a refresh request that was throttled
+  private _additionalRefreshRequested = false;
+
   constructor(
     private _renderCallback: (start: number, end: number) => void
   ) {
   }
 
-  public dispose(): void {
-    if (this._animationFrame) {
-      window.cancelAnimationFrame(this._animationFrame);
-      this._animationFrame = undefined;
-    }
-  }
+  public dispose(): void {}
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
@@ -35,11 +37,25 @@ export class RenderDebouncer implements IDisposable {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    if (this._animationFrame) {
-      return;
-    }
+    // Only refresh if the time since last refresh is above a threshold, otherwise wait for
+    // enough time to pass before refreshing again.
+    const refreshRequestTime: number = Date.now();
+    if (refreshRequestTime - this._lastRefreshMs >= RENDER_DEBOUNCE_THRESHOLD_MS) {
+      // Enough time has lapsed since the last refresh; refresh immediately
+      this._lastRefreshMs = refreshRequestTime;
+      this._innerRefresh();
+    } else if (!this._additionalRefreshRequested) {
+      // This is the first additional request throttled; set up trailing refresh
+      const elapsed = refreshRequestTime - this._lastRefreshMs;
+      const waitPeriodBeforeTrailingRefresh = RENDER_DEBOUNCE_THRESHOLD_MS - elapsed;
+      this._additionalRefreshRequested = true;
 
-    this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+      setTimeout(() => {
+        this._lastRefreshMs = Date.now();
+        this._innerRefresh();
+        this._additionalRefreshRequested = false;
+      }, waitPeriodBeforeTrailingRefresh);
+    }
   }
 
   private _innerRefresh(): void {
@@ -55,9 +71,9 @@ export class RenderDebouncer implements IDisposable {
     // Reset debouncer (this happens before render callback as the render could trigger it again)
     this._rowStart = undefined;
     this._rowEnd = undefined;
-    this._animationFrame = undefined;
 
     // Run render callback
     this._renderCallback(start, end);
   }
 }
+
