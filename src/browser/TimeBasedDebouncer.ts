@@ -23,8 +23,6 @@ export class TimeBasedDebouncer {
   ) {
   }
 
-  public dispose(): void {}
-
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
     // Get the min/max row start/end for the arg values
