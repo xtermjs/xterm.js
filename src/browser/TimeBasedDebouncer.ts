@@ -5,10 +5,12 @@
 
 const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
 
+import { IDisposable } from 'common/Types';
+
 /**
  * Debounces calls to update screen readers to update at most once per second.
  */
-export class TimeBasedDebouncer {
+export class TimeBasedDebouncer implements IDisposable {
   private _rowStart: number | undefined;
   private _rowEnd: number | undefined;
   private _rowCount: number | undefined;
@@ -22,6 +24,8 @@ export class TimeBasedDebouncer {
     private _renderCallback: (start: number, end: number) => void
   ) {
   }
+
+  public dispose(): void {}
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
