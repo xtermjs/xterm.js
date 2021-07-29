@@ -7,7 +7,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal } from 'browser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
-import { RenderDebouncer } from 'browser/RenderDebouncer';
+import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
-  private _renderRowsDebouncer: RenderDebouncer;
+  private _renderRowsDebouncer: TimeBasedDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
@@ -72,7 +72,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
-    this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
+    this._renderRowsDebouncer = new TimeBasedDebouncer(this._renderRows.bind(this));
     this._refreshRows();
 
     this._liveRegion = document.createElement('div');
