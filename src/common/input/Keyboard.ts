@@ -359,6 +359,8 @@ export function evaluateKeyboardEvent(
       } else if (isMac && !ev.altKey && !ev.ctrlKey && !ev.shiftKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
+        } else if (ev.keyCode === 190) { // cmd + . (same as ^C)
+          result.key = C0.ETX;
         }
       } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48 && ev.key.length === 1) {
         // Include only keys that that result in a _single_ character; don't include num lock, volume up, etc.
