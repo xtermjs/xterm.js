@@ -401,8 +401,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       for (let i = 0; i < boxes.length; i++) {
         const box = boxes[i];
         this._ctx.fillRect(
-          xOffset + (box.x * xEighth),
-          yOffset + (box.y * yEighth),
+          xOffset + (box.x*xEighth),
+          yOffset + (box.y*yEighth),
           (box.w * xEighth),
           (box.h * yEighth));
       }
