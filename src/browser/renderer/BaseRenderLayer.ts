@@ -17,6 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { boxDrawingBoxes, boxDrawingLineSegments } from 'browser/renderer/BoxCharacters';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -259,10 +260,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.font = this._getFont(false, false);
     this._ctx.textBaseline = 'ideographic';
     this._clipRow(y);
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    // TODO: fix
+    if (!this._drawBoxChar(cell, x, y)) {
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
   }
 
   /**
@@ -373,13 +377,100 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (cell.isDim()) {
       this._ctx.globalAlpha = DIM_OPACITY;
     }
-    // Draw the character
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    if (!this._drawBoxChar(cell, x, y)) {
+      // Draw the character
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
     this._ctx.restore();
   }
+
+  private _drawBoxChar(cell: ICellData, x: number, y: number): boolean {
+    const char = cell.getChars();
+
+    const boxes = boxDrawingBoxes[char];
+    if (boxes) {
+      this._ctx.strokeStyle = this._ctx.fillStyle;
+      const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
+      const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
+      const xEighth = this._scaledCellWidth / 8;
+      const yEighth = this._scaledCellHeight / 8;
+
+      for (let i = 0; i < boxes.length; i++) {
+        const box = boxes[i];
+        this._ctx.fillRect(
+          xOffset + (box.x * xEighth),
+          yOffset + (box.y * yEighth),
+          (box.w * xEighth),
+          (box.h * yEighth));
+      }
+
+      return true;
+    }
+
+    const ops = boxDrawingLineSegments[char];
+    if (!ops) {
+      return false;
+    }
+
+    // TODO: Clean below
+    const scale = window.devicePixelRatio;
+    this._ctx.strokeStyle = this._ctx.fillStyle;
+    this._ctx.lineWidth = scale;
+
+    const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
+    const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
+    const horizontalCenter = this._scaledCellWidth / 2;
+    const verticalCenter = this._scaledCellHeight / 2;
+    const xPoints = [
+      xOffset,
+      xOffset + horizontalCenter - scale,
+      xOffset + horizontalCenter - scale / 2,
+      xOffset + horizontalCenter,
+      xOffset + horizontalCenter + scale / 2,
+      xOffset + horizontalCenter + scale,
+      xOffset + this._scaledCellWidth
+    ];
+    const yPoints = [
+      yOffset,
+      yOffset + verticalCenter - scale,
+      yOffset + verticalCenter - scale / 2,
+      yOffset + verticalCenter,
+      yOffset + verticalCenter + scale / 2,
+      yOffset + verticalCenter + scale,
+      yOffset + this._scaledCellHeight
+    ];
+
+    for (let i = 0; i < ops.length; i++) {
+      const op = ops[i];
+
+      if (i === 0 || (op.x1 !== ops[i - 1].x2 || op.y1 !== ops[i - 1].y2)) {
+        this._ctx.beginPath();
+        this._ctx.moveTo(xPoints[op.x1], yPoints[op.y1]);
+      }
+
+      if (typeof op.cx1 !== 'undefined') {
+        // Draw curve
+        this._ctx.bezierCurveTo(
+          xPoints[op.cx1],
+          yPoints[op.cy1],
+          xPoints[op.cx2],
+          yPoints[op.cy2],
+          xPoints[op.x2],
+          yPoints[op.y2]);
+      } else {
+        // Draw line
+        this._ctx.lineTo(xPoints[op.x2], yPoints[op.y2]);
+      }
+
+      this._ctx.stroke();
+    }
+
+    return true;
+  }
+
 
   /**
    * Clips a row to ensure no pixels will be drawn outside the cells in the row.
