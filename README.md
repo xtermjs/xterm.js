@@ -176,6 +176,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Wizard Assistant**](https://wizardassistant.com/): Wizard Assistant comes with advanced automation tools, preloaded common and special time-saving commands, and a built-in SSH terminal. Now you can remotely administer, troubleshoot, and analyze any system with ease. 
 - [**ucli**](https://github.com/tsadarsh/ucli): Command Line for everyone :family_man_woman_girl_boy: at [www.ucli.tech](https://www.ucli.tech).
 - [**Tess**](https://github.com/SquitchYT/Tess/): Simple Terminal Fully Customizable for Everyone.
+- [**HashiCorp Nomad**](https://www.nomadproject.io/): A container orchestrator with the ability to connect to remote tasks via a web interface using websockets and xterm.js.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
