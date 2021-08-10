@@ -16,7 +16,7 @@ const xtermHeadlessPackageJson = {
   ...xtermPackageJson,
   name: 'xterm-headless',
   description: 'A headless terminal component that runs in Node.js',
-  main: 'lib/xterm-headless.js',
+  main: 'lib-headless/xterm-headless.js',
   types: 'typings/xterm-headless.d.ts',
 };
 delete xtermHeadlessPackageJson['scripts'];

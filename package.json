@@ -11,6 +11,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "package-headless": "webpack --config ./webpack.config.headless.js",
+    "postpackage-headless": "node ./bin/package_headless.js",
     "compile": "tsc -b ./src/common/public/tsconfig.json",
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
