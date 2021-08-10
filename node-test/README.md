@@ -1,4 +1,4 @@
-Cursory test that 'xterm-core' works:
+Cursory test that 'xterm-headless' works:
 
 ```
 # From root of this repo

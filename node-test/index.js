@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const Terminal = require('../lib-headless/xterm.js').Terminal;
 
-console.log('Creating xterm-core terminal...');
+console.log('Creating xterm-headless terminal...');
 const terminal = new Terminal();
 console.log('Writing to terminal...')
 terminal.write('foo \x1b[1;31mbar\x1b[0m baz', () => {

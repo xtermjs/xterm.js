@@ -6,10 +6,10 @@
 const path = require('path');
 
 /**
- * This webpack config does a production build for xterm.js. It works by taking the output from tsc
- * (via `yarn watch` or `yarn prebuild`) which are put into `out/` and webpacks them into a
- * production mode umd library module in `lib/`. The aliases are used fix up the absolute paths
- * output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
+ * This webpack config does a production build for xterm.js headless. It works by taking the output
+ * from tsc (via `yarn watch` or `yarn prebuild`) which are put into `out/` and webpacks them into a
+ * production mode umd library module in `lib-headless/`. The aliases are used fix up the absolute
+ * paths output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
  */
 module.exports = {
   entry: './out/headless/public/Terminal.js',
