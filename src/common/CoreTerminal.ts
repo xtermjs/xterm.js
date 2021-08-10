@@ -132,6 +132,17 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
+    setTimeout(() => {
+      this.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\r\n');
+      this.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\r\n');
+      this.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\r\n');
+      this.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\r\n');
+      this.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\r\n');
+      this.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\r\n');
+      this.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\r\n');
+      this.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\r\n');
+      this.write('└─┐╘═╕╚═╕╗');
+    }, 1500);
   }
 
   public dispose(): void {

@@ -17,7 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { boxDrawingBoxes, boxDrawingLineSegments } from 'browser/renderer/BoxCharacters';
+import { boxDrawingBoxes, boxDrawingLineSegments } from 'browser/renderer/BoxAndBlockCharacters';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -395,18 +395,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.strokeStyle = this._ctx.fillStyle;
       const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
       const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
-      const xEighth = this._scaledCellWidth / 8;
-      const yEighth = this._scaledCellHeight / 8;
-
       for (let i = 0; i < boxes.length; i++) {
         const box = boxes[i];
+        const xEighth = this._scaledCellWidth / 8;
+        const yEighth = this._scaledCellHeight / 8;
         this._ctx.fillRect(
-          xOffset + (box.x*xEighth),
-          yOffset + (box.y*yEighth),
-          (box.w * xEighth),
-          (box.h * yEighth));
+          xOffset,
+          yOffset,
+          box.w * xEighth,
+          box.h * yEighth);
       }
-
       return true;
     }
 
@@ -418,28 +416,30 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // TODO: Clean below
     const scale = window.devicePixelRatio;
     this._ctx.strokeStyle = this._ctx.fillStyle;
-    this._ctx.lineWidth = scale;
+
+    // increase # of pixels when font size incremented by 10
+    this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
 
     const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
     const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
-    const horizontalCenter = this._scaledCellWidth / 2;
-    const verticalCenter = this._scaledCellHeight / 2;
+    const horizontalCenter = Math.round(this._scaledCellWidth / 2);
+    const verticalCenter = Math.round(this._scaledCellHeight / 2);
     const xPoints = [
       xOffset,
+      xOffset + horizontalCenter - scale * 2,
       xOffset + horizontalCenter - scale,
-      xOffset + horizontalCenter - scale / 2,
       xOffset + horizontalCenter,
-      xOffset + horizontalCenter + scale / 2,
       xOffset + horizontalCenter + scale,
+      xOffset + horizontalCenter + scale * 2,
       xOffset + this._scaledCellWidth
     ];
     const yPoints = [
       yOffset,
+      yOffset + verticalCenter - scale * 2,
       yOffset + verticalCenter - scale,
-      yOffset + verticalCenter - scale / 2,
       yOffset + verticalCenter,
-      yOffset + verticalCenter + scale / 2,
       yOffset + verticalCenter + scale,
+      yOffset + verticalCenter + scale * 2,
       yOffset + this._scaledCellHeight
     ];
 
@@ -448,7 +448,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
       if (i === 0 || (op.x1 !== ops[i - 1].x2 || op.y1 !== ops[i - 1].y2)) {
         this._ctx.beginPath();
-        this._ctx.moveTo(xPoints[op.x1], yPoints[op.y1]);
+        if (this._ctx.lineWidth % 2 === 1) {
+
+          this._ctx.moveTo(op.x1 === 0 ? xPoints[op.x1] : xPoints[op.x1] + .5, yPoints[op.y1] + .5);
+        } else {
+          this._ctx.moveTo(xPoints[op.x1], yPoints[op.y1]);
+        }
       }
 
       if (typeof op.cx1 !== 'undefined') {
@@ -462,7 +467,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           yPoints[op.y2]);
       } else {
         // Draw line
-        this._ctx.lineTo(xPoints[op.x2], yPoints[op.y2]);
+        if (this._ctx.lineWidth % 2 === 1) {
+          this._ctx.lineTo(op.x2 === 0 ? xPoints[op.x2] : xPoints[op.x2] + .5, yPoints[op.y2] + .5);
+        } else {
+          this._ctx.lineTo(xPoints[op.x2], yPoints[op.y2]);
+        }
       }
 
       this._ctx.stroke();
