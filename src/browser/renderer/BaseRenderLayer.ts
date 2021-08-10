@@ -408,8 +408,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       return true;
     }
 
-    const ops = boxDrawingLineSegments[char];
-    if (!ops) {
+    const lineSegments = boxDrawingLineSegments[char];
+    if (!lineSegments) {
       return false;
     }
 
@@ -434,7 +434,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       xOffset + this._scaledCellWidth
     ];
     const yPoints = [
-      yOffset,
+      yOffset - 1,
       yOffset + verticalCenter - scale * 2,
       yOffset + verticalCenter - scale,
       yOffset + verticalCenter,
@@ -443,34 +443,33 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       yOffset + this._scaledCellHeight
     ];
 
-    for (let i = 0; i < ops.length; i++) {
-      const op = ops[i];
+    for (let i = 0; i < lineSegments.length; i++) {
+      const line = lineSegments[i];
 
-      if (i === 0 || (op.x1 !== ops[i - 1].x2 || op.y1 !== ops[i - 1].y2)) {
+      if (i === 0 || (line.x1 !== lineSegments[i - 1].x2 || line.y1 !== lineSegments[i - 1].y2)) {
         this._ctx.beginPath();
         if (this._ctx.lineWidth % 2 === 1) {
-
-          this._ctx.moveTo(op.x1 === 0 ? xPoints[op.x1] : xPoints[op.x1] + .5, yPoints[op.y1] + .5);
+          this._ctx.moveTo(line.x1 === 0 ? xPoints[line.x1] : xPoints[line.x1] + .5, yPoints[line.y1] + .5);
         } else {
-          this._ctx.moveTo(xPoints[op.x1], yPoints[op.y1]);
+          this._ctx.moveTo(xPoints[line.x1], yPoints[line.y1]);
         }
       }
 
-      if (typeof op.cx1 !== 'undefined') {
+      if (typeof line.cx1 !== 'undefined') {
         // Draw curve
         this._ctx.bezierCurveTo(
-          xPoints[op.cx1],
-          yPoints[op.cy1],
-          xPoints[op.cx2],
-          yPoints[op.cy2],
-          xPoints[op.x2],
-          yPoints[op.y2]);
+          xPoints[line.cx1],
+          yPoints[line.cy1],
+          xPoints[line.cx2],
+          yPoints[line.cy2],
+          xPoints[line.x2],
+          yPoints[line.y2]);
       } else {
         // Draw line
         if (this._ctx.lineWidth % 2 === 1) {
-          this._ctx.lineTo(op.x2 === 0 ? xPoints[op.x2] : xPoints[op.x2] + .5, yPoints[op.y2] + .5);
+          this._ctx.lineTo(line.x2 === 0 ? xPoints[line.x2] : xPoints[line.x2] + .5, yPoints[line.y2] + .5);
         } else {
-          this._ctx.lineTo(xPoints[op.x2], yPoints[op.y2]);
+          this._ctx.lineTo(xPoints[line.x2], yPoints[line.y2]);
         }
       }
 
