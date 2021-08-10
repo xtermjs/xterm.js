@@ -12,7 +12,7 @@ declare module 'xterm-core' {
      * A string representing log level.
      */
     export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
-  
+
     /**
      * An object containing start up options for the terminal.
      */
@@ -23,7 +23,7 @@ declare module 'xterm-core' {
        * true currently, but will change to false in v5.0.
        */
       allowProposedApi?: boolean;
-  
+
       /**
        * Whether background should support non-opaque color. It must be set before
        * executing the `Terminal.open()` method and can't be changed later without
@@ -31,23 +31,23 @@ declare module 'xterm-core' {
        * performance.
        */
       allowTransparency?: boolean;
-  
+
       /**
        * If enabled, alt + click will move the prompt cursor to position
        * underneath the mouse. The default is true.
        */
       altClickMovesCursor?: boolean;
-  
+
       /**
        * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
        */
       bellSound?: string;
-  
+
       /**
        * The type of the bell notification the terminal will use.
        */
       bellStyle?: 'none' | 'sound';
-  
+
       /**
        * When enabled the cursor will be set to the beginning of the next line
        * with every new line. This is equivalent to sending '\r\n' for each '\n'.
@@ -57,59 +57,59 @@ declare module 'xterm-core' {
        * useful.
        */
       convertEol?: boolean;
-  
+
       /**
        * The number of columns in the terminal.
        */
       cols?: number;
-  
+
       /**
        * Whether the cursor blinks.
        */
       cursorBlink?: boolean;
-  
+
       /**
        * The style of the cursor.
        */
       cursorStyle?: 'block' | 'underline' | 'bar';
-  
+
       /**
        * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
        */
       cursorWidth?: number;
-  
+
       /**
        * Whether input should be disabled.
        */
       disableStdin?: boolean;
-  
+
       /**
        * Whether to draw bold text in bright colors. The default is true.
        */
       drawBoldTextInBrightColors?: boolean;
-  
+
       /**
        * The modifier key hold to multiply scroll speed.
        */
       fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
-  
+
       /**
        * The spacing in whole pixels between characters.
        */
       letterSpacing?: number;
-  
+
       /**
        * The line height used to render text.
        */
       lineHeight?: number;
-  
+
       /**
        * The duration in milliseconds before link tooltip events fire when
        * hovering on a link.
        * @deprecated This will be removed when the link matcher API is removed.
        */
       linkTooltipHoverDuration?: number;
-  
+
       /**
        * What log level to use, this will log for all levels below and including
        * what is set:
@@ -121,12 +121,12 @@ declare module 'xterm-core' {
        * 5. off
        */
       logLevel?: LogLevel;
-  
+
       /**
        * Whether to treat option as the meta key.
        */
       macOptionIsMeta?: boolean;
-  
+
       /**
        * Whether holding a modifier key will force normal selection behavior,
        * regardless of whether the terminal is in mouse events mode. This will
@@ -135,7 +135,7 @@ declare module 'xterm-core' {
        * with mouse mode enabled.
        */
       macOptionClickForcesSelection?: boolean;
-  
+
       /**
        * The minimum contrast ratio for text in the terminal, setting this will
        * change the foreground color dynamically depending on whether the contrast
@@ -147,47 +147,47 @@ declare module 'xterm-core' {
        * - 21: White on black or black on white.
        */
       minimumContrastRatio?: number;
-  
+
       /**
        * Whether to select the word under the cursor on right click, this is
        * standard behavior in a lot of macOS applications.
        */
       rightClickSelectsWord?: boolean;
-  
+
       /**
        * The number of rows in the terminal.
        */
       rows?: number;
-  
+
       /**
        * Whether screen reader support is enabled. When on this will expose
        * supporting elements in the DOM to support NVDA on Windows and VoiceOver
        * on macOS.
        */
       screenReaderMode?: boolean;
-  
+
       /**
        * The amount of scrollback in the terminal. Scrollback is the amount of
        * rows that are retained when lines are scrolled beyond the initial
        * viewport.
        */
       scrollback?: number;
-  
+
       /**
        * The scrolling speed multiplier used for adjusting normal scrolling speed.
        */
       scrollSensitivity?: number;
-  
+
       /**
        * The size of tab stops in the terminal.
        */
       tabStopWidth?: number;
-  
+
       /**
        * The color theme of the terminal.
        */
       theme?: ITheme;
-  
+
       /**
        * Whether "Windows mode" is enabled. Because Windows backends winpty and
        * conpty operate by doing line wrapping on their side, xterm.js does not
@@ -199,20 +199,20 @@ declare module 'xterm-core' {
        *   not whitespace.
        */
       windowsMode?: boolean;
-  
+
       /**
        * A string containing all characters that are considered word separated by the
        * double click to select work logic.
       */
       wordSeparator?: string;
-  
+
       /**
        * Enable various window manipulation and report features.
        * All features are disabled by default for security reasons.
        */
       windowOptions?: IWindowOptions;
     }
-  
+
     /**
      * Contains colors to theme the terminal with.
      */
@@ -260,14 +260,14 @@ declare module 'xterm-core' {
       /** ANSI bright white (eg. `\x1b[1;37m`) */
       brightWhite?: string;
     }
-  
+
     /**
      * An object that can be disposed via a dispose function.
      */
     export interface IDisposable {
       dispose(): void;
     }
-  
+
     /**
      * An event that can be listened to.
      * @returns an `IDisposable` to stop listening.
@@ -275,7 +275,7 @@ declare module 'xterm-core' {
     export interface IEvent<T, U = void> {
       (listener: (arg1: T, arg2: U) => any): IDisposable;
     }
-  
+
     /**
      * Represents a specific line in the terminal that is tracked when scrollback
      * is trimmed and lines are added or removed. This is a single line that may
@@ -286,18 +286,18 @@ declare module 'xterm-core' {
        * A unique identifier for this marker.
        */
       readonly id: number;
-  
+
       /**
        * Whether this marker is disposed.
        */
       readonly isDisposed: boolean;
-  
+
       /**
        * The actual line index in the buffer at this point in time. This is set to
        * -1 if the marker has been disposed.
        */
       readonly line: number;
-  
+
       /**
        * Event listener to get notified when the marker gets disposed. Automatic disposal
        * might happen for a marker, that got invalidated by scrolling out or removal of
@@ -305,7 +305,7 @@ declare module 'xterm-core' {
        */
       onDispose: IEvent<void>;
     }
-  
+
     /**
      * The set of localizable strings.
      */
@@ -314,14 +314,14 @@ declare module 'xterm-core' {
        * The aria label for the underlying input textarea for the terminal.
        */
       promptLabel: string;
-  
+
       /**
        * Announcement for when line reading is suppressed due to too many lines
        * being printed to the terminal when `screenReaderMode` is enabled.
        */
       tooMuchOutput: string;
     }
-  
+
     /**
      * Enable various window manipulation and report features (CSI Ps ; Ps ; Ps t).
      *
@@ -477,7 +477,7 @@ declare module 'xterm-core' {
        */
       setWinLines?: boolean;
     }
-  
+
     /**
      * The class that represents an xterm.js terminal.
      */
@@ -488,51 +488,51 @@ declare module 'xterm-core' {
        * `Terminal.resize` for when the terminal exists.
        */
       readonly rows: number;
-  
+
       /**
        * The number of columns in the terminal's viewport. Use
        * `ITerminalOptions.cols` to set this in the constructor and
        * `Terminal.resize` for when the terminal exists.
        */
       readonly cols: number;
-  
+
       /**
        * (EXPERIMENTAL) The terminal's current buffer, this might be either the
        * normal buffer or the alt buffer depending on what's running in the
        * terminal.
        */
       readonly buffer: IBufferNamespace;
-  
+
       /**
        * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
        * buffer is active this will always return [].
        */
       readonly markers: ReadonlyArray<IMarker>;
-  
+
       /**
        * (EXPERIMENTAL) Get the parser interface to register
        * custom escape sequence handlers.
        */
       readonly parser: IParser;
-  
+
       /**
        * (EXPERIMENTAL) Get the Unicode handling interface
        * to register and switch Unicode version.
        */
       readonly unicode: IUnicodeHandling;
-  
+
       /**
        * Natural language strings that can be localized.
        */
       static strings: ILocalizableStrings;
-  
+
       /**
        * Creates a new `Terminal` object.
        *
        * @param options An object containing a set of options.
        */
       constructor(options?: ITerminalOptions);
-  
+
       /**
        * Adds an event listener for when a binary event fires. This is used to
        * enable non UTF-8 conformant binary messages to be sent to the backend.
@@ -543,13 +543,13 @@ declare module 'xterm-core' {
        * @returns an `IDisposable` to stop listening.
        */
       onBinary: IEvent<string>;
-  
+
       /**
        * Adds an event listener for the cursor moves.
        * @returns an `IDisposable` to stop listening.
        */
       onCursorMove: IEvent<void>;
-  
+
       /**
        * Adds an event listener for when a data event fires. This happens for
        * example when the user types or pastes into the terminal. The event value
@@ -558,20 +558,20 @@ declare module 'xterm-core' {
        * @returns an `IDisposable` to stop listening.
        */
       onData: IEvent<string>;
-      
+
       /**
        * Adds an event listener for when a line feed is added.
        * @returns an `IDisposable` to stop listening.
        */
       onLineFeed: IEvent<void>;
-  
+
       /**
        * Adds an event listener for when the terminal is resized. The event value
        * contains the new size.
        * @returns an `IDisposable` to stop listening.
        */
       onResize: IEvent<{ cols: number, rows: number }>;
-  
+
       /**
        * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
        * The event value is the new title.
@@ -595,7 +595,7 @@ declare module 'xterm-core' {
        * @returns The new marker or undefined.
        */
       registerMarker(cursorYOffset: number): IMarker | undefined;
-  
+
       /**
        * @deprecated use `registerMarker` instead.
        */
@@ -611,7 +611,7 @@ declare module 'xterm-core' {
        * Clear the entire buffer, making the prompt line the new first line.
        */
       clear(): void;
-  
+
       /**
        * Write data to the terminal.
        * @param data The data to write to the terminal. This can either be raw
@@ -621,7 +621,7 @@ declare module 'xterm-core' {
        * by the parser.
        */
       write(data: string | Uint8Array, callback?: () => void): void;
-  
+
       /**
        * Writes data to the terminal, followed by a break line character (\n).
        * @param data The data to write to the terminal. This can either be raw
@@ -631,7 +631,7 @@ declare module 'xterm-core' {
        * by the parser.
        */
       writeln(data: string | Uint8Array, callback?: () => void): void;
-  
+
       /**
        * Write UTF8 data to the terminal.
        * @param data The data to write to the terminal.
@@ -639,7 +639,7 @@ declare module 'xterm-core' {
        * @deprecated use `write` instead
        */
       writeUtf8(data: Uint8Array, callback?: () => void): void;
-  
+
       /**
        * Retrieves an option's value from the terminal.
        * @param key The option key.
@@ -660,7 +660,7 @@ declare module 'xterm-core' {
        * @param key The option key.
        */
       getOption(key: string): any;
-  
+
       /**
        * Sets an option on the terminal.
        * @param key The option key.
@@ -721,13 +721,19 @@ declare module 'xterm-core' {
        * @param value The option value.
        */
       setOption(key: string, value: any): void;
-  
+
       /**
        * Perform a full reset (RIS, aka '\x1bc').
        */
       reset(): void;
+
+      /**
+       * Loads an addon into this instance of xterm.js.
+       * @param addon The addon to load.
+       */
+      loadAddon(addon: ITerminalAddon): void;
     }
-  
+
     /**
      * An addon that can provide additional functionality to the terminal.
      */
@@ -737,7 +743,7 @@ declare module 'xterm-core' {
        */
       activate(terminal: Terminal): void;
     }
-  
+
     /**
      * An object representing a selection within the terminal.
      */
@@ -746,23 +752,23 @@ declare module 'xterm-core' {
        * The start column of the selection.
        */
       startColumn: number;
-  
+
       /**
        * The start row of the selection.
        */
       startRow: number;
-  
+
       /**
        * The end column of the selection.
        */
       endColumn: number;
-  
+
       /**
        * The end row of the selection.
        */
       endRow: number;
     }
-  
+
     /**
      * An object representing a range within the viewport of the terminal.
      */
@@ -771,13 +777,13 @@ declare module 'xterm-core' {
        * The start of the range.
        */
       start: IViewportRangePosition;
-  
+
       /**
        * The end of the range.
        */
       end: IViewportRangePosition;
     }
-  
+
     /**
      * An object representing a cell position within the viewport of the terminal.
      */
@@ -790,14 +796,14 @@ declare module 'xterm-core' {
        * a text editor.
        */
       x: number;
-  
+
       /**
        * The y position of the cell. This is a 0-based index that refers to a
        * specific row.
        */
       y: number;
     }
-  
+
     /**
      * A range within a buffer.
      */
@@ -806,13 +812,13 @@ declare module 'xterm-core' {
        * The start position of the range.
        */
       start: IBufferCellPosition;
-  
+
       /**
        * The end position of the range.
        */
       end: IBufferCellPosition;
     }
-  
+
     /**
      * A position within a buffer.
      */
@@ -821,13 +827,13 @@ declare module 'xterm-core' {
        * The x position within the buffer.
        */
       x: number;
-  
+
       /**
        * The y position within the buffer.
        */
       y: number;
     }
-  
+
     /**
      * Represents a terminal buffer.
      */
@@ -836,36 +842,36 @@ declare module 'xterm-core' {
        * The type of the buffer.
        */
       readonly type: 'normal' | 'alternate';
-  
+
       /**
        * The y position of the cursor. This ranges between `0` (when the
        * cursor is at baseY) and `Terminal.rows - 1` (when the cursor is on the
        * last row).
        */
       readonly cursorY: number;
-  
+
       /**
        * The x position of the cursor. This ranges between `0` (left side) and
        * `Terminal.cols` (after last cell of the row).
        */
       readonly cursorX: number;
-  
+
       /**
        * The line within the buffer where the top of the viewport is.
        */
       readonly viewportY: number;
-  
+
       /**
        * The line within the buffer where the top of the bottom page is (when
        * fully scrolled down).
        */
       readonly baseY: number;
-  
+
       /**
        * The amount of lines in the buffer.
        */
       readonly length: number;
-  
+
       /**
        * Gets a line from the buffer, or undefined if the line index does not
        * exist.
@@ -877,7 +883,7 @@ declare module 'xterm-core' {
        * @param y The line index to get.
        */
       getLine(y: number): IBufferLine | undefined;
-  
+
       /**
        * Creates an empty cell object suitable as a cell reference in
        * `line.getCell(x, cell)`. Use this to avoid costly recreation of
@@ -885,7 +891,7 @@ declare module 'xterm-core' {
        */
       getNullCell(): IBufferCell;
     }
-  
+
     /**
      * Represents the terminal's set of buffers.
      */
@@ -894,25 +900,25 @@ declare module 'xterm-core' {
        * The active buffer, this will either be the normal or alternate buffers.
        */
       readonly active: IBuffer;
-  
+
       /**
        * The normal buffer.
        */
       readonly normal: IBuffer;
-  
+
       /**
        * The alternate buffer, this becomes the active buffer when an application
        * enters this mode via DECSET (`CSI ? 4 7 h`)
        */
       readonly alternate: IBuffer;
-  
+
       /**
        * Adds an event listener for when the active buffer changes.
        * @returns an `IDisposable` to stop listening.
        */
       onBufferChange: IEvent<IBuffer>;
     }
-  
+
     /**
      * Represents a line in the terminal's buffer.
      */
@@ -921,13 +927,13 @@ declare module 'xterm-core' {
        * Whether the line is wrapped from the previous line.
        */
       readonly isWrapped: boolean;
-  
+
       /**
        * The length of the line, all call to getCell beyond the length will result
        * in `undefined`.
        */
       readonly length: number;
-  
+
       /**
        * Gets a cell from the line, or undefined if the line index does not exist.
        *
@@ -941,7 +947,7 @@ declare module 'xterm-core' {
        * looped over to avoid creating new objects for every cell.
        */
       getCell(x: number, cell?: IBufferCell): IBufferCell | undefined;
-  
+
       /**
        * Gets the line as a string. Note that this is gets only the string for the
        * line, not taking isWrapped into account.
@@ -952,7 +958,7 @@ declare module 'xterm-core' {
        */
       translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
     }
-  
+
     /**
      * Represents a single cell in the terminal's buffer.
      */
@@ -965,7 +971,7 @@ declare module 'xterm-core' {
        * - `0` for cells immediately following cells with a width of `2`.
        */
       getWidth(): number;
-  
+
       /**
        * The character(s) within the cell. Examples of what this can contain:
        *
@@ -974,13 +980,13 @@ declare module 'xterm-core' {
        * - An emoji
        */
       getChars(): string;
-  
+
       /**
        * Gets the UTF32 codepoint of single characters, if content is a combined
        * string it returns the codepoint of the last character in the string.
        */
       getCode(): number;
-  
+
       /**
        * Gets the number representation of the foreground color mode, this can be
        * used to perform quick comparisons of 2 cells to see if they're the same.
@@ -988,7 +994,7 @@ declare module 'xterm-core' {
        * a cell is.
        */
       getFgColorMode(): number;
-  
+
       /**
        * Gets the number representation of the background color mode, this can be
        * used to perform quick comparisons of 2 cells to see if they're the same.
@@ -996,7 +1002,7 @@ declare module 'xterm-core' {
        * a cell is.
        */
       getBgColorMode(): number;
-  
+
       /**
        * Gets a cell's foreground color number, this differs depending on what the
        * color mode of the cell is:
@@ -1009,7 +1015,7 @@ declare module 'xterm-core' {
        *   (CSI 3 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
        */
       getFgColor(): number;
-  
+
       /**
        * Gets a cell's background color number, this differs depending on what the
        * color mode of the cell is:
@@ -1022,7 +1028,7 @@ declare module 'xterm-core' {
        *   (CSI 4 8 ; 2 ; Pi ; Pr ; Pg ; Pb)
        */
       getBgColor(): number;
-  
+
       /** Whether the cell has the bold attribute (CSI 1 m). */
       isBold(): number;
       /** Whether the cell has the inverse attribute (CSI 3 m). */
@@ -1037,7 +1043,7 @@ declare module 'xterm-core' {
       isInverse(): number;
       /** Whether the cell has the inverse attribute (CSI 8 m). */
       isInvisible(): number;
-  
+
       /** Whether the cell is using the RGB foreground color mode. */
       isFgRGB(): boolean;
       /** Whether the cell is using the RGB background color mode. */
@@ -1050,11 +1056,11 @@ declare module 'xterm-core' {
       isFgDefault(): boolean;
       /** Whether the cell is using the default background color mode. */
       isBgDefault(): boolean;
-  
+
       /** Whether the cell has the default attribute (no color or style). */
       isAttributeDefault(): boolean;
     }
-  
+
     /**
      * Data type to register a CSI, DCS or ESC callback in the parser
      * in the form:
@@ -1098,7 +1104,7 @@ declare module 'xterm-core' {
        */
       final: string;
     }
-  
+
     /**
      * Allows hooking into the parser for custom handling of escape sequences.
      */
@@ -1116,7 +1122,7 @@ declare module 'xterm-core' {
        * @return An IDisposable you can call to remove this handler.
        */
       registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
-  
+
       /**
        * Adds a handler for DCS escape sequences.
        * @param id Specifies the function identifier under which the callback
@@ -1135,7 +1141,7 @@ declare module 'xterm-core' {
        * @return An IDisposable you can call to remove this handler.
        */
       registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
-  
+
       /**
        * Adds a handler for ESC escape sequences.
        * @param id Specifies the function identifier under which the callback
@@ -1148,7 +1154,7 @@ declare module 'xterm-core' {
        * @return An IDisposable you can call to remove this handler.
        */
       registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
-  
+
       /**
        * Adds a handler for OSC escape sequences.
        * @param ident The number (first parameter) of the sequence.
@@ -1167,7 +1173,7 @@ declare module 'xterm-core' {
        */
       registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
     }
-  
+
     /**
      * (EXPERIMENTAL) Unicode version provider.
      * Used to register custom Unicode versions with `Terminal.unicode.register`.
@@ -1177,13 +1183,13 @@ declare module 'xterm-core' {
        * String indicating the Unicode version provided.
        */
       readonly version: string;
-  
+
       /**
        * Unicode version dependent wcwidth implementation.
        */
       wcwidth(codepoint: number): 0 | 1 | 2;
     }
-  
+
     /**
      * (EXPERIMENTAL) Unicode handling interface.
      */
@@ -1192,16 +1198,15 @@ declare module 'xterm-core' {
        * Register a custom Unicode version provider.
        */
       register(provider: IUnicodeVersionProvider): void;
-  
+
       /**
        * Registered Unicode versions.
        */
       readonly versions: ReadonlyArray<string>;
-  
+
       /**
        * Getter/setter for active Unicode version.
        */
       activeVersion: string;
     }
   }
-  

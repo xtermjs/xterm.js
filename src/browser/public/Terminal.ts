@@ -5,12 +5,12 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight } from 'xterm';
 import { ITerminal } from 'browser/Types';
-import { Terminal as TerminalCore } from '../Terminal';
-import * as Strings from '../LocalizableStrings';
+import { Terminal as TerminalCore } from 'browser/Terminal';
+import * as Strings from 'browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { AddonManager } from './AddonManager';
+import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 
 export class Terminal implements ITerminalApi {

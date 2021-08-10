@@ -7,16 +7,19 @@ import { IEvent } from 'common/EventEmitter';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IMarker, IParser, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-core';
+import { IBufferNamespace as IBufferNamespaceApi, IMarker, IParser, ITerminalAddon, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-core';
 import { Terminal as TerminalCore } from 'headless/Terminal';
+import { AddonManager } from 'common/public/AddonManager';
 
 export class Terminal implements ITerminalApi {
   private _core: TerminalCore;
+  private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
+    this._addonManager = new AddonManager();
   }
 
   private _checkProposedApi(): void {
@@ -69,6 +72,7 @@ export class Terminal implements ITerminalApi {
     return this.registerMarker(cursorYOffset);
   }
   public dispose(): void {
+    this._addonManager.dispose();
     this._core.dispose();
   }
   public clear(): void {
@@ -105,6 +109,10 @@ export class Terminal implements ITerminalApi {
   }
   public reset(): void {
     this._core.reset();
+  }
+  public loadAddon(addon: ITerminalAddon): void {
+    // TODO: This could cause issues if the addon calls renderer apis
+    return this._addonManager.loadAddon(this as any, addon);
   }
 
   private _verifyIntegers(...values: number[]): void {
