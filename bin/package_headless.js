@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const { join } = require('path');
 
@@ -38,3 +39,15 @@ function mkdirF(p) {
     fs.mkdirSync(p);
   }
 }
+
+console.log('> Publish dry run');
+exec('npm publish --dry-run', { cwd: headlessRoot }, (error, stdout, stderr) => {
+  if (error) {
+    console.log(`error: ${error.message}`);
+    return;
+  }
+  if (stderr) {
+      console.error(`stderr:\n${stderr}`);
+  }
+  console.log(`stdout:\n${stdout}`);
+});
