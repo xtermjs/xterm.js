@@ -22,20 +22,20 @@ const changedFiles = getChangedFilesInCommit('HEAD');
 // Publish xterm if any files were changed outside of the addons directory
 let isStableRelease = false;
 if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
-  // isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
+  isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
   checkAndPublishPackage(path.resolve(__dirname, '../headless'));
 }
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  // path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  // path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  // path.resolve(__dirname, '../addons/xterm-addon-search'),
-  // path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  // path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  // path.resolve(__dirname, '../addons/xterm-addon-web-links'),
-  // path.resolve(__dirname, '../addons/xterm-addon-webgl')
+  path.resolve(__dirname, '../addons/xterm-addon-attach'),
+  path.resolve(__dirname, '../addons/xterm-addon-fit'),
+  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
+  path.resolve(__dirname, '../addons/xterm-addon-search'),
+  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
+  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
+  path.resolve(__dirname, '../addons/xterm-addon-web-links'),
+  path.resolve(__dirname, '../addons/xterm-addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
@@ -48,7 +48,7 @@ for (const p of addonPackageDirs) {
 
 // Publish website if it's a stable release
 if (isStableRelease) {
-  // updateWebsite();
+  updateWebsite();
 }
 
 function checkAndPublishPackage(packageDir) {
@@ -72,11 +72,11 @@ function checkAndPublishPackage(packageDir) {
 
   // Publish
   const args = ['publish'];
-  args.push('--tag', 'beta');
-  // if (basename(packageDir) === 'headless') {
-  // } else if (!isStableRelease) {
-  //   args.push('--tag', 'beta');
-  // }
+  if (basename(packageDir) === 'headless') {
+    args.push('--tag', 'beta');
+  } else if (!isStableRelease) {
+    args.push('--tag', 'beta');
+  }
   console.log(`Spawn: npm ${args.join(' ')}`);
   if (!isDryRun || basename(packageDir) === 'headless') {
     const result = cp.spawnSync('npm', args, {
