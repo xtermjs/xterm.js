@@ -72,13 +72,11 @@ function checkAndPublishPackage(packageDir) {
 
   // Publish
   const args = ['publish'];
-  if (basename(packageDir) === 'headless') {
-    args.push('--tag', 'beta');
-  } else if (!isStableRelease) {
+  if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
   console.log(`Spawn: npm ${args.join(' ')}`);
-  if (!isDryRun || basename(packageDir) === 'headless') {
+  if (!isDryRun) {
     const result = cp.spawnSync('npm', args, {
       cwd: packageDir,
       stdio: 'inherit'
