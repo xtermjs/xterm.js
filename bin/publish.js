@@ -6,6 +6,7 @@
 const cp = require('child_process');
 const fs = require('fs');
 const os = require('os');
+const { basename } = require('path');
 const path = require('path');
 
 // Setup auth
@@ -22,6 +23,7 @@ const changedFiles = getChangedFilesInCommit('HEAD');
 let isStableRelease = false;
 if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
   isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
+  checkAndPublishPackage(path.resolve(__dirname, '../headless'));
 }
 
 // Publish addons if any files were changed inside of the addon
@@ -70,11 +72,13 @@ function checkAndPublishPackage(packageDir) {
 
   // Publish
   const args = ['publish'];
-  if (!isStableRelease) {
+  if (basename(packageDir) === 'headless') {
+    args.push('--tag', 'beta');
+  } else if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
   console.log(`Spawn: npm ${args.join(' ')}`);
-  if (!isDryRun) {
+  if (!isDryRun || basename(packageDir) === 'headless') {
     const result = cp.spawnSync('npm', args, {
       cwd: packageDir,
       stdio: 'inherit'

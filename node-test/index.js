@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const Terminal = require('../lib-headless/xterm.js').Terminal;
+const Terminal = require('../headless/lib-headless/xterm.js').Terminal;
 
 console.log('Creating xterm-headless terminal...');
 const terminal = new Terminal();
