@@ -33,7 +33,7 @@ module.exports = {
     }
   },
   output: {
-    filename: 'xterm.js',
+    filename: 'xterm-headless.js',
     path: path.resolve('./headless/lib-headless'),
     library: {
       type: 'commonjs'
