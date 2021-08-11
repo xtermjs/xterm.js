@@ -422,7 +422,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // increase # of pixels when font size incremented by 10
     this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
     const horizontalCenter = Math.round(this._scaledCellWidth / 2);
-    draw(this._ctx, char, xOffset, yOffset - verticalCenter, this._scaledCellWidth, this._scaledCellHeight);
+    // yOffset - verticalCenter
+    draw(this._ctx, char, xOffset, y * this._scaledCellHeight + this._scaledCharTop, this._scaledCellWidth, this._scaledCellHeight);
     return true;
 
 

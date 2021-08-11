@@ -147,7 +147,9 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       // this.write('           ║              ║               ║        │        ║        │\r\n');
       // this.write('           ║              ║               ║        │        ║        │\r\n');
       // this.write('▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇');
-      this.write('━│┃');
+      this.write('━━│┃\r\n');
+      this.write('                                ━━│┃┌┍┎┏\r\n');
+      this.write('                                ━━│┃┌┐┍┑┎┒┏┓');
     }, 1000);
   }
 
