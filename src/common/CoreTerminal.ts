@@ -133,21 +133,22 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
     setTimeout(() => {
-      this.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\r\n');
-      this.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\r\n');
-      this.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\r\n');
-      this.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\r\n');
-      this.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\r\n');
-      this.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\r\n');
-      this.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\r\n');
-      this.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\r\n');
-      this.write('▇▇▇▇▇▇▇▇▇');
-      this.write('           ╔═════════════════════════════════════════════════════════╕\r\n');
-      this.write('           ║                                                         │\r\n');
-      this.write('           ║              ╔═══════════════╦════════╤════════╗        │\r\n');
-      this.write('           ║              ║               ║        │        ║        │\r\n');
-      this.write('           ║              ║               ║        │        ║        │\r\n');
-    }, 1500);
+      // this.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\r\n');
+      // this.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\r\n');
+      // this.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\r\n');
+      // this.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\r\n');
+      // this.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\r\n');
+      // this.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\r\n');
+      // this.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\r\n');
+      // this.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\r\n');
+      // this.write('           ╔═════════════════════════════════════════════════════════╕\r\n');
+      // this.write('           ║                                                         │\r\n');
+      // this.write('           ║              ╔═══════════════╦════════╤════════╗        │\r\n');
+      // this.write('           ║              ║               ║        │        ║        │\r\n');
+      // this.write('           ║              ║               ║        │        ║        │\r\n');
+      // this.write('▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇');
+      this.write('━│┃');
+    }, 1000);
   }
 
   public dispose(): void {

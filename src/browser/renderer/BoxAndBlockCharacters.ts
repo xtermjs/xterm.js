@@ -211,3 +211,165 @@ export const boxDrawingBoxes: { [index: string]: any } = {
   // HEAVY HORIZONTAL FILL (upper middle and lower one quarter block)
   '\u{1FB97}': [{ x: 0, y: 2, w: 8, h: 2 }, { x: 0, y: 6, w: 8, h: 2 }]
 };
+
+export const chars: { [index: string]: string } = {
+  '━': 'M0,.5, L1,.5 z',
+  '│': 'M0,0, L0,2 z',
+  '┃': 'M0,0, L0,2 z!',
+  '┌': 'M , L , z',
+  '┍': 'M , L , z',
+  '┎': 'M , L , z',
+  '┏': 'M , L , z',
+  '┐': 'M , L , z',
+  '┑': 'M , L , z',
+  '┒': 'M , L , z',
+  '┓': 'M , L , z',
+  '└': 'M , L , z',
+  '┕': 'M , L , z',
+  '┖': 'M , L , z',
+  '┗': 'M , L , z',
+  '┘': 'M , L , z',
+  '┙': 'M , L , z',
+  '┚': 'M , L , z',
+  '┛': 'M , L , z',
+  '├': 'M , L , z',
+  '┝': 'M , L , z',
+  '┞': 'M , L , z',
+  '┟': 'M , L , z',
+  '┠': 'M , L , z',
+  '┡': 'M , L , z',
+  '┢': 'M , L , z',
+  '┣': 'M , L , z',
+  '┤': 'M , L , z',
+  '┥': 'M , L , z',
+  '┦': 'M , L , z',
+  '┧': 'M , L , z',
+  '┨': 'M , L , z',
+  '┩': 'M , L , z',
+  '┪': 'M , L , z',
+  '┫': 'M , L , z',
+  '┬': 'M , L , z',
+  '┭': 'M , L , z',
+  '┮': 'M , L , z',
+  '┯': 'M , L , z',
+  '┰': 'M , L , z',
+  '┱': 'M , L , z',
+  '┲': 'M , L , z',
+  '┳': 'M , L , z',
+  '┴': 'M , L , z',
+  '┵': 'M , L , z',
+  '┶': 'M , L , z',
+  '┷': 'M , L , z',
+  '┸': 'M , L , z',
+  '┹': 'M , L , z',
+  '┺': 'M , L , z',
+  '┻': 'M , L , z',
+  '┼': 'M , L , z',
+  '┽': 'M , L , z',
+  '┾': 'M , L , z',
+  '┿': 'M , L , z',
+  '╀': 'M , L , z',
+  '╁': 'M , L , z',
+  '╂': 'M , L , z',
+  '╃': 'M , L , z',
+  '╄': 'M , L , z',
+  '╅': 'M , L , z',
+  '╆': 'M , L , z',
+  '╇': 'M , L , z',
+  '╈': 'M , L , z',
+  '╉': 'M , L , z',
+  '╊': 'M , L , z',
+  '╋': 'M , L , z',
+  '╌': 'M , L , z',
+  '╍': 'M , L , z',
+  '╎': 'M , L , z',
+  '╏': 'M , L , z',
+  '═': 'M , L , z',
+  '║': 'M , L , z',
+  '╒': 'M , L , z',
+  '╓': 'M , L , z',
+  '╔': 'M , L , z',
+  '╕': 'M , L , z',
+  '╖': 'M , L , z',
+  '╗': 'M , L , z',
+  '╘': 'M , L , z',
+  '╙': 'M , L , z',
+  '╚': 'M , L , z',
+  '╛': 'M , L , z',
+  '╜': 'M , L , z',
+  '╝': 'M , L , z',
+  '╞': 'M , L , z',
+  '╟': 'M , L , z',
+  '╠': 'M , L , z',
+  '╡': 'M , L , z',
+  '╢': 'M , L , z',
+  '╣': 'M , L , z',
+  '╤': 'M , L , z',
+  '╥': 'M , L , z',
+  '╦': 'M , L , z',
+  '╧': 'M , L , z',
+  '╨': 'M , L , z',
+  '╩': 'M , L , z',
+  '╪': 'M , L , z',
+  '╫': 'M , L , z',
+  '╬': 'M , L , z',
+  '╭': 'M , L , z',
+  '╮': 'M , L , z',
+  '╯': 'M , L , z',
+  '╰': 'M , L , z',
+  '╱': 'M , L , z',
+  '╲': 'M , L , z',
+  '╳': 'M , L , z',
+  '╴': 'M , L , z',
+  '╵': 'M , L , z',
+  '╶': 'M , L , z',
+  '╷': 'M , L , z',
+  '╸': 'M , L , z',
+  '╹': 'M , L , z',
+  '╺': 'M , L , z',
+  '╻': 'M , L , z',
+  '╼': 'M , L , z',
+  '╽': 'M , L , z',
+  '╾': 'M , L , z',
+  '╿': 'M0,0, L0,10 z'
+};
+
+export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
+  const entry = chars[c];
+  console.log(c);
+  if (!entry) {
+    return;
+  }
+  const instructions = entry.split(' ');
+  for (const instruction of instructions) {
+    if (instruction.endsWith('!')) {
+      ctx.lineWidth = ctx.lineWidth * 2;
+    }
+    const type = instruction[0];
+    const spec = instructionMap[type];
+    const coords: string[] = instruction.substring(1).split(',');
+    if (!coords[0] || !coords[1]) {
+      continue;
+    }
+
+
+    const numX = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
+    const numY = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
+    spec(ctx, xOffset + Math.round((numX)*cellWidth), yOffset + ((numY))*cellHeight);
+  }
+  ctx.stroke();
+}
+
+const instructionMap: { [index: string]: any } = {
+  'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  },
+  'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.lineTo(x, y);
+  },
+  'z': (ctx: CanvasRenderingContext2D) => {
+    ctx.closePath();
+    console.log('closing path');
+  }
+};
