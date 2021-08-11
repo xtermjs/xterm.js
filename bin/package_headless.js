@@ -3,15 +3,14 @@
  * @license MIT
  */
 
-const { spawn, exec } = require('child_process');
+const { exec } = require('child_process');
 const fs = require('fs');
 const { join } = require('path');
 
 const repoRoot = join(__dirname, '..');
 const headlessRoot = join(repoRoot, 'headless');
 
-// Create headless/package.json
-console.log('> Creating headless/package.json');
+console.log('> headless/package.json');
 const xtermPackageJson = require('../package.json');
 const xtermHeadlessPackageJson = {
   ...xtermPackageJson,
@@ -23,15 +22,21 @@ const xtermHeadlessPackageJson = {
 delete xtermHeadlessPackageJson['scripts'];
 delete xtermHeadlessPackageJson['devDependencies'];
 delete xtermHeadlessPackageJson['style'];
-xtermHeadlessPackageJson.version += '-alpha';
+xtermHeadlessPackageJson.version += '-alpha1';
 fs.writeFileSync(join(headlessRoot, 'package.json'), JSON.stringify(xtermHeadlessPackageJson, null, 1));
 console.log(fs.readFileSync(join(headlessRoot, 'package.json')).toString());
 
-console.log('> Creating headless/typings');
+console.log('> headless/typings/');
 mkdirF(join(headlessRoot, 'typings'));
 fs.copyFileSync(
   join(repoRoot, 'typings/xterm-headless.d.ts'),
   join(headlessRoot, 'typings/xterm-headless.d.ts')
+);
+
+console.log('> headless/logo-full.png');
+fs.copyFileSync(
+  join(repoRoot, 'logo-full.png'),
+  join(headlessRoot, 'logo-full.png')
 );
 
 function mkdirF(p) {

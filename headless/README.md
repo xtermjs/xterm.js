@@ -1,4 +1,4 @@
-# [![xterm.js logo](../logo-full.png)](https://xtermjs.org)
+# [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
 ⚠ This package is a work in progress
 
