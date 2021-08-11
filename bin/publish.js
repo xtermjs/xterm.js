@@ -6,7 +6,6 @@
 const cp = require('child_process');
 const fs = require('fs');
 const os = require('os');
-const { basename } = require('path');
 const path = require('path');
 
 // Setup auth
