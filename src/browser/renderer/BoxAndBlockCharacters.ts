@@ -243,161 +243,378 @@ const topYAxisFromMiddle = `${MOVE}${CENTER.TOP} ${TO}${CENTER.MIDDLE}`;
 const rightMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${RIGHT.MIDDLE}`;
 const leftMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${LEFT.MIDDLE}`;
 
-export const chars: { [index: string]: string } = {
-  '━': `${xAxis}`,
-  '│': `${yAxis}`,
-  '┃': `${yAxis}${THICK}`,
-  '┌': `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}`,
-  '┍': `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  '┎': `${bottomYAxisFromBottom}${THICK} ${TO}${RIGHT.MIDDLE}`,
-  '┏': `${bottomYAxisFromBottom}${THICK} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  '┐': `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}`,
-  '┑': `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}${THICK}`,
-  '┒': `${bottomYAxisFromBottom}${THICK} ${TO}${LEFT.MIDDLE}`,
-  '┓': `${bottomYAxisFromBottom}${THICK} ${TO}${LEFT.MIDDLE}${THICK}`,
-  '└': `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}`,
-  '┕': `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  '┖': `${topYAxisFromTop}${THICK} ${TO}${RIGHT.MIDDLE}`,
-  '┗': `${topYAxisFromTop}${THICK} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  '┘': `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}`,
-  '┙': `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}${THICK}`,
-  '┚': `${topYAxisFromTop}${THICK} ${TO}${LEFT.MIDDLE}`,
-  '┛': `${topYAxisFromTop}${THICK} ${TO}${LEFT.MIDDLE}${THICK}`,
-  '├': `${yAxis} ${rightMiddleXAxis}`,
-  '┝': `${yAxis} ${rightMiddleXAxis}${THICK}`,
-  '┞': `${topYAxisFromTop}${THICK} ${bottomYAxisFromMiddle} ${rightMiddleXAxis}`,
-  '┟': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${rightMiddleXAxis}${THICK}`,
-  '┠': `${yAxis}${THICK} ${rightMiddleXAxis}`,
-  '┡': `${bottomYAxisFromBottom} ${topYAxisFromMiddle}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '┢': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${rightMiddleXAxis}${THICK}`,
-  '┣': `${yAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '┤': `${yAxis} ${leftMiddleXAxis}`,
-  '┥': `${yAxis} ${leftMiddleXAxis}${THICK}`,
-  '┦': `${topYAxisFromTop}${THICK} ${bottomYAxisFromMiddle} ${leftMiddleXAxis}`,
-  '┧': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
-  '┨': `${yAxis}${THICK} ${leftMiddleXAxis}`,
-  '┩': `${bottomYAxisFromBottom} ${topYAxisFromMiddle}${THICK} ${leftMiddleXAxis}${THICK}`,
-  '┪': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
-  '┫': `${yAxis}${THICK} ${leftMiddleXAxis}${THICK}`,
-  '┬': `${bottomYAxisFromBottom} ${xAxis}`,
-  '┭': `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '┮': `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '┯': `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '┰': `${bottomYAxisFromBottom}${THICK} ${xAxis}`,
-  '┱': `${bottomYAxisFromBottom}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '┲': `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '┳': `${bottomYAxisFromBottom}${THICK} ${xAxis}${THICK}`,
-  '┴': `${topYAxisFromTop} ${xAxis}`,
-  '┵': `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '┶': `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '┷': `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '┸': `${topYAxisFromTop}${THICK} ${xAxis}`,
-  '┹': `${topYAxisFromTop}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '┺': `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '┻': `${topYAxisFromTop}${THICK} ${xAxis}${THICK}`,
-  '┼': `${yAxis} ${xAxis}`,
-  '┽': `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '┾': `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '┿': `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '╀': `${yAxis}${THICK} ${xAxis}`,
-  '╁': `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '╂': `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '╃': `${yAxis}${THICK} ${xAxis}${THICK}`,
-  '╄': `${yAxis} ${xAxis}`,
-  '╅': `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '╆': `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '╇': `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  '╈': `${yAxis}${THICK} ${xAxis}`,
-  '╉': `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '╊': `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '╋': `${yAxis}${THICK} ${xAxis}${THICK}`,
-  '╌': `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}`,
-  '╍': `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'}${THICK} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  '╎':`${MOVE}${CENTER.TOP} ${TO}${'.5,.47'} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}`,
-  '╏':`${MOVE}${CENTER.TOP} ${TO}${'.5,.47'}${THICK} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}${THICK}`,
-  // '═': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '║': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╒': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╓': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╔': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╕': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╖': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╗': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╘': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╙': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╚': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╛': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╜': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╝': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╞': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╟': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╠': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╡': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╢': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╣': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╤': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╥': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╦': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╧': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╨': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╩': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╪': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╫': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╬': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╭': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╮': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╯': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╰': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╱': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╲': `${MOVE}${} ${TO}${} ${TO}${}`,
-  // '╳': `${MOVE}${} ${TO}${} ${TO}${}`,
-  '╴': `${leftMiddleXAxis}`,
-  '╵': `${topYAxisFromMiddle}`,
-  '╶': `${rightMiddleXAxis}`,
-  '╷': `${bottomYAxisFromMiddle}`,
-  '╸': `${leftMiddleXAxis}${THICK}`,
-  '╹': `${topYAxisFromMiddle}${THICK}`,
-  '╺': `${rightMiddleXAxis}${THICK}`,
-  '╻': `${bottomYAxisFromMiddle}${THICK}`,
-  '╼': `${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  '╽': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle}`,
-  '╾': `${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  '╿': `${bottomYAxisFromBottom} ${topYAxisFromMiddle}${THICK}`
+const map: { [character: string]: { [fontWeight: number]: string } } = {
+  '━': {
+    1: `${xAxis}`
+  },
+  '│': {
+    1: `${yAxis}`
+  },
+  '┃': {
+    2: `${yAxis}`
+  },
+  '┌': {
+    1: `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}`
+  },
+  '┍': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┎': {
+    1: `${rightMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom}`
+  },
+  '┏': {
+    2: `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}`
+  },
+  '┐': {
+    1: `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}`
+  },
+  '┑': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┒': {
+    1: `${leftMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom}`
+  },
+  '┓': {
+    2: `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}`
+  },
+  '└': {
+    1: `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}`
+  },
+  '┕': {
+    1: `${topYAxisFromTop}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┖': {
+    1: `${rightMiddleXAxis}`,
+    2: `${topYAxisFromTop}`
+  },
+  '┗': {
+    2: `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}`
+  },
+  '┘': {
+    1: `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}`
+  },
+  '┙': {
+    1: `${topYAxisFromTop}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┚': {
+    1: `${leftMiddleXAxis}`,
+    2: `${topYAxisFromTop}`
+  },
+  '┛': {
+    2: `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}`
+  },
+  '├': {
+    1: `${yAxis} ${rightMiddleXAxis}`
+  },
+  '┝': {
+    1: `${yAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┞': {
+    1: `${bottomYAxisFromMiddle} ${rightMiddleXAxis}`,
+    2: `${topYAxisFromTop}`
+  },
+  '┟': {
+    1: `${topYAxisFromMiddle} ${rightMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom}`
+  },
+  '┠': {
+    1: `${rightMiddleXAxis}`,
+    2: `${yAxis}`
+  },
+  '┡': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${topYAxisFromMiddle} ${rightMiddleXAxis}`
+  },
+  '┢': {
+    1: `${topYAxisFromMiddle}`,
+    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
+  },
+  '┣': {
+    2: `${yAxis} ${rightMiddleXAxis}`
+  },
+  '┤': {
+    1: `${yAxis} ${leftMiddleXAxis}`
+  },
+  '┥': {
+    1: `${yAxis}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┦': {
+    1: `${bottomYAxisFromMiddle} ${leftMiddleXAxis}`,
+    2: `${topYAxisFromTop}`
+  },
+  '┧': {
+    1: `${topYAxisFromMiddle}`,
+    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
+  },
+  '┨': {
+    1: `${leftMiddleXAxis}`,
+    2: `${yAxis}`
+  },
+  '┩': {
+    2: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
+    1: `${bottomYAxisFromMiddle}`
+  }
+};
+
+const chars: { [index: string]: string } = {
+
+
+  // }    // '┩{
+  //     1: ': `${leftMiddleXAxis}${THICK} ${topYAxisFromMiddle}${THICK} ${MOVE}${CENTER.MIDDLE} ${bottomYAxisFromMiddle
+  //     1: ': `${leftMiddleXAxis}${THICK} ${topYAxisFromMiddle}${THICK} ${MOVE}${CENTER.MIDDLE} ${bottomYAxisFromMiddle
+  // }`,
+
+  // }    '┪': {
+  //     1: `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
+  //     1: `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
+  //     }
+  //   '┫': {
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK}`,
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK}`,
+  //     }
+  //   '┬': {
+  //     1: `${bottomYAxisFromBottom} ${xAxis}`,
+  //     1: `${bottomYAxisFromBottom} ${xAxis}`,
+  //     }
+  //   '┭': {
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '┮': {
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┯': {
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┰': {
+  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}`,
+  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}`,
+  //     }
+  //   '┱': {
+  //     1: `${bottomYAxisFromBottom}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${bottomYAxisFromBottom}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '┲': {
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┳': {
+  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}${THICK}`,
+  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}${THICK}`,
+  //     }
+  //   '┴': {
+  //     1: `${topYAxisFromTop} ${xAxis}`,
+  //     1: `${topYAxisFromTop} ${xAxis}`,
+  //     }
+  //   '┵': {
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '┶': {
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┷': {
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┸': {
+  //     1: `${topYAxisFromTop}${THICK} ${xAxis}`,
+  //     1: `${topYAxisFromTop}${THICK} ${xAxis}`,
+  //     }
+  //   '┹': {
+  //     1: `${topYAxisFromTop}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${topYAxisFromTop}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '┺': {
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┻': {
+  //     1: `${topYAxisFromTop}${THICK} ${xAxis}${THICK}`,
+  //     1: `${topYAxisFromTop}${THICK} ${xAxis}${THICK}`,
+  //     }
+  //   '┼': {
+  //     1: `${yAxis} ${xAxis}`,
+  //     1: `${yAxis} ${xAxis}`,
+  //     }
+  //   '┽': {
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '┾': {
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '┿': {
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '╀': {
+  //     1: `${yAxis}${THICK} ${xAxis}`,
+  //     1: `${yAxis}${THICK} ${xAxis}`,
+  //     }
+  //   '╁': {
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '╂': {
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '╃': {
+  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
+  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
+  //     }
+  //   '╄': {
+  //     1: `${yAxis} ${xAxis}`,
+  //     1: `${yAxis} ${xAxis}`,
+  //     }
+  //   '╅': {
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '╆': {
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '╇': {
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '╈': {
+  //     1: `${yAxis}${THICK} ${xAxis}`,
+  //     1: `${yAxis}${THICK} ${xAxis}`,
+  //     }
+  //   '╉': {
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+  //     }
+  //   '╊': {
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+  //     }
+  //   '╋': {
+  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
+  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
+  //     }
+  //   '╌': {
+  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}`,
+  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}`,
+  //     }
+  //   '╍': {
+  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'}${THICK} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}${THICK}`,
+  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'}${THICK} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}${THICK}`,
+  //     }
+  //   '╎':`{
+  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}`
+  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}`
+  //     },
+  //   '╏':`{
+  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'}${THICK} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}${THICK}`
+  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'}${THICK} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}${THICK}`
+  //     },
+  //   // '═{
+  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
+  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
+
+  //     }`,
+
+  // }    // '║{
+  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
+  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
+
+  //     }`,
+
+// }    // '╒': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╓': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╔': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╕': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╖': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╗': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╘': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╙': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╚': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╛': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╜': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╝': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╞': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╟': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╠': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╡': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╢': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╣': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╤': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╥': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╦': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╧': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╨': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╩': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╪': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╫': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╬': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╭': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╮': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╯': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╰': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╱': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╲': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   // '╳': `${MOVE}${} ${TO}${} ${TO}${}`,
+//   '╴': `${leftMiddleXAxis}`,
+//   '╵': `${topYAxisFromMiddle}`,
+//   '╶': `${rightMiddleXAxis}`,
+//   '╷': `${bottomYAxisFromMiddle}`,
+//   '╸': `${leftMiddleXAxis}${THICK}`,
+//   '╹': `${topYAxisFromMiddle}${THICK}`,
+//   '╺': `${rightMiddleXAxis}${THICK}`,
+//   '╻': `${bottomYAxisFromMiddle}${THICK}`,
+//   '╼': `${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
+//   '╽': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle}`,
+//   '╾': `${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
+//   '╿': `${bottomYAxisFromBottom} ${topYAxisFromMiddle}${THICK}`
 };
 
 export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
-  const entry = chars[c];
-  if (!entry) {
+  const match: { [fontWeight: number]: string } = map[c];
+  if (!match) {
     return;
   }
-  const lineWidth = ctx.lineWidth;
-  const instructions = entry.split(' ');
+  for (const [fontWeight, instructions] of Object.entries(match)) {
+    ctx.beginPath();
+    ctx.lineWidth = window.devicePixelRatio * Number.parseInt(fontWeight);
+    for (const instruction of instructions.split(' ')) {
+      const type = instruction[0];
+      const f = instructionMap[type];
+      const coords: string[] = instruction.substring(1).split(',');
+      if (!coords[0] || !coords[1]) {
+        continue;
+      }
+      let x = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
+      let y = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
 
-  for (const instruction of instructions) {
-    const type = instruction[0];
-    const spec = instructionMap[type];
-    const coords: string[] = instruction.substring(1).split(',');
-    if (!coords[0] || !coords[1]) {
-      continue;
-    }
-    let numX = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
-    let numY = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
-    if (instruction.endsWith(THICK)) {
-      ctx.lineWidth = window.devicePixelRatio * 2;
-    } else {
-      ctx.lineWidth = window.devicePixelRatio;
-    }
+      x *= cellWidth;
+      y *= cellHeight;
 
-    numX *= cellWidth;
-    numY *= cellHeight;
-
-    if (numY !== 0) {
-      numY = clamp(Math.round(numY + .5) - .5, cellHeight, 0);
+      if (y !== 0) {
+        y = clamp(Math.round(y + .5) - .5, cellHeight, 0);
+      }
+      if (x !== 0) {
+        x = clamp(Math.round(x + .5) - .5, cellWidth, 0);
+      }
+      f(ctx, xOffset + x, yOffset + y);
     }
-    if (numX !== 0) {
-      numX = clamp(Math.round(numX + .5) - .5, cellWidth, 0);
-    }
-    spec(ctx, xOffset + numX, yOffset + numY);
+    ctx.stroke();
+    ctx.closePath();
   }
 }
 
@@ -407,13 +624,9 @@ function clamp(value: number, max: number, min: number = 0): number {
 
 const instructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.beginPath();
     ctx.moveTo(x, y);
   },
   'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
   }
 };

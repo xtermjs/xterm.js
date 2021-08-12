@@ -421,76 +421,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // increase # of pixels when font size incremented by 10
     // this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
-    const horizontalCenter = Math.round(this._scaledCellWidth / 2);
     // yOffset - verticalCenter
     draw(this._ctx, char, xOffset, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     return true;
-
-
-    // // TODO: Clean below
-    // const scale = window.devicePixelRatio;
-    // this._ctx.strokeStyle = this._ctx.fillStyle;
-
-    // // increase # of pixels when font size incremented by 10
-    // this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
-
-    // const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
-    // const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
-    // const horizontalCenter = Math.round(this._scaledCellWidth / 2);
-    // const verticalCenter = Math.round(this._scaledCellHeight / 2);
-    // const xPoints = [
-    //   xOffset,
-    //   xOffset + horizontalCenter - scale * 2,
-    //   xOffset + horizontalCenter - scale,
-    //   xOffset + horizontalCenter,
-    //   xOffset + horizontalCenter + scale,
-    //   xOffset + horizontalCenter + scale * 2,
-    //   xOffset + this._scaledCellWidth
-    // ];
-    // const yPoints = [
-    //   yOffset - 1,
-    //   yOffset + verticalCenter - scale * 2,
-    //   yOffset + verticalCenter - scale,
-    //   yOffset + verticalCenter,
-    //   yOffset + verticalCenter + scale,
-    //   yOffset + verticalCenter + scale * 2,
-    //   yOffset + this._scaledCellHeight
-    // ];
-
-    // for (let i = 0; i < lineSegments.length; i++) {
-    //   const line = lineSegments[i];
-
-    //   if (i === 0 || (line.x1 !== lineSegments[i - 1].x2 || line.y1 !== lineSegments[i - 1].y2)) {
-    //     this._ctx.beginPath();
-    //     if (this._ctx.lineWidth % 2 === 1) {
-    //       this._ctx.moveTo(line.x1 === 0 ? xPoints[line.x1] : xPoints[line.x1] + .5, yPoints[line.y1] + .5);
-    //     } else {
-    //       this._ctx.moveTo(xPoints[line.x1], yPoints[line.y1]);
-    //     }
-    //   }
-
-    //   if (typeof line.cx1 !== 'undefined') {
-    //     // Draw curve
-    //     this._ctx.bezierCurveTo(
-    //       xPoints[line.cx1],
-    //       yPoints[line.cy1],
-    //       xPoints[line.cx2],
-    //       yPoints[line.cy2],
-    //       xPoints[line.x2],
-    //       yPoints[line.y2]);
-    //   } else {
-    //     // Draw line
-    //     if (this._ctx.lineWidth % 2 === 1) {
-    //       this._ctx.lineTo(line.x2 === 0 ? xPoints[line.x2] : xPoints[line.x2] + .5, yPoints[line.y2] + .5);
-    //     } else {
-    //       this._ctx.lineTo(xPoints[line.x2], yPoints[line.y2]);
-    //     }
-    //   }
-
-    //   this._ctx.stroke();
-    // }
-
-    // return true;
   }
 
 
