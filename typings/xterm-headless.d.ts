@@ -534,6 +534,12 @@ declare module 'xterm-headless' {
       constructor(options?: ITerminalOptions);
 
       /**
+       * Adds an event listener for when the bell is triggered.
+       * @returns an `IDisposable` to stop listening.
+       */
+      onBell: IEvent<void>;
+
+      /**
        * Adds an event listener for when a binary event fires. This is used to
        * enable non UTF-8 conformant binary messages to be sent to the backend.
        * Currently this is only used for a certain type of mouse reports that
@@ -571,6 +577,13 @@ declare module 'xterm-headless' {
        * @returns an `IDisposable` to stop listening.
        */
       onResize: IEvent<{ cols: number, rows: number }>;
+
+      /**
+       * Adds an event listener for when a scroll occurs. The event value is the
+       * new position of the viewport.
+       * @returns an `IDisposable` to stop listening.
+       */
+      onScroll: IEvent<number>;
 
       /**
        * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.

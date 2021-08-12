@@ -30,17 +30,17 @@ export class Terminal implements ITerminalApi {
     }
   }
 
-  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
-  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
-  public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
-  public get onData(): IEvent<string> { return this._core.onData; }
-  public get onBinary(): IEvent<string> { return this._core.onBinary; }
-  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onBell(): IEvent<void> { return this._core.onBell; }
-  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
+  public get onData(): IEvent<string> { return this._core.onData; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
+  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
+  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
+  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {

@@ -28,12 +28,14 @@ export class Terminal implements ITerminalApi {
     }
   }
 
-  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
-  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
-  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onBell(): IEvent<void> { return this._core.onBell; }
   public get onBinary(): IEvent<string> { return this._core.onBinary; }
-  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
+  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
+  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
 
   public get parser(): IParser {
     this._checkProposedApi();

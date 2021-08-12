@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { strictEqual, throws } from 'assert';
+import { deepStrictEqual, strictEqual, throws } from 'assert';
 import { Terminal } from 'headless/public/Terminal';
 
 let term: Terminal;
@@ -113,265 +113,113 @@ describe.only('Headless API Tests', function(): void {
     }
   });
 
-  //  it('getOption, setOption', async () => {
-  //    await openTerminal(page);
-  //    assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
-  //    await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
-  //    assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
-  //  });
+  it('getOption, setOption', async () => {
+    strictEqual(term.getOption('scrollback'), 1000);
+    term.setOption('scrollback', 50);
+    strictEqual(term.getOption('scrollback'), 50);
+  });
 
-  //  describe('renderer', () => {
-  //    it('foreground', async () => {
-  //      await openTerminal(page, { rendererType: 'dom' });
-  //      await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
-  //      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
-  //      assert.deepEqual(await page.evaluate(`
-  //        [
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(2)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(3)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(4)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(5)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(6)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(7)').className
-  //        ]
-  //      `), [
-  //        'xterm-fg-0',
-  //        'xterm-fg-1',
-  //        'xterm-fg-2',
-  //        'xterm-fg-3',
-  //        'xterm-fg-4',
-  //        'xterm-fg-5',
-  //        'xterm-fg-6'
-  //      ]);
-  //    });
+  describe('loadAddon', () => {
+    it('constructor', async () => {
+      term = new Terminal({ cols: 5 });
+      let cols = 0;
+      term.loadAddon({
+        activate: (t) => cols = t.cols,
+        dispose: () => {}
+      });
+      strictEqual(cols, 5);
+    });
 
-  //    it('background', async () => {
-  //      await openTerminal(page, { rendererType: 'dom' });
-  //      await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
-  //      await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
-  //      assert.deepEqual(await page.evaluate(`
-  //        [
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(2)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(3)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(4)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(5)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(6)').className,
-  //          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(7)').className
-  //        ]
-  //      `), [
-  //        'xterm-bg-0',
-  //        'xterm-bg-1',
-  //        'xterm-bg-2',
-  //        'xterm-bg-3',
-  //        'xterm-bg-4',
-  //        'xterm-bg-5',
-  //        'xterm-bg-6'
-  //      ]);
-  //    });
-  //  });
+    it('dispose (addon)', async () => {
+      let disposeCalled = false;
+      const addon = {
+        activate: () => {},
+        dispose: () => disposeCalled = true
+      };
+      term.loadAddon(addon);
+      strictEqual(disposeCalled, false);
+      addon.dispose();
+      strictEqual(disposeCalled, true);
+    });
 
-  //  it('selection', async () => {
-  //    await openTerminal(page, { rows: 5, cols: 5 });
-  //    await writeSync(page, `\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz`);
-  //    assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
-  //    assert.equal(await page.evaluate(`window.term.getSelection()`), '');
-  //    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
-  //    await page.evaluate(`window.term.selectAll()`);
-  //    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
-  //    if (process.platform === 'win32') {
-  //      assert.equal(await page.evaluate(`window.term.getSelection()`), '\r\n\r\nfoo\r\n\r\nbar\r\n\r\nbaz');
-  //    } else {
-  //      assert.equal(await page.evaluate(`window.term.getSelection()`), '\n\nfoo\n\nbar\n\nbaz');
-  //    }
-  //    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 0, startRow: 0, endColumn: 5, endRow: 6 });
-  //    await page.evaluate(`window.term.clearSelection()`);
-  //    assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
-  //    assert.equal(await page.evaluate(`window.term.getSelection()`), '');
-  //    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
-  //    await page.evaluate(`window.term.select(1, 2, 2)`);
-  //    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
-  //    assert.equal(await page.evaluate(`window.term.getSelection()`), 'oo');
-  //    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
-  //  });
+    it('dispose (terminal)', async () => {
+      let disposeCalled = false;
+      term.loadAddon({
+        activate: () => {},
+        dispose: () => disposeCalled = true
+      });
+      strictEqual(disposeCalled, false);
+      term.dispose();
+      strictEqual(disposeCalled, true);
+    });
+  });
 
-  //  it('focus, blur', async () => {
-  //    await openTerminal(page);
-  //    assert.equal(await page.evaluate(`document.activeElement.className`), '');
-  //    await page.evaluate(`window.term.focus()`);
-  //    assert.equal(await page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
-  //    await page.evaluate(`window.term.blur()`);
-  //    assert.equal(await page.evaluate(`document.activeElement.className`), '');
-  //  });
+  describe('Events', () => {
+    it('onCursorMove', async () => {
+      let callCount = 0;
+      term.onCursorMove(e => callCount++);
+      await writeSync('foo');
+      strictEqual(callCount, 1);
+      await writeSync('bar');
+      strictEqual(callCount, 2);
+    });
 
-  //  describe('loadAddon', () => {
-  //    it('constructor', async () => {
-  //      await openTerminal(page, { cols: 5 });
-  //      await page.evaluate(`
-  //        window.cols = 0;
-  //        window.term.loadAddon({
-  //          activate: (t) => window.cols = t.cols,
-  //          dispose: () => {}
-  //        });
-  //      `);
-  //      assert.equal(await page.evaluate(`window.cols`), 5);
-  //    });
+    it('onData', async () => {
+      const calls: string[] = [];
+      term.onData(e => calls.push(e));
+      await writeSync('\x1b[5n'); // DSR Status Report
+      deepStrictEqual(calls, ['\x1b[0n']);
+    });
 
-  //    it('dispose (addon)', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.disposeCalled = false
-  //        window.addon = {
-  //          activate: () => {},
-  //          dispose: () => window.disposeCalled = true
-  //        };
-  //        window.term.loadAddon(window.addon);
-  //      `);
-  //      assert.equal(await page.evaluate(`window.disposeCalled`), false);
-  //      await page.evaluate(`window.addon.dispose()`);
-  //      assert.equal(await page.evaluate(`window.disposeCalled`), true);
-  //    });
+    it('onLineFeed', async () => {
+      let callCount = 0;
+      term.onLineFeed(() => callCount++);
+      await writelnSync('foo');
+      strictEqual(callCount, 1);
+      await writelnSync('bar');
+      strictEqual(callCount, 2);
+    });
 
-  //    it('dispose (terminal)', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.disposeCalled = false
-  //        window.term.loadAddon({
-  //          activate: () => {},
-  //          dispose: () => window.disposeCalled = true
-  //        });
-  //      `);
-  //      assert.equal(await page.evaluate(`window.disposeCalled`), false);
-  //      await page.evaluate(`window.term.dispose()`);
-  //      assert.equal(await page.evaluate(`window.disposeCalled`), true);
-  //    });
-  //  });
+    it('onScroll', async () => {
+      term = new Terminal({ rows: 5 });
+      const calls: number[] = [];
+      term.onScroll(e => calls.push(e));
+      for (let i = 0; i < 4; i++) {
+        await writelnSync('foo');
+      }
+      deepStrictEqual(calls, []);
+      await writelnSync('bar');
+      deepStrictEqual(calls, [1]);
+      await writelnSync('baz');
+      deepStrictEqual(calls, [1, 2]);
+    });
 
-  //  describe('Events', () => {
-  //    it('onCursorMove', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.callCount = 0;
-  //        window.term.onCursorMove(e => window.callCount++);
-  //        window.term.write('foo');
-  //      `);
-  //      await pollFor(page, `window.callCount`, 1);
-  //      await page.evaluate(`window.term.write('bar')`);
-  //      await pollFor(page, `window.callCount`, 2);
-  //    });
+    it('onResize', async () => {
+      const calls: [number, number][] = [];
+      term.onResize(e => calls.push([e.cols, e.rows]));
+      deepStrictEqual(calls, []);
+      term.resize(10, 5);
+      deepStrictEqual(calls, [[10, 5]]);
+      term.resize(20, 15);
+      deepStrictEqual(calls, [[10, 5], [20, 15]]);
+    });
 
-  //    it('onData', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onData(e => calls.push(e));
-  //      `);
-  //      await page.type('.xterm-helper-textarea', 'foo');
-  //      assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
-  //    });
+    it('onTitleChange', async () => {
+      const calls: string[] = [];
+      term.onTitleChange(e => calls.push(e));
+      deepStrictEqual(calls, []);
+      await writeSync('\x1b]2;foo\x9c');
+      deepStrictEqual(calls, ['foo']);
+    });
 
-  //    it('onKey', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onKey(e => calls.push(e.key));
-  //      `);
-  //      await page.type('.xterm-helper-textarea', 'foo');
-  //      assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
-  //    });
-
-  //    it('onLineFeed', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.callCount = 0;
-  //        window.term.onLineFeed(() => callCount++);
-  //        window.term.writeln('foo');
-  //      `);
-  //      await pollFor(page, `window.callCount`, 1);
-  //      await page.evaluate(`window.term.writeln('bar')`);
-  //      await pollFor(page, `window.callCount`, 2);
-  //    });
-
-  //    it('onScroll', async () => {
-  //      await openTerminal(page, { rows: 5 });
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onScroll(e => window.calls.push(e));
-  //        for (let i = 0; i < 4; i++) {
-  //          window.term.writeln('foo');
-  //        }
-  //      `);
-  //      await pollFor(page, `window.calls`, []);
-  //      await page.evaluate(`window.term.writeln('bar')`);
-  //      await pollFor(page, `window.calls`, [1]);
-  //      await page.evaluate(`window.term.writeln('baz')`);
-  //      await pollFor(page, `window.calls`, [1, 2]);
-  //    });
-
-  //    it('onSelectionChange', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.callCount = 0;
-  //        window.term.onSelectionChange(() => window.callCount++);
-  //      `);
-  //      await pollFor(page, `window.callCount`, 0);
-  //      await page.evaluate(`window.term.selectAll()`);
-  //      await pollFor(page, `window.callCount`, 1);
-  //      await page.evaluate(`window.term.clearSelection()`);
-  //      await pollFor(page, `window.callCount`, 2);
-  //    });
-
-  //    it('onRender', async function(): Promise<void> {
-  //      this.retries(3);
-  //      await openTerminal(page);
-  //      await timeout(20); // Ensure all init events are fired
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onRender(e => window.calls.push([e.start, e.end]));
-  //      `);
-  //      await pollFor(page, `window.calls`, []);
-  //      await page.evaluate(`window.term.write('foo')`);
-  //      await pollFor(page, `window.calls`, [[0, 0]]);
-  //      await page.evaluate(`window.term.write('bar\\n\\nbaz')`);
-  //      await pollFor(page, `window.calls`, [[0, 0], [0, 2]]);
-  //    });
-
-  //    it('onResize', async () => {
-  //      await openTerminal(page);
-  //      await timeout(20); // Ensure all init events are fired
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onResize(e => window.calls.push([e.cols, e.rows]));
-  //      `);
-  //      await pollFor(page, `window.calls`, []);
-  //      await page.evaluate(`window.term.resize(10, 5)`);
-  //      await pollFor(page, `window.calls`, [[10, 5]]);
-  //      await page.evaluate(`window.term.resize(20, 15)`);
-  //      await pollFor(page, `window.calls`, [[10, 5], [20, 15]]);
-  //    });
-
-  //    it('onTitleChange', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onTitleChange(e => window.calls.push(e));
-  //      `);
-  //      await pollFor(page, `window.calls`, []);
-  //      await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
-  //      await pollFor(page, `window.calls`, ['foo']);
-  //    });
-  //    it('onBell', async () => {
-  //      await openTerminal(page);
-  //      await page.evaluate(`
-  //        window.calls = [];
-  //        window.term.onBell(() => window.calls.push(true));
-  //      `);
-  //      await pollFor(page, `window.calls`, []);
-  //      await page.evaluate(`window.term.write('\\x07')`);
-  //      await pollFor(page, `window.calls`, [true]);
-  //    });
-  //  });
+    it('onBell', async () => {
+      const calls: boolean[] = [];
+      term.onBell(() => calls.push(true));
+      deepStrictEqual(calls, []);
+      await writeSync('\x07');
+      deepStrictEqual(calls, [true]);
+    });
+  });
 
   //  describe('buffer', () => {
   //    it('cursorX, cursorY', async () => {
