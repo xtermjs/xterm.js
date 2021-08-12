@@ -22,7 +22,7 @@ const xtermHeadlessPackageJson = {
 delete xtermHeadlessPackageJson['scripts'];
 delete xtermHeadlessPackageJson['devDependencies'];
 delete xtermHeadlessPackageJson['style'];
-xtermHeadlessPackageJson.version += '-alpha1';
+xtermHeadlessPackageJson.version += '-alpha3';
 fs.writeFileSync(join(headlessRoot, 'package.json'), JSON.stringify(xtermHeadlessPackageJson, null, 1));
 console.log(fs.readFileSync(join(headlessRoot, 'package.json')).toString());
 
