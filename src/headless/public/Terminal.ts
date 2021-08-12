@@ -77,6 +77,24 @@ export class Terminal implements ITerminalApi {
     this._addonManager.dispose();
     this._core.dispose();
   }
+  public scrollLines(amount: number): void {
+    this._verifyIntegers(amount);
+    this._core.scrollLines(amount);
+  }
+  public scrollPages(pageCount: number): void {
+    this._verifyIntegers(pageCount);
+    this._core.scrollPages(pageCount);
+  }
+  public scrollToTop(): void {
+    this._core.scrollToTop();
+  }
+  public scrollToBottom(): void {
+    this._core.scrollToBottom();
+  }
+  public scrollToLine(line: number): void {
+    this._verifyIntegers(line);
+    this._core.scrollToLine(line);
+  }
   public clear(): void {
     this._core.clear();
   }

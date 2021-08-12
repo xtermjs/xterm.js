@@ -621,6 +621,34 @@ declare module 'xterm-headless' {
       dispose(): void;
 
       /**
+       * Scroll the display of the terminal
+       * @param amount The number of lines to scroll down (negative scroll up).
+       */
+      scrollLines(amount: number): void;
+
+      /**
+       * Scroll the display of the terminal by a number of pages.
+       * @param pageCount The number of pages to scroll (negative scrolls up).
+       */
+      scrollPages(pageCount: number): void;
+
+      /**
+       * Scrolls the display of the terminal to the top.
+       */
+      scrollToTop(): void;
+
+      /**
+       * Scrolls the display of the terminal to the bottom.
+       */
+      scrollToBottom(): void;
+
+      /**
+       * Scrolls to a line within the buffer.
+       * @param line The 0-based line index to scroll to.
+       */
+      scrollToLine(line: number): void;
+
+      /**
        * Clear the entire buffer, making the prompt line the new first line.
        */
       clear(): void;

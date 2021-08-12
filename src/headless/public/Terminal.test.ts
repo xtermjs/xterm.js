@@ -8,7 +8,7 @@ import { Terminal } from 'headless/public/Terminal';
 
 let term: Terminal;
 
-describe.only('Headless API Tests', function(): void {
+describe('Headless API Tests', function(): void {
   beforeEach(() => {
     // Create default terminal to be used by most tests
     term = new Terminal();
@@ -221,165 +221,156 @@ describe.only('Headless API Tests', function(): void {
     });
   });
 
-  //  describe('buffer', () => {
-  //    it('cursorX, cursorY', async () => {
-  //      await openTerminal(page, { rows: 5, cols: 5 });
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 0);
-  //      await writeSync(page, 'foo');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 3);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 0);
-  //      await writeSync(page, '\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 3);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
-  //      await writeSync(page, '\\r');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
-  //      await writeSync(page, 'abcde');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 5);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 1);
-  //      await writeSync(page, '\\n\\r\\n\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorX`), 0);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.cursorY`), 4);
-  //    });
+  describe('buffer', () => {
+    it('cursorX, cursorY', async () => {
+      term = new Terminal({ rows: 5, cols: 5 });
+      strictEqual(term.buffer.active.cursorX, 0);
+      strictEqual(term.buffer.active.cursorY, 0);
+      await writeSync('foo');
+      strictEqual(term.buffer.active.cursorX, 3);
+      strictEqual(term.buffer.active.cursorY, 0);
+      await writeSync('\n');
+      strictEqual(term.buffer.active.cursorX, 3);
+      strictEqual(term.buffer.active.cursorY, 1);
+      await writeSync('\r');
+      strictEqual(term.buffer.active.cursorX, 0);
+      strictEqual(term.buffer.active.cursorY, 1);
+      await writeSync('abcde');
+      strictEqual(term.buffer.active.cursorX, 5);
+      strictEqual(term.buffer.active.cursorY, 1);
+      await writeSync('\n\r\n\n\n\n\n');
+      strictEqual(term.buffer.active.cursorX, 0);
+      strictEqual(term.buffer.active.cursorY, 4);
+    });
 
-  //    it('viewportY', async () => {
-  //      await openTerminal(page, { rows: 5 });
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
-  //      await writeSync(page, '\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 1);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 5);
-  //      await page.evaluate(`window.term.scrollLines(-1)`);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 4);
-  //      await page.evaluate(`window.term.scrollToTop()`);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.viewportY`), 0);
-  //    });
+    it('viewportY', async () => {
+      term = new Terminal({ rows: 5 });
+      strictEqual(term.buffer.active.viewportY, 0);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.viewportY, 0);
+      await writeSync('\n');
+      strictEqual(term.buffer.active.viewportY, 1);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.viewportY, 5);
+      term.scrollLines(-1);
+      strictEqual(term.buffer.active.viewportY, 4);
+      term.scrollToTop();
+      strictEqual(term.buffer.active.viewportY, 0);
+    });
 
-  //    it('baseY', async () => {
-  //      await openTerminal(page, { rows: 5 });
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 0);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 0);
-  //      await writeSync(page, '\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 1);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
-  //      await page.evaluate(`window.term.scrollLines(-1)`);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
-  //      await page.evaluate(`window.term.scrollToTop()`);
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.baseY`), 5);
-  //    });
+    it('baseY', async () => {
+      term = new Terminal({ rows: 5 });
+      strictEqual(term.buffer.active.baseY, 0);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.baseY, 0);
+      await writeSync('\n');
+      strictEqual(term.buffer.active.baseY, 1);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.baseY, 5);
+      term.scrollLines(-1);
+      strictEqual(term.buffer.active.baseY, 5);
+      term.scrollToTop();
+      strictEqual(term.buffer.active.baseY, 5);
+    });
 
-  //    it('length', async () => {
-  //      await openTerminal(page, { rows: 5 });
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 5);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 5);
-  //      await writeSync(page, '\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 6);
-  //      await writeSync(page, '\\n\\n\\n\\n');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.length`), 10);
-  //    });
+    it('length', async () => {
+      term = new Terminal({ rows: 5 });
+      strictEqual(term.buffer.active.length, 5);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.length, 5);
+      await writeSync('\n');
+      strictEqual(term.buffer.active.length, 6);
+      await writeSync('\n\n\n\n');
+      strictEqual(term.buffer.active.length, 10);
+    });
 
-  //    describe('getLine', () => {
-  //      it('invalid index', async () => {
-  //        await openTerminal(page, { rows: 5 });
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(-1)`), undefined);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(5)`), undefined);
-  //      });
+    describe('getLine', () => {
+      it('invalid index', async () => {
+        term = new Terminal({ rows: 5 });
+        strictEqual(term.buffer.active.getLine(-1), undefined);
+        strictEqual(term.buffer.active.getLine(5), undefined);
+      });
 
-  //      it('isWrapped', async () => {
-  //        await openTerminal(page, { cols: 5 });
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
-  //        await writeSync(page, 'abcde');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
-  //        await writeSync(page, 'f');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), true);
-  //      });
+      it('isWrapped', async () => {
+        term = new Terminal({ cols: 5 });
+        strictEqual(term.buffer.active.getLine(0)!.isWrapped, false);
+        strictEqual(term.buffer.active.getLine(1)!.isWrapped, false);
+        await writeSync('abcde');
+        strictEqual(term.buffer.active.getLine(0)!.isWrapped, false);
+        strictEqual(term.buffer.active.getLine(1)!.isWrapped, false);
+        await writeSync('f');
+        strictEqual(term.buffer.active.getLine(0)!.isWrapped, false);
+        strictEqual(term.buffer.active.getLine(1)!.isWrapped, true);
+      });
 
-  //      it('translateToString', async () => {
-  //        await openTerminal(page, { cols: 5 });
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), '');
-  //        await writeSync(page, 'foo');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'foo  ');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'foo');
-  //        await writeSync(page, 'bar');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'fooba');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'fooba');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(1).translateToString(true)`), 'r');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1)`), 'ooba');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1, 3)`), 'oo');
-  //      });
+      it('translateToString', async () => {
+        term = new Terminal({ cols: 5 });
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(), '     ');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(true), '');
+        await writeSync('foo');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'foo  ');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(true), 'foo');
+        await writeSync('bar');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'fooba');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(true), 'fooba');
+        strictEqual(term.buffer.active.getLine(1)!.translateToString(true), 'r');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(false, 1), 'ooba');
+        strictEqual(term.buffer.active.getLine(0)!.translateToString(false, 1, 3), 'oo');
+      });
 
-  //      it('getCell', async () => {
-  //        await openTerminal(page, { cols: 5 });
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(-1)`), undefined);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(5)`), undefined);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), '');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
-  //        await writeSync(page, 'a文');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), 'a');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getChars()`), '文');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getWidth()`), 2);
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getChars()`), '');
-  //        assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
-  //      });
-  //    });
+      it('getCell', async () => {
+        term = new Terminal({ cols: 5 });
+        strictEqual(term.buffer.active.getLine(0)!.getCell(-1), undefined);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(5), undefined);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(0)!.getChars(), '');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(0)!.getWidth(), 1);
+        await writeSync('a文');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(0)!.getChars(), 'a');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(0)!.getWidth(), 1);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(1)!.getChars(), '文');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(1)!.getWidth(), 2);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(2)!.getChars(), '');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(2)!.getWidth(), 0);
+      });
+    });
 
-  //    it('active, normal, alternate', async () => {
-  //      await openTerminal(page, { cols: 5 });
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+    it('active, normal, alternate', async () => {
+      term = new Terminal({ cols: 5 });
+      strictEqual(term.buffer.active.type, 'normal');
+      strictEqual(term.buffer.normal.type, 'normal');
+      strictEqual(term.buffer.alternate.type, 'alternate');
 
-  //      await writeSync(page, 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
+      await writeSync('norm ');
+      strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'norm ');
+      strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
+      strictEqual(term.buffer.alternate.getLine(0), undefined);
 
-  //      await writeSync(page, '\\x1b[?47h\\r'); // use alternate screen buffer
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'alternate');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+      await writeSync('\x1b[?47h\r'); // use alternate screen buffer
+      strictEqual(term.buffer.active.type, 'alternate');
+      strictEqual(term.buffer.normal.type, 'normal');
+      strictEqual(term.buffer.alternate.type, 'alternate');
 
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
-  //      await writeSync(page, 'alt  ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'alt  ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0).translateToString()`), 'alt  ');
+      strictEqual(term.buffer.active.getLine(0)!.translateToString(), '     ');
+      await writeSync('alt  ');
+      strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'alt  ');
+      strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
+      strictEqual(term.buffer.alternate.getLine(0)!.translateToString(), 'alt  ');
 
-  //      await writeSync(page, '\\x1b[?47l\\r'); // use normal screen buffer
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.type`), 'normal');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.type`), 'alternate');
+      await writeSync('\x1b[?47l\r'); // use normal screen buffer
+      strictEqual(term.buffer.active.type, 'normal');
+      strictEqual(term.buffer.normal.type, 'normal');
+      strictEqual(term.buffer.alternate.type, 'alternate');
 
-  //      assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.normal.getLine(0).translateToString()`), 'norm ');
-  //      assert.equal(await page.evaluate(`window.term.buffer.alternate.getLine(0)`), undefined);
-  //    });
-  //  });
+      strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'norm ');
+      strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
+      strictEqual(term.buffer.alternate.getLine(0), undefined);
+    });
+  });
 
-  //  it('dispose', async () => {
-  //    await page.evaluate(`
-  //      window.term = new Terminal();
-  //      window.term.dispose();
-  //    `);
-  //    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
-  //  });
-
-  //  it('dispose (opened)', async () => {
-  //    await openTerminal(page);
-  //    await page.evaluate(`window.term.dispose()`);
-  //    assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
-  //  });
+  it('dispose', async () => {
+    term.dispose();
+    strictEqual((term as any)._core._isDisposed, true);
+  });
 });
 
 function writeSync(text: string | Uint8Array): Promise<void> {
