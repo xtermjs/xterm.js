@@ -1,0 +1,5 @@
+# Include
+!typings/*.d.ts
+
+# Exclude
+test/
