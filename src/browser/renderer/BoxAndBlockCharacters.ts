@@ -361,25 +361,17 @@ const map: { [character: string]: { [fontWeight: number]: string } } = {
   '┩': {
     2: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
     1: `${bottomYAxisFromMiddle}`
+  },
+  '┪': {
+    1: `${topYAxisFromMiddle}`,
+    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
+  },
+  '┫': {
+    2: `${yAxis} ${leftMiddleXAxis}`
   }
 };
 
 const chars: { [index: string]: string } = {
-
-
-  // }    // '┩{
-  //     1: ': `${leftMiddleXAxis}${THICK} ${topYAxisFromMiddle}${THICK} ${MOVE}${CENTER.MIDDLE} ${bottomYAxisFromMiddle
-  //     1: ': `${leftMiddleXAxis}${THICK} ${topYAxisFromMiddle}${THICK} ${MOVE}${CENTER.MIDDLE} ${bottomYAxisFromMiddle
-  // }`,
-
-  // }    '┪': {
-  //     1: `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
-  //     1: `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle} ${leftMiddleXAxis}${THICK}`,
-  //     }
-  //   '┫': {
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK}`,
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK}`,
-  //     }
   //   '┬': {
   //     1: `${bottomYAxisFromBottom} ${xAxis}`,
   //     1: `${bottomYAxisFromBottom} ${xAxis}`,
