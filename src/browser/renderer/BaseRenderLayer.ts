@@ -412,7 +412,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (!lineSegments) {
       return false;
     }
-    const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
+    const xOffset = x * this._scaledCellWidth;
     const verticalCenter = Math.round(this._scaledCellHeight / 2);
 
     const yOffset = y * this._scaledCellHeight + this._scaledCharTop + verticalCenter;
@@ -420,10 +420,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.strokeStyle = this._ctx.fillStyle;
 
     // increase # of pixels when font size incremented by 10
-    this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
+    // this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
     const horizontalCenter = Math.round(this._scaledCellWidth / 2);
     // yOffset - verticalCenter
-    draw(this._ctx, char, xOffset, y * this._scaledCellHeight + this._scaledCharTop, this._scaledCellWidth, this._scaledCellHeight);
+    draw(this._ctx, char, xOffset, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     return true;
 
 

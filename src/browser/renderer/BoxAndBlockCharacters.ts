@@ -372,6 +372,7 @@ export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, 
   }
   const lineWidth = ctx.lineWidth;
   const instructions = entry.split(' ');
+
   for (const instruction of instructions) {
     const type = instruction[0];
     const spec = instructionMap[type];
@@ -379,15 +380,29 @@ export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, 
     if (!coords[0] || !coords[1]) {
       continue;
     }
-    const numX = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
-    const numY = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
+    let numX = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
+    let numY = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
     if (instruction.endsWith(THICK)) {
-      ctx.lineWidth = lineWidth * 2;
+      ctx.lineWidth = window.devicePixelRatio * 2;
     } else {
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = window.devicePixelRatio;
     }
-    spec(ctx, xOffset + Math.round((numX) * cellWidth), yOffset + ((numY)) * cellHeight);
+
+    numX *= cellWidth;
+    numY *= cellHeight;
+
+    if (numY !== 0) {
+      numY = clamp(Math.round(numY + .5) - .5, cellHeight, 0);
+    }
+    if (numX !== 0) {
+      numX = clamp(Math.round(numX + .5) - .5, cellWidth, 0);
+    }
+    spec(ctx, xOffset + numX, yOffset + numY);
   }
+}
+
+function clamp(value: number, max: number, min: number = 0): number {
+  return Math.max(Math.min(value, max), min);
 }
 
 const instructionMap: { [index: string]: any } = {
