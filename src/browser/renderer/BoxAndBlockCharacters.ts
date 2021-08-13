@@ -260,349 +260,170 @@ const topLeftYLine = `${MOVE}${'.35,0'} ${TO}${'.35,.5'}`;
 const bottomRightYLine = `${MOVE}${'.65,.5'} ${TO}${'.65,1'}`;
 const topRightYLine = `${MOVE}${'.65,0'} ${TO}${'.65,.5'}`;
 
+const enum Shapes {
+  /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',
+  /** ─ */ LEFT_TO_RIGHT = 'M0,.5 L1,.5',
 
-const map: { [character: string]: { [fontWeight: number]: string } } = {
-  '━': {
-    1: `${xAxis}`
-  },
-  '│': {
-    1: `${yAxis}`
-  },
-  '┃': {
-    2: `${yAxis}`
-  },
-  '┌': {
-    1: `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}`
-  },
-  '┍': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┎': {
-    1: `${rightMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom}`
-  },
-  '┏': {
-    2: `${bottomYAxisFromBottom} ${TO}${RIGHT.MIDDLE}`
-  },
-  '┐': {
-    1: `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}`
-  },
-  '┑': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┒': {
-    1: `${leftMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom}`
-  },
-  '┓': {
-    2: `${bottomYAxisFromBottom} ${TO}${LEFT.MIDDLE}`
-  },
-  '└': {
-    1: `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}`
-  },
-  '┕': {
-    1: `${topYAxisFromTop}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┖': {
-    1: `${rightMiddleXAxis}`,
-    2: `${topYAxisFromTop}`
-  },
-  '┗': {
-    2: `${topYAxisFromTop} ${TO}${RIGHT.MIDDLE}`
-  },
-  '┘': {
-    1: `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}`
-  },
-  '┙': {
-    1: `${topYAxisFromTop}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┚': {
-    1: `${leftMiddleXAxis}`,
-    2: `${topYAxisFromTop}`
-  },
-  '┛': {
-    2: `${topYAxisFromTop} ${TO}${LEFT.MIDDLE}`
-  },
-  '├': {
-    1: `${yAxis} ${rightMiddleXAxis}`
-  },
-  '┝': {
-    1: `${yAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┞': {
-    1: `${bottomYAxisFromMiddle} ${rightMiddleXAxis}`,
-    2: `${topYAxisFromTop}`
-  },
-  '┟': {
-    1: `${topYAxisFromMiddle} ${rightMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom}`
-  },
-  '┠': {
-    1: `${rightMiddleXAxis}`,
-    2: `${yAxis}`
-  },
-  '┡': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${topYAxisFromMiddle} ${rightMiddleXAxis}`
-  },
-  '┢': {
-    1: `${topYAxisFromMiddle}`,
-    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
-  },
-  '┣': {
-    2: `${yAxis} ${rightMiddleXAxis}`
-  },
-  '┤': {
-    1: `${yAxis} ${leftMiddleXAxis}`
-  },
-  '┥': {
-    1: `${yAxis}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┦': {
-    1: `${bottomYAxisFromMiddle} ${leftMiddleXAxis}`,
-    2: `${topYAxisFromTop}`
-  },
-  '┧': {
-    1: `${topYAxisFromMiddle}`,
-    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
-  },
-  '┨': {
-    1: `${leftMiddleXAxis}`,
-    2: `${yAxis}`
-  },
-  '┩': {
-    2: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
-    1: `${bottomYAxisFromMiddle}`
-  },
-  '┪': {
-    1: `${topYAxisFromMiddle}`,
-    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
-  },
-  '┫': {
-    2: `${yAxis} ${leftMiddleXAxis}`
-  },
-  '┬': {
-    1: `${bottomYAxisFromBottom} ${xAxis}`
-  },
-  '┭': {
-    1: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┮': {
-    1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┯': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
-  },
-  '┰': {
-    1: `${xAxis}`,
-    2: `${bottomYAxisFromBottom}`
-  },
-  '┱': {
-    1: `${rightMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
-  },
-  '┲': {
-    1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┳': {
-    2: `${bottomYAxisFromBottom} ${xAxis}`
-  },
-  '┴': {
-    1: `${topYAxisFromMiddle} ${xAxis}`
-  },
-  '┵': {
-    1: `${topYAxisFromMiddle} ${rightMiddleXAxis}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┶': {
-    1: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┷': {
-    1: `${topYAxisFromMiddle}`,
-    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
-  },
-  '┸': {
-    1: `${xAxis}`,
-    2: `${topYAxisFromMiddle}`
-  },
-  '┹': {
-    1: `${rightMiddleXAxis}`,
-    2: `${topYAxisFromMiddle} ${leftMiddleXAxis}`
-  },
-  '┺': {
-    1: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┻': {
-    2: `${topYAxisFromMiddle} ${xAxis}`
-  },
-  '┼': {
-    1: `${yAxis} ${xAxis}`
-  },
-  '┽': {
-    1: `${yAxis} ${rightMiddleXAxis}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '┾': {
-    1: `${yAxis} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '┿': {
-    1: `${yAxis}`,
-    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
-  },
-  '╀': {
-    1: `${xAxis}`,
-    2: `${yAxis}`
-  },
-  '╁': {
-    1: `${rightMiddleXAxis}`,
-    2: `${yAxis} ${leftMiddleXAxis}`
-  },
-  '╂': {
-    1: `${yAxis} ${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '╃': {
-    1: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`,
-    2: `${topYAxisFromTop} ${leftMiddleXAxis}`
-  },
-  '╄': {
-    1: `${topYAxisFromTop} ${leftMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
-  },
-  '╅': {
-    1: `${topYAxisFromTop} ${rightMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
-  },
-  '╆': {
-    1: `${topYAxisFromTop} ${leftMiddleXAxis}`,
-    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
-  },
-  '╇': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${leftMiddleXAxis} ${topYAxisFromTop} ${rightMiddleXAxis}`
-  },
-  '╈': {
-    1: `${topYAxisFromTop}`,
-    2: `${leftMiddleXAxis} ${bottomYAxisFromBottom} ${rightMiddleXAxis}`
-  },
-  '╉': {
-    1: `${rightMiddleXAxis}`,
-    2: `${leftMiddleXAxis} ${yAxis}`
-  },
-  '╊': {
-    1: `${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis} ${yAxis}`
-  },
-  '╋': {
-    2: `${yAxis} ${xAxis}`
-  },
-  '╌': {
-    1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}`
-  },
-  '╍': {
-    2: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}`
-  },
-  '╎': {
-    1: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}`
-  },
-  '╏': {
-    2: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}`
-  },
-  '═': {
-    1: `${MOVE}${'0,.45'} ${TO}${'1,.45'} ${MOVE}${'0,.55'} ${TO}${'1,.55'}`
-  },
-  '║': {
-    1: `${MOVE}${'.35,0'} ${TO}${'.35,1'} ${MOVE}${'.65,0'} ${TO}${'.65,1'}`
-  },
-  '╒': {
-    1: `${rightTopXLine} ${rightBottomXLine} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
-  },
-  '╓': {
-    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'.3,.5'} ${TO}${'1,.5'}`
-  },
-  '╔': {
-    1: `${MOVE}${'.35,.45'} ${TO}${'1,.45'} ${MOVE}${'.35,.45'} ${TO}${'.35,1'} ${MOVE}${'.65,.65'} ${TO}${'1,.65'} ${MOVE}${'.65,.625'} ${TO}${'.65,1'}`
-  },
-  '╕': {
-    1: `${leftTopXLine} ${leftBottomXLine} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
-  },
-  '╖': {
-    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'0,.5'} ${TO}${'.7,.5'}`
-  },
-  '╗': {
-    1: `${MOVE}${'.35,.45'} ${TO}${'1,.45'} ${MOVE}${'1,.45'} ${TO}${'1,1'} ${MOVE}${'.35,.65'} ${TO}${'.7,.65'} ${MOVE}${'.7,.65'} ${TO}${'.7,1'}`
-  },
-  '╘': {
-    1: `${MOVE}${'0,.85'} ${TO}${'.5,.85'} ${MOVE}${'0,1'} ${TO}${'.5,1'} ${MOVE}${'0,.5'} ${TO}${'0,1'}`
-  },
-  '╙': {
-    1: `${MOVE}${'0,.5'} ${TO}${'0,1'} ${MOVE}${'.35,.5'} ${TO}${'.35,1'} ${MOVE}${'0,1'} ${TO}${'.7,1'}`
-  },
-  '╚': {
-    1: `${MOVE}${'0,.5'} ${TO}${'0,1'} ${MOVE}${'.35,.5'} ${TO}${'.35,.85'} ${MOVE}${'0,1'} ${TO}${'.7,1'} ${MOVE}${'.5,.85'} ${TO}${'1,.85'}`
-  },
-  '╛': {
-    1: `${MOVE}${'0,.85'} ${TO}${'.5,.85'} ${MOVE}${'0,1'} ${TO}${'.5,1'} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
-  },
-  '╜': {
-    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'0,1'} ${TO}${'.7,1'}`
-  },
-  '╝': {
-    1: `${MOVE}${'.35,.45'} ${TO}${'.35,.85'} ${MOVE}${'.65,.45'} ${TO} ${'.65,1'} ${MOVE}${'0,.85'} ${TO}${'.45,.85'} ${MOVE}${'0,1'} ${TO}${'.65,1'}`
-  },
-  '╴': {
-    1: `${leftMiddleXAxis}`
-  },
-  '╵': {
-    1: `${topYAxisFromMiddle}`
-  },
-  '╶': {
-    1: `${rightMiddleXAxis}`
-  },
-  '╷': {
-    1: `${bottomYAxisFromMiddle}`
-  },
-  '╸': {
-    2: `${leftMiddleXAxis}`
-  },
-  '╹': {
-    2: `${topYAxisFromMiddle}`
-  },
-  '╺': {
-    2: `${rightMiddleXAxis}`
-  },
-  '╻': {
-    2: `${bottomYAxisFromMiddle}`
-  },
-  '╼': {
-    1: `${leftMiddleXAxis}`,
-    2: `${rightMiddleXAxis}`
-  },
-  '╽': {
-    1: `${topYAxisFromMiddle}`,
-    2: `${bottomYAxisFromBottom}`
-  },
-  '╾': {
-    1: `${rightMiddleXAxis}`,
-    2: `${leftMiddleXAxis}`
-  },
-  '╿': {
-    1: `${bottomYAxisFromBottom}`,
-    2: `${topYAxisFromMiddle}`
-  }
+  /** └ */ TOP_TO_RIGHT = 'M.5,0 L.5,.5 L1,.5',
+  /** ┘ */ TOP_TO_LEFT = 'M.5,0 L.5,.5 L0,.5',
+  /** ┐ */ LEFT_TO_BOTTOM = 'M0,.5 L.5,.5 L.5,1',
+  /** ┌ */ RIGHT_TO_BOTTOM = 'M0.5,1 L.5,.5 L1,.5',
+
+  /** ╵ */ MIDDLE_TO_TOP = 'M.5,.5 L0,.5',
+  /** ╴ */ MIDDLE_TO_LEFT = 'M.5,.5 L.5,0',
+  /** ╶ */ MIDDLE_TO_RIGHT = 'M.5,.5 L1,.5',
+  /** ╷ */ MIDDLE_TO_BOTTOM = 'M.5,.5 L.5,1',
+
+  /** ┴ */ T_TOP = 'M0,.5 L1,.5 M.5,.5 L.5,0',
+  /** ┤ */ T_LEFT = 'M.5,0 L.5,1 M.5,.5 L0,.5',
+  /** ├ */ T_RIGHT = 'M.5,0 L.5,1 M.5,.5 L1,.5',
+  /** ┬ */ T_BOTTOM = 'M0,.5 L1,.5 M.5,.5 L.5,1',
+
+  /** ┼ */ CROSS = 'M0,.5 L1,.5 M.5,0 L.5,1',
+}
+
+const enum Style {
+  NORMAL = 1,
+  BOLD = 2
+}
+
+// TODO: Tweak normal and bold weights
+const map: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } } = {
+  // Uniform normal and bold
+  '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
+  '━': { [Style.BOLD]:   Shapes.LEFT_TO_RIGHT },
+  '│': { [Style.NORMAL]: Shapes.TOP_TO_BOTTOM },
+  '┃': { [Style.BOLD]:   Shapes.TOP_TO_BOTTOM },
+  '┌': { [Style.NORMAL]: Shapes.RIGHT_TO_BOTTOM },
+  '┏': { [Style.BOLD]:   Shapes.RIGHT_TO_BOTTOM },
+  '┐': { [Style.NORMAL]: Shapes.LEFT_TO_BOTTOM },
+  '┓': { [Style.BOLD]:   Shapes.LEFT_TO_BOTTOM },
+  '└': { [Style.NORMAL]: Shapes.TOP_TO_RIGHT },
+  '┗': { [Style.BOLD]:   Shapes.TOP_TO_RIGHT },
+  '┘': { [Style.NORMAL]: Shapes.TOP_TO_LEFT },
+  '┛': { [Style.BOLD]:   Shapes.TOP_TO_LEFT },
+  '├': { [Style.NORMAL]: Shapes.T_RIGHT },
+  '┣': { [Style.BOLD]:   Shapes.T_RIGHT },
+  '┤': { [Style.NORMAL]: Shapes.T_LEFT },
+  '┫': { [Style.BOLD]:   Shapes.T_LEFT },
+  '┬': { [Style.NORMAL]: Shapes.T_BOTTOM },
+  '┳': { [Style.BOLD]:   Shapes.T_BOTTOM },
+  '┴': { [Style.NORMAL]: Shapes.T_TOP },
+  '┻': { [Style.BOLD]:   Shapes.T_TOP },
+  '┼': { [Style.NORMAL]: Shapes.CROSS },
+  '╋': { [Style.BOLD]:   Shapes.CROSS },
+  '╴': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT },
+  '╸': { [Style.BOLD]:   Shapes.MIDDLE_TO_LEFT },
+  '╵': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP },
+  '╹': { [Style.BOLD]:   Shapes.MIDDLE_TO_TOP },
+  '╶': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT },
+  '╺': { [Style.BOLD]:   Shapes.MIDDLE_TO_RIGHT },
+  '╷': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM },
+  '╻': { [Style.BOLD]:   Shapes.MIDDLE_TO_BOTTOM },
+
+  // Mixed normal/bold
+  '┍': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM, [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┎': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,  [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+
+  // Double border
+  '═': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L1,${.5 + yp}` },
+  '║': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1` },
+  '╒': { [Style.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 - yp} L1,${.5 - yp} M.5,${.5 + yp} L1,${.5 + yp}` },
+  '╓': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},1 L${.5 - xp},.5 L1,.5 M${.5 + xp},.5 L${.5 + xp},1` },
+  '╔': { [Style.NORMAL]: (xp, yp) => `M1,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},1 M1,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},1` },
+  '╕': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L.5,${.5 - yp} L.5,1 M0,${.5 + yp} L.5,${.5 + yp}` },
+  '╖': { [Style.NORMAL]: (xp, yp) => `M${.5 + xp},1 L${.5 + xp},.5 L0,.5 M${.5 - xp},.5 L${.5 - xp},1` },
+  '╗': { [Style.NORMAL]: (xp, yp) => `M0,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},1 M0,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},1` },
+  '╘': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 + yp} L1,${.5 + yp} M.5,${.5 - yp} L1,${.5 - yp}` },
+  '╙': { [Style.NORMAL]: (xp, yp) => `M1,.5 L${.5 - xp},.5 L${.5 - xp},0 M${.5 + xp},.5 L${.5 + xp},0` },
+  '╚': { [Style.NORMAL]: (xp, yp) => `M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0 M1,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},0` },
+  '╛': { [Style.NORMAL]: (xp, yp) => `M0,${.5 + yp} L.5,${.5 + yp} L.5,0 M0,${.5 - yp} L.5,${.5 - yp}` },
+  '╜': { [Style.NORMAL]: (xp, yp) => `M0,.5 L${.5 + xp},.5 L${.5 + xp},0 M${.5 - xp},.5 L${.5 - xp},0 ` },
+  '╝': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0 M0,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},0` },
+  '╞': { [Style.NORMAL]: (xp, yp) => `${Shapes.TOP_TO_BOTTOM} M.5,${.5 - yp} L1,${.5 - yp} M.5,${.5 + yp} L1,${.5 + yp}` },
+  '╟': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1 M${.5 + xp},.5 L1,.5` },
+  '╠': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},0 L${.5 - xp},1 M1,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},1 M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0` },
+  '╡': { [Style.NORMAL]: (xp, yp) => `${Shapes.TOP_TO_BOTTOM} M0,${.5 - yp} L.5,${.5 - yp} M0,${.5 + yp} L.5,${.5 + yp}` },
+  '╢': { [Style.NORMAL]: (xp, yp) => `M0,.5 L${.5 - xp},.5 M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1` },
+  '╣': { [Style.NORMAL]: (xp, yp) => `M${.5 + xp},0 L${.5 + xp},1 M0,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},1 M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0` },
+  '╤': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L1,${.5 + yp} M.5,${.5 + yp} L.5,1` },
+  '╥': { [Style.NORMAL]: (xp, yp) => `${Shapes.LEFT_TO_RIGHT} M${.5 - xp},.5 L${.5 - xp},1 M${.5 + xp},.5 L${.5 + xp},1` },
+  '╦': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},1 M1,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},1` },
+  '╧': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - yp} M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L1,${.5 + yp}` },
+  '╨': { [Style.NORMAL]: (xp, yp) => `${Shapes.LEFT_TO_RIGHT} M${.5 - xp},.5 L${.5 - xp},0 M${.5 + xp},.5 L${.5 + xp},0` },
+  '╩': { [Style.NORMAL]: (xp, yp) => `M0,${.5 + yp} L1,${.5 + yp} M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0 M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0` },
+  '╪': { [Style.NORMAL]: (xp, yp) => `${Shapes.TOP_TO_BOTTOM} M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L1,${.5 + yp}` },
+  '╫': { [Style.NORMAL]: (xp, yp) => `${Shapes.LEFT_TO_RIGHT} M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1` },
+  '╬': { [Style.NORMAL]: (xp, yp) => `M0,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},1 M1,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},1 M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0 M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0` },
+
+  // Diagonal
+  '╱': { [Style.NORMAL]: 'M1,0 L0,1' },
+  '╲': { [Style.NORMAL]: 'M0,0 L1,1' },
+  '╳': { [Style.NORMAL]: 'M1,0 L0,1 M0,0 L1,1' },
+
+  // Mixed weight
+  '┑': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┒': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
+  '┕': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┖': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
+  '┙': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┚': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
+  '┝': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┞': { [Style.NORMAL]: `${bottomYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
+  '┟': { [Style.NORMAL]: `${topYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
+  '┠': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${yAxis}` },
+  '┡': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${topYAxisFromMiddle} ${rightMiddleXAxis}` },
+  '┢': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
+  '┥': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┦': { [Style.NORMAL]: `${bottomYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
+  '┧': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
+  '┨': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${yAxis}` },
+  '┩': { [Style.NORMAL]: `${bottomYAxisFromMiddle}`, [Style.BOLD]: `${topYAxisFromMiddle} ${leftMiddleXAxis}` },
+  '┪': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
+  '┭': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┮': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┯': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
+  '┰': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
+  '┱': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
+  '┲': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┵': { [Style.NORMAL]: `${topYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┶': { [Style.NORMAL]: `${topYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┷': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
+  '┸': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${topYAxisFromMiddle}` },
+  '┹': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromMiddle} ${leftMiddleXAxis}` },
+  '┺': { [Style.NORMAL]: `${topYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┽': { [Style.NORMAL]: `${yAxis} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '┾': { [Style.NORMAL]: `${yAxis} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '┿': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
+  '╀': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${yAxis}` },
+  '╁': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${yAxis} ${leftMiddleXAxis}` },
+  '╂': { [Style.NORMAL]: `${yAxis} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '╃': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop} ${leftMiddleXAxis}` },
+  '╄': { [Style.NORMAL]: `${topYAxisFromTop} ${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
+  '╅': { [Style.NORMAL]: `${topYAxisFromTop} ${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
+  '╆': { [Style.NORMAL]: `${topYAxisFromTop} ${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
+  '╇': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis} ${topYAxisFromTop} ${rightMiddleXAxis}` },
+  '╈': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${leftMiddleXAxis} ${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
+  '╉': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis} ${yAxis}` },
+  '╊': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis} ${yAxis}` },
+  '╼': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
+  '╽': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
+  '╾': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
+  '╿': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${topYAxisFromMiddle}` },
+
+  // Dashed
+  '╌': { [Style.NORMAL]: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
+  '╍': { [Style.BOLD]:   `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
+  '┄': { [Style.NORMAL]: `` },
+  '┅': { [Style.BOLD]:   `` },
+  '┈': { [Style.NORMAL]: `` },
+  '┉': { [Style.BOLD]:   `` },
+  '╎': { [Style.NORMAL]: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}` },
+  '╏': { [Style.BOLD]:   `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}` },
+  '┆': { [Style.NORMAL]: `` },
+  '┇': { [Style.BOLD]:   `` },
+  '┊': { [Style.NORMAL]: `` },
+  '┋': { [Style.BOLD]:   `` }
 };
 
 const chars: { [index: string]: string } = {
@@ -630,17 +451,30 @@ const chars: { [index: string]: string } = {
 //   // '╳': `${MOVE}${} ${TO}${} ${TO}${}`,
 };
 
+// Give more specific name
 export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
-  const match: { [fontWeight: number]: string } = map[c];
+  const match: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } = map[c];
   if (!match) {
     return;
   }
   for (const [fontWeight, instructions] of Object.entries(match)) {
     ctx.beginPath();
     ctx.lineWidth = window.devicePixelRatio * Number.parseInt(fontWeight);
-    for (const instruction of instructions.split(' ')) {
+    let actualInstructions: string;
+    if (typeof instructions === 'function') {
+      const xp = .15;
+      const yp = .15 / cellHeight * cellWidth;
+      actualInstructions = instructions(xp, yp);
+    } else {
+      actualInstructions = instructions;
+    }
+    for (const instruction of actualInstructions.split(' ')) {
       const type = instruction[0];
       const f = instructionMap[type];
+      if (!f) {
+        console.error(`Could not find drawing instructions for "${type}"`);
+        continue;
+      }
       const coords: string[] = instruction.substring(1).split(',');
       if (!coords[0] || !coords[1]) {
         continue;
@@ -670,8 +504,7 @@ function clamp(value: number, max: number, min: number = 0): number {
 
 const instructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.moveTo(x, y);
-  },
+    ctx.moveTo(x, y); },
   'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     ctx.lineTo(x, y);
   }
