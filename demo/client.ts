@@ -214,16 +214,17 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
-      res.text().then((processId) => {
-        pid = processId;
-        socketURL += processId;
-        socket = new WebSocket(socketURL);
-        socket.onopen = runRealTerminal;
-        socket.onclose = runFakeTerminal;
-        socket.onerror = runFakeTerminal;
-      });
-    });
+    // fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
+    //   res.text().then((processId) => {
+    //     pid = processId;
+    //     socketURL += processId;
+    //     socket = new WebSocket(socketURL);
+    //     socket.onopen = runRealTerminal;
+    //     socket.onclose = runFakeTerminal;
+    //     socket.onerror = runFakeTerminal;
+    //   });
+    // });
+    runFakeTerminal();
   }, 0);
 }
 
@@ -246,11 +247,33 @@ function runFakeTerminal(): void {
     term.write('\r\n$ ');
   };
 
-  term.writeln('Welcome to xterm.js');
-  term.writeln('This is a local terminal emulation, without a real terminal in the back-end.');
-  term.writeln('Type some keys and commands to play around.');
-  term.writeln('');
-  term.prompt();
+  // term.writeln('Welcome to xterm.js');
+  // term.writeln('This is a local terminal emulation, without a real terminal in the back-end.');
+  // term.writeln('Type some keys and commands to play around.');
+  // term.writeln('');
+  // term.prompt();
+
+  term.write('Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐\n\r');
+  term.write('┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤\n\r');
+  term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘\n\r');
+  term.write('├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐\n\r');
+  term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤\n\r');
+  term.write('└─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘\n\r');
+  term.write('\n\r');
+  term.write('Other:\n\r');
+  term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌ ┄┄ ┈┈\n\r');
+  term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍ ┅┅ ┉┉\n\r');
+  term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
+  term.write('\n\r');
+  term.write('All box drawing characters:\n\r');
+  term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
+  term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
+  term.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\n\r');
+  term.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\n\r');
+  term.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\n\r');
+  term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
+  term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
+  term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
 
   term.onKey((e: { key: string, domEvent: KeyboardEvent }) => {
     const ev = e.domEvent;
