@@ -243,6 +243,24 @@ const topYAxisFromMiddle = `${MOVE}${CENTER.TOP} ${TO}${CENTER.MIDDLE}`;
 const rightMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${RIGHT.MIDDLE}`;
 const leftMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${LEFT.MIDDLE}`;
 
+const topXLine = `${MOVE}${'0,.45'} ${TO}${'1,.45'}`;
+const bottomXLine = `${MOVE}${'0,.55'} ${TO}${'1,.55'}`;
+const leftYLine = `${MOVE}${'.35,0'} ${TO}${'.35,1'}`;
+const rightYLine = `${MOVE}${'.65,0'} ${TO}${'.65,1'}`;
+
+const leftTopXLine = `${MOVE}${'0,.45'} ${TO}${'.5,.45'}`;
+const rightTopXLine = `${MOVE}${'.5,.45'} ${TO}${'1,.45'}`;
+
+const leftBottomXLine = `${MOVE}${'0,.55'} ${TO}${'.5,.55'}`;
+const rightBottomXLine = `${MOVE}${'.5,.55'} ${TO}${'1,.55'}`;
+
+const bottomLeftYLine = `${MOVE}${'.35,.5'} ${TO}${'.35,1'}`;
+const topLeftYLine = `${MOVE}${'.35,0'} ${TO}${'.35,.5'}`;
+
+const bottomRightYLine = `${MOVE}${'.65,.5'} ${TO}${'.65,1'}`;
+const topRightYLine = `${MOVE}${'.65,0'} ${TO}${'.65,.5'}`;
+
+
 const map: { [character: string]: { [fontWeight: number]: string } } = {
   '━': {
     1: `${xAxis}`
@@ -368,178 +386,226 @@ const map: { [character: string]: { [fontWeight: number]: string } } = {
   },
   '┫': {
     2: `${yAxis} ${leftMiddleXAxis}`
+  },
+  '┬': {
+    1: `${bottomYAxisFromBottom} ${xAxis}`
+  },
+  '┭': {
+    1: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┮': {
+    1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┯': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
+  },
+  '┰': {
+    1: `${xAxis}`,
+    2: `${bottomYAxisFromBottom}`
+  },
+  '┱': {
+    1: `${rightMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
+  },
+  '┲': {
+    1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┳': {
+    2: `${bottomYAxisFromBottom} ${xAxis}`
+  },
+  '┴': {
+    1: `${topYAxisFromMiddle} ${xAxis}`
+  },
+  '┵': {
+    1: `${topYAxisFromMiddle} ${rightMiddleXAxis}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┶': {
+    1: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┷': {
+    1: `${topYAxisFromMiddle}`,
+    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
+  },
+  '┸': {
+    1: `${xAxis}`,
+    2: `${topYAxisFromMiddle}`
+  },
+  '┹': {
+    1: `${rightMiddleXAxis}`,
+    2: `${topYAxisFromMiddle} ${leftMiddleXAxis}`
+  },
+  '┺': {
+    1: `${topYAxisFromMiddle} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┻': {
+    2: `${topYAxisFromMiddle} ${xAxis}`
+  },
+  '┼': {
+    1: `${yAxis} ${xAxis}`
+  },
+  '┽': {
+    1: `${yAxis} ${rightMiddleXAxis}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '┾': {
+    1: `${yAxis} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '┿': {
+    1: `${yAxis}`,
+    2: `${leftMiddleXAxis} ${rightMiddleXAxis}`
+  },
+  '╀': {
+    1: `${xAxis}`,
+    2: `${yAxis}`
+  },
+  '╁': {
+    1: `${rightMiddleXAxis}`,
+    2: `${yAxis} ${leftMiddleXAxis}`
+  },
+  '╂': {
+    1: `${yAxis} ${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '╃': {
+    1: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`,
+    2: `${topYAxisFromTop} ${leftMiddleXAxis}`
+  },
+  '╄': {
+    1: `${topYAxisFromTop} ${leftMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
+  },
+  '╅': {
+    1: `${topYAxisFromTop} ${rightMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`
+  },
+  '╆': {
+    1: `${topYAxisFromTop} ${leftMiddleXAxis}`,
+    2: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`
+  },
+  '╇': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${leftMiddleXAxis} ${topYAxisFromTop} ${rightMiddleXAxis}`
+  },
+  '╈': {
+    1: `${topYAxisFromTop}`,
+    2: `${leftMiddleXAxis} ${bottomYAxisFromBottom} ${rightMiddleXAxis}`
+  },
+  '╉': {
+    1: `${rightMiddleXAxis}`,
+    2: `${leftMiddleXAxis} ${yAxis}`
+  },
+  '╊': {
+    1: `${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis} ${yAxis}`
+  },
+  '╋': {
+    2: `${yAxis} ${xAxis}`
+  },
+  '╌': {
+    1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}`
+  },
+  '╍': {
+    2: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}`
+  },
+  '╎': {
+    1: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}`
+  },
+  '╏': {
+    2: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}`
+  },
+  '═': {
+    1: `${MOVE}${'0,.45'} ${TO}${'1,.45'} ${MOVE}${'0,.55'} ${TO}${'1,.55'}`
+  },
+  '║': {
+    1: `${MOVE}${'.35,0'} ${TO}${'.35,1'} ${MOVE}${'.65,0'} ${TO}${'.65,1'}`
+  },
+  '╒': {
+    1: `${rightTopXLine} ${rightBottomXLine} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
+  },
+  '╓': {
+    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'.3,.5'} ${TO}${'1,.5'}`
+  },
+  '╔': {
+    1: `${MOVE}${'.35,.45'} ${TO}${'1,.45'} ${MOVE}${'.35,.45'} ${TO}${'.35,1'} ${MOVE}${'.65,.65'} ${TO}${'1,.65'} ${MOVE}${'.65,.625'} ${TO}${'.65,1'}`
+  },
+  '╕': {
+    1: `${leftTopXLine} ${leftBottomXLine} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
+  },
+  '╖': {
+    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'0,.5'} ${TO}${'.7,.5'}`
+  },
+  '╗': {
+    1: `${MOVE}${'.35,.45'} ${TO}${'1,.45'} ${MOVE}${'1,.45'} ${TO}${'1,1'} ${MOVE}${'.35,.65'} ${TO}${'.7,.65'} ${MOVE}${'.7,.65'} ${TO}${'.7,1'}`
+  },
+  '╘': {
+    1: `${MOVE}${'0,.85'} ${TO}${'.5,.85'} ${MOVE}${'0,1'} ${TO}${'.5,1'} ${MOVE}${'0,.5'} ${TO}${'0,1'}`
+  },
+  '╙': {
+    1: `${MOVE}${'0,.5'} ${TO}${'0,1'} ${MOVE}${'.35,.5'} ${TO}${'.35,1'} ${MOVE}${'0,1'} ${TO}${'.7,1'}`
+  },
+  '╚': {
+    1: `${MOVE}${'0,.5'} ${TO}${'0,1'} ${MOVE}${'.35,.5'} ${TO}${'.35,.85'} ${MOVE}${'0,1'} ${TO}${'.7,1'} ${MOVE}${'.5,.85'} ${TO}${'1,.85'}`
+  },
+  '╛': {
+    1: `${MOVE}${'0,.85'} ${TO}${'.5,.85'} ${MOVE}${'0,1'} ${TO}${'.5,1'} ${MOVE}${'.55,1'} ${TO}${'.55,.45'}`
+  },
+  '╜': {
+    1: `${bottomLeftYLine} ${bottomRightYLine} ${MOVE}${'0,1'} ${TO}${'.7,1'}`
+  },
+  '╝': {
+    1: `${MOVE}${'.35,.45'} ${TO}${'.35,.85'} ${MOVE}${'.65,.45'} ${TO} ${'.65,1'} ${MOVE}${'0,.85'} ${TO}${'.45,.85'} ${MOVE}${'0,1'} ${TO}${'.65,1'}`
+  },
+  '╴': {
+    1: `${leftMiddleXAxis}`
+  },
+  '╵': {
+    1: `${topYAxisFromMiddle}`
+  },
+  '╶': {
+    1: `${rightMiddleXAxis}`
+  },
+  '╷': {
+    1: `${bottomYAxisFromMiddle}`
+  },
+  '╸': {
+    2: `${leftMiddleXAxis}`
+  },
+  '╹': {
+    2: `${topYAxisFromMiddle}`
+  },
+  '╺': {
+    2: `${rightMiddleXAxis}`
+  },
+  '╻': {
+    2: `${bottomYAxisFromMiddle}`
+  },
+  '╼': {
+    1: `${leftMiddleXAxis}`,
+    2: `${rightMiddleXAxis}`
+  },
+  '╽': {
+    1: `${topYAxisFromMiddle}`,
+    2: `${bottomYAxisFromBottom}`
+  },
+  '╾': {
+    1: `${rightMiddleXAxis}`,
+    2: `${leftMiddleXAxis}`
+  },
+  '╿': {
+    1: `${bottomYAxisFromBottom}`,
+    2: `${topYAxisFromMiddle}`
   }
 };
 
 const chars: { [index: string]: string } = {
-  //   '┬': {
-  //     1: `${bottomYAxisFromBottom} ${xAxis}`,
-  //     1: `${bottomYAxisFromBottom} ${xAxis}`,
-  //     }
-  //   '┭': {
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '┮': {
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┯': {
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┰': {
-  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}`,
-  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}`,
-  //     }
-  //   '┱': {
-  //     1: `${bottomYAxisFromBottom}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${bottomYAxisFromBottom}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '┲': {
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${bottomYAxisFromBottom} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┳': {
-  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}${THICK}`,
-  //     1: `${bottomYAxisFromBottom}${THICK} ${xAxis}${THICK}`,
-  //     }
-  //   '┴': {
-  //     1: `${topYAxisFromTop} ${xAxis}`,
-  //     1: `${topYAxisFromTop} ${xAxis}`,
-  //     }
-  //   '┵': {
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '┶': {
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┷': {
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┸': {
-  //     1: `${topYAxisFromTop}${THICK} ${xAxis}`,
-  //     1: `${topYAxisFromTop}${THICK} ${xAxis}`,
-  //     }
-  //   '┹': {
-  //     1: `${topYAxisFromTop}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${topYAxisFromTop}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '┺': {
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${topYAxisFromTop} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┻': {
-  //     1: `${topYAxisFromTop}${THICK} ${xAxis}${THICK}`,
-  //     1: `${topYAxisFromTop}${THICK} ${xAxis}${THICK}`,
-  //     }
-  //   '┼': {
-  //     1: `${yAxis} ${xAxis}`,
-  //     1: `${yAxis} ${xAxis}`,
-  //     }
-  //   '┽': {
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '┾': {
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '┿': {
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '╀': {
-  //     1: `${yAxis}${THICK} ${xAxis}`,
-  //     1: `${yAxis}${THICK} ${xAxis}`,
-  //     }
-  //   '╁': {
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '╂': {
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '╃': {
-  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
-  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
-  //     }
-  //   '╄': {
-  //     1: `${yAxis} ${xAxis}`,
-  //     1: `${yAxis} ${xAxis}`,
-  //     }
-  //   '╅': {
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '╆': {
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '╇': {
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '╈': {
-  //     1: `${yAxis}${THICK} ${xAxis}`,
-  //     1: `${yAxis}${THICK} ${xAxis}`,
-  //     }
-  //   '╉': {
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     1: `${yAxis}${THICK} ${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-  //     }
-  //   '╊': {
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     1: `${yAxis} ${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-  //     }
-  //   '╋': {
-  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
-  //     1: `${yAxis}${THICK} ${xAxis}${THICK}`,
-  //     }
-  //   '╌': {
-  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}`,
-  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}`,
-  //     }
-  //   '╍': {
-  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'}${THICK} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  //     1: `${MOVE}${LEFT.MIDDLE} ${TO}${'.47,.5'}${THICK} ${MOVE}${'.53,.5'} ${TO}${RIGHT.MIDDLE}${THICK}`,
-  //     }
-  //   '╎':`{
-  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}`
-  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}`
-  //     },
-  //   '╏':`{
-  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'}${THICK} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}${THICK}`
-  //     1: ${MOVE}${CENTER.TOP} ${TO}${'.5,.47'}${THICK} ${MOVE}${'.5,.53'} ${TO}${CENTER.BOTTOM}${THICK}`
-  //     },
-  //   // '═{
-  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
-  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
-
-  //     }`,
-
-  // }    // '║{
-  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
-  //     1: ': `${MOVE}${} ${TO}${} ${TO}${
-
-  //     }`,
-
-// }    // '╒': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╓': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╔': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╕': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╖': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╗': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╘': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╙': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╚': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╛': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╜': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╝': `${MOVE}${} ${TO}${} ${TO}${}`,
 //   // '╞': `${MOVE}${} ${TO}${} ${TO}${}`,
 //   // '╟': `${MOVE}${} ${TO}${} ${TO}${}`,
 //   // '╠': `${MOVE}${} ${TO}${} ${TO}${}`,
@@ -562,18 +628,6 @@ const chars: { [index: string]: string } = {
 //   // '╱': `${MOVE}${} ${TO}${} ${TO}${}`,
 //   // '╲': `${MOVE}${} ${TO}${} ${TO}${}`,
 //   // '╳': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   '╴': `${leftMiddleXAxis}`,
-//   '╵': `${topYAxisFromMiddle}`,
-//   '╶': `${rightMiddleXAxis}`,
-//   '╷': `${bottomYAxisFromMiddle}`,
-//   '╸': `${leftMiddleXAxis}${THICK}`,
-//   '╹': `${topYAxisFromMiddle}${THICK}`,
-//   '╺': `${rightMiddleXAxis}${THICK}`,
-//   '╻': `${bottomYAxisFromMiddle}${THICK}`,
-//   '╼': `${leftMiddleXAxis} ${rightMiddleXAxis}${THICK}`,
-//   '╽': `${bottomYAxisFromBottom}${THICK} ${topYAxisFromMiddle}`,
-//   '╾': `${leftMiddleXAxis}${THICK} ${rightMiddleXAxis}`,
-//   '╿': `${bottomYAxisFromBottom} ${topYAxisFromMiddle}${THICK}`
 };
 
 export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
