@@ -261,8 +261,8 @@ function runFakeTerminal(): void {
   term.write('└─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘\n\r');
   term.write('\n\r');
   term.write('Other:\n\r');
-  term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌ ┄┄ ┈┈\n\r');
-  term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍ ┅┅ ┉┉\n\r');
+  term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈\n\r');
+  term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉\n\r');
   term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
   term.write('\n\r');
   term.write('All box drawing characters:\n\r');

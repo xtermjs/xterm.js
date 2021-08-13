@@ -243,22 +243,6 @@ const topYAxisFromMiddle = `${MOVE}${CENTER.TOP} ${TO}${CENTER.MIDDLE}`;
 const rightMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${RIGHT.MIDDLE}`;
 const leftMiddleXAxis = `${MOVE}${CENTER.MIDDLE} ${TO}${LEFT.MIDDLE}`;
 
-const topXLine = `${MOVE}${'0,.45'} ${TO}${'1,.45'}`;
-const bottomXLine = `${MOVE}${'0,.55'} ${TO}${'1,.55'}`;
-const leftYLine = `${MOVE}${'.35,0'} ${TO}${'.35,1'}`;
-const rightYLine = `${MOVE}${'.65,0'} ${TO}${'.65,1'}`;
-
-const leftTopXLine = `${MOVE}${'0,.45'} ${TO}${'.5,.45'}`;
-const rightTopXLine = `${MOVE}${'.5,.45'} ${TO}${'1,.45'}`;
-
-const leftBottomXLine = `${MOVE}${'0,.55'} ${TO}${'.5,.55'}`;
-const rightBottomXLine = `${MOVE}${'.5,.55'} ${TO}${'1,.55'}`;
-
-const bottomLeftYLine = `${MOVE}${'.35,.5'} ${TO}${'.35,1'}`;
-const topLeftYLine = `${MOVE}${'.35,0'} ${TO}${'.35,.5'}`;
-
-const bottomRightYLine = `${MOVE}${'.65,.5'} ${TO}${'.65,1'}`;
-const topRightYLine = `${MOVE}${'.65,0'} ${TO}${'.65,.5'}`;
 
 const enum Shapes {
   /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',
@@ -412,9 +396,10 @@ const map: { [character: string]: { [fontWeight: number]: string | ((xp: number,
   '╿': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${topYAxisFromMiddle}` },
 
   // Dashed
-  '╌': { [Style.NORMAL]: `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
+  // TODO: Spacing dashes evenly, use 1/2 padding on each edge so the line is continuous
+  '╌': { [Style.NORMAL]: `` }, // `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
   '╍': { [Style.BOLD]:   `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
-  '┄': { [Style.NORMAL]: `` },
+  '┄': { [Style.NORMAL]: `M.04,.5 L.96,.5` },
   '┅': { [Style.BOLD]:   `` },
   '┈': { [Style.NORMAL]: `` },
   '┉': { [Style.BOLD]:   `` },
