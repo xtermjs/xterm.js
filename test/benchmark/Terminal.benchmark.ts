@@ -47,22 +47,22 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
   perfContext('write/string/async', () => {
     let terminal: Terminal;
     before(() => {
-      terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
+      terminal = new Terminal({ cols: 80, rows: 25, scrollback: 1000 });
     });
     new ThroughputRuntimeCase('', async () => {
       await new Promise<void>(res => terminal.write(content, res));
-      return {payloadSize: contentUtf8.length};
-    }, {fork: false}).showAverageThroughput();
+      return { payloadSize: contentUtf8.length };
+    }, { fork: false }).showAverageThroughput();
   });
 
   perfContext('write/Utf8/async', () => {
     let terminal: Terminal;
     before(() => {
-      terminal = new Terminal({cols: 80, rows: 25, scrollback: 1000});
+      terminal = new Terminal({ cols: 80, rows: 25, scrollback: 1000 });
     });
     new ThroughputRuntimeCase('', async () => {
       await new Promise<void>(res => terminal.write(content, res));
-      return {payloadSize: contentUtf8.length};
-    }, {fork: false}).showAverageThroughput();
+      return { payloadSize: contentUtf8.length };
+    }, { fork: false }).showAverageThroughput();
   });
 });

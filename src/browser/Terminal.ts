@@ -113,8 +113,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onBell  = new EventEmitter<void>();
-  public get onBell (): IEvent<void> { return this._onBell.event; }
+  private _onBell = new EventEmitter<void>();
+  public get onBell(): IEvent<void> { return this._onBell.event; }
 
   private _onFocus = new EventEmitter<void>();
   public get onFocus(): IEvent<void> { return this._onFocus.event; }
