@@ -69,12 +69,9 @@ describe('API Integration Tests', function(): void {
   it('write - bytes (UTF8)', async () => {
     await openTerminal(page);
     await page.evaluate(`
-      // foo
-      window.term.write(new Uint8Array([102, 111, 111]));
-      // bar
-      window.term.write(new Uint8Array([98, 97, 114]));
-      // 文
-      window.term.write(new Uint8Array([230, 150, 135]));
+      window.term.write(new Uint8Array([102, 111, 111])); // foo
+      window.term.write(new Uint8Array([98, 97, 114])); // bar
+      window.term.write(new Uint8Array([230, 150, 135])); // 文
     `);
     await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
   });
@@ -82,12 +79,9 @@ describe('API Integration Tests', function(): void {
   it('write - bytes (UTF8) with callback', async () => {
     await openTerminal(page);
     await page.evaluate(`
-      // foo
-      window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; });
-      // bar
-      window.term.write(new Uint8Array([98, 97, 114]), () => { window.__x += 'B'; });
-      // 文
-      window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; });
+      window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; }); // foo
+      window.term.write(new Uint8Array([98, 97, 114]), () => { window.__x += 'B'; }); // bar
+      window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; }); // 文
     `);
     await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
     await pollFor(page, `window.__x`, 'ABC');
