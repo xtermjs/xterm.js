@@ -264,6 +264,13 @@ const enum Shapes {
   /** ┬ */ T_BOTTOM = 'M0,.5 L1,.5 M.5,.5 L.5,1',
 
   /** ┼ */ CROSS = 'M0,.5 L1,.5 M.5,0 L.5,1',
+
+  /** ╌ */ TWO_DASHES_HORIZONTAL = 'M.1,.5 L.45,.5 M.55,.5 L.9,.5',
+  /** ┄ */ THREE_DASHES_HORIZONTAL = 'M.052,.5 L.316,.5 M.0.421,.5 L.6315,.5 M.684,.5 L.947,.5',
+  /** ┉ */ FOUR_DASHES_HORIZONTAL = 'M.0588,.5 L.235,.5 M.294,.5 L.4705,.5 M.529,.5 L.7058,.5 M.765,.5 L.947,.5',
+  /** ╌ */ TWO_DASHES_VERTICAL = 'M.5,0 T.5,.45 M.5,.55 T.5,1',
+  /** ┄ */ THREE_DASHES_VERTICAL = 'M.5,.052 L.5,.316 M.5,.0.368 L.5.632 M.5,.684 L.5,.947',
+  /** ┉ */ FOUR_DASHES_VERTICAL = 'M.5,.0588 L.5,.235 M.5,.294 L.5,.4705 29 L.5,.7058 M.5,.765 L.5,.947',
 }
 
 const enum Style {
@@ -397,47 +404,21 @@ const map: { [character: string]: { [fontWeight: number]: string | ((xp: number,
 
   // Dashed
   // TODO: Spacing dashes evenly, use 1/2 padding on each edge so the line is continuous
-  '╌': { [Style.NORMAL]: `` }, // `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
-  '╍': { [Style.BOLD]:   `${MOVE}${LEFT.MIDDLE} ${TO}${'.4,.5'} ${MOVE}${'.6,.5'} ${TO}${RIGHT.MIDDLE}` },
-  '┄': { [Style.NORMAL]: `M.04,.5 L.96,.5` },
-  '┅': { [Style.BOLD]:   `` },
-  '┈': { [Style.NORMAL]: `` },
-  '┉': { [Style.BOLD]:   `` },
-  '╎': { [Style.NORMAL]: `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}` },
-  '╏': { [Style.BOLD]:   `${MOVE}${CENTER.TOP} ${TO}${'.5,.45'} ${MOVE}${'.5,.55'} ${TO}${CENTER.BOTTOM}` },
-  '┆': { [Style.NORMAL]: `` },
-  '┇': { [Style.BOLD]:   `` },
-  '┊': { [Style.NORMAL]: `` },
-  '┋': { [Style.BOLD]:   `` }
+  '╌': { [Style.NORMAL]:  Shapes.TWO_DASHES_HORIZONTAL },
+  '╍': { [Style.BOLD]: Shapes.TWO_DASHES_HORIZONTAL },
+  '┄': { [Style.NORMAL]:  Shapes.THREE_DASHES_HORIZONTAL },
+  '┅': { [Style.BOLD]: Shapes.THREE_DASHES_HORIZONTAL },
+  '┈': { [Style.NORMAL]:  Shapes.FOUR_DASHES_HORIZONTAL },
+  '┉': { [Style.BOLD]: Shapes.FOUR_DASHES_HORIZONTAL },
+  '╎': { [Style.NORMAL]: Shapes.TWO_DASHES_VERTICAL },
+  '╏': { [Style.BOLD]:   Shapes.TWO_DASHES_VERTICAL },
+  '┆': { [Style.NORMAL]: Shapes.THREE_DASHES_VERTICAL  },
+  '┇': { [Style.BOLD]: Shapes.THREE_DASHES_VERTICAL },
+  '┊': { [Style.NORMAL]: Shapes.FOUR_DASHES_VERTICAL },
+  '┋': { [Style.BOLD]: Shapes.FOUR_DASHES_VERTICAL }
 };
 
-const chars: { [index: string]: string } = {
-//   // '╞': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╟': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╠': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╡': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╢': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╣': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╤': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╥': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╦': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╧': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╨': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╩': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╪': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╫': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╬': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╭': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╮': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╯': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╰': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╱': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╲': `${MOVE}${} ${TO}${} ${TO}${}`,
-//   // '╳': `${MOVE}${} ${TO}${} ${TO}${}`,
-};
-
-// Give more specific name
-export function draw(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
+export function drawBoxChar(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
   const match: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } = map[c];
   if (!match) {
     return;

@@ -17,7 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { boxDrawingBoxes, boxDrawingLineSegments, draw } from 'browser/renderer/BoxAndBlockCharacters';
+import { boxDrawingBoxes, boxDrawingLineSegments, drawBoxChar } from 'browser/renderer/BoxAndBlockCharacters';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -422,7 +422,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // increase # of pixels when font size incremented by 10
     // this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
     // yOffset - verticalCenter
-    draw(this._ctx, char, xOffset, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    drawBoxChar(this._ctx, char, xOffset, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     return true;
   }
 
