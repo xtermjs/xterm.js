@@ -17,7 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { boxDrawingBoxes, boxDrawingLineSegments, drawBoxChar } from 'browser/renderer/BoxAndBlockCharacters';
+import { boxCharacters, boxDrawingBoxes, drawBoxChar } from 'browser/renderer/BoxAndBlockCharacters';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -408,21 +408,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       return true;
     }
 
-    const lineSegments = boxDrawingLineSegments[char];
+    const lineSegments = boxCharacters[char];
     if (!lineSegments) {
       return false;
     }
-    const xOffset = x * this._scaledCellWidth;
-    const verticalCenter = Math.round(this._scaledCellHeight / 2);
-
-    const yOffset = y * this._scaledCellHeight + this._scaledCharTop + verticalCenter;
-    // const scale = window.devicePixelRatio;
     this._ctx.strokeStyle = this._ctx.fillStyle;
-
-    // increase # of pixels when font size incremented by 10
-    // this._ctx.lineWidth = Math.max(Math.floor(this._optionsService.options.fontSize / 10), 1);
-    // yOffset - verticalCenter
-    drawBoxChar(this._ctx, char, xOffset, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    drawBoxChar(this._ctx, char, x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     return true;
   }
 
