@@ -635,6 +635,12 @@ declare module 'xterm' {
     constructor(options?: ITerminalOptions);
 
     /**
+     * Adds an event listener for when the bell is triggered.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBell: IEvent<void>;
+
+    /**
      * Adds an event listener for when a binary event fires. This is used to
      * enable non UTF-8 conformant binary messages to be sent to the backend.
      * Currently this is only used for a certain type of mouse reports that
@@ -675,19 +681,6 @@ declare module 'xterm' {
     onLineFeed: IEvent<void>;
 
     /**
-     * Adds an event listener for when a scroll occurs. The event value is the
-     * new position of the viewport.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onScroll: IEvent<number>;
-
-    /**
-     * Adds an event listener for when a selection change occurs.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onSelectionChange: IEvent<void>;
-
-    /**
      * Adds an event listener for when rows are rendered. The event value
      * contains the start row and end rows of the rendered area (ranges from `0`
      * to `Terminal.rows - 1`).
@@ -703,17 +696,24 @@ declare module 'xterm' {
     onResize: IEvent<{ cols: number, rows: number }>;
 
     /**
+     * Adds an event listener for when a scroll occurs. The event value is the
+     * new position of the viewport.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onScroll: IEvent<number>;
+
+    /**
+     * Adds an event listener for when a selection change occurs.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onSelectionChange: IEvent<void>;
+
+    /**
      * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
      * The event value is the new title.
      * @returns an `IDisposable` to stop listening.
      */
     onTitleChange: IEvent<string>;
-
-    /**
-     * Adds an event listener for when the bell is triggered.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onBell: IEvent<void>;
 
     /**
      * Unfocus the terminal.

@@ -1,0 +1,9 @@
+{
+ "name": "xterm-headless",
+ "description": "A headless terminal component that runs in Node.js",
+ "version": "4.13.0-alpha3",
+ "main": "lib-headless/xterm-headless.js",
+ "types": "typings/xterm-headless.d.ts",
+ "repository": "https://github.com/xtermjs/xterm.js",
+ "license": "MIT"
+}

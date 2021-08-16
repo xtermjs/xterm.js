@@ -22,6 +22,7 @@ const changedFiles = getChangedFilesInCommit('HEAD');
 let isStableRelease = false;
 if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
   isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
+  checkAndPublishPackage(path.resolve(__dirname, '../headless'));
 }
 
 // Publish addons if any files were changed inside of the addon

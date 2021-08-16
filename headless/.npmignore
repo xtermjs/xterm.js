@@ -1,0 +1,6 @@
+# Include
+!typings/*.d.ts
+!lib-headless/
+
+# Exclude
+test/
