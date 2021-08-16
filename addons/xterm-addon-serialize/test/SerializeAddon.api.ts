@@ -30,6 +30,12 @@ const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
   assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
 };
 
+async function testSerializeEquals(writeContent: string, expectedSerialized: string): Promise<void> {
+  await writeRawSync(page, writeContent);
+  const result = await page.evaluate(`serializeAddon.serialize();`) as string;
+  assert.strictEqual(result, expectedSerialized);
+}
+
 describe('SerializeAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
@@ -478,6 +484,52 @@ describe('SerializeAddon', () => {
     ];
 
     await testNormalScreenEqual(page, lines.join(''));
+  });
+
+  describe('handle modes', () => {
+    it('applicationCursorKeysMode', async () => {
+      await testSerializeEquals('test\u001b[?1h', 'test\u001b[?1h');
+      await testSerializeEquals('\u001b[?1l', 'test');
+    });
+    it('applicationKeypadMode', async () => {
+      await testSerializeEquals('test\u001b[?66h', 'test\u001b[?66h');
+      await testSerializeEquals('\u001b[?66l', 'test');
+    });
+    it('bracketedPasteMode', async () => {
+      await testSerializeEquals('test\u001b[?2004h', 'test\u001b[?2004h');
+      await testSerializeEquals('\u001b[?2004l', 'test');
+    });
+    it('insertMode', async () => {
+      await testSerializeEquals('test\u001b[4h', 'test\u001b[4h');
+      await testSerializeEquals('\u001b[4l', 'test');
+    });
+    it('mouseTrackingMode', async () => {
+      await testSerializeEquals('test\u001b[?9h', 'test\u001b[?9h');
+      await testSerializeEquals('\u001b[?9l', 'test');
+      await testSerializeEquals('\u001b[?1000h', 'test\u001b[?1000h');
+      await testSerializeEquals('\u001b[?1000l', 'test');
+      await testSerializeEquals('\u001b[?1002h', 'test\u001b[?1002h');
+      await testSerializeEquals('\u001b[?1002l', 'test');
+      await testSerializeEquals('\u001b[?1003h', 'test\u001b[?1003h');
+      await testSerializeEquals('\u001b[?1003l', 'test');
+    });
+    it('originMode', async () => {
+      // origin mode moves cursor to (0,0)
+      await testSerializeEquals('test\u001b[?6h', 'test\u001b[4D\u001b[?6h');
+      await testSerializeEquals('\u001b[?6l', 'test\u001b[4D');
+    });
+    it('reverseWraparoundMode', async () => {
+      await testSerializeEquals('test\u001b[?45h', 'test\u001b[?45h');
+      await testSerializeEquals('\u001b[?45l', 'test');
+    });
+    it('sendFocusMode', async () => {
+      await testSerializeEquals('test\u001b[?1004h', 'test\u001b[?1004h');
+      await testSerializeEquals('\u001b[?1004l', 'test');
+    });
+    it('wraparoundMode', async () => {
+      await testSerializeEquals('test\u001b[?7l', 'test\u001b[?7l');
+      await testSerializeEquals('\u001b[?7h', 'test');
+    });
   });
 });
 

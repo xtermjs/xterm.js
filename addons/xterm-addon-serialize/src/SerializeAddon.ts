@@ -403,6 +403,35 @@ export class SerializeAddon implements ITerminalAddon {
     return handler.serialize(maxRows - correctRows, maxRows);
   }
 
+  private _serializeModes(terminal: Terminal): string {
+    let content = '';
+    const modes = terminal.modes;
+
+    // Default: false
+    if (modes.applicationCursorKeysMode) content += '\x1b[?1h';
+    if (modes.applicationKeypadMode) content += '\x1b[?66h';
+    if (modes.bracketedPasteMode) content += '\x1b[?2004h';
+    if (modes.insertMode) content += '\x1b[4h';
+    if (modes.originMode) content += '\x1b[?6h';
+    if (modes.reverseWraparoundMode) content += '\x1b[?45h';
+    if (modes.sendFocusMode) content += '\x1b[?1004h';
+
+    // Default: true
+    if (modes.wraparoundMode === false) content += '\x1b[?7l';
+
+    // Default: 'none'
+    if (modes.mouseTrackingMode !== 'none') {
+      switch (modes.mouseTrackingMode) {
+        case 'x10': content += '\x1b[?9h'; break;
+        case 'vt200': content += '\x1b[?1000h'; break;
+        case 'drag': content += '\x1b[?1002h'; break;
+        case 'any': content += '\x1b[?1003h'; break;
+      }
+    }
+
+    return content;
+  }
+
   public serialize(scrollback?: number): string {
     // TODO: Add combinedData support
     if (!this._terminal) {
@@ -417,6 +446,9 @@ export class SerializeAddon implements ITerminalAddon {
       const alternativeScreenContent = this._serializeBuffer(this._terminal, this._terminal.buffer.alternate, undefined);
       content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
     }
+
+    // Modes
+    content += this._serializeModes(this._terminal);
 
     return content;
   }
