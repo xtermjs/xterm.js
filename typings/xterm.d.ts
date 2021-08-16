@@ -1666,7 +1666,7 @@ declare module 'xterm' {
      */
     readonly reverseWraparoundMode: boolean;
     /**
-     * Send FocusIn/FocusOut events: `CSI ? 1 0 0 3 h`
+     * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
      */
     readonly sendFocusMode: boolean;
     /**

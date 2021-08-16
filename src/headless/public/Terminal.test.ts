@@ -367,6 +367,88 @@ describe('Headless API Tests', function(): void {
     });
   });
 
+  describe('modes', () => {
+    it('defaults', () => {
+      deepStrictEqual(term.modes, {
+        applicationCursorKeysMode: false,
+        applicationKeypadMode: false,
+        bracketedPasteMode: false,
+        insertMode: false,
+        mouseTrackingMode: 'none',
+        originMode: false,
+        reverseWraparoundMode: false,
+        sendFocusMode: false,
+        wraparoundMode: true
+      });
+    });
+    it('applicationCursorKeysMode', async () => {
+      await writeSync('\x1b[?1h');
+      strictEqual(term.modes.applicationCursorKeysMode, true);
+      await writeSync('\x1b[?1l');
+      strictEqual(term.modes.applicationCursorKeysMode, false);
+    });
+    it('applicationKeypadMode', async () => {
+      await writeSync('\x1b[?66h');
+      strictEqual(term.modes.applicationKeypadMode, true);
+      await writeSync('\x1b[?66l');
+      strictEqual(term.modes.applicationKeypadMode, false);
+    });
+    it('bracketedPasteMode', async () => {
+      await writeSync('\x1b[?2004h');
+      strictEqual(term.modes.bracketedPasteMode, true);
+      await writeSync('\x1b[?2004l');
+      strictEqual(term.modes.bracketedPasteMode, false);
+    });
+    it('insertMode', async () => {
+      await writeSync('\x1b[4h');
+      strictEqual(term.modes.insertMode, true);
+      await writeSync('\x1b[4l');
+      strictEqual(term.modes.insertMode, false);
+    });
+    it('mouseTrackingMode', async () => {
+      await writeSync('\x1b[?9h');
+      strictEqual(term.modes.mouseTrackingMode, 'x10');
+      await writeSync('\x1b[?9l');
+      strictEqual(term.modes.mouseTrackingMode, 'none');
+      await writeSync('\x1b[?1000h');
+      strictEqual(term.modes.mouseTrackingMode, 'vt200');
+      await writeSync('\x1b[?1000l');
+      strictEqual(term.modes.mouseTrackingMode, 'none');
+      await writeSync('\x1b[?1002h');
+      strictEqual(term.modes.mouseTrackingMode, 'drag');
+      await writeSync('\x1b[?1002l');
+      strictEqual(term.modes.mouseTrackingMode, 'none');
+      await writeSync('\x1b[?1003h');
+      strictEqual(term.modes.mouseTrackingMode, 'any');
+      await writeSync('\x1b[?1003l');
+      strictEqual(term.modes.mouseTrackingMode, 'none');
+    });
+    it('originMode', async () => {
+      await writeSync('\x1b[?6h');
+      strictEqual(term.modes.originMode, true);
+      await writeSync('\x1b[?6l');
+      strictEqual(term.modes.originMode, false);
+    });
+    it('reverseWraparoundMode', async () => {
+      await writeSync('\x1b[?45h');
+      strictEqual(term.modes.reverseWraparoundMode, true);
+      await writeSync('\x1b[?45l');
+      strictEqual(term.modes.reverseWraparoundMode, false);
+    });
+    it('sendFocusMode', async () => {
+      await writeSync('\x1b[?1004h');
+      strictEqual(term.modes.sendFocusMode, true);
+      await writeSync('\x1b[?1004l');
+      strictEqual(term.modes.sendFocusMode, false);
+    });
+    it('wraparoundMode', async () => {
+      await writeSync('\x1b[?7h');
+      strictEqual(term.modes.wraparoundMode, true);
+      await writeSync('\x1b[?7l');
+      strictEqual(term.modes.wraparoundMode, false);
+    });
+  });
+
   it('dispose', async () => {
     term.dispose();
     strictEqual((term as any)._core._isDisposed, true);
