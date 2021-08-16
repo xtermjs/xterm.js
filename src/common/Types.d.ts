@@ -7,10 +7,12 @@ import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
-import { IOptionsService, IUnicodeService } from 'common/services/Services';
+import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBufferSet } from 'common/buffer/Types';
 
 export interface ICoreTerminal {
+  coreMouseService: ICoreMouseService;
+  coreService: ICoreService;
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
   buffers: IBufferSet;
