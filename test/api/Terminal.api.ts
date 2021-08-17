@@ -562,6 +562,98 @@ describe('API Integration Tests', function(): void {
     });
   });
 
+  describe('modes', () => {
+    it('defaults', async () => {
+      await openTerminal(page);
+      assert.deepStrictEqual(await page.evaluate(`window.term.modes`), {
+        applicationCursorKeysMode: false,
+        applicationKeypadMode: false,
+        bracketedPasteMode: false,
+        insertMode: false,
+        mouseTrackingMode: 'none',
+        originMode: false,
+        reverseWraparoundMode: false,
+        sendFocusMode: false,
+        wraparoundMode: true
+      });
+    });
+    it('applicationCursorKeysMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?1h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), true);
+      await writeSync(page, '\\x1b[?1l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), false);
+    });
+    it('applicationKeypadMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?66h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), true);
+      await writeSync(page, '\\x1b[?66l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), false);
+    });
+    it('bracketedPasteMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?2004h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), true);
+      await writeSync(page, '\\x1b[?2004l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), false);
+    });
+    it('insertMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[4h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), true);
+      await writeSync(page, '\\x1b[4l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), false);
+    });
+    it('mouseTrackingMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?9h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'x10');
+      await writeSync(page, '\\x1b[?9l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1000h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'vt200');
+      await writeSync(page, '\\x1b[?1000l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1002h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'drag');
+      await writeSync(page, '\\x1b[?1002l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1003h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'any');
+      await writeSync(page, '\\x1b[?1003l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+    });
+    it('originMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?6h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), true);
+      await writeSync(page, '\\x1b[?6l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), false);
+    });
+    it('reverseWraparoundMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?45h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), true);
+      await writeSync(page, '\\x1b[?45l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), false);
+    });
+    it('sendFocusMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?1004h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), true);
+      await writeSync(page, '\\x1b[?1004l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), false);
+    });
+    it('wraparoundMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?7h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), true);
+      await writeSync(page, '\\x1b[?7l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), false);
+    });
+  });
+
   it('dispose', async () => {
     await page.evaluate(`
       window.term = new Terminal();
