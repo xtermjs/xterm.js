@@ -125,6 +125,7 @@ const enum Style {
 }
 
 // TODO: Tweak normal and bold weights
+// This contains the definitions of all box drawing characters as SVG paths (ie. the svg d attribute)
 export const boxCharacters: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
@@ -320,18 +321,26 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
   }
 
   for (let x = 0; x < result.length; x += 2) {
+    // Translate from 0-1 to 0-cellWidth
     result[x] *= cellWidth;
+    // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
+    // line at 100% devicePixelRatio
     if (result[x] !== 0) {
       result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
     }
+    // Apply the cell's offset (ie. x*cellWidth)
     result[x] += xOffset;
   }
 
   for (let y = 1; y < result.length; y += 2) {
+    // Translate from 0-1 to 0-cellHeight
     result[y] *= cellHeight;
+    // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
+    // line at 100% devicePixelRatio
     if (result[y] !== 0) {
       result[y] = clamp(Math.round(result[y] + 0.5) - 0.5, cellHeight, 0);
     }
+    // Apply the cell's offset (ie. x*cellHeight)
     result[y] += yOffset;
   }
 
