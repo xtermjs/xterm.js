@@ -4,7 +4,7 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal } from 'browser/Types';
+import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
-  private _renderRowsDebouncer: TimeBasedDebouncer;
+  private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
