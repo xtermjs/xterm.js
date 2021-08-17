@@ -20,12 +20,18 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
   // Whether a trailing refresh should be triggered due to a refresh request that was throttled
   private _additionalRefreshRequested = false;
 
+  private _refreshTimeoutID: number | undefined;
+
   constructor(
     private _renderCallback: (start: number, end: number) => void
   ) {
   }
 
-  public dispose(): void {}
+  public dispose(): void {
+    if (this._refreshTimeoutID) {
+      clearTimeout(this._refreshTimeoutID);
+    }
+  }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
@@ -49,7 +55,7 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
       const waitPeriodBeforeTrailingRefresh = RENDER_DEBOUNCE_THRESHOLD_MS - elapsed;
       this._additionalRefreshRequested = true;
 
-      setTimeout(() => {
+      this._refreshTimeoutID = window.setTimeout(() => {
         this._lastRefreshMs = Date.now();
         this._innerRefresh();
         this._additionalRefreshRequested = false;
