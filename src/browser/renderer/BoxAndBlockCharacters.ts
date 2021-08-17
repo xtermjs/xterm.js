@@ -90,15 +90,6 @@ export const boxDrawingBoxes: { [index: string]: any } = {
   '\u{1FB97}': [{ x: 0, y: 2, w: 8, h: 2 }, { x: 0, y: 6, w: 8, h: 2 }]
 };
 
-const yAxis = `M.5,0 L.5,1`;
-const xAxis = `M0,.5 L1,.5`;
-const bottomYAxisFromBottom = `M.5,1 L.5,.5`;
-const bottomYAxisFromMiddle = `M.5,.5 L.5,1`;
-const topYAxisFromTop = `M.5,0 L.5,.5`;
-const topYAxisFromMiddle = `M.5,0 L.5,.5`;
-const rightMiddleXAxis = `M.5,.5 L1,.5`;
-const leftMiddleXAxis = `M.5,.5 L0,.5`;
-
 const enum Shapes {
   /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',
   /** ─ */ LEFT_TO_RIGHT = 'M0,.5 L1,.5',
@@ -108,8 +99,8 @@ const enum Shapes {
   /** ┐ */ LEFT_TO_BOTTOM = 'M0,.5 L.5,.5 L.5,1',
   /** ┌ */ RIGHT_TO_BOTTOM = 'M0.5,1 L.5,.5 L1,.5',
 
-  /** ╵ */ MIDDLE_TO_TOP = 'M.5,.5 L0,.5',
-  /** ╴ */ MIDDLE_TO_LEFT = 'M.5,.5 L.5,0',
+  /** ╵ */ MIDDLE_TO_TOP = 'M.5,.5 L.5,0',
+  /** ╴ */ MIDDLE_TO_LEFT = 'M.5,.5 L0,.5',
   /** ╶ */ MIDDLE_TO_RIGHT = 'M.5,.5 L1,.5',
   /** ╷ */ MIDDLE_TO_BOTTOM = 'M.5,.5 L.5,1',
 
@@ -167,10 +158,6 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
   '╷': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM },
   '╻': { [Style.BOLD]:   Shapes.MIDDLE_TO_BOTTOM },
 
-  // Mixed normal/bold
-  '┍': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM, [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
-  '┎': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,  [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
-
   // Double border
   '═': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L1,${.5 - yp} M0,${.5 + yp} L1,${.5 + yp}` },
   '║': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1` },
@@ -208,54 +195,56 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
   '╳': { [Style.NORMAL]: 'M1,0 L0,1 M0,0 L1,1' },
 
   // Mixed weight
-  '┑': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┒': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
-  '┕': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┖': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
-  '┙': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┚': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
-  '┝': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┞': { [Style.NORMAL]: `${bottomYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
-  '┟': { [Style.NORMAL]: `${topYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
-  '┠': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${yAxis}` },
-  '┡': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${topYAxisFromMiddle} ${rightMiddleXAxis}` },
-  '┢': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
-  '┥': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┦': { [Style.NORMAL]: `${bottomYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop}` },
-  '┧': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
-  '┨': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${yAxis}` },
-  '┩': { [Style.NORMAL]: `${bottomYAxisFromMiddle}`, [Style.BOLD]: `${topYAxisFromMiddle} ${leftMiddleXAxis}` },
-  '┪': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
-  '┭': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┮': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┯': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
-  '┰': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
-  '┱': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
-  '┲': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┵': { [Style.NORMAL]: `${topYAxisFromMiddle} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┶': { [Style.NORMAL]: `${topYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┷': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
-  '┸': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${topYAxisFromMiddle}` },
-  '┹': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromMiddle} ${leftMiddleXAxis}` },
-  '┺': { [Style.NORMAL]: `${topYAxisFromMiddle} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┽': { [Style.NORMAL]: `${yAxis} ${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '┾': { [Style.NORMAL]: `${yAxis} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '┿': { [Style.NORMAL]: `${yAxis}`, [Style.BOLD]: `${leftMiddleXAxis} ${rightMiddleXAxis}` },
-  '╀': { [Style.NORMAL]: `${xAxis}`, [Style.BOLD]: `${yAxis}` },
-  '╁': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${yAxis} ${leftMiddleXAxis}` },
-  '╂': { [Style.NORMAL]: `${yAxis} ${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '╃': { [Style.NORMAL]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}`, [Style.BOLD]: `${topYAxisFromTop} ${leftMiddleXAxis}` },
-  '╄': { [Style.NORMAL]: `${topYAxisFromTop} ${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
-  '╅': { [Style.NORMAL]: `${topYAxisFromTop} ${rightMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${leftMiddleXAxis}` },
-  '╆': { [Style.NORMAL]: `${topYAxisFromTop} ${leftMiddleXAxis}`, [Style.BOLD]: `${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
-  '╇': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${leftMiddleXAxis} ${topYAxisFromTop} ${rightMiddleXAxis}` },
-  '╈': { [Style.NORMAL]: `${topYAxisFromTop}`, [Style.BOLD]: `${leftMiddleXAxis} ${bottomYAxisFromBottom} ${rightMiddleXAxis}` },
-  '╉': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis} ${yAxis}` },
-  '╊': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis} ${yAxis}` },
-  '╼': { [Style.NORMAL]: `${leftMiddleXAxis}`, [Style.BOLD]: `${rightMiddleXAxis}` },
-  '╽': { [Style.NORMAL]: `${topYAxisFromMiddle}`, [Style.BOLD]: `${bottomYAxisFromBottom}` },
-  '╾': { [Style.NORMAL]: `${rightMiddleXAxis}`, [Style.BOLD]: `${leftMiddleXAxis}` },
-  '╿': { [Style.NORMAL]: `${bottomYAxisFromBottom}`, [Style.BOLD]: `${topYAxisFromMiddle}` },
+  '╼': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '╽': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '╾': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '╿': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┍': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┎': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '┑': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┒': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '┕': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┖': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┙': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┚': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┝': { [Style.NORMAL]: Shapes.TOP_TO_BOTTOM,                                 [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┞': { [Style.NORMAL]: Shapes.RIGHT_TO_BOTTOM,                               [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┟': { [Style.NORMAL]: Shapes.TOP_TO_RIGHT,                                  [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '┠': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.TOP_TO_BOTTOM },
+  '┡': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.TOP_TO_RIGHT },
+  '┢': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.RIGHT_TO_BOTTOM },
+  '┥': { [Style.NORMAL]: Shapes.TOP_TO_BOTTOM,                                 [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┦': { [Style.NORMAL]: Shapes.LEFT_TO_BOTTOM,                                [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┧': { [Style.NORMAL]: Shapes.TOP_TO_LEFT,                                   [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '┨': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.TOP_TO_BOTTOM },
+  '┩': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.TOP_TO_LEFT },
+  '┪': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.LEFT_TO_BOTTOM },
+  '┭': { [Style.NORMAL]: Shapes.RIGHT_TO_BOTTOM,                               [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┮': { [Style.NORMAL]: Shapes.LEFT_TO_BOTTOM,                                [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┯': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: Shapes.LEFT_TO_RIGHT },
+  '┰': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT,                                 [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '┱': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.LEFT_TO_BOTTOM },
+  '┲': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.RIGHT_TO_BOTTOM },
+  '┵': { [Style.NORMAL]: Shapes.TOP_TO_RIGHT,                                  [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┶': { [Style.NORMAL]: Shapes.TOP_TO_LEFT,                                   [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┷': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: Shapes.LEFT_TO_RIGHT },
+  '┸': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT,                                 [Style.BOLD]: Shapes.MIDDLE_TO_TOP },
+  '┹': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: Shapes.TOP_TO_LEFT },
+  '┺': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: Shapes.TOP_TO_RIGHT },
+  '┽': { [Style.NORMAL]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_RIGHT}`,  [Style.BOLD]: Shapes.MIDDLE_TO_LEFT },
+  '┾': { [Style.NORMAL]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_LEFT}`,   [Style.BOLD]: Shapes.MIDDLE_TO_RIGHT },
+  '┿': { [Style.NORMAL]: Shapes.TOP_TO_BOTTOM,                                 [Style.BOLD]: Shapes.LEFT_TO_RIGHT },
+  '╀': { [Style.NORMAL]: `${Shapes.LEFT_TO_RIGHT} ${Shapes.MIDDLE_TO_BOTTOM}`, [Style.BOLD]: Shapes.TOP_TO_BOTTOM },
+  '╁': { [Style.NORMAL]: `${Shapes.MIDDLE_TO_TOP} ${Shapes.LEFT_TO_RIGHT}`,    [Style.BOLD]: Shapes.MIDDLE_TO_BOTTOM },
+  '╂': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT,                                 [Style.BOLD]: Shapes.TOP_TO_BOTTOM },
+  '╃': { [Style.NORMAL]: Shapes.RIGHT_TO_BOTTOM,                               [Style.BOLD]: Shapes.TOP_TO_LEFT },
+  '╄': { [Style.NORMAL]: Shapes.LEFT_TO_BOTTOM,                                [Style.BOLD]: Shapes.TOP_TO_RIGHT },
+  '╅': { [Style.NORMAL]: Shapes.TOP_TO_RIGHT,                                  [Style.BOLD]: Shapes.LEFT_TO_BOTTOM },
+  '╆': { [Style.NORMAL]: Shapes.TOP_TO_LEFT,                                   [Style.BOLD]: Shapes.RIGHT_TO_BOTTOM },
+  '╇': { [Style.NORMAL]: Shapes.MIDDLE_TO_BOTTOM,                              [Style.BOLD]: `${Shapes.MIDDLE_TO_TOP} ${Shapes.LEFT_TO_RIGHT}` },
+  '╈': { [Style.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [Style.BOLD]: `${Shapes.LEFT_TO_RIGHT} ${Shapes.MIDDLE_TO_BOTTOM}` },
+  '╉': { [Style.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [Style.BOLD]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_LEFT}` },
+  '╊': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_RIGHT}` },
 
   // Dashed
   // TODO: Spacing dashes evenly, use 1/2 padding on each edge so the line is continuous
@@ -324,9 +313,6 @@ function clamp(value: number, max: number, min: number = 0): number {
 }
 
 const instructionMap: { [index: string]: any } = {
-  'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.moveTo(x, y); },
-  'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.lineTo(x, y);
-  }
+  'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => ctx.moveTo(x, y),
+  'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => ctx.lineTo(x, y)
 };
