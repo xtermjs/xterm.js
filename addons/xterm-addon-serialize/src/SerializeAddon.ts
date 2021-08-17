@@ -7,6 +7,7 @@
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
 
+
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
