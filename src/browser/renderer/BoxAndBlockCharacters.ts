@@ -248,18 +248,24 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
 
   // Dashed
   // TODO: Spacing dashes evenly, use 1/2 padding on each edge so the line is continuous
-  '╌': { [Style.NORMAL]:  Shapes.TWO_DASHES_HORIZONTAL },
-  '╍': { [Style.BOLD]: Shapes.TWO_DASHES_HORIZONTAL },
-  '┄': { [Style.NORMAL]:  Shapes.THREE_DASHES_HORIZONTAL },
-  '┅': { [Style.BOLD]: Shapes.THREE_DASHES_HORIZONTAL },
-  '┈': { [Style.NORMAL]:  Shapes.FOUR_DASHES_HORIZONTAL },
-  '┉': { [Style.BOLD]: Shapes.FOUR_DASHES_HORIZONTAL },
+  '╌': { [Style.NORMAL]: Shapes.TWO_DASHES_HORIZONTAL },
+  '╍': { [Style.BOLD]:   Shapes.TWO_DASHES_HORIZONTAL },
+  '┄': { [Style.NORMAL]: Shapes.THREE_DASHES_HORIZONTAL },
+  '┅': { [Style.BOLD]:   Shapes.THREE_DASHES_HORIZONTAL },
+  '┈': { [Style.NORMAL]: Shapes.FOUR_DASHES_HORIZONTAL },
+  '┉': { [Style.BOLD]:   Shapes.FOUR_DASHES_HORIZONTAL },
   '╎': { [Style.NORMAL]: Shapes.TWO_DASHES_VERTICAL },
   '╏': { [Style.BOLD]:   Shapes.TWO_DASHES_VERTICAL },
   '┆': { [Style.NORMAL]: Shapes.THREE_DASHES_VERTICAL  },
-  '┇': { [Style.BOLD]: Shapes.THREE_DASHES_VERTICAL },
+  '┇': { [Style.BOLD]:   Shapes.THREE_DASHES_VERTICAL },
   '┊': { [Style.NORMAL]: Shapes.FOUR_DASHES_VERTICAL },
-  '┋': { [Style.BOLD]: Shapes.FOUR_DASHES_VERTICAL }
+  '┋': { [Style.BOLD]:   Shapes.FOUR_DASHES_VERTICAL },
+
+  // Curved
+  '╭': { [Style.NORMAL]: 'C.5,1,.5,.5,1,.5' },
+  '╮': { [Style.NORMAL]: 'C.5,1,.5,.5,0,.5' },
+  '╯': { [Style.NORMAL]: 'C.5,0,.5,.5,0,.5' },
+  '╰': { [Style.NORMAL]: 'C.5,0,.5,.5,1,.5' }
 };
 
 export function drawBoxChar(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
@@ -285,23 +291,11 @@ export function drawBoxChar(ctx: CanvasRenderingContext2D, c: string, xOffset: n
         console.error(`Could not find drawing instructions for "${type}"`);
         continue;
       }
-      const coords: string[] = instruction.substring(1).split(',');
-      if (!coords[0] || !coords[1]) {
+      const args: string[] = instruction.substring(1).split(',');
+      if (!args[0] || !args[1]) {
         continue;
       }
-      let x = Number.parseFloat(coords[0].toString()) || Number.parseInt(coords[0].toString());
-      let y = Number.parseFloat(coords[1].toString()) || Number.parseInt(coords[1].toString());
-
-      x *= cellWidth;
-      y *= cellHeight;
-
-      if (y !== 0) {
-        y = clamp(Math.round(y + .5) - .5, cellHeight, 0);
-      }
-      if (x !== 0) {
-        x = clamp(Math.round(x + .5) - .5, cellWidth, 0);
-      }
-      f(ctx, xOffset + x, yOffset + y);
+      f(ctx, translateArgs(args, cellWidth, cellHeight, xOffset, yOffset));
     }
     ctx.stroke();
     ctx.closePath();
@@ -313,6 +307,33 @@ function clamp(value: number, max: number, min: number = 0): number {
 }
 
 const instructionMap: { [index: string]: any } = {
-  'M': (ctx: CanvasRenderingContext2D, x: number, y: number) => ctx.moveTo(x, y),
-  'L': (ctx: CanvasRenderingContext2D, x: number, y: number) => ctx.lineTo(x, y)
+  'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
+  'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
+  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
 };
+
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number): number[] {
+  const result = args.map(e => parseFloat(e) || parseInt(e));
+
+  if (result.length < 2) {
+    throw new Error('Too few arguments for instruction');
+  }
+
+  for (let x = 0; x < result.length; x += 2) {
+    result[x] *= cellWidth;
+    if (result[x] !== 0) {
+      result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
+    }
+    result[x] += xOffset;
+  }
+
+  for (let y = 1; y < result.length; y += 2) {
+    result[y] *= cellHeight;
+    if (result[y] !== 0) {
+      result[y] = clamp(Math.round(result[y] + 0.5) - 0.5, cellHeight, 0);
+    }
+    result[y] += yOffset;
+  }
+
+  return result;
+}
