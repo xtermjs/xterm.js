@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes } from 'xterm';
 import { ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -67,6 +67,27 @@ export class Terminal implements ITerminalApi {
   public get markers(): ReadonlyArray<IMarker> {
     this._checkProposedApi();
     return this._core.markers;
+  }
+  public get modes(): IModes {
+    const m = this._core.coreService.decPrivateModes;
+    let mouseTrackingMode: 'none' | 'x10' | 'vt200' | 'drag' | 'any' = 'none';
+    switch (this._core.coreMouseService.activeProtocol) {
+      case 'X10': mouseTrackingMode = 'x10'; break;
+      case 'VT200': mouseTrackingMode = 'vt200'; break;
+      case 'DRAG': mouseTrackingMode = 'drag'; break;
+      case 'ANY': mouseTrackingMode = 'any'; break;
+    }
+    return {
+      applicationCursorKeysMode: m.applicationCursorKeys,
+      applicationKeypadMode: m.applicationKeypad,
+      bracketedPasteMode: m.bracketedPasteMode,
+      insertMode: this._core.coreService.modes.insertMode,
+      mouseTrackingMode: mouseTrackingMode,
+      originMode: m.origin,
+      reverseWraparoundMode: m.reverseWraparound,
+      sendFocusMode: m.sendFocus,
+      wraparoundMode: m.wraparound
+    };
   }
   public blur(): void {
     this._core.blur();
