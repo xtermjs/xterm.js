@@ -8,7 +8,7 @@ const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
 import { IRenderDebouncer } from 'browser/Types';
 
 /**
- * Debounces calls to update screen readers to update at most once per second.
+ * Debounces calls to update screen readers to update at most once configurable interval of time.
  */
 export class TimeBasedDebouncer implements IRenderDebouncer {
   private _rowStart: number | undefined;
@@ -23,7 +23,8 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
   private _refreshTimeoutID: number | undefined;
 
   constructor(
-    private _renderCallback: (start: number, end: number) => void
+    private _renderCallback: (start: number, end: number) => void,
+    private readonly debounceThresholdMS = RENDER_DEBOUNCE_THRESHOLD_MS
   ) {
   }
 
@@ -45,14 +46,14 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     // Only refresh if the time since last refresh is above a threshold, otherwise wait for
     // enough time to pass before refreshing again.
     const refreshRequestTime: number = Date.now();
-    if (refreshRequestTime - this._lastRefreshMs >= RENDER_DEBOUNCE_THRESHOLD_MS) {
+    if (refreshRequestTime - this._lastRefreshMs >= this.debounceThresholdMS) {
       // Enough time has lapsed since the last refresh; refresh immediately
       this._lastRefreshMs = refreshRequestTime;
       this._innerRefresh();
     } else if (!this._additionalRefreshRequested) {
       // This is the first additional request throttled; set up trailing refresh
       const elapsed = refreshRequestTime - this._lastRefreshMs;
-      const waitPeriodBeforeTrailingRefresh = RENDER_DEBOUNCE_THRESHOLD_MS - elapsed;
+      const waitPeriodBeforeTrailingRefresh = this.debounceThresholdMS - elapsed;
       this._additionalRefreshRequested = true;
 
       this._refreshTimeoutID = window.setTimeout(() => {
