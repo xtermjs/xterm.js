@@ -111,12 +111,12 @@ const enum Shapes {
 
   /** ┼ */ CROSS = 'M0,.5 L1,.5 M.5,0 L.5,1',
 
-  /** ╌ */ TWO_DASHES_HORIZONTAL = 'M.1,.5 L.4,.5 M.6,.5 L.9,.5',
-  /** ┄ */ THREE_DASHES_HORIZONTAL = 'M.052,.5 L.316,.5 M.0.421,.5 L.6315,.5 M.684,.5 L.947,.5',
-  /** ┉ */ FOUR_DASHES_HORIZONTAL = 'M.0588,.5 L.235,.5 M.294,.5 L.4705,.5 M.529,.5 L.7058,.5 M.765,.5 L.947,.5',
-  /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 T.5,.4 M.5,.6 T.5,.9',
-  /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.052 L.5,.316 M.5,.0.368 L.5.632 M.5,.684 L.5,.947',
-  /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.0588 L.5,.235 M.5,.294 L.5,.4705 29 L.5,.7058 M.5,.765 L.5,.947',
+  /** ╌ */ TWO_DASHES_HORIZONTAL = 'M.1,.5 L.4,.5 M.6,.5 L.9,.5', // .2 empty, .3 filled
+  /** ┄ */ THREE_DASHES_HORIZONTAL = 'M.0667,.5 L.2667,.5 M.4,.5 L.6,.5 M.7333,.5 L.9333,.5', // .1333 empty, .2 filled
+  /** ┉ */ FOUR_DASHES_HORIZONTAL = 'M.05,.5 L.2,.5 M.3,.5 L.45,.5 M.55,.5 L.7,.5 M.8,.5 L.95,.5', // .1 empty, .15 filled
+  /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 L.5,.4 M.5,.6 L.5,.9',
+  /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.0667 L.5,.2667 M.5,.4 L.5,.6 M.5,.7333 L.5,.9333',
+  /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.05 L.5,.2 M.5,.3 L.5,.45 L.5,.55 M.5,.7 L.5,.95',
 }
 
 const enum Style {
@@ -171,7 +171,7 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
   '╙': { [Style.NORMAL]: (xp, yp) => `M1,.5 L${.5 - xp},.5 L${.5 - xp},0 M${.5 + xp},.5 L${.5 + xp},0` },
   '╚': { [Style.NORMAL]: (xp, yp) => `M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0 M1,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},0` },
   '╛': { [Style.NORMAL]: (xp, yp) => `M0,${.5 + yp} L.5,${.5 + yp} L.5,0 M0,${.5 - yp} L.5,${.5 - yp}` },
-  '╜': { [Style.NORMAL]: (xp, yp) => `M0,.5 L${.5 + xp},.5 L${.5 + xp},0 M${.5 - xp},.5 L${.5 - xp},0 ` },
+  '╜': { [Style.NORMAL]: (xp, yp) => `M0,.5 L${.5 + xp},.5 L${.5 + xp},0 M${.5 - xp},.5 L${.5 - xp},0` },
   '╝': { [Style.NORMAL]: (xp, yp) => `M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0 M0,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},0` },
   '╞': { [Style.NORMAL]: (xp, yp) => `${Shapes.TOP_TO_BOTTOM} M.5,${.5 - yp} L1,${.5 - yp} M.5,${.5 + yp} L1,${.5 + yp}` },
   '╟': { [Style.NORMAL]: (xp, yp) => `M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1 M${.5 + xp},.5 L1,.5` },
