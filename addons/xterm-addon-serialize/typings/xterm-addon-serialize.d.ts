@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-
 import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-serialize' {
@@ -21,12 +20,13 @@ declare module 'xterm-addon-serialize' {
     public activate(terminal: Terminal): void;
 
     /**
-     * Serializes terminal rows into a string that can be written back to the terminal
-     * to restore the state. The cursor will also be positioned to the correct cell.
-     * When restoring a terminal it is best to do before `Terminal.open` is called
-     * to avoid wasting CPU cycles rendering incomplete frames.
-     * @param scrollback The number of rows in scrollback buffer to serialize, starting from the bottom of the
-     * scrollback buffer. This defaults to the all available rows in the scrollback buffer.
+     * Serializes terminal rows into a string that can be written back to the terminal to restore
+     * the state. The cursor will also be positioned to the correct cell. When restoring a terminal
+     * it is best to do before `Terminal.open` is called to avoid wasting CPU cycles rendering
+     * incomplete frames.
+     * @param scrollback The number of rows in scrollback buffer to serialize, starting from the
+     * bottom of the scrollback buffer. This defaults to the all available rows in the scrollback
+     * buffer.
      */
     public serialize(scrollback?: number): string;
 

@@ -7,7 +7,7 @@ import { IEvent } from 'common/EventEmitter';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IMarker, IParser, ITerminalAddon, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
+import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 
@@ -60,6 +60,27 @@ export class Terminal implements ITerminalApi {
   public get markers(): ReadonlyArray<IMarker> {
     this._checkProposedApi();
     return this._core.markers;
+  }
+  public get modes(): IModes {
+    const m = this._core.coreService.decPrivateModes;
+    let mouseTrackingMode: 'none' | 'x10' | 'vt200' | 'drag' | 'any' = 'none';
+    switch (this._core.coreMouseService.activeProtocol) {
+      case 'X10': mouseTrackingMode = 'x10'; break;
+      case 'VT200': mouseTrackingMode = 'vt200'; break;
+      case 'DRAG': mouseTrackingMode = 'drag'; break;
+      case 'ANY': mouseTrackingMode = 'any'; break;
+    }
+    return {
+      applicationCursorKeysMode: m.applicationCursorKeys,
+      applicationKeypadMode: m.applicationKeypad,
+      bracketedPasteMode: m.bracketedPasteMode,
+      insertMode: this._core.coreService.modes.insertMode,
+      mouseTrackingMode: mouseTrackingMode,
+      originMode: m.origin,
+      reverseWraparoundMode: m.reverseWraparound,
+      sendFocusMode: m.sendFocus,
+      wraparoundMode: m.wraparound
+    };
   }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);

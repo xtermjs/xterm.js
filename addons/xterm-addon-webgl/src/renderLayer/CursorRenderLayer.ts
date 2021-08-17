@@ -7,7 +7,7 @@ import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IEventEmitter } from 'common/EventEmitter';
 
@@ -34,6 +34,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
+    private readonly _terminal: ITerminal,
     private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>
   ) {
     super(container, 'cursor', zIndex, true, colors);
@@ -120,7 +121,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _render(terminal: Terminal, triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
     // TODO: Need to expose API for this
-    if (!(terminal as any)._core._coreService.isCursorInitialized || (terminal as any)._core._coreService.isCursorHidden) {
+    if (!this._terminal.coreService.isCursorInitialized || this._terminal.coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }

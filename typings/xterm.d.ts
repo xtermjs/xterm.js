@@ -623,6 +623,11 @@ declare module 'xterm' {
     readonly unicode: IUnicodeHandling;
 
     /**
+     * Gets the terminal modes as set by SM/DECSET.
+     */
+    readonly modes: IModes;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -1621,5 +1626,52 @@ declare module 'xterm' {
      * Getter/setter for active Unicode version.
      */
     activeVersion: string;
+  }
+
+  /**
+   * Terminal modes as set by SM/DECSET.
+   */
+  export interface IModes {
+    /**
+     * Application Cursor Keys (DECCKM): `CSI ? 1 h`
+     */
+    readonly applicationCursorKeysMode: boolean;
+    /**
+     * Application Keypad Mode (DECNKM): `CSI ? 6 6 h`
+     */
+    readonly applicationKeypadMode: boolean;
+    /**
+     * Bracketed Paste Mode: `CSI ? 2 0 0 4 h`
+     */
+    readonly bracketedPasteMode: boolean;
+    /**
+     * Insert Mode (IRM): `CSI 4 h`
+     */
+    readonly insertMode: boolean;
+    /**
+     * Mouse Tracking, this can be one of the following:
+     * - none: This is the default value and can be reset with DECRST
+     * - x10: Send Mouse X & Y on button press `CSI ? 9 h`
+     * - vt200: Send Mouse X & Y on button press and release `CSI ? 1 0 0 0 h`
+     * - drag: Use Cell Motion Mouse Tracking `CSI ? 1 0 0 2 h`
+     * - any: Use All Motion Mouse Tracking `CSI ? 1 0 0 3 h`
+     */
+    readonly mouseTrackingMode: 'none' | 'x10' | 'vt200' | 'drag' | 'any';
+    /**
+     * Origin Mode (DECOM): `CSI ? 6 h`
+     */
+    readonly originMode: boolean;
+    /**
+     * Reverse-wraparound Mode: `CSI ? 4 5 h`
+     */
+    readonly reverseWraparoundMode: boolean;
+    /**
+     * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
+     */
+    readonly sendFocusMode: boolean;
+    /**
+     * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
+     */
+    readonly wraparoundMode: boolean
   }
 }
