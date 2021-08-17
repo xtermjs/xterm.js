@@ -13,7 +13,7 @@ import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, I
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { Terminal } from 'browser/Terminal';
-import { IUnicodeService, IOptionsService } from 'common/services/Services';
+import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 
@@ -43,6 +43,8 @@ export class MockTerminal implements ITerminal {
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public coreMouseService!: ICoreMouseService;
+  public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
   public addMarker(cursorYOffset: number): IMarker {
