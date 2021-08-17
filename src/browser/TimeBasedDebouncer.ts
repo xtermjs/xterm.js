@@ -60,6 +60,7 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
         this._lastRefreshMs = Date.now();
         this._innerRefresh();
         this._additionalRefreshRequested = false;
+        this._refreshTimeoutID = undefined; // No longer need to clear the timeout
       }, waitPeriodBeforeTrailingRefresh);
     }
   }
