@@ -121,10 +121,9 @@ const enum Shapes {
 
 const enum Style {
   NORMAL = 1,
-  BOLD = 2
+  BOLD = 3
 }
 
-// TODO: Tweak normal and bold weights
 // This contains the definitions of all box drawing characters as SVG paths (ie. the svg d attribute)
 export const boxCharacters: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } } = {
   // Uniform normal and bold
