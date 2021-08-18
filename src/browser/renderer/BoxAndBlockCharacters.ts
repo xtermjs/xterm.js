@@ -10,7 +10,7 @@ interface IBlockVector {
   h: number;
 }
 
-export const blockElementChars: { [index: string]: IBlockVector[] | undefined } = {
+export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefined } = {
   '▀': [{ x: 0, y: 0, w: 8, h: 4 }],
   '█': [{ x: 0, y: 0, w: 8, h: 8 }],
   '▇': [{ x: 0, y: 1, w: 8, h: 7 }],
@@ -136,7 +136,7 @@ const enum Style {
 }
 
 // This contains the definitions of all box drawing characters as SVG paths (ie. the svg d attribute)
-export const boxDrawingChars: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
+export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
   '━': { [Style.BOLD]:   Shapes.LEFT_TO_RIGHT },
@@ -292,15 +292,15 @@ export function tryDrawCustomChar(
   scaledCharLeft: number,
   scaledCharTop: number
 ): boolean {
-  const blockElementInstruction = blockElementChars[c];
-  if (blockElementInstruction) {
-    drawBlockElementChar(ctx, blockElementInstruction, x, y, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
+  const blockElementDefinition = blockElementDefinitions[c];
+  if (blockElementDefinition) {
+    drawBlockElementChar(ctx, blockElementDefinition, x, y, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
     return true;
   }
 
-  const boxDrawingInstruction = boxDrawingChars[c];
-  if (boxDrawingInstruction) {
-    drawBoxDrawingChar(ctx, boxDrawingInstruction, x, y, scaledCellWidth, scaledCellHeight);
+  const boxDrawingDefinition = boxDrawingDefinitions[c];
+  if (boxDrawingDefinition) {
+    drawBoxDrawingChar(ctx, boxDrawingDefinition, x, y, scaledCellWidth, scaledCellHeight);
     return true;
   }
 
@@ -309,7 +309,7 @@ export function tryDrawCustomChar(
 
 function drawBlockElementChar(
   ctx: CanvasRenderingContext2D,
-  instruction: IBlockVector[],
+  charDefinition: IBlockVector[],
   x: number,
   y: number,
   scaledCellWidth: number,
@@ -319,8 +319,8 @@ function drawBlockElementChar(
 ): void {
   const xOffset = x * scaledCellWidth + scaledCharLeft;
   const yOffset = y * scaledCellHeight + scaledCharTop;
-  for (let i = 0; i < instruction.length; i++) {
-    const box = instruction[i];
+  for (let i = 0; i < charDefinition.length; i++) {
+    const box = charDefinition[i];
     const xEighth = scaledCellWidth / 8;
     const yEighth = scaledCellHeight / 8;
     ctx.fillRect(
