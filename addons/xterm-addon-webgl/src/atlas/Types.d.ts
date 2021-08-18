@@ -17,11 +17,14 @@ export interface IGlyphIdentifier {
 }
 
 export interface ICharAtlasConfig {
+  customBlockAndBoxCharacters: boolean;
   devicePixelRatio: number;
   fontSize: number;
   fontFamily: string;
   fontWeight: FontWeight;
   fontWeightBold: FontWeight;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
   scaledCharWidth: number;
   scaledCharHeight: number;
   allowTransparency: boolean;

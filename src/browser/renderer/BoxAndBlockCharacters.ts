@@ -288,8 +288,8 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
 export function tryDrawCustomChar(
   ctx: CanvasRenderingContext2D,
   c: string,
-  x: number,
-  y: number,
+  xOffset: number,
+  yOffset: number,
   scaledCellWidth: number,
   scaledCellHeight: number,
   scaledCharLeft: number,
@@ -297,13 +297,13 @@ export function tryDrawCustomChar(
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
-    drawBlockElementChar(ctx, blockElementDefinition, x, y, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
+    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
     return true;
   }
 
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, x, y, scaledCellWidth, scaledCellHeight);
+    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
     return true;
   }
 
@@ -313,15 +313,16 @@ export function tryDrawCustomChar(
 function drawBlockElementChar(
   ctx: CanvasRenderingContext2D,
   charDefinition: IBlockVector[],
-  x: number,
-  y: number,
+  xOffset: number,
+  yOffset: number,
   scaledCellWidth: number,
   scaledCellHeight: number,
   scaledCharLeft: number,
   scaledCharTop: number
 ): void {
-  const xOffset = x * scaledCellWidth + scaledCharLeft;
-  const yOffset = y * scaledCellHeight + scaledCharTop;
+  // TODO: Scale to cell not char?
+  xOffset += scaledCharLeft;
+  yOffset += scaledCharTop;
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
     const xEighth = scaledCellWidth / 8;
@@ -378,13 +379,11 @@ function drawBlockElementChar(
 function drawBoxDrawingChar(
   ctx: CanvasRenderingContext2D,
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
-  x: number,
-  y: number,
+  xOffset: number,
+  yOffset: number,
   scaledCellWidth: number,
   scaledCellHeight: number
 ): void {
-  const xOffset = x * scaledCellWidth;
-  const yOffset = y * scaledCellHeight;
   ctx.strokeStyle = ctx.fillStyle;
   for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
     ctx.beginPath();

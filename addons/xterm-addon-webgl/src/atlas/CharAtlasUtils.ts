@@ -13,7 +13,7 @@ const NULL_COLOR: IColor = {
   rgba: 0
 };
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCellWidth: number, scaledCellHeight: number, scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -28,7 +28,10 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     contrastCache: colors.contrastCache
   };
   return {
+    customBlockAndBoxCharacters: terminal.getOption('customBlockAndBoxCharacters'),
     devicePixelRatio: window.devicePixelRatio,
+    scaledCellWidth,
+    scaledCellHeight,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: terminal.getOption('fontFamily'),

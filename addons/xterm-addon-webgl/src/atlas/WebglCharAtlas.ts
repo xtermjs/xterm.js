@@ -12,6 +12,7 @@ import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
+import { tryDrawCustomChar } from 'browser/renderer/BoxAndBlockCharacters';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -390,8 +391,16 @@ export class WebglCharAtlas implements IDisposable {
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
     const padding = isPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
 
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._config.customBlockAndBoxCharacters !== false) {
+      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.scaledCharWidth, this._config.scaledCharHeight);
+    }
+
     // Draw the character
-    this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    if (!drawSuccess) {
+      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    }
 
     // Draw underline and strikethrough
     if (underline || strikethrough) {
