@@ -9,6 +9,7 @@
     "project": [
       "src/browser/tsconfig.json",
       "src/common/tsconfig.json",
+      "src/headless/tsconfig.json",
       "test/api/tsconfig.json",
       "test/benchmark/tsconfig.json",
       "addons/tsconfig.eslint.addons.json"

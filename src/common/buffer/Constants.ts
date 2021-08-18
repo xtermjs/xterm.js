@@ -136,13 +136,14 @@ export const enum Attributes {
 
 export const enum FgFlags {
   /**
-   * bit 27..31 (32th bit unused)
+   * bit 27..32
    */
   INVERSE = 0x4000000,
   BOLD = 0x8000000,
   UNDERLINE = 0x10000000,
   BLINK = 0x20000000,
-  INVISIBLE = 0x40000000
+  INVISIBLE = 0x40000000,
+  STRIKETHROUGH = 0x80000000,
 }
 
 export const enum BgFlags {

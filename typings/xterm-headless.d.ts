@@ -7,23 +7,11 @@
  * to be stable and consumed by external programs.
  */
 
-/// <reference lib="dom"/>
-
-declare module 'xterm' {
-  /**
-   * A string or number representing text font weight.
-   */
-  export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
-
+declare module 'xterm-headless' {
   /**
    * A string representing log level.
    */
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
-
-  /**
-   * A string representing a renderer type.
-   */
-  export type RendererType = 'dom' | 'canvas';
 
   /**
    * An object containing start up options for the terminal.
@@ -106,31 +94,6 @@ declare module 'xterm' {
     fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
 
     /**
-     * The scroll speed multiplier used for fast scrolling.
-     */
-    fastScrollSensitivity?: number;
-
-    /**
-     * The font size used to render text.
-     */
-    fontSize?: number;
-
-    /**
-     * The font family used to render text.
-     */
-    fontFamily?: string;
-
-    /**
-     * The font weight used to render non-bold text.
-     */
-    fontWeight?: FontWeight;
-
-    /**
-     * The font weight used to render bold text.
-     */
-    fontWeightBold?: FontWeight;
-
-    /**
      * The spacing in whole pixels between characters.
      */
     letterSpacing?: number;
@@ -184,16 +147,6 @@ declare module 'xterm' {
      * - 21: White on black or black on white.
      */
     minimumContrastRatio?: number;
-
-    /**
-     * The type of renderer to use, this allows using the fallback DOM renderer
-     * when canvas is too slow for the environment. The following features do
-     * not work when the DOM renderer is used:
-     *
-     * - Letter spacing
-     * - Cursor blink
-     */
-    rendererType?: RendererType;
 
     /**
      * Whether to select the word under the cursor on right click, this is
@@ -306,50 +259,6 @@ declare module 'xterm' {
     brightCyan?: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
     brightWhite?: string;
-  }
-
-  /**
-   * An object containing options for a link matcher.
-   */
-  export interface ILinkMatcherOptions {
-    /**
-     * The index of the link from the regex.match(text) call. This defaults to 0
-     * (for regular expressions without capture groups).
-     */
-    matchIndex?: number;
-
-    /**
-     * A callback that validates whether to create an individual link, pass
-     * whether the link is valid to the callback.
-     */
-    validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
-
-    /**
-     * A callback that fires when the mouse hovers over a link for a period of
-     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
-     */
-    tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
-
-    /**
-     * A callback that fires when the mouse leaves a link. Note that this can
-     * happen even when tooltipCallback hasn't fired for the link yet.
-     */
-    leaveCallback?: () => void;
-
-    /**
-     * The priority of the link matcher, this defines the order in which the
-     * link matcher is evaluated relative to others, from highest to lowest. The
-     * default value is 0.
-     */
-    priority?: number;
-
-    /**
-     * A callback that fires when the mousedown and click events occur that
-     * determines whether a link will be activated upon click. This enables
-     * only activating a link when a certain modifier is held down, if not the
-     * mouse event will continue propagation (eg. double click to select word).
-     */
-    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
   /**
@@ -574,16 +483,6 @@ declare module 'xterm' {
    */
   export class Terminal implements IDisposable {
     /**
-     * The element containing the terminal.
-     */
-    readonly element: HTMLElement | undefined;
-
-    /**
-     * The textarea that accepts input for the terminal.
-     */
-    readonly textarea: HTMLTextAreaElement | undefined;
-
-    /**
      * The number of rows in the terminal's viewport. Use
      * `ITerminalOptions.rows` to set this in the constructor and
      * `Terminal.resize` for when the terminal exists.
@@ -672,26 +571,10 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for when a key is pressed. The event value contains the
-     * string that will be sent in the data event as well as the DOM event that
-     * triggered it.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
-
-    /**
      * Adds an event listener for when a line feed is added.
      * @returns an `IDisposable` to stop listening.
      */
     onLineFeed: IEvent<void>;
-
-    /**
-     * Adds an event listener for when rows are rendered. The event value
-     * contains the start row and end rows of the rendered area (ranges from `0`
-     * to `Terminal.rows - 1`).
-     * @returns an `IDisposable` to stop listening.
-     */
-    onRender: IEvent<{ start: number, end: number }>;
 
     /**
      * Adds an event listener for when the terminal is resized. The event value
@@ -708,27 +591,11 @@ declare module 'xterm' {
     onScroll: IEvent<number>;
 
     /**
-     * Adds an event listener for when a selection change occurs.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onSelectionChange: IEvent<void>;
-
-    /**
      * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
      * The event value is the new title.
      * @returns an `IDisposable` to stop listening.
      */
     onTitleChange: IEvent<string>;
-
-    /**
-     * Unfocus the terminal.
-     */
-    blur(): void;
-
-    /**
-     * Focus the terminal.
-     */
-    focus(): void;
 
     /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
@@ -738,93 +605,6 @@ declare module 'xterm' {
      * @param y The number of rows to resize to.
      */
     resize(columns: number, rows: number): void;
-
-    /**
-     * Opens the terminal within an element.
-     * @param parent The element to create the terminal within. This element
-     * must be visible (have dimensions) when `open` is called as several DOM-
-     * based measurements need to be performed when this function is called.
-     */
-    open(parent: HTMLElement): void;
-
-    /**
-     * Attaches a custom key event handler which is run before keys are
-     * processed, giving consumers of xterm.js ultimate control as to what keys
-     * should be processed by the terminal and what keys should not.
-     * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
-     * This is a function that takes a KeyboardEvent, allowing consumers to stop
-     * propagation and/or prevent the default action. The function returns
-     * whether the event should be processed by xterm.js.
-     */
-    attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-
-    /**
-     * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
-     * be matched and handled.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param regex The regular expression to search for, specifically this
-     * searches the textContent of the rows. You will want to use \s to match a
-     * space ' ' character for example.
-     * @param handler The callback when the link is called.
-     * @param options Options for the link matcher.
-     * @return The ID of the new matcher, this can be used to deregister.
-     */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
-
-    /**
-     * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param matcherId The link matcher's ID (returned after register)
-     */
-    deregisterLinkMatcher(matcherId: number): void;
-
-    /**
-     * (EXPERIMENTAL) Registers a link provider, allowing a custom parser to
-     * be used to match and handle links. Multiple link providers can be used,
-     * they will be asked in the order in which they are registered.
-     * @param linkProvider The link provider to use to detect links.
-     */
-    registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
-
-    /**
-     * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
-     * characters to be rendered as a single unit. This is useful in particular
-     * for rendering ligatures and graphemes, among other things.
-     *
-     * Each registered character joiner is called with a string of text
-     * representing a portion of a line in the terminal that can be rendered as
-     * a single unit. The joiner must return a sorted array, where each entry is
-     * itself an array of length two, containing the start (inclusive) and end
-     * (exclusive) index of a substring of the input that should be rendered as
-     * a single unit. When multiple joiners are provided, the results of each
-     * are collected. If there are any overlapping substrings between them, they
-     * are combined into one larger unit that is drawn together.
-     *
-     * All character joiners that are registered get called every time a line is
-     * rendered in the terminal, so it is essential for the handler function to
-     * run as quickly as possible to avoid slowdowns when rendering. Similarly,
-     * joiners should strive to return the smallest possible substrings to
-     * render together, since they aren't drawn as optimally as individual
-     * characters.
-     *
-     * NOTE: character joiners are only used by the canvas renderer.
-     *
-     * @param handler The function that determines character joins. It is called
-     * with a string of text that is eligible for joining and returns an array
-     * where each entry is an array containing the start (inclusive) and end
-     * (exclusive) indexes of ranges that should be rendered as a single unit.
-     * @return The ID of the new joiner, this can be used to deregister
-     */
-    registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
-
-    /**
-     * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
-     * NOTE: character joiners are only used by the canvas renderer.
-     * @param joinerId The character joiner's ID (returned after register)
-     */
-    deregisterCharacterJoiner(joinerId: number): void;
 
     /**
      * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
@@ -839,51 +619,10 @@ declare module 'xterm' {
      */
     addMarker(cursorYOffset: number): IMarker | undefined;
 
-    /**
-     * Gets whether the terminal has an active selection.
-     */
-    hasSelection(): boolean;
-
-    /**
-     * Gets the terminal's current selection, this is useful for implementing
-     * copy behavior outside of xterm.js.
-     */
-    getSelection(): string;
-
-    /**
-     * Gets the selection position or undefined if there is no selection.
-     */
-    getSelectionPosition(): ISelectionPosition | undefined;
-
-    /**
-     * Clears the current terminal selection.
-     */
-    clearSelection(): void;
-
-    /**
-     * Selects text within the terminal.
-     * @param column The column the selection starts at.
-     * @param row The row the selection starts at.
-     * @param length The length of the selection.
-     */
-    select(column: number, row: number, length: number): void;
-
-    /**
-     * Selects all text within the terminal.
-     */
-    selectAll(): void;
-
-    /**
-     * Selects text in the buffer between 2 lines.
-     * @param start The 0-based line index to select from (inclusive).
-     * @param end The 0-based line index to select to (inclusive).
-     */
-    selectLines(start: number, end: number): void;
-
     /*
-     * Disposes of the terminal, detaching it from the DOM and removing any
-     * active listeners.
-     */
+      * Disposes of the terminal, detaching it from the DOM and removing any
+      * active listeners.
+      */
     dispose(): void;
 
     /**
@@ -948,12 +687,6 @@ declare module 'xterm' {
     writeUtf8(data: Uint8Array, callback?: () => void): void;
 
     /**
-     * Writes text to the terminal, performing the necessary transformations for pasted text.
-     * @param data The text to write to the terminal.
-     */
-    paste(data: string): void;
-
-    /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
@@ -968,11 +701,6 @@ declare module 'xterm' {
      * @param key The option key.
      */
     getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -1039,14 +767,6 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: string, value: any): void;
-
-    /**
-     * Tells the renderer to refresh terminal content between two rows
-     * (inclusive) at the next opportunity.
-     * @param start The row to start from (between 0 and this.rows - 1).
-     * @param end The row to end at (between start and this.rows - 1).
-     */
-    refresh(start: number, end: number): void;
 
     /**
      * Perform a full reset (RIS, aka '\x1bc').
@@ -1128,85 +848,6 @@ declare module 'xterm' {
      * specific row.
      */
     y: number;
-  }
-
-  /**
-   * A custom link provider.
-   */
-  interface ILinkProvider {
-    /**
-     * Provides a link a buffer position
-     * @param bufferLineNumber The y position of the buffer to check for links
-     * within.
-     * @param callback The callback to be fired when ready with the resulting
-     * link(s) for the line or `undefined`.
-     */
-    provideLinks(bufferLineNumber: number, callback: (links: ILink[] | undefined) => void): void;
-  }
-
-  /**
-   * A link within the terminal.
-   */
-  interface ILink {
-    /**
-     * The buffer range of the link.
-     */
-    range: IBufferRange;
-
-    /**
-     * The text of the link.
-     */
-    text: string;
-
-    /**
-     * What link decorations to show when hovering the link, this property is tracked and changes
-     * made after the link is provided will trigger changes. If not set, all decroations will be
-     * enabled.
-     */
-    decorations?: ILinkDecorations;
-
-    /**
-     * Calls when the link is activated.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     */
-    activate(event: MouseEvent, text: string): void;
-
-    /**
-     * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
-     * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
-     * that will cause mouse events to not fall through and activate other links.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     */
-    hover?(event: MouseEvent, text: string): void;
-
-    /**
-     * Called when the mouse leaves the link.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     */
-    leave?(event: MouseEvent, text: string): void;
-
-    /**
-     * Called when the link is released and no longer used by xterm.js.
-     */
-    dispose?(): void;
-  }
-
-  /**
-   * A set of decorations that can be applied to links.
-   */
-  interface ILinkDecorations {
-    /**
-     * Whether the cursor is set to pointer.
-     */
-    pointerCursor: boolean;
-
-    /**
-     * Whether the underline is visible
-     */
-    underline: boolean;
   }
 
   /**
@@ -1512,23 +1153,6 @@ declare module 'xterm' {
 
   /**
    * Allows hooking into the parser for custom handling of escape sequences.
-   *
-   * Note on sync vs. async handlers:
-   * xterm.js implements all parser actions with synchronous handlers.
-   * In general custom handlers should also operate in sync mode wherever
-   * possible to keep the parser fast.
-   * Still the exposed interfaces allow to register async handlers by returning
-   * a `Promise<boolean>`. Here the parser will pause input processing until
-   * the promise got resolved or rejected (in-band blocking). This "full stop"
-   * on the input chain allows to implement backpressure from a certain async
-   * action while the terminal state will not progress any further from input.
-   * It does not mean that the terminal state will not change at all in between,
-   * as user actions like resize or reset are still processed immediately.
-   * It is an error to assume a stable terminal state while giving back control
-   * in between, e.g. by multiple chained `then` calls.
-   * Downside of an async handler is a rather bad throughput performance,
-   * thus use async handlers only as a last resort or for actions that have
-   * to rely on async interfaces itself.
    */
   export interface IParser {
     /**
@@ -1538,11 +1162,12 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence. The callback is
      * called with the numerical params. If the sequence has subparams the
      * array will contain subarrays with their numercial values.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addCsiHandler or setCsiHandler).
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1556,11 +1181,12 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits DCS payload to 10 MB
      * which should give enough room for most use cases.
      * The function gets the payload and numerical parameters as arguments.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addDcsHandler or setDcsHandler).
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1568,11 +1194,12 @@ declare module 'xterm' {
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
      * @param callback The function to handle the sequence.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addEscHandler or setEscHandler).
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1585,11 +1212,12 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits OSC payload to 10 MB
      * which should give enough room for most use cases.
      * The callback is called with OSC data string.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * Return true if the sequence was handled; false if we should try
+     * a previous handler (set by addOscHandler or setOscHandler).
+     * The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
 
   /**
