@@ -17,7 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { tryDrawCustomChar } from 'browser/renderer/BoxAndBlockCharacters';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

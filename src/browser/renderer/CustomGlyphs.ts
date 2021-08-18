@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+
 interface IBlockVector {
   x: number;
   y: number;
@@ -99,6 +101,33 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   ],
   // HEAVY HORIZONTAL FILL (upper middle and lower one quarter block)
   '\u{1FB97}': [{ x: 0, y: 2, w: 8, h: 2 }, { x: 0, y: 6, w: 8, h: 2 }]
+};
+
+type PatternDefinition = number[][];
+
+/**
+ * Defines the repeating pattern used by special characters, the pattern is made up of a 2d array of
+ * pixel values to be filled (1) or not filled (0).
+ */
+const patternCharacterDefinitions: { [key: string]: PatternDefinition | undefined } = {
+  '░': [
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 0]
+  ],
+  '▒': [
+    [1, 0],
+    [0, 0],
+    [0, 1],
+    [0, 0]
+  ],
+  '▓': [
+    [0, 1],
+    [1, 1],
+    [1, 0],
+    [1, 1]
+  ]
 };
 
 const enum Shapes {
@@ -299,6 +328,13 @@ export function tryDrawCustomChar(
     return true;
   }
 
+  const patternDefinition = patternCharacterDefinitions[c];
+  if (patternDefinition) {
+    console.log('draw pattern', c);
+    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    return true;
+  }
+
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
     drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
@@ -327,6 +363,58 @@ function drawBlockElementChar(
       box.h * yEighth
     );
   }
+}
+
+const cachedPatterns: Map<PatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();
+
+function drawPatternChar(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: number[][],
+  xOffset: number,
+  yOffset: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number
+): void {
+  let patternSet = cachedPatterns.get(charDefinition);
+  if (!patternSet) {
+    patternSet = new Map();
+    cachedPatterns.set(charDefinition, patternSet);
+  }
+  // TODO: Unsafe?
+  const fillStyle = ctx.fillStyle as string;
+  let pattern = patternSet.get(fillStyle);
+  if (!pattern) {
+    const width = charDefinition[0].length;
+    const height = charDefinition.length;
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = width;
+    tmpCanvas.height = height;
+    const tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d'));
+    const imageData = new ImageData(width, height);
+    // TODO: This is a little unsafe, fillStyle could be rgb/rgba format
+    const r = parseInt(fillStyle.substr(1, 2), 16);
+    const g = parseInt(fillStyle.substr(3, 2), 16);
+    const b = parseInt(fillStyle.substr(5, 2), 16);
+    const a = fillStyle.length > 7 && parseInt(fillStyle.substr(7, 2), 16) || undefined;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        imageData.data[(y * width + x) * 4    ] = r;
+        imageData.data[(y * width + x) * 4 + 1] = g;
+        imageData.data[(y * width + x) * 4 + 2] = b;
+        imageData.data[(y * width + x) * 4 + 3] = charDefinition[y][x] * (a ?? 255);
+      }
+    }
+    console.log('put', imageData);
+    tmpCtx.putImageData(imageData, 0, 0);
+    // TODO: This will break for different colored patterns
+    // TODO: This could happen multiple times
+    pattern = throwIfFalsy(ctx.createPattern(tmpCanvas, null));
+    patternSet.set(fillStyle, pattern);
+  }
+
+  console.log('fill style', pattern);
+  ctx.fillStyle = pattern;
+  ctx.fillRect(xOffset, yOffset, scaledCellWidth, scaledCellHeight);
 }
 
 /**

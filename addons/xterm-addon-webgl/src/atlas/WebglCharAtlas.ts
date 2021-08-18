@@ -12,7 +12,7 @@ import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
-import { tryDrawCustomChar } from 'browser/renderer/BoxAndBlockCharacters';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
