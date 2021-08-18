@@ -135,7 +135,10 @@ const enum Style {
   BOLD = 3
 }
 
-// This contains the definitions of all box drawing characters as SVG paths (ie. the svg d attribute)
+/**
+ * This contains the definitions of all box drawing characters in the format of SVG paths (ie. the
+ * svg d attribute).
+ */
 export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
@@ -324,14 +327,54 @@ function drawBlockElementChar(
     const xEighth = scaledCellWidth / 8;
     const yEighth = scaledCellHeight / 8;
     ctx.fillRect(
-      xOffset,
-      yOffset,
+      xOffset + box.x * xEighth,
+      yOffset + box.y * yEighth,
       box.w * xEighth,
       box.h * yEighth
     );
   }
 }
 
+/**
+ * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
+ * canvas draw calls.
+ *
+ * Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐
+ * ┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤
+ * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘
+ * ├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐
+ * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤
+ * └─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘
+ *
+ * Other:
+ * ╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈
+ * │ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉
+ * ╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋
+ *
+ * All box drawing characters:
+ * ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏
+ * ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
+ * ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯
+ * ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
+ * ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏
+ * ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
+ * ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯
+ * ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
+ *
+ * ---
+ *
+ * Box drawing alignment tests:                                          █
+ *                                                                       ▉
+ *   ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳
+ *   ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳
+ *   ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳
+ *   ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳
+ *   ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎
+ *   ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏
+ *   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
+ *
+ * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
+ */
 function drawBoxDrawingChar(
   ctx: CanvasRenderingContext2D,
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
@@ -356,7 +399,7 @@ function drawBoxDrawingChar(
     }
     for (const instruction of actualInstructions.split(' ')) {
       const type = instruction[0];
-      const f = instructionMap[type];
+      const f = svgToCanvasInstructionMap[type];
       if (!f) {
         console.error(`Could not find drawing instructions for "${type}"`);
         continue;
@@ -376,7 +419,7 @@ function clamp(value: number, max: number, min: number = 0): number {
   return Math.max(Math.min(value, max), min);
 }
 
-const instructionMap: { [index: string]: any } = {
+const svgToCanvasInstructionMap: { [index: string]: any } = {
   'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
   'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
   'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
