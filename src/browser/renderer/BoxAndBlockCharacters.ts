@@ -291,13 +291,11 @@ export function tryDrawCustomChar(
   xOffset: number,
   yOffset: number,
   scaledCellWidth: number,
-  scaledCellHeight: number,
-  scaledCharLeft: number,
-  scaledCharTop: number
+  scaledCellHeight: number
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
-    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
+    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
     return true;
   }
 
@@ -316,13 +314,8 @@ function drawBlockElementChar(
   xOffset: number,
   yOffset: number,
   scaledCellWidth: number,
-  scaledCellHeight: number,
-  scaledCharLeft: number,
-  scaledCharTop: number
+  scaledCellHeight: number
 ): void {
-  // TODO: Scale to cell not char?
-  xOffset += scaledCharLeft;
-  yOffset += scaledCharTop;
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
     const xEighth = scaledCellWidth / 8;

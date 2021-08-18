@@ -394,7 +394,7 @@ export class WebglCharAtlas implements IDisposable {
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._config.customBlockAndBoxCharacters !== false) {
-      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.scaledCharWidth, this._config.scaledCharHeight);
+      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
     // Draw the character
