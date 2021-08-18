@@ -30,6 +30,8 @@ export function generateConfig(scaledCellWidth: number, scaledCellHeight: number
   return {
     customBlockAndBoxCharacters: terminal.getOption('customBlockAndBoxCharacters'),
     devicePixelRatio: window.devicePixelRatio,
+    letterSpacing: terminal.getOption('letterSpacing'),
+    lineHeight: terminal.getOption('lineHeight'),
     scaledCellWidth,
     scaledCellHeight,
     scaledCharWidth,
@@ -52,6 +54,9 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
     }
   }
   return a.devicePixelRatio === b.devicePixelRatio &&
+      a.customBlockAndBoxCharacters === b.customBlockAndBoxCharacters &&
+      a.lineHeight === b.lineHeight &&
+      a.letterSpacing === b.letterSpacing &&
       a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&

@@ -404,15 +404,10 @@ function drawPatternChar(
         imageData.data[(y * width + x) * 4 + 3] = charDefinition[y][x] * (a ?? 255);
       }
     }
-    console.log('put', imageData);
     tmpCtx.putImageData(imageData, 0, 0);
-    // TODO: This will break for different colored patterns
-    // TODO: This could happen multiple times
     pattern = throwIfFalsy(ctx.createPattern(tmpCanvas, null));
     patternSet.set(fillStyle, pattern);
   }
-
-  console.log('fill style', pattern);
   ctx.fillStyle = pattern;
   ctx.fillRect(xOffset, yOffset, scaledCellWidth, scaledCellHeight);
 }

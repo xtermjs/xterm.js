@@ -19,6 +19,8 @@ export interface IGlyphIdentifier {
 export interface ICharAtlasConfig {
   customBlockAndBoxCharacters: boolean;
   devicePixelRatio: number;
+  letterSpacing: number;
+  lineHeight: number;
   fontSize: number;
   fontFamily: string;
   fontWeight: FontWeight;

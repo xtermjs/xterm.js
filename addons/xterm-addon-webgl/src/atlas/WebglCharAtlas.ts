@@ -84,8 +84,8 @@ export class WebglCharAtlas implements IDisposable {
     this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCharWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.width = this._config.scaledCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.height = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
   }
 
@@ -321,7 +321,7 @@ export class WebglCharAtlas implements IDisposable {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    let allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
