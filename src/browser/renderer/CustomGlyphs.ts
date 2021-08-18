@@ -330,7 +330,6 @@ export function tryDrawCustomChar(
 
   const patternDefinition = patternCharacterDefinitions[c];
   if (patternDefinition) {
-    console.log('draw pattern', c);
     drawPatternChar(ctx, patternDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
     return true;
   }
