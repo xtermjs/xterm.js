@@ -244,6 +244,7 @@ export interface ITerminalOptions {
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
   cursorWidth: number;
+  customBlockAndBoxCharacters: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
   fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;

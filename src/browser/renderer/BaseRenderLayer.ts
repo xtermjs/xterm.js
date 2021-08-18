@@ -17,7 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { boxCharacters, boxDrawingBoxes, drawBoxChar } from 'browser/renderer/BoxAndBlockCharacters';
+import { tryDrawCustomChar } from 'browser/renderer/BoxAndBlockCharacters';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -260,8 +260,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.font = this._getFont(false, false);
     this._ctx.textBaseline = 'ideographic';
     this._clipRow(y);
-    // TODO: fix
-    if (!this._drawBoxChar(cell, x, y)) {
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customBlockAndBoxCharacters !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x, y, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharLeft, this._scaledCharTop);
+    }
+
+    // Draw the character
+    if (!drawSuccess) {
       this._ctx.fillText(
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
@@ -377,44 +384,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (cell.isDim()) {
       this._ctx.globalAlpha = DIM_OPACITY;
     }
-    if (!this._drawBoxChar(cell, x, y)) {
-      // Draw the character
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customBlockAndBoxCharacters !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x, y, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharLeft, this._scaledCharTop);
+    }
+
+    // Draw the character
+    if (!drawSuccess) {
       this._ctx.fillText(
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
         y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
     }
+
     this._ctx.restore();
-  }
-
-  private _drawBoxChar(cell: ICellData, x: number, y: number): boolean {
-    const char = cell.getChars();
-
-    const boxes = boxDrawingBoxes[char];
-    if (boxes) {
-      this._ctx.strokeStyle = this._ctx.fillStyle;
-      const xOffset = x * this._scaledCellWidth + this._scaledCharLeft;
-      const yOffset = y * this._scaledCellHeight + this._scaledCharTop;
-      for (let i = 0; i < boxes.length; i++) {
-        const box = boxes[i];
-        const xEighth = this._scaledCellWidth / 8;
-        const yEighth = this._scaledCellHeight / 8;
-        this._ctx.fillRect(
-          xOffset,
-          yOffset,
-          box.w * xEighth,
-          box.h * yEighth);
-      }
-      return true;
-    }
-
-    const lineSegments = boxCharacters[char];
-    if (!lineSegments) {
-      return false;
-    }
-    this._ctx.strokeStyle = this._ctx.fillStyle;
-    drawBoxChar(this._ctx, char, x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
-    return true;
   }
 
 

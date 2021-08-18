@@ -1,5 +1,16 @@
+/**
+ * Copyright (c) 2021 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
 
-export const boxDrawingBoxes: { [index: string]: any } = {
+interface IBlockVector {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export const blockElementChars: { [index: string]: IBlockVector[] | undefined } = {
   '▀': [{ x: 0, y: 0, w: 8, h: 4 }],
   '█': [{ x: 0, y: 0, w: 8, h: 8 }],
   '▇': [{ x: 0, y: 1, w: 8, h: 7 }],
@@ -125,7 +136,7 @@ const enum Style {
 }
 
 // This contains the definitions of all box drawing characters as SVG paths (ie. the svg d attribute)
-export const boxCharacters: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } } = {
+export const boxDrawingChars: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
   '━': { [Style.BOLD]:   Shapes.LEFT_TO_RIGHT },
@@ -247,7 +258,6 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
   '╊': { [Style.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [Style.BOLD]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_RIGHT}` },
 
   // Dashed
-  // TODO: Spacing dashes evenly, use 1/2 padding on each edge so the line is continuous
   '╌': { [Style.NORMAL]: Shapes.TWO_DASHES_HORIZONTAL },
   '╍': { [Style.BOLD]:   Shapes.TWO_DASHES_HORIZONTAL },
   '┄': { [Style.NORMAL]: Shapes.THREE_DASHES_HORIZONTAL },
@@ -268,18 +278,78 @@ export const boxCharacters: { [character: string]: { [fontWeight: number]: strin
   '╰': { [Style.NORMAL]: 'C.5,0,.5,.5,1,.5' }
 };
 
-export function drawBoxChar(ctx: CanvasRenderingContext2D, c: string, xOffset: number, yOffset: number, cellWidth: number, cellHeight: number): void {
-  const match: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } = boxCharacters[c];
-  if (!match) {
-    return;
+/**
+ * Try drawing a custom block element or box drawing character, returning whether it was
+ * successfully drawn.
+ */
+export function tryDrawCustomChar(
+  ctx: CanvasRenderingContext2D,
+  c: string,
+  x: number,
+  y: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number,
+  scaledCharLeft: number,
+  scaledCharTop: number
+): boolean {
+  const blockElementInstruction = blockElementChars[c];
+  if (blockElementInstruction) {
+    drawBlockElementChar(ctx, blockElementInstruction, x, y, scaledCellWidth, scaledCellHeight, scaledCharLeft, scaledCharTop);
+    return true;
   }
-  for (const [fontWeight, instructions] of Object.entries(match)) {
+
+  const boxDrawingInstruction = boxDrawingChars[c];
+  if (boxDrawingInstruction) {
+    drawBoxDrawingChar(ctx, boxDrawingInstruction, x, y, scaledCellWidth, scaledCellHeight);
+    return true;
+  }
+
+  return false;
+}
+
+function drawBlockElementChar(
+  ctx: CanvasRenderingContext2D,
+  instruction: IBlockVector[],
+  x: number,
+  y: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number,
+  scaledCharLeft: number,
+  scaledCharTop: number
+): void {
+  const xOffset = x * scaledCellWidth + scaledCharLeft;
+  const yOffset = y * scaledCellHeight + scaledCharTop;
+  for (let i = 0; i < instruction.length; i++) {
+    const box = instruction[i];
+    const xEighth = scaledCellWidth / 8;
+    const yEighth = scaledCellHeight / 8;
+    ctx.fillRect(
+      xOffset,
+      yOffset,
+      box.w * xEighth,
+      box.h * yEighth
+    );
+  }
+}
+
+function drawBoxDrawingChar(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
+  x: number,
+  y: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number
+): void {
+  const xOffset = x * scaledCellWidth;
+  const yOffset = y * scaledCellHeight;
+  ctx.strokeStyle = ctx.fillStyle;
+  for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
     ctx.beginPath();
     ctx.lineWidth = window.devicePixelRatio * Number.parseInt(fontWeight);
     let actualInstructions: string;
     if (typeof instructions === 'function') {
       const xp = .15;
-      const yp = .15 / cellHeight * cellWidth;
+      const yp = .15 / scaledCellHeight * scaledCellWidth;
       actualInstructions = instructions(xp, yp);
     } else {
       actualInstructions = instructions;
@@ -295,7 +365,7 @@ export function drawBoxChar(ctx: CanvasRenderingContext2D, c: string, xOffset: n
       if (!args[0] || !args[1]) {
         continue;
       }
-      f(ctx, translateArgs(args, cellWidth, cellHeight, xOffset, yOffset));
+      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset));
     }
     ctx.stroke();
     ctx.closePath();
