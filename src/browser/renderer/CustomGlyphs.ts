@@ -13,22 +13,40 @@ interface IBlockVector {
 }
 
 export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefined } = {
-  '▀': [{ x: 0, y: 0, w: 8, h: 4 }],
-  '█': [{ x: 0, y: 0, w: 8, h: 8 }],
-  '▇': [{ x: 0, y: 1, w: 8, h: 7 }],
-  '▆': [{ x: 0, y: 2, w: 8, h: 6 }],
-  '▅': [{ x: 0, y: 3, w: 8, h: 5 }],
-  '▄': [{ x: 0, y: 4, w: 8, h: 4 }],
-  '▃': [{ x: 0, y: 5, w: 8, h: 3 }],
-  '▂': [{ x: 0, y: 6, w: 8, h: 2 }],
-  '▁': [{ x: 0, y: 7, w: 8, h: 1 }],
-  '▉': [{ x: 0, y: 0, w: 7, h: 8 }],
-  '▊': [{ x: 0, y: 0, w: 6, h: 8 }],
-  '▋': [{ x: 0, y: 0, w: 5, h: 8 }],
-  '▌': [{ x: 0, y: 0, w: 4, h: 8 }],
-  '▍': [{ x: 0, y: 0, w: 3, h: 8 }],
-  '▎': [{ x: 0, y: 0, w: 2, h: 8 }],
-  '▏': [{ x: 0, y: 0, w: 1, h: 8 }],
+  // Block elements (0x2580-0x2590)
+  '▀': [{ x: 0, y: 0, w: 8, h: 4 }], // UPPER HALF BLOCK
+  '▁': [{ x: 0, y: 7, w: 8, h: 1 }], // LOWER ONE EIGHTH BLOCK
+  '▂': [{ x: 0, y: 6, w: 8, h: 2 }], // LOWER ONE QUARTER BLOCK
+  '▃': [{ x: 0, y: 5, w: 8, h: 3 }], // LOWER THREE EIGHTHS BLOCK
+  '▄': [{ x: 0, y: 4, w: 8, h: 4 }], // LOWER HALF BLOCK
+  '▅': [{ x: 0, y: 3, w: 8, h: 5 }], // LOWER FIVE EIGHTHS BLOCK
+  '▆': [{ x: 0, y: 2, w: 8, h: 6 }], // LOWER THREE QUARTERS BLOCK
+  '▇': [{ x: 0, y: 1, w: 8, h: 7 }], // LOWER SEVEN EIGHTHS BLOCK
+  '█': [{ x: 0, y: 0, w: 8, h: 8 }], // FULL BLOCK
+  '▉': [{ x: 0, y: 0, w: 7, h: 8 }], // LEFT SEVEN EIGHTHS BLOCK
+  '▊': [{ x: 0, y: 0, w: 6, h: 8 }], // LEFT THREE QUARTERS BLOCK
+  '▋': [{ x: 0, y: 0, w: 5, h: 8 }], // LEFT FIVE EIGHTHS BLOCK
+  '▌': [{ x: 0, y: 0, w: 4, h: 8 }], // LEFT HALF BLOCK
+  '▍': [{ x: 0, y: 0, w: 3, h: 8 }], // LEFT THREE EIGHTHS BLOCK
+  '▎': [{ x: 0, y: 0, w: 2, h: 8 }], // LEFT ONE QUARTER BLOCK
+  '▏': [{ x: 0, y: 0, w: 1, h: 8 }], // LEFT ONE EIGHTH BLOCK
+  '▐': [{ x: 4, y: 0, w: 4, h: 8 }], // RIGHT HALF BLOCK
+
+  // Block elements (0x2594-0x2595)
+  '▔': [{ x: 0, y: 0, w: 9, h: 1 }], // UPPER ONE EIGHTH BLOCK
+  '▕': [{ x: 7, y: 0, w: 1, h: 8 }], // RIGHT ONE EIGHTH BLOCK
+
+  // Terminal graphic characters (0x2596-0x259F)
+  '▖': [{ x: 0, y: 4, w: 4, h: 4 }],                             // QUADRANT LOWER LEFT
+  '▗': [{ x: 4, y: 4, w: 4, h: 4 }],                             // QUADRANT LOWER RIGHT
+  '▘': [{ x: 0, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER LEFT
+  '▙': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }], // QUADRANT UPPER LEFT AND LOWER LEFT AND LOWER RIGHT
+  '▚': [{ x: 0, y: 0, w: 4, h: 4 }, { x: 4, y: 4, w: 4, h: 4 }], // QUADRANT UPPER LEFT AND LOWER RIGHT
+  '▛': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 0, w: 4, h: 8 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
+  '▜': [{ x: 0, y: 0, w: 8, h: 4 }, { x: 4, y: 0, w: 4, h: 8 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
+  '▝': [{ x: 4, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER RIGHT
+  '▞': [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }], // QUADRANT UPPER RIGHT AND LOWER LEFT
+  '▟': [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }], // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
 
   // VERTICAL ONE EIGHTH BLOCK-2 through VERTICAL ONE EIGHTH BLOCK-7
   '\u{1FB70}': [{ x: 1, y: 0, w: 1, h: 8 }],
@@ -37,11 +55,7 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   '\u{1FB73}': [{ x: 4, y: 0, w: 1, h: 8 }],
   '\u{1FB74}': [{ x: 5, y: 0, w: 1, h: 8 }],
   '\u{1FB75}': [{ x: 6, y: 0, w: 1, h: 8 }],
-  // RIGHT ONE EIGHTH BLOCK
-  '▕': [{ x: 7, y: 0, w: 1, h: 8 }],
 
-  // UPPER ONE EIGHTH BLOCK
-  '▔': [{ x: 0, y: 0, w: 8, h: 1 }],
   // HORIZONTAL ONE EIGHTH BLOCK-2 through HORIZONTAL ONE EIGHTH BLOCK-7
   '\u{1FB76}': [{ x: 0, y: 1, w: 8, h: 1 }],
   '\u{1FB77}': [{ x: 0, y: 2, w: 8, h: 1 }],
@@ -110,19 +124,20 @@ type PatternDefinition = number[][];
  * pixel values to be filled (1) or not filled (0).
  */
 const patternCharacterDefinitions: { [key: string]: PatternDefinition | undefined } = {
-  '░': [
+  // Shade characters (0x2591-0x2593)
+  '░': [ // LIGHT SHADE (25%)
     [1, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 1, 0],
     [0, 0, 0, 0]
   ],
-  '▒': [
+  '▒': [ // MEDIUM SHADE (50%)
     [1, 0],
     [0, 0],
     [0, 1],
     [0, 0]
   ],
-  '▓': [
+  '▓': [ // DARK SHADE (75%)
     [0, 1],
     [1, 1],
     [1, 0],
