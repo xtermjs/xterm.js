@@ -830,45 +830,6 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe.only('custom glyphs', () => {
-    if (areTestsEnabled) {
-      before(async () => setupBrowser());
-      after(async () => browser.close());
-      beforeEach(async () => page.evaluate(`window.term.reset()`));
-    }
-
-    itWebgl('should draw normal weight characters pixel perfect', async () => {
-      const theme: ITheme = {
-        background: '#000000',
-        foreground: '#ffffff'
-      };
-      await page.evaluate(`
-        window.term.setOption('theme', ${JSON.stringify(theme)});
-        window.term.setOption('fontSize', 12);
-        window.term.setOption('minimumContrastRatio', 1);
-      `);
-      await writeSync(page,
-        'Box drawing alignment tests:                                          █\\n\\r' +
-        '                                                                      ▉\\n\\r' +
-        '  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\\n\\r' +
-        '  ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳\\n\\r' +
-        '  ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳\\n\\r' +
-        '  ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳\\n\\r' +
-        '  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\\n\\r' +
-        '  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\\n\\r' +
-        '  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█'
-      );
-      // Validate before minimumContrastRatio is applied
-      await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
-      const pixels = await getCellPixels(1, 1);
-      for (let y = 0; y < pixels.length / 20; y++) {
-        console.log(`pixels ${y}: ` + pixels.slice(y * 20, y * 20 + 20).join(', '));
-      }
-      console.log('cellPixels', pixels.length);
-      await timeout(2000);
-    });
-  });
-
   describe('selection', async () => {
     if (areTestsEnabled) {
       before(async () => setupBrowser());
