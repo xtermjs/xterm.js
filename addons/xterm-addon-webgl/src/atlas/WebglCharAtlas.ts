@@ -402,6 +402,22 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     }
 
+    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
+    // try for a maximum of 5 pixels.
+    if (chars === '_' && !this._config.allowTransparency) {
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+      if (isBeyondCellBounds) {
+        for (let offset = 1; offset <= 5; offset++) {
+          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+          if (!isBeyondCellBounds) {
+            break;
+          }
+        }
+      }
+    }
+
     // Draw underline and strikethrough
     if (underline || strikethrough) {
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
