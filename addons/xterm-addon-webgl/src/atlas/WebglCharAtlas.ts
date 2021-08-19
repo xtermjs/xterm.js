@@ -12,6 +12,7 @@ import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -83,8 +84,8 @@ export class WebglCharAtlas implements IDisposable {
     this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCharWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.width = this._config.scaledCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.height = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
   }
 
@@ -390,8 +391,32 @@ export class WebglCharAtlas implements IDisposable {
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
     const padding = isPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
 
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._config.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+    }
+
     // Draw the character
-    this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    if (!drawSuccess) {
+      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    }
+
+    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
+    // try for a maximum of 5 pixels.
+    if (chars === '_' && !this._config.allowTransparency) {
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+      if (isBeyondCellBounds) {
+        for (let offset = 1; offset <= 5; offset++) {
+          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+          if (!isBeyondCellBounds) {
+            break;
+          }
+        }
+      }
+    }
 
     // Draw underline and strikethrough
     if (underline || strikethrough) {

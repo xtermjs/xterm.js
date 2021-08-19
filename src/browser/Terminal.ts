@@ -224,6 +224,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         // The DOM renderer needs a row refresh to update the cursor styles
         this.refresh(this.buffer.y, this.buffer.y);
         break;
+      case 'customGlyphs':
       case 'drawBoldTextInBrightColors':
       case 'letterSpacing':
       case 'lineHeight':
