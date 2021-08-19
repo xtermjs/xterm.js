@@ -57,7 +57,7 @@ const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
 // const SIXEL_SEQ_2 = introducer(2) + TESTDATA.sixel + FINALIZER;
 
 
-describe('ImageAddon', () => {
+describe.only('ImageAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     browser = await browserType.launch({
@@ -111,8 +111,8 @@ describe('ImageAddon', () => {
       '_core._inputHandler._curAttrData.getBgColor',
       '_core._inputHandler.lineFeed',
       '_core._inputHandler.onRequestReset',
-      '_core._coreService',
-      '_core._coreService.triggerDataEvent',
+      '_core.coreService',
+      '_core.coreService.triggerDataEvent',
       '_core._colorManager',
       '_core._colorManager.colors',
       '_core._colorManager.colors.ansi',
@@ -125,7 +125,7 @@ describe('ImageAddon', () => {
     for (const prop of accessors) {
       assert.equal(
         await page.evaluate('(() => { const v = window.term.' + prop + '; return v !== undefined && v !== null; })()'),
-        true
+        true, `problem at ${prop}`
       );
     }
     // bufferline privates

@@ -210,7 +210,7 @@ export class ImageAddon implements ITerminalAddon {
   }
 
   private _report(s: string): void {
-    this._terminal?._core._coreService.triggerDataEvent(s);
+    this._terminal?._core.coreService.triggerDataEvent(s);
   }
 
   private _decset(params: (number | number[])[]): boolean {

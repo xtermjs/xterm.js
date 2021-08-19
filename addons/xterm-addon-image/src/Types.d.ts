@@ -156,7 +156,7 @@ export interface ICoreTerminal extends Terminal {
     // needed sub parts
     optionsService: IOptionsService;
     _dirtyRowService: IDirtyRowService;
-    _coreService: ICoreService;
+    coreService: ICoreService;
     _colorManager: IColorManager;
     _inputHandler: IInputHandlerExt;
     _renderService: IRenderService;
