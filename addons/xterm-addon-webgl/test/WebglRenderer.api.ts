@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ITerminalOptions } from '../../../src/common/Types';
-import { ITheme } from 'xterm';
 import { assert } from 'chai';
-import { openTerminal, pollFor, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
+import { ITheme } from 'xterm';
+import { getBrowserType, openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { ITerminalOptions } from '../../../src/common/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -885,6 +885,20 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
       Math.floor((${col - 0.5}) * window.d.scaledCellWidth),
       Math.floor(window.gl.drawingBufferHeight - 1 - (${row - 0.5}) * window.d.scaledCellHeight),
       1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
+    );
+  `);
+  return await page.evaluate(`Array.from(window.result)`);
+}
+
+async function getCellPixels(col: number, row: number): Promise<number[]> {
+  await page.evaluate(`
+    window.gl = window.term._core._renderService._renderer._gl;
+    window.result = new Uint8Array(window.d.scaledCellWidth * window.d.scaledCellHeight * 4);
+    window.d = window.term._core._renderService.dimensions;
+    window.gl.readPixels(
+      Math.floor(${col - 1} * window.d.scaledCellWidth),
+      Math.floor(window.gl.drawingBufferHeight - ${row} * window.d.scaledCellHeight),
+      window.d.scaledCellWidth, window.d.scaledCellHeight, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
     );
   `);
   return await page.evaluate(`Array.from(window.result)`);
