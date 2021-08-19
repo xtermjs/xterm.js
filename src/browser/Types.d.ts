@@ -309,3 +309,7 @@ export interface ICharacterJoiner {
   id: number;
   handler: CharacterJoinerHandler;
 }
+
+export interface IRenderDebouncer extends IDisposable {
+  refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
+}
