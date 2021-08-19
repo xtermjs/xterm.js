@@ -57,7 +57,7 @@ const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
 // const SIXEL_SEQ_2 = introducer(2) + TESTDATA.sixel + FINALIZER;
 
 
-describe.only('ImageAddon', () => {
+describe('ImageAddon', () => {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     browser = await browserType.launch({
