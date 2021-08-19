@@ -28,7 +28,7 @@ export function generateConfig(scaledCellWidth: number, scaledCellHeight: number
     contrastCache: colors.contrastCache
   };
   return {
-    customBlockAndBoxCharacters: terminal.getOption('customBlockAndBoxCharacters'),
+    customGlyphs: terminal.getOption('customGlyphs'),
     devicePixelRatio: window.devicePixelRatio,
     letterSpacing: terminal.getOption('letterSpacing'),
     lineHeight: terminal.getOption('lineHeight'),
@@ -54,7 +54,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
     }
   }
   return a.devicePixelRatio === b.devicePixelRatio &&
-      a.customBlockAndBoxCharacters === b.customBlockAndBoxCharacters &&
+      a.customGlyphs === b.customGlyphs &&
       a.lineHeight === b.lineHeight &&
       a.letterSpacing === b.letterSpacing &&
       a.fontFamily === b.fontFamily &&

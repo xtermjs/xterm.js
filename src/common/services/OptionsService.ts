@@ -21,7 +21,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,
-  customBlockAndBoxCharacters: true,
+  customGlyphs: true,
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
