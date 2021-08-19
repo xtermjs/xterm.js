@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ITerminalOptions } from '../../../src/common/Types';
-import { ITheme } from 'xterm';
 import { assert } from 'chai';
-import { openTerminal, pollFor, writeSync, getBrowserType, timeout } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
+import { ITheme } from 'xterm';
+import { getBrowserType, openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { ITerminalOptions } from '../../../src/common/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
 

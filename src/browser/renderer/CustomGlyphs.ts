@@ -379,8 +379,10 @@ function drawPatternChar(
     patternSet = new Map();
     cachedPatterns.set(charDefinition, patternSet);
   }
-  // TODO: Unsafe?
-  const fillStyle = ctx.fillStyle as string;
+  const fillStyle = ctx.fillStyle;
+  if (typeof fillStyle !== 'string') {
+    throw new Error(`Unexpected fillStyle type "${fillStyle}"`);
+  }
   let pattern = patternSet.get(fillStyle);
   if (!pattern) {
     const width = charDefinition[0].length;
@@ -390,17 +392,29 @@ function drawPatternChar(
     tmpCanvas.height = height;
     const tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d'));
     const imageData = new ImageData(width, height);
-    // TODO: This is a little unsafe, fillStyle could be rgb/rgba format
-    const r = parseInt(fillStyle.substr(1, 2), 16);
-    const g = parseInt(fillStyle.substr(3, 2), 16);
-    const b = parseInt(fillStyle.substr(5, 2), 16);
-    const a = fillStyle.length > 7 && parseInt(fillStyle.substr(7, 2), 16) || undefined;
+
+    // Extract rgba from fillStyle
+    let r: number;
+    let g: number;
+    let b: number;
+    let a: number;
+    if (fillStyle.startsWith('#')) {
+      r = parseInt(fillStyle.substr(1, 2), 16);
+      g = parseInt(fillStyle.substr(3, 2), 16);
+      b = parseInt(fillStyle.substr(5, 2), 16);
+      a = fillStyle.length > 7 && parseInt(fillStyle.substr(7, 2), 16) || 1;
+    } else if (fillStyle.startsWith('rgba')) {
+      ([r, g, b, a] = fillStyle.substring(5, fillStyle.length - 1).split(',').map(e => parseFloat(e)));
+    } else {
+      throw new Error(`Unexpected fillStyle color format "${fillStyle}" when drawing pattern glyph`);
+    }
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         imageData.data[(y * width + x) * 4    ] = r;
         imageData.data[(y * width + x) * 4 + 1] = g;
         imageData.data[(y * width + x) * 4 + 2] = b;
-        imageData.data[(y * width + x) * 4 + 3] = charDefinition[y][x] * (a ?? 255);
+        imageData.data[(y * width + x) * 4 + 3] = charDefinition[y][x] * (a * 255);
       }
     }
     tmpCtx.putImageData(imageData, 0, 0);
