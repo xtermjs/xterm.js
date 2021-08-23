@@ -101,6 +101,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _keyPressHandled: boolean = false;
 
+  /**
+   * Records whether there has been a keydown event for a dead key without a corresponding keydown
+   * event for the composed/alternative character. If we cancel the keydown event for the dead key,
+   * no events will be emitted for the final character.
+   */
+  private _unprocessedDeadKey: boolean = false;
+
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
@@ -1033,6 +1040,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
+    if (event.key === 'Dead') {
+      this._unprocessedDeadKey = true;
+    }
+
     const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
@@ -1057,6 +1068,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     if (!result.key) {
+      return true;
+    }
+
+    if (this._unprocessedDeadKey) {
+      this._unprocessedDeadKey = false;
       return true;
     }
 
