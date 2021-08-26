@@ -5,7 +5,7 @@
 
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IBufferLine, IDisposable } from 'common/Types';
+import { IBufferLine, ICellData, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
@@ -17,6 +17,7 @@ import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { Disposable } from 'common/Lifecycle';
 import { getRangeLength } from 'common/buffer/BufferRange';
+import { Content } from 'common/buffer/Constants';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -39,9 +40,6 @@ const DRAG_SCROLL_INTERVAL = 50;
  * cursor.
  */
 const ALT_CLICK_MOVE_CURSOR_TIME = 500;
-
-const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
-const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
 
 /**
  * Represents a position of a word on a line.
@@ -241,9 +239,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     // Format string by replacing non-breaking space chars with regular spaces
     // and joining the array into a multi-line string.
-    const formattedResult = result.map(line => {
-      return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
-    }).join(Browser.isWindows ? '\r\n' : '\n');
+    const formattedResult = result.join(Browser.isWindows ? '\r\n' : '\n');
 
     return formattedResult;
   }
@@ -630,7 +626,18 @@ export class SelectionService extends Disposable implements ISelectionService {
     if (this._model.selectionEnd[1] < buffer.lines.length) {
       const line = buffer.lines.get(this._model.selectionEnd[1]);
       if (line && line.hasWidth(this._model.selectionEnd[0]) === 0) {
-        this._model.selectionEnd[0]++;
+        let c = line.getContent(this._model.selectionEnd[0]);
+        if (c === Content.TAB_FILLER) {
+          let end = this._model.selectionEnd[0] - 1;
+          while ((c = line.getContent(end)) === Content.TAB_FILLER) {
+            --end;
+          }
+          if(line.getCodePoint(end) === Content.TAB_CODE) {
+            this._model.selectionEnd[0] = end;
+          }
+        } else {
+          this._model.selectionEnd[0]++;
+        }
       }
     }
 
@@ -798,7 +805,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       return undefined;
     }
 
-    const line = buffer.translateBufferLineToString(coords[1], false);
+    const line = bufferLine.translateToString(false);
 
     // Get actual index, taking into consideration wide characters
     let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
@@ -817,6 +824,20 @@ export class SelectionService extends Disposable implements ISelectionService {
         startIndex--;
       }
       while (endIndex < line.length && line.charAt(endIndex + 1) === ' ') {
+        endIndex++;
+      }
+    } else if (bufferLine.getCodePoint(startIndex) === Content.TAB_CODE) {
+      while (endIndex < line.length && bufferLine.getContent(endIndex + 1) === Content.TAB_FILLER) {
+        endIndex++;
+      }
+    } else if (bufferLine.getContent(startIndex) === Content.TAB_FILLER) {
+      while (startIndex > 0 && bufferLine.getContent(startIndex - 1) === Content.TAB_FILLER) {
+        startIndex--;
+      }
+      if (startIndex > 0 && bufferLine.getCodePoint(startIndex - 1) === Content.TAB_CODE) {
+        startIndex--;
+      }
+      while (endIndex < line.length && bufferLine.getContent(endIndex + 1) === Content.TAB_FILLER) {
         endIndex++;
       }
     } else {

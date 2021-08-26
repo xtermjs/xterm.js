@@ -1344,7 +1344,7 @@ describe('Terminal', () => {
       const input = '\thttps://google.de';
       await terminal.writeP(input);
       const s = terminal.buffer.iterator(true).next().content;
-      assert.equal(s, Array(terminal.optionsService.options.tabStopWidth + 1).join(' ') + 'https://google.de');
+      assert.equal(s, '\thttps://google.de');
     });
   });
 

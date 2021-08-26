@@ -222,6 +222,9 @@ export class MockBuffer implements IBuffer {
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments as any);
   }
+  public getBufferLineLength(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): number {
+    return Buffer.prototype.getBufferLineLength.apply(this, arguments as any);
+  }
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
     return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments as any);
   }

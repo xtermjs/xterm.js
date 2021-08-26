@@ -125,7 +125,7 @@ function terminalToString(term: Terminal): string {
   let result = '';
   let lineText = '';
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
-    lineText = term.buffer.lines.get(line)!.translateToString(true);
+    lineText = term.buffer.lines.get(line)!.translateToString(true, undefined, undefined, true);
     // rtrim empty cells as xterm does
     lineText = lineText.replace(/\s+$/, '');
     result += lineText;

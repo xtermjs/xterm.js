@@ -1,0 +1,9 @@
+require:
+  - source-map-support/register
+spec:
+  - out/**/*.test.js
+watch-files:
+  - out/**/*.js
+reporter: spec
+color: true
+check-leaks: true

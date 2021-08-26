@@ -145,6 +145,10 @@ export class BufferLine implements IBufferLine {
     return content & Content.CODEPOINT_MASK;
   }
 
+  public getContent(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT];
+  }
+
   /** Test whether the cell contains a combined string. */
   public isCombined(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED_MASK;
@@ -202,6 +206,25 @@ export class BufferLine implements IBufferLine {
    * it gets an optimized access method.
    */
   public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
+    if(((index + 1) * CELL_SIZE + Cell.CONTENT) < this._data.length && this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] === Content.TAB_FILLER) {
+      if (this._data[index * CELL_SIZE + Cell.CONTENT] === Content.TAB_FILLER) {
+        let i = index - 1
+        let cp = this._data[i * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK;
+        while(cp !== 9) {
+          i--;
+          this._data[i * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK;
+        }
+        const content = this._data[i * CELL_SIZE + Cell.CONTENT];
+        while(i < index) {
+          this._data[i * CELL_SIZE + Cell.CONTENT] = 32 | (1 << Content.WIDTH_SHIFT);
+          i++;
+        }
+        this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] = content
+      } else if ((this._data[index * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK) === 9) {
+        this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] = this._data[index * CELL_SIZE + Cell.CONTENT]
+      }
+    }
+
     if (bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = eAttrs;
     }
@@ -425,16 +448,52 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, whitespace: boolean = false): string {
     if (trimRight) {
       endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
+    if(whitespace) {
+       while (startCol < endCol) {
+        const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
+        const cp = content & Content.CODEPOINT_MASK;
+        if(content === Content.TAB_FILLER || cp === 9) {
+          result += WHITESPACE_CELL_CHAR;
+          ++startCol;
+        } else {
+          result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+          startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+        }
+      }
+    } else {
+      while (startCol < endCol) {
+        const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
+        const cp = content & Content.CODEPOINT_MASK;
+        if(content === Content.TAB_FILLER) {
+          ++startCol;
+        } else {
+          result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+          startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+        }
+      }
+    }
+    return result;
+  }
+
+  public getLength(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): number {
+    if (trimRight) {
+      endCol = Math.min(endCol, this.getTrimmedLength());
+    }
+    let result = 0;
     while (startCol < endCol) {
       const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
-      result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+      if(content === Content.TAB_FILLER) {
+        ++startCol;
+      } else {
+        result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol].length : (cp) ? stringFromCodePoint(cp).length : 1;
+        startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+      }
     }
     return result;
   }

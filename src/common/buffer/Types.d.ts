@@ -36,6 +36,7 @@ export interface IBuffer {
   isCursorInViewport: boolean;
   markers: IMarker[];
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  getBufferLineLength(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): number;
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;

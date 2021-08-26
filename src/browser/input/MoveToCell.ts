@@ -66,10 +66,10 @@ function resetStartingRow(startX: number, startY: number, targetX: number, targe
   if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length === 0) {
     return '';
   }
-  return repeat(bufferLine(
+  return repeat(bufferLineLength(
     startX, startY, startX,
     startY - wrappedRowsForRow(bufferService, startY), false, bufferService
-  ).length, sequence(Direction.LEFT, applicationCursor));
+  ), sequence(Direction.LEFT, applicationCursor));
 }
 
 /**
@@ -99,10 +99,10 @@ function moveToRequestedCol(startX: number, startY: number, targetX: number, tar
   const endRow = targetY;
   const direction = horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
 
-  return repeat(bufferLine(
+  return repeat(bufferLineLength(
     startX, startRow, targetX, endRow,
     direction === Direction.RIGHT, bufferService
-  ).length, sequence(direction, applicationCursor));
+  ), sequence(direction, applicationCursor));
 }
 
 /**
@@ -187,30 +187,30 @@ function verticalDirection(startY: number, targetY: number): Direction {
  * @param endRow The ending row position
  * @param forward Direction to move
  */
-function bufferLine(
+function bufferLineLength(
   startCol: number,
   startRow: number,
   endCol: number,
   endRow: number,
   forward: boolean,
   bufferService: IBufferService
-): string {
+): number {
   let currentCol = startCol;
   let currentRow = startRow;
-  let bufferStr = '';
+  let length = 0;
 
   while (currentCol !== endCol || currentRow !== endRow) {
     currentCol += forward ? 1 : -1;
 
     if (forward && currentCol > bufferService.cols - 1) {
-      bufferStr += bufferService.buffer.translateBufferLineToString(
+      length += bufferService.buffer.getBufferLineLength(
         currentRow, false, startCol, currentCol
       );
       currentCol = 0;
       startCol = 0;
       currentRow++;
     } else if (!forward && currentCol < 0) {
-      bufferStr += bufferService.buffer.translateBufferLineToString(
+      length += bufferService.buffer.getBufferLineLength(
         currentRow, false, 0, startCol + 1
       );
       currentCol = bufferService.cols - 1;
@@ -219,7 +219,7 @@ function bufferLine(
     }
   }
 
-  return bufferStr + bufferService.buffer.translateBufferLineToString(
+  return length + bufferService.buffer.getBufferLineLength(
     currentRow, false, startCol, currentCol
   );
 }

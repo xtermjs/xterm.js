@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack, ICellData } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -889,7 +889,28 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
     const originalX = this._bufferService.buffer.x;
+
+    const curAttr = this._curAttrData;
+
     this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
+
+    const buffer = this._bufferService.buffer;
+    const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    const length = this._bufferService.buffer.x - originalX
+
+    if(bufferRow) {
+      bufferRow.setCellFromCodePoint(originalX, Content.TAB_CODE, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+
+      for(let i = 1; i < length; i++) {
+        bufferRow.setCell(originalX + i, {
+          content: Content.TAB_FILLER,
+          fg: curAttr.fg,
+          bg: curAttr.bg,
+          extended: curAttr.extended
+        } as Partial<ICellData> as ICellData);
+      }
+    }
+
     if (this._optionsService.options.screenReaderMode) {
       this._onA11yTab.fire(this._bufferService.buffer.x - originalX);
     }

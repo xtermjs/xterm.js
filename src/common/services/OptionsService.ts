@@ -49,7 +49,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   rendererType: 'canvas',
   windowOptions: {},
   windowsMode: false,
-  wordSeparator: ' ()[]{}\',"`',
+  wordSeparator: ' \t()[]{}\',"`',
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',

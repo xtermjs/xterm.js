@@ -522,6 +522,14 @@ export class Buffer implements IBuffer {
     return line.translateToString(trimRight, startCol, endCol);
   }
 
+  public getBufferLineLength(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol?: number): number {
+    const line = this.lines.get(lineIndex);
+    if (!line) {
+      return 0;
+    }
+    return line.getLength(trimRight, startCol, endCol);
+  }
+
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
     let first = y;
     let last = y;

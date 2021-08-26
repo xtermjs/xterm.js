@@ -69,7 +69,10 @@ export const enum Content {
    *                      `content |= width << Content.widthShift;`
    */
   WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22
+  WIDTH_SHIFT = 22,
+
+  TAB_CODE = 9,
+  TAB_FILLER = 0x1000000 // 1 << 24
 }
 
 export const enum Attributes {

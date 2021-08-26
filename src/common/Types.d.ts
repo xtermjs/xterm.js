@@ -176,7 +176,8 @@ export interface IBufferLine {
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
-  translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+  translateToString(trimRight?: boolean, startCol?: number, endCol?: number, whitespace?: boolean): string;
+  getLength(trimRight?: boolean, startCol?: number, endCol?: number): number;
 
   /* direct access to cell attrs */
   getWidth(index: number): number;
@@ -185,6 +186,7 @@ export interface IBufferLine {
   getBg(index: number): number;
   hasContent(index: number): number;
   getCodePoint(index: number): number;
+  getContent(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
 }
