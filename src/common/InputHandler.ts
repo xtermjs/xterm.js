@@ -16,7 +16,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
@@ -899,14 +899,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     const length = this._bufferService.buffer.x - originalX;
 
     if (bufferRow) {
-      bufferRow.setCellFromCodePoint(originalX, Content.TAB_CODE, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodePoint(originalX, Content.TAB_CODE, 1, 0, 0, new ExtendedAttrs());
 
       for (let i = 1; i < length; i++) {
         bufferRow.setCell(originalX + i, {
-          content: Content.TAB_FILLER,
-          fg: curAttr.fg,
-          bg: curAttr.bg,
-          extended: curAttr.extended
+          content: Content.TAB_FILLER
         } as Partial<ICellData> as ICellData);
       }
     }
