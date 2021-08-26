@@ -632,7 +632,7 @@ export class SelectionService extends Disposable implements ISelectionService {
           while ((c = line.getContent(end)) === Content.TAB_FILLER) {
             --end;
           }
-          if(line.getCodePoint(end) === Content.TAB_CODE) {
+          if (line.getCodePoint(end) === Content.TAB_CODE) {
             this._model.selectionEnd[0] = end;
           }
         } else {

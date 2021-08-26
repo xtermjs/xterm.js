@@ -896,12 +896,12 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const buffer = this._bufferService.buffer;
     const bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
-    const length = this._bufferService.buffer.x - originalX
+    const length = this._bufferService.buffer.x - originalX;
 
-    if(bufferRow) {
+    if (bufferRow) {
       bufferRow.setCellFromCodePoint(originalX, Content.TAB_CODE, 1, curAttr.fg, curAttr.bg, curAttr.extended);
 
-      for(let i = 1; i < length; i++) {
+      for (let i = 1; i < length; i++) {
         bufferRow.setCell(originalX + i, {
           content: Content.TAB_FILLER,
           fg: curAttr.fg,

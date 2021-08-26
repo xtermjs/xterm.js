@@ -206,29 +206,30 @@ export class BufferLine implements IBufferLine {
    * it gets an optimized access method.
    */
   public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
-    if(((index + 1) * CELL_SIZE + Cell.CONTENT) < this._data.length && this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] === Content.TAB_FILLER) {
-      if (this._data[index * CELL_SIZE + Cell.CONTENT] === Content.TAB_FILLER) {
-        let i = index - 1
+    const contentIndex = index * CELL_SIZE + Cell.CONTENT;
+    if ((contentIndex + CELL_SIZE) < this._data.length && this._data[contentIndex + CELL_SIZE] === Content.TAB_FILLER) {
+      if (this._data[contentIndex] === Content.TAB_FILLER) {
+        let i = index - 1;
         let cp = this._data[i * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK;
-        while(cp !== 9) {
+        while (cp !== Content.TAB_CODE) {
           i--;
-          this._data[i * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK;
+          cp = this._data[i * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK;
         }
         const content = this._data[i * CELL_SIZE + Cell.CONTENT];
-        while(i < index) {
+        while (i < index) {
           this._data[i * CELL_SIZE + Cell.CONTENT] = 32 | (1 << Content.WIDTH_SHIFT);
           i++;
         }
-        this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] = content
-      } else if ((this._data[index * CELL_SIZE + Cell.CONTENT] & Content.CODEPOINT_MASK) === 9) {
-        this._data[(index + 1) * CELL_SIZE + Cell.CONTENT] = this._data[index * CELL_SIZE + Cell.CONTENT]
+        this._data[contentIndex + CELL_SIZE] = content;
+      } else if ((this._data[contentIndex] & Content.CODEPOINT_MASK) === Content.TAB_CODE) {
+        this._data[contentIndex + CELL_SIZE] = this._data[contentIndex];
       }
     }
 
     if (bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = eAttrs;
     }
-    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
+    this._data[contentIndex] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * CELL_SIZE + Cell.FG] = fg;
     this._data[index * CELL_SIZE + Cell.BG] = bg;
   }
@@ -453,11 +454,11 @@ export class BufferLine implements IBufferLine {
       endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
-    if(whitespace) {
-       while (startCol < endCol) {
+    if (whitespace) {
+      while (startCol < endCol) {
         const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
         const cp = content & Content.CODEPOINT_MASK;
-        if(content === Content.TAB_FILLER || cp === 9) {
+        if (content === Content.TAB_FILLER || cp === 9) {
           result += WHITESPACE_CELL_CHAR;
           ++startCol;
         } else {
@@ -469,7 +470,7 @@ export class BufferLine implements IBufferLine {
       while (startCol < endCol) {
         const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
         const cp = content & Content.CODEPOINT_MASK;
-        if(content === Content.TAB_FILLER) {
+        if (content === Content.TAB_FILLER) {
           ++startCol;
         } else {
           result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
@@ -488,7 +489,7 @@ export class BufferLine implements IBufferLine {
     while (startCol < endCol) {
       const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
-      if(content === Content.TAB_FILLER) {
+      if (content === Content.TAB_FILLER) {
         ++startCol;
       } else {
         result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol].length : (cp) ? stringFromCodePoint(cp).length : 1;
