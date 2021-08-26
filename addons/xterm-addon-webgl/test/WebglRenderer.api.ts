@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { Browser, Page } from 'playwright';
 import { ITheme } from 'xterm';
-import { openTerminal, pollFor, writeSync, getBrowserType, launchBrowser } from '../../../out-test/api/TestUtils';
+import { getBrowserType, launchBrowser, openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
 import { ITerminalOptions } from '../../../src/common/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
