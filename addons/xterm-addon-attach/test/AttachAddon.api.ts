@@ -4,7 +4,7 @@
  */
 
 import WebSocket = require('ws');
-import { openTerminal, pollFor, getBrowserType } from '../../../out-test/api/TestUtils';
+import { openTerminal, pollFor, launchBrowser } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -16,10 +16,7 @@ const height = 600;
 
 describe('AttachAddon', () => {
   before(async function(): Promise<any> {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.includes('--headless')
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
   });

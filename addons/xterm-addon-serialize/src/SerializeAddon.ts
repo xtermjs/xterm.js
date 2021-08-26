@@ -379,7 +379,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
       moveRight(realCursorCol - this._lastCursorCol);
     }
 
-
     return content;
   }
 }

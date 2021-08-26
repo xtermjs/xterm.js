@@ -30,15 +30,16 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** Width of the cell. */
   public getWidth(): number {
-    return this.content >> Content.WIDTH_SHIFT;
+    return this.content === Content.TAB_FILLER ? 1 : this.content >> Content.WIDTH_SHIFT;
   }
   /** JS string of the content. */
   public getChars(): string {
     if (this.content & Content.IS_COMBINED_MASK) {
       return this.combinedData;
     }
-    if (this.content & Content.CODEPOINT_MASK) {
-      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+    const code = this.content & Content.CODEPOINT_MASK;
+    if (code) {
+      return code === Content.TAB_CODE ? '' : stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
     }
     return '';
   }
