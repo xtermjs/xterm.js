@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "4.12.0",
+  "version": "4.13.0",
   "main": "lib/xterm.js",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
@@ -10,6 +10,8 @@
   "scripts": {
     "prepackage": "npm run build",
     "package": "webpack",
+    "package-headless": "webpack --config ./webpack.config.headless.js",
+    "postpackage-headless": "node ./bin/package_headless.js",
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
     "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",

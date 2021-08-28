@@ -2383,7 +2383,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
-   * | 9         | Crossed-out characters.                                  | #N      |
+   * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
    * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
@@ -2391,7 +2391,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 25        | Steady (not blinking).                                   | #Y      |
    * | 27        | Positive (not inverse).                                  | #Y      |
    * | 28        | Visible (not hidden).                                    | #Y      |
-   * | 29        | Not Crossed-out.                                         | #N      |
+   * | 29        | Not Crossed-out (strikethrough).                         | #Y      |
    * | 30        | Foreground color: Black.                                 | #Y      |
    * | 31        | Foreground color: Red.                                   | #Y      |
    * | 32        | Foreground color: Green.                                 | #Y      |
@@ -2496,6 +2496,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 8) {
         // invisible
         attr.fg |= FgFlags.INVISIBLE;
+      } else if (p === 9) {
+        // strikethrough
+        attr.fg |= FgFlags.STRIKETHROUGH;
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
@@ -2521,6 +2524,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 28) {
         // not invisible
         attr.fg &= ~FgFlags.INVISIBLE;
+      } else if (p === 29) {
+        // not strikethrough
+        attr.fg &= ~FgFlags.STRIKETHROUGH;
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);

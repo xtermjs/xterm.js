@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
+import { IRenderDebouncer } from 'browser/Types';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
  */
-export class RenderDebouncer implements IDisposable {
+export class RenderDebouncer implements IRenderDebouncer {
   private _rowStart: number | undefined;
   private _rowEnd: number | undefined;
   private _rowCount: number | undefined;

@@ -636,6 +636,12 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[28m');
       assert.equal(!!inputHandler.curAttrData.isInvisible(), false);
     });
+    it('strikethrough', async () => {
+      await inputHandler.parseP('\x1b[9m');
+      assert.equal(!!inputHandler.curAttrData.isStrikethrough(), true);
+      await inputHandler.parseP('\x1b[29m');
+      assert.equal(!!inputHandler.curAttrData.isStrikethrough(), false);
+    });
     it('colormode palette 16', async () => {
       assert.equal(inputHandler.curAttrData.getFgColorMode(), 0); // DEFAULT
       assert.equal(inputHandler.curAttrData.getBgColorMode(), 0); // DEFAULT

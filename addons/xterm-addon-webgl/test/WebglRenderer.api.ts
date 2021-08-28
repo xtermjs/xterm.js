@@ -890,6 +890,20 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
   return await page.evaluate(`Array.from(window.result)`);
 }
 
+async function getCellPixels(col: number, row: number): Promise<number[]> {
+  await page.evaluate(`
+    window.gl = window.term._core._renderService._renderer._gl;
+    window.result = new Uint8Array(window.d.scaledCellWidth * window.d.scaledCellHeight * 4);
+    window.d = window.term._core._renderService.dimensions;
+    window.gl.readPixels(
+      Math.floor(${col - 1} * window.d.scaledCellWidth),
+      Math.floor(window.gl.drawingBufferHeight - ${row} * window.d.scaledCellHeight),
+      window.d.scaledCellWidth, window.d.scaledCellHeight, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
+    );
+  `);
+  return await page.evaluate(`Array.from(window.result)`);
+}
+
 async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
   browser = await launchBrowser();
   page = await (await browser.newContext()).newPage();

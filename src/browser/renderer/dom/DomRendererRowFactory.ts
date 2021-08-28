@@ -17,6 +17,7 @@ export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const UNDERLINE_CLASS = 'xterm-underline';
+export const STRIKETHROUGH_CLASS = 'xterm-strikethrough';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
@@ -149,6 +150,10 @@ export class DomRendererRowFactory {
         charElement.textContent = WHITESPACE_CELL_CHAR;
       } else {
         charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
+      }
+
+      if (cell.isStrikethrough()) {
+        charElement.classList.add(STRIKETHROUGH_CLASS);
       }
 
       let fg = cell.getFgColor();

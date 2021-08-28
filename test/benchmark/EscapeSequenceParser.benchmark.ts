@@ -40,42 +40,42 @@ perfContext('Parser throughput - 50MB data', () => {
   beforeEach(() => {
     parser = new EscapeSequenceParser();
     parser.setPrintHandler((data, start, end) => {});
-    parser.registerCsiHandler({final: '@'}, params => true);
-    parser.registerCsiHandler({final: 'A'}, params => true);
-    parser.registerCsiHandler({final: 'B'}, params => true);
-    parser.registerCsiHandler({final: 'C'}, params => true);
-    parser.registerCsiHandler({final: 'D'}, params => true);
-    parser.registerCsiHandler({final: 'E'}, params => true);
-    parser.registerCsiHandler({final: 'F'}, params => true);
-    parser.registerCsiHandler({final: 'G'}, params => true);
-    parser.registerCsiHandler({final: 'H'}, params => true);
-    parser.registerCsiHandler({final: 'I'}, params => true);
-    parser.registerCsiHandler({final: 'J'}, params => true);
-    parser.registerCsiHandler({final: 'K'}, params => true);
-    parser.registerCsiHandler({final: 'L'}, params => true);
-    parser.registerCsiHandler({final: 'M'}, params => true);
-    parser.registerCsiHandler({final: 'P'}, params => true);
-    parser.registerCsiHandler({final: 'S'}, params => true);
-    parser.registerCsiHandler({final: 'T'}, params => true);
-    parser.registerCsiHandler({final: 'X'}, params => true);
-    parser.registerCsiHandler({final: 'Z'}, params => true);
-    parser.registerCsiHandler({final: '`'}, params => true);
-    parser.registerCsiHandler({final: 'a'}, params => true);
-    parser.registerCsiHandler({final: 'b'}, params => true);
-    parser.registerCsiHandler({final: 'c'}, params => true);
-    parser.registerCsiHandler({final: 'd'}, params => true);
-    parser.registerCsiHandler({final: 'e'}, params => true);
-    parser.registerCsiHandler({final: 'f'}, params => true);
-    parser.registerCsiHandler({final: 'g'}, params => true);
-    parser.registerCsiHandler({final: 'h'}, params => true);
-    parser.registerCsiHandler({final: 'l'}, params => true);
-    parser.registerCsiHandler({final: 'm'}, params => true);
-    parser.registerCsiHandler({final: 'n'}, params => true);
-    parser.registerCsiHandler({final: 'p'}, params => true);
-    parser.registerCsiHandler({final: 'q'}, params => true);
-    parser.registerCsiHandler({final: 'r'}, params => true);
-    parser.registerCsiHandler({final: 's'}, params => true);
-    parser.registerCsiHandler({final: 'u'}, params => true);
+    parser.registerCsiHandler({ final: '@' }, params => true);
+    parser.registerCsiHandler({ final: 'A' }, params => true);
+    parser.registerCsiHandler({ final: 'B' }, params => true);
+    parser.registerCsiHandler({ final: 'C' }, params => true);
+    parser.registerCsiHandler({ final: 'D' }, params => true);
+    parser.registerCsiHandler({ final: 'E' }, params => true);
+    parser.registerCsiHandler({ final: 'F' }, params => true);
+    parser.registerCsiHandler({ final: 'G' }, params => true);
+    parser.registerCsiHandler({ final: 'H' }, params => true);
+    parser.registerCsiHandler({ final: 'I' }, params => true);
+    parser.registerCsiHandler({ final: 'J' }, params => true);
+    parser.registerCsiHandler({ final: 'K' }, params => true);
+    parser.registerCsiHandler({ final: 'L' }, params => true);
+    parser.registerCsiHandler({ final: 'M' }, params => true);
+    parser.registerCsiHandler({ final: 'P' }, params => true);
+    parser.registerCsiHandler({ final: 'S' }, params => true);
+    parser.registerCsiHandler({ final: 'T' }, params => true);
+    parser.registerCsiHandler({ final: 'X' }, params => true);
+    parser.registerCsiHandler({ final: 'Z' }, params => true);
+    parser.registerCsiHandler({ final: '`' }, params => true);
+    parser.registerCsiHandler({ final: 'a' }, params => true);
+    parser.registerCsiHandler({ final: 'b' }, params => true);
+    parser.registerCsiHandler({ final: 'c' }, params => true);
+    parser.registerCsiHandler({ final: 'd' }, params => true);
+    parser.registerCsiHandler({ final: 'e' }, params => true);
+    parser.registerCsiHandler({ final: 'f' }, params => true);
+    parser.registerCsiHandler({ final: 'g' }, params => true);
+    parser.registerCsiHandler({ final: 'h' }, params => true);
+    parser.registerCsiHandler({ final: 'l' }, params => true);
+    parser.registerCsiHandler({ final: 'm' }, params => true);
+    parser.registerCsiHandler({ final: 'n' }, params => true);
+    parser.registerCsiHandler({ final: 'p' }, params => true);
+    parser.registerCsiHandler({ final: 'q' }, params => true);
+    parser.registerCsiHandler({ final: 'r' }, params => true);
+    parser.registerCsiHandler({ final: 's' }, params => true);
+    parser.registerCsiHandler({ final: 'u' }, params => true);
     parser.setExecuteHandler(C0.BEL, () => true);
     parser.setExecuteHandler(C0.LF, () => true);
     parser.setExecuteHandler(C0.VT, () => true);
@@ -90,24 +90,24 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.setExecuteHandler(C1.HTS, () => true);
     parser.registerOscHandler(0, new OscHandler(data => true));
     parser.registerOscHandler(1, new FastOscHandler());
-    parser.registerEscHandler({final: '7'}, () => true);
-    parser.registerEscHandler({final: '8'}, () => true);
-    parser.registerEscHandler({final: 'D'}, () => true);
-    parser.registerEscHandler({final: 'E'}, () => true);
-    parser.registerEscHandler({final: 'H'}, () => true);
-    parser.registerEscHandler({final: 'M'}, () => true);
-    parser.registerEscHandler({final: '='}, () => true);
-    parser.registerEscHandler({final: '>'}, () => true);
-    parser.registerEscHandler({final: 'c'}, () => true);
-    parser.registerEscHandler({final: 'n'}, () => true);
-    parser.registerEscHandler({final: 'o'}, () => true);
-    parser.registerEscHandler({final: '|'}, () => true);
-    parser.registerEscHandler({final: '}'}, () => true);
-    parser.registerEscHandler({final: '~'}, () => true);
-    parser.registerEscHandler({intermediates: '%', final: '@'}, () => true);
-    parser.registerEscHandler({intermediates: '%', final: 'G'}, () => true);
-    parser.registerDcsHandler({final: 'p'}, new DcsHandler(data => true));
-    parser.registerDcsHandler({final: 'q'}, new FastDcsHandler());
+    parser.registerEscHandler({ final: '7' }, () => true);
+    parser.registerEscHandler({ final: '8' }, () => true);
+    parser.registerEscHandler({ final: 'D' }, () => true);
+    parser.registerEscHandler({ final: 'E' }, () => true);
+    parser.registerEscHandler({ final: 'H' }, () => true);
+    parser.registerEscHandler({ final: 'M' }, () => true);
+    parser.registerEscHandler({ final: '=' }, () => true);
+    parser.registerEscHandler({ final: '>' }, () => true);
+    parser.registerEscHandler({ final: 'c' }, () => true);
+    parser.registerEscHandler({ final: 'n' }, () => true);
+    parser.registerEscHandler({ final: 'o' }, () => true);
+    parser.registerEscHandler({ final: '|' }, () => true);
+    parser.registerEscHandler({ final: '}' }, () => true);
+    parser.registerEscHandler({ final: '~' }, () => true);
+    parser.registerEscHandler({ intermediates: '%', final: '@' }, () => true);
+    parser.registerEscHandler({ intermediates: '%', final: 'G' }, () => true);
+    parser.registerDcsHandler({ final: 'p' }, new DcsHandler(data => true));
+    parser.registerDcsHandler({ final: 'q' }, new FastDcsHandler());
   });
 
   perfContext('PRINT - a', () => {
@@ -121,8 +121,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', async () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('EXECUTE - \\n', () => {
@@ -136,8 +136,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('ESCAPE - ESC E', () => {
@@ -151,8 +151,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('ESCAPE with collect - ESC % G', () => {
@@ -166,8 +166,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('CSI - CSI A', () => {
@@ -181,8 +181,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('CSI with collect - CSI ? p', () => {
@@ -196,8 +196,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('CSI with params (short) - CSI 1;2 m', () => {
@@ -211,8 +211,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('CSI with params (long) - CSI 1;2;3;4;5;6;7;8;9;0 m', () => {
@@ -226,8 +226,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('OSC string interface (short seq) - OSC 0;hi ST', () => {
@@ -241,8 +241,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('OSC string interface (long seq) - OSC 0;<text> ST', () => {
@@ -256,8 +256,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('OSC class interface (short seq) - OSC 0;hi ST', () => {
@@ -271,8 +271,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('OSC class interface (long seq) - OSC 0;<text> ST', () => {
@@ -286,8 +286,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('DCS string interface (short seq)', () => {
@@ -301,8 +301,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', async () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('DCS string interface (long seq)', () => {
@@ -316,8 +316,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', async () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('DCS class interface (short seq)', () => {
@@ -331,8 +331,8 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', async () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 
   perfContext('DCS class interface (long seq)', () => {
@@ -346,7 +346,7 @@ perfContext('Parser throughput - 50MB data', () => {
     });
     new ThroughputRuntimeCase('', async () => {
       parser.parse(parsed, parsed.length);
-      return {payloadSize: parsed.length};
-    }, {fork: true}).showAverageThroughput();
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
   });
 });

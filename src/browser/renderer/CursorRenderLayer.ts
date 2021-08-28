@@ -58,6 +58,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
+  public dispose(): void {
+    if (this._cursorBlinkStateManager) {
+      this._cursorBlinkStateManager.dispose();
+      this._cursorBlinkStateManager = undefined;
+    }
+    super.dispose();
+  }
+
   public resize(dim: IRenderDimensions): void {
     super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
@@ -197,7 +205,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      // Avoid potential rounding errors when device pixel ratio is less than 1
+      if (window.devicePixelRatio < 1) {
+        this._clearAll();
+      } else {
+        this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      }
       this._state = {
         x: 0,
         y: 0,
