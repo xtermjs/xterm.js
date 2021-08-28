@@ -94,6 +94,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _keyDownHandled: boolean = false;
 
+  /**
+   * Records whether there has been a keydown event for a dead key without a corresponding keydown
+   * event for the composed/alternative character. If we cancel the keydown event for the dead key,
+   * no events will be emitted for the final character.
+   */
+  private _unprocessedDeadKey: boolean = false;
+
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
@@ -1025,6 +1032,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
+    if (event.key === 'Dead') {
+      this._unprocessedDeadKey = true;
+    }
+
     const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
@@ -1052,6 +1063,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
+    if (this._unprocessedDeadKey) {
+      this._unprocessedDeadKey = false;
+      return true;
+    }
+
     // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
     // will announce deleted characters. This will not work 100% of the time but it should cover
     // most scenarios.
@@ -1074,10 +1090,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._keyDownHandled = true;
   }
 
-  private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
     const thirdLevelKey =
       (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey) ||
+      (browser.isWindows && ev.getModifierState('AltGraph'));
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
