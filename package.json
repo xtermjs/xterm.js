@@ -68,5 +68,8 @@
     "webpack-cli": "^4.7.0",
     "ws": "^7.4.5",
     "xterm-benchmark": "^0.2.1"
+  },
+  "dependencies": {
+    "xterm-addon-web-links": "^0.4.0"
   }
 }
