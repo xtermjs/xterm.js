@@ -23,6 +23,7 @@ export class Viewport extends Disposable implements IViewport {
   private _lastRecordedBufferHeight: number = 0;
   private _lastTouchY: number = 0;
   private _lastScrollTop: number = 0;
+  private _lastHadScrollBar: boolean = false;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
@@ -47,6 +48,7 @@ export class Viewport extends Disposable implements IViewport {
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
     // therefore we account for a standard amount to make it visible
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
+    this._lastHadScrollBar = true;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
 
     // Perform this async to ensure the ICharSizeService is ready.
@@ -93,14 +95,19 @@ export class Viewport extends Disposable implements IViewport {
       this._ignoreNextScrollEvent = true;
       this._viewportElement.scrollTop = scrollTop;
     }
-    if (this._optionsService.getOption('scrollback') === 0) {
+
+    // Update scroll bar width
+    if (this._optionsService.options.scrollback === 0) {
       this.scrollBarWidth = 0;
     } else {
       this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     }
+    this._lastHadScrollBar = this.scrollBarWidth > 0;
+
     this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
+
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
@@ -136,9 +143,11 @@ export class Viewport extends Disposable implements IViewport {
       this._refresh(immediate);
       return;
     }
-    // This is for refreshing the viewport if scrollBarWidth has to be updated
-    this._refresh(immediate);
-    return;
+
+    // If the scroll bar visibility changed
+    if (this._lastHadScrollBar !== (this._optionsService.options.scrollback > 0)) {
+      this._refresh(immediate);
+    }
   }
 
   /**
