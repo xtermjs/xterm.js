@@ -47,11 +47,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
   protected readonly _bufferService: IBufferService;
   protected readonly _logService: ILogService;
-  protected readonly _coreService: ICoreService;
   protected readonly _charsetService: ICharsetService;
-  protected readonly _coreMouseService: ICoreMouseService;
   protected readonly _dirtyRowService: IDirtyRowService;
 
+  public readonly coreMouseService: ICoreMouseService;
+  public readonly coreService: ICoreService;
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
 
@@ -100,10 +100,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._instantiationService.createInstance(LogService);
     this._instantiationService.setService(ILogService, this._logService);
-    this._coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
-    this._instantiationService.setService(ICoreService, this._coreService);
-    this._coreMouseService = this._instantiationService.createInstance(CoreMouseService);
-    this._instantiationService.setService(ICoreMouseService, this._coreMouseService);
+    this.coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
+    this._instantiationService.setService(ICoreService, this.coreService);
+    this.coreMouseService = this._instantiationService.createInstance(CoreMouseService);
+    this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
     this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
     this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
     this.unicodeService = this._instantiationService.createInstance(UnicodeService);
@@ -112,14 +112,14 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this._coreService, this._dirtyRowService, this._logService, this.optionsService, this._coreMouseService, this.unicodeService);
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this.coreMouseService, this.unicodeService);
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 
     // Setup listeners
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
-    this.register(forwardEvent(this._coreService.onData, this._onData));
-    this.register(forwardEvent(this._coreService.onBinary, this._onBinary));
+    this.register(forwardEvent(this.coreService.onData, this._onData));
+    this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
     this.register(this._bufferService.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
@@ -250,8 +250,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._inputHandler.reset();
     this._bufferService.reset();
     this._charsetService.reset();
-    this._coreService.reset();
-    this._coreMouseService.reset();
+    this.coreService.reset();
+    this.coreMouseService.reset();
   }
 
   protected _updateOptions(key: string): void {

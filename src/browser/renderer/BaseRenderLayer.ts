@@ -17,6 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -259,10 +260,20 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.font = this._getFont(false, false);
     this._ctx.textBaseline = 'ideographic';
     this._clipRow(y);
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    }
+
+    // Draw the character
+    if (!drawSuccess) {
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
   }
 
   /**
@@ -373,13 +384,24 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (cell.isDim()) {
       this._ctx.globalAlpha = DIM_OPACITY;
     }
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    }
+
     // Draw the character
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    if (!drawSuccess) {
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
+
     this._ctx.restore();
   }
+
 
   /**
    * Clips a row to ensure no pixels will be drawn outside the cells in the row.

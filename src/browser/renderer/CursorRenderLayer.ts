@@ -58,6 +58,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
+  public dispose(): void {
+    if (this._cursorBlinkStateManager) {
+      this._cursorBlinkStateManager.dispose();
+      this._cursorBlinkStateManager = undefined;
+    }
+    super.dispose();
+  }
+
   public resize(dim: IRenderDimensions): void {
     super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state

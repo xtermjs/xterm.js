@@ -60,7 +60,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._onRequestRedraw)
+      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._core, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -230,7 +230,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
+    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }

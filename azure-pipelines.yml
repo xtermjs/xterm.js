@@ -164,5 +164,9 @@ jobs:
     displayName: Cache node modules
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: |
+      yarn package-headless
+      node ./bin/package_headless.js
+    displayName: 'Package xterm-headless'
   - script: NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
     displayName: 'Package and publish to npm'
