@@ -1032,7 +1032,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    if (event.key === 'Dead') {
+    if (event.key === 'Dead' || event.key === 'AltGraph') {
       this._unprocessedDeadKey = true;
     }
 
