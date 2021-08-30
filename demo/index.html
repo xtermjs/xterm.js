@@ -15,42 +15,69 @@
   </head>
   <body>
     <h1 style="color: #2D2E2C">xterm.js: A terminal for the <em style="color: #5DA5D5">web</em></h1>
-    <div id="terminal-container"></div>
-    <div>
-      <h3>Options</h3>
-      <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.setOption</code> function.</p>
-      <div id="options-container"></div>
-    </div>
-    <div>
-      <h3>Addons</h3>
-      <p>Addons can be loaded and unloaded on a particular terminal to extend its functionality.</p>
-      <div id="addons-container"></div>
-      <h3>Addons Control</h3>
-      <h4>SearchAddon</h4>
-      <p>
-        <label>Find next <input id="find-next"/></label>
-        <label>Find previous <input id="find-previous"/></label>
-        <label>Use regex<input type="checkbox" id="regex"/></label>
-        <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
-        <label>Whole word<input type="checkbox" id="whole-word"/></label>
-      </p>
-      <h4>SerializeAddon</h4>
-      <p>
-        <button id="serialize">Serialize the content of terminal</button>
-        <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
-        <div><pre id="serialize-output"></pre></div>
-      </p>
-    </div>
-    <div>
-      <h3>Style</h3>
-      <div style="display: inline-block; margin-right: 16px;">
-        <label for="padding">Padding</label>
-        <input type="number" id="padding" />
+    <div id="container">
+      <div id="grid">
+        <div id="terminal-container"></div>
+      </div>
+      <div id="grid">
+        <div class="tab">
+          <button class="tabLinks active" onclick="openSection(event, 'options')">Options</button>
+          <button class="tabLinks" onclick="openSection(event, 'addons')">Add Ons</button>
+          <button class="tabLinks" onclick="openSection(event, 'style')">Style</button>
+        </div>
+        <div id="options" class="tabContent">
+          <h3>Options</h3>
+          <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.setOption</code> function.</p>
+          <div id="options-container"></div>
+        </div>
+        <div id="addons" class="tabContent">
+          <h3>Addons</h3>
+          <p>Addons can be loaded and unloaded on a particular terminal to extend its functionality.</p>
+          <div id="addons-container"></div>
+          <h3>Addons Control</h3>
+          <h4>SearchAddon</h4>
+          <p>
+            <label>Find next <input id="find-next"/></label>
+            <label>Find previous <input id="find-previous"/></label>
+            <label>Use regex<input type="checkbox" id="regex"/></label>
+            <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
+            <label>Whole word<input type="checkbox" id="whole-word"/></label>
+          </p>
+          <h4>SerializeAddon</h4>
+          <p>
+            <button id="serialize">Serialize the content of terminal</button>
+            <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
+            <div><pre id="serialize-output"></pre></div>
+          </p>
+        </div>
+        <div id="style" class="tabContent">
+          <h3>Style</h3>
+          <div style="display: inline-block; margin-right: 16px;">
+            <label for="padding">Padding</label>
+            <input type="number" id="padding" />
+          </div>
+        </div>
       </div>
     </div>
-    <hr/>
-    <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
-    <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
-    <script src="dist/client-bundle.js" defer ></script>
-  </body>
+      <hr/>
+      <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
+      <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
+      <script src="dist/client-bundle.js" defer ></script>
+      <script>
+        function openSection(event, section) {
+          const tabContent = document.getElementsByClassName("tabContent");
+          let itr;
+          for (itr = 0; itr < tabContent.length; itr+=1) {
+            tabContent[itr].style.display = "none";
+          }
+          const tabLinks = document.getElementsByClassName("tabLinks");
+          for (itr = 0; itr < tabLinks.length; itr+=1) {
+            tabLinks[itr].className = tabLinks[itr].className.replace(" active", "");
+          }
+          document.getElementById(section).style.display = "block";
+          event.currentTarget.className += " active";
+        }
+        document.getElementById("options").style.display = "block";
+      </script>
+    </body>
 </html>
