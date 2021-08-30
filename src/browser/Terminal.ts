@@ -1040,7 +1040,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    if (event.key === 'Dead') {
+    if (event.key === 'Dead' || event.key === 'AltGraph') {
       this._unprocessedDeadKey = true;
     }
 
@@ -1098,10 +1098,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._keyDownHandled = true;
   }
 
-  private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
     const thirdLevelKey =
       (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey) ||
+      (browser.isWindows && ev.getModifierState('AltGraph'));
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
