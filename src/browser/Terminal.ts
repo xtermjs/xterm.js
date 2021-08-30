@@ -95,6 +95,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _keyDownHandled: boolean = false;
 
   /**
+   * Records whether the keypress event has already been handled and triggered a data event, if so
+   * the input event should not trigger a data event but should still print to the textarea so
+   * screen readers will announce it.
+   */
+  private _keyPressHandled: boolean = false;
+
+  /**
    * Records whether there has been a keydown event for a dead key without a corresponding keydown
    * event for the composed/alternative character. If we cancel the keydown event for the dead key,
    * no events will be emitted for the final character.
@@ -390,6 +397,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
     this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this.register(addDisposableDomListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
     this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
@@ -1114,6 +1122,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     this.updateCursorStyle(ev);
+    this._keyPressHandled = false;
   }
 
   /**
@@ -1124,6 +1133,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
+
+    this._keyPressHandled = false;
 
     if (this._keyDownHandled) {
       return false;
@@ -1157,7 +1168,31 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._showCursor();
     this.coreService.triggerDataEvent(key, true);
 
+    this._keyPressHandled = true;
+
     return true;
+  }
+
+  /**
+   * Handle an input event.
+   * Key Resources:
+   *   - https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
+   * @param ev The input event to be handled.
+   */
+  protected _inputEvent(ev: InputEvent): boolean {
+    if (ev.data && ev.inputType === 'insertText') {
+      if (this._keyPressHandled) {
+        return false;
+      }
+
+      const text = ev.data;
+      this.coreService.triggerDataEvent(text, true);
+
+      this.cancel(ev);
+      return true;
+    }
+
+    return false;
   }
 
   /**
