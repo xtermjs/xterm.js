@@ -7,6 +7,7 @@
   },
   "main": "lib/xterm-addon-serialize.js",
   "types": "typings/xterm-addon-serialize.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "scripts": {
     "build": "../../node_modules/.bin/tsc -p .",

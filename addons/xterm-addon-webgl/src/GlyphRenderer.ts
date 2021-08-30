@@ -176,8 +176,9 @@ export class GlyphRenderer {
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
 
-    // Exit early if this is a null/space character
-    if (code === NULL_CELL_CODE || code === WHITESPACE_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
+    // Exit early if this is a null character, allow space character to continue as it may have
+    // underline/strikethrough styles
+    if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
       fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
