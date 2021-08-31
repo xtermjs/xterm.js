@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { pollFor, timeout, writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -16,10 +16,7 @@ const height = 600;
 
 describe('API Integration Tests', function(): void {
   before(async () => {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
   });
