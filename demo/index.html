@@ -37,19 +37,19 @@
           <div id="addons-container"></div>
           <h3>Addons Control</h3>
           <h4>SearchAddon</h4>
-          <p style= "display:flex; flex-direction:column;">
+          <div style= "display:flex; flex-direction:column;">
             <label>Find next <input id="find-next"/></label>
             <label>Find previous <input id="find-previous"/></label>
-            <label>Use regex<input type="checkbox" id="regex"/></label>
-            <label>Case sensitive<input type="checkbox" id="case-sensitive"/></label>
-            <label>Whole word<input type="checkbox" id="whole-word"/></label>
-          </p>
+            <label><input type="checkbox" id="regex"/>Use regex</label>
+            <label><input type="checkbox" id="case-sensitive"/>Case sensitive</label>
+            <label><input type="checkbox" id="whole-word"/>Whole word</label>
+          </div>
           <h4>SerializeAddon</h4>
-          <p>
+          <div>
             <button id="serialize">Serialize the content of terminal</button>
             <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
             <div><pre id="serialize-output"></pre></div>
-          </p>
+          </div>
         </div>
         <div id="style" class="tabContent">
           <h3>Style</h3>
