@@ -23,7 +23,7 @@
     "test-api-webkit": "node ./bin/test_api.js --browser=webkit --timeout=20000",
     "test-unit": "node ./bin/test.js",
     "test-unit-coverage": "node ./bin/test.js --coverage",
-    "test:dev": "cross-env NODE_PATH='./out' mocha",
+    "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run setup",
     "setup": "npm run build",
