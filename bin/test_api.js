@@ -34,19 +34,37 @@ if (process.argv.length > 2) {
 
 
 env.DEBUG = flagArgs.indexOf('--debug') >= 0 ? 'debug' : '';
+env.PORT = 3001;
 
-const run = cp.spawnSync(
-  npmBinScript('mocha'),
-  [...testFiles, ...flagArgs],
-  {
-    cwd: path.resolve(__dirname, '..'),
-    env,
-    stdio: 'inherit'
+const server = cp.spawn('node', ['demo/start'], {
+  cwd: path.resolve(__dirname, '..'),
+  env,
+  stdio: 'pipe'
+})
+
+server.stdout.on('data', (data) => {
+  // await for the server to fully start
+  if (data.indexOf("successfully") !== -1) {
+    const run = cp.spawnSync(
+      npmBinScript('mocha'),
+      [...testFiles, ...flagArgs], {
+        cwd: path.resolve(__dirname, '..'),
+        env,
+        stdio: 'inherit'
+      }
+    );
+
+    function npmBinScript(script) {
+      return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ?
+        `${script}.cmd` : script));
+    }
+
+    server.kill();
+
+    process.exit(run.status);
   }
-);
+});
 
-function npmBinScript(script) {
-  return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ? `${script}.cmd` : script));
-}
-
-process.exit(run.status);
+server.stderr.on('data', (data) => {
+  console.error(data.toString());
+});

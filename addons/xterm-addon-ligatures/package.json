@@ -1,6 +1,6 @@
 {
   "name": "xterm-addon-ligatures",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "description": "Add support for programming ligatures to xterm.js",
   "author": {
     "name": "The xterm.js authors",
@@ -32,7 +32,7 @@
   "license": "MIT",
   "dependencies": {
     "font-finder": "^1.1.0",
-    "font-ligatures": "^1.3.3"
+    "font-ligatures": "^1.4.0"
   },
   "devDependencies": {
     "@types/sinon": "^5.0.1",

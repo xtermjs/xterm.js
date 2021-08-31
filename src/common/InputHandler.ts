@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,14 +17,14 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
@@ -96,6 +96,9 @@ export enum WindowsOptionsReportType {
   GET_WIN_SIZE_PIXELS = 0,
   GET_CELL_SIZE_PIXELS = 1
 }
+
+// create a warning log if an async handler takes longer than the limit (in ms)
+const SLOW_ASYNC_LIMIT = 5000;
 
 /**
  * DCS subparser implementations
@@ -171,7 +174,7 @@ class DECRQSS implements IDcsHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
         break;
       case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
+        const STYLES: {[key: string]: number} = { 'block': 2, 'underline': 4, 'bar': 6 };
         let style = STYLES[this._optionsService.options.cursorStyle];
         style -= this._optionsService.options.cursorBlink ? 1 : 0;
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
@@ -237,8 +240,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestScroll = new EventEmitter<IAttributeData, boolean | void>();
-  public get onRequestScroll(): IEvent<IAttributeData, boolean | void> { return this._onRequestScroll.event; }
   private _onRequestSyncScrollBar = new EventEmitter<void>();
   public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
   private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
@@ -258,6 +259,14 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
   public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
+
+  private _parseStack: IParseStack = {
+    paused: false,
+    cursorStartX: 0,
+    cursorStartY: 0,
+    decodedLength: 0,
+    position: 0
+  };
 
   constructor(
     private readonly _bufferService: IBufferService,
@@ -303,53 +312,53 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * CSI handler
      */
-    this._parser.registerCsiHandler({final: '@'}, params => this.insertChars(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: '@'}, params => this.scrollLeft(params));
-    this._parser.registerCsiHandler({final: 'A'}, params => this.cursorUp(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: 'A'}, params => this.scrollRight(params));
-    this._parser.registerCsiHandler({final: 'B'}, params => this.cursorDown(params));
-    this._parser.registerCsiHandler({final: 'C'}, params => this.cursorForward(params));
-    this._parser.registerCsiHandler({final: 'D'}, params => this.cursorBackward(params));
-    this._parser.registerCsiHandler({final: 'E'}, params => this.cursorNextLine(params));
-    this._parser.registerCsiHandler({final: 'F'}, params => this.cursorPrecedingLine(params));
-    this._parser.registerCsiHandler({final: 'G'}, params => this.cursorCharAbsolute(params));
-    this._parser.registerCsiHandler({final: 'H'}, params => this.cursorPosition(params));
-    this._parser.registerCsiHandler({final: 'I'}, params => this.cursorForwardTab(params));
-    this._parser.registerCsiHandler({final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'J'}, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({final: 'K'}, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'K'}, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({final: 'L'}, params => this.insertLines(params));
-    this._parser.registerCsiHandler({final: 'M'}, params => this.deleteLines(params));
-    this._parser.registerCsiHandler({final: 'P'}, params => this.deleteChars(params));
-    this._parser.registerCsiHandler({final: 'S'}, params => this.scrollUp(params));
-    this._parser.registerCsiHandler({final: 'T'}, params => this.scrollDown(params));
-    this._parser.registerCsiHandler({final: 'X'}, params => this.eraseChars(params));
-    this._parser.registerCsiHandler({final: 'Z'}, params => this.cursorBackwardTab(params));
-    this._parser.registerCsiHandler({final: '`'}, params => this.charPosAbsolute(params));
-    this._parser.registerCsiHandler({final: 'a'}, params => this.hPositionRelative(params));
-    this._parser.registerCsiHandler({final: 'b'}, params => this.repeatPrecedingCharacter(params));
-    this._parser.registerCsiHandler({final: 'c'}, params => this.sendDeviceAttributesPrimary(params));
-    this._parser.registerCsiHandler({prefix: '>', final: 'c'}, params => this.sendDeviceAttributesSecondary(params));
-    this._parser.registerCsiHandler({final: 'd'}, params => this.linePosAbsolute(params));
-    this._parser.registerCsiHandler({final: 'e'}, params => this.vPositionRelative(params));
-    this._parser.registerCsiHandler({final: 'f'}, params => this.hVPosition(params));
-    this._parser.registerCsiHandler({final: 'g'}, params => this.tabClear(params));
-    this._parser.registerCsiHandler({final: 'h'}, params => this.setMode(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'h'}, params => this.setModePrivate(params));
-    this._parser.registerCsiHandler({final: 'l'}, params => this.resetMode(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'l'}, params => this.resetModePrivate(params));
-    this._parser.registerCsiHandler({final: 'm'}, params => this.charAttributes(params));
-    this._parser.registerCsiHandler({final: 'n'}, params => this.deviceStatus(params));
-    this._parser.registerCsiHandler({prefix: '?', final: 'n'}, params => this.deviceStatusPrivate(params));
-    this._parser.registerCsiHandler({intermediates: '!', final: 'p'}, params => this.softReset(params));
-    this._parser.registerCsiHandler({intermediates: ' ', final: 'q'}, params => this.setCursorStyle(params));
-    this._parser.registerCsiHandler({final: 'r'}, params => this.setScrollRegion(params));
-    this._parser.registerCsiHandler({final: 's'}, params => this.saveCursor(params));
-    this._parser.registerCsiHandler({final: 't'}, params => this.windowOptions(params));
-    this._parser.registerCsiHandler({final: 'u'}, params => this.restoreCursor(params));
-    this._parser.registerCsiHandler({intermediates: '\'', final: '}'}, params => this.insertColumns(params));
-    this._parser.registerCsiHandler({intermediates: '\'', final: '~'}, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ final: '@' }, params => this.insertChars(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: '@' }, params => this.scrollLeft(params));
+    this._parser.registerCsiHandler({ final: 'A' }, params => this.cursorUp(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: 'A' }, params => this.scrollRight(params));
+    this._parser.registerCsiHandler({ final: 'B' }, params => this.cursorDown(params));
+    this._parser.registerCsiHandler({ final: 'C' }, params => this.cursorForward(params));
+    this._parser.registerCsiHandler({ final: 'D' }, params => this.cursorBackward(params));
+    this._parser.registerCsiHandler({ final: 'E' }, params => this.cursorNextLine(params));
+    this._parser.registerCsiHandler({ final: 'F' }, params => this.cursorPrecedingLine(params));
+    this._parser.registerCsiHandler({ final: 'G' }, params => this.cursorCharAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
+    this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
+    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
+    this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
+    this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
+    this._parser.registerCsiHandler({ final: 'S' }, params => this.scrollUp(params));
+    this._parser.registerCsiHandler({ final: 'T' }, params => this.scrollDown(params));
+    this._parser.registerCsiHandler({ final: 'X' }, params => this.eraseChars(params));
+    this._parser.registerCsiHandler({ final: 'Z' }, params => this.cursorBackwardTab(params));
+    this._parser.registerCsiHandler({ final: '`' }, params => this.charPosAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'a' }, params => this.hPositionRelative(params));
+    this._parser.registerCsiHandler({ final: 'b' }, params => this.repeatPrecedingCharacter(params));
+    this._parser.registerCsiHandler({ final: 'c' }, params => this.sendDeviceAttributesPrimary(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'c' }, params => this.sendDeviceAttributesSecondary(params));
+    this._parser.registerCsiHandler({ final: 'd' }, params => this.linePosAbsolute(params));
+    this._parser.registerCsiHandler({ final: 'e' }, params => this.vPositionRelative(params));
+    this._parser.registerCsiHandler({ final: 'f' }, params => this.hVPosition(params));
+    this._parser.registerCsiHandler({ final: 'g' }, params => this.tabClear(params));
+    this._parser.registerCsiHandler({ final: 'h' }, params => this.setMode(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'h' }, params => this.setModePrivate(params));
+    this._parser.registerCsiHandler({ final: 'l' }, params => this.resetMode(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'l' }, params => this.resetModePrivate(params));
+    this._parser.registerCsiHandler({ final: 'm' }, params => this.charAttributes(params));
+    this._parser.registerCsiHandler({ final: 'n' }, params => this.deviceStatus(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'n' }, params => this.deviceStatusPrivate(params));
+    this._parser.registerCsiHandler({ intermediates: '!', final: 'p' }, params => this.softReset(params));
+    this._parser.registerCsiHandler({ intermediates: ' ', final: 'q' }, params => this.setCursorStyle(params));
+    this._parser.registerCsiHandler({ final: 'r' }, params => this.setScrollRegion(params));
+    this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
+    this._parser.registerCsiHandler({ final: 't' }, params => this.windowOptions(params));
+    this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
+    this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
 
     /**
      * execute handler
@@ -415,32 +424,32 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * ESC handlers
      */
-    this._parser.registerEscHandler({final: '7'}, () => this.saveCursor());
-    this._parser.registerEscHandler({final: '8'}, () => this.restoreCursor());
-    this._parser.registerEscHandler({final: 'D'}, () => this.index());
-    this._parser.registerEscHandler({final: 'E'}, () => this.nextLine());
-    this._parser.registerEscHandler({final: 'H'}, () => this.tabSet());
-    this._parser.registerEscHandler({final: 'M'}, () => this.reverseIndex());
-    this._parser.registerEscHandler({final: '='}, () => this.keypadApplicationMode());
-    this._parser.registerEscHandler({final: '>'}, () => this.keypadNumericMode());
-    this._parser.registerEscHandler({final: 'c'}, () => this.fullReset());
-    this._parser.registerEscHandler({final: 'n'}, () => this.setgLevel(2));
-    this._parser.registerEscHandler({final: 'o'}, () => this.setgLevel(3));
-    this._parser.registerEscHandler({final: '|'}, () => this.setgLevel(3));
-    this._parser.registerEscHandler({final: '}'}, () => this.setgLevel(2));
-    this._parser.registerEscHandler({final: '~'}, () => this.setgLevel(1));
-    this._parser.registerEscHandler({intermediates: '%', final: '@'}, () => this.selectDefaultCharset());
-    this._parser.registerEscHandler({intermediates: '%', final: 'G'}, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({ final: '7' }, () => this.saveCursor());
+    this._parser.registerEscHandler({ final: '8' }, () => this.restoreCursor());
+    this._parser.registerEscHandler({ final: 'D' }, () => this.index());
+    this._parser.registerEscHandler({ final: 'E' }, () => this.nextLine());
+    this._parser.registerEscHandler({ final: 'H' }, () => this.tabSet());
+    this._parser.registerEscHandler({ final: 'M' }, () => this.reverseIndex());
+    this._parser.registerEscHandler({ final: '=' }, () => this.keypadApplicationMode());
+    this._parser.registerEscHandler({ final: '>' }, () => this.keypadNumericMode());
+    this._parser.registerEscHandler({ final: 'c' }, () => this.fullReset());
+    this._parser.registerEscHandler({ final: 'n' }, () => this.setgLevel(2));
+    this._parser.registerEscHandler({ final: 'o' }, () => this.setgLevel(3));
+    this._parser.registerEscHandler({ final: '|' }, () => this.setgLevel(3));
+    this._parser.registerEscHandler({ final: '}' }, () => this.setgLevel(2));
+    this._parser.registerEscHandler({ final: '~' }, () => this.setgLevel(1));
+    this._parser.registerEscHandler({ intermediates: '%', final: '@' }, () => this.selectDefaultCharset());
+    this._parser.registerEscHandler({ intermediates: '%', final: 'G' }, () => this.selectDefaultCharset());
     for (const flag in CHARSETS) {
-      this._parser.registerEscHandler({intermediates: '(', final: flag}, () => this.selectCharset('(' + flag));
-      this._parser.registerEscHandler({intermediates: ')', final: flag}, () => this.selectCharset(')' + flag));
-      this._parser.registerEscHandler({intermediates: '*', final: flag}, () => this.selectCharset('*' + flag));
-      this._parser.registerEscHandler({intermediates: '+', final: flag}, () => this.selectCharset('+' + flag));
-      this._parser.registerEscHandler({intermediates: '-', final: flag}, () => this.selectCharset('-' + flag));
-      this._parser.registerEscHandler({intermediates: '.', final: flag}, () => this.selectCharset('.' + flag));
-      this._parser.registerEscHandler({intermediates: '/', final: flag}, () => this.selectCharset('/' + flag)); // TODO: supported?
+      this._parser.registerEscHandler({ intermediates: '(', final: flag }, () => this.selectCharset('(' + flag));
+      this._parser.registerEscHandler({ intermediates: ')', final: flag }, () => this.selectCharset(')' + flag));
+      this._parser.registerEscHandler({ intermediates: '*', final: flag }, () => this.selectCharset('*' + flag));
+      this._parser.registerEscHandler({ intermediates: '+', final: flag }, () => this.selectCharset('+' + flag));
+      this._parser.registerEscHandler({ intermediates: '-', final: flag }, () => this.selectCharset('-' + flag));
+      this._parser.registerEscHandler({ intermediates: '.', final: flag }, () => this.selectCharset('.' + flag));
+      this._parser.registerEscHandler({ intermediates: '/', final: flag }, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
-    this._parser.registerEscHandler({intermediates: '#', final: '8'}, () => this.screenAlignmentPattern());
+    this._parser.registerEscHandler({ intermediates: '#', final: '8' }, () => this.screenAlignmentPattern());
 
     /**
      * error handler
@@ -453,17 +462,71 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({intermediates: '$', final: 'q'}, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
   }
 
   public dispose(): void {
     super.dispose();
   }
 
-  public parse(data: string | Uint8Array): void {
+  /**
+   * Async parse support.
+   */
+  private _preserveStack(cursorStartX: number, cursorStartY: number, decodedLength: number, position: number): void {
+    this._parseStack.paused = true;
+    this._parseStack.cursorStartX = cursorStartX;
+    this._parseStack.cursorStartY = cursorStartY;
+    this._parseStack.decodedLength = decodedLength;
+    this._parseStack.position = position;
+  }
+
+  private _logSlowResolvingAsync(p: Promise<boolean>): void {
+    // log a limited warning about an async handler taking too long
+    if (this._logService.logLevel <= LogLevelEnum.WARN) {
+      Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
+        .catch(err => {
+          if (err !== '#SLOW_TIMEOUT') {
+            throw err;
+          }
+          console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`);
+        });
+    }
+  }
+
+  /**
+   * Parse call with async handler support.
+   *
+   * Whether the stack state got preserved for the next call, is indicated by the return value:
+   * - undefined (void):
+   *   all handlers were sync, no stack save, continue normally with next chunk
+   * - Promise\<boolean\>:
+   *   execution stopped at async handler, stack saved, continue with
+   *   same chunk and the promise resolve value as `promiseResult` until the method returns `undefined`
+   *
+   * Note: This method should only be called by `Terminal.write` to ensure correct execution order and
+   * proper continuation of async parser handlers.
+   */
+  public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
+    let result: void | Promise<boolean>;
     let buffer = this._bufferService.buffer;
-    const cursorStartX = buffer.x;
-    const cursorStartY = buffer.y;
+    let cursorStartX = buffer.x;
+    let cursorStartY = buffer.y;
+    let start = 0;
+    const wasPaused = this._parseStack.paused;
+
+    if (wasPaused) {
+      // assumption: _parseBuffer never mutates between async calls
+      if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+        this._logSlowResolvingAsync(result);
+        return result;
+      }
+      cursorStartX = this._parseStack.cursorStartX;
+      cursorStartY = this._parseStack.cursorStartY;
+      this._parseStack.paused = false;
+      if (data.length > MAX_PARSEBUFFER_LENGTH) {
+        start = this._parseStack.position + MAX_PARSEBUFFER_LENGTH;
+      }
+    }
 
     this._logService.debug('parsing data', data);
 
@@ -475,22 +538,35 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Clear the dirty row service so we know which lines changed as a result of parsing
-    this._dirtyRowService.clearRange();
+    // Important: do not clear between async calls, otherwise we lost pending update information.
+    if (!wasPaused) {
+      this._dirtyRowService.clearRange();
+    }
 
     // process big data in smaller chunks
     if (data.length > MAX_PARSEBUFFER_LENGTH) {
-      for (let i = 0; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
+      for (let i = start; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
         const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
-        this._parser.parse(this._parseBuffer, len);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, i);
+          this._logSlowResolvingAsync(result);
+          return result;
+        }
       }
     } else {
-      const len = (typeof data === 'string')
-        ? this._stringDecoder.decode(data, this._parseBuffer)
-        : this._utf8Decoder.decode(data, this._parseBuffer);
-      this._parser.parse(this._parseBuffer, len);
+      if (!wasPaused) {
+        const len = (typeof data === 'string')
+          ? this._stringDecoder.decode(data, this._parseBuffer)
+          : this._utf8Decoder.decode(data, this._parseBuffer);
+        if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._preserveStack(cursorStartX, cursorStartY, len, 0);
+          this._logSlowResolvingAsync(result);
+          return result;
+        }
+      }
     }
 
     buffer = this._bufferService.buffer;
@@ -573,7 +649,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (buffer.y === buffer.scrollBottom + 1) {
             buffer.y--;
-            this._onRequestScroll.fire(this._eraseAttrData(), true);
+            this._bufferService.scroll(this._eraseAttrData(), true);
           } else {
             if (buffer.y >= this._bufferService.rows) {
               buffer.y = this._bufferService.rows - 1;
@@ -643,9 +719,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addCsiHandler from parser.
+   * Forward registerCsiHandler from parser.
    */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.registerCsiHandler(id, params => {
@@ -659,23 +735,23 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Forward addDcsHandler from parser.
+   * Forward registerDcsHandler from parser.
    */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerDcsHandler(id, new DcsHandler(callback));
   }
 
   /**
-   * Forward addEscHandler from parser.
+   * Forward registerEscHandler from parser.
    */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerEscHandler(id, callback);
   }
 
   /**
-   * Forward addOscHandler from parser.
+   * Forward registerOscHandler from parser.
    */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerOscHandler(ident, new OscHandler(callback));
   }
 
@@ -713,7 +789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onRequestScroll.fire(this._eraseAttrData());
+      this._bufferService.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }
@@ -1171,7 +1247,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
    */
   public eraseInDisplay(params: IParams): boolean {
-    this._restrictCursor();
+    this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
@@ -1243,7 +1319,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
    */
   public eraseInLine(params: IParams): boolean {
-    this._restrictCursor();
+    this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
         this._eraseInBufferLine(this._bufferService.buffer.y, this._bufferService.buffer.x, this._bufferService.cols);
@@ -2289,7 +2365,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
-   * | 9         | Crossed-out characters.                                  | #N      |
+   * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
    * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
@@ -2297,7 +2373,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 25        | Steady (not blinking).                                   | #Y      |
    * | 27        | Positive (not inverse).                                  | #Y      |
    * | 28        | Visible (not hidden).                                    | #Y      |
-   * | 29        | Not Crossed-out.                                         | #N      |
+   * | 29        | Not Crossed-out (strikethrough).                         | #Y      |
    * | 30        | Foreground color: Black.                                 | #Y      |
    * | 31        | Foreground color: Red.                                   | #Y      |
    * | 32        | Foreground color: Green.                                 | #Y      |
@@ -2402,6 +2478,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 8) {
         // invisible
         attr.fg |= FgFlags.INVISIBLE;
+      } else if (p === 9) {
+        // strikethrough
+        attr.fg |= FgFlags.STRIKETHROUGH;
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
@@ -2427,6 +2506,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 28) {
         // not invisible
         attr.fg &= ~FgFlags.INVISIBLE;
+      } else if (p === 29) {
+        // not strikethrough
+        attr.fg &= ~FgFlags.STRIKETHROUGH;
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
@@ -2778,7 +2860,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
     const result: IAnsiColorChangeEvent = { colors: [] };
     // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})/gi;
+    const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
     let match;
 
     while ((match = regex.exec(data)) !== null) {
@@ -2909,7 +2991,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._bufferService.buffer.y++;
     if (buffer.y === buffer.scrollBottom + 1) {
       buffer.y--;
-      this._onRequestScroll.fire(this._eraseAttrData());
+      this._bufferService.scroll(this._eraseAttrData());
     } else if (buffer.y >= this._bufferService.rows) {
       buffer.y = this._bufferService.rows - 1;
     }

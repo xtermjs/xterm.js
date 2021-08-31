@@ -3,15 +3,23 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
-import { IOptionsService, IUnicodeService } from 'common/services/Services';
+import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferSet } from 'common/buffer/Types';
 
 export interface ICoreTerminal {
+  coreMouseService: ICoreMouseService;
+  coreService: ICoreService;
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
+  buffers: IBufferSet;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 }
 
 export interface IDisposable {
@@ -40,6 +48,16 @@ export interface IKeyboardEvent {
   keyCode: number;
   key: string;
   type: string;
+}
+
+export interface IScrollEvent {
+  position: number;
+  source: ScrollSource;
+}
+
+export const enum ScrollSource {
+  TERMINAL,
+  VIEWPORT,
 }
 
 export interface ICircularList<T> {
@@ -107,6 +125,7 @@ export interface IAttributeData {
   isInvisible(): number;
   isItalic(): number;
   isDim(): number;
+  isStrikethrough(): number;
 
   // color modes
   getFgColorMode(): number;
@@ -347,10 +366,13 @@ export interface IAnsiColorChangeEvent {
  */
 export interface IInputHandler {
   onTitleChange: IEvent<string>;
-  onRequestScroll: IEvent<IAttributeData, boolean | void>;
 
-  parse(data: string | Uint8Array): void;
+  parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -426,4 +448,12 @@ export interface IInputHandler {
       ESC }
       ESC ~ */ setgLevel(level: number): void;
   /** ESC # 8 */ screenAlignmentPattern(): void;
+}
+
+interface IParseStack {
+  paused: boolean;
+  cursorStartX: number;
+  cursorStartY: number;
+  decodedLength: number;
+  position: number;
 }

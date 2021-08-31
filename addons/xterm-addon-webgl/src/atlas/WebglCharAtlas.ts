@@ -12,6 +12,7 @@ import { IColor } from 'browser/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -80,12 +81,12 @@ export class WebglCharAtlas implements IDisposable {
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
-    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', {alpha: true}));
+    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCharWidth * 2 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.scaledCharHeight + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
+    this._tmpCanvas.width = this._config.scaledCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.height = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
   }
 
   public dispose(): void {
@@ -317,6 +318,13 @@ export class WebglCharAtlas implements IDisposable {
 
     this.hasCanvasChanged = true;
 
+    // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
+    // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
+    // giant ligatures (eg. =====>) don't impact overall performance.
+    const allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    if (this._tmpCanvas.width < allowedWidth) {
+      this._tmpCanvas.width = allowedWidth;
+    }
     this._tmpCtx.save();
 
     this._workAttributeData.fg = fg;
@@ -331,6 +339,8 @@ export class WebglCharAtlas implements IDisposable {
     const inverse = !!this._workAttributeData.isInverse();
     const dim = !!this._workAttributeData.isDim();
     const italic = !!this._workAttributeData.isItalic();
+    const underline = !!this._workAttributeData.isUnderline();
+    const strikethrough = !!this._workAttributeData.isStrikethrough();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -358,7 +368,7 @@ export class WebglCharAtlas implements IDisposable {
     const fontStyle = italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'middle';
+    this._tmpCtx.textBaseline = 'ideographic';
 
     this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
@@ -367,8 +377,66 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
 
+    // Check if the char is a powerline glyph, these will be restricted to a single cell glyph, no
+    // padding on either side that are allowed for other glyphs since they are designed to be pixel
+    // perfect but may render with "bad" anti-aliasing
+    let isPowerlineGlyph = false;
+    if (chars.length === 1) {
+      const code = chars.charCodeAt(0);
+      if (code >= 0xE0A0 && code <= 0xE0D6) {
+        isPowerlineGlyph = true;
+      }
+    }
+
+    // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
+    const padding = isPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._config.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+    }
+
     // Draw the character
-    this._tmpCtx.fillText(chars, TMP_CANVAS_GLYPH_PADDING, TMP_CANVAS_GLYPH_PADDING + this._config.scaledCharHeight / 2);
+    if (!drawSuccess) {
+      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    }
+
+    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
+    // try for a maximum of 5 pixels.
+    if (chars === '_' && !this._config.allowTransparency) {
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+      if (isBeyondCellBounds) {
+        for (let offset = 1; offset <= 5; offset++) {
+          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+          if (!isBeyondCellBounds) {
+            break;
+          }
+        }
+      }
+    }
+
+    // Draw underline and strikethrough
+    if (underline || strikethrough) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      if (underline) {
+        this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+      }
+      if (strikethrough) {
+        this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      }
+      this._tmpCtx.stroke();
+      this._tmpCtx.closePath();
+    }
+
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
@@ -391,7 +459,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, isPowerlineGlyph, drawSuccess);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Check if there is enough room in the current row and go to next if needed
@@ -424,11 +492,13 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
     boundingBox.top = 0;
+    const height = restrictedGlyph ? this._config.scaledCharHeight : this._tmpCanvas.height;
+    const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
     let found = false;
-    for (let y = 0; y < this._tmpCanvas.height; y++) {
-      for (let x = 0; x < this._tmpCanvas.width; x++) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.top = y;
@@ -442,8 +512,8 @@ export class WebglCharAtlas implements IDisposable {
     }
     boundingBox.left = 0;
     found = false;
-    for (let x = 0; x < this._tmpCanvas.width; x++) {
-      for (let y = 0; y < this._tmpCanvas.height; y++) {
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.left = x;
@@ -455,10 +525,10 @@ export class WebglCharAtlas implements IDisposable {
         break;
       }
     }
-    boundingBox.right = this._tmpCanvas.width;
+    boundingBox.right = width;
     found = false;
-    for (let x = this._tmpCanvas.width - 1; x >= 0; x--) {
-      for (let y = 0; y < this._tmpCanvas.height; y++) {
+    for (let x = width - 1; x >= 0; x--) {
+      for (let y = 0; y < height; y++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.right = x;
@@ -470,10 +540,10 @@ export class WebglCharAtlas implements IDisposable {
         break;
       }
     }
-    boundingBox.bottom = this._tmpCanvas.height;
+    boundingBox.bottom = height;
     found = false;
-    for (let y = this._tmpCanvas.height - 1; y >= 0; y--) {
-      for (let x = 0; x < this._tmpCanvas.width; x++) {
+    for (let y = height - 1; y >= 0; y--) {
+      for (let x = 0; x < width; x++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
           boundingBox.bottom = y;
@@ -497,8 +567,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + TMP_CANVAS_GLYPH_PADDING,
-        y: -boundingBox.top + TMP_CANVAS_GLYPH_PADDING
+        x: -boundingBox.left + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? Math.floor(this._config.letterSpacing / 2) : 0),
+        y: -boundingBox.top + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
   }

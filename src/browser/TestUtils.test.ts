@@ -5,15 +5,15 @@
 
 import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { IRenderDimensions, IRenderer, CharacterJoinerHandler, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper } from 'browser/Types';
+import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { Terminal } from 'browser/Terminal';
-import { IUnicodeService, IOptionsService } from 'common/services/Services';
+import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 
@@ -21,6 +21,9 @@ export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
+  public writeP(data: string | Uint8Array): Promise<void> {
+    return new Promise(r => this.write(data, r));
+  }
 }
 
 export class MockTerminal implements ITerminal {
@@ -34,11 +37,14 @@ export class MockTerminal implements ITerminal {
   public onData!: IEvent<string>;
   public onBinary!: IEvent<string>;
   public onTitleChange!: IEvent<string>;
+  public onBell!: IEvent<void>;
   public onScroll!: IEvent<number>;
   public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public coreMouseService!: ICoreMouseService;
+  public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
   public addMarker(cursorYOffset: number): IMarker {
@@ -75,16 +81,16 @@ export class MockTerminal implements ITerminal {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  public registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable {
+  public registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
@@ -149,7 +155,7 @@ export class MockTerminal implements ITerminal {
   public textarea!: HTMLTextAreaElement;
   public rows!: number;
   public cols!: number;
-  public browser: IBrowser = <any>Browser;
+  public browser: IBrowser = Browser as any;
   public writeBuffer!: string[];
   public children!: HTMLElement[];
   public cursorHidden!: boolean;
@@ -281,8 +287,6 @@ export class MockRenderer implements IRenderer {
   public onDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
-  public deregisterCharacterJoiner(): boolean { return true; }
 }
 
 export class MockViewport implements IViewport {
@@ -406,13 +410,20 @@ export class MockRenderService implements IRenderService {
   public clear(): void {
     throw new Error('Method not implemented.');
   }
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    throw new Error('Method not implemented.');
-  }
-  public deregisterCharacterJoiner(joinerId: number): boolean {
-    throw new Error('Method not implemented.');
-  }
   public dispose(): void {
     throw new Error('Method not implemented.');
+  }
+}
+
+export class MockCharacterJoinerService implements ICharacterJoinerService {
+  public serviceBrand: undefined;
+  public register(handler: (text: string) => [number, number][]): number {
+    return 0;
+  }
+  public deregister(joinerId: number): boolean {
+    return true;
+  }
+  public getJoinedCharacters(row: number): [number, number][] {
+    return [];
   }
 }

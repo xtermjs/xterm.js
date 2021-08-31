@@ -6,10 +6,10 @@
 import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;
@@ -18,10 +18,7 @@ const height = 600;
 
 describe('Search Tests', function(): void {
   before(async function(): Promise<any> {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);

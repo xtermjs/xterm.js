@@ -17,6 +17,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -66,7 +67,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', { alpha: this._alpha }));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();
@@ -150,6 +151,21 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       y * this._scaledCellHeight,
       width * this._scaledCellWidth,
       height * this._scaledCellHeight);
+  }
+
+  /**
+     * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
+     * existing fillStyle on the context.
+     * @param x The column to fill.
+     * @param y The row to fill.
+     */
+  protected _fillMiddleLineAtCells(x: number, y: number, width: number = 1): void {
+    const cellOffset = Math.ceil(this._scaledCellHeight * 0.5);
+    this._ctx.fillRect(
+      x * this._scaledCellWidth,
+      (y + 1) * this._scaledCellHeight - cellOffset - window.devicePixelRatio,
+      width * this._scaledCellWidth,
+      window.devicePixelRatio);
   }
 
   /**
@@ -242,12 +258,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
-    this._ctx.textBaseline = 'middle';
+    this._ctx.textBaseline = 'ideographic';
     this._clipRow(y);
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    }
+
+    // Draw the character
+    if (!drawSuccess) {
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
   }
 
   /**
@@ -320,7 +346,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = 'middle';
+    this._ctx.textBaseline = 'ideographic';
 
     if (cell.isInverse()) {
       if (fgOverride) {
@@ -358,13 +384,24 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (cell.isDim()) {
       this._ctx.globalAlpha = DIM_OPACITY;
     }
+
+    // Draw custom characters if applicable
+    let drawSuccess = false;
+    if (this._optionsService.options.customGlyphs !== false) {
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+    }
+
     // Draw the character
-    this._ctx.fillText(
-      cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+    if (!drawSuccess) {
+      this._ctx.fillText(
+        cell.getChars(),
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+    }
+
     this._ctx.restore();
   }
+
 
   /**
    * Clips a row to ensure no pixels will be drawn outside the cells in the row.

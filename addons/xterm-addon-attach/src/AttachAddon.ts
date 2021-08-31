@@ -20,7 +20,7 @@ export class AttachAddon implements ITerminalAddon {
     this._socket = socket;
     // always set binary type to arraybuffer, we do not handle blobs
     this._socket.binaryType = 'arraybuffer';
-    this._bidirectional = (options && options.bidirectional === false) ? false : true;
+    this._bidirectional = !(options && options.bidirectional === false);
   }
 
   public activate(terminal: Terminal): void {
@@ -41,7 +41,9 @@ export class AttachAddon implements ITerminalAddon {
   }
 
   public dispose(): void {
-    this._disposables.forEach(d => d.dispose());
+    for (const d of this._disposables) {
+      d.dispose();
+    }
   }
 
   private _sendData(data: string): void {

@@ -20,8 +20,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     rendererId: number,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
-    bufferService: IBufferService,
-    optionsService: IOptionsService
+    @IBufferService bufferService: IBufferService,
+    @IOptionsService optionsService: IOptionsService
   ) {
     super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService);
     linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));

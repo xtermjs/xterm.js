@@ -28,10 +28,12 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
 export function acquireCharAtlas(
   terminal: Terminal,
   colors: IColorSet,
+  scaledCellWidth: number,
+  scaledCellHeight: number,
   scaledCharWidth: number,
   scaledCharHeight: number
 ): WebglCharAtlas {
-  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
+  const newConfig = generateConfig(scaledCellWidth, scaledCellHeight, scaledCharWidth, scaledCharHeight, terminal, colors);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

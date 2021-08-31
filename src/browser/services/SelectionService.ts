@@ -10,11 +10,13 @@ import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
+import { IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
+import { ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { Disposable } from 'common/Lifecycle';
+import { getRangeLength } from 'common/buffer/BufferRange';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -121,6 +123,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   constructor(
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
+    private readonly _linkifier: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
@@ -130,8 +133,8 @@ export class SelectionService extends Disposable implements ISelectionService {
     super();
 
     // Init listeners
-    this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
-    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._mouseMoveListener = event => this._onMouseMove(event as MouseEvent);
+    this._mouseUpListener = event => this._onMouseUp(event as MouseEvent);
     this._coreService.onUserInput(() => {
       if (this.hasSelection) {
         this.clearSelection();
@@ -316,13 +319,23 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
-  private _selectWordAtCursor(event: MouseEvent): void {
+  private _selectWordAtCursor(event: MouseEvent, allowWhitespaceOnlySelection: boolean): boolean {
+    // Check if there is a link under the cursor first and select that if so
+    const range = this._linkifier.currentLink?.link?.range;
+    if (range) {
+      this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
+      this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
+      this._model.selectionEnd = undefined;
+      return true;
+    }
+
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._selectWordAt(coords, false);
+      this._selectWordAt(coords, allowWhitespaceOnlySelection);
       this._model.selectionEnd = undefined;
-      this.refresh(true);
+      return true;
     }
+    return false;
   }
 
   /**
@@ -527,14 +540,12 @@ export class SelectionService extends Disposable implements ISelectionService {
   }
 
   /**
-   * Performs a double click, selecting the current work.
+   * Performs a double click, selecting the current word.
    * @param event The mouse event.
    */
   private _onDoubleClick(event: MouseEvent): void {
-    const coords = this._getMouseBufferCoords(event);
-    if (coords) {
+    if (this._selectWordAtCursor(event, true)) {
       this._activeSelectionMode = SelectionMode.WORD;
-      this._selectWordAt(coords, true);
     }
   }
 
@@ -764,7 +775,9 @@ export class SelectionService extends Disposable implements ISelectionService {
 
   public rightClickSelect(ev: MouseEvent): void {
     if (!this._isClickInSelection(ev)) {
-      this._selectWordAtCursor(ev);
+      if (this._selectWordAtCursor(ev, false)) {
+        this.refresh(true);
+      }
       this._fireEventIfSelectionChanged();
     }
   }

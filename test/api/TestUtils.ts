@@ -6,8 +6,9 @@
 import * as playwright from 'playwright';
 import deepEqual = require('deep-equal');
 import { ITerminalOptions } from 'xterm';
+import { deepStrictEqual, fail } from 'assert';
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number): Promise<void> {
   if (preFn) {
     await preFn();
   }
@@ -18,8 +19,14 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   }
 
   if (!deepEqual(result, val)) {
+    if (maxDuration === undefined) {
+      maxDuration = 2000;
+    }
+    if (maxDuration <= 0) {
+      deepStrictEqual(result, val, 'pollFor max duration exceeded');
+    }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn)), 1);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10)), 10);
     });
   }
 }
@@ -59,4 +66,18 @@ export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowse
   }
 
   return browserType;
+}
+
+export function launchBrowser() {
+  const browserType = getBrowserType();
+  const options: Record<string, unknown> = {
+    headless: process.argv.includes('--headless'),
+  }
+
+  const index = process.argv.indexOf('--executablePath');
+  if(index > 0 && process.argv.length > index + 1 && typeof process.argv[index + 1] === 'string') {
+    options.executablePath = process.argv[index + 1];
+  }
+
+  return browserType.launch(options);
 }

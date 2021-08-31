@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions } from 'browser/renderer/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
@@ -22,7 +22,7 @@ interface ISelectionState {
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
-  private _renderDebouncer: RenderDebouncer;
+  private _renderDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _isPaused: boolean = false;
@@ -213,13 +213,5 @@ export class RenderService extends Disposable implements IRenderService {
 
   public clear(): void {
     this._renderer.clear();
-  }
-
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    return this._renderer.registerCharacterJoiner(handler);
-  }
-
-  public deregisterCharacterJoiner(joinerId: number): boolean {
-    return this._renderer.deregisterCharacterJoiner(joinerId);
   }
 }

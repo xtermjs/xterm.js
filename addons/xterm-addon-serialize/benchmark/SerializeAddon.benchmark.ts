@@ -35,7 +35,7 @@ perfContext('Terminal: sh -c "dd if=/dev/urandom count=40 bs=1k | hexdump | lolc
       chunks.push(data as unknown as Buffer);
       length += data.length;
     });
-    await new Promise(resolve => p.on('exit', () => resolve()));
+    await new Promise<void>(resolve => p.on('exit', () => resolve()));
     contentUtf8 = Buffer.concat(chunks, length);
     // translate to content string
     const buffer = new Uint32Array(contentUtf8.length);
