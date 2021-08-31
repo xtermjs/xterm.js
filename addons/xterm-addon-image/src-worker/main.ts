@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { SixelDecoder } from 'sixel/lib/SixelDecoder';
-import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
 import { IImageWorkerMessage } from '../src/WorkerTypes';
+
+import { Decoder } from 'sixel/lib/Decoder';
+import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
 
 
 // narrow types for postMessage to our protocol
@@ -15,12 +16,18 @@ declare const postMessage: {
 };
 
 
-let decoder: SixelDecoder | undefined;
 let imageBuffer: ArrayBuffer | undefined;
 let sizeExceeded = false;
 
+// keep the default mem limit of 128 MB for now (32M pixels)
+// FIXME: set memoryLimit from addon setting
+const dec = new Decoder();
+
 // setup options loaded from ACK
 let pixelLimit = 0;
+
+// always free decoder ressources after decoding if it exceeds this limit
+const MEM_PERMA_LIMIT = 16777216; // 16MB --> 2048x2048 pixels
 
 
 function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
@@ -28,13 +35,12 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
   switch (data.type) {
     case 'SIXEL_PUT':
       if (!sizeExceeded) {
-        if (decoder) {
-          decoder.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));
-          if (decoder.height * decoder.width > pixelLimit) {
-            sizeExceeded = true;
-            console.warn('image worker: pixelLimit exceeded, aborting');
-            postMessage({ type: 'SIZE_EXCEEDED' });
-          }
+        dec.decode(new Uint8Array(data.payload.buffer, 0, data.payload.length));
+        if (dec.height * dec.width > pixelLimit) {
+          sizeExceeded = true;
+          dec.release();
+          console.warn('image worker: pixelLimit exceeded, aborting');
+          postMessage({ type: 'SIZE_EXCEEDED' });
         }
       }
       postMessage({ type: 'CHUNK_TRANSFER', payload: data.payload.buffer }, [data.payload.buffer]);
@@ -42,18 +48,16 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
     case 'SIXEL_END':
       const success = data.payload;
       if (success) {
-        if (!decoder || !decoder.width || !decoder.height || sizeExceeded) {
+        if (!dec || !dec.width || !dec.height || sizeExceeded) {
           postMessage({ type: 'SIXEL_IMAGE', payload: null });
         } else {
-          const width = decoder.width;
-          const height = decoder.height;
+          const width = dec.width;
+          const height = dec.height;
           const bytes = width * height * 4;
           if (!imageBuffer || imageBuffer.byteLength < bytes) {
             imageBuffer = new ArrayBuffer(bytes);
           }
-          const container = new Uint8ClampedArray(imageBuffer, 0, bytes);
-          container.fill(0);  // TODO: should clearing be done by sixel lib?
-          decoder.toPixelData(container, width, height);
+          new Uint32Array(imageBuffer, 0, width * height).set(dec.data32);
           postMessage({
             type: 'SIXEL_IMAGE',
             payload: {
@@ -63,9 +67,11 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
             }
           }, [imageBuffer]);
           imageBuffer = undefined;
+          if (dec.memoryUsage > MEM_PERMA_LIMIT) {
+            dec.release();
+          }
         }
       }
-      decoder = undefined;
       sizeExceeded = false;
       break;
     case 'CHUNK_TRANSFER':
@@ -81,8 +87,7 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
         : paletteName === 'VT340-GREY'
           ? PALETTE_VT340_GREY
           : PALETTE_ANSI_256;
-      // TODO: non private palette? (not really supported) - needs upstream fix in sixel lib
-      decoder = new SixelDecoder(fillColor, Object.assign([], palette), limit);
+      dec.init(fillColor, palette, limit);
       break;
     case 'ACK':
       pixelLimit = data.options?.pixelLimit || 0;
@@ -90,5 +95,4 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
       break;
   }
 }
-
 self.addEventListener('message', messageHandler, false);

@@ -18,9 +18,10 @@
   "peerDependencies": {
     "xterm": "^4.11.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "sixel": "^0.15.0"
+  },
   "devDependencies": {
-    "png-ts": "^0.0.3",
-    "sixel": "^0.14.0"
+    "png-ts": "^0.0.3"
   }
 }
