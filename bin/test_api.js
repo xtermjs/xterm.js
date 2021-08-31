@@ -59,6 +59,12 @@ server.stdout.on('data', (data) => {
         `${script}.cmd` : script));
     }
 
+    server.kill();
+
     process.exit(run.status);
   }
+});
+
+server.stderr.on('data', (data) => {
+  console.error(data.toString());
 });
