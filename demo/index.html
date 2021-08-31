@@ -21,9 +21,10 @@
       </div>
       <div id="grid">
         <div class="tab">
-          <button class="tabLinks active" onclick="openSection(event, 'options')">Options</button>
-          <button class="tabLinks" onclick="openSection(event, 'addons')">Add Ons</button>
-          <button class="tabLinks" onclick="openSection(event, 'style')">Style</button>
+          <button id= "optionsbutton" class="tabLinks" onclick="openSection(event, 'options')">Options</button>
+          <button id= "addonsbutton" class="tabLinks" onclick="openSection(event, 'addons')">Add Ons</button>
+          <button id= "stylebutton" class="tabLinks" onclick="openSection(event, 'style')">Style</button>
+          <button id= "testbutton" class="tabLinks" onclick="openSection(event, 'test')">Test</button>
         </div>
         <div id="options" class="tabContent">
           <h3>Options</h3>
@@ -36,7 +37,7 @@
           <div id="addons-container"></div>
           <h3>Addons Control</h3>
           <h4>SearchAddon</h4>
-          <p>
+          <p style= "display:flex; flex-direction:column;">
             <label>Find next <input id="find-next"/></label>
             <label>Find previous <input id="find-previous"/></label>
             <label>Use regex<input type="checkbox" id="regex"/></label>
@@ -57,13 +58,32 @@
             <input type="number" id="padding" />
           </div>
         </div>
+        <div id="test" class="tabContent">
+          <h3>Test</h3>
+          <div style="display: inline-block; margin-right: 16px;">
+            <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
+            <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
+          </div>
+        </div>
       </div>
     </div>
-      <hr/>
-      <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
-      <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
       <script src="dist/client-bundle.js" defer ></script>
       <script>
+      var tab = localStorage.getItem("tab");
+
+        if(tab === null){
+            document.getElementById("options").style.display = "block";
+            document.getElementById("optionsbutton").classList.add("active");
+        }
+        else {
+          const tabContent = document.getElementsByClassName("tabContent");
+          let itr;
+          for (itr = 0; itr < tabContent.length; itr+=1) {
+            tabContent[itr].style.display = "none";
+          }
+          document.getElementById(""+tab+"").style.display = "block";
+          document.getElementById(""+tab+"button").classList.add("active");
+        }
         function openSection(event, section) {
           const tabContent = document.getElementsByClassName("tabContent");
           let itr;
@@ -75,9 +95,10 @@
             tabLinks[itr].className = tabLinks[itr].className.replace(" active", "");
           }
           document.getElementById(section).style.display = "block";
+          localStorage.setItem("tab", section);
           event.currentTarget.className += " active";
         }
-        document.getElementById("options").style.display = "block";
+
       </script>
     </body>
 </html>
