@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { pollFor, openTerminal, getBrowserType } from './TestUtils';
+import { pollFor, openTerminal, getBrowserType, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
@@ -21,9 +21,7 @@ describe('InputHandler Integration Tests', function(): void {
   before(async function(): Promise<any> {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);

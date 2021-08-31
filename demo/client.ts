@@ -359,6 +359,9 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
         term.setOption(o, parseFloat(input.value));
         updateTerminalSize();
+      } else if(o === 'scrollback') {
+        term.setOption(o, parseInt(input.value));
+        setTimeout(() => updateTerminalSize(), 5);
       } else {
         term.setOption(o, parseInt(input.value));
       }

@@ -67,3 +67,17 @@ export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowse
 
   return browserType;
 }
+
+export function launchBrowser() {
+  const browserType = getBrowserType();
+  const options: Record<string, unknown> = {
+    headless: process.argv.includes('--headless'),
+  }
+
+  const index = process.argv.indexOf('--executablePath');
+  if(index > 0 && process.argv.length > index + 1 && typeof process.argv[index + 1] === 'string') {
+    options.executablePath = process.argv[index + 1];
+  }
+
+  return browserType.launch(options);
+}
