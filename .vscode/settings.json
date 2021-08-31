@@ -1,4 +1,7 @@
 {
     "typescript.preferences.importModuleSpecifier": "non-relative",
-    "typescript.preferences.quoteStyle": "single"
+    "typescript.preferences.quoteStyle": "single",
+    "mochaExplorer.env": {
+        "NODE_PATH": "./out"
+    }
 }
