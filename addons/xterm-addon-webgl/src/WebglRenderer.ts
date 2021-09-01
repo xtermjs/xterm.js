@@ -108,7 +108,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.dispose();
     }
-    this._core.screenElement!.removeChild(this._canvas);
+    if (this._canvas.parentNode) {
+      this._core.screenElement?.removeChild(this._canvas);
+    }
     super.dispose();
   }
 
