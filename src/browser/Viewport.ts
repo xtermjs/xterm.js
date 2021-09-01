@@ -143,12 +143,6 @@ export class Viewport extends Disposable implements IViewport {
       return;
     }
 
-    // If element's scroll top changed, this can happen when hiding the element
-    if (this._lastScrollTop !== this._viewportElement.scrollTop) {
-      this._refresh(immediate);
-      return;
-    }
-
     // If row height changed
     if (this._renderDimensions.scaledCellHeight !== this._currentScaledCellHeight) {
       this._refresh(immediate);
