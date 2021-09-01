@@ -152,7 +152,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @alias module:xterm/src/xterm
    */
   constructor(
-    options: ITerminalOptions = {}
+    options: Partial<ITerminalOptions> = {}
   ) {
     super(options);
 

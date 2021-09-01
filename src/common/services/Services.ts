@@ -198,56 +198,27 @@ export enum LogLevelEnum {
   OFF = 4
 }
 export type RendererType = 'dom' | 'canvas';
+export type BellStyle = 'none' | 'sound' /* | 'visual' | 'both' */;
+export type CursorStyle = 'block' | 'underline' | 'bar';
+export type FastScrollModifier = 'alt' | 'ctrl' | 'shift';
 
-export interface IPartialTerminalOptions {
-  altClickMovesCursor?: boolean;
-  allowTransparency?: boolean;
-  bellSound?: string;
-  bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
-  cols?: number;
-  cursorBlink?: boolean;
-  cursorStyle?: 'block' | 'underline' | 'bar';
-  cursorWidth?: number;
-  disableStdin?: boolean;
-  drawBoldTextInBrightColors?: boolean;
-  fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
-  fastScrollSensitivity?: number;
-  fontSize?: number;
-  fontFamily?: string;
-  fontWeight?: FontWeight;
-  fontWeightBold?: FontWeight;
-  letterSpacing?: number;
-  lineHeight?: number;
-  logLevel?: LogLevel;
-  macOptionIsMeta?: boolean;
-  macOptionClickForcesSelection?: boolean;
-  rendererType?: RendererType;
-  rightClickSelectsWord?: boolean;
-  rows?: number;
-  screenReaderMode?: boolean;
-  scrollback?: number;
-  scrollSensitivity?: number;
-  tabStopWidth?: number;
-  theme?: ITheme;
-  windowsMode?: boolean;
-  wordSeparator?: string;
-  windowOptions?: IWindowOptions;
-}
 
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
   altClickMovesCursor: boolean;
   bellSound: string;
-  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
+  bellStyle: BellStyle;
+  cancelEvents: boolean;
   cols: number;
+  convertEol: boolean;
   cursorBlink: boolean;
-  cursorStyle: 'block' | 'underline' | 'bar';
+  cursorStyle: CursorStyle;
   cursorWidth: number;
   customGlyphs: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
+  fastScrollModifier: FastScrollModifier | undefined;
   fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;
@@ -267,15 +238,13 @@ export interface ITerminalOptions {
   scrollback: number;
   scrollSensitivity: number;
   tabStopWidth: number;
+  termName: string;
   theme: ITheme;
   windowsMode: boolean;
   windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
-  cancelEvents: boolean;
-  convertEol: boolean;
-  termName: string;
 }
 
 export interface ITheme {

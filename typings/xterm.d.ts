@@ -636,6 +636,11 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
+     * Get the terminal options
+     */
+    readonly options: ITerminalOptions;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
