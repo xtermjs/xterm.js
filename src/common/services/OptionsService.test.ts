@@ -10,13 +10,23 @@ describe('OptionsService', () => {
   describe('constructor', () => {
     const originalError = console.error;
     beforeEach(() => {
-      console.error = () => {};
+      console.error = () => { };
     });
     afterEach(() => {
       console.error = originalError;
     });
+    it('uses default value if invalid constructor option values passed for cols/rows', () => {
+      const optionsService = new OptionsService({ cols: undefined, rows: undefined });
+      assert.equal(optionsService.getOption('rows'), DEFAULT_OPTIONS.rows);
+      assert.equal(optionsService.getOption('cols'), DEFAULT_OPTIONS.cols);
+    });
+    it('uses values from constructor option values if correctly passed', () => {
+      const optionsService = new OptionsService({ cols: 80, rows: 25 });
+      assert.equal(optionsService.getOption('rows'), 25);
+      assert.equal(optionsService.getOption('cols'), 80);
+    });
     it('uses default value if invalid constructor option value passed', () => {
-      assert.equal(new OptionsService({tabStopWidth: 0}).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
+      assert.equal(new OptionsService({ tabStopWidth: 0 }).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
     });
   });
   describe('setOption', () => {
