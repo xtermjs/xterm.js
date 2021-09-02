@@ -19,6 +19,9 @@
     "paths": {
       "browser/*": [
         "../../src/browser/*"
+      ],
+      "common/*": [
+        "../../src/common/*"
       ]
     },
     "target": "es2016",
@@ -31,6 +34,9 @@
   "references": [
     {
       "path": "../../src/browser"
+    },
+    {
+      "path": "../../src/common"
     }
   ]
 }

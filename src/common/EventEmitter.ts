@@ -57,10 +57,14 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
   }
 
   public dispose(): void {
+    this.clearListeners();
+    this._disposed = true;
+  }
+
+  public clearListeners(): void {
     if (this._listeners) {
       this._listeners.length = 0;
     }
-    this._disposed = true;
   }
 }
 
