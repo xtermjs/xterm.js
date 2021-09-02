@@ -208,9 +208,19 @@ test.describe.serial('API integration', () => {
   });
 
   test.describe('Events', () => {
+    test('onBell', async () => {
+      let callCount = 0;
+      ctx.proxy.onBell(() => callCount++);
+      strictEqual(callCount, 0);
+      await ctx.proxy.write('\x07');
+      strictEqual(callCount, 1);
+    });
+
+    // TODO: onBinary test
+
     test('onCursorMove', async () => {
       let callCount = 0;
-      await ctx.proxy.onCursorMove(() => callCount++);
+      ctx.proxy.onCursorMove(() => callCount++);
       await ctx.proxy.write('foo');
       strictEqual(callCount, 1);
       await ctx.proxy.write('bar');
@@ -224,99 +234,75 @@ test.describe.serial('API integration', () => {
       deepStrictEqual(calls, ['f', 'o', 'o']);
     });
 
-  //   test('onKey', async () => {
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onKey(e => calls.push(e.key));
-  //     `);
-  //     await page.type('.xterm-helper-textarea', 'foo');
-  //     assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
-  //   });
+    test('onKey', async () => {
+      const calls: string[] = [];
+      ctx.proxy.onKey(e => calls.push(e.key));
+      await ctx.page.type('.xterm-helper-textarea', 'foo');
+      deepStrictEqual(calls, ['f', 'o', 'o']);
+    });
 
-  //   test('onLineFeed', async () => {
-  //     await page.evaluate(`
-  //       window.callCount = 0;
-  //       window.term.onLineFeed(() => callCount++);
-  //       window.term.writeln('foo');
-  //     `);
-  //     await pollFor(page, `window.callCount`, 1);
-  //     await page.evaluate(`window.term.writeln('bar')`);
-  //     await pollFor(page, `window.callCount`, 2);
-  //   });
+    test('onLineFeed', async () => {
+      let callCount = 0;
+      ctx.proxy.onLineFeed(() => callCount++);
+      await ctx.proxy.writeln('foo');
+      strictEqual(callCount, 1);
+      await ctx.proxy.writeln('bar');
+      strictEqual(callCount, 2);
+    });
 
-  //   test('onScroll', async () => {
-  //     await openTerminal(ctx, { rows: 5 });
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onScroll(e => window.calls.push(e));
-  //       for (let i = 0; i < 4; i++) {
-  //         window.term.writeln('foo');
-  //       }
-  //     `);
-  //     await pollFor(page, `window.calls`, []);
-  //     await page.evaluate(`window.term.writeln('bar')`);
-  //     await pollFor(page, `window.calls`, [1]);
-  //     await page.evaluate(`window.term.writeln('baz')`);
-  //     await pollFor(page, `window.calls`, [1, 2]);
-  //   });
+    test('onScroll', async () => {
+      await openTerminal(ctx, { rows: 5 });
+      const calls: number[] = [];
+      ctx.proxy.onScroll(e => calls.push(e));
+      for (let i = 0; i < 4; i++) {
+        await ctx.proxy.writeln('foo');
+      }
+      deepStrictEqual(calls, []);
+      await ctx.proxy.writeln('bar');
+      deepStrictEqual(calls, [1]);
+      await ctx.proxy.writeln('baz');
+      deepStrictEqual(calls, [1, 2]);
+    });
 
-  //   test('onSelectionChange', async () => {
-  //     await page.evaluate(`
-  //       window.callCount = 0;
-  //       window.term.onSelectionChange(() => window.callCount++);
-  //     `);
-  //     await pollFor(page, `window.callCount`, 0);
-  //     await page.evaluate(`window.term.selectAll()`);
-  //     await pollFor(page, `window.callCount`, 1);
-  //     await page.evaluate(`window.term.clearSelection()`);
-  //     await pollFor(page, `window.callCount`, 2);
-  //   });
+    test('onSelectionChange', async () => {
+      let callCount = 0;
+      ctx.proxy.onSelectionChange(() => callCount++);
+      strictEqual(callCount, 0);
+      await ctx.proxy.selectAll();
+      strictEqual(callCount, 1);
+      await ctx.proxy.clearSelection();
+      strictEqual(callCount, 2);
+    });
 
-  //   test('onRender', async function(): Promise<void> {
-  //     this.retries(3);
-  //     await timeout(20); // Ensure all init events are fired
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onRender(e => window.calls.push([e.start, e.end]));
-  //     `);
-  //     await pollFor(page, `window.calls`, []);
-  //     await page.evaluate(`window.term.write('foo')`);
-  //     await pollFor(page, `window.calls`, [[0, 0]]);
-  //     await page.evaluate(`window.term.write('bar\\n\\nbaz')`);
-  //     await pollFor(page, `window.calls`, [[0, 0], [0, 2]]);
-  //   });
+    test('onRender', async function(): Promise<void> {
+      const calls: { start: number, end: number }[] = [];
+      ctx.proxy.onRender(e => calls.push(e));
+      deepStrictEqual(calls, []);
+      // Polling is required here because the event is fired on the animation frame
+      await ctx.proxy.write('foo');
+      await pollFor(ctx.page, async () => calls, [{ start: 0, end: 0 }]);
+      await ctx.proxy.write('bar\n\nbaz');
+      await pollFor(ctx.page, async () => calls, [{ start: 0, end: 0 }, { start: 0, end: 2 }]);
+    });
 
-  //   test('onResize', async () => {
-  //     await timeout(20); // Ensure all init events are fired
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onResize(e => window.calls.push([e.cols, e.rows]));
-  //     `);
-  //     await pollFor(page, `window.calls`, []);
-  //     await page.evaluate(`window.term.resize(10, 5)`);
-  //     await pollFor(page, `window.calls`, [[10, 5]]);
-  //     await page.evaluate(`window.term.resize(20, 15)`);
-  //     await pollFor(page, `window.calls`, [[10, 5], [20, 15]]);
-  //   });
+    test('onResize', async () => {
+      // await timeout(20); // Ensure all init events are fired
+      const calls: { cols: number, rows: number }[] = [];
+      ctx.proxy.onResize(e => calls.push(e));
+      deepStrictEqual(calls, []);
+      await ctx.proxy.resize(10, 5);
+      deepStrictEqual(calls, [{ cols: 10, rows: 5 }]);
+      await ctx.proxy.resize(20, 15);
+      deepStrictEqual(calls, [{ cols: 10, rows: 5 }, { cols: 20, rows: 15 }]);
+    });
 
-  //   test('onTitleChange', async () => {
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onTitleChange(e => window.calls.push(e));
-  //     `);
-  //     await pollFor(page, `window.calls`, []);
-  //     await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
-  //     await pollFor(page, `window.calls`, ['foo']);
-  //   });
-  //   test('onBell', async () => {
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.term.onBell(() => window.calls.push(true));
-  //     `);
-  //     await pollFor(page, `window.calls`, []);
-  //     await page.evaluate(`window.term.write('\\x07')`);
-  //     await pollFor(page, `window.calls`, [true]);
-  //   });
+    test('onTitleChange', async () => {
+      const calls: string[] = [];
+      ctx.proxy.onTitleChange(e => calls.push(e));
+      deepStrictEqual(calls, []);
+      await ctx.proxy.write('\x1b]2;foo\x9c');
+      deepStrictEqual(calls, ['foo']);
+    });
   });
 
   // describe('buffer', () => {

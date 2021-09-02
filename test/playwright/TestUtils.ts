@@ -148,6 +148,7 @@ export class TerminalProxy implements ITerminalProxy {
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
+  public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this._getHandle(), cols, rows] as const); }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
