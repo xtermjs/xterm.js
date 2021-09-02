@@ -2,7 +2,6 @@ import { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
   testDir: '.',
-  timeout: 30000,
   projects: [
     {
       name: 'Chrome Stable',
@@ -11,6 +10,12 @@ const config: PlaywrightTestConfig = {
         channel: 'chrome'
       }
     }
-  ]
+  ],
+  webServer: {
+    command: 'npm start',
+    port: 3000,
+    timeout: 120000,
+    reuseExistingServer: !process.env.CI
+  }
 };
 export default config;
