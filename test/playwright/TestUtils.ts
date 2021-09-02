@@ -5,6 +5,7 @@ import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
 import { PageFunction } from '@playwright/test/types/structs';
+import { ICoreTerminal } from 'common/Types';
 
 export interface ITestContext {
   page: Page;
@@ -123,6 +124,8 @@ export class TerminalProxy implements ITerminalProxy {
 
   // #region Complex properties
   public get buffer(): TerminalBufferNamespaceProxy { return new TerminalBufferNamespaceProxy(this._page, this); }
+  /** Exposes somewhat unsafe access to internals for testing things difficult to do with the regular API */
+  public get internal(): TerminalInternalProxy { return new TerminalInternalProxy(this._page, this); }
   // #endregion
 
   // #region Proxied methods
@@ -134,32 +137,32 @@ export class TerminalProxy implements ITerminalProxy {
   public async getSelectionPosition(): Promise<ISelectionPosition | undefined> { return this.evaluate(([term]) => term.getSelectionPosition()); }
   public async selectAll(): Promise<void> { return this.evaluate(([term]) => term.selectAll()); }
   public async clearSelection(): Promise<void> { return this.evaluate(([term]) => term.clearSelection()); }
-  public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this._getHandle(), column, row, length] as const); }
-  public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this._getHandle(), data] as const); }
-  public async getOption(key: string): Promise<any> { return this._page.evaluate(([term, key]) => term.getOption(key), [await this._getHandle(), key] as const); }
-  public async setOption(key: string, value: any): Promise<any> { return this._page.evaluate(([term, key, value]) => term.setOption(key, value), [await this._getHandle(), key, value] as const); }
+  public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const); }
+  public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const); }
+  public async getOption(key: string): Promise<any> { return this._page.evaluate(([term, key]) => term.getOption(key), [await this.getHandle(), key] as const); }
+  public async setOption(key: string, value: any): Promise<any> { return this._page.evaluate(([term, key, value]) => term.setOption(key, value), [await this.getHandle(), key, value] as const); }
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.write(typeof data === 'string' ? data : new Uint8Array(data), r));
-    }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
+    }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
   public async writeln(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
-    }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
+    }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
-  public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this._getHandle(), cols, rows] as const); }
+  public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
-    return this._page.evaluate(pageFunction, [await this._getHandle()]);
+    return this._page.evaluate(pageFunction, [await this.getHandle()]);
   }
 
   public async evaluateHandle<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<JSHandle<T>> {
-    return this._page.evaluateHandle(pageFunction, [await this._getHandle()]);
+    return this._page.evaluateHandle(pageFunction, [await this.getHandle()]);
   }
 
-  private _getHandle(): Promise<JSHandle<Terminal>> {
+  public async getHandle(): Promise<JSHandle<Terminal>> {
     // This is async because it must be evaluated each time it is called since term may have changed
     return this._page.evaluateHandle('window.term');
   }
@@ -221,6 +224,18 @@ class TerminalBufferLine {
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferLine>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
+  }
+}
+
+class TerminalInternalProxy {
+  constructor(
+    private readonly _page: Page,
+    private readonly _proxy: TerminalProxy
+  ) {
+  }
+
+  public async triggerBinaryEvent(data: string): Promise<void> {
+    return this._page.evaluate(([term, data]) => ((term as any)._core as ICoreTerminal).coreService.triggerBinaryEvent(data), [await this._proxy.getHandle(), data] as const);
   }
 }
 

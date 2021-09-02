@@ -216,7 +216,12 @@ test.describe.serial('API integration', () => {
       strictEqual(callCount, 1);
     });
 
-    // TODO: onBinary test
+    test('onBinary', async () => {
+      const calls: string[] = [];
+      ctx.proxy.onBinary(e => calls.push(e));
+      await ctx.proxy.internal.triggerBinaryEvent('foo');
+      deepStrictEqual(calls, ['foo']);
+    });
 
     test('onCursorMove', async () => {
       let callCount = 0;
