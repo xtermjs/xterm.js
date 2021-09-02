@@ -6,6 +6,7 @@
 import { IOptionsService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
+import { throwIfFalsy } from 'browser/renderer/RendererUtils';
 
 export class CharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
@@ -24,7 +25,9 @@ export class CharSizeService implements ICharSizeService {
     parentElement: HTMLElement,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
-    this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+    this._measureStrategy = new TextMetricsMeasureStrategy(document, this._optionsService);
+    // TODO: Switch out when it throws
+    // this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
   }
 
   public measure(): void {
@@ -38,12 +41,7 @@ export class CharSizeService implements ICharSizeService {
 }
 
 interface IMeasureStrategy {
-  measure(): IReadonlyMeasureResult;
-}
-
-interface IReadonlyMeasureResult {
-  readonly width: number;
-  readonly height: number;
+  measure(): Readonly<IMeasureResult>;
 }
 
 interface IMeasureResult {
@@ -68,7 +66,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._parentElement.appendChild(this._measureElement);
   }
 
-  public measure(): IReadonlyMeasureResult {
+  public measure(): Readonly<IMeasureResult> {
     this._measureElement.style.fontFamily = this._optionsService.options.fontFamily;
     this._measureElement.style.fontSize = `${this._optionsService.options.fontSize}px`;
 
@@ -82,6 +80,26 @@ class DomMeasureStrategy implements IMeasureStrategy {
       this._result.height = Math.ceil(geometry.height);
     }
 
+    return this._result;
+  }
+}
+
+class TextMetricsMeasureStrategy implements IMeasureStrategy {
+  private _result: IMeasureResult = { width: 0, height: 0 };
+
+  constructor(
+    private _document: Document,
+    private _optionsService: IOptionsService
+  ) {
+  }
+
+  public measure(): Readonly<IMeasureResult> {
+    const canvas = this._document.createElement('canvas');
+    const ctx = throwIfFalsy(canvas.getContext('2d'));
+    ctx.font = `${this._optionsService.options.fontSize}px ${this._optionsService.options.fontFamily}`;
+    const metrics = ctx.measureText('W');
+    this._result.height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    this._result.width = metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight;
     return this._result;
   }
 }
