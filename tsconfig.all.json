@@ -6,6 +6,7 @@
     { "path": "./src/headless" },
     { "path": "./test/api" },
     { "path": "./test/benchmark" },
+    { "path": "./test/playwright" },
     { "path": "./addons/xterm-addon-attach" },
     { "path": "./addons/xterm-addon-fit" },
     { "path": "./addons/xterm-addon-ligatures" },
