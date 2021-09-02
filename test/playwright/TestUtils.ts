@@ -1,6 +1,6 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IEvent, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IEvent, IModes, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -117,9 +117,10 @@ export class TerminalProxy implements ITerminalProxy {
   public readonly onTitleChange = this._onTitleChange.event;
   // #endregion
 
-  // #region Primitive properties
+  // #region Simple properties
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
+  public get modes(): Promise<IModes> { return this.evaluate(([term]) => term.modes); }
   // #endregion
 
   // #region Complex properties

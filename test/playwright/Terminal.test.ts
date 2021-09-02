@@ -457,87 +457,87 @@ test.describe.serial('API integration', () => {
     });
   });
 
-  // describe('modes', () => {
-  //   test('defaults', async () => {
-  //     assert.deepStrictEqual(await page.evaluate(`window.term.modes`), {
-  //       applicationCursorKeysMode: false,
-  //       applicationKeypadMode: false,
-  //       bracketedPasteMode: false,
-  //       insertMode: false,
-  //       mouseTrackingMode: 'none',
-  //       originMode: false,
-  //       reverseWraparoundMode: false,
-  //       sendFocusMode: false,
-  //       wraparoundMode: true
-  //     });
-  //   });
-  //   test('applicationCursorKeysMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?1h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), true);
-  //     await ctx.proxy.write('\\x1b[?1l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), false);
-  //   });
-  //   test('applicationKeypadMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?66h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), true);
-  //     await ctx.proxy.write('\\x1b[?66l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), false);
-  //   });
-  //   test('bracketedPasteMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?2004h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), true);
-  //     await ctx.proxy.write('\\x1b[?2004l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), false);
-  //   });
-  //   test('insertMode', async () => {
-  //     await ctx.proxy.write('\\x1b[4h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), true);
-  //     await ctx.proxy.write('\\x1b[4l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), false);
-  //   });
-  //   test('mouseTrackingMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?9h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'x10');
-  //     await ctx.proxy.write('\\x1b[?9l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
-  //     await ctx.proxy.write('\\x1b[?1000h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'vt200');
-  //     await ctx.proxy.write('\\x1b[?1000l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
-  //     await ctx.proxy.write('\\x1b[?1002h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'drag');
-  //     await ctx.proxy.write('\\x1b[?1002l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
-  //     await ctx.proxy.write('\\x1b[?1003h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'any');
-  //     await ctx.proxy.write('\\x1b[?1003l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
-  //   });
-  //   test('originMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?6h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), true);
-  //     await ctx.proxy.write('\\x1b[?6l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), false);
-  //   });
-  //   test('reverseWraparoundMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?45h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), true);
-  //     await ctx.proxy.write('\\x1b[?45l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), false);
-  //   });
-  //   test('sendFocusMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?1004h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), true);
-  //     await ctx.proxy.write('\\x1b[?1004l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), false);
-  //   });
-  //   test('wraparoundMode', async () => {
-  //     await ctx.proxy.write('\\x1b[?7h');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), true);
-  //     await ctx.proxy.write('\\x1b[?7l');
-  //     assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), false);
-  //   });
-  // });
+  test.describe('modes', () => {
+    test('defaults', async () => {
+      deepStrictEqual(await ctx.proxy.modes, {
+        applicationCursorKeysMode: false,
+        applicationKeypadMode: false,
+        bracketedPasteMode: false,
+        insertMode: false,
+        mouseTrackingMode: 'none',
+        originMode: false,
+        reverseWraparoundMode: false,
+        sendFocusMode: false,
+        wraparoundMode: true
+      });
+    });
+    test('applicationCursorKeysMode', async () => {
+      await ctx.proxy.write('\x1b[?1h');
+      strictEqual((await ctx.proxy.modes).applicationCursorKeysMode, true);
+      await ctx.proxy.write('\x1b[?1l');
+      strictEqual((await ctx.proxy.modes).applicationCursorKeysMode, false);
+    });
+    test('applicationKeypadMode', async () => {
+      await ctx.proxy.write('\x1b[?66h');
+      strictEqual((await ctx.proxy.modes).applicationKeypadMode, true);
+      await ctx.proxy.write('\x1b[?66l');
+      strictEqual((await ctx.proxy.modes).applicationKeypadMode, false);
+    });
+    test('bracketedPasteMode', async () => {
+      await ctx.proxy.write('\x1b[?2004h');
+      strictEqual((await ctx.proxy.modes).bracketedPasteMode, true);
+      await ctx.proxy.write('\x1b[?2004l');
+      strictEqual((await ctx.proxy.modes).bracketedPasteMode, false);
+    });
+    test('insertMode', async () => {
+      await ctx.proxy.write('\x1b[4h');
+      strictEqual((await ctx.proxy.modes).insertMode, true);
+      await ctx.proxy.write('\x1b[4l');
+      strictEqual((await ctx.proxy.modes).insertMode, false);
+    });
+    test('mouseTrackingMode', async () => {
+      await ctx.proxy.write('\x1b[?9h');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'x10');
+      await ctx.proxy.write('\x1b[?9l');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
+      await ctx.proxy.write('\x1b[?1000h');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'vt200');
+      await ctx.proxy.write('\x1b[?1000l');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
+      await ctx.proxy.write('\x1b[?1002h');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'drag');
+      await ctx.proxy.write('\x1b[?1002l');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
+      await ctx.proxy.write('\x1b[?1003h');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'any');
+      await ctx.proxy.write('\x1b[?1003l');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
+    });
+    test('originMode', async () => {
+      await ctx.proxy.write('\x1b[?6h');
+      strictEqual((await ctx.proxy.modes).originMode, true);
+      await ctx.proxy.write('\x1b[?6l');
+      strictEqual((await ctx.proxy.modes).originMode, false);
+    });
+    test('reverseWraparoundMode', async () => {
+      await ctx.proxy.write('\x1b[?45h');
+      strictEqual((await ctx.proxy.modes).reverseWraparoundMode, true);
+      await ctx.proxy.write('\x1b[?45l');
+      strictEqual((await ctx.proxy.modes).reverseWraparoundMode, false);
+    });
+    test('sendFocusMode', async () => {
+      await ctx.proxy.write('\x1b[?1004h');
+      strictEqual((await ctx.proxy.modes).sendFocusMode, true);
+      await ctx.proxy.write('\x1b[?1004l');
+      strictEqual((await ctx.proxy.modes).sendFocusMode, false);
+    });
+    test('wraparoundMode', async () => {
+      await ctx.proxy.write('\x1b[?7h');
+      strictEqual((await ctx.proxy.modes).wraparoundMode, true);
+      await ctx.proxy.write('\x1b[?7l');
+      strictEqual((await ctx.proxy.modes).wraparoundMode, false);
+    });
+  });
 
   // test('dispose', async () => {
   //   await page.evaluate(`
