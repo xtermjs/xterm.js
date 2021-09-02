@@ -14,7 +14,7 @@ png-ts@^0.0.3:
   dependencies:
     pako "^1.0.6"
 
-sixel@^0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.14.0.tgz#9d27804de92a04ee6604d082b2ee816d0fd4e891"
-  integrity sha512-6uEartRUNPrQelr+FoodzOoia9WZ8kkPJkHTXGrst5iWl57kcvef6p7R7QY4YOc3KDctiMnwuySWhd/E3sNxlw==
+sixel@^0.15.0:
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/sixel/-/sixel-0.15.0.tgz#621e4a4ca50ad1c8d2fccdf93317bf25370b0d3a"
+  integrity sha512-osNcrv21tyW1IwYM36zugnW5zD2Pm/4N04jofhjq4XBcseVGLpDXJIqkXz0DFuGW1UtLYjkdcojJpvtLtw3CaA==
