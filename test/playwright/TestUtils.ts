@@ -39,31 +39,47 @@ export class TerminalProxy implements ITerminalProxy {
   constructor(private readonly _page: Page) {
   }
 
+  // #region Simple proxied properties
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
+  // #endregion
 
+  // #region Simple proxies methods
+  public async clear(): Promise<void> { return this.evaluate(([term]) => term.clear()); }
+  public async paste(data: string): Promise<void> {
+    return this._page.evaluate(([term, data]) => term.paste(data), [await this._getHandle(), data] as const);
+  }
+  public async getOption(key: string): Promise<any> {
+    return this._page.evaluate(([term, key]) => term.getOption(key), [await this._getHandle(), key] as const);
+  }
+  public async setOption(key: string, value: any): Promise<any> {
+    return this._page.evaluate(([term, key, value]) => term.setOption(key, value), [await this._getHandle(), key, value] as const);
+  }
+  // #endregion
+
+  // #region Proxy objects
   public get buffer(): TerminalBufferNamespaceProxy { return new TerminalBufferNamespaceProxy(this._page, this); }
+  // #endregion
 
+  // #region Complex proxied methods
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.write(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
-
   public async writeln(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
+  // #endregion
 
-  public async paste(data: string): Promise<void> {
-    return this._page.evaluate(([term, data]) => term.paste(data), [await this._getHandle(), data] as const);
-  }
-
+  // #region Events
   public async onData(cb: (data: string) => void): Promise<void> {
     this._page.exposeFunction('onData', cb);
     this.evaluate(([term]) => term.onData((window as any).onData));
   }
+  // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._getHandle()]);
