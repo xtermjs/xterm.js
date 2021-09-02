@@ -1,6 +1,6 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { IBuffer, IBufferLine, IBufferNamespace, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferLine, IBufferNamespace, IEvent, ITerminalOptions, Terminal } from 'xterm';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
 import { PageFunction } from '@playwright/test/types/structs';
@@ -46,8 +46,23 @@ export class TerminalProxy implements ITerminalProxy {
 
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
-      return new Promise(r => term.write(data, r));
-    }, [await this._getHandle(), data] as const);
+      return new Promise(r => term.write(typeof data === 'string' ? data : new Uint8Array(data), r));
+    }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
+  }
+
+  public async writeln(data: string | Uint8Array): Promise<void> {
+    return this._page.evaluate(([term, data]) => {
+      return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
+    }, [await this._getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
+  }
+
+  public async paste(data: string): Promise<void> {
+    return this._page.evaluate(([term, data]) => term.paste(data), [await this._getHandle(), data] as const);
+  }
+
+  public async onData(cb: (data: string) => void): Promise<void> {
+    this._page.exposeFunction('onData', cb);
+    this.evaluate(([term]) => term.onData((window as any).onData));
   }
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
