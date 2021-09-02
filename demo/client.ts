@@ -156,6 +156,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   initImageAddonExposed();
+  document.getElementById('load-test').addEventListener('click', loadTest);
 }
 
 function createTerminal(): void {
@@ -537,5 +538,38 @@ function initImageAddonExposed(): void {
       // ctrl+click: get original image
       : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
     canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+  });
+}
+
+function loadTest() {
+  const isWebglEnabled = !!addons.webgl.instance;
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 79);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
   });
 }

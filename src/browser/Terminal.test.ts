@@ -732,80 +732,78 @@ describe('Terminal', () => {
   });
 
   describe('unicode - surrogates', () => {
-    it('2 characters per cell', async function (): Promise<void> {
-      this.timeout(10000);  // This is needed because istanbul patches code and slows it down
-      const high = String.fromCharCode(0xD800);
-      const cell = new CellData();
-      for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        await term.writeP(high + String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
-        assert.equal(tchar.getChars(), high + String.fromCharCode(i));
-        assert.equal(tchar.getChars().length, 2);
-        assert.equal(tchar.getWidth(), 1);
-        assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
-        term.reset();
-      }
-    });
-    it('2 characters at last cell', async () => {
-      const high = String.fromCharCode(0xD800);
-      const cell = new CellData();
-      for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.buffer.x = term.cols - 1;
-        await term.writeP(high + String.fromCharCode(i));
-        assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars(), high + String.fromCharCode(i));
-        assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length, 2);
-        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), '');
-        term.reset();
-      }
-    });
-    it('2 characters per cell over line end with autowrap', async function (): Promise<void> {
-      this.timeout(10000);
-      const high = String.fromCharCode(0xD800);
-      const cell = new CellData();
-      for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.buffer.x = term.cols - 1;
-
-        await term.writeP('a' + high + String.fromCharCode(i));
-        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), 'a');
-        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), high + String.fromCharCode(i));
-        assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length, 2);
-        assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
-        term.reset();
-      }
-    });
-    it('2 characters per cell over line end without autowrap', async function (): Promise<void> {
-      this.timeout(10000);
-      const high = String.fromCharCode(0xD800);
-      const cell = new CellData();
-      for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        term.buffer.x = term.cols - 1;
-        await term.writeP('\x1b[?7l'); // Disable wraparound mode
-        const width = wcwidth((0xD800 - 0xD800) * 0x400 + i - 0xDC00 + 0x10000);
-        if (width !== 1) {
-          continue;
+    for (let i = 0xDC00; i <= 0xDCF0; i += 0x10) {
+      const range = `0x${i.toString(16).toUpperCase()}-0x${(i + 0xF).toString(16).toUpperCase()}`;
+      it(`${range}: 2 characters per cell`, async function (): Promise<void> {
+        const high = String.fromCharCode(0xD800);
+        const cell = new CellData();
+        for (let j = i; j <= i + 0xF; j++) {
+          await term.writeP(high + String.fromCharCode(j));
+          const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
+          assert.equal(tchar.getChars(), high + String.fromCharCode(j));
+          assert.equal(tchar.getChars().length, 2);
+          assert.equal(tchar.getWidth(), 1);
+          assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
+          term.reset();
         }
-        await term.writeP('a' + high + String.fromCharCode(i));
-        // auto wraparound mode should cut off the rest of the line
-        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), high + String.fromCharCode(i));
-        assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length, 2);
-        assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
-        term.reset();
-      }
-    });
-    it('splitted surrogates', async function (): Promise<void> {
-      this.timeout(10000);
-      const high = String.fromCharCode(0xD800);
-      const cell = new CellData();
-      for (let i = 0xDC00; i <= 0xDCFF; ++i) {
-        await term.writeP(high + String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
-        assert.equal(tchar.getChars(), high + String.fromCharCode(i));
-        assert.equal(tchar.getChars().length, 2);
-        assert.equal(tchar.getWidth(), 1);
-        assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
-        term.reset();
-      }
-    });
+      });
+      it(`${range}: 2 characters at last cell`, async () => {
+        const high = String.fromCharCode(0xD800);
+        const cell = new CellData();
+        term.buffer.x = term.cols - 1;
+        for (let j = i; j <= i + 0xF; j++) {
+          await term.writeP(high + String.fromCharCode(j));
+          assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars(), high + String.fromCharCode(j));
+          assert.equal(term.buffer.lines.get(0)!.loadCell(term.buffer.x - 1, cell).getChars().length, 2);
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), '');
+          term.reset();
+        }
+      });
+      it(`${range}: 2 characters per cell over line end with autowrap`, async function (): Promise<void> {
+        const high = String.fromCharCode(0xD800);
+        const cell = new CellData();
+        for (let j = i; j <= i + 0xF; j++) {
+          term.buffer.x = term.cols - 1;
+          await term.writeP('a' + high + String.fromCharCode(j));
+          assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars(), high + String.fromCharCode(j));
+          assert.equal(term.buffer.lines.get(1)!.loadCell(0, cell).getChars().length, 2);
+          assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
+          term.reset();
+        }
+      });
+      it(`${range}: 2 characters per cell over line end without autowrap`, async function (): Promise<void> {
+        const high = String.fromCharCode(0xD800);
+        const cell = new CellData();
+        for (let j = i; j <= i + 0xF; j++) {
+          term.buffer.x = term.cols - 1;
+          await term.writeP('\x1b[?7l'); // Disable wraparound mode
+          const width = wcwidth((0xD800 - 0xD800) * 0x400 + j - 0xDC00 + 0x10000);
+          if (width !== 1) {
+            continue;
+          }
+          await term.writeP('a' + high + String.fromCharCode(j));
+          // auto wraparound mode should cut off the rest of the line
+          assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars(), high + String.fromCharCode(j));
+          assert.equal(term.buffer.lines.get(0)!.loadCell(term.cols - 1, cell).getChars().length, 2);
+          assert.equal(term.buffer.lines.get(1)!.loadCell(1, cell).getChars(), '');
+          term.reset();
+        }
+      });
+      it(`${range}: splitted surrogates`, async function (): Promise<void> {
+        const high = String.fromCharCode(0xD800);
+        const cell = new CellData();
+        for (let j = i; j <= i + 0xF; j++) {
+          await term.writeP(high + String.fromCharCode(j));
+          const tchar = term.buffer.lines.get(0)!.loadCell(0, cell);
+          assert.equal(tchar.getChars(), high + String.fromCharCode(j));
+          assert.equal(tchar.getChars().length, 2);
+          assert.equal(tchar.getWidth(), 1);
+          assert.equal(term.buffer.lines.get(0)!.loadCell(1, cell).getChars(), '');
+          term.reset();
+        }
+      });
+    }
   });
 
   describe('unicode - combining characters', () => {
