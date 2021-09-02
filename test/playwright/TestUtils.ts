@@ -48,8 +48,13 @@ export class TerminalProxy implements ITerminalProxy {
 }
 
 export async function openTerminal(ctx: ITestContext, options: ITerminalOptions = {}): Promise<void> {
-  await ctx.page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await ctx.page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+  await ctx.page.evaluate(`
+    if ('term' in window) {
+      window.term.dispose();
+    }
+    window.term = new Terminal(${JSON.stringify(options)});
+    window.term.open(document.querySelector('#terminal-container'));
+  `);
   if (options.rendererType === 'dom') {
     await ctx.page.waitForSelector('.xterm-rows');
   } else {
