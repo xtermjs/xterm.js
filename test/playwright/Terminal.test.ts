@@ -25,4 +25,11 @@ test.describe.serial('API integration tests', () => {
     await ctx.proxy.write('文');
     strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foobar文');
   });
+
+  test('write - bytes (UTF8)', async () => {
+    await ctx.proxy.write(new Uint8Array([102, 111, 111])); // foo
+    await ctx.proxy.write(new Uint8Array([98, 97, 114])); // bar
+    await ctx.proxy.write(new Uint8Array([230, 150, 135])); // 文
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foobar文');
+  });
 });
