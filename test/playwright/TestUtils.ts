@@ -29,6 +29,7 @@ type EnsureAsyncProperties<T> = {
 interface ITerminalProxy extends
   EnsureAsyncProperties<Pick<Terminal, 'cols' | 'rows'>> {
   evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
+  write(data: string | Uint8Array): Promise<void>;
 }
 
 export class TerminalProxy implements ITerminalProxy {
@@ -37,6 +38,14 @@ export class TerminalProxy implements ITerminalProxy {
 
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
+
+  public async write(data: string | Uint8Array): Promise<void> {
+    return this._page.evaluate(([term, data]) => {
+      return new Promise(r => {
+        term.write(data, r);
+      });
+    }, [await this._getTermHandle(), data] as const);
+  }
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._getTermHandle()]);
