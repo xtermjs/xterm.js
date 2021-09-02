@@ -1,6 +1,6 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferLine, IBufferNamespace, ITerminalOptions, Terminal } from 'xterm';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
 import { PageFunction } from '@playwright/test/types/structs';
@@ -8,7 +8,7 @@ import { PageFunction } from '@playwright/test/types/structs';
 export interface ITestContext {
   page: Page;
   termHandle: JSHandle<Terminal>;
-  proxy: ITerminalProxy;
+  proxy: TerminalProxy;
 }
 
 export async function createTextContext(browser: Browser): Promise<ITestContext> {
@@ -27,7 +27,10 @@ type EnsureAsyncProperties<T> = {
 };
 
 interface ITerminalProxy extends
+  // Interfaces that the proxy implements with async values
   EnsureAsyncProperties<Pick<Terminal, 'cols' | 'rows'>> {
+
+  // Custom proxy methods
   evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
   write(data: string | Uint8Array): Promise<void>;
 }
@@ -39,20 +42,84 @@ export class TerminalProxy implements ITerminalProxy {
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
 
+  public get buffer(): TerminalBufferNamespaceProxy { return new TerminalBufferNamespaceProxy(this._page, this); }
+
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
-      return new Promise(r => {
-        term.write(data, r);
-      });
-    }, [await this._getTermHandle(), data] as const);
+      return new Promise(r => term.write(data, r));
+    }, [await this._getHandle(), data] as const);
   }
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
-    return this._page.evaluate(pageFunction, [await this._getTermHandle()]);
+    return this._page.evaluate(pageFunction, [await this._getHandle()]);
   }
 
-  private async _getTermHandle(): Promise<JSHandle<Terminal>> {
+  public async evaluateHandle<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<JSHandle<T>> {
+    return this._page.evaluateHandle(pageFunction, [await this._getHandle()]);
+  }
+
+  private _getHandle(): Promise<JSHandle<Terminal>> {
+    // This is async because it must be evaluated each time it is called since term may have changed
     return this._page.evaluateHandle('window.term');
+  }
+}
+
+class TerminalBufferNamespaceProxy {
+  constructor(
+    private readonly _page: Page,
+    private readonly _proxy: TerminalProxy
+  ) {
+
+  }
+
+  public get active(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy); }
+}
+
+class TerminalBufferProxy {
+  private readonly _handle: Promise<JSHandle<IBuffer>>;
+
+  constructor(
+    private readonly _page: Page,
+    private readonly _proxy: TerminalProxy
+  ) {
+    this._handle = this._proxy.evaluateHandle(([term]) => term.buffer.active);
+  }
+
+  public get type(): Promise<'normal' | 'alternate'> { return this.evaluate(([buffer]) => buffer.type); }
+  public get cursorY(): Promise<number> { return this.evaluate(([buffer]) => buffer.cursorY); }
+  public get cursorX(): Promise<number> { return this.evaluate(([buffer]) => buffer.cursorX); }
+  public get viewportY(): Promise<number> { return this.evaluate(([buffer]) => buffer.viewportY); }
+  public get baseY(): Promise<number> { return this.evaluate(([buffer]) => buffer.baseY); }
+  public get length(): Promise<number> { return this.evaluate(([buffer]) => buffer.length); }
+  public async getLine(y: number): Promise<TerminalBufferLine | undefined> {
+    const lineHandle = await this._page.evaluateHandle(([buffer, y]) => buffer.getLine(y), [await this._handle, y] as const);
+    const value = await lineHandle.jsonValue();
+    if (value) {
+      return new TerminalBufferLine(this._page, lineHandle as JSHandle<IBufferLine>);
+    }
+    return undefined;
+  }
+
+  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBuffer>[], T>): Promise<T> {
+    return this._page.evaluate(pageFunction, [await this._handle]);
+  }
+}
+
+class TerminalBufferLine {
+  constructor(
+    private readonly _page: Page,
+    private readonly _handle: JSHandle<IBufferLine>
+  ) {
+  }
+
+  public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): Promise<string> {
+    return this._page.evaluate(([bufferLine, trimRight, startColumn, endColumn]) => {
+      return bufferLine.translateToString(trimRight, startColumn, endColumn);
+    }, [this._handle, trimRight, startColumn, endColumn] as const);
+  }
+
+  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferLine>[], T>): Promise<T> {
+    return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
 

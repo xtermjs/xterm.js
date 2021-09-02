@@ -23,6 +23,6 @@ test.describe.serial('API integration tests', () => {
     await ctx.proxy.write('foo');
     await ctx.proxy.write('bar');
     await ctx.proxy.write('文');
-    strictEqual(await ctx.proxy.evaluate(([term]) => term.buffer.active.getLine(0)!.translateToString(true)), 'foobar文');
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foobar文');
   });
 });
