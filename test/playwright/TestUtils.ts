@@ -1,5 +1,5 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
-import { deepStrictEqual } from 'assert';
+import { deepStrictEqual, fail, ok } from 'assert';
 import { ITerminalOptions, Terminal } from 'xterm';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -8,7 +8,7 @@ import { PageFunction } from '@playwright/test/types/structs';
 export interface ITestContext {
   page: Page;
   termHandle: JSHandle<Terminal>;
-  proxy: TerminalProxy;
+  proxy: ITerminalProxy;
 }
 
 export async function createTextContext(browser: Browser): Promise<ITestContext> {
@@ -26,19 +26,24 @@ type EnsureAsyncProperties<T> = {
   [Key in keyof T]: EnsureAsync<T[Key]>
 };
 
-export class TerminalProxy implements EnsureAsyncProperties<Pick<Terminal, 'cols'>> {
+interface ITerminalProxy extends
+  EnsureAsyncProperties<Pick<Terminal, 'cols' | 'rows'>> {
+  evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
+}
+
+export class TerminalProxy implements ITerminalProxy {
   constructor(private readonly _page: Page) {
   }
 
-  public get cols(): Promise<number> { return this._evaluateProperty(([term]) => term.cols); }
-  public get rows(): Promise<number> { return this._evaluateProperty(([term]) => term.rows); }
+  public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
+  public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
+
+  public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
+    return this._page.evaluate(pageFunction, [await this._getTermHandle()]);
+  }
 
   private async _getTermHandle(): Promise<JSHandle<Terminal>> {
     return this._page.evaluateHandle('window.term');
-  }
-
-  private async _evaluateProperty<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
-    return this._page.evaluate(pageFunction, [await this._getTermHandle()]);
   }
 }
 
@@ -75,4 +80,16 @@ export async function pollFor<T>(page: Page, evalOrFn: string | (() => Promise<T
       setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10)), 10);
     });
   }
+}
+
+export async function asyncThrows(cb: () => Promise<any>, expectedMessage?: string): Promise<void> {
+  try {
+    await cb();
+  } catch (e) {
+    if (expectedMessage) {
+      ok((e as Error).message.indexOf(expectedMessage) !== -1);
+    }
+    return;
+  }
+  fail('Expected callback to throw');
 }
