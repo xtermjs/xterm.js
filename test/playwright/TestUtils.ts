@@ -1,6 +1,6 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { IBuffer, IBufferLine, IBufferNamespace, IEvent, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IEvent, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -141,6 +141,11 @@ export class TerminalProxy implements ITerminalProxy {
   public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const); }
   public async getOption(key: string): Promise<any> { return this._page.evaluate(([term, key]) => term.getOption(key), [await this.getHandle(), key] as const); }
   public async setOption(key: string, value: any): Promise<any> { return this._page.evaluate(([term, key, value]) => term.setOption(key, value), [await this.getHandle(), key, value] as const); }
+  public async scrollToTop(): Promise<void> { return this.evaluate(([term]) => term.scrollToTop()); }
+  public async scrollToBottom(): Promise<void> { return this.evaluate(([term]) => term.scrollToBottom()); }
+  public async scrollPages(pageCount: number): Promise<void> { return this._page.evaluate(([term, pageCount]) => term.scrollPages(pageCount), [await this.getHandle(), pageCount] as const); }
+  public async scrollToLine(line: number): Promise<void> { return this._page.evaluate(([term, line]) => term.scrollToLine(line), [await this.getHandle(), line] as const); }
+  public async scrollLines(amount: number): Promise<void> { return this._page.evaluate(([term, amount]) => term.scrollLines(amount), [await this.getHandle(), amount] as const); }
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.write(typeof data === 'string' ? data : new Uint8Array(data), r));
@@ -176,17 +181,17 @@ class TerminalBufferNamespaceProxy {
 
   }
 
-  public get active(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy); }
+  public get active(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.active)); }
+  public get normal(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.normal)); }
+  public get alternate(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.alternate)); }
 }
 
 class TerminalBufferProxy {
-  private readonly _handle: Promise<JSHandle<IBuffer>>;
-
   constructor(
     private readonly _page: Page,
-    private readonly _proxy: TerminalProxy
+    private readonly _proxy: TerminalProxy,
+    private readonly _handle: Promise<JSHandle<IBuffer>>
   ) {
-    this._handle = this._proxy.evaluateHandle(([term]) => term.buffer.active);
   }
 
   public get type(): Promise<'normal' | 'alternate'> { return this.evaluate(([buffer]) => buffer.type); }
@@ -216,13 +221,40 @@ class TerminalBufferLine {
   ) {
   }
 
+  public get length(): Promise<number> { return this.evaluate(([bufferLine]) => bufferLine.length); }
+  public get isWrapped(): Promise<boolean> { return this.evaluate(([bufferLine]) => bufferLine.isWrapped); }
+
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): Promise<string> {
     return this._page.evaluate(([bufferLine, trimRight, startColumn, endColumn]) => {
       return bufferLine.translateToString(trimRight, startColumn, endColumn);
     }, [this._handle, trimRight, startColumn, endColumn] as const);
   }
 
+  public async getCell(x: number): Promise<TerminalBufferCell | undefined> {
+    const cellHandle = await this._page.evaluateHandle(([bufferLine, x]) => bufferLine.getCell(x), [this._handle, x] as const);
+    const value = await cellHandle.jsonValue();
+    if (value) {
+      return new TerminalBufferCell(this._page, cellHandle as JSHandle<IBufferCell>);
+    }
+    return undefined;
+  }
+
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferLine>[], T>): Promise<T> {
+    return this._page.evaluate(pageFunction, [this._handle]);
+  }
+}
+
+class TerminalBufferCell {
+  constructor(
+    private readonly _page: Page,
+    private readonly _handle: JSHandle<IBufferCell>
+  ) {
+  }
+
+  public getWidth(): Promise<number> { return this.evaluate(([line]) => line.getWidth()); }
+  public getChars(): Promise<string> { return this.evaluate(([line]) => line.getChars()); }
+
+  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferCell>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
