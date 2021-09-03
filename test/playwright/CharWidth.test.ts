@@ -4,8 +4,7 @@
  */
 
 import { test } from '@playwright/test';
-import { deepStrictEqual, strictEqual } from 'assert';
-import { createTestContext, ITestContext, openTerminal, asyncThrows, pollFor, timeout} from './TestUtils';
+import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
