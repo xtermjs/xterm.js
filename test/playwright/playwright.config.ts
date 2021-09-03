@@ -2,6 +2,7 @@ import { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
   testDir: '.',
+  timeout: 10000,
   projects: [
     {
       name: 'Chrome Stable',
