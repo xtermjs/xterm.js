@@ -13,7 +13,7 @@ export interface ITestContext {
   proxy: TerminalProxy;
 }
 
-export async function createTextContext(browser: Browser): Promise<ITestContext> {
+export async function createTestContext(browser: Browser): Promise<ITestContext> {
   const page = await browser.newPage();
   await page.goto('http://127.0.0.1:3000/test');
   const proxy = new TerminalProxy(page);
@@ -126,10 +126,11 @@ export class TerminalProxy implements ITerminalProxy {
   // #region Complex properties
   public get buffer(): TerminalBufferNamespaceProxy { return new TerminalBufferNamespaceProxy(this._page, this); }
   /** Exposes somewhat unsafe access to internals for testing things difficult to do with the regular API */
-  public get internal(): TerminalInternalProxy { return new TerminalInternalProxy(this._page, this); }
+  public get core(): TerminalCoreProxy { return new TerminalCoreProxy(this._page, this); }
   // #endregion
 
   // #region Proxied methods
+  public async dispose(): Promise<void> { return this.evaluate(([term]) => term.dispose()); }
   public async clear(): Promise<void> { return this.evaluate(([term]) => term.clear()); }
   public async focus(): Promise<void> { return this.evaluate(([term]) => term.focus()); }
   public async blur(): Promise<void> { return this.evaluate(([term]) => term.blur()); }
@@ -260,15 +261,25 @@ class TerminalBufferCell {
   }
 }
 
-class TerminalInternalProxy {
+class TerminalCoreProxy {
   constructor(
     private readonly _page: Page,
     private readonly _proxy: TerminalProxy
   ) {
   }
 
+  public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
+
   public async triggerBinaryEvent(data: string): Promise<void> {
-    return this._page.evaluate(([term, data]) => ((term as any)._core as ICoreTerminal).coreService.triggerBinaryEvent(data), [await this._proxy.getHandle(), data] as const);
+    return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);
+  }
+
+  private async _getCoreHandle(): Promise<JSHandle<ICoreTerminal>> {
+    return this._proxy.evaluateHandle(([term]) => (term as any)._core as ICoreTerminal);
+  }
+
+  public async evaluate<T>(pageFunction: PageFunction<JSHandle<ICoreTerminal>[], T>): Promise<T> {
+    return this._page.evaluate(pageFunction, [await this._getCoreHandle()]);
   }
 }
 
@@ -323,4 +334,8 @@ export async function asyncThrows(cb: () => Promise<any>, expectedMessage?: stri
     return;
   }
   fail('Expected callback to throw');
+}
+
+export async function timeout(ms: number): Promise<void> {
+  return new Promise<void>(r => setTimeout(r, ms));
 }

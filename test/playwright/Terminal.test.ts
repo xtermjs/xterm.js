@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import { createTextContext as createTestContext, ITestContext, openTerminal, asyncThrows, pollFor } from './TestUtils';
+import { createTestContext, ITestContext, openTerminal, asyncThrows, pollFor, timeout} from './TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => ctx = await createTestContext(browser));
@@ -219,7 +219,7 @@ test.describe.serial('API integration', () => {
     test('onBinary', async () => {
       const calls: string[] = [];
       ctx.proxy.onBinary(e => calls.push(e));
-      await ctx.proxy.internal.triggerBinaryEvent('foo');
+      await ctx.proxy.core.triggerBinaryEvent('foo');
       deepStrictEqual(calls, ['foo']);
     });
 
@@ -539,264 +539,311 @@ test.describe.serial('API integration', () => {
     });
   });
 
-  // test('dispose', async () => {
-  //   await page.evaluate(`
-  //     window.term = new Terminal();
-  //     window.term.dispose();
-  //   `);
-  //   assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
-  // });
+  test('dispose', async () => {
+    await ctx.page.evaluate(`window.term = new Terminal();`);
+    await ctx.proxy.dispose();
+    strictEqual(await ctx.proxy.core.isDisposed, true);
+  });
 
-  // test('dispose (opened)', async () => {
-  //   await page.evaluate(`window.term.dispose()`);
-  //   assert.equal(await page.evaluate(`window.term._core._isDisposed`), true);
-  // });
+  test('dispose (opened)', async () => {
+    await ctx.proxy.dispose();
+    strictEqual(await ctx.proxy.core.isDisposed, true);
+  });
 
   // test('render when visible after hidden', async () => {
-  //   await page.evaluate(`document.querySelector('#terminal-container').style.display='none'`);
-  //   await page.evaluate(`window.term = new Terminal()`);
-  //   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  //   await page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-  //   await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
+  //   await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display='none'`);
+  //   await ctx.page.evaluate(`window.term = new Terminal()`);
+  //   await ctx.page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+  //   await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
+  //   await pollFor(ctx.page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   // });
 
-  // describe('registerLinkProvider', () => {
-  //   test('should fire provideLinks when hovering cells', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (position, cb) => {
-  //           calls.push(position);
-  //           cb(undefined);
-  //         }
-  //       });
-  //     `);
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 1, 1);
-  //     await moveMouseCell(page, dims, 2, 2);
-  //     await moveMouseCell(page, dims, 10, 4);
-  //     await pollFor(page, `window.calls`, [1, 2, 4]);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
+  test.describe('registerLinkProvider', () => {
+    test('should fire provideLinks when hovering cells', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            calls.push(position);
+            cb(undefined);
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 1, 1);
+      await moveMouseCell(ctx, dims, 2, 2);
+      await moveMouseCell(ctx, dims, 10, 4);
+      await pollFor(ctx.page, `window.calls`, [1, 2, 4]);
+      await ctx.page.evaluate(`
+        window.disposable.dispose();
+        window.disposable = undefined;
+      `);
+    });
 
-  //   test('should fire hover and leave events on the link', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await ctx.proxy.write('foo bar baz');
-  //     // Wait for renderer to catch up as links are cleared on render
-  //     await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (position, cb) => {
-  //           window.calls.push('provide ' + position);
-  //           if (position === 1) {
-  //             window.calls.push('match');
-  //             cb([{
-  //               range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
-  //               text: 'bar',
-  //               activate: () => window.calls.push('activate'),
-  //               hover: () => window.calls.push('hover'),
-  //               leave: () => window.calls.push('leave')
-  //             }]);
-  //           }
-  //         }
-  //       });
-  //     `);
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 5, 1);
-  //     await timeout(100);
-  //     await moveMouseCell(page, dims, 4, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
-  //     await moveMouseCell(page, dims, 7, 1);
-  //     await timeout(100);
-  //     await moveMouseCell(page, dims, 8, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
+    test('should fire hover and leave events on the link', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.proxy.write('foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              window.calls.push('match');
+              cb([{
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover'),
+                leave: () => window.calls.push('leave')
+              }]);
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 5, 1);
+      await timeout(100);
+      await moveMouseCell(ctx, dims, 4, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
+      await moveMouseCell(ctx, dims, 7, 1);
+      await timeout(100);
+      await moveMouseCell(ctx, dims, 8, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
+      await ctx.page.evaluate(`window.disposable.dispose()`);
+    });
 
-  //   test('should work fine when hover and leave callbacks are not provided', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await ctx.proxy.write('foo bar baz');
-  //     // Wait for renderer to catch up as links are cleared on render
-  //     await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (position, cb) => {
-  //           window.calls.push('provide ' + position);
-  //           if (position === 1) {
-  //             window.calls.push('match 1');
-  //             cb([{
-  //               range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
-  //               text: 'bar',
-  //               activate: () => window.calls.push('activate')
-  //             }]);
-  //           } else if (position === 2) {
-  //             window.calls.push('match 2');
-  //             cb([{
-  //               range: { start: { x: 5, y: 2 }, end: { x: 7, y: 2 } },
-  //               text: 'bar',
-  //               activate: () => window.calls.push('activate')
-  //             }]);
-  //           }
-  //         }
-  //       });
-  //     `);
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 5, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match 1']);
-  //     await moveMouseCell(page, dims, 4, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2']);
-  //     await moveMouseCell(page, dims, 7, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1']);
-  //     await moveMouseCell(page, dims, 6, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1', 'provide 2', 'match 2']);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
+    test('should work fine when hover and leave callbacks are not provided', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.proxy.write('foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              window.calls.push('match 1');
+              cb([{
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              }]);
+            } else if (position === 2) {
+              window.calls.push('match 2');
+              cb([{
+                range: { start: { x: 5, y: 2 }, end: { x: 7, y: 2 } },
+                text: 'bar',
+                activate: () => window.calls.push('activate')
+              }]);
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 5, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match 1']);
+      await moveMouseCell(ctx, dims, 4, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2']);
+      await moveMouseCell(ctx, dims, 7, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1']);
+      await moveMouseCell(ctx, dims, 6, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'match 1', 'provide 2', 'match 2', 'provide 1', 'match 1', 'provide 2', 'match 2']);
+      await ctx.page.evaluate(`window.disposable.dispose()`);
+    });
 
-  //   test('should fire activate events when clicking the link', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await ctx.proxy.write('a b c');
+    test('should fire activate events when clicking the link', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.proxy.write('a b c');
 
-  //     // Wait for renderer to catch up as links are cleared on render
-  //     await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
 
-  //     // Focus terminal to avoid a render event clearing the active link
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 5, 5);
-  //     await page.mouse.down();
-  //     await page.mouse.up();
-  //     await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
+      // Focus terminal to avoid a render event clearing the active link
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 5, 5);
+      await ctx.page.mouse.down();
+      await ctx.page.mouse.up();
+      await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
 
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (y, cb) => {
-  //           window.calls.push('provide ' + y);
-  //           cb([{
-  //             range: { start: { x: 1, y }, end: { x: 80, y } },
-  //             text: window.term.buffer.active.getLine(y - 1).translateToString(),
-  //             activate: (_, text) => window.calls.push('activate ' + y),
-  //             hover: () => window.calls.push('hover ' + y),
-  //             leave: () => window.calls.push('leave ' + y)
-  //           }]);
-  //         }
-  //       });
-  //     `);
-  //     await moveMouseCell(page, dims, 3, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1']);
-  //     await page.mouse.down();
-  //     await page.mouse.up();
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1']);
-  //     await moveMouseCell(page, dims, 1, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2']);
-  //     await page.mouse.down();
-  //     await page.mouse.up();
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2']);
-  //     await moveMouseCell(page, dims, 5, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1']);
-  //     await page.mouse.down();
-  //     await page.mouse.up();
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1', 'activate 1']);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (y, cb) => {
+            window.calls.push('provide ' + y);
+            cb([{
+              range: { start: { x: 1, y }, end: { x: 80, y } },
+              text: window.term.buffer.active.getLine(y - 1).translateToString(),
+              activate: (_, text) => window.calls.push('activate ' + y),
+              hover: () => window.calls.push('hover ' + y),
+              leave: () => window.calls.push('leave ' + y)
+            }]);
+          }
+        });
+      `);
+      await moveMouseCell(ctx, dims, 3, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1']);
+      await ctx.page.mouse.down();
+      await ctx.page.mouse.up();
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1', 'activate 1']);
+      await moveMouseCell(ctx, dims, 1, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2']);
+      await ctx.page.mouse.down();
+      await ctx.page.mouse.up();
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2']);
+      await moveMouseCell(ctx, dims, 5, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1']);
+      await ctx.page.mouse.down();
+      await ctx.page.mouse.up();
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1', 'activate 1', 'leave 1', 'provide 2', 'hover 2', 'activate 2', 'leave 2', 'provide 1', 'hover 1', 'activate 1']);
+      await ctx.page.evaluate(`window.disposable.dispose()`);
+    });
 
-  //   test('should work when multiple links are provided on the same line', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await ctx.proxy.write('foo bar baz');
-  //     // Wait for renderer to catch up as links are cleared on render
-  //     await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (position, cb) => {
-  //           window.calls.push('provide ' + position);
-  //           if (position === 1) {
-  //             cb([{
-  //               range: { start: { x: 1, y: 1 }, end: { x: 3, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               hover: () => window.calls.push('hover 1-3'),
-  //               leave: () => window.calls.push('leave 1-3')
-  //             }, {
-  //               range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               hover: () => window.calls.push('hover 5-7'),
-  //               leave: () => window.calls.push('leave 5-7')
-  //             }, {
-  //               range: { start: { x: 9, y: 1 }, end: { x: 11, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               hover: () => window.calls.push('hover 9-11'),
-  //               leave: () => window.calls.push('leave 9-11')
-  //             }]);
-  //           }
-  //         }
-  //       });
-  //     `);
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 2, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3']);
-  //     await moveMouseCell(page, dims, 6, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7']);
-  //     await moveMouseCell(page, dims, 6, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2']);
-  //     await moveMouseCell(page, dims, 10, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2', 'provide 1', 'hover 9-11']);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
+    test('should work when multiple links are provided on the same line', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.proxy.write('foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              cb([{
+                range: { start: { x: 1, y: 1 }, end: { x: 3, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 1-3'),
+                leave: () => window.calls.push('leave 1-3')
+              }, {
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 5-7'),
+                leave: () => window.calls.push('leave 5-7')
+              }, {
+                range: { start: { x: 9, y: 1 }, end: { x: 11, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                hover: () => window.calls.push('hover 9-11'),
+                leave: () => window.calls.push('leave 9-11')
+              }]);
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 2, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3']);
+      await moveMouseCell(ctx, dims, 6, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7']);
+      await moveMouseCell(ctx, dims, 6, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2']);
+      await moveMouseCell(ctx, dims, 10, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'provide 2', 'provide 1', 'hover 9-11']);
+      await ctx.page.evaluate(`window.disposable.dispose()`);
+    });
 
-  //   test('should dispose links when hovering away', async () => {
-  //     await openTerminal(ctx, { rendererType: 'dom' });
-  //     await ctx.proxy.write('foo bar baz');
-  //     // Wait for renderer to catch up as links are cleared on render
-  //     await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
-  //     await page.evaluate(`
-  //       window.calls = [];
-  //       window.disposable = window.term.registerLinkProvider({
-  //         provideLinks: (position, cb) => {
-  //           window.calls.push('provide ' + position);
-  //           if (position === 1) {
-  //             cb([{
-  //               range: { start: { x: 1, y: 1 }, end: { x: 3, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               dispose: () => window.calls.push('dispose 1-3'),
-  //               hover: () => window.calls.push('hover 1-3'),
-  //               leave: () => window.calls.push('leave 1-3')
-  //             }, {
-  //               range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               dispose: () => window.calls.push('dispose 5-7'),
-  //               hover: () => window.calls.push('hover 5-7'),
-  //               leave: () => window.calls.push('leave 5-7')
-  //             }, {
-  //               range: { start: { x: 9, y: 1 }, end: { x: 11, y: 1 } },
-  //               text: '',
-  //               activate: () => window.calls.push('activate'),
-  //               dispose: () => window.calls.push('dispose 9-11'),
-  //               hover: () => window.calls.push('hover 9-11'),
-  //               leave: () => window.calls.push('leave 9-11')
-  //             }]);
-  //           }
-  //         }
-  //       });
-  //     `);
-  //     const dims = await getDimensions();
-  //     await moveMouseCell(page, dims, 2, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3']);
-  //     await moveMouseCell(page, dims, 6, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7']);
-  //     await moveMouseCell(page, dims, 6, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2']);
-  //     await moveMouseCell(page, dims, 10, 1);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2', 'provide 1', 'hover 9-11']);
-  //     await moveMouseCell(page, dims, 10, 2);
-  //     await pollFor(page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2', 'provide 1', 'hover 9-11', 'leave 9-11', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2']);
-  //     await page.evaluate(`window.disposable.dispose()`);
-  //   });
-  // });
+    test('should dispose links when hovering away', async () => {
+      await openTerminal(ctx, { rendererType: 'dom' });
+      await ctx.proxy.write('foo bar baz');
+      // Wait for renderer to catch up as links are cleared on render
+      await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.disposable = window.term.registerLinkProvider({
+          provideLinks: (position, cb) => {
+            window.calls.push('provide ' + position);
+            if (position === 1) {
+              cb([{
+                range: { start: { x: 1, y: 1 }, end: { x: 3, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                dispose: () => window.calls.push('dispose 1-3'),
+                hover: () => window.calls.push('hover 1-3'),
+                leave: () => window.calls.push('leave 1-3')
+              }, {
+                range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                dispose: () => window.calls.push('dispose 5-7'),
+                hover: () => window.calls.push('hover 5-7'),
+                leave: () => window.calls.push('leave 5-7')
+              }, {
+                range: { start: { x: 9, y: 1 }, end: { x: 11, y: 1 } },
+                text: '',
+                activate: () => window.calls.push('activate'),
+                dispose: () => window.calls.push('dispose 9-11'),
+                hover: () => window.calls.push('hover 9-11'),
+                leave: () => window.calls.push('leave 9-11')
+              }]);
+            }
+          }
+        });
+      `);
+      const dims = await getDimensions();
+      await moveMouseCell(ctx, dims, 2, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3']);
+      await moveMouseCell(ctx, dims, 6, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7']);
+      await moveMouseCell(ctx, dims, 6, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2']);
+      await moveMouseCell(ctx, dims, 10, 1);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2', 'provide 1', 'hover 9-11']);
+      await moveMouseCell(ctx, dims, 10, 2);
+      await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1-3', 'leave 1-3', 'hover 5-7', 'leave 5-7', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2', 'provide 1', 'hover 9-11', 'leave 9-11', 'dispose 1-3', 'dispose 5-7', 'dispose 9-11', 'provide 2']);
+      await ctx.page.evaluate(`window.disposable.dispose()`);
+    });
+  });
 });
+
+async function getCellCoordinates(dimensions: IDimensions, col: number, row: number): Promise<{ x: number, y: number }> {
+  return {
+    x: dimensions.left + dimensions.renderDimensions.scaledCellWidth * (col - 0.5),
+    y: dimensions.top + dimensions.renderDimensions.scaledCellHeight * (row - 0.5)
+  };
+}
+
+async function moveMouseCell(ctx: ITestContext, dimensions: IDimensions, col: number, row: number): Promise<void> {
+  const coords = await getCellCoordinates(dimensions, col, row);
+  await ctx.page.mouse.move(coords.x, coords.y);
+}
+
+interface IDimensions {
+  top: number;
+  left: number;
+  renderDimensions: IRenderDimensions;
+}
+
+interface IRenderDimensions {
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
+  scaledCharLeft: number;
+  scaledCharTop: number;
+  scaledCanvasWidth: number;
+  scaledCanvasHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  actualCellWidth: number;
+  actualCellHeight: number;
+}
+
+async function getDimensions(): Promise<IDimensions> {
+  return await ctx.page.evaluate(`
+    (function() {
+      const rect = document.querySelector('.xterm-rows').getBoundingClientRect();
+      return {
+        top: rect.top,
+        left: rect.left,
+        renderDimensions: window.term._core._renderService.dimensions
+      };
+    })();
+  `);
+}
