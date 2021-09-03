@@ -101,9 +101,7 @@ jobs:
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-playwright --forbid-only
-    displayName: 'Integration tests (Chromium)'
-  # - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
-  #   displayName: 'Integration tests (Firefox)'
+    displayName: 'Integration tests'
 
 - job: macOS_IntegrationTests
   pool:
@@ -116,11 +114,7 @@ jobs:
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-playwright --forbid-only
-    displayName: 'Integration tests (Chromium)'
-  # - script: yarn test-api-firefox --headless --forbid-only
-  #   displayName: 'Integration tests (Firefox)'
-  # - script: yarn test-api-webkit --headless --forbid-only
-  #   displayName: 'Integration tests (Webkit)'
+    displayName: 'Integration tests'
 
 - job: Windows_IntegrationTests
   pool:
@@ -133,9 +127,7 @@ jobs:
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
   - script: yarn test-playwright --forbid-only
-    displayName: 'Integration tests (Chromium)'
-  # - script: yarn test-api-firefox --headless --forbid-only
-  #   displayName: 'Integration tests (Firefox)'
+    displayName: 'Integration tests'
 
 - job: Release
   dependsOn:
