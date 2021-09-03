@@ -2,6 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/Types';
