@@ -11,6 +11,8 @@ test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   await openTerminal(ctx);
 });
+test.afterAll(async () => await ctx.page.close());
+
 test.beforeEach(async () => await ctx.proxy.reset());
 
 test.describe.serial('CharWidth Integration Tests', function(): void {

@@ -11,6 +11,7 @@ test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   await openTerminal(ctx);
 });
+test.afterAll(async () => await ctx.page.close());
 
 test.describe('InputHandler Integration Tests', function(): void {
   test.describe('CSI', () => {

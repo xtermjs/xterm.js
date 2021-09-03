@@ -4,6 +4,7 @@ import { createTestContext, ITestContext, openTerminal, asyncThrows, pollFor, ti
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => ctx = await createTestContext(browser));
+test.afterAll(async () => await ctx.page.close());
 
 test.describe.serial('API integration', () => {
   test.beforeEach(async () => await openTerminal(ctx));
