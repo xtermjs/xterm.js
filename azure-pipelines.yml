@@ -100,10 +100,10 @@ jobs:
     displayName: 'Install Yarn'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-api-chromium --headless --forbid-only
+  - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
-    displayName: 'Integration tests (Firefox)'
+  # - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
+  #   displayName: 'Integration tests (Firefox)'
 
 - job: macOS_IntegrationTests
   pool:
@@ -115,12 +115,12 @@ jobs:
     displayName: 'Install Node.js'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-api-chromium --headless --forbid-only
+  - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firefox --headless --forbid-only
-    displayName: 'Integration tests (Firefox)'
-  - script: yarn test-api-webkit --headless --forbid-only
-    displayName: 'Integration tests (Webkit)'
+  # - script: yarn test-api-firefox --headless --forbid-only
+  #   displayName: 'Integration tests (Firefox)'
+  # - script: yarn test-api-webkit --headless --forbid-only
+  #   displayName: 'Integration tests (Webkit)'
 
 - job: Windows_IntegrationTests
   pool:
@@ -132,10 +132,10 @@ jobs:
     displayName: 'Install Node.js'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
-  - script: yarn test-api-chromium --headless --forbid-only
+  - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firefox --headless --forbid-only
-    displayName: 'Integration tests (Firefox)'
+  # - script: yarn test-api-firefox --headless --forbid-only
+  #   displayName: 'Integration tests (Firefox)'
 
 - job: Release
   dependsOn:
