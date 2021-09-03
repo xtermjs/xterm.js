@@ -1,12 +1,13 @@
 import { test } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
+import type { IRenderDimensions } from 'browser/renderer/Types';
 import { createTestContext, ITestContext, openTerminal, asyncThrows, pollFor, timeout} from './TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => ctx = await createTestContext(browser));
 test.afterAll(async () => await ctx.page.close());
 
-test.describe.serial('API integration', () => {
+test.describe('API integration', () => {
   test.beforeEach(async () => await openTerminal(ctx));
 
   test('default options', async () => {
@@ -819,21 +820,6 @@ interface IDimensions {
   top: number;
   left: number;
   renderDimensions: IRenderDimensions;
-}
-
-interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
 }
 
 async function getDimensions(): Promise<IDimensions> {

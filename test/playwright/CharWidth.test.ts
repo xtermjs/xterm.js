@@ -15,7 +15,7 @@ test.afterAll(async () => await ctx.page.close());
 
 test.beforeEach(async () => await ctx.proxy.reset());
 
-test.describe.serial('CharWidth Integration Tests', function(): void {
+test.describe('CharWidth Integration Tests', function(): void {
   test.describe('getStringCellWidth', () => {
     test('ASCII chars', async () => {
       await ctx.proxy.write('This is just ASCII text.#');

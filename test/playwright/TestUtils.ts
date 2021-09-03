@@ -1,11 +1,13 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IEvent, IModes, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IModes, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
 import { PageFunction } from '@playwright/test/types/structs';
-import { ICoreTerminal } from 'common/Types';
+import type { ICoreTerminal } from 'common/Types';
+import type { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderService } from 'browser/services/Services';
 
 export interface ITestContext {
   page: Page;
@@ -270,10 +272,12 @@ class TerminalCoreProxy {
   }
 
   public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
+  public get renderDimensions(): Promise<IRenderDimensions> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
 
   public async triggerBinaryEvent(data: string): Promise<void> {
     return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);
   }
+
 
   private async _getCoreHandle(): Promise<JSHandle<ICoreTerminal>> {
     return this._proxy.evaluateHandle(([term]) => (term as any)._core as ICoreTerminal);
