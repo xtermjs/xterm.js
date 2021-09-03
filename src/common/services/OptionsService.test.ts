@@ -10,7 +10,7 @@ describe('OptionsService', () => {
   describe('constructor', () => {
     const originalError = console.error;
     beforeEach(() => {
-      console.error = () => { };
+      console.error = () => {};
     });
     afterEach(() => {
       console.error = originalError;
@@ -26,7 +26,7 @@ describe('OptionsService', () => {
       assert.equal(optionsService.getOption('cols'), 80);
     });
     it('uses default value if invalid constructor option value passed', () => {
-      assert.equal(new OptionsService({ tabStopWidth: 0 }).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
+      assert.equal(new OptionsService({tabStopWidth: 0}).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
     });
   });
   describe('setOption', () => {
