@@ -131,6 +131,7 @@ export class TerminalProxy implements ITerminalProxy {
 
   // #region Proxied methods
   public async dispose(): Promise<void> { return this.evaluate(([term]) => term.dispose()); }
+  public async reset(): Promise<void> { return this.evaluate(([term]) => term.reset()); }
   public async clear(): Promise<void> { return this.evaluate(([term]) => term.clear()); }
   public async focus(): Promise<void> { return this.evaluate(([term]) => term.focus()); }
   public async blur(): Promise<void> { return this.evaluate(([term]) => term.blur()); }
