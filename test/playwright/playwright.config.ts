@@ -10,6 +10,18 @@ const config: PlaywrightTestConfig = {
         browserName: 'chromium',
         channel: 'chrome'
       }
+    },
+    {
+      name: 'Firefox Stable',
+      use: {
+        browserName: 'firefox'
+      }
+    },
+    {
+      name: 'WebKit',
+      use: {
+        browserName: 'webkit'
+      }
     }
   ],
   webServer: {

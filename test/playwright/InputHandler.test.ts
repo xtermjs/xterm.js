@@ -195,8 +195,10 @@ test.describe('InputHandler Integration Tests', function(): void {
           await ctx.page.mouse.up();
         });
 
-        // TODO: This only works in Chromium? (isChromium ? it : it.skip)
-        test('Pm = 2004, Set bracketed paste mode', async () => {
+        test('Pm = 2004, Set bracketed paste mode', async ({ browserName }) => {
+          if (browserName !== 'chromium') {
+            return;
+          }
           strictEqual(await simulatePaste('foo'), 'foo');
           await ctx.proxy.write('\x1b[?2004h');
           strictEqual(await simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
