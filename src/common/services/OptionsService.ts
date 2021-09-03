@@ -149,6 +149,11 @@ export class OptionsService implements IOptionsService {
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
+      case 'rows':
+      case 'cols':
+        if (!value && value !== 0) {
+          throw new Error(`${key} must be numeric, value: ${value}`);
+        }
         break;
     }
     return value;
