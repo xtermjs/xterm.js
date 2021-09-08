@@ -25,7 +25,7 @@ declare module 'xterm-addon-image' {
      * - getWinSizeChars (CSI 18 t)
      *
      * If `true` (default), the reports will be activated during addon loading.
-     * If `false`, no settings will be touched. Use this, if you have high
+     * If `false`, no settings will be touched. Use `false`, if you have high
      * security constraints and/or deal with windowOptions by other means.
      * On addon disposal, the settings will not change.
      */
@@ -83,17 +83,18 @@ declare module 'xterm-addon-image' {
     /**
      * SIXEL settings
      */
-    // Whether SIXEL is enabled (default is true).
+
+    /** Whether SIXEL is enabled (default is true). */
     sixelSupport?: boolean;
-    // Whether SIXEL scrolling is enabled (default is true). Same as DECSET 80.
+    /** Whether SIXEL scrolling is enabled (default is true). Same as DECSET 80. */
     sixelScrolling?: boolean;
-    // Palette color limit (default 256).
+    /** Palette color limit (default 256). */
     sixelPaletteLimit?: number;
-    // SIXEL image size limit in bytes (default 25000000).
+    /** SIXEL image size limit in bytes (default 25000000 bytes). */
     sixelSizeLimit?: number;
-    // Whether to use private palettes for SIXEL sequences (default is true). Same as DECSET 1070.
+    /** Whether to use private palettes for SIXEL sequences (default is true). Same as DECSET 1070. */
     sixelPrivatePalette?: boolean;
-    // Default start palette (default 'ANSI256').
+    /** Default start palette (default is 'VT340-COLOR'). */
     sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
   }
 
