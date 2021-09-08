@@ -2,7 +2,11 @@
 
 Image output in xterm.js.
 
-⚠️ This is an experimental addon that is still under construction. ⚠️
+
+![](fixture/example.png)
+
+
+⚠️ This is an experimental addon, that is still under construction. ⚠️
 
 
 ### Install
