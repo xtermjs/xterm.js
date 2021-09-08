@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IImageWorkerMessage, postMessageType } from '../src/WorkerTypes';
+import { IImageWorkerMessage, IPostMessage } from '../src/WorkerTypes';
 
 import { Decoder } from 'sixel/lib/Decoder';
 import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
 
 
 // narrow types for postMessage to our protocol
-declare const postMessage: postMessageType;
+declare const postMessage: IPostMessage;
 
 
 let imageBuffer: ArrayBuffer | undefined;
@@ -85,7 +85,7 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
       break;
     case 'ACK':
       pixelLimit = data.options?.pixelLimit || 0;
-      dec = new Decoder({memoryLimit: pixelLimit * 4});
+      dec = new Decoder({ memoryLimit: pixelLimit * 4 });
       console.log((dec as any)._opts);
       postMessage({ type: 'ACK', payload: 'alive', options: null });
       break;

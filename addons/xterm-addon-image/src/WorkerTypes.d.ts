@@ -61,11 +61,11 @@ export type IImageWorkerMessage = (
   ISixelImageMessage | IChunkTransferMessage | ISizeExceededMessage
 );
 
-export type postMessageType = {
+export interface IPostMessage {
   <T extends IImageWorkerMessage>(message: T, transfer: Transferable[]): void;
   <T extends IImageWorkerMessage>(message: T, options?: PostMessageOptions): void;
-};
+}
 
-interface IImageWorker extends Worker {
-  postMessage: postMessageType;
+export interface IImageWorker extends Worker {
+  postMessage: IPostMessage;
 }
