@@ -5,16 +5,8 @@
 
 import { IImageAddonOptions } from './Types';
 import { IDisposable } from 'xterm';
-import { IImageWorkerMessage, IImagePixel } from './WorkerTypes';
+import { IImageWorkerMessage, IImagePixel, IImageWorker } from './WorkerTypes';
 
-
-// narrow types for postMessage to our protocol
-interface IImageWorker extends Worker {
-  postMessage: {
-    <T extends IImageWorkerMessage>(message: T, transfer: Transferable[]): void;
-    <T extends IImageWorkerMessage>(message: T, options?: PostMessageOptions | undefined): void;
-  };
-}
 
 
 // pool cleanup interval in ms

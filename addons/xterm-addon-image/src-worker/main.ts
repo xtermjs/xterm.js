@@ -3,17 +3,14 @@
  * @license MIT
  */
 
-import { IImageWorkerMessage } from '../src/WorkerTypes';
+import { IImageWorkerMessage, postMessageType } from '../src/WorkerTypes';
 
 import { Decoder } from 'sixel/lib/Decoder';
 import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
 
 
 // narrow types for postMessage to our protocol
-declare const postMessage: {
-  <T extends IImageWorkerMessage>(message: T, transfer: Transferable[]): void;
-  <T extends IImageWorkerMessage>(message: T, options?: PostMessageOptions | undefined): void;
-};
+declare const postMessage: postMessageType;
 
 
 let imageBuffer: ArrayBuffer | undefined;
