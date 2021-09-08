@@ -526,6 +526,18 @@ function initImageAddonExposed(): void {
   const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 
+  const sixel_demo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      term.write('\r\n');
+      term.write(new Uint8Array(buffer))
+    });
+
+  document.getElementById('image-demo1').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/chess.six'));
+  document.getElementById('image-demo2').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/biplane.six'));
+
   // demo for image retrieval API
   term.element.addEventListener('click', (ev: MouseEvent) => {
     if (!ev.ctrlKey || !addons.image.instance) return;
