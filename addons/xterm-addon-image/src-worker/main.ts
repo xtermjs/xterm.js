@@ -15,16 +15,13 @@ declare const postMessage: postMessageType;
 
 let imageBuffer: ArrayBuffer | undefined;
 let sizeExceeded = false;
-
-// keep the default mem limit of 128 MB for now (32M pixels)
-// FIXME: set memoryLimit from addon setting
-const dec = new Decoder();
+let dec: Decoder;
 
 // setup options loaded from ACK
 let pixelLimit = 0;
 
 // always free decoder ressources after decoding if it exceeds this limit
-const MEM_PERMA_LIMIT = 16777216; // 16MB --> 2048x2048 pixels
+const MEM_PERMA_LIMIT = 16777216; // 2048 pixels * 2048 pixels * 4 channels = 16MB
 
 
 function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
@@ -88,6 +85,8 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
       break;
     case 'ACK':
       pixelLimit = data.options?.pixelLimit || 0;
+      dec = new Decoder({memoryLimit: pixelLimit * 4});
+      console.log((dec as any)._opts);
       postMessage({ type: 'ACK', payload: 'alive', options: null });
       break;
   }

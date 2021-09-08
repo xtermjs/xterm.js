@@ -11,10 +11,6 @@ declare module 'xterm-addon-image' {
      * Path to the worker file.
      * Must be the path to the worker JS file directly loadable
      * in the integration as with `new Worker(path)`.
-     *
-     * You most likely want to customize this,
-     * the hardcoded default '/workers/xterm-addon-image-worker.js'
-     * is derived from demo integration of the xterm.js repo.
      */
     workerPath?: string;
 

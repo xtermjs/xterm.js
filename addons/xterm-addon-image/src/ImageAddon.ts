@@ -10,30 +10,11 @@ import { SixelHandler } from './SixelHandler';
 import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
 
-// to run testfiles:
-// cd ../node-sixel/testfiles/
-// shopt -s extglob
-// cat !(*_clean).six
-
-// no scrolling test:
-// echo -ne '\x1b[?80l\x1bP0;0q' && cat ../node-sixel/testfiles/screen_clean.six && echo -e '\x1b\\'
-
-// mpv test
-// cd ../mpv-build/
-// mpv/build/mpv /home/jerch/Downloads/sintel.webm --vo=sixel --vo-sixel-width=800 --vo-sixel-height=600 \
-// --profile=sw-fast --vo-sixel-fixedpalette=no --vo-sixel-reqcolors=256 --really-quiet
-
 /**
  * TODOs / next steps:
- * - update sixel lib to FastSixelDecoder
  * - allow overprinting with blending? (needed for correct handling of transparent pixels)
  * - find some working serialize solution (re-encode?)
  * - investigate in worker based drawing (OffscreenCanvas, createImageBitmap)
- * - think about additional library like public API endpoints:
- *    - get image(canvas|blob) under pointer full | line | tile
- *    - get images in buffer range with cell notion (right expanding?)
- *    - possible storage events: onAdded(imageSpec), onBeforeEvicted(imageSpec)
- *    - query addon settings
  *
  * Longterm:
  * - iTerm2 protocol support
@@ -46,7 +27,7 @@ import { WorkerManager } from './WorkerManager';
 const DEFAULT_OPTIONS: IImageAddonOptions = {
   workerPath: '/workers/xterm-addon-image-worker.js',
   enableSizeReports: true,
-  pixelLimit: 16777216, // limit to 4096 x 4096 images
+  pixelLimit: 16777216, // limit to 4096 * 4096 pixels
   cursorRight: false,
   cursorBelow: false,
   sixelSupport: true,
@@ -88,7 +69,7 @@ export class ImageAddon implements ITerminalAddon {
   private _terminal: ICoreTerminal | undefined;
   private _workerManager: WorkerManager;
 
-  constructor(opts: IImageAddonOptionalOptions = DEFAULT_OPTIONS) {
+  constructor(opts: IImageAddonOptionalOptions) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._workerManager = new WorkerManager(this._opts.workerPath, this._opts);
