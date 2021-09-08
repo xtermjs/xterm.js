@@ -28,9 +28,6 @@ const customSettings: IImageAddonOptions = {
 const terminal = new Terminal();
 const imageAddon = new ImageAddon(customSettings);
 terminal.loadAddon(imageAddon);
-
-// when done
-imageAddon.dispose();
 ```
 
 ### General Notes
