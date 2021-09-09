@@ -72,7 +72,7 @@ export class OptionsService implements IOptionsService {
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
 
   constructor(options: Partial<ITerminalOptions>) {
-    this.options = { ... DEFAULT_OPTIONS };
+    this.options = { ...DEFAULT_OPTIONS };
     for (const key in options) {
       if (key in this.options) {
         try {
@@ -88,6 +88,7 @@ export class OptionsService implements IOptionsService {
     for (const propName in this.options) {
       const privatePropName = `_${propName}`;
       this._options[privatePropName] = this.options[propName];
+
       Object.defineProperty(this.options, propName, {
         get: () => {
           if (!(propName in DEFAULT_OPTIONS)) {
@@ -99,6 +100,35 @@ export class OptionsService implements IOptionsService {
           if (!(propName in DEFAULT_OPTIONS)) {
             throw new Error('No option with key "' + propName + '"');
           }
+
+          value = this._sanitizeAndValidateOption(propName, value);
+          // Don't fire an option change event if they didn't change
+          if (this._options[privatePropName] !== value) {
+            this._options[privatePropName] = value;
+            this._onOptionChange.fire(propName);
+          }
+        }
+      });
+    }
+  }
+
+  public get publicOptions(): ITerminalOptions {
+    const publicOptions = { ... this.options };
+    for (const propName in CONSTRUCTOR_ONLY_OPTIONS) {
+      const privatePropName = `_${propName}`;
+      Object.defineProperty(publicOptions, propName, {
+        get: () => {
+          if (!(propName in DEFAULT_OPTIONS)) {
+            throw new Error(`No option with key "${propName}"`);
+          }
+          return this._options[privatePropName];
+        },
+        set: (value: any) => {
+          if (!(propName in DEFAULT_OPTIONS)) {
+            throw new Error('No option with key "' + propName + '"');
+          }
+          // Throw an error if any constructor only option is modified
+          // from terminal.options
           if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
             throw new Error(`Option "${propName}" can only be set in the constructor`);
           }
@@ -112,6 +142,7 @@ export class OptionsService implements IOptionsService {
         }
       });
     }
+    return publicOptions;
   }
 
   public setOption(key: string, value: any): void {
@@ -138,7 +169,7 @@ export class OptionsService implements IOptionsService {
         break;
       case 'cursorWidth':
         value = Math.floor(value);
-      // Fall through for bounds check
+        // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {

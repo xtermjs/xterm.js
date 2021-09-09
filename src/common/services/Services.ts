@@ -181,6 +181,7 @@ export interface IOptionsService {
   serviceBrand: undefined;
 
   readonly options: ITerminalOptions;
+  readonly publicOptions: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;
 
