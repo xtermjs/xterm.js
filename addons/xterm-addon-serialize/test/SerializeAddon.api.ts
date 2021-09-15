@@ -146,7 +146,7 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfScrollback});`), lines.slice(halfScrollback, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: ${halfScrollback} });`), lines.slice(halfScrollback, rows).join('\r\n'));
   });
 
   it('serialize 0 rows of scrollback', async function(): Promise<any> {
@@ -154,7 +154,7 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), lines.slice(rows - 10, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
   });
 
   it('serialize all rows of content with color16', async function(): Promise<any> {

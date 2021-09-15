@@ -433,26 +433,37 @@ export class SerializeAddon implements ITerminalAddon {
     return content;
   }
 
-  public serialize(scrollback?: number): string {
+  public serialize(options?: ISerializeOptions): string {
     // TODO: Add combinedData support
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
     // Normal buffer
-    let content = this._serializeBuffer(this._terminal, this._terminal.buffer.normal, scrollback);
+    let content = this._serializeBuffer(this._terminal, this._terminal.buffer.normal, options?.scrollback);
 
     // Alternate buffer
-    if (this._terminal.buffer.active.type === 'alternate') {
-      const alternativeScreenContent = this._serializeBuffer(this._terminal, this._terminal.buffer.alternate, undefined);
-      content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
+    if (!options?.excludeAltBuffer) {
+      if (this._terminal.buffer.active.type === 'alternate') {
+        const alternativeScreenContent = this._serializeBuffer(this._terminal, this._terminal.buffer.alternate, undefined);
+        content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
+      }
     }
 
     // Modes
-    content += this._serializeModes(this._terminal);
+    if (!options?.excludeModes) {
+      content += this._serializeModes(this._terminal);
+    }
 
     return content;
   }
 
   public dispose(): void { }
+}
+
+
+interface ISerializeOptions {
+  scrollback?: number;
+  excludeModes?: boolean;
+  excludeAltBuffer?: boolean;
 }
