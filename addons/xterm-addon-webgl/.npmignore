@@ -1,7 +1,14 @@
-**/*.api.js
-**/*.api.ts
-tsconfig.json
-.yarnrc
-webpack.config.js
-out-test/
-test/
+# Blacklist - exclude everything except npm defaults such as LICENSE, etc
+*
+!*/
+
+# Whitelist - lib/
+!lib/**/*.d.ts
+
+!lib/**/*.js
+!lib/**/*.js.map
+
+!lib/**/*.css
+
+# Whitelist - typings/
+!typings/*.d.ts

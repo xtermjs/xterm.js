@@ -2,10 +2,6 @@
 *
 !*/
 
-# Whitelist - entries to be included must be negated with "!"
-!*.js
-!*.json
-
 # Whitelist - css/
 !css/**/*.css
 
@@ -23,34 +19,9 @@
 
 !lib/**/*.css
 
-# Whitelist - src/
-!src/**/*.ts
-!src/**/*.d.ts
-
-!src/**/*.js
-!src/**/*.js.map
-
-!src/**/*.css
-
 # Whitelist - typings/
 !typings/*.d.ts
 
 # Blacklist - (normal behavior) these will override any whitelist
-*.d.ts.map
-*.test.ts
-*.test.d.ts
-*.test.js
-*.test.js.map
-lib/test/
-webpack.config.js
-
-docs/
-/.idea/
-.vscode/
-bin/
-build/
-fixtures/
-demo/
-.devcontainer/
-out/
-addons/
+headless/
+typings/xterm-headless.d.ts

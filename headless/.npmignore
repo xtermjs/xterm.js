@@ -1,6 +1,14 @@
-# Include
-!typings/*.d.ts
-!lib-headless/
+# Blacklist - exclude everything except npm defaults such as LICENSE, etc
+*
+!*/
 
-# Exclude
-test/
+# Whitelist - lib-headless/
+!lib-headless/**/*.d.ts
+
+!lib-headless/**/*.js
+!lib-headless/**/*.js.map
+
+!lib-headless/**/*.css
+
+# Whitelist - typings/
+!typings/*.d.ts
