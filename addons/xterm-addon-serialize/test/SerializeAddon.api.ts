@@ -157,6 +157,18 @@ describe('SerializeAddon', () => {
     assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
   });
 
+  it('serialize exclude modes', async () => {
+    await writeSync(page, 'before\\x1b[?1hafter');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'beforeafter\x1b[?1h');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeModes: true });`), 'beforeafter');
+  });
+
+  it('serialize exclude alt buffer', async () => {
+    await writeSync(page, 'normal\\x1b[?1049h\\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'normal\x1b[?1049h\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeAltBuffer: true });`), 'normal');
+  });
+
   it('serialize all rows of content with color16', async function(): Promise<any> {
     const cols = 10;
     const color16 = [
