@@ -146,7 +146,7 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfScrollback});`), lines.slice(halfScrollback, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: ${halfScrollback} });`), lines.slice(halfScrollback, rows).join('\r\n'));
   });
 
   it('serialize 0 rows of scrollback', async function(): Promise<any> {
@@ -154,7 +154,19 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), lines.slice(rows - 10, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
+  });
+
+  it('serialize exclude modes', async () => {
+    await writeSync(page, 'before\\x1b[?1hafter');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'beforeafter\x1b[?1h');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeModes: true });`), 'beforeafter');
+  });
+
+  it('serialize exclude alt buffer', async () => {
+    await writeSync(page, 'normal\\x1b[?1049h\\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'normal\x1b[?1049h\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeAltBuffer: true });`), 'normal');
   });
 
   it('serialize all rows of content with color16', async function(): Promise<any> {
