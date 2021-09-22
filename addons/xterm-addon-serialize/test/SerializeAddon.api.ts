@@ -184,11 +184,13 @@ describe('SerializeAddon', () => {
       sgr(UNDERLINED) + line,
       sgr(BLINK) + line,
       sgr(INVISIBLE) + line,
+      sgr(STRIKETHROUGH) + line,
       sgr(NO_INVERSE) + line,
       sgr(NO_BOLD) + line,
       sgr(NO_UNDERLINED) + line,
       sgr(NO_BLINK) + line,
-      sgr(NO_INVISIBLE) + line
+      sgr(NO_INVISIBLE) + line,
+      sgr(NO_STRIKETHROUGH) + line
     ];
     const rows = lines.length;
     await writeSync(page, lines.join('\\r\\n'));
@@ -579,20 +581,20 @@ const BG_RGB_GREEN = '48;2;0;255;0';
 const BG_RGB_YELLOW = '48;2;255;255;0';
 const BG_RESET = '49';
 
-const INVERSE = '7';
 const BOLD = '1';
+const DIM = '2';
+const ITALIC = '3';
 const UNDERLINED = '4';
 const BLINK = '5';
+const INVERSE = '7';
 const INVISIBLE = '8';
+const STRIKETHROUGH = '9';
 
-const NO_INVERSE = '27';
 const NO_BOLD = '22';
+const NO_DIM = '22';
+const NO_ITALIC = '23';
 const NO_UNDERLINED = '24';
 const NO_BLINK = '25';
+const NO_INVERSE = '27';
 const NO_INVISIBLE = '28';
-
-const ITALIC = '3';
-const DIM = '2';
-
-const NO_ITALIC = '23';
-const NO_DIM = '22';
+const NO_STRIKETHROUGH = '29';
