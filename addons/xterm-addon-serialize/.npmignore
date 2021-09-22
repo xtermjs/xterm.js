@@ -10,5 +10,14 @@
 
 !lib/**/*.css
 
+# Whitelist - src/
+!src/**/*.ts
+!src/**/*.d.ts
+
+!src/**/*.js
+!src/**/*.js.map
+
+!src/**/*.css
+
 # Whitelist - typings/
 !typings/*.d.ts
