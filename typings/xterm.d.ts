@@ -1057,6 +1057,14 @@ declare module 'xterm' {
     refresh(start: number, end: number): void;
 
     /**
+     * Clears the texture atlas of the canvas renderer if it's active. Doing this will force a
+     * redraw of all glyphs which can workaround issues causing the texture to become corrupt, for
+     * example Chromium/Nvidia has an issue where the texture gets messed up when resuming the OS
+     * from sleep.
+     */
+    clearTextureAtlas(): void;
+
+    /**
      * Perform a full reset (RIS, aka '\x1bc').
      */
     reset(): void;

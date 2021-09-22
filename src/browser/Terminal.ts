@@ -1290,6 +1290,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.viewport?.syncScrollArea();
   }
 
+  public clearTextureAtlas(): void {
+    this._renderService?.clearTextureAtlas();
+  }
+
   private _reportWindowsOptions(type: WindowsOptionsReportType): void {
     if (!this._renderService) {
       return;
