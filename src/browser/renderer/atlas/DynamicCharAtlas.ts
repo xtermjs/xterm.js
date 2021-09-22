@@ -119,6 +119,16 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     this._drawToCacheCount = 0;
   }
 
+  public clear(): void {
+    if (this._cacheMap.size > 0) {
+      const capacity = this._width * this._height;
+      this._cacheMap = new LRUMap(capacity);
+      this._cacheMap.prealloc(capacity);
+    }
+    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._tmpCtx.clearRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
+  }
+
   public draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
