@@ -21,6 +21,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,
+  customGlyphs: true,
   bellSound:  DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
@@ -50,7 +51,7 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   windowOptions: {},
   windowsMode: false,
   wordSeparator: ' ()[]{}\',"`',
-
+  altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false
@@ -147,6 +148,11 @@ export class OptionsService implements IOptionsService {
       case 'scrollSensitivity':
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
+        }
+      case 'rows':
+      case 'cols':
+        if (!value && value !== 0) {
+          throw new Error(`${key} must be numeric, value: ${value}`);
         }
         break;
     }

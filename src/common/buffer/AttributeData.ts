@@ -33,13 +33,14 @@ export class AttributeData implements IAttributeData {
   public extended = new ExtendedAttrs();
 
   // flags
-  public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
-  public isBold(): number      { return this.fg & FgFlags.BOLD; }
-  public isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
-  public isBlink(): number     { return this.fg & FgFlags.BLINK; }
-  public isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
-  public isItalic(): number    { return this.bg & BgFlags.ITALIC; }
-  public isDim(): number       { return this.bg & BgFlags.DIM; }
+  public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
+  public isBold(): number          { return this.fg & FgFlags.BOLD; }
+  public isUnderline(): number     { return this.fg & FgFlags.UNDERLINE; }
+  public isBlink(): number         { return this.fg & FgFlags.BLINK; }
+  public isInvisible(): number     { return this.fg & FgFlags.INVISIBLE; }
+  public isItalic(): number        { return this.bg & BgFlags.ITALIC; }
+  public isDim(): number           { return this.bg & BgFlags.DIM; }
+  public isStrikethrough(): number { return this.fg & FgFlags.STRIKETHROUGH; }
 
   // color modes
   public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }

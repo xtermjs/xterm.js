@@ -356,7 +356,7 @@ export function evaluateKeyboardEvent(
           const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
           result.key = C0.ESC + String.fromCharCode(keyCode);
         }
-      } else if (isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
+      } else if (isMac && !ev.altKey && !ev.ctrlKey && !ev.shiftKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
         }

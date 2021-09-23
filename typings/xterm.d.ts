@@ -45,6 +45,12 @@ declare module 'xterm' {
     allowTransparency?: boolean;
 
     /**
+     * If enabled, alt + click will move the prompt cursor to position
+     * underneath the mouse. The default is true.
+     */
+    altClickMovesCursor?: boolean;
+
+    /**
      * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
      */
     bellSound?: string;
@@ -83,6 +89,14 @@ declare module 'xterm' {
      * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
      */
     cursorWidth?: number;
+
+    /**
+     * Whether to draw custom glyphs for block element and box drawing characters instead of using
+     * the font. This should typically result in better rendering with continuous lines, even when
+     * line height and letter spacing is used. Note that this doesn't work with the DOM renderer
+     * which renders all characters using the font. The default is true.
+     */
+    customGlyphs?: boolean;
 
     /**
      * Whether input should be disabled.
@@ -617,6 +631,11 @@ declare module 'xterm' {
     readonly unicode: IUnicodeHandling;
 
     /**
+     * Gets the terminal modes as set by SM/DECSET.
+     */
+    readonly modes: IModes;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -627,6 +646,12 @@ declare module 'xterm' {
      * @param options An object containing a set of options.
      */
     constructor(options?: ITerminalOptions);
+
+    /**
+     * Adds an event listener for when the bell is triggered.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onBell: IEvent<void>;
 
     /**
      * Adds an event listener for when a binary event fires. This is used to
@@ -669,19 +694,6 @@ declare module 'xterm' {
     onLineFeed: IEvent<void>;
 
     /**
-     * Adds an event listener for when a scroll occurs. The event value is the
-     * new position of the viewport.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onScroll: IEvent<number>;
-
-    /**
-     * Adds an event listener for when a selection change occurs.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onSelectionChange: IEvent<void>;
-
-    /**
      * Adds an event listener for when rows are rendered. The event value
      * contains the start row and end rows of the rendered area (ranges from `0`
      * to `Terminal.rows - 1`).
@@ -695,6 +707,19 @@ declare module 'xterm' {
      * @returns an `IDisposable` to stop listening.
      */
     onResize: IEvent<{ cols: number, rows: number }>;
+
+    /**
+     * Adds an event listener for when a scroll occurs. The event value is the
+     * new position of the viewport.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onScroll: IEvent<number>;
+
+    /**
+     * Adds an event listener for when a selection change occurs.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onSelectionChange: IEvent<void>;
 
     /**
      * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
@@ -1030,6 +1055,14 @@ declare module 'xterm' {
      * @param end The row to end at (between start and this.rows - 1).
      */
     refresh(start: number, end: number): void;
+
+    /**
+     * Clears the texture atlas of the canvas renderer if it's active. Doing this will force a
+     * redraw of all glyphs which can workaround issues causing the texture to become corrupt, for
+     * example Chromium/Nvidia has an issue where the texture gets messed up when resuming the OS
+     * from sleep.
+     */
+    clearTextureAtlas(): void;
 
     /**
      * Perform a full reset (RIS, aka '\x1bc').
@@ -1419,18 +1452,20 @@ declare module 'xterm' {
 
     /** Whether the cell has the bold attribute (CSI 1 m). */
     isBold(): number;
-    /** Whether the cell has the inverse attribute (CSI 3 m). */
+    /** Whether the cell has the italic attribute (CSI 3 m). */
     isItalic(): number;
-    /** Whether the cell has the inverse attribute (CSI 2 m). */
+    /** Whether the cell has the dim attribute (CSI 2 m). */
     isDim(): number;
     /** Whether the cell has the underline attribute (CSI 4 m). */
     isUnderline(): number;
-    /** Whether the cell has the inverse attribute (CSI 5 m). */
+    /** Whether the cell has the blink attribute (CSI 5 m). */
     isBlink(): number;
     /** Whether the cell has the inverse attribute (CSI 7 m). */
     isInverse(): number;
-    /** Whether the cell has the inverse attribute (CSI 8 m). */
+    /** Whether the cell has the invisible attribute (CSI 8 m). */
     isInvisible(): number;
+    /** Whether the cell has the strikethrough attribute (CSI 9 m). */
+    isStrikethrough(): number;
 
     /** Whether the cell is using the RGB foreground color mode. */
     isFgRGB(): boolean;
@@ -1495,6 +1530,23 @@ declare module 'xterm' {
 
   /**
    * Allows hooking into the parser for custom handling of escape sequences.
+   *
+   * Note on sync vs. async handlers:
+   * xterm.js implements all parser actions with synchronous handlers.
+   * In general custom handlers should also operate in sync mode wherever
+   * possible to keep the parser fast.
+   * Still the exposed interfaces allow to register async handlers by returning
+   * a `Promise<boolean>`. Here the parser will pause input processing until
+   * the promise got resolved or rejected (in-band blocking). This "full stop"
+   * on the input chain allows to implement backpressure from a certain async
+   * action while the terminal state will not progress any further from input.
+   * It does not mean that the terminal state will not change at all in between,
+   * as user actions like resize or reset are still processed immediately.
+   * It is an error to assume a stable terminal state while giving back control
+   * in between, e.g. by multiple chained `then` calls.
+   * Downside of an async handler is a rather bad throughput performance,
+   * thus use async handlers only as a last resort or for actions that have
+   * to rely on async interfaces itself.
    */
   export interface IParser {
     /**
@@ -1504,12 +1556,11 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence. The callback is
      * called with the numerical params. If the sequence has subparams the
      * array will contain subarrays with their numercial values.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addCsiHandler or setCsiHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1523,12 +1574,11 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits DCS payload to 10 MB
      * which should give enough room for most use cases.
      * The function gets the payload and numerical parameters as arguments.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addDcsHandler or setDcsHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1536,12 +1586,11 @@ declare module 'xterm' {
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
      * @param callback The function to handle the sequence.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addEscHandler or setEscHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1554,12 +1603,11 @@ declare module 'xterm' {
      * big payloads. Currently xterm.js limits OSC payload to 10 MB
      * which should give enough room for most use cases.
      * The callback is called with OSC data string.
-     * Return true if the sequence was handled; false if we should try
-     * a previous handler (set by addOscHandler or setOscHandler).
-     * The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should try
+     * a previous handler. The most recently added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
 
   /**
@@ -1596,5 +1644,52 @@ declare module 'xterm' {
      * Getter/setter for active Unicode version.
      */
     activeVersion: string;
+  }
+
+  /**
+   * Terminal modes as set by SM/DECSET.
+   */
+  export interface IModes {
+    /**
+     * Application Cursor Keys (DECCKM): `CSI ? 1 h`
+     */
+    readonly applicationCursorKeysMode: boolean;
+    /**
+     * Application Keypad Mode (DECNKM): `CSI ? 6 6 h`
+     */
+    readonly applicationKeypadMode: boolean;
+    /**
+     * Bracketed Paste Mode: `CSI ? 2 0 0 4 h`
+     */
+    readonly bracketedPasteMode: boolean;
+    /**
+     * Insert Mode (IRM): `CSI 4 h`
+     */
+    readonly insertMode: boolean;
+    /**
+     * Mouse Tracking, this can be one of the following:
+     * - none: This is the default value and can be reset with DECRST
+     * - x10: Send Mouse X & Y on button press `CSI ? 9 h`
+     * - vt200: Send Mouse X & Y on button press and release `CSI ? 1 0 0 0 h`
+     * - drag: Use Cell Motion Mouse Tracking `CSI ? 1 0 0 2 h`
+     * - any: Use All Motion Mouse Tracking `CSI ? 1 0 0 3 h`
+     */
+    readonly mouseTrackingMode: 'none' | 'x10' | 'vt200' | 'drag' | 'any';
+    /**
+     * Origin Mode (DECOM): `CSI ? 6 h`
+     */
+    readonly originMode: boolean;
+    /**
+     * Reverse-wraparound Mode: `CSI ? 4 5 h`
+     */
+    readonly reverseWraparoundMode: boolean;
+    /**
+     * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
+     */
+    readonly sendFocusMode: boolean;
+    /**
+     * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
+     */
+    readonly wraparoundMode: boolean
   }
 }

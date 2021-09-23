@@ -15,7 +15,6 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
-  buffers: IBufferSet;
   viewport: IViewport | undefined;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
@@ -47,15 +46,16 @@ export interface IPublicTerminal extends IDisposable {
   onRender: IEvent<{ start: number, end: number }>;
   onResize: IEvent<{ cols: number, rows: number }>;
   onTitleChange: IEvent<string>;
+  onBell: IEvent<void>;
   blur(): void;
   focus(): void;
   resize(columns: number, rows: number): void;
   open(parent: HTMLElement): void;
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable;
-  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable;
-  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable;
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -79,6 +79,7 @@ export interface IPublicTerminal extends IDisposable {
   write(data: string | Uint8Array, callback?: () => void): void;
   paste(data: string): void;
   refresh(start: number, end: number): void;
+  clearTextureAtlas(): void;
   reset(): void;
 }
 
@@ -205,9 +206,19 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
+interface ILinkState {
+  decorations: ILinkDecorations;
+  isHovered: boolean;
+}
+export interface ILinkWithState {
+  link: ILink;
+  state?: ILinkState;
+}
+
 export interface ILinkifier2 {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
+  readonly currentLink: ILinkWithState | undefined;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -291,4 +302,15 @@ interface IBufferRange {
 interface IBufferCellPosition {
   x: number;
   y: number;
+}
+
+export type CharacterJoinerHandler = (text: string) => [number, number][];
+
+export interface ICharacterJoiner {
+  id: number;
+  handler: CharacterJoinerHandler;
+}
+
+export interface IRenderDebouncer extends IDisposable {
+  refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
 }

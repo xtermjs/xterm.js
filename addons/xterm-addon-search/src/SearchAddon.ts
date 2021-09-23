@@ -23,7 +23,7 @@ export interface ISearchResult {
   row: number;
 }
 
-const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
+const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
@@ -158,8 +158,15 @@ export class SearchAddon implements ITerminalAddon {
     };
 
     if (incremental) {
+      // Try to expand selection to right first.
       result = this._findInLine(term, searchPosition, searchOptions, false);
-      if (!(result && result.row === startRow && result.col === startCol)) {
+      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
+      if (!isOldResultHighlighted) {
+        // If selection was not able to be expanded to the right, then try reverse search
+        if (currentSelection) {
+          searchPosition.startRow = currentSelection.endRow;
+          searchPosition.startCol = currentSelection.endColumn;
+        }
         result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
@@ -233,8 +240,8 @@ export class SearchAddon implements ITerminalAddon {
    * @param term the substring that starts at searchIndex
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
-    return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
-      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
+    return ((searchIndex === 0) || (NON_WORD_CHARACTERS.includes(line[searchIndex - 1]))) &&
+      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.includes(line[searchIndex + term.length])));
   }
 
   /**
@@ -245,6 +252,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param term The search term.
    * @param position The position to start the search.
    * @param searchOptions Search options.
+   * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
@@ -254,7 +262,7 @@ export class SearchAddon implements ITerminalAddon {
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     const firstLine = terminal.buffer.active.getLine(row);
-    if (firstLine && firstLine.isWrapped) {
+    if (firstLine?.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += terminal.cols;
         return;
@@ -386,7 +394,7 @@ export class SearchAddon implements ITerminalAddon {
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
       let scroll = result.row - terminal.buffer.active.viewportY;
-      scroll = scroll - Math.floor(terminal.rows / 2);
+      scroll -= Math.floor(terminal.rows / 2);
       terminal.scrollLines(scroll);
     }
     return true;

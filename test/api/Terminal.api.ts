@@ -4,10 +4,10 @@
  */
 
 import { assert } from 'chai';
-import { pollFor, timeout, writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
-const APP = 'http://127.0.0.1:3000/test';
+const APP = 'http://127.0.0.1:3001/test';
 
 let browser: Browser;
 let page: Page;
@@ -16,10 +16,7 @@ const height = 600;
 
 describe('API Integration Tests', function(): void {
   before(async () => {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
   });
@@ -69,12 +66,9 @@ describe('API Integration Tests', function(): void {
   it('write - bytes (UTF8)', async () => {
     await openTerminal(page);
     await page.evaluate(`
-      // foo
-      window.term.write(new Uint8Array([102, 111, 111]));
-      // bar
-      window.term.write(new Uint8Array([98, 97, 114]));
-      // 文
-      window.term.write(new Uint8Array([230, 150, 135]));
+      window.term.write(new Uint8Array([102, 111, 111])); // foo
+      window.term.write(new Uint8Array([98, 97, 114])); // bar
+      window.term.write(new Uint8Array([230, 150, 135])); // 文
     `);
     await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
   });
@@ -82,12 +76,9 @@ describe('API Integration Tests', function(): void {
   it('write - bytes (UTF8) with callback', async () => {
     await openTerminal(page);
     await page.evaluate(`
-      // foo
-      window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; });
-      // bar
-      window.term.write(new Uint8Array([98, 97, 114]), () => { window.__x += 'B'; });
-      // 文
-      window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; });
+      window.term.write(new Uint8Array([102, 111, 111]), () => { window.__x = 'A'; }); // foo
+      window.term.write(new Uint8Array([98, 97, 114]), () => { window.__x += 'B'; }); // bar
+      window.term.write(new Uint8Array([230, 150, 135]), () => { window.__x += 'C'; }); // 文
     `);
     await pollFor(page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
     await pollFor(page, `window.__x`, 'ABC');
@@ -410,6 +401,16 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
       await pollFor(page, `window.calls`, ['foo']);
     });
+    it('onBell', async () => {
+      await openTerminal(page);
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onBell(() => window.calls.push(true));
+      `);
+      await pollFor(page, `window.calls`, []);
+      await page.evaluate(`window.term.write('\\x07')`);
+      await pollFor(page, `window.calls`, [true]);
+    });
   });
 
   describe('buffer', () => {
@@ -558,6 +559,98 @@ describe('API Integration Tests', function(): void {
     });
   });
 
+  describe('modes', () => {
+    it('defaults', async () => {
+      await openTerminal(page);
+      assert.deepStrictEqual(await page.evaluate(`window.term.modes`), {
+        applicationCursorKeysMode: false,
+        applicationKeypadMode: false,
+        bracketedPasteMode: false,
+        insertMode: false,
+        mouseTrackingMode: 'none',
+        originMode: false,
+        reverseWraparoundMode: false,
+        sendFocusMode: false,
+        wraparoundMode: true
+      });
+    });
+    it('applicationCursorKeysMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?1h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), true);
+      await writeSync(page, '\\x1b[?1l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationCursorKeysMode`), false);
+    });
+    it('applicationKeypadMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?66h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), true);
+      await writeSync(page, '\\x1b[?66l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.applicationKeypadMode`), false);
+    });
+    it('bracketedPasteMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?2004h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), true);
+      await writeSync(page, '\\x1b[?2004l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.bracketedPasteMode`), false);
+    });
+    it('insertMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[4h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), true);
+      await writeSync(page, '\\x1b[4l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.insertMode`), false);
+    });
+    it('mouseTrackingMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?9h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'x10');
+      await writeSync(page, '\\x1b[?9l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1000h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'vt200');
+      await writeSync(page, '\\x1b[?1000l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1002h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'drag');
+      await writeSync(page, '\\x1b[?1002l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      await writeSync(page, '\\x1b[?1003h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'any');
+      await writeSync(page, '\\x1b[?1003l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+    });
+    it('originMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?6h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), true);
+      await writeSync(page, '\\x1b[?6l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.originMode`), false);
+    });
+    it('reverseWraparoundMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?45h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), true);
+      await writeSync(page, '\\x1b[?45l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.reverseWraparoundMode`), false);
+    });
+    it('sendFocusMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?1004h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), true);
+      await writeSync(page, '\\x1b[?1004l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.sendFocusMode`), false);
+    });
+    it('wraparoundMode', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\x1b[?7h');
+      assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), true);
+      await writeSync(page, '\\x1b[?7l');
+      assert.strictEqual(await page.evaluate(`window.term.modes.wraparoundMode`), false);
+    });
+  });
+
   it('dispose', async () => {
     await page.evaluate(`
       window.term = new Terminal();
@@ -625,11 +718,11 @@ describe('API Integration Tests', function(): void {
       `);
       const dims = await getDimensions();
       await moveMouseCell(page, dims, 5, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 4, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave' ]);
       await moveMouseCell(page, dims, 7, 1);
-      await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover']);
+      await timeout(100);
       await moveMouseCell(page, dims, 8, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'match', 'hover', 'leave', 'hover', 'leave']);
       await page.evaluate(`window.disposable.dispose()`);

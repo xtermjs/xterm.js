@@ -46,7 +46,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = throwIfFalsy(this._canvas.getContext('2d', {alpha: this._alpha}));
+    this._ctx = throwIfFalsy(this._canvas.getContext('2d', { alpha: this._alpha }));
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this._clearAll();
@@ -92,7 +92,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight);
     this._charAtlas.warmUp();
   }
 
@@ -224,12 +224,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(terminal: Terminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
-    this._ctx.textBaseline = 'middle';
+    this._ctx.textBaseline = 'ideographic';
     this._clipRow(terminal, y);
     this._ctx.fillText(
       cell.getChars(),
       x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
   }
 
   /**

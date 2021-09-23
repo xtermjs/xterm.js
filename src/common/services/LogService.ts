@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILogService, IOptionsService } from 'common/services/Services';
+import { ILogService, IOptionsService, LogLevelEnum } from 'common/services/Services';
 
 type LogType = (message?: any, ...optionalParams: any[]) => void;
 
@@ -19,21 +19,12 @@ interface IConsole {
 // module doesn't depend on them so we need to explicitly declare it.
 declare const console: IConsole;
 
-
-export enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  OFF = 4
-}
-
-const optionsKeyToLogLevel: { [key: string]: LogLevel } = {
-  debug: LogLevel.DEBUG,
-  info: LogLevel.INFO,
-  warn: LogLevel.WARN,
-  error: LogLevel.ERROR,
-  off: LogLevel.OFF
+const optionsKeyToLogLevel: { [key: string]: LogLevelEnum } = {
+  debug: LogLevelEnum.DEBUG,
+  info: LogLevelEnum.INFO,
+  warn: LogLevelEnum.WARN,
+  error: LogLevelEnum.ERROR,
+  off: LogLevelEnum.OFF
 };
 
 const LOG_PREFIX = 'xterm.js: ';
@@ -41,7 +32,7 @@ const LOG_PREFIX = 'xterm.js: ';
 export class LogService implements ILogService {
   public serviceBrand: any;
 
-  private _logLevel!: LogLevel;
+  public logLevel: LogLevelEnum = LogLevelEnum.OFF;
 
   constructor(
     @IOptionsService private readonly _optionsService: IOptionsService
@@ -55,7 +46,7 @@ export class LogService implements ILogService {
   }
 
   private _updateLogLevel(): void {
-    this._logLevel = optionsKeyToLogLevel[this._optionsService.options.logLevel];
+    this.logLevel = optionsKeyToLogLevel[this._optionsService.options.logLevel];
   }
 
   private _evalLazyOptionalParams(optionalParams: any[]): void {
@@ -72,25 +63,25 @@ export class LogService implements ILogService {
   }
 
   public debug(message: string, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.DEBUG) {
+    if (this.logLevel <= LogLevelEnum.DEBUG) {
       this._log(console.log, message, optionalParams);
     }
   }
 
   public info(message: string, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.INFO) {
+    if (this.logLevel <= LogLevelEnum.INFO) {
       this._log(console.info, message, optionalParams);
     }
   }
 
   public warn(message: string, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.WARN) {
+    if (this.logLevel <= LogLevelEnum.WARN) {
       this._log(console.warn, message, optionalParams);
     }
   }
 
   public error(message: string, ...optionalParams: any[]): void {
-    if (this._logLevel <= LogLevel.ERROR) {
+    if (this.logLevel <= LogLevelEnum.ERROR) {
       this._log(console.error, message, optionalParams);
     }
   }

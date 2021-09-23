@@ -7,8 +7,6 @@ import { IDisposable } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 
-export type CharacterJoinerHandler = (text: string) => [number, number][];
-
 export interface IRenderDimensions {
   scaledCharWidth: number;
   scaledCharHeight: number;
@@ -54,19 +52,7 @@ export interface IRenderer extends IDisposable {
   onOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
-  registerCharacterJoiner(handler: CharacterJoinerHandler): number;
-  deregisterCharacterJoiner(joinerId: number): boolean;
-}
-
-export interface ICharacterJoiner {
-  id: number;
-  handler: CharacterJoinerHandler;
-}
-
-export interface ICharacterJoinerRegistry {
-  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
-  deregisterCharacterJoiner(joinerId: number): boolean;
-  getJoinedCharacters(row: number): [number, number][];
+  clearTextureAtlas?(): void;
 }
 
 export interface IRenderLayer extends IDisposable {
@@ -107,16 +93,6 @@ export interface IRenderLayer extends IDisposable {
   onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
 
   /**
-   * Registers a handler to join characters to render as a group
-   */
-  registerCharacterJoiner?(joiner: ICharacterJoiner): void;
-
-  /**
-   * Deregisters the specified character joiner handler
-   */
-  deregisterCharacterJoiner?(joinerId: number): void;
-
-  /**
    * Resize the render layer.
    */
   resize(dim: IRenderDimensions): void;
@@ -125,4 +101,9 @@ export interface IRenderLayer extends IDisposable {
    * Clear the state of the render layer.
    */
   reset(): void;
+
+  /**
+   * Clears the texture atlas.
+   */
+  clearTextureAtlas(): void;
 }

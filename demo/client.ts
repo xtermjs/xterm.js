@@ -16,6 +16,7 @@ import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAdd
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
+import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -26,6 +27,7 @@ import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Add
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
+// import { LigaturesAddon } from 'xterm-addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -41,6 +43,7 @@ export interface IWindowWithTerminal extends Window {
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
   Unicode11Addon?: typeof Unicode11Addon;
+  LigaturesAddon?: typeof LigaturesAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -50,7 +53,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl';
+type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -62,8 +65,9 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'serialize' ? typeof SerializeAddon :
     T extends 'web-links' ? typeof WebLinksAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
+    T extends 'ligatures' ? typeof LigaturesAddon :
     typeof WebglAddon;
-  instance?:
+    instance?:
     T extends 'attach' ? AttachAddon :
     T extends 'fit' ? FitAddon :
     T extends 'search' ? SearchAddon :
@@ -71,6 +75,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'web-links' ? WebLinksAddon :
     T extends 'webgl' ? WebglAddon :
     T extends 'unicode11' ? typeof Unicode11Addon :
+    T extends 'ligatures' ? typeof LigaturesAddon :
     never;
 }
 
@@ -81,7 +86,8 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
-  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true }
+  unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
+  ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
 const terminalContainer = document.getElementById('terminal-container');
@@ -117,6 +123,7 @@ const disposeRecreateButtonHandler = () => {
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
+    addons.ligatures.instance = undefined;
     addons['web-links'].instance = undefined;
     addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
@@ -133,12 +140,15 @@ if (document.location.pathname === '/test') {
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
+  window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
+  document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
+  document.getElementById('load-test').addEventListener('click', loadTest);
 }
 
 function createTerminal(): void {
@@ -149,7 +159,8 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
-    windowsMode: isWindows
+    windowsMode: isWindows,
+    fontFamily: 'Fira Code, courier-new, courier, monospace'
   } as ITerminalOptions);
 
   // Load addons
@@ -339,6 +350,9 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
         term.setOption(o, parseFloat(input.value));
         updateTerminalSize();
+      } else if(o === 'scrollback') {
+        term.setOption(o, parseInt(input.value));
+        setTimeout(() => updateTerminalSize(), 5);
       } else {
         term.setOption(o, parseInt(input.value));
       }
@@ -363,6 +377,9 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
+    if(name === 'unicode11' && checkbox.checked) {
+      term.unicode.activeVersion = '11';
+    }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
@@ -371,10 +388,14 @@ function initAddons(term: TerminalType): void {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
           }, 0);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '11';
         }
       } else {
         if (name === 'webgl') {
           document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
@@ -421,4 +442,83 @@ function serializeButtonHandler(): void {
     term.reset();
     term.write(output);
   }
+}
+
+
+function writeCustomGlyphHandler() {
+  term.write('\n\r');
+  term.write('\n\r');
+  term.write('Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐\n\r');
+  term.write('┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤\n\r');
+  term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘\n\r');
+  term.write('├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐\n\r');
+  term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤\n\r');
+  term.write('└─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘\n\r');
+  term.write('\n\r');
+  term.write('Other:\n\r');
+  term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈\n\r');
+  term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉\n\r');
+  term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
+  term.write('\n\r');
+  term.write('All box drawing characters:\n\r');
+  term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
+  term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
+  term.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\n\r');
+  term.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\n\r');
+  term.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\n\r');
+  term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
+  term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
+  term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
+  term.write('Box drawing alignment tests:\x1b[31m                                          █\n\r');
+  term.write('                                                                      ▉\n\r');
+  term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
+  term.write('  ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳\n\r');
+  term.write('  ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳\n\r');
+  term.write('  ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳\n\r');
+  term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
+  term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
+  term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
+  term.write('Box drawing alignment tests:\x1b[32m                                          █\n\r');
+  term.write('                                                                      ▉\n\r');
+  term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
+  term.write('  ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳\n\r');
+  term.write('  ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳\n\r');
+  term.write('  ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳\n\r');
+  term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
+  term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
+  term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
+  window.scrollTo(0, 0);
+}
+
+function loadTest() {
+  const isWebglEnabled = !!addons.webgl.instance;
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 79);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
 }
