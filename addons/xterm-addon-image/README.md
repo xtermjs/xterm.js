@@ -21,22 +21,23 @@ npm install --save xterm-addon-image
 import { Terminal } from 'xterm';
 import { ImageAddon, IImageAddonOptions } from 'xterm-addon-image';
 
+const WORKER_PATH = '/path/to/xterm-addon-image-worker.js';
+
 // customize as needed
 const customSettings: IImageAddonOptions = {
-  workerPath: '/path/to/xterm-addon-image-worker.js',
   sixelSupport: true,
   ...
 }
 
 // initialization
 const terminal = new Terminal();
-const imageAddon = new ImageAddon(customSettings);
+const imageAddon = new ImageAddon(WORKER_PATH, customSettings);
 terminal.loadAddon(imageAddon);
 ```
 
 ### General Notes
 
-- The image decoding is done with a worker, therefore the addon will only work, if you expose the worker file as well, which is distributed under `lib/xterm-addon-image-worker.js`. To customize the worker path, set `workerPath` in the constructor options to your needs (default is `'/workers/xterm-addon-image-worker.js'`).
+- The image decoding is done with a worker, therefore the addon will only work, if you expose the worker file as well. The worker is distributed under `lib/xterm-addon-image-worker.js`. Place the exported worker path as the first argument of the addon constructor, e.g. `new ImageAddon('/your/path/to/image/worker')`. Additionally make sure, that your main integration has proper read and execution permissions on the worker file, otherwise the addon will log a worker error and disable itself on the first image decoding attempt (lazy evaluated).
 
 - By default the addon will activate these `windowOptions` reports on the terminal:
   - getWinSizePixels (CSI 14 t)

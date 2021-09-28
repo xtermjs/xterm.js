@@ -23,7 +23,6 @@ export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRende
  * Plugin ctor options.
  */
 export interface IImageAddonOptionalOptions {
-  workerPath?: string;
   enableSizeReports?: boolean;
   pixelLimit?: number;
   storageLimit?: number;

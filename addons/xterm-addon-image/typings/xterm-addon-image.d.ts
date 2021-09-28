@@ -8,13 +8,6 @@ import { Terminal, ITerminalAddon } from 'xterm';
 declare module 'xterm-addon-image' {
   export interface IImageAddonOptions {
     /**
-     * Path to the worker file.
-     * Must be the path to the worker JS file directly loadable
-     * in the integration as with `new Worker(path)`.
-     */
-    workerPath?: string;
-
-    /**
      * Enable size reports in windowOptions:
      * - getWinSizePixels (CSI 14 t)
      * - getCellSizePixels (CSI 16 t)
@@ -95,7 +88,7 @@ declare module 'xterm-addon-image' {
   }
 
   export class ImageAddon implements ITerminalAddon {
-    constructor(options?: IImageAddonOptions);
+    constructor(workerPath: string, options?: IImageAddonOptions);
     public activate(terminal: Terminal): void;
     public dispose(): void;
 

@@ -19,7 +19,9 @@ const width = 800;
 const height = 600;
 
 // eslint-disable-next-line
-declare const ImageAddon: any;
+declare const ImageAddon: {
+  new(workerPath: string, options?: IImageAddonOptionalOptions): any;
+};
 
 interface ITestData {
   width: number;
@@ -35,6 +37,8 @@ interface IDim {
   width: number;
   height: number;
 }
+
+const IMAGE_WORKER_PATH = '/workers/xterm-addon-image-worker.js';
 
 // image: 640 x 80, 512 color
 const TESTDATA: ITestData = (() => {
@@ -74,8 +78,10 @@ describe('ImageAddon', () => {
   beforeEach(async function(): Promise<any> {
     await page.goto(APP);
     await openTerminal(page);
-    await page.evaluate(`window.imageAddon = new ImageAddon({sixelPaletteLimit: 512});`);
-    await page.evaluate(`window.term.loadAddon(window.imageAddon);`);
+    await page.evaluate(opts => {
+      (window as any).imageAddon = new ImageAddon(IMAGE_WORKER_PATH, opts);
+      (window as any).term.loadAddon((window as any).imageAddon);
+    }, { sixelPaletteLimit: 512 });
   });
 
   it('test for private accessors', async () => {
@@ -139,7 +145,6 @@ describe('ImageAddon', () => {
   describe('ctor options', () => {
     it('empty settings should load defaults', async () => {
       const DEFAULT_OPTIONS: IImageAddonOptions = {
-        workerPath: '/workers/xterm-addon-image-worker.js',
         enableSizeReports: true,
         pixelLimit: 16777216,
         cursorRight: false,
@@ -157,7 +162,6 @@ describe('ImageAddon', () => {
     });
     it('custom settings should overload defaults', async () => {
       const customSettings: IImageAddonOptions = {
-        workerPath: 'xyz.js',
         enableSizeReports: false,
         pixelLimit: 5,
         cursorRight: true,
@@ -172,7 +176,7 @@ describe('ImageAddon', () => {
         showPlaceholder: false
       };
       await page.evaluate(opts => {
-        (window as any).imageAddonCustom = new ImageAddon(opts);
+        (window as any).imageAddonCustom = new ImageAddon(IMAGE_WORKER_PATH, opts);
         (window as any).term.loadAddon((window as any).imageAddonCustom);
       }, customSettings);
       assert.deepEqual(await page.evaluate(`window.imageAddonCustom._opts`), customSettings);
@@ -309,11 +313,10 @@ describe('ImageAddon', () => {
       // hard coded default
       assert.equal(await execOnManager('url'), '/workers/xterm-addon-image-worker.js');
       // custom
-      const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
       await page.evaluate(opts => {
-        (window as any).imageAddonCustom = new ImageAddon(opts);
+        (window as any).imageAddonCustom = new ImageAddon('xyz.js', opts);
         (window as any).term.loadAddon((window as any).imageAddonCustom);
-      }, customSettings);
+      }, {});
       assert.equal(await page.evaluate(`window.imageAddonCustom._workerManager.url`), 'xyz.js');
     });
     it('timed chunk pooling', async () =>{
@@ -361,11 +364,10 @@ describe('ImageAddon', () => {
     });
     describe('handle worker loading error gracefully', () => {
       beforeEach(async () => {
-        const customSettings: IImageAddonOptionalOptions = { workerPath: 'xyz.js' };
         await page.evaluate(opts => {
-          (window as any).imageAddonCustom = new ImageAddon(opts);
+          (window as any).imageAddonCustom = new ImageAddon('xyz.js', opts);
           (window as any).term.loadAddon((window as any).imageAddonCustom);
-        }, customSettings);
+        }, {});
       });
       it('failed is set upon first worker access', async () => {
         assert.equal(await page.evaluate(`window.imageAddonCustom._workerManager.failed`), false);

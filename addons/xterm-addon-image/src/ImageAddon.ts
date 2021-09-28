@@ -25,7 +25,6 @@ import { WorkerManager } from './WorkerManager';
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
-  workerPath: '/workers/xterm-addon-image-worker.js',
   enableSizeReports: true,
   pixelLimit: 16777216, // limit to 4096 * 4096 pixels
   cursorRight: false,
@@ -72,10 +71,10 @@ export class ImageAddon implements ITerminalAddon {
   private _terminal: ICoreTerminal | undefined;
   private _workerManager: WorkerManager;
 
-  constructor(opts: IImageAddonOptionalOptions) {
+  constructor(workerPath: string, opts: IImageAddonOptionalOptions) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
-    this._workerManager = new WorkerManager(this._opts.workerPath, this._opts);
+    this._workerManager = new WorkerManager(workerPath, this._opts);
     this._disposeLater(this._workerManager);
   }
 
