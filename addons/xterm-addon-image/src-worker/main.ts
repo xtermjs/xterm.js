@@ -21,7 +21,7 @@ let dec: Decoder;
 let pixelLimit = 0;
 
 // always free decoder ressources after decoding if it exceeds this limit
-const MEM_PERMA_LIMIT = 16777216; // 2048 pixels * 2048 pixels * 4 channels = 16MB
+const MEM_PERMA_LIMIT = 4194304; // 1024 pixels * 1024 pixels * 4 channels = 4MB
 
 
 function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
