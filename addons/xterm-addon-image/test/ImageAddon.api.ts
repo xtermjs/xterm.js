@@ -79,9 +79,9 @@ describe('ImageAddon', () => {
     await page.goto(APP);
     await openTerminal(page);
     await page.evaluate(opts => {
-      (window as any).imageAddon = new ImageAddon(IMAGE_WORKER_PATH, opts);
+      (window as any).imageAddon = new ImageAddon(opts.workerPath, opts.opts);
       (window as any).term.loadAddon((window as any).imageAddon);
-    }, { sixelPaletteLimit: 512 });
+    }, { workerPath: IMAGE_WORKER_PATH, opts: { sixelPaletteLimit: 512 } });
   });
 
   it('test for private accessors', async () => {
@@ -176,9 +176,9 @@ describe('ImageAddon', () => {
         showPlaceholder: false
       };
       await page.evaluate(opts => {
-        (window as any).imageAddonCustom = new ImageAddon(IMAGE_WORKER_PATH, opts);
+        (window as any).imageAddonCustom = new ImageAddon(opts.workerPath, opts.opts);
         (window as any).term.loadAddon((window as any).imageAddonCustom);
-      }, customSettings);
+      }, { workerPath: IMAGE_WORKER_PATH, opts: customSettings });
       assert.deepEqual(await page.evaluate(`window.imageAddonCustom._opts`), customSettings);
     });
   });
