@@ -40,6 +40,9 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   showPlaceholder: true
 };
 
+// max palette size supported by the sixel lib (compile time setting)
+const MAX_SIXEL_PALETTE_SIZE = 4096;
+
 // definitions for _xtermGraphicsAttributes sequence
 const enum GaItem {
   COLORS = 1,
@@ -198,7 +201,7 @@ export class ImageAddon implements ITerminalAddon {
     for (let i = 0; i < params.length; ++i) {
       switch (params[i]) {
         case 80:
-          this._opts.sixelScrolling = true;
+          this._opts.sixelScrolling = false;
           break;
         case 1070:
           this._opts.sixelPrivatePalette = true;
@@ -207,7 +210,7 @@ export class ImageAddon implements ITerminalAddon {
           this._opts.cursorRight = true;
           break;
         case 7730:
-          this._opts.cursorBelow = true;
+          this._opts.cursorBelow = false;
           break;
       }
     }
@@ -218,7 +221,7 @@ export class ImageAddon implements ITerminalAddon {
     for (let i = 0; i < params.length; ++i) {
       switch (params[i]) {
         case 80:
-          this._opts.sixelScrolling = false;
+          this._opts.sixelScrolling = true;
           break;
         case 1070:
           this._opts.sixelPrivatePalette = false;
@@ -227,7 +230,7 @@ export class ImageAddon implements ITerminalAddon {
           this._opts.cursorRight = false;
           break;
         case 7730:
-          this._opts.cursorBelow = false;
+          this._opts.cursorBelow = true;
           break;
       }
     }
@@ -279,7 +282,7 @@ export class ImageAddon implements ITerminalAddon {
           this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
           return true;
         case GaAction.SET:
-          if (params.length > 2 && !(params[2] instanceof Array) && params[2] <= 65536) {
+          if (params.length > 2 && !(params[2] instanceof Array) && params[2] <= MAX_SIXEL_PALETTE_SIZE) {
             this._opts.sixelPaletteLimit = params[2];
             this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${this._opts.sixelPaletteLimit}S`);
           } else {
@@ -287,7 +290,7 @@ export class ImageAddon implements ITerminalAddon {
           }
           return true;
         case GaAction.READ_MAX:
-          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};65536S`);
+          this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${MAX_SIXEL_PALETTE_SIZE}S`);
           return true;
         default:
           this._report(`\x1b[?${params[0]};${GaStatus.ACTION_ERROR}S`);

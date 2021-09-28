@@ -86,7 +86,6 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
     case 'ACK':
       pixelLimit = data.options?.pixelLimit || 0;
       dec = new Decoder({ memoryLimit: pixelLimit * 4 });
-      console.log((dec as any)._opts);
       postMessage({ type: 'ACK', payload: 'alive', options: null });
       break;
   }
