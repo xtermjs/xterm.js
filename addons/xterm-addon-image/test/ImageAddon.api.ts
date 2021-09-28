@@ -190,7 +190,7 @@ describe('ImageAddon', () => {
       // await new Promise(res => setTimeout(res, 1000));
     });
     it('write testdata noScrolling', async () => {
-      await writeToTerminal('\x1b[?80l' + SIXEL_SEQ_0);
+      await writeToTerminal('\x1b[?80h' + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, 0]);
       // second draw does not change anything
       await writeToTerminal(SIXEL_SEQ_0);
@@ -215,7 +215,7 @@ describe('ImageAddon', () => {
     it('testdata cursor always below', async () => {
       const dim = await getDim();
       // offset 0
-      await writeToTerminal('\x1b[?7730h' + SIXEL_SEQ_0);
+      await writeToTerminal('\x1b[?7730l' + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
       await writeToTerminal('#'.repeat(10) + SIXEL_SEQ_0);
