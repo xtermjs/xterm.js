@@ -7,7 +7,7 @@ import { ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
-import { ICoreTerminal, IImageAddonOptions } from './Types';
+import { ITerminalExt, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
 
 
@@ -56,7 +56,7 @@ export class ImageAddon implements ITerminalAddon {
   private _storage: ImageStorage | undefined;
   private _renderer: ImageRenderer | undefined;
   private _disposables: IDisposable[] = [];
-  private _terminal: ICoreTerminal | undefined;
+  private _terminal: ITerminalExt | undefined;
   private _workerManager: WorkerManager;
 
   constructor(workerPath: string, opts: Partial<IImageAddonOptions>) {
@@ -79,7 +79,7 @@ export class ImageAddon implements ITerminalAddon {
     }
   }
 
-  public activate(terminal: ICoreTerminal): void {
+  public activate(terminal: ITerminalExt): void {
     this._terminal = terminal;
 
     // internal data structures

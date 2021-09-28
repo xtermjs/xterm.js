@@ -4,7 +4,7 @@
  */
 import { IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize } from './Types';
+import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize } from './Types';
 
 
 // fallback default cell size
@@ -55,7 +55,7 @@ export class ImageStorage implements IDisposable {
   private _viewportMetrics: { cols: number, rows: number };
 
   constructor(
-    private _terminal: ICoreTerminal,
+    private _terminal: ITerminalExt,
     private _renderer: ImageRenderer,
     private _opts: IImageAddonOptions
   ) {

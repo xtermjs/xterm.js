@@ -12,7 +12,7 @@ import type { IParams, IDcsHandler, IEscapeSequenceParser } from 'common/parser/
 import type { IBuffer } from 'common/buffer/Types';
 import type { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
 import type { IOptionsService, IDirtyRowService, ICoreService } from 'common/services/Services';
-import type { IColorManager } from 'browser/Types';
+import type { IColorManager, ITerminal } from 'browser/Types';
 import type { IRenderDimensions } from 'browser/renderer/Types';
 import type { IRenderService } from 'browser/services/Services';
 
@@ -62,24 +62,15 @@ interface IInputHandlerExt extends IInputHandler {
   onRequestReset(handler: () => void): IDisposable;
 }
 
-// we need several private services from core terminal
-// thus stub them here (access is tested by test case)
-export interface ICoreTerminal extends Terminal {
-  _core: {
-    buffer: IBuffer;
-    cols: number;
-    rows: number;
-    screenElement: HTMLElement;
-    open(parent: HTMLElement): void;
+export interface ICoreTerminalExt extends ITerminal {
+  _dirtyRowService: IDirtyRowService;
+  _colorManager: IColorManager;
+  _inputHandler: IInputHandlerExt;
+  _renderService: IRenderService;
+}
 
-    // needed sub parts
-    optionsService: IOptionsService;
-    _dirtyRowService: IDirtyRowService;
-    coreService: ICoreService;
-    _colorManager: IColorManager;
-    _inputHandler: IInputHandlerExt;
-    _renderService: IRenderService;
-  };
+export interface ITerminalExt extends Terminal {
+  _core: ICoreTerminalExt;
 }
 /* eslint-enable */
 

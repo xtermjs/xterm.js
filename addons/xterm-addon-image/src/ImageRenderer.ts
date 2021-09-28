@@ -5,7 +5,7 @@
 
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from 'xterm';
-import { ICellSize, ICoreTerminal, IImageSpec, IRenderDimensions, IRenderService } from './Types';
+import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 
 
 const PLACEHOLDER_LENGTH = 4096;
@@ -58,7 +58,7 @@ export class ImageRenderer implements IDisposable {
   }
 
 
-  constructor(private _terminal: ICoreTerminal, private _showPlaceholder: boolean) {
+  constructor(private _terminal: ITerminalExt, private _showPlaceholder: boolean) {
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
       this._oldOpen?.call(this._terminal._core, parent);
@@ -305,7 +305,7 @@ export class ImageRenderer implements IDisposable {
   private _insertLayerToDom(): void {
     this.canvas = ImageRenderer.createCanvas(this.dimensions?.canvasWidth || 0, this.dimensions?.canvasHeight || 0);
     this.canvas.classList.add('xterm-image-layer');
-    this._terminal._core.screenElement.appendChild(this.canvas);
+    this._terminal._core.screenElement?.appendChild(this.canvas);
     this._ctx = this.canvas.getContext('2d', { alpha: true, desynchronized: true });
   }
 

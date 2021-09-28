@@ -4,7 +4,7 @@
  */
 
 import { ImageStorage } from './ImageStorage';
-import { IDcsHandler, IParams, IImageAddonOptions, ICoreTerminal, AttributeData, IColorManager } from './Types';
+import { IDcsHandler, IParams, IImageAddonOptions, ITerminalExt, AttributeData, IColorManager } from './Types';
 import { toRGBA8888, BIG_ENDIAN } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
 import { WorkerManager } from './WorkerManager';
@@ -19,7 +19,7 @@ export class SixelHandler implements IDcsHandler {
   constructor(
     private readonly _opts: IImageAddonOptions,
     private readonly _storage: ImageStorage,
-    private readonly _coreTerminal: ICoreTerminal,
+    private readonly _coreTerminal: ITerminalExt,
     private readonly _workerManager: WorkerManager
   ) {}
 
