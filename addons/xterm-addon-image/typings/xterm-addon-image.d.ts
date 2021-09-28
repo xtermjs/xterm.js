@@ -27,15 +27,17 @@ declare module 'xterm-addon-image' {
      * This setting is mainly used to restrict images sizes during initial decoding
      * including the final canvas creation.
      *
-     * Note: The image worker decoder may hold additional memory up to `pixelLimit` * 4
-     * permanently, plus the same amount on top temporarily for pixel transfers,
-     * which should be taken into account under memory pressure conditions.
+     * Note: The image worker decoder may hold additional memory up to
+     * `pixelLimit` * 4 bytes permanently, plus the same amount on top temporarily
+     * for pixel transfers, which should be taken into account under memory pressure conditions.
      *
      * Note: Browsers restrict allowed canvas dimensions further. We dont reflect those
      * limits here, thus the construction of an oddly shaped image having most pixels
      * in one dimension still can fail.
      *
-     * Note:`pixelLimit` * 4 should not exceed `storageLimit` in bytes.
+     * Note: `storageLimit` bytes are calculated from images by multiplying the pixels with 4
+     * (4 channels with one byte, images are stored as RGBA8888).
+     * 
      * Default is 2^16 (4096 x 4096 pixels).
      */
     pixelLimit?: number;
