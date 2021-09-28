@@ -7,7 +7,7 @@ import { ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
-import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
+import { ICoreTerminal, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
 
 
@@ -59,7 +59,7 @@ export class ImageAddon implements ITerminalAddon {
   private _terminal: ICoreTerminal | undefined;
   private _workerManager: WorkerManager;
 
-  constructor(workerPath: string, opts: IImageAddonOptionalOptions) {
+  constructor(workerPath: string, opts: Partial<IImageAddonOptions>) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._workerManager = new WorkerManager(workerPath, this._opts);

@@ -22,25 +22,20 @@ export { AttributeData, IParams, IDcsHandler, BgFlags, IRenderDimensions, IRende
 /**
  * Plugin ctor options.
  */
-export interface IImageAddonOptionalOptions {
-  enableSizeReports?: boolean;
-  pixelLimit?: number;
-  storageLimit?: number;
-  showPlaceholder?: boolean;
-  cursorRight?: boolean;
-  cursorBelow?: boolean;
-  sixelSupport?: boolean;
-  sixelScrolling?: boolean;
-  sixelPaletteLimit?: number;
-  sixelSizeLimit?: number;
-  sixelPrivatePalette?: boolean;
-  sixelDefaultPalette?: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
+export interface IImageAddonOptions {
+  enableSizeReports: boolean;
+  pixelLimit: number;
+  storageLimit: number;
+  showPlaceholder: boolean;
+  cursorRight: boolean;
+  cursorBelow: boolean;
+  sixelSupport: boolean;
+  sixelScrolling: boolean;
+  sixelPaletteLimit: number;
+  sixelSizeLimit: number;
+  sixelPrivatePalette: boolean;
+  sixelDefaultPalette: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256';
 }
-
-export type IImageAddonOptions = {
-  [P in keyof IImageAddonOptionalOptions]-?: IImageAddonOptionalOptions[P];
-};
-
 
 /**
  * Stub into private interfaces.

@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
-import { IImageAddonOptionalOptions, IImageAddonOptions } from '../src/Types';
+import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { readFileSync } from 'fs';
 import PNG from 'png-ts';
@@ -20,7 +20,7 @@ const height = 600;
 
 // eslint-disable-next-line
 declare const ImageAddon: {
-  new(workerPath: string, options?: IImageAddonOptionalOptions): any;
+  new(workerPath: string, options?: Partial<IImageAddonOptions>): any;
 };
 
 interface ITestData {
