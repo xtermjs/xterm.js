@@ -5,7 +5,7 @@
 
 import { ITerminalAddon, IDisposable } from 'xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ImageStorage } from './ImageStorage';
+import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
 import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
@@ -299,8 +299,27 @@ export class ImageAddon implements ITerminalAddon {
     }
     if (params[0] === GaItem.SIXEL_GEO) {
       switch (params[1]) {
-        // we only implement read here (returns pixelLimit as square)
+        // we only implement read and read_max here
         case GaAction.READ:
+          let width = this._renderer?.dimensions?.canvasWidth;
+          let height = this._renderer?.dimensions?.canvasHeight;
+          if (!width || !height) {
+            // for some reason we have no working image renderer
+            // --> fallback to default cell size
+            const cellSize = CELL_SIZE_DEFAULT;
+            width = (this._terminal?.cols || 80) * cellSize.width;
+            height = (this._terminal?.rows || 24) * cellSize.height;
+          }
+          if (width * height < this._opts.pixelLimit) {
+            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${width};${height}S`);
+          } else {
+            // if we overflow pixelLimit report that squared instead
+            const x = Math.floor(Math.sqrt(this._opts.pixelLimit));
+            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${x};${x}S`);
+          }
+          return true;
+        case GaAction.READ_MAX:
+          // read_max returns pixelLimit as square area
           const x = Math.floor(Math.sqrt(this._opts.pixelLimit));
           this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${x};${x}S`);
           return true;

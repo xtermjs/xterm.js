@@ -8,7 +8,7 @@ import { ICoreTerminal, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBu
 
 
 // fallback default cell size
-const CELL_SIZE_DEFAULT: ICellSize = {
+export const CELL_SIZE_DEFAULT: ICellSize = {
   width: 7,
   height: 14
 };
