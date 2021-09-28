@@ -62,7 +62,7 @@ const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
 
 
 describe('ImageAddon', () => {
-  before(async function(): Promise<any> {
+  before(async () => {
     const browserType = getBrowserType();
     browser = await browserType.launch({
       headless: process.argv.indexOf('--headless') !== -1
@@ -75,7 +75,7 @@ describe('ImageAddon', () => {
     await browser.close();
   });
 
-  beforeEach(async function(): Promise<any> {
+  beforeEach(async () => {
     await page.goto(APP);
     await openTerminal(page);
     await page.evaluate(opts => {
