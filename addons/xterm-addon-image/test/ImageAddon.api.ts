@@ -287,7 +287,7 @@ describe('ImageAddon', () => {
       // image fits into one chunk
       await writeToTerminal(SIXEL_SEQ_0);
       assert.equal(await execOnManager('_memPool.length'), 1);
-      assert.notEqual(await execOnManager('_poolChecker'), undefined);
+      assert.notEqual(await execOnManager('_poolCheckerInterval'), undefined);
       const lastActive = await execOnManager('_lastActive');
       assert.notEqual(lastActive, 0);
     });
