@@ -10,18 +10,6 @@ import { SixelHandler } from './SixelHandler';
 import { ICoreTerminal, IImageAddonOptionalOptions, IImageAddonOptions } from './Types';
 import { WorkerManager } from './WorkerManager';
 
-/**
- * TODOs / next steps:
- * - allow overprinting with blending? (needed for correct handling of transparent pixels)
- * - find some working serialize solution (re-encode?)
- * - investigate in worker based drawing (OffscreenCanvas, createImageBitmap)
- *
- * Longterm:
- * - iTerm2 protocol support
- * - a better image protocol
- * - nodejs support (drawing and export shims)
- */
-
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
