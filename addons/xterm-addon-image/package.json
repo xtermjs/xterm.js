@@ -16,7 +16,7 @@
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
-    "xterm": "^4.13.0"
+    "xterm": "^4.14.0"
   },
   "dependencies": {
     "sixel": "^0.15.0"
