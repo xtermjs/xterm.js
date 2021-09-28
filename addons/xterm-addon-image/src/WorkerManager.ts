@@ -5,7 +5,7 @@
 
 import { IImageAddonOptions } from './Types';
 import { IDisposable } from 'xterm';
-import { IImageWorkerMessage, IImagePixel, IImageWorker } from './WorkerTypes';
+import { IImageWorkerMessage, IImagePixel, IImageWorker, MessageType } from './WorkerTypes';
 
 
 
@@ -38,19 +38,19 @@ export class WorkerManager implements IDisposable {
   private _message: (msg: MessageEvent<IImageWorkerMessage>) => void = event => {
     const data = event.data;
     switch (data.type) {
-      case 'CHUNK_TRANSFER':
+      case MessageType.CHUNK_TRANSFER:
         this.storeChunk(data.payload);
         break;
-      case 'SIXEL_IMAGE':
+      case MessageType.SIXEL_IMAGE:
         if (this._sixelResolver) {
           this._sixelResolver(data.payload);
           this._sixelResolver = undefined;
         }
         break;
-      case 'ACK':
+      case MessageType.ACK:
         this._worker?.removeEventListener('error', this._startupError);
         break;
-      case 'SIZE_EXCEEDED':
+      case MessageType.SIZE_EXCEEDED:
         this.sizeExceeded = true;
         break;
     }
@@ -91,7 +91,7 @@ export class WorkerManager implements IDisposable {
       this._worker.addEventListener('message', this._message, false);
       this._worker.addEventListener('error', this._startupError, false);
       this._worker.postMessage({
-        type: 'ACK',
+        type: MessageType.ACK,
         payload: 'ping',
         options: { pixelLimit: this._opts.pixelLimit }
       });
@@ -128,13 +128,13 @@ export class WorkerManager implements IDisposable {
     this._setSixelResolver();
     this.sizeExceeded = false;
     this.worker?.postMessage({
-      type: 'SIXEL_INIT',
+      type: MessageType.SIXEL_INIT,
       payload: { fillColor, paletteName, limit }
     });
   }
   public sixelPut(data: Uint8Array, length: number): void {
     this.worker?.postMessage({
-      type: 'SIXEL_PUT',
+      type: MessageType.SIXEL_PUT,
       payload: {
         buffer: data.buffer,
         length
@@ -146,10 +146,10 @@ export class WorkerManager implements IDisposable {
     if (success && this.worker) {
       result = new Promise<IImagePixel|null>(resolve => this._setSixelResolver(resolve));
     }
-    this.worker?.postMessage({ type: 'SIXEL_END', payload: success });
+    this.worker?.postMessage({ type: MessageType.SIXEL_END, payload: success });
     return result;
   }
   public sixelSendBuffer(buffer: ArrayBuffer): void {
-    this.worker?.postMessage({ type: 'CHUNK_TRANSFER', payload: buffer }, [buffer]);
+    this.worker?.postMessage({ type: MessageType.CHUNK_TRANSFER, payload: buffer }, [buffer]);
   }
 }
