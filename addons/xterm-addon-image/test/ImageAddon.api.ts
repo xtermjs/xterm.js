@@ -303,13 +303,13 @@ describe('ImageAddon', () => {
       }
       await writeToTerminal(''); // wait until all got consumed
       assert.equal(await execOnManager('_memPool.length'), 50);
-      assert.notEqual(await execOnManager('_poolChecker'), undefined);
+      assert.notEqual(await execOnManager('_poolCheckerInterval'), undefined);
       const lastActive = await execOnManager('_lastActive');
       assert.notEqual(lastActive, 0);
       // should drop back to 0 after 20000
       await new Promise<void>(res => setTimeout(async () => {
         assert.equal(await execOnManager('_memPool.length'), 0);
-        assert.equal(await execOnManager('_poolChecker'), undefined);
+        assert.equal(await execOnManager('_poolCheckerInterval'), undefined);
         res();
       }, 20000));
     });
@@ -324,7 +324,7 @@ describe('ImageAddon', () => {
       assert.equal(await execOnManager('_sixelResolver'), undefined);
       // pool and checker cleared
       assert.equal(await execOnManager('_memPool.length'), 0);
-      assert.equal(await execOnManager('_poolChecker'), undefined);
+      assert.equal(await execOnManager('_poolCheckerInterval'), undefined);
     });
     describe('handle worker loading error gracefully', () => {
       beforeEach(async () => {
