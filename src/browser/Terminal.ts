@@ -1180,7 +1180,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
-    if (ev.data && ev.inputType === 'insertText') {
+    // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
+    // support reading out character input which can doubling up input characters
+    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
@@ -1288,6 +1290,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
     this.viewport?.syncScrollArea();
+  }
+
+  public clearTextureAtlas(): void {
+    this._renderService?.clearTextureAtlas();
   }
 
   private _reportWindowsOptions(type: WindowsOptionsReportType): void {

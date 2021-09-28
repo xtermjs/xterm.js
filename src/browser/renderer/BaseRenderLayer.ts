@@ -138,6 +138,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public abstract reset(): void;
 
+  public clearTextureAtlas(): void {
+    this._charAtlas?.clear();
+  }
+
   /**
    * Fills 1+ cells completely. This uses the existing fillStyle on the context.
    * @param x The column to start at.

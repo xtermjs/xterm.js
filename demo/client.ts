@@ -387,6 +387,9 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
+    if(name === 'unicode11' && checkbox.checked) {
+      term.unicode.activeVersion = '11';
+    }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
@@ -406,10 +409,14 @@ function initAddons(term: TerminalType): void {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
           }, 0);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '11';
         }
       } else {
         if (name === 'webgl') {
           document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
