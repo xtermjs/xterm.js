@@ -25,9 +25,16 @@ export class WorkerManager implements IDisposable {
   private _memPool: ArrayBuffer[] = [];
   private _sixelResolver: ((img: IImagePixel | null) => void) | undefined;
   private _failedToLoad = false;
-  private _poolChecker: any | undefined;
+  private _poolCheckerInterval: number | undefined;
   private _lastActive = 0;
   public sizeExceeded = false;
+
+  constructor(
+    public url: string,
+    private _opts: IImageAddonOptions,
+    public chunkSize: number = 65536 * 2,
+    public maxPoolSize: number = 50
+  ) {}
 
   private _startupError: () => void = () => {
     console.warn('ImageAddon worker failed to load, image output is disabled.');
@@ -63,21 +70,14 @@ export class WorkerManager implements IDisposable {
     this._sixelResolver = resolver;
   }
 
-  constructor(
-    public url: string,
-    private _opts: IImageAddonOptions,
-    public chunkSize: number = 65536 * 2,
-    public maxPoolSize: number = 50
-  ) {}
-
   public dispose(): void {
     this._worker?.terminate();
     this._worker = undefined;
     this._setSixelResolver();
     this.flushPool();
-    if (this._poolChecker) {
-      clearInterval(this._poolChecker);
-      this._poolChecker = undefined;
+    if (this._poolCheckerInterval) {
+      clearInterval(this._poolCheckerInterval);
+      this._poolCheckerInterval = undefined;
     }
   }
 
@@ -105,12 +105,12 @@ export class WorkerManager implements IDisposable {
   }
 
   public storeChunk(chunk: ArrayBuffer): void {
-    if (!this._poolChecker) {
-      this._poolChecker = setInterval(() => {
+    if (!this._poolCheckerInterval) {
+      this._poolCheckerInterval = setInterval(() => {
         if (Date.now() - this._lastActive > CLEANUP_INTERVAL) {
           this.flushPool();
-          clearInterval(this._poolChecker);
-          this._poolChecker = undefined;
+          clearInterval(this._poolCheckerInterval);
+          this._poolCheckerInterval = undefined;
         }
       }, CLEANUP_INTERVAL);
     }

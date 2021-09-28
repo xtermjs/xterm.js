@@ -52,7 +52,7 @@ export class ImageRenderer implements IDisposable {
   // drawing primitive - ImageBitmap
   public static createImageBitmap(img: ImageBitmapSource): Promise<ImageBitmap | undefined> {
     if (typeof createImageBitmap !== 'function') {
-      return new Promise(res => res(undefined));
+      return Promise.resolve(undefined);
     }
     return createImageBitmap(img);
   }
