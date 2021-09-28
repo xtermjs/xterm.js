@@ -209,7 +209,7 @@ describe('ImageAddon', () => {
     });
     it('testdata cursor right with overflow below', async () => {
       const dim = await getDim();
-      await writeToTerminal('\x1b[?8452;7730h' + '#'.repeat(30) + SIXEL_SEQ_0);
+      await writeToTerminal('\x1b[?8452h\x1b[?7730l' + '#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [30, Math.ceil(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor always below', async () => {
