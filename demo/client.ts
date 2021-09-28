@@ -541,7 +541,7 @@ function initImageAddonExposed(): void {
     });
 
   document.getElementById('image-demo1').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/chess.six'));
+    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
   document.getElementById('image-demo2').addEventListener('click',
     sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/biplane.six'));
 
