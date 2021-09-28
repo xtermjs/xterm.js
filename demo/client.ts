@@ -458,7 +458,7 @@ function serializeButtonHandler(): void {
   const output = addons.serialize.instance.serialize();
   const outputString = JSON.stringify(output);
 
-  document.querySelector<HTMLPreElement>('#serialize-output').innerText = outputString;
+  document.querySelector<HTMLElement>('#serialize-output').innerText = outputString;
   if (document.querySelector<HTMLInputElement>('#write-to-terminal').checked) {
     term.reset();
     term.write(output);
