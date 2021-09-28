@@ -31,7 +31,7 @@ interface ITestData {
   sixel: string;
 }
 
-interface IDim {
+interface IDimensions {
   cellWidth: number;
   cellHeight: number;
   width: number;
@@ -149,7 +149,7 @@ describe('ImageAddon', () => {
 
   describe('scrolling & cursor modes', () => {
     it('testdata default (scrolling, cursor next line, beginning)', async () => {
-      const dim = await getDim();
+      const dim = await getDimensions();
       await writeToTerminal(SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
@@ -165,23 +165,23 @@ describe('ImageAddon', () => {
       assert.deepEqual(await getCursor(), [0, 0]);
     });
     it.skip('testdata cursor right', async () => {
-      const dim = await getDim();
+      const dim = await getDimensions();
       await writeToTerminal('\x1b[?8452h' + SIXEL_SEQ_0);
       // currently failing on OSX firefox with AssertionError: expected [ 72, 4 ] to deeply equal [ 72, 5 ]
       assert.deepEqual(await getCursor(), [Math.ceil(TESTDATA.width/dim.cellWidth), Math.floor(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor right with overflow beginning', async () => {
-      const dim = await getDim();
+      const dim = await getDimensions();
       await writeToTerminal('\x1b[?8452h' + '#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor right with overflow below', async () => {
-      const dim = await getDim();
+      const dim = await getDimensions();
       await writeToTerminal('\x1b[?8452h\x1b[?7730l' + '#'.repeat(30) + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [30, Math.ceil(TESTDATA.height/dim.cellHeight)]);
     });
     it('testdata cursor always below', async () => {
-      const dim = await getDim();
+      const dim = await getDimensions();
       // offset 0
       await writeToTerminal('\x1b[?7730l' + SIXEL_SEQ_0);
       assert.deepEqual(await getCursor(), [0, Math.ceil(TESTDATA.height/dim.cellHeight)]);
@@ -370,13 +370,13 @@ describe('ImageAddon', () => {
 /**
  * terminal access helpers.
  */
-async function getDim(): Promise<IDim> {
-  const dim: any = await page.evaluate(`term._core._renderService.dimensions`);
+async function getDimensions(): Promise<IDimensions> {
+  const dimensions: any = await page.evaluate(`term._core._renderService.dimensions`);
   return {
-    cellWidth: Math.round(dim.actualCellWidth),
-    cellHeight: Math.round(dim.actualCellHeight),
-    width: Math.round(dim.canvasWidth),
-    height: Math.round(dim.canvasHeight)
+    cellWidth: Math.round(dimensions.actualCellWidth),
+    cellHeight: Math.round(dimensions.actualCellHeight),
+    width: Math.round(dimensions.canvasWidth),
+    height: Math.round(dimensions.canvasHeight)
   };
 }
 
