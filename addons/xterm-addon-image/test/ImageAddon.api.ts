@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { openTerminal, getBrowserType } from '../../../out-test/api/TestUtils';
+import { openTerminal, launchBrowser } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
@@ -63,10 +63,7 @@ const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
 
 describe('ImageAddon', () => {
   before(async () => {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
   });
