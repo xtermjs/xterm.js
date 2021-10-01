@@ -423,7 +423,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-    this.element.setAttribute('tabindex', '0');
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
