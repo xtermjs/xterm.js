@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2021 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -28,13 +28,5 @@ describe('SoundAddon', () => {
   beforeEach(async function(): Promise<any> {
     await page.goto(APP);
     await openTerminal(page);
-  });
-
-  it('wcwidth V11 emoji test', async () => {
-    await page.evaluate(`
-      window.sound = new SoundAddon();
-      window.term.loadAddon(window.sound);
-    `);
-    // TODO...
   });
 });

@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "ES2017",
     "lib": [
       "dom",
-      "es2015"
+      "ES2017"
     ],
     "rootDir": ".",
     "outDir": "../out-test",
