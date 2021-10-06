@@ -22,6 +22,8 @@
       "addons/xterm-addon-serialize/src/tsconfig.json",
       "addons/xterm-addon-serialize/test/tsconfig.json",
       "addons/xterm-addon-serialize/benchmark/tsconfig.json",
+      "addons/xterm-addon-sound/src/tsconfig.json",
+      "addons/xterm-addon-sound/test/tsconfig.json",
       "addons/xterm-addon-unicode11/src/tsconfig.json",
       "addons/xterm-addon-unicode11/test/tsconfig.json",
       "addons/xterm-addon-web-links/src/tsconfig.json",

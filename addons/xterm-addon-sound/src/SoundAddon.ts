@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2021 The xterm.js authors. All rights reserved.
  * @license MIT
- * 
+ *
  * Support for sound sequences in xtermjs.
  */
 
@@ -14,7 +14,7 @@ const TEARDOWN_MS = 5000;
 /**
  * Equal MIDI tuning with a base pitch.
  */
- function equaltune(key: number, pitch: number): number {
+function equaltune(key: number, pitch: number): number {
   return Math.pow(2, (key - 69) / 12) * pitch;
 }
 
@@ -27,7 +27,7 @@ export class SoundAddon implements ITerminalAddon {
   private _oscillators: OscillatorNode[] = [];
   private _gains: GainNode[] = [];
   private _compressor: DynamicsCompressorNode | undefined;
-  private _lastActive = 0;
+  private _currentIdx = 0;
   private _lastUsed = 0;
   private _tearDownInterval = 0;
   private _decpsHandler: IDisposable | undefined;
@@ -46,7 +46,7 @@ export class SoundAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._decpsHandler = terminal.parser.registerCsiHandler(
-      {intermediates: ',', final: '~'},
+      { intermediates: ',', final: '~' },
       params => this.decps(params)
     );
     this._terminal = terminal;
@@ -54,7 +54,7 @@ export class SoundAddon implements ITerminalAddon {
 
   /**
    * DECPS - CSI Pvolume ; Pduration ; Pnote ; ... Pnote , ~
-   * 
+   *
    * volume:  0 - off, 1 - 7 (low to high)
    * duration: 1/32 of a sec, value in 0-255
    * notes: 1 - 25 (semi tones c5 - c7), tuning: TODO
@@ -111,10 +111,10 @@ export class SoundAddon implements ITerminalAddon {
     });
   }
 
-  private waitForAudioPermission(ctx: AudioContext): Promise<void> {
-    //TODO: make this customizable from outside + try resuming concurrently (prolly not working on safari)
+  public waitForAudioPermission(ctx: AudioContext): Promise<void> {
+    // TODO: make this customizable from outside + try resuming concurrently (prolly not working on safari)
     return new Promise<void>(res => {
-      const handler = () => ctx.resume().then(() => {
+      const handler: () => void = () => ctx.resume().then(() => {
         document.removeEventListener('click', handler);
         res();
       });
@@ -126,11 +126,10 @@ export class SoundAddon implements ITerminalAddon {
     if (!this._oscillators.length) {
       this._start(ctx);
     }
-    const currentIdx = (this._lastActive + 1) % 2;
-    this._lastActive = currentIdx;
+    this._currentIdx ^= 1;
 
-    const o = this._oscillators[currentIdx];
-    const g = this._gains[currentIdx];
+    const o = this._oscillators[this._currentIdx];
+    const g = this._gains[this._currentIdx];
 
     o.frequency.value = tune;
     o.type = this.type;
@@ -157,7 +156,7 @@ export class SoundAddon implements ITerminalAddon {
     }
   }
 
-  private _stop():void {
+  private _stop(): void {
     for (const o of this._oscillators) {
       o.stop();
       o.disconnect();
