@@ -11,6 +11,7 @@
     { "path": "./addons/xterm-addon-ligatures" },
     { "path": "./addons/xterm-addon-search" },
     { "path": "./addons/xterm-addon-serialize" },
+    { "path": "./addons/xterm-addon-sound" },
     { "path": "./addons/xterm-addon-unicode11" },
     { "path": "./addons/xterm-addon-web-links" },
     { "path": "./addons/xterm-addon-webgl" }

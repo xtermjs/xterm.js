@@ -523,6 +523,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
       if (result = this._parser.parse(this._parseBuffer, this._parseStack.decodedLength, promiseResult)) {
+        this._onRequestRefreshRows.fire(0, 300);  // FIXME: needs proper values
         this._logSlowResolvingAsync(result);
         return result;
       }
@@ -557,6 +558,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
         if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._onRequestRefreshRows.fire(0, 300);  // FIXME: needs proper values
           this._preserveStack(cursorStartX, cursorStartY, len, i);
           this._logSlowResolvingAsync(result);
           return result;
@@ -568,6 +570,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           ? this._stringDecoder.decode(data, this._parseBuffer)
           : this._utf8Decoder.decode(data, this._parseBuffer);
         if (result = this._parser.parse(this._parseBuffer, len)) {
+          this._onRequestRefreshRows.fire(0, 300);  // FIXME: needs proper values
           this._preserveStack(cursorStartX, cursorStartY, len, 0);
           this._logSlowResolvingAsync(result);
           return result;
