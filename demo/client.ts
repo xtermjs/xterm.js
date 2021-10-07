@@ -146,6 +146,7 @@ if (document.location.pathname === '/test') {
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
+  window.SoundAddon = SoundAddon;
   window.Unicode11Addon = Unicode11Addon;
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
