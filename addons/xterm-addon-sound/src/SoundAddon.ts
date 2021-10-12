@@ -76,7 +76,7 @@ export class SoundAddon implements ITerminalAddon {
 
     // blocking promised return - wait for all notes to finish
     return new Promise(async res => {
-      const volume = params[0] as number;
+      let volume = params[0] as number;
       const duration = params[1] as number;
 
       // try to circumvent weird user action constraint
@@ -86,7 +86,10 @@ export class SoundAddon implements ITerminalAddon {
       }
 
       for (let i = 2; i < params.length; ++i) {
-        const note = params[i] as number || 1;  // ZDM normalization: 0 --> 1
+        let note = params[i] as number;
+        if (note === 0) {
+          volume = 0;
+        }
         await this._play(
           ctx,
           // spread volume levels as 2^n gain
