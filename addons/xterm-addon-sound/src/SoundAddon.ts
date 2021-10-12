@@ -137,10 +137,10 @@ export class SoundAddon implements ITerminalAddon {
     o.frequency.value = tune;
     o.type = this.type;
     g.gain.setTargetAtTime(volume, ctx.currentTime, 0.005);
-    return new Promise<void>(res => setTimeout(() => {
-      g.gain.setTargetAtTime(0, ctx.currentTime, 0.01);
-      res();
-    }, duration - 10));
+    g.gain.setTargetAtTime(0, ctx.currentTime + (duration - 10)/1000, 0.01);
+
+    // TODO: replace with some sort of stacking buffer, which blocks as on a VT520
+    return new Promise<void>(r => setTimeout(r, duration));
   }
 
   private _start(ctx: AudioContext): void {
