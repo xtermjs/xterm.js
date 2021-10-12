@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { openTerminal, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -38,10 +38,7 @@ async function testSerializeEquals(writeContent: string, expectedSerialized: str
 
 describe('SerializeAddon', () => {
   before(async function(): Promise<any> {
-    const browserType = getBrowserType();
-    browser = await browserType.launch({
-      headless: process.argv.includes('--headless')
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);
@@ -149,7 +146,7 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(${halfScrollback});`), lines.slice(halfScrollback, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: ${halfScrollback} });`), lines.slice(halfScrollback, rows).join('\r\n'));
   });
 
   it('serialize 0 rows of scrollback', async function(): Promise<any> {
@@ -157,7 +154,19 @@ describe('SerializeAddon', () => {
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
     await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize(0);`), lines.slice(rows - 10, rows).join('\r\n'));
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
+  });
+
+  it('serialize exclude modes', async () => {
+    await writeSync(page, 'before\\x1b[?1hafter');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'beforeafter\x1b[?1h');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeModes: true });`), 'beforeafter');
+  });
+
+  it('serialize exclude alt buffer', async () => {
+    await writeSync(page, 'normal\\x1b[?1049h\\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'normal\x1b[?1049h\x1b[Halt');
+    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeAltBuffer: true });`), 'normal');
   });
 
   it('serialize all rows of content with color16', async function(): Promise<any> {
@@ -187,11 +196,13 @@ describe('SerializeAddon', () => {
       sgr(UNDERLINED) + line,
       sgr(BLINK) + line,
       sgr(INVISIBLE) + line,
+      sgr(STRIKETHROUGH) + line,
       sgr(NO_INVERSE) + line,
       sgr(NO_BOLD) + line,
       sgr(NO_UNDERLINED) + line,
       sgr(NO_BLINK) + line,
-      sgr(NO_INVISIBLE) + line
+      sgr(NO_INVISIBLE) + line,
+      sgr(NO_STRIKETHROUGH) + line
     ];
     const rows = lines.length;
     await writeSync(page, lines.join('\\r\\n'));
@@ -582,20 +593,20 @@ const BG_RGB_GREEN = '48;2;0;255;0';
 const BG_RGB_YELLOW = '48;2;255;255;0';
 const BG_RESET = '49';
 
-const INVERSE = '7';
 const BOLD = '1';
+const DIM = '2';
+const ITALIC = '3';
 const UNDERLINED = '4';
 const BLINK = '5';
+const INVERSE = '7';
 const INVISIBLE = '8';
+const STRIKETHROUGH = '9';
 
-const NO_INVERSE = '27';
 const NO_BOLD = '22';
+const NO_DIM = '22';
+const NO_ITALIC = '23';
 const NO_UNDERLINED = '24';
 const NO_BLINK = '25';
+const NO_INVERSE = '27';
 const NO_INVISIBLE = '28';
-
-const ITALIC = '3';
-const DIM = '2';
-
-const NO_ITALIC = '23';
-const NO_DIM = '22';
+const NO_STRIKETHROUGH = '29';

@@ -1,0 +1,11 @@
+require:
+  - source-map-support/register
+spec:
+  - out/**/*.test.js
+  - addons/**/out/*.test.js
+watch-files:
+  - out/**/*.js
+  - addons/**/out/*.js
+reporter: spec
+color: true
+check-leaks: true

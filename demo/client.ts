@@ -148,6 +148,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
+  document.getElementById('load-test').addEventListener('click', loadTest);
 }
 
 function createTerminal(): void {
@@ -349,6 +350,9 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
         term.setOption(o, parseFloat(input.value));
         updateTerminalSize();
+      } else if(o === 'scrollback') {
+        term.setOption(o, parseInt(input.value));
+        setTimeout(() => updateTerminalSize(), 5);
       } else {
         term.setOption(o, parseInt(input.value));
       }
@@ -373,6 +377,9 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
+    if(name === 'unicode11' && checkbox.checked) {
+      term.unicode.activeVersion = '11';
+    }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
@@ -381,10 +388,14 @@ function initAddons(term: TerminalType): void {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
           }, 0);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '11';
         }
       } else {
         if (name === 'webgl') {
           document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
@@ -477,4 +488,37 @@ function writeCustomGlyphHandler() {
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
   window.scrollTo(0, 0);
+}
+
+function loadTest() {
+  const isWebglEnabled = !!addons.webgl.instance;
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 79);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
 }

@@ -94,6 +94,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _keyDownHandled: boolean = false;
 
+  /**
+   * Records whether the keypress event has already been handled and triggered a data event, if so
+   * the input event should not trigger a data event but should still print to the textarea so
+   * screen readers will announce it.
+   */
+  private _keyPressHandled: boolean = false;
+
+  /**
+   * Records whether there has been a keydown event for a dead key without a corresponding keydown
+   * event for the composed/alternative character. If we cancel the keydown event for the dead key,
+   * no events will be emitted for the final character.
+   */
+  private _unprocessedDeadKey: boolean = false;
+
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
@@ -384,6 +398,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
     this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this.register(addDisposableDomListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
     this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
@@ -1026,6 +1041,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
+    if (event.key === 'Dead' || event.key === 'AltGraph') {
+      this._unprocessedDeadKey = true;
+    }
+
     const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
@@ -1053,6 +1072,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
+    if (this._unprocessedDeadKey) {
+      this._unprocessedDeadKey = false;
+      return true;
+    }
+
     // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
     // will announce deleted characters. This will not work 100% of the time but it should cover
     // most scenarios.
@@ -1075,10 +1099,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._keyDownHandled = true;
   }
 
-  private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
     const thirdLevelKey =
       (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey) ||
+      (browser.isWindows && ev.getModifierState('AltGraph'));
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
@@ -1098,6 +1123,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     this.updateCursorStyle(ev);
+    this._keyPressHandled = false;
   }
 
   /**
@@ -1108,6 +1134,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
+
+    this._keyPressHandled = false;
 
     if (this._keyDownHandled) {
       return false;
@@ -1141,7 +1169,33 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._showCursor();
     this.coreService.triggerDataEvent(key, true);
 
+    this._keyPressHandled = true;
+
     return true;
+  }
+
+  /**
+   * Handle an input event.
+   * Key Resources:
+   *   - https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
+   * @param ev The input event to be handled.
+   */
+  protected _inputEvent(ev: InputEvent): boolean {
+    // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
+    // support reading out character input which can doubling up input characters
+    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
+      if (this._keyPressHandled) {
+        return false;
+      }
+
+      const text = ev.data;
+      this.coreService.triggerDataEvent(text, true);
+
+      this.cancel(ev);
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -1237,6 +1291,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
     this.viewport?.syncScrollArea();
+  }
+
+  public clearTextureAtlas(): void {
+    this._renderService?.clearTextureAtlas();
   }
 
   private _reportFocus(): void {
