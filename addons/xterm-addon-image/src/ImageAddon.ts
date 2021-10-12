@@ -245,8 +245,9 @@ export class ImageAddon implements ITerminalAddon {
    * Implementation of xterm's graphics attribute sequence.
    *
    * Supported features:
-   * - read/change palette limits (max 65536 by sixel lib)
-   * - read SIXEL canvas geometry (always reports pixelLimit as square)
+   * - read/change palette limits (max 4096 by sixel lib)
+   * - read SIXEL canvas geometry (reports current window canvas or
+   *   squared pixelLimit if canvas > pixel limit)
    *
    * Everything else is deactivated.
    */
@@ -298,7 +299,7 @@ export class ImageAddon implements ITerminalAddon {
             height = (this._terminal?.rows || 24) * cellSize.height;
           }
           if (width * height < this._opts.pixelLimit) {
-            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${width};${height}S`);
+            this._report(`\x1b[?${params[0]};${GaStatus.SUCCESS};${width.toFixed(0)};${height.toFixed(0)}S`);
           } else {
             // if we overflow pixelLimit report that squared instead
             const x = Math.floor(Math.sqrt(this._opts.pixelLimit));

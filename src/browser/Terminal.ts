@@ -1303,13 +1303,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     switch (type) {
       case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
-        const canvasWidth = this._renderService.dimensions.scaledCanvasWidth.toFixed(0);
-        const canvasHeight = this._renderService.dimensions.scaledCanvasHeight.toFixed(0);
+        const canvasWidth = this._renderService.dimensions.canvasWidth.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.canvasHeight.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
         break;
       case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
-        const cellWidth = this._renderService.dimensions.scaledCellWidth.toFixed(0);
-        const cellHeight = this._renderService.dimensions.scaledCellHeight.toFixed(0);
+        const cellWidth = this._renderService.dimensions.actualCellWidth.toFixed(0);
+        const cellHeight = this._renderService.dimensions.actualCellHeight.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
         break;
     }
