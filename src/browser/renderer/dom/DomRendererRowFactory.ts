@@ -7,7 +7,7 @@ import { IBufferLine } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { IOptionsService } from 'common/services/Services';
+import { ICoreService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 import { ICharacterJoinerService } from 'browser/services/Services';
@@ -31,7 +31,8 @@ export class DomRendererRowFactory {
     private readonly _document: Document,
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICoreService private readonly _coreService: ICoreService
   ) {
   }
 
@@ -110,7 +111,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (isCursorRow && x === cursorX) {
+      if (!this._coreService.isCursorHidden && isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
 
         if (cursorBlink) {
