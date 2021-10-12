@@ -86,7 +86,7 @@ export class SoundAddon implements ITerminalAddon {
       }
 
       for (let i = 2; i < params.length; ++i) {
-        let note = params[i] as number;
+        const note = params[i] as number;
         if (note === 0) {
           volume = 0;
         }
