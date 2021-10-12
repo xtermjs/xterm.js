@@ -240,6 +240,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
+  private _onRequestSendFocus = new EventEmitter<void>();
+  public get onRequestSendFocus(): IEvent<void> { return this._onRequestSendFocus.event; }
   private _onRequestSyncScrollBar = new EventEmitter<void>();
   public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
   private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
@@ -1976,6 +1978,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // focusin: ^[[I
           // focusout: ^[[O
           this._coreService.decPrivateModes.sendFocus = true;
+          this._onRequestSendFocus.fire();
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1005 not supported (see #2507)');
