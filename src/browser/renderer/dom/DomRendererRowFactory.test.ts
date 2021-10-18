@@ -10,7 +10,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags,
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { MockOptionsService } from 'common/TestUtils.test';
+import { MockCoreService, MockOptionsService } from 'common/TestUtils.test';
 import { css } from 'browser/Color';
 import { MockCharacterJoinerService } from 'browser/TestUtils.test';
 
@@ -21,30 +21,36 @@ describe('DomRendererRowFactory', () => {
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
-    rowFactory = new DomRendererRowFactory(dom.window.document, {
-      background: css.toColor('#010101'),
-      foreground: css.toColor('#020202'),
-      ansi: [
-        // dark:
-        css.toColor('#2e3436'),
-        css.toColor('#cc0000'),
-        css.toColor('#4e9a06'),
-        css.toColor('#c4a000'),
-        css.toColor('#3465a4'),
-        css.toColor('#75507b'),
-        css.toColor('#06989a'),
-        css.toColor('#d3d7cf'),
-        // bright:
-        css.toColor('#555753'),
-        css.toColor('#ef2929'),
-        css.toColor('#8ae234'),
-        css.toColor('#fce94f'),
-        css.toColor('#729fcf'),
-        css.toColor('#ad7fa8'),
-        css.toColor('#34e2e2'),
-        css.toColor('#eeeeec')
-      ]
-    } as any, new MockCharacterJoinerService(), new MockOptionsService({ drawBoldTextInBrightColors: true }));
+    rowFactory = new DomRendererRowFactory(
+      dom.window.document,
+      {
+        background: css.toColor('#010101'),
+        foreground: css.toColor('#020202'),
+        ansi: [
+          // dark:
+          css.toColor('#2e3436'),
+          css.toColor('#cc0000'),
+          css.toColor('#4e9a06'),
+          css.toColor('#c4a000'),
+          css.toColor('#3465a4'),
+          css.toColor('#75507b'),
+          css.toColor('#06989a'),
+          css.toColor('#d3d7cf'),
+          // bright:
+          css.toColor('#555753'),
+          css.toColor('#ef2929'),
+          css.toColor('#8ae234'),
+          css.toColor('#fce94f'),
+          css.toColor('#729fcf'),
+          css.toColor('#ad7fa8'),
+          css.toColor('#34e2e2'),
+          css.toColor('#eeeeec')
+        ]
+      } as any,
+      new MockCharacterJoinerService(),
+      new MockOptionsService({ drawBoldTextInBrightColors: true }),
+      new MockCoreService()
+    );
     lineData = createEmptyLineData(2);
   });
 

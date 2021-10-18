@@ -164,6 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
@@ -1294,6 +1295,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   public clearTextureAtlas(): void {
     this._renderService?.clearTextureAtlas();
+  }
+
+  private _reportFocus(): void {
+    if (this.element?.classList.contains('focus')) {
+      this.coreService.triggerDataEvent(C0.ESC + '[I');
+    } else {
+      this.coreService.triggerDataEvent(C0.ESC + '[O');
+    }
   }
 
   private _reportWindowsOptions(type: WindowsOptionsReportType): void {
