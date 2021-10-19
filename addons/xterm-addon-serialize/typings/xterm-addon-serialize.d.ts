@@ -7,14 +7,14 @@ import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-serialize' {
   /**
-   * An xterm.js addon that enables web links.
+   * An xterm.js addon that enables serialization of terminal contents.
    */
   export class SerializeAddon implements ITerminalAddon {
 
     constructor();
 
     /**
-     * Activates the addon
+     * Activates the addon.
      * @param terminal The terminal the addon is being loaded in.
      */
     public activate(terminal: Terminal): void;
@@ -28,15 +28,32 @@ declare module 'xterm-addon-serialize' {
      * It's recommended that you write the serialized data into a terminal of the same size in which
      * it originated from and then resize it after if needed.
      * 
-     * @param scrollback The number of rows in scrollback buffer to serialize, starting from the
-     * bottom of the scrollback buffer. This defaults to the all available rows in the scrollback
-     * buffer.
+     * @param options Custom options to allow control over what gets serialized.
      */
-    public serialize(scrollback?: number): string;
+    public serialize(options?: ISerializeOptions): string;
 
     /**
      * Disposes the addon.
      */
     public dispose(): void;
+  }
+
+  export interface ISerializeOptions {
+    /**
+     * The number of rows in the scrollback buffer to serialize, starting from the bottom of the
+     * scrollback buffer. When not specified, all available rows in the scrollback buffer will be
+     * serialized.
+     */
+    scrollback?: number;
+
+    /**
+     * Whether to exclude the terminal modes from the serialization. False by default.
+     */
+    excludeModes?: boolean;
+
+    /**
+     * Whether to exclude the alt buffer from the serialization. False by default.
+     */
+    excludeAltBuffer?: boolean;
   }
 }
