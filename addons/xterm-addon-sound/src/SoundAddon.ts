@@ -6,6 +6,7 @@
  */
 
 import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
+import { AudioSampleHandler } from './AudioSampleHandler';
 
 // tear down sound resources after inactivity
 const TEARDOWN_MS = 5000;
@@ -49,6 +50,7 @@ export class SoundAddon implements ITerminalAddon {
       { intermediates: ',', final: '~' },
       params => this.decps(params)
     );
+    (terminal as any)._core._inputHandler._parser.registerDcsHandler({final: 'a'}, new AudioSampleHandler(terminal));
     this._terminal = terminal;
   }
 
