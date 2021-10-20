@@ -24,6 +24,10 @@ declare module 'xterm-addon-serialize' {
      * the state. The cursor will also be positioned to the correct cell. When restoring a terminal
      * it is best to do before `Terminal.open` is called to avoid wasting CPU cycles rendering
      * incomplete frames.
+     * 
+     * It's recommended that you write the serialized data into a terminal of the same size in which
+     * it originated from and then resize it after if needed.
+     * 
      * @param options Custom options to allow control over what gets serialized.
      */
     public serialize(options?: ISerializeOptions): string;
