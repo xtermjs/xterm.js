@@ -7,7 +7,7 @@ import { IBufferLine } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { IOptionsService } from 'common/services/Services';
+import { ICoreService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 import { ICharacterJoinerService } from 'browser/services/Services';
@@ -17,6 +17,7 @@ export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const UNDERLINE_CLASS = 'xterm-underline';
+export const STRIKETHROUGH_CLASS = 'xterm-strikethrough';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
@@ -30,7 +31,8 @@ export class DomRendererRowFactory {
     private readonly _document: Document,
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICoreService private readonly _coreService: ICoreService
   ) {
   }
 
@@ -109,7 +111,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (isCursorRow && x === cursorX) {
+      if (!this._coreService.isCursorHidden && isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
 
         if (cursorBlink) {
@@ -149,6 +151,10 @@ export class DomRendererRowFactory {
         charElement.textContent = WHITESPACE_CELL_CHAR;
       } else {
         charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
+      }
+
+      if (cell.isStrikethrough()) {
+        charElement.classList.add(STRIKETHROUGH_CLASS);
       }
 
       let fg = cell.getFgColor();

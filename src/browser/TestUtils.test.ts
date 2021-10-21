@@ -13,7 +13,7 @@ import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, I
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { Terminal } from 'browser/Terminal';
-import { IUnicodeService, IOptionsService } from 'common/services/Services';
+import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 
@@ -43,6 +43,8 @@ export class MockTerminal implements ITerminal {
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public coreMouseService!: ICoreMouseService;
+  public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
   public addMarker(cursorYOffset: number): IMarker {
@@ -191,6 +193,9 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public reset(): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }
   public refresh(start: number, end: number): void {
@@ -370,6 +375,9 @@ export class MockRenderService implements IRenderService {
     actualCellHeight: 0
   };
   public refreshRows(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }
   public resize(cols: number, rows: number): void {

@@ -91,6 +91,10 @@ We also partially support *Internet Explorer 11*, meaning xterm.js should work f
 
 Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers. These are the versions we strive to keep working.
 
+### Node.js Support
+
+We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the serialize addon so it can get all state restored upon reconnection.
+
 ## API
 
 The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
@@ -162,20 +166,24 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**CoCalc**](https://cocalc.com/): Lots of free software pre-installed, to chat, collaborate, develop, program, publish, research, share, teach, in C++, HTML, Julia, Jupyter, LaTeX, Markdown, Python, R, SageMath, Scala, ...
 - [**Dank Domain**](https://www.DDgame.us/): Open source multiuser medieval game supporting old & new terminal emulation.
 - [**DockerStacks**](https://docker-stacks.com/): Local LAMP/LEMP development studio
-- [**Codecademy**](https://codecademy.com/): Uses xterm.js in its courses on Bash. 
+- [**Codecademy**](https://codecademy.com/): Uses xterm.js in its courses on Bash.
 - [**Laravel Ssh Web Client**](https://github.com/roke22/Laravel-ssh-client): Laravel server inventory with ssh web client to connect at server using xterm.js
 - [**Repl.it**](https://repl.it): Collaborative browser based IDE with support for 50+ different languages.
 - [**TeleType**](https://github.com/akshaykmr/TeleType): cli tool that allows you to share your terminal online conveniently. Show off mad cli-fu, help a colleague, teach, or troubleshoot.
 - [**Intervue**](https://www.intervue.io): Pair programming for interviews. Multiple programming languages are supported, with results displayed by xterm.js.
-- [**TRASA**](https://trasa.io): Zero trust access to Web, SSH, RDP, and Database services.  
+- [**TRASA**](https://trasa.io): Zero trust access to Web, SSH, RDP, and Database services.
 - [**Commas**](https://github.com/CyanSalt/commas): Commas is a hackable terminal and command runner.
-- [**Devtron**](https://github.com/devtron-labs/devtron): Software Delivery Workflow For Kubernetes. 
+- [**Devtron**](https://github.com/devtron-labs/devtron): Software Delivery Workflow For Kubernetes.
 - [**NxShell**](https://github.com/nxshell/nxshell): An easy to use new terminal for SSH.
 - [**gifcast**](https://dstein64.github.io/gifcast/): Converts an asciinema cast to an animated GIF.
 - [**WizardWebssh**](https://gitlab.com/mikeramsey/wizardwebssh): A terminal with Pyqt5 Widget for embedding, which can be used as an ssh client to connect to your ssh servers. It is written in Python, based on tornado, paramiko, and xterm.js.
-- [**Wizard Assistant**](https://wizardassistant.com/): Wizard Assistant comes with advanced automation tools, preloaded common and special time-saving commands, and a built-in SSH terminal. Now you can remotely administer, troubleshoot, and analyze any system with ease. 
+- [**Wizard Assistant**](https://wizardassistant.com/): Wizard Assistant comes with advanced automation tools, preloaded common and special time-saving commands, and a built-in SSH terminal. Now you can remotely administer, troubleshoot, and analyze any system with ease.
 - [**ucli**](https://github.com/tsadarsh/ucli): Command Line for everyone :family_man_woman_girl_boy: at [www.ucli.tech](https://www.ucli.tech).
 - [**Tess**](https://github.com/SquitchYT/Tess/): Simple Terminal Fully Customizable for Everyone.
+- [**HashiCorp Nomad**](https://www.nomadproject.io/): A container orchestrator with the ability to connect to remote tasks via a web interface using websockets and xterm.js.
+- [**TermPair**](https://github.com/cs01/termpair): View and control terminals from your browser with end-to-end encryption
+- [**gdbgui**](https://github.com/cs01/gdbgui): Browser-based frontend to gdb (gnu debugger)
+- [**goormIDE**](https://ide.goorm.io/): Run almost every programming languages with real-time collaboration, live pair programming, and built-in messenger.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.

@@ -20,6 +20,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { IBuffer } from 'common/buffer/Types';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -234,12 +235,16 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
+  private _activeBuffer: IBuffer;
+
   private _onRequestBell = new EventEmitter<void>();
   public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
   private _onRequestRefreshRows = new EventEmitter<number, number>();
   public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
   private _onRequestReset = new EventEmitter<void>();
   public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
+  private _onRequestSendFocus = new EventEmitter<void>();
+  public get onRequestSendFocus(): IEvent<void> { return this._onRequestSendFocus.event; }
   private _onRequestSyncScrollBar = new EventEmitter<void>();
   public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
   private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
@@ -281,6 +286,10 @@ export class InputHandler extends Disposable implements IInputHandler {
   ) {
     super();
     this.register(this._parser);
+
+    // Track properties used in performance critical code manually to avoid using slow getters
+    this._activeBuffer = this._bufferService.buffer;
+    this.register(this._bufferService.buffers.onBufferActivate(e => this._activeBuffer = e.activeBuffer));
 
     /**
      * custom fallback handlers
@@ -508,9 +517,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
     let result: void | Promise<boolean>;
-    let buffer = this._bufferService.buffer;
-    let cursorStartX = buffer.x;
-    let cursorStartY = buffer.y;
+    let cursorStartX = this._activeBuffer.x;
+    let cursorStartY = this._activeBuffer.y;
     let start = 0;
     const wasPaused = this._parseStack.paused;
 
@@ -569,8 +577,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    buffer = this._bufferService.buffer;
-    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
+    if (this._activeBuffer.x !== cursorStartX || this._activeBuffer.y !== cursorStartY) {
       this._onCursorMove.fire();
     }
 
@@ -581,20 +588,19 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
     let chWidth: number;
-    const buffer = this._bufferService.buffer;
     const charset = this._charsetService.charset;
     const screenReaderMode = this._optionsService.options.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
-    let bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
+    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
 
-    this._dirtyRowService.markDirty(buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
-    if (buffer.x && end - start > 0 && bufferRow.getWidth(buffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(buffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+    if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
+      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
     for (let pos = start; pos < end; ++pos) {
@@ -619,17 +625,17 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // insert combining char at last cursor position
-      // buffer.x should never be 0 for a combining char
+      // this._activeBuffer.x should never be 0 for a combining char
       // since they always follow a cell consuming char
-      // therefore we can test for buffer.x to avoid overflow left
-      if (!chWidth && buffer.x) {
-        if (!bufferRow.getWidth(buffer.x - 1)) {
+      // therefore we can test for this._activeBuffer.x to avoid overflow left
+      if (!chWidth && this._activeBuffer.x) {
+        if (!bufferRow.getWidth(this._activeBuffer.x - 1)) {
           // found empty cell after fullwidth, need to go 2 cells back
           // it is save to step 2 cells back here
           // since an empty cell is only set by fullwidth chars
-          bufferRow.addCodepointToCell(buffer.x - 2, code);
+          bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
         } else {
-          bufferRow.addCodepointToCell(buffer.x - 1, code);
+          bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
         }
         continue;
       }
@@ -637,31 +643,31 @@ export class InputHandler extends Disposable implements IInputHandler {
       // goto next line if ch would overflow
       // NOTE: To avoid costly width checks here,
       // the terminal does not allow a cols < 2.
-      if (buffer.x + chWidth - 1 >= cols) {
+      if (this._activeBuffer.x + chWidth - 1 >= cols) {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
           // clear left over cells to the right
-          while (buffer.x < cols) {
-            bufferRow.setCellFromCodePoint(buffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+          while (this._activeBuffer.x < cols) {
+            bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
           }
-          buffer.x = 0;
-          buffer.y++;
-          if (buffer.y === buffer.scrollBottom + 1) {
-            buffer.y--;
+          this._activeBuffer.x = 0;
+          this._activeBuffer.y++;
+          if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
+            this._activeBuffer.y--;
             this._bufferService.scroll(this._eraseAttrData(), true);
           } else {
-            if (buffer.y >= this._bufferService.rows) {
-              buffer.y = this._bufferService.rows - 1;
+            if (this._activeBuffer.y >= this._bufferService.rows) {
+              this._activeBuffer.y = this._bufferService.rows - 1;
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            buffer.lines.get(buffer.ybase + buffer.y)!.isWrapped = true;
+            this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = true;
           }
           // row changed, get it again
-          bufferRow = buffer.lines.get(buffer.ybase + buffer.y)!;
+          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         } else {
-          buffer.x = cols - 1;
+          this._activeBuffer.x = cols - 1;
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
             // What to do here? We got a wide char that does not fit into last cell
@@ -673,7 +679,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr), curAttr);
+        bufferRow.insertCells(this._activeBuffer.x, chWidth, this._activeBuffer.getNullCell(curAttr), curAttr);
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
@@ -683,15 +689,15 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
-      // we already made sure above, that buffer.x + chWidth will not overflow right
+      // we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
         }
       }
     }
@@ -700,7 +706,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  - fullwidth + surrogates: reset
     //  - combining: only base char gets carried on (bug in xterm?)
     if (end - start > 0) {
-      bufferRow.loadCell(buffer.x - 1, this._workCell);
+      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
       if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
         this._parser.precedingCodepoint = 0;
       } else if (this._workCell.isCombined()) {
@@ -711,11 +717,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
-    if (buffer.x < cols && end - start > 0 && bufferRow.getWidth(buffer.x) === 0 && !bufferRow.hasContent(buffer.x)) {
-      bufferRow.setCellFromCodePoint(buffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+    if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
+      bufferRow.setCellFromCodePoint(this._activeBuffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
-    this._dirtyRowService.markDirty(buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -779,25 +785,22 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): boolean {
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
-    this._dirtyRowService.markDirty(buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
     if (this._optionsService.options.convertEol) {
-      buffer.x = 0;
+      this._activeBuffer.x = 0;
     }
-    buffer.y++;
-    if (buffer.y === buffer.scrollBottom + 1) {
-      buffer.y--;
+    this._activeBuffer.y++;
+    if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
+      this._activeBuffer.y--;
       this._bufferService.scroll(this._eraseAttrData());
-    } else if (buffer.y >= this._bufferService.rows) {
-      buffer.y = this._bufferService.rows - 1;
+    } else if (this._activeBuffer.y >= this._bufferService.rows) {
+      this._activeBuffer.y = this._bufferService.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (buffer.x >= this._bufferService.cols) {
-      buffer.x--;
+    if (this._activeBuffer.x >= this._bufferService.cols) {
+      this._activeBuffer.x--;
     }
-    this._dirtyRowService.markDirty(buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
 
     this._onLineFeed.fire();
     return true;
@@ -810,7 +813,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    CR   "Carriage Return"  "\r, \x0D"  "Move the cursor to the beginning of the row."
    */
   public carriageReturn(): boolean {
-    this._bufferService.buffer.x = 0;
+    this._activeBuffer.x = 0;
     return true;
   }
 
@@ -826,13 +829,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * with the cursor, thus at the home position (top-leftmost cell) this has no effect.
    */
   public backspace(): boolean {
-    const buffer = this._bufferService.buffer;
-
     // reverse wrap-around is disabled
     if (!this._coreService.decPrivateModes.reverseWraparound) {
       this._restrictCursor();
-      if (buffer.x > 0) {
-        buffer.x--;
+      if (this._activeBuffer.x > 0) {
+        this._activeBuffer.x--;
       }
       return true;
     }
@@ -842,8 +843,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     // to be at x=cols to be able to address the last cell of a row by BS
     this._restrictCursor(this._bufferService.cols);
 
-    if (buffer.x > 0) {
-      buffer.x--;
+    if (this._activeBuffer.x > 0) {
+      this._activeBuffer.x--;
     } else {
       /**
        * reverse wrap-around handling:
@@ -853,21 +854,21 @@ export class InputHandler extends Disposable implements IInputHandler {
        * - cannot peek into scrollbuffer
        * - any cursor movement sequence keeps working as expected
        */
-      if (buffer.x === 0
-          && buffer.y > buffer.scrollTop
-          && buffer.y <= buffer.scrollBottom
-          && buffer.lines.get(buffer.ybase + buffer.y)?.isWrapped)
+      if (this._activeBuffer.x === 0
+          && this._activeBuffer.y > this._activeBuffer.scrollTop
+          && this._activeBuffer.y <= this._activeBuffer.scrollBottom
+          && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped)
       {
-        buffer.lines.get(buffer.ybase + buffer.y)!.isWrapped = false;
-        buffer.y--;
-        buffer.x = this._bufferService.cols - 1;
+        this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
+        this._activeBuffer.y--;
+        this._activeBuffer.x = this._bufferService.cols - 1;
         // find last taken cell - last cell can have 3 different states:
         // - hasContent(true) + hasWidth(1): narrow char - we are done
         // - hasWidth(0): second part of wide char - we are done
         // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
-        const line = buffer.lines.get(buffer.ybase + buffer.y)!;
-        if (line.hasWidth(buffer.x) && !line.hasContent(buffer.x)) {
-          buffer.x--;
+        const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+        if (line.hasWidth(this._activeBuffer.x) && !line.hasContent(this._activeBuffer.x)) {
+          this._activeBuffer.x--;
           // We do this only once, since width=1 + hasContent=false currently happens only once before
           // early wrapping of a wide char.
           // This needs to be fixed once we support graphemes taking more than 2 cells.
@@ -885,13 +886,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    HT   "Horizontal Tabulation"  "\t, \x09"  "Move the cursor to the next character tab stop."
    */
   public tab(): boolean {
-    if (this._bufferService.buffer.x >= this._bufferService.cols) {
+    if (this._activeBuffer.x >= this._bufferService.cols) {
       return true;
     }
-    const originalX = this._bufferService.buffer.x;
-    this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
+    const originalX = this._activeBuffer.x;
+    this._activeBuffer.x = this._activeBuffer.nextStop();
     if (this._optionsService.options.screenReaderMode) {
-      this._onA11yTab.fire(this._bufferService.buffer.x - originalX);
+      this._onA11yTab.fire(this._activeBuffer.x - originalX);
     }
     return true;
   }
@@ -924,27 +925,27 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Restrict cursor to viewport size / scroll margin (origin mode).
    */
   private _restrictCursor(maxCol: number = this._bufferService.cols - 1): void {
-    this._bufferService.buffer.x = Math.min(maxCol, Math.max(0, this._bufferService.buffer.x));
-    this._bufferService.buffer.y = this._coreService.decPrivateModes.origin
-      ? Math.min(this._bufferService.buffer.scrollBottom, Math.max(this._bufferService.buffer.scrollTop, this._bufferService.buffer.y))
-      : Math.min(this._bufferService.rows - 1, Math.max(0, this._bufferService.buffer.y));
-    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    this._activeBuffer.x = Math.min(maxCol, Math.max(0, this._activeBuffer.x));
+    this._activeBuffer.y = this._coreService.decPrivateModes.origin
+      ? Math.min(this._activeBuffer.scrollBottom, Math.max(this._activeBuffer.scrollTop, this._activeBuffer.y))
+      : Math.min(this._bufferService.rows - 1, Math.max(0, this._activeBuffer.y));
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
   }
 
   /**
    * Set absolute cursor position.
    */
   private _setCursor(x: number, y: number): void {
-    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
     if (this._coreService.decPrivateModes.origin) {
-      this._bufferService.buffer.x = x;
-      this._bufferService.buffer.y = this._bufferService.buffer.scrollTop + y;
+      this._activeBuffer.x = x;
+      this._activeBuffer.y = this._activeBuffer.scrollTop + y;
     } else {
-      this._bufferService.buffer.x = x;
-      this._bufferService.buffer.y = y;
+      this._activeBuffer.x = x;
+      this._activeBuffer.y = y;
     }
     this._restrictCursor();
-    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -954,7 +955,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // for relative changes we have to make sure we are within 0 .. cols/rows - 1
     // before calculating the new position
     this._restrictCursor();
-    this._setCursor(this._bufferService.buffer.x + x, this._bufferService.buffer.y + y);
+    this._setCursor(this._activeBuffer.x + x, this._activeBuffer.y + y);
   }
 
   /**
@@ -966,7 +967,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorUp(params: IParams): boolean {
     // stop at scrollTop
-    const diffToTop = this._bufferService.buffer.y - this._bufferService.buffer.scrollTop;
+    const diffToTop = this._activeBuffer.y - this._activeBuffer.scrollTop;
     if (diffToTop >= 0) {
       this._moveCursor(0, -Math.min(diffToTop, params.params[0] || 1));
     } else {
@@ -984,7 +985,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorDown(params: IParams): boolean {
     // stop at scrollBottom
-    const diffToBottom = this._bufferService.buffer.scrollBottom - this._bufferService.buffer.y;
+    const diffToBottom = this._activeBuffer.scrollBottom - this._activeBuffer.y;
     if (diffToBottom >= 0) {
       this._moveCursor(0, Math.min(diffToBottom, params.params[0] || 1));
     } else {
@@ -1025,7 +1026,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorNextLine(params: IParams): boolean {
     this.cursorDown(params);
-    this._bufferService.buffer.x = 0;
+    this._activeBuffer.x = 0;
     return true;
   }
 
@@ -1039,7 +1040,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public cursorPrecedingLine(params: IParams): boolean {
     this.cursorUp(params);
-    this._bufferService.buffer.x = 0;
+    this._activeBuffer.x = 0;
     return true;
   }
 
@@ -1050,7 +1051,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
    */
   public cursorCharAbsolute(params: IParams): boolean {
-    this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
+    this._setCursor((params.params[0] || 1) - 1, this._activeBuffer.y);
     return true;
   }
 
@@ -1081,7 +1082,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
    */
   public charPosAbsolute(params: IParams): boolean {
-    this._setCursor((params.params[0] || 1) - 1, this._bufferService.buffer.y);
+    this._setCursor((params.params[0] || 1) - 1, this._activeBuffer.y);
     return true;
   }
 
@@ -1103,7 +1104,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI VPA   "Vertical Position Absolute"    "CSI Ps d"  "Move cursor to `Ps`-th row (default=1)."
    */
   public linePosAbsolute(params: IParams): boolean {
-    this._setCursor(this._bufferService.buffer.x, (params.params[0] || 1) - 1);
+    this._setCursor(this._activeBuffer.x, (params.params[0] || 1) - 1);
     return true;
   }
 
@@ -1146,9 +1147,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   public tabClear(params: IParams): boolean {
     const param = params.params[0];
     if (param === 0) {
-      delete this._bufferService.buffer.tabs[this._bufferService.buffer.x];
+      delete this._activeBuffer.tabs[this._activeBuffer.x];
     } else if (param === 3) {
-      this._bufferService.buffer.tabs = {};
+      this._activeBuffer.tabs = {};
     }
     return true;
   }
@@ -1160,12 +1161,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CHT   "Cursor Horizontal Tabulation" "CSI Ps I" "Move cursor `Ps` times tabs forward (default=1)."
    */
   public cursorForwardTab(params: IParams): boolean {
-    if (this._bufferService.buffer.x >= this._bufferService.cols) {
+    if (this._activeBuffer.x >= this._bufferService.cols) {
       return true;
     }
     let param = params.params[0] || 1;
     while (param--) {
-      this._bufferService.buffer.x = this._bufferService.buffer.nextStop();
+      this._activeBuffer.x = this._activeBuffer.nextStop();
     }
     return true;
   }
@@ -1176,16 +1177,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CBT   "Cursor Backward Tabulation"  "CSI Ps Z"  "Move cursor `Ps` tabs backward (default=1)."
    */
   public cursorBackwardTab(params: IParams): boolean {
-    if (this._bufferService.buffer.x >= this._bufferService.cols) {
+    if (this._activeBuffer.x >= this._bufferService.cols) {
       return true;
     }
     let param = params.params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
     while (param--) {
-      buffer.x = buffer.prevStop();
+      this._activeBuffer.x = this._activeBuffer.prevStop();
     }
     return true;
   }
@@ -1199,11 +1197,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
-      this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+      this._activeBuffer.getNullCell(this._eraseAttrData()),
       this._eraseAttrData()
     );
     if (clearWrap) {
@@ -1217,8 +1215,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + y)!;
-    line.fill(this._bufferService.buffer.getNullCell(this._eraseAttrData()));
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
     line.isWrapped = false;
   }
 
@@ -1251,22 +1249,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     let j;
     switch (params.params[0]) {
       case 0:
-        j = this._bufferService.buffer.y;
+        j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
-        this._eraseInBufferLine(j++, this._bufferService.buffer.x, this._bufferService.cols, this._bufferService.buffer.x === 0);
+        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
         for (; j < this._bufferService.rows; j++) {
           this._resetBufferLine(j);
         }
         this._dirtyRowService.markDirty(j);
         break;
       case 1:
-        j = this._bufferService.buffer.y;
+        j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
-        this._eraseInBufferLine(j, 0, this._bufferService.buffer.x + 1, true);
-        if (this._bufferService.buffer.x + 1 >= this._bufferService.cols) {
+        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true);
+        if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          this._bufferService.buffer.lines.get(j + 1)!.isWrapped = false;
+          this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
           this._resetBufferLine(j);
@@ -1283,11 +1281,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
-        const scrollBackSize = this._bufferService.buffer.lines.length - this._bufferService.rows;
+        const scrollBackSize = this._activeBuffer.lines.length - this._bufferService.rows;
         if (scrollBackSize > 0) {
-          this._bufferService.buffer.lines.trimStart(scrollBackSize);
-          this._bufferService.buffer.ybase = Math.max(this._bufferService.buffer.ybase - scrollBackSize, 0);
-          this._bufferService.buffer.ydisp = Math.max(this._bufferService.buffer.ydisp - scrollBackSize, 0);
+          this._activeBuffer.lines.trimStart(scrollBackSize);
+          this._activeBuffer.ybase = Math.max(this._activeBuffer.ybase - scrollBackSize, 0);
+          this._activeBuffer.ydisp = Math.max(this._activeBuffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
           this._onScroll.fire(0);
         }
@@ -1322,16 +1320,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._bufferService.buffer.y, this._bufferService.buffer.x, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols);
         break;
       case 1:
-        this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._bufferService.buffer.x + 1);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1);
         break;
       case 2:
-        this._eraseInBufferLine(this._bufferService.buffer.y, 0, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols);
         break;
     }
-    this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
     return true;
   }
 
@@ -1348,26 +1346,23 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
     let param = params.params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
 
-    const row: number = buffer.ybase + buffer.y;
+    const row: number = this._activeBuffer.ybase + this._activeBuffer.y;
 
-    const scrollBottomRowsOffset = this._bufferService.rows - 1 - buffer.scrollBottom;
-    const scrollBottomAbsolute = this._bufferService.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
+    const scrollBottomRowsOffset = this._bufferService.rows - 1 - this._activeBuffer.scrollBottom;
+    const scrollBottomAbsolute = this._bufferService.rows - 1 + this._activeBuffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
-      buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, buffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(scrollBottomAbsolute - 1, 1);
+      this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
-    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
 
@@ -1384,27 +1379,24 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
     let param = params.params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
 
-    const row: number = buffer.ybase + buffer.y;
+    const row: number = this._activeBuffer.ybase + this._activeBuffer.y;
 
     let j: number;
-    j = this._bufferService.rows - 1 - buffer.scrollBottom;
-    j = this._bufferService.rows - 1 + buffer.ybase - j;
+    j = this._bufferService.rows - 1 - this._activeBuffer.scrollBottom;
+    j = this._bufferService.rows - 1 + this._activeBuffer.ybase - j;
     while (param--) {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, buffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(row, 1);
+      this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(buffer.y, buffer.scrollBottom);
-    buffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
 
@@ -1421,15 +1413,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public insertChars(params: IParams): boolean {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
     if (line) {
       line.insertCells(
-        this._bufferService.buffer.x,
+        this._activeBuffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1447,15 +1439,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public deleteChars(params: IParams): boolean {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
     if (line) {
       line.deleteCells(
-        this._bufferService.buffer.x,
+        this._activeBuffer.x,
         params.params[0] || 1,
-        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1471,14 +1463,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   public scrollUp(params: IParams): boolean {
     let param = params.params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
     while (param--) {
-      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1490,14 +1479,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   public scrollDown(params: IParams): boolean {
     let param = params.params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._bufferService.buffer;
-
     while (param--) {
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 1);
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 0, this._activeBuffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1520,17 +1506,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * SL has no effect outside of the scroll margins.
    */
   public scrollLeft(params: IParams): boolean {
-    const buffer = this._bufferService.buffer;
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
     const param = params.params[0] || 1;
-    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y)!;
-      line.deleteCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+    for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
+      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1554,17 +1539,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * SL has no effect outside of the scroll margins.
    */
   public scrollRight(params: IParams): boolean {
-    const buffer = this._bufferService.buffer;
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
     const param = params.params[0] || 1;
-    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y)!;
-      line.insertCells(0, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+    for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
+      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1578,17 +1562,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * DECIC has no effect outside the scrolling margins.
    */
   public insertColumns(params: IParams): boolean {
-    const buffer = this._bufferService.buffer;
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
     const param = params.params[0] || 1;
-    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = this._bufferService.buffer.lines.get(buffer.ybase + y)!;
-      line.insertCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+    for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
+      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1602,17 +1585,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * DECDC has no effect outside the scrolling margins.
    */
   public deleteColumns(params: IParams): boolean {
-    const buffer = this._bufferService.buffer;
-    if (buffer.y > buffer.scrollBottom || buffer.y < buffer.scrollTop) {
+    if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
     const param = params.params[0] || 1;
-    for (let y = buffer.scrollTop; y <= buffer.scrollBottom; ++y) {
-      const line = buffer.lines.get(buffer.ybase + y)!;
-      line.deleteCells(buffer.x, param, buffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+    for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
+      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1626,15 +1608,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public eraseChars(params: IParams): boolean {
     this._restrictCursor();
-    const line = this._bufferService.buffer.lines.get(this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
     if (line) {
       line.replaceCells(
-        this._bufferService.buffer.x,
-        this._bufferService.buffer.x + (params.params[0] || 1),
-        this._bufferService.buffer.getNullCell(this._eraseAttrData()),
+        this._activeBuffer.x,
+        this._activeBuffer.x + (params.params[0] || 1),
+        this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._bufferService.buffer.y);
+      this._dirtyRowService.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1976,6 +1958,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // focusin: ^[[I
           // focusout: ^[[O
           this._coreService.decPrivateModes.sendFocus = true;
+          this._onRequestSendFocus.fire();
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1005 not supported (see #2507)');
@@ -2365,7 +2348,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 6         | Rapidly blinking.                                        | #N      |
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
-   * | 9         | Crossed-out characters.                                  | #N      |
+   * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
    * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
@@ -2373,7 +2356,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 25        | Steady (not blinking).                                   | #Y      |
    * | 27        | Positive (not inverse).                                  | #Y      |
    * | 28        | Visible (not hidden).                                    | #Y      |
-   * | 29        | Not Crossed-out.                                         | #N      |
+   * | 29        | Not Crossed-out (strikethrough).                         | #Y      |
    * | 30        | Foreground color: Black.                                 | #Y      |
    * | 31        | Foreground color: Red.                                   | #Y      |
    * | 32        | Foreground color: Green.                                 | #Y      |
@@ -2478,6 +2461,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 8) {
         // invisible
         attr.fg |= FgFlags.INVISIBLE;
+      } else if (p === 9) {
+        // strikethrough
+        attr.fg |= FgFlags.STRIKETHROUGH;
       } else if (p === 2) {
         // dimmed text
         attr.bg |= BgFlags.DIM;
@@ -2503,6 +2489,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 28) {
         // not invisible
         attr.fg &= ~FgFlags.INVISIBLE;
+      } else if (p === 29) {
+        // not strikethrough
+        attr.fg &= ~FgFlags.STRIKETHROUGH;
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
@@ -2564,8 +2553,8 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 6:
         // cursor position
-        const y = this._bufferService.buffer.y + 1;
-        const x = this._bufferService.buffer.x + 1;
+        const y = this._activeBuffer.y + 1;
+        const x = this._activeBuffer.x + 1;
         this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
         break;
     }
@@ -2579,8 +2568,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 6:
         // cursor position
-        const y = this._bufferService.buffer.y + 1;
-        const x = this._bufferService.buffer.x + 1;
+        const y = this._activeBuffer.y + 1;
+        const x = this._activeBuffer.x + 1;
         this._coreService.triggerDataEvent(`${C0.ESC}[?${y};${x}R`);
         break;
       case 15:
@@ -2625,18 +2614,18 @@ export class InputHandler extends Disposable implements IInputHandler {
   public softReset(params: IParams): boolean {
     this._coreService.isCursorHidden = false;
     this._onRequestSyncScrollBar.fire();
-    this._bufferService.buffer.scrollTop = 0;
-    this._bufferService.buffer.scrollBottom = this._bufferService.rows - 1;
+    this._activeBuffer.scrollTop = 0;
+    this._activeBuffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
     this._coreService.reset();
     this._charsetService.reset();
 
     // reset DECSC data
-    this._bufferService.buffer.savedX = 0;
-    this._bufferService.buffer.savedY = this._bufferService.buffer.ybase;
-    this._bufferService.buffer.savedCurAttrData.fg = this._curAttrData.fg;
-    this._bufferService.buffer.savedCurAttrData.bg = this._curAttrData.bg;
-    this._bufferService.buffer.savedCharset = this._charsetService.charset;
+    this._activeBuffer.savedX = 0;
+    this._activeBuffer.savedY = this._activeBuffer.ybase;
+    this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
+    this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
+    this._activeBuffer.savedCharset = this._charsetService.charset;
 
     // reset DECOM
     this._coreService.decPrivateModes.origin = false;
@@ -2699,8 +2688,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     if (bottom > top) {
-      this._bufferService.buffer.scrollTop = top - 1;
-      this._bufferService.buffer.scrollBottom = bottom - 1;
+      this._activeBuffer.scrollTop = top - 1;
+      this._activeBuffer.scrollBottom = bottom - 1;
       this._setCursor(0, 0);
     }
     return true;
@@ -2795,11 +2784,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y ESC  SC   "Save Cursor"   "ESC 7"   "Save cursor position, charmap and text attributes."
    */
   public saveCursor(params?: IParams): boolean {
-    this._bufferService.buffer.savedX = this._bufferService.buffer.x;
-    this._bufferService.buffer.savedY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    this._bufferService.buffer.savedCurAttrData.fg = this._curAttrData.fg;
-    this._bufferService.buffer.savedCurAttrData.bg = this._curAttrData.bg;
-    this._bufferService.buffer.savedCharset = this._charsetService.charset;
+    this._activeBuffer.savedX = this._activeBuffer.x;
+    this._activeBuffer.savedY = this._activeBuffer.ybase + this._activeBuffer.y;
+    this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
+    this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
+    this._activeBuffer.savedCharset = this._charsetService.charset;
     return true;
   }
 
@@ -2813,13 +2802,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y ESC  RC "Restore Cursor"  "ESC 8"   "Restore cursor position, charmap and text attributes."
    */
   public restoreCursor(params?: IParams): boolean {
-    this._bufferService.buffer.x = this._bufferService.buffer.savedX || 0;
-    this._bufferService.buffer.y = Math.max(this._bufferService.buffer.savedY - this._bufferService.buffer.ybase, 0);
-    this._curAttrData.fg = this._bufferService.buffer.savedCurAttrData.fg;
-    this._curAttrData.bg = this._bufferService.buffer.savedCurAttrData.bg;
+    this._activeBuffer.x = this._activeBuffer.savedX || 0;
+    this._activeBuffer.y = Math.max(this._activeBuffer.savedY - this._activeBuffer.ybase, 0);
+    this._curAttrData.fg = this._activeBuffer.savedCurAttrData.fg;
+    this._curAttrData.bg = this._activeBuffer.savedCurAttrData.bg;
     this._charsetService.charset = (this as any)._savedCharset;
-    if (this._bufferService.buffer.savedCharset) {
-      this._charsetService.charset = this._bufferService.buffer.savedCharset;
+    if (this._activeBuffer.savedCharset) {
+      this._charsetService.charset = this._activeBuffer.savedCharset;
     }
     this._restrictCursor();
     return true;
@@ -2901,7 +2890,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   ESC   NEL   "Next Line"   "ESC E"   "Move the cursor to the beginning of the next row."
    */
   public nextLine(): boolean {
-    this._bufferService.buffer.x = 0;
+    this._activeBuffer.x = 0;
     this.index();
     return true;
   }
@@ -2981,13 +2970,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public index(): boolean {
     this._restrictCursor();
-    const buffer = this._bufferService.buffer;
-    this._bufferService.buffer.y++;
-    if (buffer.y === buffer.scrollBottom + 1) {
-      buffer.y--;
+    this._activeBuffer.y++;
+    if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
+      this._activeBuffer.y--;
       this._bufferService.scroll(this._eraseAttrData());
-    } else if (buffer.y >= this._bufferService.rows) {
-      buffer.y = this._bufferService.rows - 1;
+    } else if (this._activeBuffer.y >= this._bufferService.rows) {
+      this._activeBuffer.y = this._bufferService.rows - 1;
     }
     this._restrictCursor();
     return true;
@@ -3004,7 +2992,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   ESC   HTS   "Horizontal Tabulation Set" "ESC H"   "Places a tab stop at the current cursor position."
    */
   public tabSet(): boolean {
-    this._bufferService.buffer.tabs[this._bufferService.buffer.x] = true;
+    this._activeBuffer.tabs[this._activeBuffer.x] = true;
     return true;
   }
 
@@ -3019,17 +3007,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public reverseIndex(): boolean {
     this._restrictCursor();
-    const buffer = this._bufferService.buffer;
-    if (buffer.y === buffer.scrollTop) {
+    if (this._activeBuffer.y === this._activeBuffer.scrollTop) {
       // possibly move the code below to term.reverseScroll();
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
       // blankLine(true) is xterm/linux behavior
-      const scrollRegionHeight = buffer.scrollBottom - buffer.scrollTop;
-      buffer.lines.shiftElements(buffer.ybase + buffer.y, scrollRegionHeight, 1);
-      buffer.lines.set(buffer.ybase + buffer.y, buffer.getBlankLine(this._eraseAttrData()));
-      this._dirtyRowService.markRangeDirty(buffer.scrollTop, buffer.scrollBottom);
+      const scrollRegionHeight = this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop;
+      this._activeBuffer.lines.shiftElements(this._activeBuffer.ybase + this._activeBuffer.y, scrollRegionHeight, 1);
+      this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     } else {
-      buffer.y--;
+      this._activeBuffer.y--;
       this._restrictCursor(); // quickfix to not run out of bounds
     }
     return true;
@@ -3090,12 +3077,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     cell.fg = this._curAttrData.fg;
     cell.bg = this._curAttrData.bg;
 
-    const buffer = this._bufferService.buffer;
 
     this._setCursor(0, 0);
     for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
-      const row = buffer.ybase + buffer.y + yOffset;
-      const line = buffer.lines.get(row);
+      const row = this._activeBuffer.ybase + this._activeBuffer.y + yOffset;
+      const line = this._activeBuffer.lines.get(row);
       if (line) {
         line.fill(cell);
         line.isWrapped = false;

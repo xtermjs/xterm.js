@@ -32,7 +32,8 @@ module.exports = {
     filename: mainFile,
     path: path.resolve('./lib'),
     library: addonName,
-    libraryTarget: 'umd'
+    libraryTarget: 'umd',
+    globalObject: 'this'
   },
   mode: 'production'
 };

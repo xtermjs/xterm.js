@@ -9,7 +9,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
@@ -22,7 +22,7 @@ interface ISelectionState {
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
-  private _renderDebouncer: RenderDebouncer;
+  private _renderDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _isPaused: boolean = false;
@@ -166,6 +166,11 @@ export class RenderService extends Disposable implements IRenderService {
     } else {
       this.refreshRows(0, this._rowCount - 1);
     }
+  }
+
+  public clearTextureAtlas(): void {
+    this._renderer?.clearTextureAtlas?.();
+    this._fullRefresh();
   }
 
   public setColors(colors: IColorSet): void {
