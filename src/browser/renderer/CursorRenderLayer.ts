@@ -55,7 +55,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-    // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -72,26 +71,18 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public reset(): void {
     this._clearCursor();
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
-      this._cursorBlinkStateManager = undefined;
-      this.onOptionsChanged();
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this.onOptionsChanged();
   }
 
   public onBlur(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.pause();
-    }
+    this._cursorBlinkStateManager?.pause();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onFocus(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume();
-    } else {
-      this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
-    }
+    this._cursorBlinkStateManager?.resume();
+    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public onOptionsChanged(): void {
@@ -111,9 +102,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onCursorMove(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.restartBlinkAnimation();
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation();
   }
 
   public onGridChanged(startRow: number, endRow: number): void {
@@ -300,6 +289,7 @@ class CursorBlinkStateManager {
     // Clear any existing interval
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
+      this._blinkInterval = undefined;
     }
 
     // Setup the initial timeout which will hide the cursor, this is done before
