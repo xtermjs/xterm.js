@@ -172,7 +172,6 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**TeleType**](https://github.com/akshaykmr/TeleType): cli tool that allows you to share your terminal online conveniently. Show off mad cli-fu, help a colleague, teach, or troubleshoot.
 - [**Intervue**](https://www.intervue.io): Pair programming for interviews. Multiple programming languages are supported, with results displayed by xterm.js.
 - [**TRASA**](https://trasa.io): Zero trust access to Web, SSH, RDP, and Database services.
-- [**FleetDeck**](https://fleetdeck.io): Remote desktop & virtual terminal
 - [**Commas**](https://github.com/CyanSalt/commas): Commas is a hackable terminal and command runner.
 - [**Devtron**](https://github.com/devtron-labs/devtron): Software Delivery Workflow For Kubernetes.
 - [**NxShell**](https://github.com/nxshell/nxshell): An easy to use new terminal for SSH.
@@ -185,6 +184,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**TermPair**](https://github.com/cs01/termpair): View and control terminals from your browser with end-to-end encryption
 - [**gdbgui**](https://github.com/cs01/gdbgui): Browser-based frontend to gdb (gnu debugger)
 - [**goormIDE**](https://ide.goorm.io/): Run almost every programming languages with real-time collaboration, live pair programming, and built-in messenger.
+- [**FleetDeck**](https://fleetdeck.io): Remote desktop & virtual terminal
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
