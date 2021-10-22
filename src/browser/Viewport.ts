@@ -42,6 +42,7 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
+    private readonly _element: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
@@ -115,8 +116,10 @@ export class Viewport extends Disposable implements IViewport {
       this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     }
     this._lastHadScrollBar = this.scrollBarWidth > 0;
-
-    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth + (this._lastHadScrollBar ? FALLBACK_SCROLL_BAR_WIDTH : 0)).toString() + 'px';
+    
+    const elementStyle = window.getComputedStyle(this._element);
+    const elementPadding = parseInt(elementStyle.paddingLeft) + parseInt(elementStyle.paddingRight);
+    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth + (this._lastHadScrollBar ? elementPadding : 0)).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
 
