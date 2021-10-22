@@ -25,7 +25,7 @@ import { IBuffer } from 'common/buffer/Types';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
+const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
@@ -167,7 +167,7 @@ class DECRQSS implements IDcsHandler {
         break;
       case 'r': // DECSTBM
         const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
-                ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
+          ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
         break;
       case 'm': // SGR
@@ -175,7 +175,7 @@ class DECRQSS implements IDcsHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
         break;
       case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = { 'block': 2, 'underline': 4, 'bar': 6 };
+        const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
         let style = STYLES[this._optionsService.options.cursorStyle];
         style -= this._optionsService.options.cursorBlink ? 1 : 0;
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
@@ -403,7 +403,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
     //  10 - Change VT100 text foreground color to Pt.
+    this._parser.registerOscHandler(10, new OscHandler(data => this.queryOrSetFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
+    this._parser.registerOscHandler(11, new OscHandler(data => this.queryOrSetBgColor(data)));
     //  12 - Change text cursor color to Pt.
     //  13 - Change mouse foreground color to Pt.
     //  14 - Change mouse background color to Pt.
@@ -855,10 +857,9 @@ export class InputHandler extends Disposable implements IInputHandler {
        * - any cursor movement sequence keeps working as expected
        */
       if (this._activeBuffer.x === 0
-          && this._activeBuffer.y > this._activeBuffer.scrollTop
-          && this._activeBuffer.y <= this._activeBuffer.scrollBottom
-          && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped)
-      {
+        && this._activeBuffer.y > this._activeBuffer.scrollTop
+        && this._activeBuffer.y <= this._activeBuffer.scrollBottom
+        && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped) {
         this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
@@ -1977,7 +1978,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1049: // alt screen buffer cursor
           this.saveCursor();
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
@@ -2197,7 +2198,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this.restoreCursor();
           break;
         case 1049: // alt screen buffer cursor
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
@@ -2264,7 +2265,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       // exit early if can decide color mode with semicolons
       if ((accu[1] === 5 && advance + cSpace >= 2)
-          || (accu[1] === 2 && advance + cSpace >= 5)) {
+        || (accu[1] === 2 && advance + cSpace >= 5)) {
         break;
       }
       // offset colorSpace slot for semicolon mode
@@ -2683,7 +2684,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const top = params.params[0] || 1;
     let bottom: number;
 
-    if (params.length < 2 || (bottom = params.params[1]) >  this._bufferService.rows || bottom === 0) {
+    if (params.length < 2 || (bottom = params.params[1]) > this._bufferService.rows || bottom === 0) {
       bottom = this._bufferService.rows;
     }
 
@@ -2863,6 +2864,56 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Parse xcolor name to RGB values (8 bit per channel).
+   * See `man xparsecolor` for details about certain format specifications.
+   * 
+   * Supported formats:
+   * - rgb:<red>/<green>/<blue> with <red>, <green>, <blue> in h | hh | hhh | hhhh
+   * - #RGB, #RRGGBB, #RRRGGGBBB, #RRRRGGGGBBBB
+   * 
+   * All other formats like rgbi: or device-independent string specifications
+   * with float numbering are not supported.
+   */
+  protected _parseXColorName(data: string): [number, number, number] | void {
+    // also handle uppercases
+    data = data.toLowerCase();
+    if (data.indexOf('rgb:') === 0) {
+      // 'rgb:' specifier
+      data = data.slice(4);
+      const rex = /^([\da-f]{1})\/([\da-f]{1})\/([\da-f]{1})$|^([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})$|^([\da-f]{3})\/([\da-f]{3})\/([\da-f]{3})$|^([\da-f]{4})\/([\da-f]{4})\/([\da-f]{4})$/;
+      const m = rex.exec(data);
+      if (m) {
+        const base = m[1] ? 15 : m[4] ? 255 : m[7] ? 4095 : 65535;
+        return [
+          Math.round(parseInt(m[1] || m[4] || m[7] || m[10], 16) / base * 255),
+          Math.round(parseInt(m[2] || m[5] || m[8] || m[11], 16) / base * 255),
+          Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255),
+        ];
+      }
+    } else if (data.indexOf('#') === 0) {
+      // '#' specifier
+      data = data.slice(1);
+      const rex = /^[\da-f]+$/;
+      if (rex.exec(data) && [3, 6, 9, 12].includes(data.length)) {
+        const adv = data.length / 3;
+        const r = parseInt(data.slice(0, adv), 16);
+        const g = parseInt(data.slice(adv, 2 * adv), 16);
+        const b = parseInt(data.slice(2 * adv, 3 * adv), 16);
+        switch (adv) {
+          case 1:
+            return [r << 4, g << 4, b << 4];
+          case 2:
+            return [r, g, b];
+          case 3:
+            return [r >> 4, g >> 4, b >> 4];
+          case 4:
+            return [r >> 8, g >> 8, b >> 8];
+        }
+      }
+    }
+  }
+
+  /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
@@ -2876,6 +2927,42 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     else {
       this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
+    }
+    return true;
+  }
+
+  public queryOrSetFgColor(data: string): boolean {
+    // note: data may contain multiple ? or color names separated with ;
+    // Multiple values will map through to OSC 10 - 19, but we only support 10 and 11 currently,
+    // thus truncate to max. 2 occurences.
+    const slots = data.split(';').slice(0, 2);
+    if (slots[0] === '?') {
+      // TODO: query FG color
+      console.log('query FG');
+    } else {
+      const color = this._parseXColorName(slots[0]);
+      if (color) {
+        // set new FG color
+        console.log('set FG', color);
+      }
+    }
+    if (slots.length === 2) {
+      this.queryOrSetBgColor(slots[1]);
+    }
+    return true;
+  }
+
+  public queryOrSetBgColor(data: string): boolean {
+    const slots = data.split(';').slice(0, 1);
+    if (slots[0] === '?') {
+      // TODO: query BG color
+      console.log('query BG');
+    } else {
+      const color = this._parseXColorName(slots[0]);
+      if (color) {
+        // set new BG color
+        console.log('set BG', color);
+      }
     }
     return true;
   }
