@@ -126,7 +126,7 @@ export class OptionsService implements IOptionsService {
   }
 
   public setOption(key: string, value: any): void {
-    this.options[key] = value;
+    this.publicOptions[key] = value;
   }
 
   private _sanitizeAndValidateOption(key: string, value: any): any {
@@ -181,6 +181,6 @@ export class OptionsService implements IOptionsService {
   }
 
   public getOption(key: string): any {
-    return this.options[key];
+    return this.publicOptions[key];
   }
 }
