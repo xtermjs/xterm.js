@@ -116,7 +116,7 @@ export class Viewport extends Disposable implements IViewport {
     }
     this._lastHadScrollBar = this.scrollBarWidth > 0;
 
-    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth).toString() + 'px';
+    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth + (this._lastHadScrollBar ? FALLBACK_SCROLL_BAR_WIDTH : 0)).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
 
