@@ -1869,7 +1869,7 @@ describe('InputHandler', () => {
     });
   });
   describe('OSC', () => {
-    describe.only('parse xcolor names', () => {
+    describe('parse xcolor names', () => {
       it('rgb:<r>/<g>/<b> scheme in 4/8/12/16 bit', () => {
         // 4 bit
         assert.deepEqual(inputHandler.parseXColorName('rgb:0/0/0'), [0, 0, 0]);
