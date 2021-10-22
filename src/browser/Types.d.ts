@@ -15,7 +15,6 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
-  buffers: IBufferSet;
   viewport: IViewport | undefined;
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
@@ -80,6 +79,7 @@ export interface IPublicTerminal extends IDisposable {
   write(data: string | Uint8Array, callback?: () => void): void;
   paste(data: string): void;
   refresh(start: number, end: number): void;
+  clearTextureAtlas(): void;
   reset(): void;
 }
 
@@ -309,4 +309,8 @@ export type CharacterJoinerHandler = (text: string) => [number, number][];
 export interface ICharacterJoiner {
   id: number;
   handler: CharacterJoinerHandler;
+}
+
+export interface IRenderDebouncer extends IDisposable {
+  refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
 }

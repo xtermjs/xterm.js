@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { pollFor, writeSync, openTerminal, getBrowserType } from './TestUtils';
+import { pollFor, writeSync, openTerminal, getBrowserType, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -211,9 +211,7 @@ describe('Mouse Tracking Tests', async () => {
   const itMouse = isChromium ? it : it.skip;
 
   before(async function(): Promise<void> {
-    browser = await browserType.launch({
-      headless: process.argv.indexOf('--headless') !== -1
-    });
+    browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
   });

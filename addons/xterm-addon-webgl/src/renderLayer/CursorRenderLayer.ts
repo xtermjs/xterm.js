@@ -7,7 +7,7 @@ import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IEventEmitter } from 'common/EventEmitter';
 
@@ -31,9 +31,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cell: ICellData = new CellData();
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
+    private readonly _terminal: ITerminal,
     private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>
   ) {
     super(container, 'cursor', zIndex, true, colors);
@@ -49,7 +51,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-    // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
+    this.onOptionsChanged(terminal);
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -66,25 +68,18 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public reset(terminal: Terminal): void {
     this._clearCursor();
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
-      this.onOptionsChanged(terminal);
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
+    this.onOptionsChanged(terminal);
   }
 
   public onBlur(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.pause();
-    }
+    this._cursorBlinkStateManager?.pause();
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onFocus(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume(terminal);
-    } else {
-      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
-    }
+    this._cursorBlinkStateManager?.resume(terminal);
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onOptionsChanged(terminal: Terminal): void {
@@ -104,9 +99,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onCursorMove(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
   }
 
   public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
@@ -120,7 +113,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _render(terminal: Terminal, triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
     // TODO: Need to expose API for this
-    if (!(terminal as any)._core._coreService.isCursorInitialized || (terminal as any)._core._coreService.isCursorHidden) {
+    if (!this._terminal.coreService.isCursorInitialized || this._terminal.coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }
@@ -193,7 +186,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      // Avoid potential rounding errors when device pixel ratio is less than 1
+      if (window.devicePixelRatio < 1) {
+        this._clearAll();
+      } else {
+        this._clearCells(this._state.x, this._state.y, this._state.width, 1);
+      }
       this._state = {
         x: 0,
         y: 0,
@@ -296,6 +294,7 @@ class CursorBlinkStateManager {
     // Clear any existing interval
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
+      this._blinkInterval = undefined;
     }
 
     // Setup the initial timeout which will hide the cursor, this is done before

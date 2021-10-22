@@ -13,7 +13,7 @@ const NULL_COLOR: IColor = {
   rgba: 0
 };
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCellWidth: number, scaledCellHeight: number, scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -28,7 +28,12 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     contrastCache: colors.contrastCache
   };
   return {
+    customGlyphs: terminal.getOption('customGlyphs'),
     devicePixelRatio: window.devicePixelRatio,
+    letterSpacing: terminal.getOption('letterSpacing'),
+    lineHeight: terminal.getOption('lineHeight'),
+    scaledCellWidth,
+    scaledCellHeight,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: terminal.getOption('fontFamily'),
@@ -49,6 +54,9 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
     }
   }
   return a.devicePixelRatio === b.devicePixelRatio &&
+      a.customGlyphs === b.customGlyphs &&
+      a.lineHeight === b.lineHeight &&
+      a.letterSpacing === b.letterSpacing &&
       a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&

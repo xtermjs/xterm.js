@@ -10,12 +10,13 @@ import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService, IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
+import { IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
 import { ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { Disposable } from 'common/Lifecycle';
+import { getRangeLength } from 'common/buffer/BufferRange';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -132,8 +133,8 @@ export class SelectionService extends Disposable implements ISelectionService {
     super();
 
     // Init listeners
-    this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
-    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._mouseMoveListener = event => this._onMouseMove(event as MouseEvent);
+    this._mouseUpListener = event => this._onMouseUp(event as MouseEvent);
     this._coreService.onUserInput(() => {
       if (this.hasSelection) {
         this.clearSelection();
@@ -323,7 +324,8 @@ export class SelectionService extends Disposable implements ISelectionService {
     const range = this._linkifier.currentLink?.link?.range;
     if (range) {
       this._model.selectionStart = [range.start.x - 1, range.start.y - 1];
-      this._model.selectionEnd = [range.end.x, range.end.y - 1];
+      this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
+      this._model.selectionEnd = undefined;
       return true;
     }
 

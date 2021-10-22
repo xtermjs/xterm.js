@@ -7,13 +7,17 @@
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
 
+
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
 // TODO: Refine this template class later
 abstract class BaseSerializeHandler {
-  constructor(private _buffer: IBuffer) { }
+  constructor(
+    protected readonly _buffer: IBuffer
+  ) {
+  }
 
   public serialize(startRow: number, endRow: number): string {
     // we need two of them to flip between old and new cell
@@ -68,10 +72,9 @@ function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
     && cell1.isBlink() === cell2.isBlink()
     && cell1.isInvisible() === cell2.isInvisible()
     && cell1.isItalic() === cell2.isItalic()
-    && cell1.isDim() === cell2.isDim();
+    && cell1.isDim() === cell2.isDim()
+    && cell1.isStrikethrough() === cell2.isStrikethrough();
 }
-
-
 
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
@@ -83,7 +86,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   // we can see a full colored cell and a null cell that only have background the same style
   // but the information isn't preserved by null cell itself
   // so wee need to record it when required.
-  private _cursorStyle: IBufferCell = this._buffer1.getNullCell();
+  private _cursorStyle: IBufferCell = this._buffer.getNullCell();
 
   // where exact the cursor styles comes from
   // because we can't copy the cell directly
@@ -92,7 +95,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _cursorStyleCol: number = 0;
 
   // this is a null cell for reference for checking whether background is empty or not
-  private _backgroundCell: IBufferCell = this._buffer1.getNullCell();
+  private _backgroundCell: IBufferCell = this._buffer.getNullCell();
 
   private _firstRow: number = 0;
   private _lastCursorRow: number = 0;
@@ -100,8 +103,11 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _lastContentCursorRow: number = 0;
   private _lastContentCursorCol: number = 0;
 
-  constructor(private _buffer1: IBuffer, private _terminal: Terminal) {
-    super(_buffer1);
+  constructor(
+    buffer: IBuffer,
+    private readonly _terminal: Terminal
+  ) {
+    super(buffer);
   }
 
   protected _beforeSerialize(rows: number, start: number, end: number): void {
@@ -111,14 +117,14 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._firstRow = start;
   }
 
-  private _thisRowLastChar: IBufferCell = this._buffer1.getNullCell();
-  private _thisRowLastSecondChar: IBufferCell = this._buffer1.getNullCell();
-  private _nextRowFirstChar: IBufferCell = this._buffer1.getNullCell();
+  private _thisRowLastChar: IBufferCell = this._buffer.getNullCell();
+  private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
+  private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
     // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
-      this._currentRow += `\x1b[${this._nullCellCount}X`;
+      this._currentRow += `\u001b[${this._nullCellCount}X`;
     }
 
     let rowSeparator = '';
@@ -127,13 +133,13 @@ class StringSerializeHandler extends BaseSerializeHandler {
     if (!isLastRow) {
       // Enable BCE
       if (row - this._firstRow >= this._terminal.rows) {
-        this._buffer1.getLine(this._cursorStyleRow)?.getCell(this._cursorStyleCol, this._backgroundCell);
+        this._buffer.getLine(this._cursorStyleRow)?.getCell(this._cursorStyleCol, this._backgroundCell);
       }
 
       // Fetch current line
-      const currentLine = this._buffer1.getLine(row)!;
+      const currentLine = this._buffer.getLine(row)!;
       // Fetch next line
-      const nextLine = this._buffer1.getLine(row + 1)!;
+      const nextLine = this._buffer.getLine(row + 1)!;
 
       if (!nextLine.isWrapped) {
         // just insert the line break
@@ -155,7 +161,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         if (
           // you must output character to cause overflow, control sequence can't do this
           nextRowFirstChar.getChars() &&
-          isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
+            isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
         ) {
           if (
             // the last character can't be null,
@@ -187,15 +193,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
           // insert enough character to force the wrap
           rowSeparator = '-'.repeat(this._nullCellCount + 1);
           // move back and erase next line head
-          rowSeparator += '\x1b[1D\x1b[1X';
+          rowSeparator += '\u001b[1D\u001b[1X';
 
           if (this._nullCellCount > 0) {
             // do these because we filled the last several null slot, which we shouldn't
-            rowSeparator += '\x1b[A';
-            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}C`;
-            rowSeparator += `\x1b[${this._nullCellCount}X`;
-            rowSeparator += `\x1b[${currentLine.length - this._nullCellCount}D`;
-            rowSeparator += '\x1b[B';
+            rowSeparator += '\u001b[A';
+            rowSeparator += `\u001b[${currentLine.length - this._nullCellCount}C`;
+            rowSeparator += `\u001b[${this._nullCellCount}X`;
+            rowSeparator += `\u001b[${currentLine.length - this._nullCellCount}D`;
+            rowSeparator += '\u001b[B';
           }
 
           // This is content and need the be serialized even it is invisible.
@@ -254,6 +260,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
           if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
           if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
           if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
+          if (cell.isStrikethrough() !== oldCell.isStrikethrough()) { sgrSeq.push(cell.isStrikethrough() ? 9 : 29); }
         }
       }
     }
@@ -285,20 +292,20 @@ class StringSerializeHandler extends BaseSerializeHandler {
       if (this._nullCellCount > 0) {
         // use clear right to set background.
         if (!equalBg(this._cursorStyle, this._backgroundCell)) {
-          this._currentRow += `\x1b[${this._nullCellCount}X`;
+          this._currentRow += `\u001b[${this._nullCellCount}X`;
         }
         // use move right to move cursor.
-        this._currentRow += `\x1b[${this._nullCellCount}C`;
+        this._currentRow += `\u001b[${this._nullCellCount}C`;
         this._nullCellCount = 0;
       }
 
       this._lastContentCursorRow = this._lastCursorRow = row;
       this._lastContentCursorCol = this._lastCursorCol = col;
 
-      this._currentRow += `\x1b[${sgrSeq.join(';')}m`;
+      this._currentRow += `\u001b[${sgrSeq.join(';')}m`;
 
       // update the last cursor style
-      const line = this._buffer1.getLine(row);
+      const line = this._buffer.getLine(row);
       if (line !== undefined) {
         line.getCell(col, this._cursorStyle);
         this._cursorStyleRow = row;
@@ -317,10 +324,10 @@ class StringSerializeHandler extends BaseSerializeHandler {
         // because style change is handled by previous stage
         // use move right when background is empty, use clear right when there is background.
         if (equalBg(this._cursorStyle, this._backgroundCell)) {
-          this._currentRow += `\x1b[${this._nullCellCount}C`;
+          this._currentRow += `\u001b[${this._nullCellCount}C`;
         } else {
-          this._currentRow += `\x1b[${this._nullCellCount}X`;
-          this._currentRow += `\x1b[${this._nullCellCount}C`;
+          this._currentRow += `\u001b[${this._nullCellCount}X`;
+          this._currentRow += `\u001b[${this._nullCellCount}C`;
         }
         this._nullCellCount = 0;
       }
@@ -338,7 +345,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     // the fixup is only required for data without scrollback
     // because it will always be placed at last line otherwise
-    if (this._buffer1.length - this._firstRow <= this._terminal.rows) {
+    if (this._buffer.length - this._firstRow <= this._terminal.rows) {
       rowEnd = this._lastContentCursorRow + 1 - this._firstRow;
       this._lastCursorCol = this._lastContentCursorCol;
       this._lastCursorRow = this._lastContentCursorRow;
@@ -354,8 +361,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
     }
 
     // restore the cursor
-    const realCursorRow = this._buffer1.baseY + this._buffer1.cursorY;
-    const realCursorCol = this._buffer1.cursorX;
+    const realCursorRow = this._buffer.baseY + this._buffer.cursorY;
+    const realCursorCol = this._buffer.cursorX;
 
     const cursorMoved = (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
 
@@ -379,7 +386,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
       moveRight(realCursorCol - this._lastCursorCol);
     }
 
-
     return content;
   }
 }
@@ -393,34 +399,73 @@ export class SerializeAddon implements ITerminalAddon {
     this._terminal = terminal;
   }
 
-  private _getString(buffer: IBuffer, scrollback?: number): string {
+  private _serializeBuffer(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
     const maxRows = buffer.length;
-    const handler = new StringSerializeHandler(buffer, this._terminal!);
-
-    const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + this!._terminal!.rows, 0, maxRows);
-    const result = handler.serialize(maxRows - correctRows, maxRows);
-
-    return result;
+    const handler = new StringSerializeHandler(buffer, terminal);
+    const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
+    return handler.serialize(maxRows - correctRows, maxRows);
   }
 
-  public serialize(scrollback?: number): string {
+  private _serializeModes(terminal: Terminal): string {
+    let content = '';
+    const modes = terminal.modes;
+
+    // Default: false
+    if (modes.applicationCursorKeysMode) content += '\x1b[?1h';
+    if (modes.applicationKeypadMode) content += '\x1b[?66h';
+    if (modes.bracketedPasteMode) content += '\x1b[?2004h';
+    if (modes.insertMode) content += '\x1b[4h';
+    if (modes.originMode) content += '\x1b[?6h';
+    if (modes.reverseWraparoundMode) content += '\x1b[?45h';
+    if (modes.sendFocusMode) content += '\x1b[?1004h';
+
+    // Default: true
+    if (modes.wraparoundMode === false) content += '\x1b[?7l';
+
+    // Default: 'none'
+    if (modes.mouseTrackingMode !== 'none') {
+      switch (modes.mouseTrackingMode) {
+        case 'x10': content += '\x1b[?9h'; break;
+        case 'vt200': content += '\x1b[?1000h'; break;
+        case 'drag': content += '\x1b[?1002h'; break;
+        case 'any': content += '\x1b[?1003h'; break;
+      }
+    }
+
+    return content;
+  }
+
+  public serialize(options?: ISerializeOptions): string {
     // TODO: Add combinedData support
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    if (this._terminal.buffer.active.type === 'normal') {
-      return this._getString(this._terminal.buffer.active, scrollback);
+    // Normal buffer
+    let content = this._serializeBuffer(this._terminal, this._terminal.buffer.normal, options?.scrollback);
+
+    // Alternate buffer
+    if (!options?.excludeAltBuffer) {
+      if (this._terminal.buffer.active.type === 'alternate') {
+        const alternativeScreenContent = this._serializeBuffer(this._terminal, this._terminal.buffer.alternate, undefined);
+        content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
+      }
     }
 
-    const normalScreenContent = this._getString(this._terminal.buffer.normal, scrollback);
-    // alt screen don't have scrollback
-    const alternativeScreenContent = this._getString(this._terminal.buffer.alternate, undefined);
+    // Modes
+    if (!options?.excludeModes) {
+      content += this._serializeModes(this._terminal);
+    }
 
-    return normalScreenContent
-      + '\u001b[?1049h\u001b[H'
-      + alternativeScreenContent;
+    return content;
   }
 
   public dispose(): void { }
+}
+
+
+interface ISerializeOptions {
+  scrollback?: number;
+  excludeModes?: boolean;
+  excludeAltBuffer?: boolean;
 }

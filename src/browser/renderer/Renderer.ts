@@ -149,6 +149,12 @@ export class Renderer extends Disposable implements IRenderer {
     }
   }
 
+  public clearTextureAtlas(): void {
+    for (const layer of this._renderLayers) {
+      layer.clearTextureAtlas();
+    }
+  }
+
   /**
    * Recalculates the character and canvas dimensions.
    */

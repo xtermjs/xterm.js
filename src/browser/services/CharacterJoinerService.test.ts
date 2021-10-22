@@ -270,7 +270,7 @@ function lineData(data: IPartialLineData[]): IBufferLine {
   const tline = new BufferLine(0);
   for (let i = 0; i < data.length; ++i) {
     const line = data[i][0];
-    const attr = <number>(data[i][1] || 0);
+    const attr = (data[i][1] || 0) as number;
     const offset = tline.length;
     tline.resize(tline.length + line.split('').length, CellData.fromCharData([0, '', 0, 0]));
     line.split('').map((char, idx) => tline.setCell(idx + offset, CellData.fromCharData([attr, char, 1, char.charCodeAt(0)])));

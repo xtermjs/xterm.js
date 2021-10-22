@@ -119,6 +119,16 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     this._drawToCacheCount = 0;
   }
 
+  public clear(): void {
+    if (this._cacheMap.size > 0) {
+      const capacity = this._width * this._height;
+      this._cacheMap = new LRUMap(capacity);
+      this._cacheMap.prealloc(capacity);
+    }
+    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._tmpCtx.clearRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
+  }
+
   public draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
@@ -266,17 +276,37 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     }
     // Draw the character
     this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight);
-    this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
     // character if it extends past it's bounds
-    const imageData = this._tmpCtx.getImageData(
+    let imageData = this._tmpCtx.getImageData(
       0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight
     );
     let isEmpty = false;
     if (!this._config.allowTransparency) {
       isEmpty = clearColor(imageData, backgroundColor);
     }
+
+    // If this charcater is underscore and empty, shift it up until it is visible, try for a maximum
+    // of 5 pixels.
+    if (isEmpty && glyph.chars === '_' && !this._config.allowTransparency) {
+      for (let offset = 1; offset <= 5; offset++) {
+        // Draw the character
+        this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight - offset);
+
+        // clear the background from the character to avoid issues with drawing over the previous
+        // character if it extends past it's bounds
+        imageData = this._tmpCtx.getImageData(
+          0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight
+        );
+        isEmpty = clearColor(imageData, backgroundColor);
+        if (!isEmpty) {
+          break;
+        }
+      }
+    }
+
+    this._tmpCtx.restore();
 
     // copy the data from imageData to _cacheCanvas
     const x = this._toCoordinateX(index);

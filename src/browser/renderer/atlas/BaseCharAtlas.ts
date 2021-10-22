@@ -28,6 +28,8 @@ export abstract class BaseCharAtlas implements IDisposable {
    */
   private _doWarmUp(): void { }
 
+  public clear(): void { }
+
   /**
    * Called when we start drawing a new frame.
    *
