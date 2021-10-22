@@ -65,84 +65,64 @@ const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
-  private _options: any;
+  private _options: ITerminalOptions;
   public options: ITerminalOptions;
+  public publicOptions: ITerminalOptions;
 
   private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
 
   constructor(options: Partial<ITerminalOptions>) {
-    this.options = { ...DEFAULT_OPTIONS };
+    // set the default value of each option
+    this._options = { ...DEFAULT_OPTIONS };
     for (const key in options) {
-      if (key in this.options) {
+      if (key in this._options) {
         try {
           const newValue = options[key];
-          this.options[key] = this._sanitizeAndValidateOption(key, newValue);
+          this._options[key] = this._sanitizeAndValidateOption(key, newValue);
         } catch (e) {
           console.error(e);
         }
       }
     }
 
-    this._options = {};
-    for (const propName in this.options) {
-      const privatePropName = `_${propName}`;
-      this._options[privatePropName] = this.options[propName];
-
-      Object.defineProperty(this.options, propName, {
-        get: () => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error(`No option with key "${propName}"`);
-          }
-          return this._options[privatePropName];
-        },
-        set: (value: any) => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error('No option with key "' + propName + '"');
-          }
-
-          value = this._sanitizeAndValidateOption(propName, value);
-          // Don't fire an option change event if they didn't change
-          if (this._options[privatePropName] !== value) {
-            this._options[privatePropName] = value;
-            this._onOptionChange.fire(propName);
-          }
-        }
-      });
-    }
+    // set up getters and setters for each option
+    this.options = this._setupOptions(this._options, false);
+    this.publicOptions = this._setupOptions(this._options, true);
   }
 
-  public get publicOptions(): ITerminalOptions {
-    const publicOptions = { ... this.options };
-    for (const propName in CONSTRUCTOR_ONLY_OPTIONS) {
-      const privatePropName = `_${propName}`;
-      Object.defineProperty(publicOptions, propName, {
+  private _setupOptions(options: ITerminalOptions, isPublic: boolean): ITerminalOptions {
+    const copiedOptions = { ... options };
+    for (const propName in copiedOptions) {
+      Object.defineProperty(copiedOptions, propName, {
         get: () => {
           if (!(propName in DEFAULT_OPTIONS)) {
             throw new Error(`No option with key "${propName}"`);
           }
-          return this._options[privatePropName];
+          return this._options[propName];
         },
         set: (value: any) => {
           if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error('No option with key "' + propName + '"');
+            throw new Error(`No option with key "${propName}"`);
           }
+
           // Throw an error if any constructor only option is modified
           // from terminal.options
-          if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
+          // Modifications from anywhere else are allowed
+          if (isPublic && CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
             throw new Error(`Option "${propName}" can only be set in the constructor`);
           }
 
           value = this._sanitizeAndValidateOption(propName, value);
           // Don't fire an option change event if they didn't change
-          if (this._options[privatePropName] !== value) {
-            this._options[privatePropName] = value;
+          if (this._options[propName] !== value) {
+            this._options[propName] = value;
             this._onOptionChange.fire(propName);
           }
         }
       });
     }
-    return publicOptions;
+    return copiedOptions;
   }
 
   public setOption(key: string, value: any): void {
