@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -262,8 +262,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
-  public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
+  private _onColor = new EventEmitter<IColorEvent>();
+  public get onColor(): IEvent<IColorEvent> { return this._onColor.event; }
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -2841,22 +2841,24 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-  protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
-    const result: IAnsiColorChangeEvent = { colors: [] };
+  protected _parseAnsiColorChange(data: string): IColorEvent | null {
+    const result: IColorEvent = { requests: [] };
     // example data: 5;rgb:aa/bb/cc
     const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
     let match;
 
     while ((match = regex.exec(data)) !== null) {
-      result.colors.push({
-        colorIndex: parseInt(match[1]),
-        red: parseInt(match[2], 16),
-        green: parseInt(match[3], 16),
-        blue: parseInt(match[4], 16)
+      result.requests.push({
+        index: parseInt(match[1]),
+        color: [
+          parseInt(match[2], 16),
+          parseInt(match[3], 16),
+          parseInt(match[4], 16)
+        ]
       });
     }
 
-    if (result.colors.length === 0) {
+    if (result.requests.length === 0) {
       return null;
     }
 
@@ -2923,7 +2925,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public setAnsiColor(data: string): boolean {
     const event = this._parseAnsiColorChange(data);
     if (event) {
-      this._onAnsiColorChange.fire(event);
+      this._onColor.fire(event);
     }
     else {
       this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
@@ -2939,11 +2941,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (slots[0] === '?') {
       // TODO: query FG color
       console.log('query FG');
+      this._onColor.fire({ requests: [{ index: 256, color: '?' }] });
     } else {
       const color = this._parseXColorName(slots[0]);
       if (color) {
         // set new FG color
         console.log('set FG', color);
+        this._onColor.fire({ requests: [{ index: 256, color }] });
       }
     }
     if (slots.length === 2) {
@@ -2957,11 +2961,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (slots[0] === '?') {
       // TODO: query BG color
       console.log('query BG');
+      this._onColor.fire({ requests: [{ index: 257, color: '?' }] });
     } else {
       const color = this._parseXColorName(slots[0]);
       if (color) {
         // set new BG color
         console.log('set BG', color);
+        this._onColor.fire({ requests: [{ index: 257, color }] });
       }
     }
     return true;

@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IAnsiColorChangeEvent } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
@@ -41,7 +41,7 @@ class TestInputHandler extends InputHandler {
   public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
   public get windowTitleStack(): string[] { return this._windowTitleStack; }
   public get iconNameStack(): string[] { return this._iconNameStack; }
-  public parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null { return this._parseAnsiColorChange(data); }
+  public parseAnsiColorChange(data: string): IColorEvent | null { return this._parseAnsiColorChange(data); }
 
   /**
    * Promise based parse call to await the full resolve of given input data.
@@ -1924,14 +1924,12 @@ describe('InputHandler', () => {
     });
 
 
-
-
     it('4: should parse correct Ansi color change data', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3');
 
       assert.isNotNull(event);
-      assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
+      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
     });
 
     it('4: should ignore incorrect Ansi color change data', () => {
@@ -1947,33 +1945,33 @@ describe('InputHandler', () => {
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');
 
       assert.isNotNull(event);
-      assert.equal(event!.colors.length, 3);
-      assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
-      assert.deepEqual(event!.colors[1], { colorIndex: 17, red: 0x00, green: 0x11, blue: 0x22 });
-      assert.deepEqual(event!.colors[2], { colorIndex: 255, red: 0x01, green: 0xef, blue: 0x2d });
+      assert.equal(event!.requests.length, 3);
+      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.deepEqual(event!.requests[1], { index: 17, color: [0x00, 0x11, 0x22] });
+      assert.deepEqual(event!.requests[2], { index: 255, color: [0x01, 0xef, 0x2d] });
     });
     it('4: should ignore incorrect colors in a list of Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:WR/ON/G;255;rgb:01/ef/2d');
 
-      assert.equal(event!.colors.length, 2);
-      assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
-      assert.deepEqual(event!.colors[1], { colorIndex: 255, red: 0x01, green: 0xef, blue: 0x2d });
+      assert.equal(event!.requests.length, 2);
+      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.deepEqual(event!.requests[1], { index: 255, color: [0x01, 0xef, 0x2d] });
     });
     it('4: should be case insensitive when parsing Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rGb:A1/b2/C3');
 
-      assert.equal(event!.colors.length, 1);
-      assert.deepEqual(event!.colors[0], { colorIndex: 19, red: 0xa1, green: 0xb2, blue: 0xc3 });
+      assert.equal(event!.requests.length, 1);
+      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
     });
     it('4: should fire event on Ansi color change', async () => {
       return new Promise(async r => {
-        inputHandler.onAnsiColorChange(e => {
+        inputHandler.onColor(e => {
           assert.isNotNull(e);
-          assert.isNotNull(e!.colors);
-          assert.deepEqual(e!.colors[0], { colorIndex: 17, red: 0x1a, green: 0x2b, blue: 0x3c });
-          assert.deepEqual(e!.colors[1], { colorIndex: 12, red: 0x11, green: 0x22, blue: 0x33 });
+          assert.isNotNull(e!.requests);
+          assert.deepEqual(e!.requests[0], { index: 17, color: [0x1a, 0x2b, 0x3c] });
+          assert.deepEqual(e!.requests[1], { index: 12, color: [0x11, 0x22, 0x33] });
           r();
         });
         await inputHandler.parseP('\x1b]4;17;rgb:1a/2b/3c;12;rgb:11/22/33\x1b\\');

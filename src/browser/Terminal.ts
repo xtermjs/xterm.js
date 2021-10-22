@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2, CharacterJoinerHandler, IColor } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IAnsiColorChangeEvent } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -53,7 +53,7 @@ import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
-import { rgba } from 'browser/Color';
+import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -167,7 +167,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
-    this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
+    this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
@@ -177,17 +177,59 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
   }
 
-  private _changeAnsiColor(event: IAnsiColorChangeEvent): void {
+  private _handleColorEvent(event: IColorEvent): void {
     if (!this._colorManager) { return; }
 
-    for (const ansiColor of event.colors) {
-      const color = rgba.toColor(ansiColor.red, ansiColor.green, ansiColor.blue);
-
-      this._colorManager!.colors.ansi[ansiColor.colorIndex] = color;
+    let hasSet = false;
+    const query: string[] = [];
+    for (const req of event.requests) {
+      if (req.color === '?') {
+        // query color
+        let ident = '';
+        let c: IColor;
+        switch (req.index) {
+          case 256:
+            ident = '10';
+            c = this._colorManager.colors.foreground;
+            break;
+          case 257:
+            ident = '11';
+            c = this._colorManager.colors.background;
+            break;
+          default:
+            if (0 <= req.index && req.index < 256) {
+              ident = '4;' + req.index;
+              c = this._colorManager.colors.ansi[req.index];
+            }
+        }
+        if (ident) {
+          query.push(`${C0.ESC}]${ident};${color.toXColorName(c!)}${C0.BEL}`);
+        }
+      } else {
+        // set color
+        hasSet = true;
+        switch (req.index) {
+          case 256:
+            this._colorManager.colors.foreground = rgba.toColor(...req.color);
+            break;
+          case 257:
+            this._colorManager.colors.background = rgba.toColor(...req.color);
+            break;
+          default:
+            if (0 <= req.index && req.index < 256) {
+              this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+            }
+        }
+      }
     }
 
-    this._renderService?.setColors(this._colorManager!.colors);
-    this.viewport?.onThemeChange(this._colorManager!.colors);
+    if (query.length) {
+      this.coreService.triggerDataEvent(query.join(''));
+    }
+    if (hasSet) {
+      this._renderService?.setColors(this._colorManager.colors);
+      this.viewport?.onThemeChange(this._colorManager.colors);
+    }
   }
 
   public dispose(): void {
