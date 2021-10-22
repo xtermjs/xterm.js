@@ -1062,6 +1062,14 @@ declare module 'xterm' {
     refresh(start: number, end: number): void;
 
     /**
+     * Clears the texture atlas of the canvas renderer if it's active. Doing this will force a
+     * redraw of all glyphs which can workaround issues causing the texture to become corrupt, for
+     * example Chromium/Nvidia has an issue where the texture gets messed up when resuming the OS
+     * from sleep.
+     */
+    clearTextureAtlas(): void;
+
+    /**
      * Perform a full reset (RIS, aka '\x1bc').
      */
     reset(): void;
@@ -1449,18 +1457,20 @@ declare module 'xterm' {
 
     /** Whether the cell has the bold attribute (CSI 1 m). */
     isBold(): number;
-    /** Whether the cell has the inverse attribute (CSI 3 m). */
+    /** Whether the cell has the italic attribute (CSI 3 m). */
     isItalic(): number;
-    /** Whether the cell has the inverse attribute (CSI 2 m). */
+    /** Whether the cell has the dim attribute (CSI 2 m). */
     isDim(): number;
     /** Whether the cell has the underline attribute (CSI 4 m). */
     isUnderline(): number;
-    /** Whether the cell has the inverse attribute (CSI 5 m). */
+    /** Whether the cell has the blink attribute (CSI 5 m). */
     isBlink(): number;
     /** Whether the cell has the inverse attribute (CSI 7 m). */
     isInverse(): number;
-    /** Whether the cell has the inverse attribute (CSI 8 m). */
+    /** Whether the cell has the invisible attribute (CSI 8 m). */
     isInvisible(): number;
+    /** Whether the cell has the strikethrough attribute (CSI 9 m). */
+    isStrikethrough(): number;
 
     /** Whether the cell is using the RGB foreground color mode. */
     isFgRGB(): boolean;

@@ -42,6 +42,10 @@ export class BufferSet extends Disposable implements IBufferSet {
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
     this._alt = new Buffer(false, this._optionsService, this._bufferService);
     this._activeBuffer = this._normal;
+    this._onBufferActivate.fire({
+      activeBuffer: this._normal,
+      inactiveBuffer: this._alt
+    });
 
     this.setupTabStops();
   }
