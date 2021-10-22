@@ -53,6 +53,7 @@ export interface IRenderService extends IDisposable {
   dimensions: IRenderDimensions;
 
   refreshRows(start: number, end: number): void;
+  clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
   changeOptions(): void;
   setRenderer(renderer: IRenderer): void;
