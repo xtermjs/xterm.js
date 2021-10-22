@@ -2866,7 +2866,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Parse xcolor name to RGB values (8 bit per channel).
+   * Parse color spec to RGB values (8 bit per channel).
    * See `man xparsecolor` for details about certain format specifications.
    *
    * Supported formats:
@@ -2876,7 +2876,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * All other formats like rgbi: or device-independent string specifications
    * with float numbering are not supported.
    */
-  protected _parseXColorName(data: string): [number, number, number] | void {
+  protected _parseColorSpec(data: string): [number, number, number] | void {
     // also handle uppercases
     data = data.toLowerCase();
     if (data.indexOf('rgb:') === 0) {
@@ -2898,19 +2898,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       const rex = /^[\da-f]+$/;
       if (rex.exec(data) && [3, 6, 9, 12].includes(data.length)) {
         const adv = data.length / 3;
-        const r = parseInt(data.slice(0, adv), 16);
-        const g = parseInt(data.slice(adv, 2 * adv), 16);
-        const b = parseInt(data.slice(2 * adv, 3 * adv), 16);
-        switch (adv) {
-          case 1:
-            return [r << 4, g << 4, b << 4];
-          case 2:
-            return [r, g, b];
-          case 3:
-            return [r >> 4, g >> 4, b >> 4];
-          case 4:
-            return [r >> 8, g >> 8, b >> 8];
+        const result: [number, number, number] = [0, 0, 0];
+        for (let i = 0; i < 3; ++i) {
+          const c = parseInt(data.slice(adv * i, adv * i + adv), 16);
+          result[i] = adv === 1 ? c << 4 : adv === 2 ? c : adv === 3 ? c >> 4 : c >> 8;
         }
+        return result;
       }
     }
   }
@@ -2933,20 +2926,36 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
+  /**
+   * OSC 10 ; <xcolor name>|<?> ST - set or query default foreground color
+   *
+   * @vt: #Y  OSC   10    "Set or query default foreground color"   "OSC 10 ; Pt BEL"  "Set or query default foreground color."
+   * To set the color, the following color specification formats are supported:
+   * - `rgb:<red>/<green>/<blue>` for  `<red>, <green>, <blue>` in `h | hh | hhh | hhhh`, where
+   *   `h` is a single hexadecimal digit (case insignificant). The different widths scale
+   *   from 4 bit (`h`) to 16 bit (`hhhh`) and get converted to 8 bit (`hh`).
+   * - `#RGB` - 4 bits per channel, expanded to `#R0G0B0`
+   * - `#RRGGBB` - 8 bits per channel
+   * - `#RRRGGGBBB` - 12 bits per channel, truncated to `#RRGGBB`
+   * - `#RRRRGGGGBBBB` - 16 bits per channel, truncated to `#RRGGBB`
+   *
+   * If `Pt` contains `?` instead of a color specification, the terminal
+   * returns a sequence with the current default foreground color
+   * (use that sequence to restore the color after changes).
+   *
+   * **Note:** Other than xterm, xterm.js does not support OSC 12 - 19.
+   * Therefore stacking multiple `Pt` separated by `;` only works for the first two entries.
+   */
   public queryOrSetFgColor(data: string): boolean {
     // note: data may contain multiple ? or color names separated with ;
     // Multiple values will map through to OSC 10 - 19, but we only support 10 and 11 currently,
-    // thus truncate to max. 2 occurences.
+    // thus truncate to max. 2 entries.
     const slots = data.split(';').slice(0, 2);
     if (slots[0] === '?') {
-      // TODO: query FG color
-      console.log('query FG');
       this._onColor.fire({ requests: [{ index: 256, color: '?' }] });
     } else {
-      const color = this._parseXColorName(slots[0]);
+      const color = this._parseColorSpec(slots[0]);
       if (color) {
-        // set new FG color
-        console.log('set FG', color);
         this._onColor.fire({ requests: [{ index: 256, color }] });
       }
     }
@@ -2956,17 +2965,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
+  /**
+   * OSC 11 ; <xcolor name>|<?> ST - set or query default background color
+   *
+   * @vt: #Y  OSC   11    "Set or query default background color"   "OSC 11 ; Pt BEL"  "Same as OSC 10, but for default background."
+   */
   public queryOrSetBgColor(data: string): boolean {
     const slots = data.split(';').slice(0, 1);
     if (slots[0] === '?') {
-      // TODO: query BG color
-      console.log('query BG');
       this._onColor.fire({ requests: [{ index: 257, color: '?' }] });
     } else {
-      const color = this._parseXColorName(slots[0]);
+      const color = this._parseColorSpec(slots[0]);
       if (color) {
-        // set new BG color
-        console.log('set BG', color);
         this._onColor.fire({ requests: [{ index: 257, color }] });
       }
     }

@@ -55,8 +55,8 @@ class TestInputHandler extends InputHandler {
     }
   }
 
-  public parseXColorName(data: string): void | [number, number, number] {
-    return this._parseXColorName(data);
+  public parseColorSpec(data: string): void | [number, number, number] {
+    return this._parseColorSpec(data);
   }
 }
 
@@ -1872,54 +1872,54 @@ describe('InputHandler', () => {
     describe('parse xcolor names', () => {
       it('rgb:<r>/<g>/<b> scheme in 4/8/12/16 bit', () => {
         // 4 bit
-        assert.deepEqual(inputHandler.parseXColorName('rgb:0/0/0'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:f/f/f'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:1/2/3'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:0/0/0'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:f/f/f'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:1/2/3'), [17, 34, 51]);
         // 8 bit
-        assert.deepEqual(inputHandler.parseXColorName('rgb:00/00/00'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:ff/ff/ff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:11/22/33'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:00/00/00'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:ff/ff/ff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:11/22/33'), [17, 34, 51]);
         // 12 bit
-        assert.deepEqual(inputHandler.parseXColorName('rgb:000/000/000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:fff/fff/fff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:111/222/333'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:000/000/000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:fff/fff/fff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:111/222/333'), [17, 34, 51]);
         // 16 bit
-        assert.deepEqual(inputHandler.parseXColorName('rgb:0000/0000/0000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:ffff/ffff/ffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('rgb:1111/2222/3333'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:0000/0000/0000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:ffff/ffff/ffff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('rgb:1111/2222/3333'), [17, 34, 51]);
       });
       it('#RGB scheme in 4/8/12/16 bit', () => {
         // 4 bit
-        assert.deepEqual(inputHandler.parseXColorName('#000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('#fff'), [240, 240, 240]);
-        assert.deepEqual(inputHandler.parseXColorName('#123'), [16, 32, 48]);
+        assert.deepEqual(inputHandler.parseColorSpec('#000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('#fff'), [240, 240, 240]);
+        assert.deepEqual(inputHandler.parseColorSpec('#123'), [16, 32, 48]);
         // 8 bit
-        assert.deepEqual(inputHandler.parseXColorName('#000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('#ffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('#112233'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('#000000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('#ffffff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('#112233'), [17, 34, 51]);
         // 12 bit
-        assert.deepEqual(inputHandler.parseXColorName('#000000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('#fffffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('#111222333'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('#000000000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('#fffffffff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('#111222333'), [17, 34, 51]);
         // 16 bit
-        assert.deepEqual(inputHandler.parseXColorName('#000000000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseXColorName('#ffffffffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('#111122223333'), [17, 34, 51]);
+        assert.deepEqual(inputHandler.parseColorSpec('#000000000000'), [0, 0, 0]);
+        assert.deepEqual(inputHandler.parseColorSpec('#ffffffffffff'), [255, 255, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('#111122223333'), [17, 34, 51]);
       });
       it('supports upper case', () => {
-        assert.deepEqual(inputHandler.parseXColorName('RGB:0/A/F'), [0, 170, 255]);
-        assert.deepEqual(inputHandler.parseXColorName('#FFF'), [240, 240, 240]);
+        assert.deepEqual(inputHandler.parseColorSpec('RGB:0/A/F'), [0, 170, 255]);
+        assert.deepEqual(inputHandler.parseColorSpec('#FFF'), [240, 240, 240]);
       });
       it('does not parse illegal combinations', () => {
         // shifting bit width
-        assert.equal(inputHandler.parseXColorName('rgb:0/11/222'), undefined);
+        assert.equal(inputHandler.parseColorSpec('rgb:0/11/222'), undefined);
         // unsupported scheme
-        assert.equal(inputHandler.parseXColorName('rgbi:00/11/22'), undefined);
+        assert.equal(inputHandler.parseColorSpec('rgbi:00/11/22'), undefined);
         // broken # specifier
-        assert.equal(inputHandler.parseXColorName('#aabbbcc'), undefined);
+        assert.equal(inputHandler.parseColorSpec('#aabbbcc'), undefined);
         // out of range
-        assert.equal(inputHandler.parseXColorName('#aabbgg'), undefined);
-        assert.equal(inputHandler.parseXColorName('rgb:aa/bb/gg'), undefined);
+        assert.equal(inputHandler.parseColorSpec('#aabbgg'), undefined);
+        assert.equal(inputHandler.parseColorSpec('rgb:aa/bb/gg'), undefined);
       });
     });
 
