@@ -305,11 +305,11 @@ function initOptions(term: TerminalType): void {
     rendererType: ['dom', 'canvas'],
     wordSeparator: null
   };
-  const options = Object.keys((<any>term)._core.options);
+  const options = Object.keys(term.options);
   const booleanOptions = [];
   const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
-    switch (typeof term.getOption(o)) {
+    switch (typeof term.options[o]) {
       case 'boolean':
         booleanOptions.push(o);
         break;
@@ -326,18 +326,18 @@ function initOptions(term: TerminalType): void {
   let html = '';
   html += '<div class="option-group">';
   booleanOptions.forEach(o => {
-    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
+    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o]}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
     if (stringOptions[o]) {
-      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.options[o] === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`;
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
     }
   });
   html += '</div>';
@@ -350,7 +350,7 @@ function initOptions(term: TerminalType): void {
     const input = document.querySelector<HTMLInputElement>(`#opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
-      term.setOption(o, input.checked);
+      term.options[o] = input.checked;
     });
   });
   numberOptions.forEach(o => {
@@ -359,14 +359,17 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
-      } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
-        term.setOption(o, parseFloat(input.value));
+      } else if (o === 'lineHeight') {
+        term.options.lineHeight = parseFloat(input.value);
+        updateTerminalSize();
+      } else if (o === 'scrollSensitivity') {
+        term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
       } else if(o === 'scrollback') {
-        term.setOption(o, parseInt(input.value));
+        term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
-        term.setOption(o, parseInt(input.value));
+        term.options[o] = parseInt(input.value);
       }
     });
   });
@@ -374,7 +377,7 @@ function initOptions(term: TerminalType): void {
     const input = document.querySelector<HTMLInputElement>(`#opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      term.setOption(o, input.value);
+      term.options[o] = input.value;
     });
   });
 }

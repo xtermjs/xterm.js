@@ -89,6 +89,9 @@ export class Terminal implements ITerminalApi {
       wraparoundMode: m.wraparound
     };
   }
+  public get options(): ITerminalOptions {
+    return this._core.options;
+  }
   public blur(): void {
     this._core.blur();
   }
