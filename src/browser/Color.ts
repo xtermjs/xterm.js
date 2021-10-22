@@ -88,7 +88,7 @@ export namespace color {
 
   export function toXColorName(color: IColor): string {
     const [r, g, b] = rgba.toChannels(color.rgba);
-    return `rgb:${toPaddedHex(r)}/${toPaddedHex(g)}/${toPaddedHex(b)}`;
+    return `rgb:${toPaddedHex(r)}${toPaddedHex(r)}/${toPaddedHex(g)}${toPaddedHex(g)}/${toPaddedHex(b)}${toPaddedHex(b)}`;
   }
 }
 
