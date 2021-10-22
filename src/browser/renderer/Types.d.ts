@@ -52,6 +52,7 @@ export interface IRenderer extends IDisposable {
   onOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
+  clearTextureAtlas?(): void;
 }
 
 export interface IRenderLayer extends IDisposable {
@@ -100,4 +101,9 @@ export interface IRenderLayer extends IDisposable {
    * Clear the state of the render layer.
    */
   reset(): void;
+
+  /**
+   * Clears the texture atlas.
+   */
+  clearTextureAtlas(): void;
 }

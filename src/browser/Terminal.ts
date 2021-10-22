@@ -164,6 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
@@ -493,7 +494,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.viewport = this._instantiationService.createInstance(Viewport,
       (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
       this._viewportElement,
-      this._viewportScrollArea
+      this._viewportScrollArea,
+      this.element
     );
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
@@ -698,8 +700,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       },
       wheel: (ev: WheelEvent) => {
         sendEvent(ev);
-        ev.preventDefault();
-        return this.cancel(ev);
+        return this.cancel(ev, true);
       },
       mousedrag: (ev: MouseEvent) => {
         // deal only with move while a button is held
@@ -794,33 +795,31 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }));
 
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
-      if (!requestedEvents.wheel) {
+      // do nothing, if app side handles wheel itself
+      if (requestedEvents.wheel) return;
+
+      if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
-        if (!this.buffer.hasScrollback) {
-          const amount = this.viewport!.getLinesScrolled(ev);
+        const amount = this.viewport!.getLinesScrolled(ev);
 
-          // Do nothing if there's no vertical scroll
-          if (amount === 0) {
-            return;
-          }
-
-          // Construct and send sequences
-          const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-          let data = '';
-          for (let i = 0; i < Math.abs(amount); i++) {
-            data += sequence;
-          }
-          this.coreService.triggerDataEvent(data, true);
+        // Do nothing if there's no vertical scroll
+        if (amount === 0) {
+          return;
         }
-        return;
-      }
-    }, { passive: true }));
 
-    // allow wheel scrolling in
-    // the shell for example
-    this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
-      if (requestedEvents.wheel) return;
+        // Construct and send sequences
+        const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
+        let data = '';
+        for (let i = 0; i < Math.abs(amount); i++) {
+          data += sequence;
+        }
+        this.coreService.triggerDataEvent(data, true);
+        return this.cancel(ev, true);
+      }
+
+      // normal viewport scrolling
+      // conditionally stop event, if the viewport still had rows to scroll within
       if (!this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
@@ -1180,7 +1179,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
-    if (ev.data && ev.inputType === 'insertText') {
+    // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
+    // support reading out character input which can doubling up input characters
+    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
@@ -1288,6 +1289,18 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
     this.viewport?.syncScrollArea();
+  }
+
+  public clearTextureAtlas(): void {
+    this._renderService?.clearTextureAtlas();
+  }
+
+  private _reportFocus(): void {
+    if (this.element?.classList.contains('focus')) {
+      this.coreService.triggerDataEvent(C0.ESC + '[I');
+    } else {
+      this.coreService.triggerDataEvent(C0.ESC + '[O');
+    }
   }
 
   private _reportWindowsOptions(type: WindowsOptionsReportType): void {

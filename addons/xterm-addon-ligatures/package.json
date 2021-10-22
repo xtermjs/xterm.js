@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@types/sinon": "^5.0.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.2",
     "mkdirp": "0.5.5",
     "sinon": "6.3.5",
     "yauzl": "^2.10.0"
