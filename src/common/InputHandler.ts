@@ -2866,11 +2866,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Parse xcolor name to RGB values (8 bit per channel).
    * See `man xparsecolor` for details about certain format specifications.
-   * 
+   *
    * Supported formats:
    * - rgb:<red>/<green>/<blue> with <red>, <green>, <blue> in h | hh | hhh | hhhh
    * - #RGB, #RRGGBB, #RRRGGGBBB, #RRRRGGGGBBBB
-   * 
+   *
    * All other formats like rgbi: or device-independent string specifications
    * with float numbering are not supported.
    */
@@ -2887,7 +2887,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         return [
           Math.round(parseInt(m[1] || m[4] || m[7] || m[10], 16) / base * 255),
           Math.round(parseInt(m[2] || m[5] || m[8] || m[11], 16) / base * 255),
-          Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255),
+          Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255)
         ];
       }
     } else if (data.indexOf('#') === 0) {
