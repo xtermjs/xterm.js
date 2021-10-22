@@ -494,7 +494,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.viewport = this._instantiationService.createInstance(Viewport,
       (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
       this._viewportElement,
-      this._viewportScrollArea
+      this._viewportScrollArea,
+      this.element
     );
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
