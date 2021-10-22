@@ -199,27 +199,21 @@ export enum LogLevelEnum {
   OFF = 4
 }
 export type RendererType = 'dom' | 'canvas';
-export type BellStyle = 'none' | 'sound' /* | 'visual' | 'both' */;
-export type CursorStyle = 'block' | 'underline' | 'bar';
-export type FastScrollModifier = 'alt' | 'ctrl' | 'shift';
-
 
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
   altClickMovesCursor: boolean;
   bellSound: string;
-  bellStyle: BellStyle;
-  cancelEvents: boolean;
+  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
-  convertEol: boolean;
   cursorBlink: boolean;
-  cursorStyle: CursorStyle;
+  cursorStyle: 'block' | 'underline' | 'bar';
   cursorWidth: number;
   customGlyphs: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: FastScrollModifier | undefined;
+  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
   fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;
@@ -239,13 +233,15 @@ export interface ITerminalOptions {
   scrollback: number;
   scrollSensitivity: number;
   tabStopWidth: number;
-  termName: string;
   theme: ITheme;
   windowsMode: boolean;
   windowOptions: IWindowOptions;
   wordSeparator: string;
 
   [key: string]: any;
+  cancelEvents: boolean;
+  convertEol: boolean;
+  termName: string;
 }
 
 export interface ITheme {
