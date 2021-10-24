@@ -21,6 +21,7 @@ import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowSe
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
+import { getColorFromName } from 'common/data/ColorNames';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -2877,13 +2878,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * with float numbering are not supported.
    */
   protected _parseColorSpec(data: string): [number, number, number] | void {
+    if (!data) return;
     // also handle uppercases
-    data = data.toLowerCase();
-    if (data.indexOf('rgb:') === 0) {
+    let low = data.toLowerCase();
+    if (low.indexOf('rgb:') === 0) {
       // 'rgb:' specifier
-      data = data.slice(4);
+      low = low.slice(4);
       const rex = /^([\da-f]{1})\/([\da-f]{1})\/([\da-f]{1})$|^([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})$|^([\da-f]{3})\/([\da-f]{3})\/([\da-f]{3})$|^([\da-f]{4})\/([\da-f]{4})\/([\da-f]{4})$/;
-      const m = rex.exec(data);
+      const m = rex.exec(low);
       if (m) {
         const base = m[1] ? 15 : m[4] ? 255 : m[7] ? 4095 : 65535;
         return [
@@ -2892,20 +2894,21 @@ export class InputHandler extends Disposable implements IInputHandler {
           Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255)
         ];
       }
-    } else if (data.indexOf('#') === 0) {
+    } else if (low.indexOf('#') === 0) {
       // '#' specifier
-      data = data.slice(1);
+      low = low.slice(1);
       const rex = /^[\da-f]+$/;
-      if (rex.exec(data) && [3, 6, 9, 12].includes(data.length)) {
-        const adv = data.length / 3;
+      if (rex.exec(low) && [3, 6, 9, 12].includes(low.length)) {
+        const adv = low.length / 3;
         const result: [number, number, number] = [0, 0, 0];
         for (let i = 0; i < 3; ++i) {
-          const c = parseInt(data.slice(adv * i, adv * i + adv), 16);
+          const c = parseInt(low.slice(adv * i, adv * i + adv), 16);
           result[i] = adv === 1 ? c << 4 : adv === 2 ? c : adv === 3 ? c >> 4 : c >> 8;
         }
         return result;
       }
     }
+    return getColorFromName(data);
   }
 
   /**
