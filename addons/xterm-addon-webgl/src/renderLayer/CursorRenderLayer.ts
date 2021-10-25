@@ -31,6 +31,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cell: ICellData = new CellData();
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
@@ -50,7 +51,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-    // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
+    this.onOptionsChanged(terminal);
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -67,25 +68,18 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public reset(terminal: Terminal): void {
     this._clearCursor();
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
-      this.onOptionsChanged(terminal);
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
+    this.onOptionsChanged(terminal);
   }
 
   public onBlur(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.pause();
-    }
+    this._cursorBlinkStateManager?.pause();
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onFocus(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume(terminal);
-    } else {
-      this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
-    }
+    this._cursorBlinkStateManager?.resume(terminal);
+    this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
   public onOptionsChanged(terminal: Terminal): void {
@@ -105,9 +99,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onCursorMove(terminal: Terminal): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
-    }
+    this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
   }
 
   public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
@@ -302,6 +294,7 @@ class CursorBlinkStateManager {
     // Clear any existing interval
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
+      this._blinkInterval = undefined;
     }
 
     // Setup the initial timeout which will hide the cursor, this is done before

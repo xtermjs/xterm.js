@@ -60,7 +60,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
-      new CursorRenderLayer(this._core.screenElement!, 3, this._colors, this._core, this._onRequestRedraw)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._core, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -108,7 +108,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.dispose();
     }
-    this._core.screenElement!.removeChild(this._canvas);
+    this._canvas.parentElement?.removeChild(this._canvas);
     super.dispose();
   }
 

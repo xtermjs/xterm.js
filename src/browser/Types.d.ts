@@ -79,6 +79,7 @@ export interface IPublicTerminal extends IDisposable {
   write(data: string | Uint8Array, callback?: () => void): void;
   paste(data: string): void;
   refresh(start: number, end: number): void;
+  clearTextureAtlas(): void;
   reset(): void;
 }
 

@@ -636,6 +636,11 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
+     * Get the terminal options
+     */
+    readonly options: ITerminalOptions;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -964,26 +969,31 @@ declare module 'xterm' {
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: string): any;
 
@@ -991,60 +1001,70 @@ declare module 'xterm' {
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
     /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     * @deprecated Use `options` instead.
+     */
     setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
     /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     * @deprecated Use `options` instead.
+     */
     setOption(key: 'logLevel', value: LogLevel): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'theme', value: ITheme): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'cols' | 'rows', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: string, value: any): void;
 
@@ -1055,6 +1075,14 @@ declare module 'xterm' {
      * @param end The row to end at (between start and this.rows - 1).
      */
     refresh(start: number, end: number): void;
+
+    /**
+     * Clears the texture atlas of the canvas renderer if it's active. Doing this will force a
+     * redraw of all glyphs which can workaround issues causing the texture to become corrupt, for
+     * example Chromium/Nvidia has an issue where the texture gets messed up when resuming the OS
+     * from sleep.
+     */
+    clearTextureAtlas(): void;
 
     /**
      * Perform a full reset (RIS, aka '\x1bc').
@@ -1444,18 +1472,20 @@ declare module 'xterm' {
 
     /** Whether the cell has the bold attribute (CSI 1 m). */
     isBold(): number;
-    /** Whether the cell has the inverse attribute (CSI 3 m). */
+    /** Whether the cell has the italic attribute (CSI 3 m). */
     isItalic(): number;
-    /** Whether the cell has the inverse attribute (CSI 2 m). */
+    /** Whether the cell has the dim attribute (CSI 2 m). */
     isDim(): number;
     /** Whether the cell has the underline attribute (CSI 4 m). */
     isUnderline(): number;
-    /** Whether the cell has the inverse attribute (CSI 5 m). */
+    /** Whether the cell has the blink attribute (CSI 5 m). */
     isBlink(): number;
     /** Whether the cell has the inverse attribute (CSI 7 m). */
     isInverse(): number;
-    /** Whether the cell has the inverse attribute (CSI 8 m). */
+    /** Whether the cell has the invisible attribute (CSI 8 m). */
     isInvisible(): number;
+    /** Whether the cell has the strikethrough attribute (CSI 9 m). */
+    isStrikethrough(): number;
 
     /** Whether the cell is using the RGB foreground color mode. */
     isFgRGB(): boolean;

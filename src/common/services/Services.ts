@@ -181,6 +181,7 @@ export interface IOptionsService {
   serviceBrand: undefined;
 
   readonly options: ITerminalOptions;
+  readonly publicOptions: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;
 
@@ -198,41 +199,6 @@ export enum LogLevelEnum {
   OFF = 4
 }
 export type RendererType = 'dom' | 'canvas';
-
-export interface IPartialTerminalOptions {
-  altClickMovesCursor?: boolean;
-  allowTransparency?: boolean;
-  bellSound?: string;
-  bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
-  cols?: number;
-  cursorBlink?: boolean;
-  cursorStyle?: 'block' | 'underline' | 'bar';
-  cursorWidth?: number;
-  disableStdin?: boolean;
-  drawBoldTextInBrightColors?: boolean;
-  fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
-  fastScrollSensitivity?: number;
-  fontSize?: number;
-  fontFamily?: string;
-  fontWeight?: FontWeight;
-  fontWeightBold?: FontWeight;
-  letterSpacing?: number;
-  lineHeight?: number;
-  logLevel?: LogLevel;
-  macOptionIsMeta?: boolean;
-  macOptionClickForcesSelection?: boolean;
-  rendererType?: RendererType;
-  rightClickSelectsWord?: boolean;
-  rows?: number;
-  screenReaderMode?: boolean;
-  scrollback?: number;
-  scrollSensitivity?: number;
-  tabStopWidth?: number;
-  theme?: ITheme;
-  windowsMode?: boolean;
-  wordSeparator?: string;
-  windowOptions?: IWindowOptions;
-}
 
 export interface ITerminalOptions {
   allowProposedApi: boolean;

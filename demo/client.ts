@@ -148,6 +148,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
+  document.getElementById('load-test').addEventListener('click', loadTest);
 }
 
 function createTerminal(): void {
@@ -292,11 +293,11 @@ function initOptions(term: TerminalType): void {
     rendererType: ['dom', 'canvas'],
     wordSeparator: null
   };
-  const options = Object.keys((<any>term)._core.options);
+  const options = Object.keys(term.options);
   const booleanOptions = [];
   const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
-    switch (typeof term.getOption(o)) {
+    switch (typeof term.options[o]) {
       case 'boolean':
         booleanOptions.push(o);
         break;
@@ -313,18 +314,18 @@ function initOptions(term: TerminalType): void {
   let html = '';
   html += '<div class="option-group">';
   booleanOptions.forEach(o => {
-    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
+    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o]}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
     if (stringOptions[o]) {
-      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.options[o] === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`;
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
     }
   });
   html += '</div>';
@@ -337,7 +338,7 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
-      term.setOption(o, input.checked);
+      term.options[o] = input.checked;
     });
   });
   numberOptions.forEach(o => {
@@ -346,14 +347,17 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
-      } else if (o === 'lineHeight' || o === 'scrollSensitivity') {
-        term.setOption(o, parseFloat(input.value));
+      } else if (o === 'lineHeight') {
+        term.options.lineHeight = parseFloat(input.value);
+        updateTerminalSize();
+      } else if (o === 'scrollSensitivity') {
+        term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
       } else if(o === 'scrollback') {
-        term.setOption(o, parseInt(input.value));
+        term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
-        term.setOption(o, parseInt(input.value));
+        term.options[o] = parseInt(input.value);
       }
     });
   });
@@ -361,7 +365,7 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      term.setOption(o, input.value);
+      term.options[o] = input.value;
     });
   });
 }
@@ -376,6 +380,9 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
+    if(name === 'unicode11' && checkbox.checked) {
+      term.unicode.activeVersion = '11';
+    }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
@@ -384,10 +391,14 @@ function initAddons(term: TerminalType): void {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
           }, 0);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '11';
         }
       } else {
         if (name === 'webgl') {
           document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+        } else if (name === 'unicode11') {
+          term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
@@ -480,4 +491,37 @@ function writeCustomGlyphHandler() {
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
   window.scrollTo(0, 0);
+}
+
+function loadTest() {
+  const isWebglEnabled = !!addons.webgl.instance;
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 79);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
 }
