@@ -16,6 +16,7 @@ export interface ICoreTerminal {
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
   buffers: IBufferSet;
+  options: ITerminalOptions;
   registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
   registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
