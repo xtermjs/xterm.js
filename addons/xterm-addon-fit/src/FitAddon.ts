@@ -33,7 +33,7 @@ export class FitAddon implements ITerminalAddon {
 
   public fit(): void {
     const dims = this.proposeDimensions();
-    if (!dims || !this._terminal) {
+    if (!dims || !this._terminal || isNaN(dims.cols) || isNaN(dims.rows)) {
       return;
     }
 
