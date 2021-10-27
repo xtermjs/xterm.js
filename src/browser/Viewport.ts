@@ -8,8 +8,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { IBuffer } from 'common/buffer/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -20,15 +18,12 @@ const FALLBACK_SCROLL_BAR_WIDTH = 15;
 export class Viewport extends Disposable implements IViewport {
   public scrollBarWidth: number = 0;
   private _currentRowHeight: number = 0;
-  private _currentScaledCellHeight: number = 0;
   private _lastRecordedBufferLength: number = 0;
   private _lastRecordedViewportHeight: number = 0;
   private _lastRecordedBufferHeight: number = 0;
   private _lastTouchY: number = 0;
   private _lastScrollTop: number = 0;
   private _lastHadScrollBar: boolean = false;
-  private _activeBuffer: IBuffer;
-  private _renderDimensions: IRenderDimensions;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
@@ -55,12 +50,6 @@ export class Viewport extends Disposable implements IViewport {
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     this._lastHadScrollBar = true;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
-
-    // Track properties used in performance critical code manually to avoid using slow getters
-    this._activeBuffer = this._bufferService.buffer;
-    this.register(this._bufferService.buffers.onBufferActivate(e => this._activeBuffer = e.activeBuffer));
-    this._renderDimensions = this._renderService.dimensions;
-    this.register(this._renderService.onDimensionsChange(e => this._renderDimensions = e));
 
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
@@ -90,7 +79,6 @@ export class Viewport extends Disposable implements IViewport {
   private _innerRefresh(): void {
     if (this._charSizeService.height > 0) {
       this._currentRowHeight = this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio;
-      this._currentScaledCellHeight = this._renderService.dimensions.scaledCellHeight;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
       const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.canvasHeight);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
@@ -138,13 +126,14 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If the buffer position doesn't match last scroll top
-    if (this._lastScrollTop !== this._activeBuffer.ydisp * this._currentRowHeight) {
+    const newScrollTop = this._bufferService.buffer.ydisp * this._currentRowHeight;
+    if (this._lastScrollTop !== newScrollTop) {
       this._refresh(immediate);
       return;
     }
 
     // If row height changed
-    if (this._renderDimensions.scaledCellHeight !== this._currentScaledCellHeight) {
+    if (this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
       this._refresh(immediate);
       return;
     }
