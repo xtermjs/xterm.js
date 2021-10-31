@@ -4,6 +4,7 @@
   "appPort": 3000,
   "extensions": [
     "dbaeumer.vscode-eslint",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    "hbenl.vscode-mocha-test-adapter"
   ]
 }

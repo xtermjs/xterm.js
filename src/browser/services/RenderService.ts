@@ -168,6 +168,11 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
+  public clearTextureAtlas(): void {
+    this._renderer?.clearTextureAtlas?.();
+    this._fullRefresh();
+  }
+
   public setColors(colors: IColorSet): void {
     this._renderer.setColors(colors);
     this._fullRefresh();

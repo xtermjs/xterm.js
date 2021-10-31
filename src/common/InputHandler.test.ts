@@ -77,54 +77,54 @@ describe('InputHandler', () => {
       optionsService.options.scrollback = 1;
       bufferService.reset();
     });
-    it('SL (scrollLeft)', () => {
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[ @');
+    it('SL (scrollLeft)', async () => {
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[ @');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '2345', '2345', '2345', '2345', '2345']);
-      inputHandler.parseP('\x1b[0 @');
+      await inputHandler.parseP('\x1b[0 @');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '345', '345', '345', '345', '345']);
-      inputHandler.parseP('\x1b[2 @');
+      await inputHandler.parseP('\x1b[2 @');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '5', '5', '5', '5', '5']);
     });
-    it('SR (scrollRight)', () => {
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[ A');
+    it('SR (scrollRight)', async () => {
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[ A');
       assert.deepEqual(getLines(bufferService, 6), ['12345', ' 1234', ' 1234', ' 1234', ' 1234', ' 1234']);
-      inputHandler.parseP('\x1b[0 A');
+      await inputHandler.parseP('\x1b[0 A');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '  123', '  123', '  123', '  123', '  123']);
-      inputHandler.parseP('\x1b[2 A');
+      await inputHandler.parseP('\x1b[2 A');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '    1', '    1', '    1', '    1', '    1']);
     });
-    it('insertColumns (DECIC)', () => {
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[\'}');
+    it('insertColumns (DECIC)', async () => {
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[\'}');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
       bufferService.reset();
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[1\'}');
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[1\'}');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
       bufferService.reset();
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[2\'}');
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[2\'}');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '12  3', '12  3', '12  3', '12  3', '12  3']);
     });
-    it('deleteColumns (DECDC)', () => {
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[\'~');
+    it('deleteColumns (DECDC)', async () => {
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[\'~');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '1245', '1245', '1245', '1245', '1245']);
       bufferService.reset();
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[1\'~');
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[1\'~');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '1245', '1245', '1245', '1245', '1245']);
       bufferService.reset();
-      inputHandler.parseP('12345'.repeat(6));
-      inputHandler.parseP('\x1b[3;3H');
-      inputHandler.parseP('\x1b[2\'~');
+      await inputHandler.parseP('12345'.repeat(6));
+      await inputHandler.parseP('\x1b[3;3H');
+      await inputHandler.parseP('\x1b[2\'~');
       assert.deepEqual(getLines(bufferService, 6), ['12345', '125', '125', '125', '125', '125']);
     });
   });
@@ -137,41 +137,41 @@ describe('InputHandler', () => {
       bufferService.reset();
     });
     describe('reverseWraparound set', () => {
-      it('should not reverse outside of scroll margins', () => {
+      it('should not reverse outside of scroll margins', async () => {
         // prepare buffer content
-        inputHandler.parseP('#####abcdefghijklmnopqrstuvwxy');
+        await inputHandler.parseP('#####abcdefghijklmnopqrstuvwxy');
         assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
         assert.equal(bufferService.buffers.active.ydisp, 1);
         assert.equal(bufferService.buffers.active.x, 5);
         assert.equal(bufferService.buffers.active.y, 4);
-        inputHandler.parseP(ttyBS.repeat(100));
+        await inputHandler.parseP(ttyBS.repeat(100));
         assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '    y']);
 
-        inputHandler.parseP('\x1b[?45h');
-        inputHandler.parseP('uvwxy');
+        await inputHandler.parseP('\x1b[?45h');
+        await inputHandler.parseP('uvwxy');
 
         // set top/bottom to 1/3 (0-based)
-        inputHandler.parseP('\x1b[2;4r');
+        await inputHandler.parseP('\x1b[2;4r');
         // place cursor below scroll bottom
         bufferService.buffers.active.x = 5;
         bufferService.buffers.active.y = 4;
-        inputHandler.parseP(ttyBS.repeat(100));
+        await inputHandler.parseP(ttyBS.repeat(100));
         assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', 'fghij', 'klmno', 'pqrst', '     ']);
 
-        inputHandler.parseP('uvwxy');
+        await inputHandler.parseP('uvwxy');
         // place cursor within scroll margins
         bufferService.buffers.active.x = 5;
         bufferService.buffers.active.y = 3;
-        inputHandler.parseP(ttyBS.repeat(100));
+        await inputHandler.parseP(ttyBS.repeat(100));
         assert.deepEqual(getLines(bufferService, 6), ['#####', 'abcde', '     ', '     ', '     ', 'uvwxy']);
         assert.equal(bufferService.buffers.active.x, 0);
         assert.equal(bufferService.buffers.active.y, bufferService.buffers.active.scrollTop);  // stops at 0, scrollTop
 
-        inputHandler.parseP('fghijklmnopqrst');
+        await inputHandler.parseP('fghijklmnopqrst');
         // place cursor above scroll top
         bufferService.buffers.active.x = 5;
         bufferService.buffers.active.y = 0;
-        inputHandler.parseP(ttyBS.repeat(100));
+        await inputHandler.parseP(ttyBS.repeat(100));
         assert.deepEqual(getLines(bufferService, 6), ['#####', '     ', 'fghij', 'klmno', 'pqrst', 'uvwxy']);
       });
     });

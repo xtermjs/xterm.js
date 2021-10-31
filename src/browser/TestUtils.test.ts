@@ -195,6 +195,9 @@ export class MockTerminal implements ITerminal {
   public reset(): void {
     throw new Error('Method not implemented.');
   }
+  public clearTextureAtlas(): void {
+    throw new Error('Method not implemented.');
+  }
   public refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
@@ -372,6 +375,9 @@ export class MockRenderService implements IRenderService {
     actualCellHeight: 0
   };
   public refreshRows(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }
   public resize(cols: number, rows: number): void {
