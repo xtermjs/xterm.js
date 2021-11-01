@@ -433,7 +433,7 @@ describe('InputHandler', () => {
       await resetToBaseState();
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
-      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
     it('eraseInDisplay', async () => {
