@@ -325,12 +325,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
-    const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
-      this._ctx,
-      this._currentGlyphIdentifier,
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop
-    );
+    const atlasDidDraw = this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
     if (!atlasDidDraw) {
       this._drawUncachedChars(cell, x, y);
