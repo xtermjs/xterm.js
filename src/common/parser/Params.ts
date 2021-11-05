@@ -9,7 +9,6 @@ const MAX_VALUE = 0x7FFFFFFF;
 // max allowed subparams for a single sequence (hardcoded limitation)
 const MAX_SUBPARAMS = 256;
 
-
 /**
  * Params storage class.
  * This type is used by the parser to accumulate sequence parameters and sub parameters
