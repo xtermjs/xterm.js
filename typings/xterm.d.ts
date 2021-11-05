@@ -636,6 +636,11 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
+     * Get the terminal options
+     */
+    readonly options: ITerminalOptions;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -964,26 +969,31 @@ declare module 'xterm' {
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
+     * @deprecated Use `options` instead.
      */
     getOption(key: string): any;
 
@@ -991,60 +1001,70 @@ declare module 'xterm' {
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
     /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     * @deprecated Use `options` instead.
+     */
     setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
     /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     * @deprecated Use `options` instead.
+     */
     setOption(key: 'logLevel', value: LogLevel): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'theme', value: ITheme): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: 'cols' | 'rows', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
+     * @deprecated Use `options` instead.
      */
     setOption(key: string, value: any): void;
 
@@ -1351,7 +1371,9 @@ declare module 'xterm' {
 
     /**
      * The length of the line, all call to getCell beyond the length will result
-     * in `undefined`.
+     * in `undefined`. Note that this may exceed columns as the line array may
+     * not be trimmed after a resize, compare against {@link Terminal.cols} to
+     * get the actual maximum length of a line.
      */
     readonly length: number;
 
