@@ -1343,7 +1343,9 @@ declare module 'xterm' {
 
     /**
      * The length of the line, all call to getCell beyond the length will result
-     * in `undefined`.
+     * in `undefined`. Note that this may exceed columns as the line array may
+     * not be trimmed after a resize, compare against {@link Terminal.cols} to
+     * get the actual maximum length of a line.
      */
     readonly length: number;
 
