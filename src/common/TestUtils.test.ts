@@ -131,6 +131,12 @@ export class MockOptionsService implements IOptionsService {
       }
     }
   }
+  public setOptions(options: ITerminalOptions): void {
+    for (const key of Object.keys(options)) {
+      this.options[key] = options[key];
+      this.publicOptions[key] = options[key];
+    }
+  }
   public setOption<T>(key: string, value: T): void {
     throw new Error('Method not implemented.');
   }

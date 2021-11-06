@@ -52,7 +52,6 @@ import { MouseService } from 'browser/services/MouseService';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 
@@ -73,9 +72,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
-
-  // TODO: We should remove options once components adopt optionsService
-  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 

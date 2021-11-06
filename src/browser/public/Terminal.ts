@@ -92,6 +92,9 @@ export class Terminal implements ITerminalApi {
   public get options(): ITerminalOptions {
     return this._core.options;
   }
+  public set options(options: ITerminalOptions) {
+    this._core.options = options;
+  }
   public blur(): void {
     this._core.blur();
   }

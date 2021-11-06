@@ -638,7 +638,7 @@ declare module 'xterm' {
     /**
      * Get the terminal options
      */
-    readonly options: ITerminalOptions;
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
