@@ -9,6 +9,7 @@ import { toRGBA8888, BIG_ENDIAN } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
 import { WorkerManager } from './WorkerManager';
 import { ImageRenderer } from './ImageRenderer';
+import { PaletteType } from 'WorkerTypes';
 
 
 export class SixelHandler implements IDcsHandler {
@@ -33,8 +34,17 @@ export class SixelHandler implements IDcsHandler {
     this._fillColor = params.params[1] === 1 ? 0 : extractActiveBg(
       this._coreTerminal._core._inputHandler._curAttrData,
       this._coreTerminal._core._colorManager.colors);
+    // image palette is either shared (using previous one), or one of
+    // 'VT340-COLOR' | 'VT340-GREY' | 'ANSI256' (ANSI256 as fallthrough)
+    const palette = this._opts.sixelPrivatePalette === false
+      ? PaletteType.SHARED
+      : this._opts.sixelDefaultPalette === 'VT340-COLOR'
+        ? PaletteType.VT340_COLOR
+        : this._opts.sixelDefaultPalette === 'VT340-GREY'
+          ? PaletteType.VT340_GREY
+          : PaletteType.ANSI_256;
     this._size = 0;
-    this._workerManager.sixelInit(this._fillColor, 'VT340-COLOR', this._opts.sixelPaletteLimit);
+    this._workerManager.sixelInit(this._fillColor, palette, this._opts.sixelPaletteLimit);
   }
 
   // called for any SIXEL data chunk

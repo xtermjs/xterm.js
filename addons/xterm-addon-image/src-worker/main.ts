@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IImageWorkerMessage, IPostMessage, MessageType } from '../src/WorkerTypes';
+import { IImageWorkerMessage, IPostMessage, MessageType, PaletteType } from '../src/WorkerTypes';
 
 import { Decoder } from 'sixel/lib/Decoder';
 import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
@@ -75,12 +75,14 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
       break;
     case MessageType.SIXEL_INIT:
       sizeExceeded = false;
-      const { fillColor, paletteName, limit } = data.payload;
-      const palette = paletteName === 'VT340-COLOR'
-        ? PALETTE_VT340_COLOR
-        : paletteName === 'VT340-GREY'
-          ? PALETTE_VT340_GREY
-          : PALETTE_ANSI_256;
+      const { fillColor, paletteType, limit } = data.payload;
+      const palette = paletteType === PaletteType.SHARED
+        ? null
+        : paletteType === PaletteType.VT340_COLOR
+          ? PALETTE_VT340_COLOR
+          : paletteType === PaletteType.VT340_GREY
+            ? PALETTE_VT340_GREY
+            : PALETTE_ANSI_256;
       dec.init(fillColor, palette, limit);
       break;
     case MessageType.ACK:

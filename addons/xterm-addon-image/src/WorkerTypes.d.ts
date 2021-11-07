@@ -26,6 +26,14 @@ export const enum MessageType {
   SIZE_EXCEEDED = 7
 }
 
+// palette types
+export const enum PaletteType {
+  SHARED = 0,
+  VT340_COLOR = 1,
+  VT340_GREY = 2,
+  ANSI_256 = 3
+}
+
 /**
  * Worker message protocol types (used on both ends).
  */
@@ -39,7 +47,7 @@ export interface ISixelInitMessage {
   type: MessageType.SIXEL_INIT;
   payload: {
     fillColor: number;
-    paletteName: 'VT340-COLOR' | 'VT340-GREY' | 'ANSI-256' | 'private';
+    paletteType: PaletteType;
     limit: number;
   };
 }
