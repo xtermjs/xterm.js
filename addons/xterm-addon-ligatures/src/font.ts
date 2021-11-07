@@ -43,7 +43,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
         if (status && status.state !== 'granted') {
           throw new Error('Permission to access local fonts not granted.');
         }
-      } catch (err) {
+      } catch (err: any) {
         // A `TypeError` indicates the 'local-fonts'
         // permission is not yet implemented, so
         // only `throw` if this is _not_ the problem.
@@ -61,7 +61,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
           fonts[metadata.family].push(metadata);
         }
         fontsPromise = Promise.resolve(fonts);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err.name, err.message);
       }
     }
