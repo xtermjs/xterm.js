@@ -34,12 +34,18 @@ export const enum PaletteType {
   ANSI_256 = 3
 }
 
+// ACK payload
+export const enum AckPayload {
+  PING = 0,
+  ALIVE = 1
+}
+
 /**
  * Worker message protocol types (used on both ends).
  */
 export interface IAckMessage {
   type: MessageType.ACK;
-  payload: 'ping' | 'alive';
+  payload: AckPayload;
   options: ISetupOptions | null;
 }
 // outgoing

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IImageWorkerMessage, IPostMessage, MessageType, PaletteType } from '../src/WorkerTypes';
+import { AckPayload, IImageWorkerMessage, IPostMessage, MessageType, PaletteType } from '../src/WorkerTypes';
 
 import { Decoder } from 'sixel/lib/Decoder';
 import { PALETTE_VT340_COLOR, PALETTE_VT340_GREY, PALETTE_ANSI_256 } from 'sixel/lib/Colors';
@@ -88,7 +88,7 @@ function messageHandler(event: MessageEvent<IImageWorkerMessage>): void {
     case MessageType.ACK:
       pixelLimit = data.options?.pixelLimit || 0;
       dec = new Decoder({ memoryLimit: pixelLimit * 4 });
-      postMessage({ type: MessageType.ACK, payload: 'alive', options: null });
+      postMessage({ type: MessageType.ACK, payload: AckPayload.ALIVE, options: null });
       break;
   }
 }

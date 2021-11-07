@@ -5,7 +5,7 @@
 
 import { IImageAddonOptions } from './Types';
 import { IDisposable } from 'xterm';
-import { IImageWorkerMessage, IImagePixel, IImageWorker, MessageType, PaletteType } from './WorkerTypes';
+import { IImageWorkerMessage, IImagePixel, IImageWorker, MessageType, PaletteType, AckPayload } from './WorkerTypes';
 
 
 
@@ -92,7 +92,7 @@ export class WorkerManager implements IDisposable {
       this._worker.addEventListener('error', this._startupError, false);
       this._worker.postMessage({
         type: MessageType.ACK,
-        payload: 'ping',
+        payload: AckPayload.PING,
         options: { pixelLimit: this._opts.pixelLimit }
       });
     }
