@@ -220,7 +220,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
         const bufferLine = buffer.lines.get(i);
         const lineText = buffer.translateBufferLineToString(i, true);
-        if (bufferLine && bufferLine.isWrapped) {
+        if (bufferLine?.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -924,7 +924,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     if (followWrappedLinesBelow) {
       if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /* ' ' */) {
         const nextBufferLine = buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /* ' ' */) {
+        if (nextBufferLine?.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /* ' ' */) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;
