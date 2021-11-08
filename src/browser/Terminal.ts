@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, IColorRGB } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -55,6 +55,7 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
+import { toRgbString } from 'common/input/XParseColor';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -178,58 +179,26 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _handleColorEvent(event: IColorEvent): void {
-    if (!this._colorManager) { return; }
-
-    let hasSet = false;
-    const query: string[] = [];
-    for (const req of event.requests) {
-      if (req.color === '?') {
-        // query color
-        let ident = '';
-        let c: IColor;
-        switch (req.index) {
-          case 256:
-            ident = '10';
-            c = this._colorManager.colors.foreground;
-            break;
-          case 257:
-            ident = '11';
-            c = this._colorManager.colors.background;
-            break;
-          default:
-            if (0 <= req.index && req.index < 256) {
-              ident = '4;' + req.index;
-              c = this._colorManager.colors.ansi[req.index];
-            }
-        }
-        if (ident) {
-          query.push(`${C0.ESC}]${ident};${color.toXColorName(c!)}${C0.BEL}`);
-        }
-      } else {
-        // set color
-        hasSet = true;
-        switch (req.index) {
-          case 256:
-            this._colorManager.colors.foreground = rgba.toColor(...req.color);
-            break;
-          case 257:
-            this._colorManager.colors.background = rgba.toColor(...req.color);
-            break;
-          default:
-            if (0 <= req.index && req.index < 256) {
-              this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
-            }
-        }
+    if (!this._colorManager) return;
+    for (const req of event) {
+      switch (req.index) {
+        case ColorIndex.FOREGROUND: // OSC 10
+          if (req.color) this._colorManager.colors.foreground = rgba.toColor(...req.color);
+          else this.coreService.triggerDataEvent(`${C0.ESC}]10;${toRgbString(color.toColorRGB(this._colorManager.colors.foreground))}${C0.BEL}`);
+          break;
+        case ColorIndex.BACKGROUND: // OSC 11
+          if (req.color) this._colorManager.colors.background = rgba.toColor(...req.color);
+          else this.coreService.triggerDataEvent(`${C0.ESC}]11;${toRgbString(color.toColorRGB(this._colorManager.colors.background))}${C0.BEL}`);
+          break;
+        default: // OSC 4
+          if (0 <= req.index && req.index < 256) {
+            if (req.color) this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+            else this.coreService.triggerDataEvent(`${C0.ESC}]4;${req.index};${toRgbString(color.toColorRGB(this._colorManager.colors.ansi[req.index]))}${C0.BEL}`);
+          }
       }
     }
-
-    if (query.length) {
-      this.coreService.triggerDataEvent(query.join(''));
-    }
-    if (hasSet) {
-      this._renderService?.setColors(this._colorManager.colors);
-      this.viewport?.onThemeChange(this._colorManager.colors);
-    }
+    this._renderService?.setColors(this._colorManager.colors);
+    this.viewport?.onThemeChange(this._colorManager.colors);
   }
 
   public dispose(): void {

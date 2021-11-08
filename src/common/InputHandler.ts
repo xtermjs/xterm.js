@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -21,6 +21,7 @@ import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowSe
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
+import { parseColor } from 'common/input/XParseColor';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -403,9 +404,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
     //  10 - Change VT100 text foreground color to Pt.
-    this._parser.registerOscHandler(10, new OscHandler(data => this.queryOrSetFgColor(data)));
+    this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
-    this._parser.registerOscHandler(11, new OscHandler(data => this.queryOrSetBgColor(data)));
+    this._parser.registerOscHandler(11, new OscHandler(data => this.setOrReportBgColor(data)));
     //  12 - Change text cursor color to Pt.
     //  13 - Change mouse foreground color to Pt.
     //  14 - Change mouse background color to Pt.
@@ -2841,14 +2842,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-  protected _parseAnsiColorChange(data: string): IColorEvent | null {
-    const result: IColorEvent = { requests: [] };
+  protected _parseAnsiColorChange(data: string): IColorEvent {
+    const result: IColorEvent = [];
     // example data: 5;rgb:aa/bb/cc
     const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
     let match;
-
     while ((match = regex.exec(data)) !== null) {
-      result.requests.push({
+      result.push({
         index: parseInt(match[1]),
         color: [
           parseInt(match[2], 16),
@@ -2857,56 +2857,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         ]
       });
     }
-
-    if (result.requests.length === 0) {
-      return null;
-    }
-
     return result;
-  }
-
-  /**
-   * Parse color spec to RGB values (8 bit per channel).
-   * See `man xparsecolor` for details about certain format specifications.
-   *
-   * Supported formats:
-   * - rgb:<red>/<green>/<blue> with <red>, <green>, <blue> in h | hh | hhh | hhhh
-   * - #RGB, #RRGGBB, #RRRGGGBBB, #RRRRGGGGBBBB
-   *
-   * All other formats like rgbi: or device-independent string specifications
-   * with float numbering are not supported.
-   */
-  protected _parseColorSpec(data: string): [number, number, number] | undefined {
-    if (!data) return;
-    // also handle uppercases
-    let low = data.toLowerCase();
-    if (low.indexOf('rgb:') === 0) {
-      // 'rgb:' specifier
-      low = low.slice(4);
-      const rex = /^([\da-f]{1})\/([\da-f]{1})\/([\da-f]{1})$|^([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})$|^([\da-f]{3})\/([\da-f]{3})\/([\da-f]{3})$|^([\da-f]{4})\/([\da-f]{4})\/([\da-f]{4})$/;
-      const m = rex.exec(low);
-      if (m) {
-        const base = m[1] ? 15 : m[4] ? 255 : m[7] ? 4095 : 65535;
-        return [
-          Math.round(parseInt(m[1] || m[4] || m[7] || m[10], 16) / base * 255),
-          Math.round(parseInt(m[2] || m[5] || m[8] || m[11], 16) / base * 255),
-          Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255)
-        ];
-      }
-    } else if (low.indexOf('#') === 0) {
-      // '#' specifier
-      low = low.slice(1);
-      const rex = /^[\da-f]+$/;
-      if (rex.exec(low) && [3, 6, 9, 12].includes(low.length)) {
-        const adv = low.length / 3;
-        const result: [number, number, number] = [0, 0, 0];
-        for (let i = 0; i < 3; ++i) {
-          const c = parseInt(low.slice(adv * i, adv * i + adv), 16);
-          result[i] = adv === 1 ? c << 4 : adv === 2 ? c : adv === 3 ? c >> 4 : c >> 8;
-        }
-        return result;
-      }
-    }
   }
 
   /**
@@ -2918,7 +2869,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setAnsiColor(data: string): boolean {
     const event = this._parseAnsiColorChange(data);
-    if (event) {
+    if (event.length) {
       this._onColor.fire(event);
     }
     else {
@@ -2940,6 +2891,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * - `#RRRGGGBBB` - 12 bits per channel, truncated to `#RRGGBB`
    * - `#RRRRGGGGBBBB` - 16 bits per channel, truncated to `#RRGGBB`
    *
+   * **Note:** X11 named colors are currently unsupported.
+   *
    * If `Pt` contains `?` instead of a color specification, the terminal
    * returns a sequence with the current default foreground color
    * (use that sequence to restore the color after changes).
@@ -2947,21 +2900,20 @@ export class InputHandler extends Disposable implements IInputHandler {
    * **Note:** Other than xterm, xterm.js does not support OSC 12 - 19.
    * Therefore stacking multiple `Pt` separated by `;` only works for the first two entries.
    */
-  public queryOrSetFgColor(data: string): boolean {
-    // note: data may contain multiple ? or color names separated with ;
-    // Multiple values will map through to OSC 10 - 19, but we only support 10 and 11 currently,
-    // thus truncate to max. 2 entries.
-    const slots = data.split(';').slice(0, 2);
+  public setOrReportFgColor(data: string): boolean {
+    // Note: data may contain multiple values separated with ; mapping to OSC 10 - 19
+    const slots = data.split(';');
     if (slots[0] === '?') {
-      this._onColor.fire({ requests: [{ index: 256, color: '?' }] });
+      this._onColor.fire([{ index: ColorIndex.FOREGROUND }]);
     } else {
-      const color = this._parseColorSpec(slots[0]);
+      const color = parseColor(slots[0]);
       if (color) {
-        this._onColor.fire({ requests: [{ index: 256, color }] });
+        this._onColor.fire([{ index: ColorIndex.FOREGROUND, color }]);
       }
     }
-    if (slots.length === 2) {
-      this.queryOrSetBgColor(slots[1]);
+    // forward second slot to OSC 11 (higher slots are not supported)
+    if (slots.length > 1) {
+      this.setOrReportBgColor(slots[1]);
     }
     return true;
   }
@@ -2971,14 +2923,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y  OSC   11    "Set or query default background color"   "OSC 11 ; Pt BEL"  "Same as OSC 10, but for default background."
    */
-  public queryOrSetBgColor(data: string): boolean {
-    const slots = data.split(';').slice(0, 1);
+  public setOrReportBgColor(data: string): boolean {
+    const slots = data.split(';');
     if (slots[0] === '?') {
-      this._onColor.fire({ requests: [{ index: 257, color: '?' }] });
+      this._onColor.fire([{ index: ColorIndex.BACKGROUND }]);
     } else {
-      const color = this._parseColorSpec(slots[0]);
+      const color = parseColor(slots[0]);
       if (color) {
-        this._onColor.fire({ requests: [{ index: 257, color }] });
+        this._onColor.fire([{ index: ColorIndex.BACKGROUND, color }]);
       }
     }
     return true;

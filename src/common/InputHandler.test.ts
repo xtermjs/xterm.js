@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent, ColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
@@ -41,7 +41,7 @@ class TestInputHandler extends InputHandler {
   public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
   public get windowTitleStack(): string[] { return this._windowTitleStack; }
   public get iconNameStack(): string[] { return this._iconNameStack; }
-  public parseAnsiColorChange(data: string): IColorEvent | null { return this._parseAnsiColorChange(data); }
+  public parseAnsiColorChange(data: string): IColorEvent{ return this._parseAnsiColorChange(data); }
 
   /**
    * Promise based parse call to await the full resolve of given input data.
@@ -53,10 +53,6 @@ class TestInputHandler extends InputHandler {
     while (result = this.parse(data, prev)) {
       prev = await result;
     }
-  }
-
-  public parseColorSpec(data: string): undefined | [number, number, number] {
-    return this._parseColorSpec(data);
   }
 }
 
@@ -1869,113 +1865,97 @@ describe('InputHandler', () => {
     });
   });
   describe('OSC', () => {
-    describe('parse xcolor names', () => {
-      it('rgb:<r>/<g>/<b> scheme in 4/8/12/16 bit', () => {
-        // 4 bit
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:0/0/0'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:f/f/f'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:1/2/3'), [17, 34, 51]);
-        // 8 bit
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:00/00/00'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:ff/ff/ff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:11/22/33'), [17, 34, 51]);
-        // 12 bit
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:000/000/000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:fff/fff/fff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:111/222/333'), [17, 34, 51]);
-        // 16 bit
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:0000/0000/0000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:ffff/ffff/ffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('rgb:1111/2222/3333'), [17, 34, 51]);
-      });
-      it('#RGB scheme in 4/8/12/16 bit', () => {
-        // 4 bit
-        assert.deepEqual(inputHandler.parseColorSpec('#000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('#fff'), [240, 240, 240]);
-        assert.deepEqual(inputHandler.parseColorSpec('#123'), [16, 32, 48]);
-        // 8 bit
-        assert.deepEqual(inputHandler.parseColorSpec('#000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('#ffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('#112233'), [17, 34, 51]);
-        // 12 bit
-        assert.deepEqual(inputHandler.parseColorSpec('#000000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('#fffffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('#111222333'), [17, 34, 51]);
-        // 16 bit
-        assert.deepEqual(inputHandler.parseColorSpec('#000000000000'), [0, 0, 0]);
-        assert.deepEqual(inputHandler.parseColorSpec('#ffffffffffff'), [255, 255, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('#111122223333'), [17, 34, 51]);
-      });
-      it('supports upper case', () => {
-        assert.deepEqual(inputHandler.parseColorSpec('RGB:0/A/F'), [0, 170, 255]);
-        assert.deepEqual(inputHandler.parseColorSpec('#FFF'), [240, 240, 240]);
-      });
-      it('does not parse illegal combinations', () => {
-        // shifting bit width
-        assert.equal(inputHandler.parseColorSpec('rgb:0/11/222'), undefined);
-        // unsupported scheme
-        assert.equal(inputHandler.parseColorSpec('rgbi:00/11/22'), undefined);
-        // broken # specifier
-        assert.equal(inputHandler.parseColorSpec('#aabbbcc'), undefined);
-        // out of range
-        assert.equal(inputHandler.parseColorSpec('#aabbgg'), undefined);
-        assert.equal(inputHandler.parseColorSpec('rgb:aa/bb/gg'), undefined);
-      });
-    });
-
-
     it('4: should parse correct Ansi color change data', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3');
 
       assert.isNotNull(event);
-      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.deepEqual(event![0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
     });
-
     it('4: should ignore incorrect Ansi color change data', () => {
       // this is testing a private method
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:a/b/c'));
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgb:#aabbcc'));
-      assert.isNull(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc'));
-      assert.isNull(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc'));
+      assert.equal(inputHandler.parseAnsiColorChange('17;rgb:a/b/c').length, 0);
+      assert.equal(inputHandler.parseAnsiColorChange('17;rgb:#aabbcc').length, 0);
+      assert.equal(inputHandler.parseAnsiColorChange('17;rgba:aa/bb/cc').length, 0);
+      assert.equal(inputHandler.parseAnsiColorChange('rgb:aa/bb/cc').length, 0);
     });
-
     it('4: should parse a list of Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:00/11/22;255;rgb:01/ef/2d');
 
-      assert.isNotNull(event);
-      assert.equal(event!.requests.length, 3);
-      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
-      assert.deepEqual(event!.requests[1], { index: 17, color: [0x00, 0x11, 0x22] });
-      assert.deepEqual(event!.requests[2], { index: 255, color: [0x01, 0xef, 0x2d] });
+      assert.equal(event.length, 3);
+      assert.deepEqual(event[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.deepEqual(event[1], { index: 17, color: [0x00, 0x11, 0x22] });
+      assert.deepEqual(event[2], { index: 255, color: [0x01, 0xef, 0x2d] });
     });
     it('4: should ignore incorrect colors in a list of Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rgb:a1/b2/c3;17;rgb:WR/ON/G;255;rgb:01/ef/2d');
 
-      assert.equal(event!.requests.length, 2);
-      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
-      assert.deepEqual(event!.requests[1], { index: 255, color: [0x01, 0xef, 0x2d] });
+      assert.equal(event.length, 2);
+      assert.deepEqual(event[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.deepEqual(event[1], { index: 255, color: [0x01, 0xef, 0x2d] });
     });
     it('4: should be case insensitive when parsing Ansi color changes', () => {
       // this is testing a private method
       const event = inputHandler.parseAnsiColorChange('19;rGb:A1/b2/C3');
 
-      assert.equal(event!.requests.length, 1);
-      assert.deepEqual(event!.requests[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
+      assert.equal(event.length, 1);
+      assert.deepEqual(event[0], { index: 19, color: [0xa1, 0xb2, 0xc3] });
     });
     it('4: should fire event on Ansi color change', async () => {
       return new Promise(async r => {
         inputHandler.onColor(e => {
-          assert.isNotNull(e);
-          assert.isNotNull(e!.requests);
-          assert.deepEqual(e!.requests[0], { index: 17, color: [0x1a, 0x2b, 0x3c] });
-          assert.deepEqual(e!.requests[1], { index: 12, color: [0x11, 0x22, 0x33] });
+          assert.deepEqual(e[0], { index: 17, color: [0x1a, 0x2b, 0x3c] });
+          assert.deepEqual(e[1], { index: 12, color: [0x11, 0x22, 0x33] });
           r();
         });
         await inputHandler.parseP('\x1b]4;17;rgb:1a/2b/3c;12;rgb:11/22/33\x1b\\');
       });
+    });
+
+    it('10: should create appropriate events', async () => {
+      const stack: IColorEvent[] = [];
+      inputHandler.onColor(ev => stack.push(ev));
+      // single foreground query --> color undefined
+      await inputHandler.parseP('\x1b]10;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND }]]);
+      stack.length = 0;
+      // OSC with multiple values maps to OSC 10 & OSC 11
+      await inputHandler.parseP('\x1b]10;?;?;?;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND }], [{ index: ColorIndex.BACKGROUND }]]);
+      stack.length = 0;
+      // set foreground color events
+      await inputHandler.parseP('\x1b]10;rgb:01/02/03\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND, color: [1, 2, 3] }]]);
+      stack.length = 0;
+      await inputHandler.parseP('\x1b]10;#aabbcc\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND, color: [170, 187, 204] }]]);
+      stack.length = 0;
+      // set FG and BG at once
+      await inputHandler.parseP('\x1b]10;rgb:aa/bb/cc;#001122\x07');
+      assert.deepEqual(stack, [
+        [{ index: ColorIndex.FOREGROUND, color: [170, 187, 204] }],
+        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }],
+      ]);
+    });
+    it('11: should create appropriate events', async () => {
+      const stack: IColorEvent[] = [];
+      inputHandler.onColor(ev => stack.push(ev));
+      // single foreground query --> color undefined
+      await inputHandler.parseP('\x1b]11;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND }]]);
+      stack.length = 0;
+      // OSC 11 with multiple values creates only one BG event
+      await inputHandler.parseP('\x1b]11;?;?;?;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND }]]);
+      stack.length = 0;
+      // set background color events
+      await inputHandler.parseP('\x1b]11;rgb:01/02/03\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND, color: [1, 2, 3] }]]);
+      stack.length = 0;
+      await inputHandler.parseP('\x1b]11;#aabbcc\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND, color: [170, 187, 204] }]]);
     });
   });
 

@@ -4,6 +4,7 @@
  */
 
 import { IColor } from 'browser/Types';
+import { IColorRGB } from 'common/Types';
 
 // FIXME: Move Color.ts lib to common?
 
@@ -86,9 +87,8 @@ export namespace color {
     };
   }
 
-  export function toXColorName(color: IColor): string {
-    const [r, g, b] = rgba.toChannels(color.rgba);
-    return `rgb:${toPaddedHex(r)}${toPaddedHex(r)}/${toPaddedHex(g)}${toPaddedHex(g)}/${toPaddedHex(b)}${toPaddedHex(b)}`;
+  export function toColorRGB(color: IColor): IColorRGB {
+    return [(color.rgba >> 24) & 0xFF, (color.rgba >> 16) & 0xFF, (color.rgba >> 8) & 0xFF];
   }
 }
 
