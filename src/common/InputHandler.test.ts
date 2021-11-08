@@ -1936,7 +1936,7 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b]10;rgb:aa/bb/cc;#001122\x07');
       assert.deepEqual(stack, [
         [{ index: ColorIndex.FOREGROUND, color: [170, 187, 204] }],
-        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }],
+        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }]
       ]);
     });
     it('11: should create appropriate events', async () => {
