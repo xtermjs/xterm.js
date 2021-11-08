@@ -2842,24 +2842,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-  protected _parseAnsiColorChange(data: string): IColorEvent {
-    const result: IColorEvent = [];
-    // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
-    let match;
-    while ((match = regex.exec(data)) !== null) {
-      result.push({
-        index: parseInt(match[1]),
-        color: [
-          parseInt(match[2], 16),
-          parseInt(match[3], 16),
-          parseInt(match[4], 16)
-        ]
-      });
-    }
-    return result;
-  }
-
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
@@ -2868,12 +2850,24 @@ export class InputHandler extends Disposable implements IInputHandler {
    * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
    */
   public setOrReportIndexedColor(data: string): boolean {
-    const event = this._parseAnsiColorChange(data);
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    while (slots.length > 1) {
+      const idx = slots.shift() as string;
+      const spec = slots.shift() as string;
+      if (/^\d+$/.exec(idx)) {
+        if (spec === '?') {
+          event.push({ index: parseInt(idx) });
+        } else {
+          const color = parseColor(spec);
+          if (color) {
+            event.push({ index: parseInt(idx), color });
+          }
+        }
+      }
+    }
     if (event.length) {
       this._onColor.fire(event);
-    }
-    else {
-      this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
     }
     return true;
   }
