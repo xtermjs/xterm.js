@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { pollFor, openTerminal, getBrowserType, launchBrowser } from './TestUtils';
+import { pollFor, openTerminal, getBrowserType, launchBrowser, writeSync } from './TestUtils';
 import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
@@ -384,6 +384,50 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
     });
+  });
+
+  describe('OSC', () => {
+    describe('OSC 10 & 11', () => {
+      before(async () => {
+        await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
+      });
+      after(async () => {
+        await page.evaluate('window._h.dispose()');
+      });
+      beforeEach(async () => {
+        await page.evaluate('window._recordedData.length = 0;');
+      });
+      it('query FG color', async () => {
+        await writeSync(page, '\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('query BG color', async () => {
+        await writeSync(page, '\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('query FG & BG color in one call', async () => {
+        await writeSync(page, '\x1b]10;?;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07', '\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('set & query FG', async () => {
+        await writeSync(page, '\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]10;#ffffff\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07', '\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('set & query BG', async () => {
+        await writeSync(page, '\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]11;#000000\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07', '\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('set & query FG & BG color in one call', async () => {
+        await writeSync(page, '\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1212/3434/5656\x07', '\x1b]11;rgb:aaaa/bbbb/cccc\x07']);
+        await writeSync(page, '\x1b]10;#ffffff;#000000\x07');
+      });
+    });
+
   });
 
   describe('ESC', () => {
