@@ -399,7 +399,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerOscHandler(2, new OscHandler(data => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
-    this._parser.registerOscHandler(4, new OscHandler(data => this.setAnsiColor(data)));
+    this._parser.registerOscHandler(4, new OscHandler(data => this.setOrReportIndexedColor(data)));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
@@ -2867,7 +2867,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
    * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
    */
-  public setAnsiColor(data: string): boolean {
+  public setOrReportIndexedColor(data: string): boolean {
     const event = this._parseAnsiColorChange(data);
     if (event.length) {
       this._onColor.fire(event);
