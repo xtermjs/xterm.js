@@ -386,7 +386,7 @@ describe('InputHandler Integration Tests', function(): void {
     });
   });
 
-  describe.only('OSC', () => {
+  describe('OSC', () => {
     describe('OSC 4', () => {
       before(async () => {
         await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
