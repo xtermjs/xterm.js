@@ -55,7 +55,7 @@ class TestInputHandler extends InputHandler {
     }
   }
 
-  public parseColorSpec(data: string): void | [number, number, number] {
+  public parseColorSpec(data: string): undefined | [number, number, number] {
     return this._parseColorSpec(data);
   }
 }

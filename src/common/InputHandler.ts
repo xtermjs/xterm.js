@@ -21,7 +21,6 @@ import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowSe
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
-import { getColorFromName } from 'common/data/ColorNames';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -2877,7 +2876,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * All other formats like rgbi: or device-independent string specifications
    * with float numbering are not supported.
    */
-  protected _parseColorSpec(data: string): [number, number, number] | void {
+  protected _parseColorSpec(data: string): [number, number, number] | undefined {
     if (!data) return;
     // also handle uppercases
     let low = data.toLowerCase();
@@ -2908,7 +2907,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         return result;
       }
     }
-    return getColorFromName(data);
   }
 
   /**
