@@ -1902,16 +1902,16 @@ describe('InputHandler', () => {
       stack.length = 0;
     });
 
-    it('10: should create appropriate events', async () => {
+    it('10: FG set & query events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       // single foreground query --> color undefined
       await inputHandler.parseP('\x1b]10;?\x07');
       assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND }]]);
       stack.length = 0;
-      // OSC with multiple values maps to OSC 10 & OSC 11
+      // OSC with multiple values maps to OSC 10 & OSC 11 & OSC 12
       await inputHandler.parseP('\x1b]10;?;?;?;?\x07');
-      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND }], [{ index: ColorIndex.BACKGROUND }]]);
+      assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND }], [{ index: ColorIndex.BACKGROUND }], [{ index: ColorIndex.CURSOR }]]);
       stack.length = 0;
       // set foreground color events
       await inputHandler.parseP('\x1b]10;rgb:01/02/03\x07');
@@ -1920,23 +1920,24 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b]10;#aabbcc\x07');
       assert.deepEqual(stack, [[{ index: ColorIndex.FOREGROUND, color: [170, 187, 204] }]]);
       stack.length = 0;
-      // set FG and BG at once
-      await inputHandler.parseP('\x1b]10;rgb:aa/bb/cc;#001122\x07');
+      // set FG, BG and cursor color at once
+      await inputHandler.parseP('\x1b]10;rgb:aa/bb/cc;#001122;rgb:12/34/56\x07');
       assert.deepEqual(stack, [
         [{ index: ColorIndex.FOREGROUND, color: [170, 187, 204] }],
-        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }]
+        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }],
+        [{ index: ColorIndex.CURSOR, color: [18, 52, 86] }]
       ]);
     });
-    it('11: should create appropriate events', async () => {
+    it('11: BG set & query events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
-      // single foreground query --> color undefined
+      // single background query --> color undefined
       await inputHandler.parseP('\x1b]11;?\x07');
       assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND }]]);
       stack.length = 0;
-      // OSC 11 with multiple values creates only one BG event
+      // OSC 11 with multiple values creates only BG and cursor event
       await inputHandler.parseP('\x1b]11;?;?;?;?\x07');
-      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND }]]);
+      assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND }], [{ index: ColorIndex.CURSOR }]]);
       stack.length = 0;
       // set background color events
       await inputHandler.parseP('\x1b]11;rgb:01/02/03\x07');
@@ -1944,6 +1945,31 @@ describe('InputHandler', () => {
       stack.length = 0;
       await inputHandler.parseP('\x1b]11;#aabbcc\x07');
       assert.deepEqual(stack, [[{ index: ColorIndex.BACKGROUND, color: [170, 187, 204] }]]);
+      stack.length = 0;
+      // set BG and cursor color at once
+      await inputHandler.parseP('\x1b]11;#001122;rgb:12/34/56\x07');
+      assert.deepEqual(stack, [
+        [{ index: ColorIndex.BACKGROUND, color: [0, 17, 34] }],
+        [{ index: ColorIndex.CURSOR, color: [18, 52, 86] }]
+      ]);
+    });
+    it('12: cursor color set & query events', async () => {
+      const stack: IColorEvent[] = [];
+      inputHandler.onColor(ev => stack.push(ev));
+      // single cursor query --> color undefined
+      await inputHandler.parseP('\x1b]12;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.CURSOR }]]);
+      stack.length = 0;
+      // OSC 12 with multiple values creates only cursor event
+      await inputHandler.parseP('\x1b]12;?;?;?;?\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.CURSOR }]]);
+      stack.length = 0;
+      // set cursor color events
+      await inputHandler.parseP('\x1b]12;rgb:01/02/03\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.CURSOR, color: [1, 2, 3] }]]);
+      stack.length = 0;
+      await inputHandler.parseP('\x1b]12;#aabbcc\x07');
+      assert.deepEqual(stack, [[{ index: ColorIndex.CURSOR, color: [170, 187, 204] }]]);
     });
   });
 

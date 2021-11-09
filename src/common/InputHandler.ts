@@ -408,6 +408,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  11 - Change VT100 text background color to Pt.
     this._parser.registerOscHandler(11, new OscHandler(data => this.setOrReportBgColor(data)));
     //  12 - Change text cursor color to Pt.
+    this._parser.registerOscHandler(12, new OscHandler(data => this.setOrReportCursorColor(data)));
     //  13 - Change mouse foreground color to Pt.
     //  14 - Change mouse background color to Pt.
     //  15 - Change Tektronix foreground color to Pt.
@@ -2846,8 +2847,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
-   * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
-   * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
+   * `c` is the color index between 0 and 255. The color format of `spec` is derived from `XParseColor` (see OSC 10 for supported formats).
+   * There may be multipe `c ; spec` pairs present in the same instruction.
+   * If `spec` contains `?` the terminal returns a sequence with the currently set color.
    */
   public setOrReportIndexedColor(data: string): boolean {
     const event: IColorEvent = [];
@@ -2856,18 +2858,45 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        if (spec === '?') {
-          event.push({ index: parseInt(idx) });
-        } else {
-          const color = parseColor(spec);
-          if (color) {
-            event.push({ index: parseInt(idx), color });
+        const index = parseInt(idx);
+        if (0 <= index && index < 256) {
+          if (spec === '?') {
+            event.push({ index });
+          } else {
+            const color = parseColor(spec);
+            if (color) {
+              event.push({ index, color });
+            }
           }
         }
       }
     }
     if (event.length) {
       this._onColor.fire(event);
+    }
+    return true;
+  }
+
+  // special colors - OSC 10 | 11 | 12
+  private _specialColors = [ColorIndex.FOREGROUND, ColorIndex.BACKGROUND, ColorIndex.CURSOR];
+
+  /**
+   * Apply colors requests for special colors in OSC 10 | 11 | 12.
+   * Since these commands are stacking from multiple parameters,
+   * we handle them in a loop with an entry offset to `_specialColors`.
+   */
+  private _setOrReportSpecialColor(data: string, offset: number): boolean {
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i, ++offset) {
+      if (offset >= this._specialColors.length) break;
+      if (slots[i] === '?') {
+        this._onColor.fire([{ index: this._specialColors[offset] }]);
+      } else {
+        const color = parseColor(slots[i]);
+        if (color) {
+          this._onColor.fire([{ index: this._specialColors[offset], color }]);
+        }
+      }
     }
     return true;
   }
@@ -2895,21 +2924,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Therefore stacking multiple `Pt` separated by `;` only works for the first two entries.
    */
   public setOrReportFgColor(data: string): boolean {
-    // Note: data may contain multiple values separated with ; mapping to OSC 10 - 19
-    const slots = data.split(';');
-    if (slots[0] === '?') {
-      this._onColor.fire([{ index: ColorIndex.FOREGROUND }]);
-    } else {
-      const color = parseColor(slots[0]);
-      if (color) {
-        this._onColor.fire([{ index: ColorIndex.FOREGROUND, color }]);
-      }
-    }
-    // forward second slot to OSC 11 (higher slots are not supported)
-    if (slots.length > 1) {
-      this.setOrReportBgColor(slots[1]);
-    }
-    return true;
+    return this._setOrReportSpecialColor(data, 0);
   }
 
   /**
@@ -2918,16 +2933,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   11    "Set or query default background color"   "OSC 11 ; Pt BEL"  "Same as OSC 10, but for default background."
    */
   public setOrReportBgColor(data: string): boolean {
-    const slots = data.split(';');
-    if (slots[0] === '?') {
-      this._onColor.fire([{ index: ColorIndex.BACKGROUND }]);
-    } else {
-      const color = parseColor(slots[0]);
-      if (color) {
-        this._onColor.fire([{ index: ColorIndex.BACKGROUND, color }]);
-      }
-    }
-    return true;
+    return this._setOrReportSpecialColor(data, 1);
+  }
+
+  /**
+   * OSC 12 ; <xcolor name>|<?> ST - set or query default cursor color
+   *
+   * @vt: #Y  OSC   12    "Set or query default cursor color"   "OSC 12 ; Pt BEL"  "Same as OSC 10, but for default cursor color."
+   */
+  public setOrReportCursorColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 2);
   }
 
   /**

@@ -178,23 +178,44 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
   }
 
+  /**
+   * Handle color event from inputhandler for OSC 4 | 10 | 11 | 12.
+   * An event from OSC 4 may contain multiple set or report requests,
+   * while OSC 10 | 11 | 12 create single requests.
+   */
   private _handleColorEvent(event: IColorEvent): void {
     if (!this._colorManager) return;
     for (const req of event) {
+      let acc: 'foreground' | 'background' | 'cursor' | 'ansi' | undefined = undefined;
+      let ident = '';
       switch (req.index) {
         case ColorIndex.FOREGROUND: // OSC 10
-          if (req.color) this._colorManager.colors.foreground = rgba.toColor(...req.color);
-          else this.coreService.triggerDataEvent(`${C0.ESC}]10;${toRgbString(color.toColorRGB(this._colorManager.colors.foreground))}${C0.BEL}`);
+          acc = 'foreground';
+          ident = '10';
           break;
         case ColorIndex.BACKGROUND: // OSC 11
-          if (req.color) this._colorManager.colors.background = rgba.toColor(...req.color);
-          else this.coreService.triggerDataEvent(`${C0.ESC}]11;${toRgbString(color.toColorRGB(this._colorManager.colors.background))}${C0.BEL}`);
+          acc = 'background';
+          ident = '11';
+          break;
+        case ColorIndex.CURSOR: // OSC 12
+          acc = 'cursor';
+          ident = '12';
           break;
         default: // OSC 4
-          if (0 <= req.index && req.index < 256) {
-            if (req.color) this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
-            else this.coreService.triggerDataEvent(`${C0.ESC}]4;${req.index};${toRgbString(color.toColorRGB(this._colorManager.colors.ansi[req.index]))}${C0.BEL}`);
-          }
+          // we can skip the [0..255] range check here (already done in inputhandler)
+          acc = 'ansi';
+          ident = '4;' + req.index;
+      }
+      if (acc) {
+        if (req.color) {
+          if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+          else this._colorManager.colors[acc] = rgba.toColor(...req.color);
+        } else {
+          const channels = color.toColorRGB(acc === 'ansi'
+            ? this._colorManager.colors.ansi[req.index]
+            : this._colorManager.colors[acc]);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C0.BEL}`);
+        }
       }
     }
     this._renderService?.setColors(this._colorManager.colors);

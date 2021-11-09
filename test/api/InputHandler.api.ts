@@ -469,6 +469,12 @@ describe('InputHandler Integration Tests', function(): void {
         await writeSync(page, '\x1b]11;#000000\x07\x1b]11;?\x07');
         assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07', '\x1b]11;rgb:0000/0000/0000\x07']);
       });
+      it('set & query cursor color', async () => {
+        await writeSync(page, '\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]12;#ffffff\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07', '\x1b]12;rgb:ffff/ffff/ffff\x07']);
+      });
       it('set & query FG & BG color in one call', async () => {
         await writeSync(page, '\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
         assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1212/3434/5656\x07', '\x1b]11;rgb:aaaa/bbbb/cccc\x07']);

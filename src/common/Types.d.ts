@@ -348,10 +348,11 @@ export interface IWindowOptions {
   setWinLines?: boolean;
 }
 
-// color events from common, used for OSC 4/10/11
+// color events from common, used for OSC 4/10/11/12
 export const enum ColorIndex {
   FOREGROUND = 256,
-  BACKGROUND = 257
+  BACKGROUND = 257,
+  CURSOR = 258
 }
 export interface IColorReportRequest {
   index: ColorIndex;
@@ -431,6 +432,7 @@ export interface IInputHandler {
   /** OSC 4 */ setOrReportIndexedColor(data: string): boolean;
   /** OSC 10 */ setOrReportFgColor(data: string): boolean;
   /** OSC 11 */ setOrReportBgColor(data: string): boolean;
+  /** OSC 12 */ setOrReportCursorColor(data: string): boolean;
 
   /** ESC E */ nextLine(): boolean;
   /** ESC = */ keypadApplicationMode(): boolean;

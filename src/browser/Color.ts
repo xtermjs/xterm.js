@@ -217,13 +217,6 @@ export namespace rgba {
       rgba: channels.toRgba(r, g, b)
     };
   }
-
-  /**
-   * convert 0xRRGGBBAA to 0xAABBGGRR (32-bit representation on LE systems)
-   */
-  export function toABGR32(rgba: number): number {
-    return ((rgba & 0xFF) << 24 | (rgba >>> 8 & 0xFF) << 16 | (rgba >>> 16 & 0xFF) << 8 | rgba >>> 24 & 0xFF) >>> 0;
-  }
 }
 
 export function toPaddedHex(c: number): string {
