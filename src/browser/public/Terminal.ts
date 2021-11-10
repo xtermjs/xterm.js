@@ -13,6 +13,11 @@ import { UnicodeApi } from 'common/public/UnicodeApi';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 
+/**
+ * The set of options that only have an effect when set in the Terminal constructor.
+ */
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
+
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
@@ -90,10 +95,11 @@ export class Terminal implements ITerminalApi {
     };
   }
   public get options(): ITerminalOptions {
-    return this._core.publicOptions;
+    return this._core.options;
   }
   public set options(options: ITerminalOptions) {
-    this._core.publicOptions = options;
+    this._checkReadonlyOptions(options);
+    this._core.options = options;
   }
   public blur(): void {
     this._core.blur();
@@ -219,6 +225,7 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'cols' | 'rows', value: number): void;
   public setOption(key: string, value: any): void;
   public setOption(key: any, value: any): void {
+    this._checkReadonlyOptions();
     this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
@@ -242,6 +249,17 @@ export class Terminal implements ITerminalApi {
     for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
+      }
+    }
+  }
+
+  private _checkReadonlyOptions(options?: ITerminalOptions): void {
+    // Throw an error if any constructor only option is modified
+    // from terminal.options
+    // Modifications from anywhere else are allowed
+    for (const propName in options) {
+      if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
+        throw new Error(`Option "${propName}" can only be set in the constructor`);
       }
     }
   }
