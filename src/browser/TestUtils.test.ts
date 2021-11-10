@@ -147,6 +147,7 @@ export class MockTerminal implements ITerminal {
   public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
   public options: ITerminalOptions = {};
+  public publicOptions: ITerminalOptions = {};
   public element!: HTMLElement;
   public screenElement!: HTMLElement;
   public rowContainer!: HTMLElement;

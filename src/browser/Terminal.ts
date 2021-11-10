@@ -74,13 +74,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   public browser: IBrowser = Browser as any;
 
-  public get options(): ITerminalOptions { return this.optionsService.options; }
-  public set options(options: ITerminalOptions) {
-    for (const key in options) {
-      this.optionsService.options[key] = options[key];
-    }
-  }
-
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
   // browser services
