@@ -653,9 +653,8 @@ declare module 'xterm' {
      * terminal.options = {
      *   fontSize: 12,
      *   fontFamily: 'Arial',
-     * ;
+     * };
      * ```
-     */
      */
     options: ITerminalOptions;
 
