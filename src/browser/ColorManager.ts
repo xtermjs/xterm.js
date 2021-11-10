@@ -9,6 +9,15 @@ import { channels, color, css } from 'browser/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 import { ColorIndex } from 'common/Types';
 
+
+interface IRestoreColorSet {
+  foreground: IColor;
+  background: IColor;
+  cursor: IColor;
+  ansi: IColor[];
+}
+
+
 const DEFAULT_FOREGROUND = css.toColor('#ffffff');
 const DEFAULT_BACKGROUND = css.toColor('#000000');
 const DEFAULT_CURSOR = css.toColor('#ffffff');
@@ -65,13 +74,6 @@ export const DEFAULT_ANSI_COLORS = Object.freeze((() => {
 
   return colors;
 })());
-
-interface IRestoreColorSet {
-  foreground: IColor;
-  background: IColor;
-  cursor: IColor;
-  ansi: IColor[];
-}
 
 /**
  * Manages the source of truth for a terminal's colors.
