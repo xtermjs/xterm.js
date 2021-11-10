@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -421,11 +421,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
     // 104 ; c - Reset Color Number c.
+    this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
     // 105 ; c - Reset Special Color Number c.
     // 106 ; c; f - Enable/disable Special Color Number c.
     // 110 - Reset VT100 text foreground color.
+    this._parser.registerOscHandler(110, new OscHandler(data => this.restoreFgColor(data)));
     // 111 - Reset VT100 text background color.
+    this._parser.registerOscHandler(111, new OscHandler(data => this.restoreBgColor(data)));
     // 112 - Reset text cursor color.
+    this._parser.registerOscHandler(112, new OscHandler(data => this.restoreCursorColor(data)));
     // 113 - Reset mouse foreground color.
     // 114 - Reset mouse background color.
     // 115 - Reset Tektronix foreground color.
@@ -2861,11 +2865,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         const index = parseInt(idx);
         if (0 <= index && index < 256) {
           if (spec === '?') {
-            event.push({ index });
+            event.push({ type: ColorRequestType.REPORT, index });
           } else {
             const color = parseColor(spec);
             if (color) {
-              event.push({ index, color });
+              event.push({ type: ColorRequestType.SET, index, color });
             }
           }
         }
@@ -2890,11 +2894,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < slots.length; ++i, ++offset) {
       if (offset >= this._specialColors.length) break;
       if (slots[i] === '?') {
-        this._onColor.fire([{ index: this._specialColors[offset] }]);
+        this._onColor.fire([{ type: ColorRequestType.REPORT, index: this._specialColors[offset] }]);
       } else {
         const color = parseColor(slots[i]);
         if (color) {
-          this._onColor.fire([{ index: this._specialColors[offset], color }]);
+          this._onColor.fire([{ type: ColorRequestType.SET, index: this._specialColors[offset], color }]);
         }
       }
     }
@@ -2943,6 +2947,65 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setOrReportCursorColor(data: string): boolean {
     return this._setOrReportSpecialColor(data, 2);
+  }
+
+  /**
+   * OSC 104 ; <num> ST - restore ANSI color <num>
+   *
+   * @vt: #Y  OSC   104    "Reset ANSI color"   "OSC 104 ; c BEL" "Reset color number `c` to themed color."
+   * `c` is the color index between 0 and 255. This function restores the default color for `c` as
+   * specified by the loaded theme. Any number of `c` parameters may be given.
+   * If no parameters are given, the entire indexed color table will be reset.
+   */
+  public restoreIndexedColor(data: string): boolean {
+    if (!data) {
+      this._onColor.fire([{ type: ColorRequestType.RESTORE }]);
+      return true;
+    }
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i) {
+      if (/^\d+$/.exec(slots[i])) {
+        const index = parseInt(slots[i]);
+        if (0 <= index && index < 256) {
+          event.push({ type: ColorRequestType.RESTORE, index });
+        }
+      }
+    }
+    if (event.length) {
+      this._onColor.fire(event);
+    }
+    return true;
+  }
+
+  /**
+   * OSC 110 ST - restore default foreground color
+   *
+   * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
+   */
+  public restoreFgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 111 ST - restore default background color
+   *
+   * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
+   */
+  public restoreBgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 112 ST - restore default cursor color
+   *
+   * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
+   */
+  public restoreCursorColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
+    return true;
   }
 
   /**

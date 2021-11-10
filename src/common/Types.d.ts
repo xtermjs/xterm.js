@@ -348,20 +348,31 @@ export interface IWindowOptions {
   setWinLines?: boolean;
 }
 
-// color events from common, used for OSC 4/10/11/12
+// color events from common, used for OSC 4/10/11/12 and 104/110/111/112
+export const enum ColorRequestType {
+  REPORT = 0,
+  SET = 1,
+  RESTORE = 2
+}
 export const enum ColorIndex {
   FOREGROUND = 256,
   BACKGROUND = 257,
   CURSOR = 258
 }
 export interface IColorReportRequest {
+  type: ColorRequestType.REPORT;
   index: ColorIndex;
-  color?: IColorRGB;
 }
-export interface IColorSetRequest extends IColorReportRequest {
+export interface IColorSetRequest {
+  type: ColorRequestType.SET;
+  index: ColorIndex;
   color: IColorRGB;
 }
-export type IColorEvent = (IColorReportRequest | IColorSetRequest)[];
+export interface IColorRestoreRequest {
+  type: ColorRequestType.RESTORE;
+  index?: ColorIndex;
+}
+export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestoreRequest)[];
 
 
 /**
@@ -433,6 +444,10 @@ export interface IInputHandler {
   /** OSC 10 */ setOrReportFgColor(data: string): boolean;
   /** OSC 11 */ setOrReportBgColor(data: string): boolean;
   /** OSC 12 */ setOrReportCursorColor(data: string): boolean;
+  /** OSC 104 */ restoreIndexedColor(data: string): boolean;
+  /** OSC 110 */ restoreFgColor(data: string): boolean;
+  /** OSC 111 */ restoreBgColor(data: string): boolean;
+  /** OSC 112 */ restoreCursorColor(data: string): boolean;
 
   /** ESC E */ nextLine(): boolean;
   /** ESC = */ keypadApplicationMode(): boolean;

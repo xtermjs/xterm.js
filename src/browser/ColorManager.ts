@@ -7,6 +7,7 @@ import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/T
 import { ITheme } from 'common/services/Services';
 import { channels, color, css } from 'browser/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
+import { ColorIndex } from 'common/Types';
 
 const DEFAULT_FOREGROUND = css.toColor('#ffffff');
 const DEFAULT_BACKGROUND = css.toColor('#000000');
@@ -65,6 +66,13 @@ export const DEFAULT_ANSI_COLORS = Object.freeze((() => {
   return colors;
 })());
 
+interface IRestoreColorSet {
+  foreground: IColor;
+  background: IColor;
+  cursor: IColor;
+  ansi: IColor[];
+}
+
 /**
  * Manages the source of truth for a terminal's colors.
  */
@@ -73,6 +81,7 @@ export class ColorManager implements IColorManager {
   private _ctx: CanvasRenderingContext2D;
   private _litmusColor: CanvasGradient;
   private _contrastCache: IColorContrastCache;
+  private _restoreColors!: IRestoreColorSet;
 
   constructor(document: Document, public allowTransparency: boolean) {
     const canvas = document.createElement('canvas');
@@ -96,6 +105,7 @@ export class ColorManager implements IColorManager {
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
     };
+    this._updateRestoreColors();
   }
 
   public onOptionsChange(key: string): void {
@@ -142,6 +152,39 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
     // Clear our the cache
     this._contrastCache.clear();
+    this._updateRestoreColors();
+  }
+
+  public restoreColor(slot?: ColorIndex): void {
+    // unset slot restores all ansi colors
+    if (slot === undefined) {
+      for (let i = 0; i < this._restoreColors.ansi.length; ++i) {
+        this.colors.ansi[i] = this._restoreColors.ansi[i];
+      }
+      return;
+    }
+    switch (slot) {
+      case ColorIndex.FOREGROUND:
+        this.colors.foreground = this._restoreColors.foreground;
+        break;
+      case ColorIndex.BACKGROUND:
+        this.colors.background = this._restoreColors.background;
+        break;
+      case ColorIndex.CURSOR:
+        this.colors.cursor = this._restoreColors.cursor;
+        break;
+      default:
+        this.colors.ansi[slot] = this._restoreColors.ansi[slot];
+    }
+  }
+
+  private _updateRestoreColors(): void {
+    this._restoreColors = {
+      foreground: this.colors.foreground,
+      background: this.colors.background,
+      cursor: this.colors.cursor,
+      ansi: [...this.colors.ansi]
+    };
   }
 
   private _parseColor(

@@ -435,7 +435,51 @@ describe('InputHandler Integration Tests', function(): void {
         assert.deepEqual(await page.evaluate('window._recordedData'), restore);
       });
     });
-    describe('OSC 10 & 11', () => {
+    describe('OSC 4 & 104', () => {
+      before(async () => {
+        await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
+      });
+      after(async () => {
+        await page.evaluate('window._h.dispose()');
+      });
+      beforeEach(async () => {
+        await page.evaluate('window._recordedData.length = 0;');
+      });
+      it('change & restore single color', async () => {
+        // test for some random color slots
+        for (const i of [0, 43, 77, 255]) {
+          await writeSync(page, `\x1b]4;${i};?\x07`);
+          const restore: string[] = await page.evaluate('window._recordedData');
+          await writeSync(page, `\x1b]4;${i};rgb:01/02/03\x07\x1b]4;${i};?\x07`);
+          assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x07`]);
+          // restore slot color
+          await writeSync(page, `\x1b]104;${i}\x07\x1b]4;${i};?\x07`);
+          assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x07`, restore[0]]);
+          await page.evaluate('window._recordedData.length = 0;');
+        }
+      });
+      it('restore multiple at once', async () => {
+        // change 3 random slots
+        await writeSync(page, `\x1b]4;0;?;43;?;77;?\x07`);
+        const restore: string[] = await page.evaluate('window._recordedData');
+        await page.evaluate('window._recordedData.length = 0;');
+        await writeSync(page, `\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore specific slots
+        await writeSync(page, `\x1b]104;0;43;77\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+      });
+      it('restore full table', async () => {
+        // change 3 random slots
+        await writeSync(page, `\x1b]4;0;?;43;?;77;?\x07`);
+        const restore: string[] = await page.evaluate('window._recordedData');
+        await page.evaluate('window._recordedData.length = 0;');
+        await writeSync(page, `\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore all
+        await writeSync(page, `\x1b]104\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+      });
+    });
+    describe('OSC 10 & 11 + 110 | 111 | 112', () => {
       before(async () => {
         await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
       });
@@ -480,8 +524,31 @@ describe('InputHandler Integration Tests', function(): void {
         assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1212/3434/5656\x07', '\x1b]11;rgb:aaaa/bbbb/cccc\x07']);
         await writeSync(page, '\x1b]10;#ffffff;#000000\x07');
       });
+      it('OSC 110: restore FG color', async () => {
+        await writeSync(page, '\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]110\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('OSC 111: restore BG color', async () => {
+        await writeSync(page, '\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]111\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('OSC 112: restore cursor color', async () => {
+        await writeSync(page, '\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]112\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:ffff/ffff/ffff\x07']);
+      });
     });
-
   });
 
   describe('ESC', () => {
