@@ -852,7 +852,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       // normal viewport scrolling
       // conditionally stop event, if the viewport still had rows to scroll within
-      if (!this.viewport!.onWheel(ev)) {
+      if (this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
     }, { passive: false }));
