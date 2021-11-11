@@ -349,7 +349,7 @@ export function evaluateKeyboardEvent(
       } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
         const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
-        const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+        const key = keyMapping?.[!ev.shiftKey ? 0 : 1];
         if (key) {
           result.key = C0.ESC + key;
         } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {

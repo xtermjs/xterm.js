@@ -220,7 +220,7 @@ export class Viewport extends Disposable implements IViewport {
 
   private _getPixelsScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0) {
+    if (ev.deltaY === 0 || ev.shiftKey) {
       return 0;
     }
 
@@ -241,7 +241,7 @@ export class Viewport extends Disposable implements IViewport {
    */
   public getLinesScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0) {
+    if (ev.deltaY === 0 || ev.shiftKey) {
       return 0;
     }
 
