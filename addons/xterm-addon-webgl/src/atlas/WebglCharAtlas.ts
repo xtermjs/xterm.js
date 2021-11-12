@@ -14,7 +14,6 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
-// FIXME: rendering many characters can overflow the texture rarely
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
 const TEXTURE_WIDTH = 1024;
