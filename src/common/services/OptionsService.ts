@@ -65,7 +65,6 @@ const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
-  private _options: ITerminalOptions;
   public options: ITerminalOptions;
   public publicOptions: ITerminalOptions;
 
@@ -74,12 +73,12 @@ export class OptionsService implements IOptionsService {
 
   constructor(options: Partial<ITerminalOptions>) {
     // set the default value of each option
-    this._options = { ...DEFAULT_OPTIONS };
+    const defaultOptions = { ...DEFAULT_OPTIONS };
     for (const key in options) {
-      if (key in this._options) {
+      if (key in defaultOptions) {
         try {
           const newValue = options[key];
-          this._options[key] = this._sanitizeAndValidateOption(key, newValue);
+          defaultOptions[key] = this._sanitizeAndValidateOption(key, newValue);
         } catch (e) {
           console.error(e);
         }
@@ -87,42 +86,39 @@ export class OptionsService implements IOptionsService {
     }
 
     // set up getters and setters for each option
-    this.options = this._setupOptions(this._options, false);
-    this.publicOptions = this._setupOptions(this._options, true);
+    this.options = this._setupOptions(defaultOptions, false);
+    this.publicOptions = this._setupOptions(defaultOptions, true);
   }
 
   private _setupOptions(options: ITerminalOptions, isPublic: boolean): ITerminalOptions {
-    const copiedOptions = { ... options };
-    for (const propName in copiedOptions) {
-      Object.defineProperty(copiedOptions, propName, {
-        get: () => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error(`No option with key "${propName}"`);
-          }
-          return this._options[propName];
-        },
-        set: (value: any) => {
-          if (!(propName in DEFAULT_OPTIONS)) {
-            throw new Error(`No option with key "${propName}"`);
-          }
-
-          // Throw an error if any constructor only option is modified
-          // from terminal.options
-          // Modifications from anywhere else are allowed
-          if (isPublic && CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
-            throw new Error(`Option "${propName}" can only be set in the constructor`);
-          }
-
-          value = this._sanitizeAndValidateOption(propName, value);
-          // Don't fire an option change event if they didn't change
-          if (this._options[propName] !== value) {
-            this._options[propName] = value;
-            this._onOptionChange.fire(propName);
-          }
+    return new Proxy(options, {
+      get: (target, propName: string): any => {
+        if (!(propName in DEFAULT_OPTIONS)) {
+          throw new Error(`No option with key "${propName}"`);
         }
-      });
-    }
-    return copiedOptions;
+        return target[propName];
+      },
+      set: (target, propName: string, value): any => {
+        if (!(propName in DEFAULT_OPTIONS)) {
+          throw new Error(`No option with key "${propName}"`);
+        }
+
+        // Throw an error if any constructor only option is modified
+        // from terminal.options
+        // Modifications from anywhere else are allowed
+        if (isPublic && CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
+          throw new Error(`Option "${propName}" can only be set in the constructor`);
+        }
+
+        value = this._sanitizeAndValidateOption(propName, value);
+        // Don't fire an option change event if they didn't change
+        if (target[propName] !== value) {
+          target[propName] = value;
+          this._onOptionChange.fire(propName);
+        }
+        return true;
+      }
+    });
   }
 
   public setOption(key: string, value: any): void {

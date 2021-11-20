@@ -10,10 +10,15 @@ describe('OptionsService', () => {
   describe('constructor', () => {
     const originalError = console.error;
     beforeEach(() => {
-      console.error = () => {};
+      console.error = () => { };
     });
     afterEach(() => {
       console.error = originalError;
+    });
+    it('publicOptions and options are modifying the same object', () => {
+      const optionsService = new OptionsService({ cols: undefined, rows: undefined });
+      optionsService.options.rows = 25;
+      assert.equal(optionsService.publicOptions.rows, 25);
     });
     it('uses default value if invalid constructor option values passed for cols/rows', () => {
       const optionsService = new OptionsService({ cols: undefined, rows: undefined });
@@ -26,7 +31,7 @@ describe('OptionsService', () => {
       assert.equal(optionsService.getOption('cols'), 80);
     });
     it('uses default value if invalid constructor option value passed', () => {
-      assert.equal(new OptionsService({tabStopWidth: 0}).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
+      assert.equal(new OptionsService({ tabStopWidth: 0 }).getOption('tabStopWidth'), DEFAULT_OPTIONS.tabStopWidth);
     });
   });
   describe('setOption', () => {
