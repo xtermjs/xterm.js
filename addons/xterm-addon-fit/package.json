@@ -6,6 +6,10 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/xterm-addon-fit.js",
+  "exports": {
+    "import": "./lib/es6/xterm-addon-fit.js",
+    "require": "./lib/xterm-addon-fit.js"
+  },
   "types": "typings/xterm-addon-fit.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
@@ -13,6 +17,7 @@
     "build": "../../node_modules/.bin/tsc -p .",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
+    "package-module": "../../node_modules/.bin/webpack --config ./webpack.config.module.js",
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
