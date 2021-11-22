@@ -1,0 +1,20 @@
+{
+  "target": "esnext",
+  "module": "esnext",
+  "files": [],
+  "include": [],
+  "references": [
+    { "path": "./src/browser" },
+    { "path": "./src/headless" },
+    { "path": "./test/api" },
+    { "path": "./test/benchmark" },
+    { "path": "./addons/xterm-addon-attach" },
+    { "path": "./addons/xterm-addon-fit" },
+    { "path": "./addons/xterm-addon-ligatures" },
+    { "path": "./addons/xterm-addon-search" },
+    { "path": "./addons/xterm-addon-serialize" },
+    { "path": "./addons/xterm-addon-unicode11" },
+    { "path": "./addons/xterm-addon-web-links" },
+    { "path": "./addons/xterm-addon-webgl" }
+  ]
+}

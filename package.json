@@ -2,7 +2,11 @@
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
   "version": "4.15.0",
-  "main": "lib/xterm.js",
+  "main": "./lib/xterm.js",
+  "exports": {
+    "import": "./lib/es6/xterm.js",
+    "require": "./lib/xterm.js"
+  },
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -11,6 +15,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "package-headless": "webpack --config ./webpack.config.headless.js",
+    "package-module": "webpack --config ./webpack.config.module.js",
     "postpackage-headless": "node ./bin/package_headless.js",
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
@@ -67,7 +72,7 @@
     "ts-loader": "^9.1.2",
     "typescript": "^4.4.4",
     "utf8": "^3.0.0",
-    "webpack": "^5.61.0",
+    "webpack": "^5.64.1",
     "webpack-cli": "^4.9.1",
     "ws": "^8.2.3",
     "xterm-benchmark": "^0.3.0"
