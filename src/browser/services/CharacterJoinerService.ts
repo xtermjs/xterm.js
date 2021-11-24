@@ -176,26 +176,25 @@ export class CharacterJoinerService implements ICharacterJoinerService {
     // At this point we already know that there is at least one joiner so
     // we can just pull its value and assign it directly rather than
     // merging it into an empty array, which incurs unnecessary writes.
-    let joinedRanges: [number, number][] = [];
+    let allJoinedRanges: [number, number][] = [];
     try {
-      joinedRanges = this._characterJoiners[0].handler(text);
+      allJoinedRanges = this._characterJoiners[0].handler(text);
     } catch (error) {
       console.error(error);
     }
     for (let i = 1; i < this._characterJoiners.length; i++) {
       // We merge any overlapping ranges across the different joiners
-      let joinerRanges: [number, number][] = [];
       try {
-        joinerRanges = this._characterJoiners[i].handler(text);
+        const joinerRanges = this._characterJoiners[i].handler(text);
+        for (let j = 0; j < joinerRanges.length; j++) {
+          CharacterJoinerService._mergeRanges(allJoinedRanges, joinerRanges[j]);
+        }
       } catch (error) {
         console.error(error);
       }
-      for (let j = 0; j < joinerRanges.length; j++) {
-        CharacterJoinerService._mergeRanges(joinedRanges, joinerRanges[j]);
-      }
     }
-    this._stringRangesToCellRanges(joinedRanges, lineData, startCol);
-    return joinedRanges;
+    this._stringRangesToCellRanges(allJoinedRanges, lineData, startCol);
+    return allJoinedRanges;
   }
 
   /**
