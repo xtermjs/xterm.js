@@ -21,8 +21,7 @@
   },
   "include": [
     "./**/*",
-    "../../typings/xterm.d.ts",
-    "../../out/**/*"
+    "../../typings/xterm.d.ts"
   ],
   "exclude": [
     "../../**/*test.ts"
