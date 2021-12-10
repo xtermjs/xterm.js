@@ -1169,6 +1169,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = true;
 
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
     return true;
   }
 
@@ -1185,6 +1189,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (this._keyPressHandled) {
         return false;
       }
+
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
+      this._unprocessedDeadKey = false;
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);
