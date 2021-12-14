@@ -14,7 +14,7 @@
       "SerializeAddon": ["../src/SerializeAddon"]
     }
   },
-  "include": ["../**/*", "../../../typings/xterm.d.ts", "../../../out/**/*"],
+  "include": ["../**/*", "../../../typings/xterm.d.ts"],
   "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
     { "path": "../../../src/common" },
