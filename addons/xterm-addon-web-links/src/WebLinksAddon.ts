@@ -43,7 +43,7 @@ function handleLink(event: MouseEvent, uri: string): void {
 interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
   leave?(event: MouseEvent, text: string): void;
-  urlRegex: RegExp | undefined;
+  urlRegex?: RegExp;
 }
 
 export class WebLinksAddon implements ITerminalAddon {
