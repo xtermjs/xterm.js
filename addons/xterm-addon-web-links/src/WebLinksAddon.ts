@@ -43,6 +43,7 @@ function handleLink(event: MouseEvent, uri: string): void {
 interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
   leave?(event: MouseEvent, text: string): void;
+  urlRegex: RegExp | undefined;
 }
 
 export class WebLinksAddon implements ITerminalAddon {
@@ -62,7 +63,11 @@ export class WebLinksAddon implements ITerminalAddon {
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
       const options = this._options as ILinkProviderOptions;
-      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler, options));
+      let regex = strictUrlRegex;
+      if (options.urlRegex) {
+        regex = options.urlRegex;
+      }
+      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
     } else {
       // TODO: This should be removed eventually
       const options = this._options as ILinkMatcherOptions;
