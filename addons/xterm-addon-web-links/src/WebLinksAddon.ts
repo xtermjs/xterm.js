@@ -63,10 +63,7 @@ export class WebLinksAddon implements ITerminalAddon {
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
       const options = this._options as ILinkProviderOptions;
-      let regex = strictUrlRegex;
-      if (options.urlRegex) {
-        regex = options.urlRegex;
-      }
+      const regex = options.urlRegex || strictUrlRegex;
       this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
     } else {
       // TODO: This should be removed eventually
