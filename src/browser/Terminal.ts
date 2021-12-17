@@ -817,7 +817,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       // normal viewport scrolling
       // conditionally stop event, if the viewport still had rows to scroll within
-      if (!this.viewport!.onWheel(ev)) {
+      if (this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
     }, { passive: false }));
@@ -1166,6 +1166,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = true;
 
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
     return true;
   }
 
@@ -1178,10 +1182,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
+
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
+      this._unprocessedDeadKey = false;
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);

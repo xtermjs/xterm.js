@@ -11,13 +11,13 @@ const Mustache = require('mustache');
  * regexp to fetch all comments
  * Fetches all multiline comments and single lines containing '// @vt:'.
  */
-const REX_COMMENTS = /^\s*?[/][*][*]([\s\S]*?)[*][/]|^\s*?\/\/ ([@]vt[:].*?)$/mug;
+const REX_COMMENTS = /^\s*?\/\*\*([\S\s]*?)\*\/|^\s*?\/\/ (@vt:.*?)$/mug;
 
 /**
  * regexp to parse the @vt line
  * expected data - "@vt: <status> <kind> <mnemonic> "<name>" "<sequence>" "<short description>"
  */
-const REX_VT_LINE = /^[@]vt\:\s*(\w+|#\w+|#\w+\[.*?\])\s*(\w+)\s*(\w+)\s*"(.*?)"\s*"(.*?)"\s*"(.*?)".*$/;
+const REX_VT_LINE = /^@vt:\s*(\w+|#\w+|#\w+\[.*?\])\s*(\w+)\s*(\w+)\s*"(.*?)"\s*"(.*?)"\s*"(.*?)".*$/;
 
 // known vt command types
 const TYPES = [
@@ -362,7 +362,7 @@ function* parseMultiLineGen(filename, s) {
   if (!s.includes('@vt:')) {
     return;
   }
-  const lines = s.split('\n').map(el => el.trim().replace(/[*]/, '').replace(/\s/, ''));
+  const lines = s.split('\n').map(el => el.trim().replace(/\*/, '').replace(/\s/, ''));
   let grabLine = false;
   let longDescription = [];
   let feature = undefined;
