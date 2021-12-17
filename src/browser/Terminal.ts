@@ -1185,7 +1185,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
