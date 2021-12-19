@@ -102,6 +102,11 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
+
+  public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {    
+    return this._core.sendKey(key, alt, ctrl, shift);
+  }
+
   public open(parent: HTMLElement): void {
     this._core.open(parent);
   }

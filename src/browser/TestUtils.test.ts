@@ -195,6 +195,9 @@ export class MockTerminal implements ITerminal {
   public reset(): void {
     throw new Error('Method not implemented.');
   }
+  public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {
+    throw new Error('Method not implemented.');
+  }
   public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }

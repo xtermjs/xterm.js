@@ -81,6 +81,7 @@ export interface IPublicTerminal extends IDisposable {
   refresh(start: number, end: number): void;
   clearTextureAtlas(): void;
   reset(): void;
+  sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

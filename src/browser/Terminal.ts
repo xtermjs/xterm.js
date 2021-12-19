@@ -1019,6 +1019,171 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._selectionService?.selectLines(start, end);
   }
 
+
+  public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {
+    if(!key) {
+      return false;
+    }
+
+    const acm = this.coreService.decPrivateModes.applicationCursorKeys;
+    const mods = (shift ? 1 : 0) | (alt ? 2 : 0) | (ctrl ? 4 : 0);
+
+    let data = null;
+
+    // for future use
+    let wouldcancel = false;
+    let wouldscroll = true;
+
+    switch (key) {
+      case 'ArrowUp':
+        data = acm ? C0.ESC + 'OA' : C0.ESC + '[A';
+        break;
+      case 'ArrowDown':
+        data = acm ? C0.ESC + 'OB' : C0.ESC + '[B';
+        break;
+      case 'ArrowRight':
+        data = acm ? C0.ESC + 'OC' : C0.ESC + '[C';
+        break;
+      case 'ArrowLeft':
+        data = acm ? C0.ESC + 'OD' : C0.ESC + '[D';
+        break;
+      case 'Backspace':
+        data = shift ? C0.BS : (alt ? C0.ESC + C0.DEL : C0.DEL);
+        break;
+      case 'Tab':
+        if (shift) {
+          data = C0.ESC + '[Z';
+        } else {
+          data = C0.HT;
+          wouldcancel = true;
+        }
+        break;
+      case 'Enter':
+        data = alt ? C0.ESC + C0.CR : C0.CR;
+        wouldcancel = true;
+        break;
+      case 'Escape':
+        data = alt ? C0.ESC + C0.ESC : C0.ESC;
+        wouldcancel = true;
+        break;
+      case 'Insert':
+        data = !shift && !ctrl ? C0.ESC + '[2~' : null;
+        break;
+      case 'Delete':
+        data = mods ? C0.ESC + '[3;' + (mods + 1) + '~' : C0.ESC + '[3~';
+        break;
+      case 'Home':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'H' : (acm ? C0.ESC + 'OH' : C0.ESC + '[H');
+        break;
+      case 'End':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'F' : (acm ? C0.ESC + 'OF' : C0.ESC + '[F');
+        break;
+      case 'PageUp':
+        if (shift) {
+          data = null;
+          wouldscroll = true;
+        } else {
+          data = C0.ESC + '[5~';
+        }
+        break;
+      case 'PageDown':
+        if (shift) {
+          data = null;
+          wouldscroll = true;
+        } else {
+          data = C0.ESC + '[6~';
+        }
+        break;
+      case 'F1':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'P' : C0.ESC + 'OP';
+        break;
+      case 'F2':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'Q' : C0.ESC + 'OQ';
+        break;
+      case 'F3':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'R' : C0.ESC + 'OR';
+        break;
+      case 'F4':
+        data = mods ? C0.ESC + '[1;' + (mods + 1) + 'S' : C0.ESC + 'OS';
+        break;
+      case 'F5':
+        data = mods ? C0.ESC + '[15;' + (mods + 1) + '~' : C0.ESC + '[15~';
+        break;
+      case 'F6':
+        data = mods ? C0.ESC + '[17;' + (mods + 1) + '~' : C0.ESC + '[17~';
+        break;
+      case 'F7':
+        data = mods ? C0.ESC + '[18;' + (mods + 1) + '~' : C0.ESC + '[18~';
+        break;
+      case 'F8':
+        data = mods ? C0.ESC + '[19;' + (mods + 1) + '~' : C0.ESC + '[19~';
+        break;
+      case 'F9':
+        data = mods ? C0.ESC + '[20;' + (mods + 1) + '~' : C0.ESC + '[20~';
+        break;
+      case 'F10':
+        data = mods ? C0.ESC + '[21;' + (mods + 1) + '~' : C0.ESC + '[21~';
+        break;
+      case 'F11':
+        data = mods ? C0.ESC + '[23;' + (mods + 1) + '~' : C0.ESC + '[23~';
+        break;
+      case 'F12':
+        data = mods ? C0.ESC + '[24;' + (mods + 1) + '~' : C0.ESC + '[24~';
+        break;
+      default:
+        if (key.length === 1) {
+          const cca0 = key.charCodeAt(0);
+          if (ctrl && !shift && !alt) {
+            if (97 <= cca0 && cca0 <= 122) { // a..z
+              data = String.fromCharCode(cca0 - 96);
+            }
+            else if (cca0 === 32) { // space
+              data = C0.NUL;
+            }
+            else if (51 <= cca0 && cca0 <= 55) { // 3..7
+              data = String.fromCharCode(cca0 - 51 + 27);
+            }
+            else if (cca0 === 56) { // 8
+              data = C0.DEL;
+            }
+            else if (cca0 === 91) { // open bracket [
+              data = C0.ESC;
+            }
+            else if (cca0 === 92) { // back slash \
+              data = C0.FS;
+            }
+            else if (cca0 === 93) { // close bracket
+              data = C0.GS;
+            }
+            else {
+              return false;
+            }
+          }
+          else if (alt && !ctrl) {
+            if (97 <= cca0 && cca0 <= 122) { // a..z
+              data = C0.ESC + String.fromCharCode(ctrl ? cca0 - 96 : cca0);
+            }
+          }
+          else if (ctrl && key === '_') {
+            data = C0.US;;
+          }
+          else if (!alt && !ctrl && cca0 >= 32) {
+            data = key;
+          }
+          else {
+            return false;
+          }
+        }
+    }
+
+    if (data != null) {
+      this.coreService.triggerDataEvent(data, true);
+    }
+
+    return true;
+    
+  }
+
   /**
    * Handle a keydown event
    * Key Resources:
