@@ -1021,7 +1021,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
 
   public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {
-    if(!key) {
+    if (!key) {
       return false;
     }
 
@@ -1165,7 +1165,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
             }
           }
           else if (ctrl && key === '_') {
-            data = C0.US;;
+            data = C0.US;
           }
           else if (!alt && !ctrl && cca0 >= 32) {
             data = key;
@@ -1176,12 +1176,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
         }
     }
 
-    if (data != null) {
+    if (data !== null) {
       this.coreService.triggerDataEvent(data, true);
     }
 
     return true;
-    
   }
 
   /**
