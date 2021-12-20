@@ -1265,12 +1265,12 @@ declare module 'xterm' {
    */
   interface IBufferCellPosition {
     /**
-     * The x position within the buffer.
+     * The x position within the buffer (1-based).
      */
     x: number;
 
     /**
-     * The y position within the buffer.
+     * The y position within the buffer (1-based).
      */
     y: number;
   }
