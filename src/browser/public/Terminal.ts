@@ -103,7 +103,7 @@ export class Terminal implements ITerminalApi {
     this._core.resize(columns, rows);
   }
 
-  public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {    
+  public sendKey(key: string, alt: boolean, ctrl: boolean, shift: boolean): boolean {
     return this._core.sendKey(key, alt, ctrl, shift);
   }
 
