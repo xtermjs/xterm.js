@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IAnsiColorChangeEvent } from 'common/Types';
+import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ScrollSource, IAnsiColorChangeEvent } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -52,9 +52,9 @@ import { MouseService } from 'browser/services/MouseService';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
+import { ITerminalOptions } from 'common/services/Services';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -73,9 +73,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
-
-  // TODO: We should remove options once components adopt optionsService
-  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
@@ -537,7 +534,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
-    this.linkifier2.attachToDom(this.element, this._mouseService, this._renderService);
+    this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));

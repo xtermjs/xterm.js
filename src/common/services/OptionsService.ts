@@ -57,16 +57,10 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
-/**
- * The set of options that only have an effect when set in the Terminal constructor.
- */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
-
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
   public options: ITerminalOptions;
-  public publicOptions: ITerminalOptions;
 
   private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
@@ -86,11 +80,10 @@ export class OptionsService implements IOptionsService {
     }
 
     // set up getters and setters for each option
-    this.options = this._setupOptions(defaultOptions, false);
-    this.publicOptions = this._setupOptions(defaultOptions, true);
+    this.options = this._setupOptions(defaultOptions);
   }
 
-  private _setupOptions(options: ITerminalOptions, isPublic: boolean): ITerminalOptions {
+  private _setupOptions(options: ITerminalOptions): ITerminalOptions {
     return new Proxy(options, {
       get: (target, propName: string): any => {
         if (!(propName in DEFAULT_OPTIONS)) {
@@ -101,13 +94,6 @@ export class OptionsService implements IOptionsService {
       set: (target, propName: string, value): any => {
         if (!(propName in DEFAULT_OPTIONS)) {
           throw new Error(`No option with key "${propName}"`);
-        }
-
-        // Throw an error if any constructor only option is modified
-        // from terminal.options
-        // Modifications from anywhere else are allowed
-        if (isPublic && CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
-          throw new Error(`Option "${propName}" can only be set in the constructor`);
         }
 
         value = this._sanitizeAndValidateOption(propName, value);
@@ -122,7 +108,7 @@ export class OptionsService implements IOptionsService {
   }
 
   public setOption(key: string, value: any): void {
-    this.publicOptions[key] = value;
+    this.options[key] = value;
   }
 
   private _sanitizeAndValidateOption(key: string, value: any): any {
@@ -145,7 +131,7 @@ export class OptionsService implements IOptionsService {
         break;
       case 'cursorWidth':
         value = Math.floor(value);
-        // Fall through for bounds check
+      // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {
@@ -177,6 +163,6 @@ export class OptionsService implements IOptionsService {
   }
 
   public getOption(key: string): any {
-    return this.publicOptions[key];
+    return this.options[key];
   }
 }
