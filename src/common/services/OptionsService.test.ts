@@ -15,11 +15,6 @@ describe('OptionsService', () => {
     afterEach(() => {
       console.error = originalError;
     });
-    it('publicOptions and options are modifying the same object', () => {
-      const optionsService = new OptionsService({ cols: undefined, rows: undefined });
-      optionsService.options.rows = 25;
-      assert.equal(optionsService.publicOptions.rows, 25);
-    });
     it('uses default value if invalid constructor option values passed for cols/rows', () => {
       const optionsService = new OptionsService({ cols: undefined, rows: undefined });
       assert.equal(optionsService.getOption('rows'), DEFAULT_OPTIONS.rows);
