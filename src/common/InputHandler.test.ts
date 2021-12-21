@@ -386,6 +386,56 @@ describe('InputHandler', () => {
       assert.equal(bufferService.buffer.lines.get(2)!.translateToString(false), Array(bufferService.cols + 1).join(' '));
 
     });
+    it('eraseInLine reflow', async () => {
+      const bufferService = new MockBufferService(80, 30);
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockDirtyRowService(),
+        new MockLogService(),
+        new MockOptionsService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
+
+      const resetToBaseState = async (): Promise<void> => {
+        // reset and add a wrapped line
+        bufferService.buffer.y = 0;
+        bufferService.buffer.x = 0;
+        await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
+        await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
+        for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+
+        // confirm precondition that line 2 is wrapped
+        assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
+      };
+
+      // params[0] - erase from the cursor through the end of the row.
+      await resetToBaseState();
+      bufferService.buffer.y = 2;
+      bufferService.buffer.x = 40;
+      inputHandler.eraseInLine(Params.fromArray([0]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
+      bufferService.buffer.y = 2;
+      bufferService.buffer.x = 0;
+      inputHandler.eraseInLine(Params.fromArray([0]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+
+      // params[1] - erase from the beginning of the line through the cursor
+      await resetToBaseState();
+      bufferService.buffer.y = 2;
+      bufferService.buffer.x = 40;
+      inputHandler.eraseInLine(Params.fromArray([1]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
+
+      // params[2] - erase complete line
+      await resetToBaseState();
+      bufferService.buffer.y = 2;
+      bufferService.buffer.x = 40;
+      inputHandler.eraseInLine(Params.fromArray([2]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+    });
     it('eraseInDisplay', async () => {
       const bufferService = new MockBufferService(80, 7);
       const inputHandler = new TestInputHandler(
