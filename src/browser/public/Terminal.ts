@@ -37,6 +37,7 @@ export class Terminal implements ITerminalApi {
       set: (target, propName: string, value): any => {
         this._checkReadonlyOptions(propName);
         target[propName] = value;
+        return true;
       }
     });
   }
