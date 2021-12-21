@@ -92,7 +92,7 @@ function checkAndPublishPackage(packageDir) {
 }
 
 function getNextBetaVersion(packageJson) {
-  if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.exec(packageJson.version)) {
+  if (!/^\d+\.\d+\.\d+$/.exec(packageJson.version)) {
     console.error('The package.json version must be of the form x.y.z');
     process.exit(1);
   }
@@ -104,11 +104,11 @@ function getNextBetaVersion(packageJson) {
     return `${nextStableVersion}-${tag}.1`;
   }
   const latestPublishedVersion = publishedVersions.sort((a, b) => {
-    const aVersion = parseInt(a.substr(a.search(/[0-9]+$/)));
-    const bVersion = parseInt(b.substr(b.search(/[0-9]+$/)));
+    const aVersion = parseInt(a.substr(a.search(/\d+$/)));
+    const bVersion = parseInt(b.substr(b.search(/\d+$/)));
     return aVersion > bVersion ? -1 : 1;
   })[0];
-  const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/[0-9]+$/)), 10);
+  const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/\d+$/)), 10);
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
