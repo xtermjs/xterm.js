@@ -25,7 +25,7 @@ import { IBuffer } from 'common/buffer/Types';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
+const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
  * VT commands done by the parser - FIXME: move this to the parser?
@@ -167,7 +167,7 @@ class DECRQSS implements IDcsHandler {
         break;
       case 'r': // DECSTBM
         const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
-                ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
+          ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
         break;
       case 'm': // SGR
@@ -175,7 +175,7 @@ class DECRQSS implements IDcsHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
         break;
       case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = { 'block': 2, 'underline': 4, 'bar': 6 };
+        const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
         let style = STYLES[this._optionsService.options.cursorStyle];
         style -= this._optionsService.options.cursorBlink ? 1 : 0;
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
@@ -855,10 +855,9 @@ export class InputHandler extends Disposable implements IInputHandler {
        * - any cursor movement sequence keeps working as expected
        */
       if (this._activeBuffer.x === 0
-          && this._activeBuffer.y > this._activeBuffer.scrollTop
-          && this._activeBuffer.y <= this._activeBuffer.scrollBottom
-          && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped)
-      {
+        && this._activeBuffer.y > this._activeBuffer.scrollTop
+        && this._activeBuffer.y <= this._activeBuffer.scrollBottom
+        && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped) {
         this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
@@ -1195,6 +1194,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    * @param start first cell index to be erased
    * @param end   end - 1 is last erased cell
+   * @param cleanWrap clear the isWrapped flag
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
@@ -1320,13 +1320,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);
@@ -2264,7 +2264,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       // exit early if can decide color mode with semicolons
       if ((accu[1] === 5 && advance + cSpace >= 2)
-          || (accu[1] === 2 && advance + cSpace >= 5)) {
+        || (accu[1] === 2 && advance + cSpace >= 5)) {
         break;
       }
       // offset colorSpace slot for semicolon mode
@@ -2683,7 +2683,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const top = params.params[0] || 1;
     let bottom: number;
 
-    if (params.length < 2 || (bottom = params.params[1]) >  this._bufferService.rows || bottom === 0) {
+    if (params.length < 2 || (bottom = params.params[1]) > this._bufferService.rows || bottom === 0) {
       bottom = this._bufferService.rows;
     }
 
