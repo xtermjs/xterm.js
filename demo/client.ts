@@ -293,7 +293,7 @@ function initOptions(term: TerminalType): void {
     rendererType: ['dom', 'canvas'],
     wordSeparator: null
   };
-  const options = Object.keys(term.options);
+  const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
   const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
