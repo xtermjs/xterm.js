@@ -636,9 +636,27 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
-     * Get the terminal options
+     * Gets or sets the terminal options. This supports setting multiple options.
+     *
+     * @example Get a single option
+     * ```typescript
+     * console.log(terminal.options.fontSize);
+     * ```
+     *
+     * @example Set a single option
+     * ```typescript
+     * terminal.options.fontSize = 12;
+     * ```
+     *
+     * @example Set multiple options
+     * ```typescript
+     * terminal.options = {
+     *   fontSize: 12,
+     *   fontFamily: 'Arial',
+     * };
+     * ```
      */
-    readonly options: ITerminalOptions;
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
@@ -1265,12 +1283,12 @@ declare module 'xterm' {
    */
   interface IBufferCellPosition {
     /**
-     * The x position within the buffer.
+     * The x position within the buffer (1-based).
      */
     x: number;
 
     /**
-     * The y position within the buffer.
+     * The y position within the buffer (1-based).
      */
     y: number;
   }
@@ -1371,7 +1389,9 @@ declare module 'xterm' {
 
     /**
      * The length of the line, all call to getCell beyond the length will result
-     * in `undefined`.
+     * in `undefined`. Note that this may exceed columns as the line array may
+     * not be trimmed after a resize, compare against {@link Terminal.cols} to
+     * get the actual maximum length of a line.
      */
     readonly length: number;
 

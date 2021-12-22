@@ -59,7 +59,7 @@ jobs:
 
 - job: Windows
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - task: NodeTool@0
     inputs:
@@ -124,7 +124,7 @@ jobs:
 
 - job: Windows_IntegrationTests
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - task: NodeTool@0
     inputs:

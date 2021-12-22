@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IAnsiColorChangeEvent } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -52,9 +52,9 @@ import { MouseService } from 'browser/services/MouseService';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
-import { rgba } from 'browser/Color';
+import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
+import { toRgbString } from 'common/input/XParseColor';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -73,9 +73,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
-
-  // TODO: We should remove options once components adopt optionsService
-  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
@@ -167,7 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
-    this.register(this._inputHandler.onAnsiColorChange((event) => this._changeAnsiColor(event)));
+    this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
@@ -177,17 +174,55 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
   }
 
-  private _changeAnsiColor(event: IAnsiColorChangeEvent): void {
-    if (!this._colorManager) { return; }
-
-    for (const ansiColor of event.colors) {
-      const color = rgba.toColor(ansiColor.red, ansiColor.green, ansiColor.blue);
-
-      this._colorManager!.colors.ansi[ansiColor.colorIndex] = color;
+  /**
+   * Handle color event from inputhandler for OSC 4|104 | 10|110 | 11|111 | 12|112.
+   * An event from OSC 4|104 may contain multiple set or report requests, and multiple
+   * or none restore requests (resetting all),
+   * while an event from OSC 10|110 | 11|111 | 12|112 always contains a single request.
+   */
+  private _handleColorEvent(event: IColorEvent): void {
+    if (!this._colorManager) return;
+    for (const req of event) {
+      let acc: 'foreground' | 'background' | 'cursor' | 'ansi' | undefined = undefined;
+      let ident = '';
+      switch (req.index) {
+        case ColorIndex.FOREGROUND: // OSC 10 | 110
+          acc = 'foreground';
+          ident = '10';
+          break;
+        case ColorIndex.BACKGROUND: // OSC 11 | 111
+          acc = 'background';
+          ident = '11';
+          break;
+        case ColorIndex.CURSOR: // OSC 12 | 112
+          acc = 'cursor';
+          ident = '12';
+          break;
+        default: // OSC 4 | 104
+          // we can skip the [0..255] range check here (already done in inputhandler)
+          acc = 'ansi';
+          ident = '4;' + req.index;
+      }
+      if (acc) {
+        switch (req.type) {
+          case ColorRequestType.REPORT:
+            const channels = color.toColorRGB(acc === 'ansi'
+              ? this._colorManager.colors.ansi[req.index]
+              : this._colorManager.colors[acc]);
+            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C0.BEL}`);
+            break;
+          case ColorRequestType.SET:
+            if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+            else this._colorManager.colors[acc] = rgba.toColor(...req.color);
+            break;
+          case ColorRequestType.RESTORE:
+            this._colorManager.restoreColor(req.index);
+            break;
+        }
+      }
     }
-
-    this._renderService?.setColors(this._colorManager!.colors);
-    this.viewport?.onThemeChange(this._colorManager!.colors);
+    this._renderService?.setColors(this._colorManager.colors);
+    this.viewport?.onThemeChange(this._colorManager.colors);
   }
 
   public dispose(): void {
@@ -537,7 +572,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
-    this.linkifier2.attachToDom(this.element, this._mouseService, this._renderService);
+    this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
@@ -820,7 +855,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       // normal viewport scrolling
       // conditionally stop event, if the viewport still had rows to scroll within
-      if (!this.viewport!.onWheel(ev)) {
+      if (this.viewport!.onWheel(ev)) {
         return this.cancel(ev);
       }
     }, { passive: false }));
@@ -1169,6 +1204,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = true;
 
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
     return true;
   }
 
@@ -1181,10 +1220,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
+
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
+      this._unprocessedDeadKey = false;
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);

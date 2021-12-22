@@ -4,6 +4,7 @@
  */
 
 import { IColor } from 'browser/Types';
+import { IColorRGB } from 'common/Types';
 
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
@@ -17,6 +18,8 @@ export namespace channels {
   }
 
   export function toRgba(r: number, g: number, b: number, a: number = 0xFF): number {
+    // Note: The aggregated number is RGBA32 (BE), thus needs to be converted to ABGR32
+    // on LE systems, before it can be used for direct 32-bit buffer writes.
     // >>> 0 forces an unsigned int
     return (r << 24 | g << 16 | b << 8 | a) >>> 0;
   }
@@ -80,6 +83,10 @@ export namespace color {
       css: channels.toCss(r, g, b, a),
       rgba: channels.toRgba(r, g, b, a)
     };
+  }
+
+  export function toColorRGB(color: IColor): IColorRGB {
+    return [(color.rgba >> 24) & 0xFF, (color.rgba >> 16) & 0xFF, (color.rgba >> 8) & 0xFF];
   }
 }
 
@@ -197,6 +204,7 @@ export namespace rgba {
     return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
   }
 
+  // FIXME: Move this to channels NS?
   export function toChannels(value: number): [number, number, number, number] {
     return [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
   }
