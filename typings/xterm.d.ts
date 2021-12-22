@@ -812,9 +812,9 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
-     * (EXPERIMENTAL) Registers a link provider, allowing a custom parser to
-     * be used to match and handle links. Multiple link providers can be used,
-     * they will be asked in the order in which they are registered.
+     * Registers a link provider, allowing a custom parser to be used to match
+     * and handle links. Multiple link providers can be used, they will be asked
+     * in the order in which they are registered.
      * @param linkProvider The link provider to use to detect links.
      */
     registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
