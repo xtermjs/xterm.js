@@ -179,7 +179,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**WizardWebssh**](https://gitlab.com/mikeramsey/wizardwebssh): A terminal with Pyqt5 Widget for embedding, which can be used as an ssh client to connect to your ssh servers. It is written in Python, based on tornado, paramiko, and xterm.js.
 - [**Wizard Assistant**](https://wizardassistant.com/): Wizard Assistant comes with advanced automation tools, preloaded common and special time-saving commands, and a built-in SSH terminal. Now you can remotely administer, troubleshoot, and analyze any system with ease.
 - [**ucli**](https://github.com/tsadarsh/ucli): Command Line for everyone :family_man_woman_girl_boy: at [www.ucli.tech](https://www.ucli.tech).
-- [**Tess**](https://github.com/SquitchYT/Tess/): Simple Terminal Fully Customizable for Everyone.
+- [**Tess**](https://github.com/SquitchYT/Tess/): Simple Terminal Fully Customizable for Everyone. Discover more at [tessapp.dev](https://tessapp.dev)
 - [**HashiCorp Nomad**](https://www.nomadproject.io/): A container orchestrator with the ability to connect to remote tasks via a web interface using websockets and xterm.js.
 - [**TermPair**](https://github.com/cs01/termpair): View and control terminals from your browser with end-to-end encryption
 - [**gdbgui**](https://github.com/cs01/gdbgui): Browser-based frontend to gdb (gnu debugger)

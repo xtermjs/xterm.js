@@ -1202,6 +1202,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    * @param start first cell index to be erased
    * @param end   end - 1 is last erased cell
+   * @param cleanWrap clear the isWrapped flag
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
@@ -1327,13 +1328,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);

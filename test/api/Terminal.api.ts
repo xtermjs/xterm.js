@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
+import { fail } from 'assert';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -158,6 +159,36 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
     await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
+  });
+
+  describe('options', () => {
+    it('getter', async () => {
+      await openTerminal(page);
+      assert.equal(await page.evaluate(`window.term.options.rendererType`), 'canvas');
+      assert.equal(await page.evaluate(`window.term.options.cols`), 80);
+      assert.equal(await page.evaluate(`window.term.options.rows`), 24);
+    });
+    it('setter', async () => {
+      await openTerminal(page);
+      try {
+        await page.evaluate('window.term.options.cols = 40');
+        fail();
+      } catch {}
+      try {
+        await page.evaluate('window.term.options.rows = 20');
+        fail();
+      } catch {}
+      await page.evaluate('window.term.options.scrollback = 1');
+      assert.equal(await page.evaluate(`window.term.options.scrollback`), 1);
+      await page.evaluate(`
+        window.term.options = {
+          fontSize: 30,
+          fontFamily: 'Arial'
+        };
+      `);
+      assert.equal(await page.evaluate(`window.term.options.fontSize`), 30);
+      assert.equal(await page.evaluate(`window.term.options.fontFamily`), 'Arial');
+    });
   });
 
   describe('renderer', () => {

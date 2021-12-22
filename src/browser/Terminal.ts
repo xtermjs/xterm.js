@@ -39,7 +39,7 @@ import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IKeyboardEvent, KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -52,7 +52,6 @@ import { MouseService } from 'browser/services/MouseService';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { toRgbString } from 'common/input/XParseColor';
@@ -74,9 +73,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
-
-  // TODO: We should remove options once components adopt optionsService
-  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
@@ -576,7 +572,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
-    this.linkifier2.attachToDom(this.element, this._mouseService, this._renderService);
+    this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
@@ -1208,6 +1204,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = true;
 
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
     return true;
   }
 
@@ -1220,10 +1220,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.options.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.options.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
+
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
+      this._unprocessedDeadKey = false;
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);

@@ -46,6 +46,7 @@ export interface IKeyboardEvent {
   ctrlKey: boolean;
   shiftKey: boolean;
   metaKey: boolean;
+  /** @deprecated See KeyboardEvent.keyCode */
   keyCode: number;
   key: string;
   type: string;
