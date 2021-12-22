@@ -6,8 +6,6 @@
 import { IColor } from 'browser/Types';
 import { IColorRGB } from 'common/Types';
 
-// FIXME: Move Color.ts lib to common?
-
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
  */
