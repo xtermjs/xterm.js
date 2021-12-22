@@ -105,22 +105,23 @@ jobs:
   - script: xvfb-run --auto-servernum -- bash -c "yarn test-api-firefox --headless --forbid-only"
     displayName: 'Integration tests (Firefox)'
 
-- job: macOS_IntegrationTests
-  pool:
-    vmImage: 'macOS-10.15'
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '14.x'
-    displayName: 'Install Node.js'
-  - script: yarn --frozen-lockfile
-    displayName: 'Install dependencies and build'
-  - script: yarn test-api-chromium --headless --forbid-only
-    displayName: 'Integration tests (Chromium)'
-  - script: yarn test-api-firefox --headless --forbid-only
-    displayName: 'Integration tests (Firefox)'
-  - script: yarn test-api-webkit --headless --forbid-only
-    displayName: 'Integration tests (Webkit)'
+# Integration tests are too flaky on macOS https://github.com/xtermjs/xterm.js/issues/3590
+# - job: macOS_IntegrationTests
+#   pool:
+#     vmImage: 'macOS-10.15'
+#   steps:
+#   - task: NodeTool@0
+#     inputs:
+#       versionSpec: '14.x'
+#     displayName: 'Install Node.js'
+#   - script: yarn --frozen-lockfile
+#     displayName: 'Install dependencies and build'
+#   - script: yarn test-api-chromium --headless --forbid-only
+#     displayName: 'Integration tests (Chromium)'
+#   - script: yarn test-api-firefox --headless --forbid-only
+#     displayName: 'Integration tests (Firefox)'
+#   - script: yarn test-api-webkit --headless --forbid-only
+#     displayName: 'Integration tests (Webkit)'
 
 - job: Windows_IntegrationTests
   pool:
@@ -143,7 +144,7 @@ jobs:
   - macOS
   - Windows
   - Linux_IntegrationTests
-  - macOS_IntegrationTests
+  # - macOS_IntegrationTests
   - Windows_IntegrationTests
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
