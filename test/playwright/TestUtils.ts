@@ -4,7 +4,7 @@ import { IBuffer, IBufferCell, IBufferLine, IModes, ISelectionPosition, ITermina
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
-import { PageFunction } from '@playwright/test/types/structs';
+import { PageFunction } from 'playwright-core/types/structs';
 import type { ICoreTerminal } from 'common/Types';
 import type { IRenderDimensions } from 'browser/renderer/Types';
 import { IRenderService } from 'browser/services/Services';
