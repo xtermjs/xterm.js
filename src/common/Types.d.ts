@@ -50,6 +50,7 @@ export interface IKeyboardEvent {
   keyCode: number;
   key: string;
   type: string;
+  code: string;
 }
 
 export interface IScrollEvent {
