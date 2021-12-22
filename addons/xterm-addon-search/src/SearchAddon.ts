@@ -24,6 +24,8 @@ export interface ISearchResult {
   size: number;
 }
 
+type LineCacheEntry = [lineAsString: string, offsets: number[]];
+
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
@@ -35,7 +37,7 @@ export class SearchAddon implements ITerminalAddon {
    * We memoize the calls into an array that has a time based ttl.
    * _linesCache is also invalidated when the terminal cursor moves.
    */
-  private _linesCache: [string, number[]][] | undefined;
+  private _linesCache: LineCacheEntry[] | undefined;
   private _linesCacheTimeoutId = 0;
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
@@ -403,7 +405,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param line The line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    */
-  private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): [string, number[]] {
+  private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
     const terminal = this._terminal!;
     const strings = [];
     const offsets = [0];
