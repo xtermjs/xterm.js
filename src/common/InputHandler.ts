@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IAnsiColorChangeEvent, IParseStack } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -21,6 +21,7 @@ import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowSe
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
+import { parseColor } from 'common/input/XParseColor';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -262,8 +263,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onAnsiColorChange = new EventEmitter<IAnsiColorChangeEvent>();
-  public get onAnsiColorChange(): IEvent<IAnsiColorChangeEvent> { return this._onAnsiColorChange.event; }
+  private _onColor = new EventEmitter<IColorEvent>();
+  public get onColor(): IEvent<IColorEvent> { return this._onColor.event; }
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -398,13 +399,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerOscHandler(2, new OscHandler(data => this.setTitle(data)));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
-    this._parser.registerOscHandler(4, new OscHandler(data => this.setAnsiColor(data)));
+    this._parser.registerOscHandler(4, new OscHandler(data => this.setOrReportIndexedColor(data)));
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
     //  10 - Change VT100 text foreground color to Pt.
+    this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
+    this._parser.registerOscHandler(11, new OscHandler(data => this.setOrReportBgColor(data)));
     //  12 - Change text cursor color to Pt.
+    this._parser.registerOscHandler(12, new OscHandler(data => this.setOrReportCursorColor(data)));
     //  13 - Change mouse foreground color to Pt.
     //  14 - Change mouse background color to Pt.
     //  15 - Change Tektronix foreground color to Pt.
@@ -417,11 +421,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
     // 104 ; c - Reset Color Number c.
+    this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
     // 105 ; c - Reset Special Color Number c.
     // 106 ; c; f - Enable/disable Special Color Number c.
     // 110 - Reset VT100 text foreground color.
+    this._parser.registerOscHandler(110, new OscHandler(data => this.restoreFgColor(data)));
     // 111 - Reset VT100 text background color.
+    this._parser.registerOscHandler(111, new OscHandler(data => this.restoreBgColor(data)));
     // 112 - Reset text cursor color.
+    this._parser.registerOscHandler(112, new OscHandler(data => this.restoreCursorColor(data)));
     // 113 - Reset mouse foreground color.
     // 114 - Reset mouse background color.
     // 115 - Reset Tektronix foreground color.
@@ -1977,7 +1985,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1049: // alt screen buffer cursor
           this.saveCursor();
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
@@ -2197,7 +2205,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this.restoreCursor();
           break;
         case 1049: // alt screen buffer cursor
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
@@ -2840,43 +2848,164 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-  protected _parseAnsiColorChange(data: string): IAnsiColorChangeEvent | null {
-    const result: IAnsiColorChangeEvent = { colors: [] };
-    // example data: 5;rgb:aa/bb/cc
-    const regex = /(\d+);rgb:([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})/gi;
-    let match;
-
-    while ((match = regex.exec(data)) !== null) {
-      result.colors.push({
-        colorIndex: parseInt(match[1]),
-        red: parseInt(match[2], 16),
-        green: parseInt(match[3], 16),
-        blue: parseInt(match[4], 16)
-      });
-    }
-
-    if (result.colors.length === 0) {
-      return null;
-    }
-
-    return result;
-  }
-
   /**
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
-   * `c` is the color index between 0 and 255. `spec` color format is 'rgb:hh/hh/hh' where `h` are hexadecimal digits.
-   * There may be multipe c ; spec elements present in the same instruction, e.g. 1;rgb:10/20/30;2;rgb:a0/b0/c0.
+   * `c` is the color index between 0 and 255. The color format of `spec` is derived from `XParseColor` (see OSC 10 for supported formats).
+   * There may be multipe `c ; spec` pairs present in the same instruction.
+   * If `spec` contains `?` the terminal returns a sequence with the currently set color.
    */
-  public setAnsiColor(data: string): boolean {
-    const event = this._parseAnsiColorChange(data);
-    if (event) {
-      this._onAnsiColorChange.fire(event);
+  public setOrReportIndexedColor(data: string): boolean {
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    while (slots.length > 1) {
+      const idx = slots.shift() as string;
+      const spec = slots.shift() as string;
+      if (/^\d+$/.exec(idx)) {
+        const index = parseInt(idx);
+        if (0 <= index && index < 256) {
+          if (spec === '?') {
+            event.push({ type: ColorRequestType.REPORT, index });
+          } else {
+            const color = parseColor(spec);
+            if (color) {
+              event.push({ type: ColorRequestType.SET, index, color });
+            }
+          }
+        }
+      }
     }
-    else {
-      this._logService.warn(`Expected format <num>;rgb:<rr>/<gg>/<bb> but got data: ${data}`);
+    if (event.length) {
+      this._onColor.fire(event);
     }
+    return true;
+  }
+
+  // special colors - OSC 10 | 11 | 12
+  private _specialColors = [ColorIndex.FOREGROUND, ColorIndex.BACKGROUND, ColorIndex.CURSOR];
+
+  /**
+   * Apply colors requests for special colors in OSC 10 | 11 | 12.
+   * Since these commands are stacking from multiple parameters,
+   * we handle them in a loop with an entry offset to `_specialColors`.
+   */
+  private _setOrReportSpecialColor(data: string, offset: number): boolean {
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i, ++offset) {
+      if (offset >= this._specialColors.length) break;
+      if (slots[i] === '?') {
+        this._onColor.fire([{ type: ColorRequestType.REPORT, index: this._specialColors[offset] }]);
+      } else {
+        const color = parseColor(slots[i]);
+        if (color) {
+          this._onColor.fire([{ type: ColorRequestType.SET, index: this._specialColors[offset], color }]);
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * OSC 10 ; <xcolor name>|<?> ST - set or query default foreground color
+   *
+   * @vt: #Y  OSC   10    "Set or query default foreground color"   "OSC 10 ; Pt BEL"  "Set or query default foreground color."
+   * To set the color, the following color specification formats are supported:
+   * - `rgb:<red>/<green>/<blue>` for  `<red>, <green>, <blue>` in `h | hh | hhh | hhhh`, where
+   *   `h` is a single hexadecimal digit (case insignificant). The different widths scale
+   *   from 4 bit (`h`) to 16 bit (`hhhh`) and get converted to 8 bit (`hh`).
+   * - `#RGB` - 4 bits per channel, expanded to `#R0G0B0`
+   * - `#RRGGBB` - 8 bits per channel
+   * - `#RRRGGGBBB` - 12 bits per channel, truncated to `#RRGGBB`
+   * - `#RRRRGGGGBBBB` - 16 bits per channel, truncated to `#RRGGBB`
+   *
+   * **Note:** X11 named colors are currently unsupported.
+   *
+   * If `Pt` contains `?` instead of a color specification, the terminal
+   * returns a sequence with the current default foreground color
+   * (use that sequence to restore the color after changes).
+   *
+   * **Note:** Other than xterm, xterm.js does not support OSC 12 - 19.
+   * Therefore stacking multiple `Pt` separated by `;` only works for the first two entries.
+   */
+  public setOrReportFgColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 0);
+  }
+
+  /**
+   * OSC 11 ; <xcolor name>|<?> ST - set or query default background color
+   *
+   * @vt: #Y  OSC   11    "Set or query default background color"   "OSC 11 ; Pt BEL"  "Same as OSC 10, but for default background."
+   */
+  public setOrReportBgColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 1);
+  }
+
+  /**
+   * OSC 12 ; <xcolor name>|<?> ST - set or query default cursor color
+   *
+   * @vt: #Y  OSC   12    "Set or query default cursor color"   "OSC 12 ; Pt BEL"  "Same as OSC 10, but for default cursor color."
+   */
+  public setOrReportCursorColor(data: string): boolean {
+    return this._setOrReportSpecialColor(data, 2);
+  }
+
+  /**
+   * OSC 104 ; <num> ST - restore ANSI color <num>
+   *
+   * @vt: #Y  OSC   104    "Reset ANSI color"   "OSC 104 ; c BEL" "Reset color number `c` to themed color."
+   * `c` is the color index between 0 and 255. This function restores the default color for `c` as
+   * specified by the loaded theme. Any number of `c` parameters may be given.
+   * If no parameters are given, the entire indexed color table will be reset.
+   */
+  public restoreIndexedColor(data: string): boolean {
+    if (!data) {
+      this._onColor.fire([{ type: ColorRequestType.RESTORE }]);
+      return true;
+    }
+    const event: IColorEvent = [];
+    const slots = data.split(';');
+    for (let i = 0; i < slots.length; ++i) {
+      if (/^\d+$/.exec(slots[i])) {
+        const index = parseInt(slots[i]);
+        if (0 <= index && index < 256) {
+          event.push({ type: ColorRequestType.RESTORE, index });
+        }
+      }
+    }
+    if (event.length) {
+      this._onColor.fire(event);
+    }
+    return true;
+  }
+
+  /**
+   * OSC 110 ST - restore default foreground color
+   *
+   * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
+   */
+  public restoreFgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 111 ST - restore default background color
+   *
+   * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
+   */
+  public restoreBgColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
+    return true;
+  }
+
+  /**
+   * OSC 112 ST - restore default cursor color
+   *
+   * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
+   */
+  public restoreCursorColor(data: string): boolean {
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
     return true;
   }
 
