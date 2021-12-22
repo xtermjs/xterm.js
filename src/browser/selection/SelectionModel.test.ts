@@ -122,5 +122,13 @@ describe('SelectionModel', () => {
       model.selectionEnd = [5, 2];
       assert.deepEqual(model.finalSelectionEnd, [5, 2]);
     });
+    it('should not include a trailing EOL when the selection ends at the end of a line', () => {
+      model.selectionStart = [0, 0];
+      model.selectionStartLength = 80;
+      assert.deepEqual(model.finalSelectionEnd, [80, 0]);
+      model.selectionStart = [0, 0];
+      model.selectionStartLength = 160;
+      assert.deepEqual(model.finalSelectionEnd, [80, 1]);
+    });
   });
 });

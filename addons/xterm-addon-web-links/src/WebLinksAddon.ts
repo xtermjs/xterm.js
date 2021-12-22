@@ -29,7 +29,11 @@ const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 function handleLink(event: MouseEvent, uri: string): void {
   const newWindow = window.open();
   if (newWindow) {
-    newWindow.opener = null;
+    try {
+      newWindow.opener = null;
+    } catch {
+      // no-op, Electron can throw
+    }
     newWindow.location.href = uri;
   } else {
     console.warn('Opening link blocked as opener could not be cleared');
@@ -39,6 +43,7 @@ function handleLink(event: MouseEvent, uri: string): void {
 interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
   leave?(event: MouseEvent, text: string): void;
+  urlRegex?: RegExp;
 }
 
 export class WebLinksAddon implements ITerminalAddon {
@@ -58,7 +63,8 @@ export class WebLinksAddon implements ITerminalAddon {
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
       const options = this._options as ILinkProviderOptions;
-      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, strictUrlRegex, this._handler, options));
+      const regex = options.urlRegex || strictUrlRegex;
+      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
     } else {
       // TODO: This should be removed eventually
       const options = this._options as ILinkMatcherOptions;

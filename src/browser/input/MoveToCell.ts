@@ -121,7 +121,7 @@ function wrappedRowsCount(startY: number, targetY: number, bufferService: IBuffe
   for (let i = 0; i < Math.abs(startRow - endRow); i++) {
     const direction = verticalDirection(startY, targetY) === Direction.UP ? -1 : 1;
     const line = bufferService.buffer.lines.get(startRow + (direction * i));
-    if (line && line.isWrapped) {
+    if (line?.isWrapped) {
       wrappedRows++;
     }
   }
@@ -136,12 +136,12 @@ function wrappedRowsCount(startY: number, targetY: number, bufferService: IBuffe
 function wrappedRowsForRow(bufferService: IBufferService, currentRow: number): number {
   let rowCount = 0;
   let line = bufferService.buffer.lines.get(currentRow);
-  let lineWraps = line && line.isWrapped;
+  let lineWraps = line?.isWrapped;
 
   while (lineWraps && currentRow >= 0 && currentRow < bufferService.rows) {
     rowCount++;
     line = bufferService.buffer.lines.get(--currentRow);
-    lineWraps = line && line.isWrapped;
+    lineWraps = line?.isWrapped;
   }
 
   return rowCount;

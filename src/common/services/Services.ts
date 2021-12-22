@@ -164,6 +164,14 @@ export interface IInstantiationService {
   createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
 }
 
+export enum LogLevelEnum {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  OFF = 4
+}
+
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
@@ -190,49 +198,8 @@ export interface IOptionsService {
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
-export enum LogLevelEnum {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  OFF = 4
-}
-export type RendererType = 'dom' | 'canvas';
 
-export interface IPartialTerminalOptions {
-  altClickMovesCursor?: boolean;
-  allowTransparency?: boolean;
-  bellSound?: string;
-  bellStyle?: 'none' | 'sound' /* | 'visual' | 'both' */;
-  cols?: number;
-  cursorBlink?: boolean;
-  cursorStyle?: 'block' | 'underline' | 'bar';
-  cursorWidth?: number;
-  disableStdin?: boolean;
-  drawBoldTextInBrightColors?: boolean;
-  fastScrollModifier?: 'alt' | 'ctrl' | 'shift';
-  fastScrollSensitivity?: number;
-  fontSize?: number;
-  fontFamily?: string;
-  fontWeight?: FontWeight;
-  fontWeightBold?: FontWeight;
-  letterSpacing?: number;
-  lineHeight?: number;
-  logLevel?: LogLevel;
-  macOptionIsMeta?: boolean;
-  macOptionClickForcesSelection?: boolean;
-  rendererType?: RendererType;
-  rightClickSelectsWord?: boolean;
-  rows?: number;
-  screenReaderMode?: boolean;
-  scrollback?: number;
-  scrollSensitivity?: number;
-  tabStopWidth?: number;
-  theme?: ITheme;
-  windowsMode?: boolean;
-  wordSeparator?: string;
-  windowOptions?: IWindowOptions;
-}
+export type RendererType = 'dom' | 'canvas';
 
 export interface ITerminalOptions {
   allowProposedApi: boolean;
@@ -241,6 +208,7 @@ export interface ITerminalOptions {
   bellSound: string;
   bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
+  convertEol: boolean;
   cursorBlink: boolean;
   cursorStyle: 'block' | 'underline' | 'bar';
   cursorWidth: number;
@@ -274,7 +242,6 @@ export interface ITerminalOptions {
 
   [key: string]: any;
   cancelEvents: boolean;
-  convertEol: boolean;
   termName: string;
 }
 

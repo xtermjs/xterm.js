@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { pollFor, openTerminal, getBrowserType, launchBrowser } from './TestUtils';
+import { pollFor, openTerminal, getBrowserType, launchBrowser, writeSync } from './TestUtils';
 import { Browser, Page } from 'playwright';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
@@ -382,6 +382,171 @@ describe('InputHandler Integration Tests', function(): void {
           })()`);
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
+      });
+    });
+  });
+
+  describe('OSC', () => {
+    describe('OSC 4', () => {
+      before(async () => {
+        await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
+      });
+      after(async () => {
+        await page.evaluate('window._h.dispose()');
+      });
+      beforeEach(async () => {
+        await page.evaluate('window._recordedData.length = 0;');
+      });
+      it('query single color', async () => {
+        await writeSync(page, '\x1b]4;0;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x07']);
+        await writeSync(page, '\x1b]4;77;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x07', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x07']);
+      });
+      it('query multiple colors', async () => {
+        await writeSync(page, '\x1b]4;0;?;77;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x07', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x07']);
+      });
+      it('set & query single color', async () => {
+        await writeSync(page, '\x1b]4;0;?\x07');
+        const restore: string[] = await page.evaluate('window._recordedData');
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+        // set new color & query
+        await writeSync(page, '\x1b]4;0;rgb:01/02/03\x07\x1b]4;0;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x07']);
+        // restore should set old color
+        await writeSync(page, restore[0] + '\x1b]4;0;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x07', restore[0]]);
+      });
+      it('query & set colors mixed', async () => {
+        await writeSync(page, '\x1b]4;0;?;77;?\x07');
+        const restore: string[] = await page.evaluate('window._recordedData');
+        await page.evaluate('window._recordedData.length = 0;');
+        // mixed call - change 0, query 43, change 77
+        await writeSync(page, '\x1b]4;0;rgb:01/02/03;43;?;77;#aabbcc\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]4;43;rgb:0000/d7d7/afaf\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // query new values for 0 + 77
+        await writeSync(page, '\x1b]4;0;?;77;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:0101/0202/0303\x07', '\x1b]4;77;rgb:aaaa/bbbb/cccc\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore old values for 0 + 77
+        await writeSync(page, restore[0] + restore[1] + '\x1b]4;0;?;77;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+      });
+    });
+    describe('OSC 4 & 104', () => {
+      before(async () => {
+        await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
+      });
+      after(async () => {
+        await page.evaluate('window._h.dispose()');
+      });
+      beforeEach(async () => {
+        await page.evaluate('window._recordedData.length = 0;');
+      });
+      it('change & restore single color', async () => {
+        // test for some random color slots
+        for (const i of [0, 43, 77, 255]) {
+          await writeSync(page, `\x1b]4;${i};?\x07`);
+          const restore: string[] = await page.evaluate('window._recordedData');
+          await writeSync(page, `\x1b]4;${i};rgb:01/02/03\x07\x1b]4;${i};?\x07`);
+          assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x07`]);
+          // restore slot color
+          await writeSync(page, `\x1b]104;${i}\x07\x1b]4;${i};?\x07`);
+          assert.deepEqual(await page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x07`, restore[0]]);
+          await page.evaluate('window._recordedData.length = 0;');
+        }
+      });
+      it('restore multiple at once', async () => {
+        // change 3 random slots
+        await writeSync(page, `\x1b]4;0;?;43;?;77;?\x07`);
+        const restore: string[] = await page.evaluate('window._recordedData');
+        await page.evaluate('window._recordedData.length = 0;');
+        await writeSync(page, `\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore specific slots
+        await writeSync(page, `\x1b]104;0;43;77\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+      });
+      it('restore full table', async () => {
+        // change 3 random slots
+        await writeSync(page, `\x1b]4;0;?;43;?;77;?\x07`);
+        const restore: string[] = await page.evaluate('window._recordedData');
+        await page.evaluate('window._recordedData.length = 0;');
+        await writeSync(page, `\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore all
+        await writeSync(page, `\x1b]104\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        assert.deepEqual(await page.evaluate('window._recordedData'), restore);
+      });
+    });
+    describe('OSC 10 & 11 + 110 | 111 | 112', () => {
+      before(async () => {
+        await page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
+      });
+      after(async () => {
+        await page.evaluate('window._h.dispose()');
+      });
+      beforeEach(async () => {
+        await page.evaluate('window._recordedData.length = 0;');
+      });
+      it('query FG color', async () => {
+        await writeSync(page, '\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('query BG color', async () => {
+        await writeSync(page, '\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('query FG & BG color in one call', async () => {
+        await writeSync(page, '\x1b]10;?;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07', '\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('set & query FG', async () => {
+        await writeSync(page, '\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]10;#ffffff\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07', '\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('set & query BG', async () => {
+        await writeSync(page, '\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]11;#000000\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07', '\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('set & query cursor color', async () => {
+        await writeSync(page, '\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07']);
+        await writeSync(page, '\x1b]12;#ffffff\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07', '\x1b]12;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('set & query FG & BG color in one call', async () => {
+        await writeSync(page, '\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1212/3434/5656\x07', '\x1b]11;rgb:aaaa/bbbb/cccc\x07']);
+        await writeSync(page, '\x1b]10;#ffffff;#000000\x07');
+      });
+      it('OSC 110: restore FG color', async () => {
+        await writeSync(page, '\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]110\x07\x1b]10;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x07']);
+      });
+      it('OSC 111: restore BG color', async () => {
+        await writeSync(page, '\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]111\x07\x1b]11;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x07']);
+      });
+      it('OSC 112: restore cursor color', async () => {
+        await writeSync(page, '\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x07']);
+        await page.evaluate('window._recordedData.length = 0;');
+        // restore
+        await writeSync(page, '\x1b]112\x07\x1b]12;?\x07');
+        assert.deepEqual(await page.evaluate('window._recordedData'), ['\x1b]12;rgb:ffff/ffff/ffff\x07']);
       });
     });
   });

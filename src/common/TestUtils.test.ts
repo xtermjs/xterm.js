@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IPartialTerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -122,11 +122,16 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public options: ITerminalOptions = clone(DEFAULT_OPTIONS);
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
-  constructor(testOptions?: IPartialTerminalOptions) {
+  constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
-        this.options[key] = (testOptions as any)[key];
+        this.options[key] = testOptions[key];
       }
+    }
+  }
+  public setOptions(options: ITerminalOptions): void {
+    for (const key of Object.keys(options)) {
+      this.options[key] = options[key];
     }
   }
   public setOption<T>(key: string, value: T): void {

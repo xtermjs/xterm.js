@@ -7,7 +7,7 @@ import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
 import { ICellData } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -138,6 +138,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public abstract reset(): void;
 
+  public clearTextureAtlas(): void {
+    this._charAtlas?.clear();
+  }
+
   /**
    * Fills 1+ cells completely. This uses the existing fillStyle on the context.
    * @param x The column to start at.
@@ -258,7 +262,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
-    this._ctx.textBaseline = 'ideographic';
+    this._ctx.textBaseline = TEXT_BASELINE;
     this._clipRow(y);
 
     // Draw custom characters if applicable
@@ -321,12 +325,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
-    const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
-      this._ctx,
-      this._currentGlyphIdentifier,
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop
-    );
+    const atlasDidDraw = this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
     if (!atlasDidDraw) {
       this._drawUncachedChars(cell, x, y);
@@ -346,7 +345,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
     this._ctx.save();
     this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = 'ideographic';
+    this._ctx.textBaseline = TEXT_BASELINE;
 
     if (cell.isInverse()) {
       if (fgOverride) {

@@ -16,7 +16,6 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   browser: IBrowser;
   buffer: IBuffer;
   viewport: IViewport | undefined;
-  // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
   linkifier: ILinkifier;
   linkifier2: ILinkifier2;
@@ -79,6 +78,7 @@ export interface IPublicTerminal extends IDisposable {
   write(data: string | Uint8Array, callback?: () => void): void;
   paste(data: string): void;
   refresh(start: number, end: number): void;
+  clearTextureAtlas(): void;
   reset(): void;
 }
 

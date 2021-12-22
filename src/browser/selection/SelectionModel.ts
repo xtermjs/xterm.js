@@ -79,6 +79,10 @@ export class SelectionModel {
     if (!this.selectionEnd || this.areSelectionValuesReversed()) {
       const startPlusLength = this.selectionStart[0] + this.selectionStartLength;
       if (startPlusLength > this._bufferService.cols) {
+        // Ensure the trailing EOL isn't included when the selection ends on the right edge
+        if (startPlusLength % this._bufferService.cols === 0) {
+          return [this._bufferService.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._bufferService.cols) - 1];
+        }
         return [startPlusLength % this._bufferService.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._bufferService.cols)];
       }
       return [startPlusLength, this.selectionStart[1]];

@@ -52,9 +52,9 @@ export class Params implements IParams {
       return params;
     }
     // skip leading sub params
-    for (let i = (values[0] instanceof Array) ? 1 : 0; i < values.length; ++i) {
+    for (let i = (Array.isArray(values[0])) ? 1 : 0; i < values.length; ++i) {
       const value = values[i];
-      if (value instanceof Array) {
+      if (Array.isArray(value)) {
         for (let k = 0; k < value.length; ++k) {
           params.addSubParam(value[k]);
         }

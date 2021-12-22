@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, IPartialTerminalOptions, FontWeight } from 'common/services/Services';
+import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
-import { clone } from 'common/Clone';
 
 // Source: https://freesound.org/people/altemark/sounds/45759/
 // This sound is released under the Creative Commons Attribution 3.0 Unported
@@ -14,15 +13,14 @@ import { clone } from 'common/Clone';
 // made, apart from the conversion to base64.
 export const DEFAULT_BELL_SOUND = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjMyLjEwNAAAAAAAAAAAAAAA//tQxAADB8AhSmxhIIEVCSiJrDCQBTcu3UrAIwUdkRgQbFAZC1CQEwTJ9mjRvBA4UOLD8nKVOWfh+UlK3z/177OXrfOdKl7pyn3Xf//WreyTRUoAWgBgkOAGbZHBgG1OF6zM82DWbZaUmMBptgQhGjsyYqc9ae9XFz280948NMBWInljyzsNRFLPWdnZGWrddDsjK1unuSrVN9jJsK8KuQtQCtMBjCEtImISdNKJOopIpBFpNSMbIHCSRpRR5iakjTiyzLhchUUBwCgyKiweBv/7UsQbg8isVNoMPMjAAAA0gAAABEVFGmgqK////9bP/6XCykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
 
-// TODO: Freeze?
-export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
+export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   cols: 80,
   rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,
   customGlyphs: true,
-  bellSound:  DEFAULT_BELL_SOUND,
+  bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
   fastScrollModifier: 'alt',
@@ -55,57 +53,66 @@ export const DEFAULT_OPTIONS: ITerminalOptions = Object.freeze({
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false
-});
+};
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
-
-/**
- * The set of options that only have an effect when set in the Terminal constructor.
- */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
+  private _options: ITerminalOptions;
   public options: ITerminalOptions;
 
   private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
 
-  constructor(options: IPartialTerminalOptions) {
-    this.options = clone(DEFAULT_OPTIONS);
-    for (const k of Object.keys(options)) {
-      if (k in this.options) {
+  constructor(options: Partial<ITerminalOptions>) {
+    // set the default value of each option
+    this._options = { ...DEFAULT_OPTIONS };
+    for (const key in options) {
+      if (key in this._options) {
         try {
-          const newValue = options[k as keyof IPartialTerminalOptions] as any;
-          this.options[k] = this._sanitizeAndValidateOption(k, newValue);
+          const newValue = options[key];
+          this._options[key] = this._sanitizeAndValidateOption(key, newValue);
         } catch (e) {
           console.error(e);
         }
       }
     }
+
+    // set up getters and setters for each option
+    this.options = this._setupOptions(this._options);
+  }
+
+  private _setupOptions(options: ITerminalOptions): ITerminalOptions {
+    const copiedOptions = { ... options };
+    for (const propName in copiedOptions) {
+      Object.defineProperty(copiedOptions, propName, {
+        get: () => {
+          if (!(propName in DEFAULT_OPTIONS)) {
+            throw new Error(`No option with key "${propName}"`);
+          }
+          return this._options[propName];
+        },
+        set: (value: any) => {
+          if (!(propName in DEFAULT_OPTIONS)) {
+            throw new Error(`No option with key "${propName}"`);
+          }
+
+          value = this._sanitizeAndValidateOption(propName, value);
+          // Don't fire an option change event if they didn't change
+          if (this._options[propName] !== value) {
+            this._options[propName] = value;
+            this._onOptionChange.fire(propName);
+          }
+        }
+      });
+    }
+    return copiedOptions;
   }
 
   public setOption(key: string, value: any): void {
-    if (!(key in DEFAULT_OPTIONS)) {
-      throw new Error('No option with key "' + key + '"');
-    }
-    if (CONSTRUCTOR_ONLY_OPTIONS.includes(key)) {
-      throw new Error(`Option "${key}" can only be set in the constructor`);
-    }
-    if (this.options[key] === value) {
-      return;
-    }
-
-    value = this._sanitizeAndValidateOption(key, value);
-
-    // Don't fire an option change event if they didn't change
-    if (this.options[key] === value) {
-      return;
-    }
-
     this.options[key] = value;
-    this._onOptionChange.fire(key);
   }
 
   private _sanitizeAndValidateOption(key: string, value: any): any {
@@ -149,15 +156,17 @@ export class OptionsService implements IOptionsService {
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
+      case 'rows':
+      case 'cols':
+        if (!value && value !== 0) {
+          throw new Error(`${key} must be numeric, value: ${value}`);
+        }
         break;
     }
     return value;
   }
 
   public getOption(key: string): any {
-    if (!(key in DEFAULT_OPTIONS)) {
-      throw new Error(`No option with key "${key}"`);
-    }
     return this.options[key];
   }
 }

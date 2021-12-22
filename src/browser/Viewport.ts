@@ -42,6 +42,7 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
+    private readonly _element: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
@@ -116,7 +117,9 @@ export class Viewport extends Disposable implements IViewport {
     }
     this._lastHadScrollBar = this.scrollBarWidth > 0;
 
-    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth).toString() + 'px';
+    const elementStyle = window.getComputedStyle(this._element);
+    const elementPadding = parseInt(elementStyle.paddingLeft) + parseInt(elementStyle.paddingRight);
+    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth + (this._lastHadScrollBar ? elementPadding : 0)).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
 
@@ -217,7 +220,7 @@ export class Viewport extends Disposable implements IViewport {
 
   private _getPixelsScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0) {
+    if (ev.deltaY === 0 || ev.shiftKey) {
       return 0;
     }
 
@@ -238,7 +241,7 @@ export class Viewport extends Disposable implements IViewport {
    */
   public getLinesScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0) {
+    if (ev.deltaY === 0 || ev.shiftKey) {
       return 0;
     }
 

@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
@@ -14,8 +14,8 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'browser/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
-// In practice we're probably never going to exhaust a texture this large. For debugging purposes,
-// however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
+// For debugging purposes, it can be useful to set this to a really tiny value,
+// to verify that LRU eviction works.
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 1024;
 
@@ -368,7 +368,7 @@ export class WebglCharAtlas implements IDisposable {
     const fontStyle = italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'ideographic';
+    this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
 
@@ -463,7 +463,7 @@ export class WebglCharAtlas implements IDisposable {
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Check if there is enough room in the current row and go to next if needed
-    if (this._currentRowX + this._config.scaledCharWidth > TEXTURE_WIDTH) {
+    if (this._currentRowX + rasterizedGlyph.size.x > TEXTURE_WIDTH) {
       this._currentRowX = 0;
       this._currentRowY += this._currentRowHeight;
       this._currentRowHeight = 0;

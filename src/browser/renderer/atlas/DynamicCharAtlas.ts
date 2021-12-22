@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { IGlyphIdentifier, ICharAtlasConfig } from 'browser/renderer/atlas/Types';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
@@ -117,6 +117,16 @@ export class DynamicCharAtlas extends BaseCharAtlas {
 
   public beginFrame(): void {
     this._drawToCacheCount = 0;
+  }
+
+  public clear(): void {
+    if (this._cacheMap.size > 0) {
+      const capacity = this._width * this._height;
+      this._cacheMap = new LRUMap(capacity);
+      this._cacheMap.prealloc(capacity);
+    }
+    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._tmpCtx.clearRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
   }
 
   public draw(
@@ -256,7 +266,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     const fontStyle = glyph.italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'ideographic';
+    this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
 

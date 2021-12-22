@@ -59,7 +59,7 @@ jobs:
 
 - job: Windows
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - task: NodeTool@0
     inputs:
@@ -118,7 +118,7 @@ jobs:
 
 - job: Windows_IntegrationTests
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - task: NodeTool@0
     inputs:
@@ -139,7 +139,7 @@ jobs:
   - Windows_IntegrationTests
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
   - task: NodeTool@0
     inputs:

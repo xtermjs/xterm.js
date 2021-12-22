@@ -8,6 +8,7 @@ import { WebglRenderer } from './WebglRenderer';
 import { ICharacterJoinerService, IRenderService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
+import { isSafari } from 'common/Platform';
 
 export class WebglAddon implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -22,6 +23,9 @@ export class WebglAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
       throw new Error('Cannot activate WebglAddon before Terminal.open');
+    }
+    if (isSafari) {
+      throw new Error('Webgl is not currently supported on Safari');
     }
     this._terminal = terminal;
     const renderService: IRenderService = (terminal as any)._core._renderService;

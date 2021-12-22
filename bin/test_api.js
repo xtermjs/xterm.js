@@ -21,7 +21,7 @@ let flagArgs = [];
 
 if (process.argv.length > 2) {
   const args = process.argv.slice(2);
-  flagArgs = args.filter(e => e.startsWith('--')).map(arg => arg.split('=')).reduce((arr, val) => arr.concat([...val], []));
+  flagArgs = args.filter(e => e.startsWith('--')).map(arg => arg.split('=')).reduce((arr, val) => arr.concat(val.slice(), []));
   console.info(flagArgs);
   // ability to inject particular test files via
   // yarn test [testFileA testFileB ...]
@@ -44,7 +44,7 @@ const server = cp.spawn('node', ['demo/start'], {
 
 server.stdout.on('data', (data) => {
   // await for the server to fully start
-  if (data.indexOf("successfully") !== -1) {
+  if (data.includes("successfully")) {
     const run = cp.spawnSync(
       npmBinScript('mocha'),
       [...testFiles, ...flagArgs], {
