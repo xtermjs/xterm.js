@@ -24,7 +24,16 @@ export interface ISearchResult {
   size: number;
 }
 
-type LineCacheEntry = [lineAsString: string, offsets: number[]];
+type LineCacheEntry = [
+  /**
+   * The string representation of a line (as opposed to the buffer cell representation).
+   */
+  lineAsString: string,
+  /**
+   * The offsets where each line starts when the entry describes a wrapped line.
+   */
+  lineOffsets: number[]
+];
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
@@ -408,7 +417,7 @@ export class SearchAddon implements ITerminalAddon {
   private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
     const terminal = this._terminal!;
     const strings = [];
-    const offsets = [0];
+    const lineOffsets = [0];
     let line = terminal.buffer.active.getLine(lineIndex);
     while (line) {
       const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
@@ -424,14 +433,14 @@ export class SearchAddon implements ITerminalAddon {
       }
       strings.push(string);
       if (lineWrapsToNext) {
-        offsets.push(offsets[offsets.length - 1] + string.length);
+        lineOffsets.push(lineOffsets[lineOffsets.length - 1] + string.length);
       } else {
         break;
       }
       lineIndex++;
       line = nextLine;
     }
-    return [strings.join(''), offsets];
+    return [strings.join(''), lineOffsets];
   }
 
   /**
