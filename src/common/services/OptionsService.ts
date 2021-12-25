@@ -60,6 +60,7 @@ const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '1
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
+  public readonly rawOptions: ITerminalOptions;
   public options: ITerminalOptions;
 
   private _onOptionChange = new EventEmitter<string>();
@@ -80,31 +81,39 @@ export class OptionsService implements IOptionsService {
     }
 
     // set up getters and setters for each option
-    this.options = this._setupOptions(defaultOptions);
+    this.rawOptions = defaultOptions;
+    this.options = { ... defaultOptions };
+    this._setupOptions();
   }
 
-  private _setupOptions(options: ITerminalOptions): ITerminalOptions {
-    return new Proxy(options, {
-      get: (target, propName: string): any => {
-        if (!(propName in DEFAULT_OPTIONS)) {
-          throw new Error(`No option with key "${propName}"`);
-        }
-        return target[propName];
-      },
-      set: (target, propName: string, value): any => {
-        if (!(propName in DEFAULT_OPTIONS)) {
-          throw new Error(`No option with key "${propName}"`);
-        }
-
-        value = this._sanitizeAndValidateOption(propName, value);
-        // Don't fire an option change event if they didn't change
-        if (target[propName] !== value) {
-          target[propName] = value;
-          this._onOptionChange.fire(propName);
-        }
-        return true;
+  private _setupOptions(): void {
+    const getter = (propName: string): any => {
+      if (!(propName in DEFAULT_OPTIONS)) {
+        throw new Error(`No option with key "${propName}"`);
       }
-    });
+      return this.rawOptions[propName];
+    };
+
+    const setter = (propName: string, value: any): void => {
+      if (!(propName in DEFAULT_OPTIONS)) {
+        throw new Error(`No option with key "${propName}"`);
+      }
+
+      value = this._sanitizeAndValidateOption(propName, value);
+      // Don't fire an option change event if they didn't change
+      if (this.rawOptions[propName] !== value) {
+        this.rawOptions[propName] = value;
+        this._onOptionChange.fire(propName);
+      }
+    };
+
+    for (const propName in this.rawOptions) {
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this.options, propName, desc);
+    }
   }
 
   public setOption(key: string, value: any): void {

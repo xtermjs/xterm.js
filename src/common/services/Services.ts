@@ -188,6 +188,7 @@ export const IOptionsService = createDecorator<IOptionsService>('OptionsService'
 export interface IOptionsService {
   serviceBrand: undefined;
 
+  readonly rawOptions: Readonly<ITerminalOptions>;
   readonly options: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;

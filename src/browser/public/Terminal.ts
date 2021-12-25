@@ -30,16 +30,22 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 
-    this._publicOptions = new Proxy(this._core.options, {
-      get: (target, propName: string): any => {
-        return target[propName];
-      },
-      set: (target, propName: string, value): any => {
-        this._checkReadonlyOptions(propName);
-        target[propName] = value;
-        return true;
-      }
-    });
+    this._publicOptions = {};
+    const getter = (propName: string): any => {
+      return this._core.options[propName];
+    };
+    const setter = (propName: string, value: any): void => {
+      this._checkReadonlyOptions(propName);
+      this._core.options[propName] = value;
+    };
+
+    for (const propName in this._core.options) {
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this._publicOptions, propName, desc);
+    }
   }
 
   private _checkReadonlyOptions(propName: string): void {
