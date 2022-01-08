@@ -150,7 +150,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     }
 
     // Restart the tooltip timeout
-    this._tooltipTimeout = window.setTimeout(() => this._onTooltip(e), this._optionsService.options.linkTooltipHoverDuration);
+    this._tooltipTimeout = window.setTimeout(() => this._onTooltip(e), this._optionsService.rawOptions.linkTooltipHoverDuration);
   }
 
   private _onTooltip(e: MouseEvent): void {

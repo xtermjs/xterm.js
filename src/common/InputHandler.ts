@@ -176,8 +176,8 @@ class DECRQSS implements IDcsHandler {
         break;
       case ' q': // DECSCUSR
         const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
-        let style = STYLES[this._optionsService.options.cursorStyle];
-        style -= this._optionsService.options.cursorBlink ? 1 : 0;
+        let style = STYLES[this._optionsService.rawOptions.cursorStyle];
+        style -= this._optionsService.rawOptions.cursorBlink ? 1 : 0;
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
         break;
       default:
@@ -589,7 +589,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let code: number;
     let chWidth: number;
     const charset = this._charsetService.charset;
-    const screenReaderMode = this._optionsService.options.screenReaderMode;
+    const screenReaderMode = this._optionsService.rawOptions.screenReaderMode;
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
@@ -731,7 +731,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (id.final === 't' && !id.prefix && !id.intermediates) {
       // security: always check whether window option is allowed
       return this._parser.registerCsiHandler(id, params => {
-        if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+        if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
           return true;
         }
         return callback(params);
@@ -786,7 +786,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public lineFeed(): boolean {
     this._dirtyRowService.markDirty(this._activeBuffer.y);
-    if (this._optionsService.options.convertEol) {
+    if (this._optionsService.rawOptions.convertEol) {
       this._activeBuffer.x = 0;
     }
     this._activeBuffer.y++;
@@ -890,7 +890,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const originalX = this._activeBuffer.x;
     this._activeBuffer.x = this._activeBuffer.nextStop();
-    if (this._optionsService.options.screenReaderMode) {
+    if (this._optionsService.rawOptions.screenReaderMode) {
       this._onA11yTab.fire(this._activeBuffer.x - originalX);
     }
     return true;
@@ -1749,7 +1749,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param term The terminal name to evaluate
    */
   private _is(term: string): boolean {
-    return (this._optionsService.options.termName + '').indexOf(term) === 0;
+    return (this._optionsService.rawOptions.termName + '').indexOf(term) === 0;
   }
 
   /**
@@ -1915,7 +1915,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is enabled
            * through `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions.setWinLines) {
+          if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(132, this._bufferService.rows);
             this._onRequestReset.fire();
           }
@@ -2149,7 +2149,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            * This is only active if 'SetWinLines' (24) is enabled
            * through `options.windowsOptions`.
            */
-          if (this._optionsService.options.windowOptions.setWinLines) {
+          if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(80, this._bufferService.rows);
             this._onRequestReset.fire();
           }
@@ -2726,7 +2726,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    Ps >= 24                                                          not implemented
    */
   public windowOptions(params: IParams): boolean {
-    if (!paramToWindowOption(params.params[0], this._optionsService.options.windowOptions)) {
+    if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
       return true;
     }
     const second = (params.length > 1) ? params.params[1] : 0;

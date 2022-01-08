@@ -247,7 +247,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   protected _setup(): void {
-    if (this.optionsService.options.windowsMode) {
+    if (this.optionsService.rawOptions.windowsMode) {
       this._enableWindowsMode();
     }
   }
@@ -267,7 +267,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
         this.buffers.resize(this.cols, this.rows);
         break;
       case 'windowsMode':
-        if (this.optionsService.options.windowsMode) {
+        if (this.optionsService.rawOptions.windowsMode) {
           this._enableWindowsMode();
         } else {
           this._windowsMode?.dispose();
