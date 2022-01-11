@@ -189,6 +189,10 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.term.options.fontSize`), 30);
       assert.equal(await page.evaluate(`window.term.options.fontFamily`), 'Arial');
     });
+    it('object.keys return the correct number of options', async () => {
+      await openTerminal(page);
+      assert.notEqual(await page.evaluate(`Object.keys(window.term.options).length`), 0);
+    });
   });
 
   describe('renderer', () => {

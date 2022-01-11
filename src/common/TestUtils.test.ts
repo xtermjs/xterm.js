@@ -120,12 +120,13 @@ export class MockLogService implements ILogService {
 
 export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
-  public options: ITerminalOptions = clone(DEFAULT_OPTIONS);
+  public readonly rawOptions: ITerminalOptions = clone(DEFAULT_OPTIONS);
+  public options: ITerminalOptions = this.rawOptions;
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
-        this.options[key] = testOptions[key];
+        this.rawOptions[key] = testOptions[key];
       }
     }
   }

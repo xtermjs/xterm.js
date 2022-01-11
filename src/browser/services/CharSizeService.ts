@@ -69,8 +69,8 @@ class DomMeasureStrategy implements IMeasureStrategy {
   }
 
   public measure(): IReadonlyMeasureResult {
-    this._measureElement.style.fontFamily = this._optionsService.options.fontFamily;
-    this._measureElement.style.fontSize = `${this._optionsService.options.fontSize}px`;
+    this._measureElement.style.fontFamily = this._optionsService.rawOptions.fontFamily;
+    this._measureElement.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     // Note that this triggers a synchronous layout
     const geometry = this._measureElement.getBoundingClientRect();

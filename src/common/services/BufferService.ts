@@ -36,8 +36,8 @@ export class BufferService extends Disposable implements IBufferService {
     @IOptionsService private _optionsService: IOptionsService
   ) {
     super();
-    this.cols = Math.max(_optionsService.options.cols || 0, MINIMUM_COLS);
-    this.rows = Math.max(_optionsService.options.rows || 0, MINIMUM_ROWS);
+    this.cols = Math.max(_optionsService.rawOptions.cols || 0, MINIMUM_COLS);
+    this.rows = Math.max(_optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
     this.buffers = new BufferSet(_optionsService, this);
   }
 
