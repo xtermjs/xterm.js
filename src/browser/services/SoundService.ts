@@ -34,7 +34,7 @@ export class SoundService implements ISoundService {
       return;
     }
     const bellAudioSource = ctx.createBufferSource();
-    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._optionsService.options.bellSound)), (buffer) => {
+    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._optionsService.rawOptions.bellSound)), (buffer) => {
       bellAudioSource.buffer = buffer;
       bellAudioSource.connect(ctx.destination);
       bellAudioSource.start(0);

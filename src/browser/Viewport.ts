@@ -110,7 +110,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // Update scroll bar width
-    if (this._optionsService.options.scrollback === 0) {
+    if (this._optionsService.rawOptions.scrollback === 0) {
       this.scrollBarWidth = 0;
     } else {
       this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
@@ -153,7 +153,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If the scroll bar visibility changed
-    if (this._lastHadScrollBar !== (this._optionsService.options.scrollback > 0)) {
+    if (this._lastHadScrollBar !== (this._optionsService.rawOptions.scrollback > 0)) {
       this._refresh(immediate);
     }
   }
@@ -259,15 +259,15 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   private _applyScrollModifier(amount: number, ev: WheelEvent): number {
-    const modifier = this._optionsService.options.fastScrollModifier;
+    const modifier = this._optionsService.rawOptions.fastScrollModifier;
     // Multiply the scroll speed when the modifier is down
     if ((modifier === 'alt' && ev.altKey) ||
       (modifier === 'ctrl' && ev.ctrlKey) ||
       (modifier === 'shift' && ev.shiftKey)) {
-      return amount * this._optionsService.options.fastScrollSensitivity * this._optionsService.options.scrollSensitivity;
+      return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
     }
 
-    return amount * this._optionsService.options.scrollSensitivity;
+    return amount * this._optionsService.rawOptions.scrollSensitivity;
   }
 
   /**

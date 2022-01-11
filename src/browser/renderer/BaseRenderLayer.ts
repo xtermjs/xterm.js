@@ -112,7 +112,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._optionsService.options, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(this._optionsService.rawOptions, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     this._charAtlas.warmUp();
   }
 
@@ -267,7 +267,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Draw custom characters if applicable
     let drawSuccess = false;
-    if (this._optionsService.options.customGlyphs !== false) {
+    if (this._optionsService.rawOptions.customGlyphs !== false) {
       drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     }
 
@@ -315,7 +315,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
+    const drawInBrightColor = this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -356,7 +356,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
         let bg = cell.getBgColor();
-        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
           bg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[bg].css;
@@ -370,7 +370,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
       } else {
         let fg = cell.getFgColor();
-        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
           fg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -386,7 +386,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Draw custom characters if applicable
     let drawSuccess = false;
-    if (this._optionsService.options.customGlyphs !== false) {
+    if (this._optionsService.rawOptions.customGlyphs !== false) {
       drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     }
 
@@ -421,14 +421,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param isBold If we should use the bold fontWeight.
    */
   protected _getFont(isBold: boolean, isItalic: boolean): string {
-    const fontWeight = isBold ? this._optionsService.options.fontWeightBold : this._optionsService.options.fontWeight;
+    const fontWeight = isBold ? this._optionsService.rawOptions.fontWeightBold : this._optionsService.rawOptions.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${this._optionsService.options.fontSize * window.devicePixelRatio}px ${this._optionsService.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * window.devicePixelRatio}px ${this._optionsService.rawOptions.fontFamily}`;
   }
 
   private _getContrastColor(cell: CellData): IColor | undefined {
-    if (this._optionsService.options.minimumContrastRatio === 1) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
       return undefined;
     }
 
@@ -455,7 +455,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
-    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
 
     if (!result) {
       this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
@@ -495,7 +495,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        if (this._optionsService.options.drawBoldTextInBrightColors && bold && fgColor < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && bold && fgColor < 8) {
           fgColor += 8;
         }
         return this._colors.ansi[fgColor].rgba;

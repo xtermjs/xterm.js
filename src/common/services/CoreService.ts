@@ -62,7 +62,7 @@ export class CoreService extends Disposable implements ICoreService {
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
     // Prevents all events to pty process if stdin is disabled
-    if (this._optionsService.options.disableStdin) {
+    if (this._optionsService.rawOptions.disableStdin) {
       return;
     }
 
@@ -83,7 +83,7 @@ export class CoreService extends Disposable implements ICoreService {
   }
 
   public triggerBinaryEvent(data: string): void {
-    if (this._optionsService.options.disableStdin) {
+    if (this._optionsService.rawOptions.disableStdin) {
       return;
     }
     this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));

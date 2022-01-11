@@ -225,7 +225,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
           } else {
             let bg = cell.getBgColor();
-            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
               bg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[bg].css;
@@ -237,7 +237,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
           } else {
             let fg = cell.getFgColor();
-            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -271,7 +271,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   public onOptionsChanged(): void {
-    this._setTransparency(this._optionsService.options.allowTransparency);
+    this._setTransparency(this._optionsService.rawOptions.allowTransparency);
   }
 
   /**
