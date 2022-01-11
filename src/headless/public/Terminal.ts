@@ -15,7 +15,7 @@ import { ITerminalOptions } from 'common/Types';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
- const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class Terminal implements ITerminalApi {
   private _core: TerminalCore;
