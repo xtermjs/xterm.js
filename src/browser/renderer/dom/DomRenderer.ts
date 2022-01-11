@@ -107,8 +107,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _updateDimensions(): void {
     this.dimensions.scaledCharWidth = this._charSizeService.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.options.letterSpacing);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.options.lineHeight);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
@@ -161,16 +161,16 @@ export class DomRenderer extends Disposable implements IRenderer {
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
       ` color: ${this._colors.foreground.css};` +
-      ` font-family: ${this._optionsService.options.fontFamily};` +
-      ` font-size: ${this._optionsService.options.fontSize}px;` +
+      ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
+      ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       `}`;
     // Text styles
     styles +=
       `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-      ` font-weight: ${this._optionsService.options.fontWeight};` +
+      ` font-weight: ${this._optionsService.rawOptions.fontWeight};` +
       `}` +
       `${this._terminalSelector} span.${BOLD_CLASS} {` +
-      ` font-weight: ${this._optionsService.options.fontWeightBold};` +
+      ` font-weight: ${this._optionsService.rawOptions.fontWeightBold};` +
       `}` +
       `${this._terminalSelector} span.${ITALIC_CLASS} {` +
       ` font-style: italic;` +
@@ -210,7 +210,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` color: ${this._colors.cursorAccent.css};` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-      ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
+      ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
@@ -356,7 +356,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
-    const cursorBlink = this._optionsService.options.cursorBlink;
+    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
@@ -364,7 +364,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
-      const cursorStyle = this._optionsService.options.cursorStyle;
+      const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
     }
   }

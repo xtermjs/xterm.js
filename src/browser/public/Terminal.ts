@@ -30,17 +30,21 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 
-    this._publicOptions = {};
+    this._publicOptions = { ... this._core.options };
+    const getter = (propName: string): any => {
+      return this._core.options[propName];
+    };
+    const setter = (propName: string, value: any): void => {
+      this._checkReadonlyOptions(propName);
+      this._core.options[propName] = value;
+    };
+
     for (const propName in this._core.options) {
-      Object.defineProperty(this._publicOptions, propName, {
-        get: () => {
-          return this._core.options[propName];
-        },
-        set: (value: any) => {
-          this._checkReadonlyOptions(propName);
-          this._core.options[propName] = value;
-        }
-      });
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this._publicOptions, propName, desc);
     }
   }
 
@@ -54,7 +58,7 @@ export class Terminal implements ITerminalApi {
   }
 
   private _checkProposedApi(): void {
-    if (!this._core.optionsService.options.allowProposedApi) {
+    if (!this._core.optionsService.rawOptions.allowProposedApi) {
       throw new Error('You must set the allowProposedApi option to true to use proposed API');
     }
   }

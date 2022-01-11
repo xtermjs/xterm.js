@@ -175,7 +175,7 @@ export class DomRendererRowFactory {
       switch (fgColorMode) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          if (cell.isBold() && fg < 8 && this._optionsService.options.drawBoldTextInBrightColors) {
+          if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
           if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg])) {
@@ -225,7 +225,7 @@ export class DomRendererRowFactory {
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor): boolean {
-    if (this._optionsService.options.minimumContrastRatio === 1) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
       return false;
     }
 
@@ -234,7 +234,7 @@ export class DomRendererRowFactory {
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.options.minimumContrastRatio);
+      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.rawOptions.minimumContrastRatio);
       this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
     }
 

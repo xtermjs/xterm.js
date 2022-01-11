@@ -188,6 +188,12 @@ export const IOptionsService = createDecorator<IOptionsService>('OptionsService'
 export interface IOptionsService {
   serviceBrand: undefined;
 
+  /**
+   * Read only access to the raw options object, this is an internal-only fast path for accessing
+   * single options without any validation as we trust TypeScript to enforce correct usage
+   * internally.
+   */
+  readonly rawOptions: Readonly<ITerminalOptions>;
   readonly options: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;

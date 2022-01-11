@@ -414,7 +414,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   public shouldForceSelection(event: MouseEvent): boolean {
     if (Browser.isMac) {
-      return event.altKey && this._optionsService.options.macOptionClickForcesSelection;
+      return event.altKey && this._optionsService.rawOptions.macOptionClickForcesSelection;
     }
 
     return event.shiftKey;
@@ -567,7 +567,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
-    return event.altKey && !(Browser.isMac && this._optionsService.options.macOptionClickForcesSelection);
+    return event.altKey && !(Browser.isMac && this._optionsService.rawOptions.macOptionClickForcesSelection);
   }
 
   /**
@@ -993,7 +993,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     if (cell.getWidth() === 0) {
       return false;
     }
-    return this._optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
+    return this._optionsService.rawOptions.wordSeparator.indexOf(cell.getChars()) >= 0;
   }
 
   /**

@@ -46,7 +46,7 @@ export class LogService implements ILogService {
   }
 
   private _updateLogLevel(): void {
-    this.logLevel = optionsKeyToLogLevel[this._optionsService.options.logLevel];
+    this.logLevel = optionsKeyToLogLevel[this._optionsService.rawOptions.logLevel];
   }
 
   private _evalLazyOptionalParams(optionalParams: any[]): void {
