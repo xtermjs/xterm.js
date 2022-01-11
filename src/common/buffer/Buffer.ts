@@ -367,6 +367,11 @@ export class Buffer implements IBuffer {
       let srcCol = lastLineLength;
       while (srcLineIndex >= 0) {
         const cellsToCopy = Math.min(srcCol, destCol);
+        if (wrappedLines[destLineIndex] === undefined) {
+          // Sanity check that the line exists, this has been known to fail for an unknown reason
+          // which would stop the reflow from happening if an exception would throw.
+          break;
+        }
         wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
         destCol -= cellsToCopy;
         if (destCol === 0) {
