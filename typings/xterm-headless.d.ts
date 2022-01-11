@@ -535,6 +535,29 @@ declare module 'xterm-headless' {
     readonly modes: IModes;
 
     /**
+     * Gets or sets the terminal options. This supports setting multiple options.
+     *
+     * @example Get a single option
+     * ```typescript
+     * console.log(terminal.options.fontSize);
+     * ```
+     *
+     * @example Set a single option
+     * ```typescript
+     * terminal.options.fontSize = 12;
+     * ```
+     *
+     * @example Set multiple options
+     * ```typescript
+     * terminal.options = {
+     *   fontSize: 12,
+     *   fontFamily: 'Arial',
+     * };
+     * ```
+     */
+    options: ITerminalOptions;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
