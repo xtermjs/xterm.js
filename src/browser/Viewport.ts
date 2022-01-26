@@ -209,8 +209,8 @@ export class Viewport extends Disposable implements IViewport {
       this._remainingLinesToScroll -= step;
     }
 
-    if (this._remainingLinesToScroll == 0) {
-      clearInterval(<NodeJS.Timeout>this._smoothScrollTimeout);
+    if (this._remainingLinesToScroll === 0 && this._smoothScrollTimeout) {
+      clearInterval(this._smoothScrollTimeout);
       this._smoothScrollTimeout = undefined;
     }
   }
@@ -253,7 +253,7 @@ export class Viewport extends Disposable implements IViewport {
       } else {
         this._remainingLinesToScroll += amount;
       }
-      if (this._remainingLinesToScroll != 0 && !this._smoothScrollTimeout) {
+      if (this._remainingLinesToScroll !== 0 && !this._smoothScrollTimeout) {
         this._lastSmoothScrollStepTime = Date.now();
         this._smoothScrollTimeout = setInterval(() => this._performSmoothScrollStep(), this._optionsService.rawOptions.smoothScrollingStepInterval);
       }
