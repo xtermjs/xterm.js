@@ -249,7 +249,7 @@ export class Viewport extends Disposable implements IViewport {
     } else {
       // Check whether user wants to scroll the other way (different signs)
       if (amount * this._remainingLinesToScroll < 0) {
-        this._remainingLinesToScroll = 0;
+        this._remainingLinesToScroll = amount;
       } else {
         this._remainingLinesToScroll += amount;
       }
