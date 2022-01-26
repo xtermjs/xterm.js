@@ -353,6 +353,8 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
+      } else if (o === 'smoothScrollingSpeed') {
+        term.options.smoothScrollingSpeed = parseFloat(input.value);
       } else if(o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);

@@ -35,6 +35,9 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   logLevel: 'info',
   scrollback: 1000,
   scrollSensitivity: 1,
+  smoothScrolling: false,
+  smoothScrollingSpeed: 10,
+  smoothScrollingStepInterval: 20,
   screenReaderMode: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
@@ -156,10 +159,16 @@ export class OptionsService implements IOptionsService {
           throw new Error(`${key} cannot be less than 0, value: ${value}`);
         }
         break;
+      case 'smoothScrollingSpeed':
       case 'fastScrollSensitivity':
       case 'scrollSensitivity':
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
+        }
+      case 'smoothScrollingStepInterval':
+        value = Math.floor(value);
+        if (value < 1 || value > 250) {
+          throw new Error(`${key} has to be between 1 and 250, value: ${value}`);
         }
       case 'rows':
       case 'cols':

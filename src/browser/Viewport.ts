@@ -29,6 +29,9 @@ export class Viewport extends Disposable implements IViewport {
   private _lastHadScrollBar: boolean = false;
   private _activeBuffer: IBuffer;
   private _renderDimensions: IRenderDimensions;
+  private _remainingLinesToScroll: number = 0;
+  private _lastSmoothScrollStepTime: number = Date.now();
+  private _smoothScrollTimeout?: NodeJS.Timeout;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
@@ -187,6 +190,32 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   /**
+   * Performs single step of the smooth scrolling.
+   */
+  private _performSmoothScrollStep(): void {
+
+    // Calculate and update time
+    const now = Date.now();
+    const deltaSeconds = (now - this._lastSmoothScrollStepTime) / 1000;
+    this._lastSmoothScrollStepTime = now;
+
+    // Calculate absolute step
+    const maxStepAbs = Math.abs(this._remainingLinesToScroll);
+
+    if (maxStepAbs > 0) {
+      const stepAbs = Math.max(1, Math.min(maxStepAbs, Math.floor(maxStepAbs * this._optionsService.rawOptions.smoothScrollingSpeed * deltaSeconds)));
+      const step = (this._remainingLinesToScroll > 0 ? 1 : -1) * stepAbs;
+      this._viewportElement.scrollTop += step;
+      this._remainingLinesToScroll -= step;
+    }
+
+    if (this._remainingLinesToScroll == 0) {
+      clearInterval(<NodeJS.Timeout>this._smoothScrollTimeout);
+      this._smoothScrollTimeout = undefined;
+    }
+  }
+
+  /**
    * Handles bubbling of scroll event in case the viewport has reached top or bottom
    * @param ev The scroll event.
    * @param amount The amount scrolled
@@ -214,7 +243,21 @@ export class Viewport extends Disposable implements IViewport {
     if (amount === 0) {
       return false;
     }
-    this._viewportElement.scrollTop += amount;
+
+    if (!this._optionsService.rawOptions.smoothScrolling) {
+      this._viewportElement.scrollTop += amount;
+    } else {
+      // Check whether user wants to scroll the other way (different signs)
+      if (amount * this._remainingLinesToScroll < 0) {
+        this._remainingLinesToScroll = 0;
+      } else {
+        this._remainingLinesToScroll += amount;
+      }
+      if (this._remainingLinesToScroll != 0 && !this._smoothScrollTimeout) {
+        this._lastSmoothScrollStepTime = Date.now();
+        this._smoothScrollTimeout = setInterval(() => this._performSmoothScrollStep(), this._optionsService.rawOptions.smoothScrollingStepInterval);
+      }
+    }
     return this._bubbleScroll(ev, amount);
   }
 

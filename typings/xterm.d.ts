@@ -234,6 +234,26 @@ declare module 'xterm' {
     scrollSensitivity?: number;
 
     /**
+     * Whether to use smooth scrolling.
+     */
+    smoothScrolling?: boolean;
+
+    /**
+     * The speed of the terminal scroll position adjustment.
+     * Speed is then multiplied by the amount of lines user
+     * wants to scroll. Fast scrolling speeds up the position adjustment.
+     * Takes no effect when `smoothScrolling` is set `false`.
+     */
+    smoothScrollingSpeed?: number;
+
+    /**
+     * The interval in milliseconds that will determine how often
+     * the smooth scrolling should update the in-terminal position.
+     * Takes no effect when `smoothScrolling` is set `false`.
+     */
+    smoothScrollingStepInterval?: number;
+
+    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;
