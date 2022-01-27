@@ -406,6 +406,69 @@ declare module 'xterm' {
   }
 
   /**
+   * Represents a decoration in the terminal that is associated with a particular marker.
+   */
+  export interface IDecoration extends IDisposable {
+    /**
+     * Whether this decoration is disposed.
+     */
+    readonly isDisposed: boolean;
+
+    /**
+     * The actual line index in the buffer at this point in time. This is set to
+     * -1 if the decoration has been disposed.
+     */
+    readonly line: number;
+
+    /**
+     * An event fired when the decoration 
+     * is rendered, returns the dom element 
+     * associated with the decoration.
+     */
+    onRender: IEvent<HTMLElement>;
+  }
+
+  export interface IDecorationOptions extends IDisposable {
+    /**
+    * The line in the terminal where
+    * the decoration will be displayed
+    */
+    startMarker: IMarker;
+
+    /**
+    * The number of milliseconds the decoration
+    * should be displayed for.
+    */
+    displayDuration?: number;
+
+    /**
+     * The color of the decoration
+     */
+    color?: string 
+  }
+
+  export interface IBufferDecorationOptions extends IDecorationOptions {
+    /**
+     * The type of buffer decoration
+     */ 
+    type: 'button' | 'box-border';
+
+    /*
+     * The x position for the decoration.
+     * Defaults to the right edge.
+     */
+    position?: number;
+  }
+
+  export interface IGutterDecorationOptions extends IDecorationOptions {
+    /**
+    * The end line in the terminal for
+    * the decoration
+    */
+    endMarker: IMarker;
+  }
+
+  /**
    * The set of localizable strings.
    */
   export interface ILocalizableStrings {
@@ -869,6 +932,13 @@ declare module 'xterm' {
      * @deprecated use `registerMarker` instead.
      */
     addMarker(cursorYOffset: number): IMarker | undefined;
+
+    /**
+     * (EXPERIMENTAL) Adds a decoration as configured with @param decorationOptions to the 
+     * normal buffer or gutter and returns it.
+     * If the alt buffer is active or the decoration is invalid, undefined is returned.
+     */
+    registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration | undefined;
 
     /**
      * Gets whether the terminal has an active selection.
