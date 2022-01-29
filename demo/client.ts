@@ -59,27 +59,27 @@ interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor:
-    T extends 'attach' ? typeof AttachAddon :
-    T extends 'fit' ? typeof FitAddon :
-    T extends 'search' ? typeof SearchAddon :
-    T extends 'serialize' ? typeof SerializeAddon :
-    T extends 'web-links' ? typeof WebLinksAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    typeof WebglAddon;
-    instance?:
-    T extends 'attach' ? AttachAddon :
-    T extends 'fit' ? FitAddon :
-    T extends 'search' ? SearchAddon :
-    T extends 'serialize' ? SerializeAddon :
-    T extends 'web-links' ? WebLinksAddon :
-    T extends 'webgl' ? WebglAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    never;
+  T extends 'attach' ? typeof AttachAddon :
+  T extends 'fit' ? typeof FitAddon :
+  T extends 'search' ? typeof SearchAddon :
+  T extends 'serialize' ? typeof SerializeAddon :
+  T extends 'web-links' ? typeof WebLinksAddon :
+  T extends 'unicode11' ? typeof Unicode11Addon :
+  T extends 'ligatures' ? typeof LigaturesAddon :
+  typeof WebglAddon;
+  instance?:
+  T extends 'attach' ? AttachAddon :
+  T extends 'fit' ? FitAddon :
+  T extends 'search' ? SearchAddon :
+  T extends 'serialize' ? SerializeAddon :
+  T extends 'web-links' ? WebLinksAddon :
+  T extends 'webgl' ? WebglAddon :
+  T extends 'unicode11' ? typeof Unicode11Addon :
+  T extends 'ligatures' ? typeof LigaturesAddon :
+  never;
 }
 
-const addons: { [T in AddonType]: IDemoAddon<T>} = {
+const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
@@ -147,6 +147,7 @@ if (document.location.pathname === '/test') {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
+  document.getElementById('htmlserialize').addEventListener('click', htmlserializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
 }
@@ -186,7 +187,7 @@ function createTerminal(): void {
     const rows = size.rows;
     const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
-    fetch(url, {method: 'POST'});
+    fetch(url, { method: 'POST' });
   });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
@@ -216,7 +217,7 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then((res) => {
       res.text().then((processId) => {
         pid = processId;
         socketURL += processId;
@@ -261,7 +262,7 @@ function runFakeTerminal(): void {
     if (ev.keyCode === 13) {
       term.prompt();
     } else if (ev.keyCode === 8) {
-     // Do not delete the prompt
+      // Do not delete the prompt
       if (term._core.buffer.x > 2) {
         term.write('\b \b');
       }
@@ -353,7 +354,7 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
-      } else if(o === 'scrollback') {
+      } else if (o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
@@ -380,7 +381,7 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    if(name === 'unicode11' && checkbox.checked) {
+    if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
     }
     addDomListener(checkbox, 'change', () => {
@@ -445,6 +446,32 @@ function serializeButtonHandler(): void {
     term.reset();
     term.write(output);
   }
+}
+
+function htmlserializeButtonHandler(): void {
+  const output = addons.serialize.instance.htmlserialize();
+  document.getElementById('htmlserialize-output').innerText = output;
+
+  var type = "text/html";
+  var blob = new Blob([output], { type });
+  // @ts-ignore
+  var data = [new ClipboardItem({ [type]: blob })];
+
+  const permissionName = "clipboard-write" as PermissionName;
+  navigator.permissions.query({name: permissionName }).then(result => {
+    if (result.state == "granted" || result.state == "prompt") {
+      navigator.clipboard.write(data).then(
+        () => {
+          document.getElementById("htmlserialize-output-result").innerText
+            = "Copied to clipboard";
+        },
+        () => {
+          document.getElementById("htmlserialize-output-result").innerText
+            = "Can't copy to clipboard.";
+        }
+      );
+    }
+  });
 }
 
 
