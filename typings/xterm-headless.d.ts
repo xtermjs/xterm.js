@@ -195,7 +195,7 @@ declare module 'xterm-headless' {
      * The speed of the in-terminal position adjustment.
      * Speed is then multiplied by the amount of lines user
      * wants to scroll. Fast scrolling speeds up the position adjustment.
-     * Takes no effect when `smoothScrolling` is set `false`.
+     * Takes no effect when `smoothScrolling` is set to `false`.
      */
     smoothScrollingSpeed?: number;
 

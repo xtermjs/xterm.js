@@ -193,13 +193,11 @@ export class Viewport extends Disposable implements IViewport {
    * Performs single step of the smooth scrolling.
    */
   private _performSmoothScrollStep(): void {
-
     // Calculate and update time
     const now = Date.now();
     const deltaSeconds = (now - this._lastSmoothScrollStepTime) / 1000;
     this._lastSmoothScrollStepTime = now;
 
-    // Calculate absolute step
     const maxStepAbs = Math.abs(this._remainingLinesToScroll);
 
     if (maxStepAbs > 0) {
