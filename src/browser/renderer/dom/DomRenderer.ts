@@ -13,6 +13,8 @@ import { IOptionsService, IBufferService, IInstantiationService } from 'common/s
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { DecorationRenderLayer } from 'browser/renderer/DecorationRenderLayer';
+import { IBufferDecorationOptions, IGutterDecorationOptions, IDecoration } from 'xterm';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -149,6 +151,14 @@ export class DomRenderer extends Disposable implements IRenderer {
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     this._injectCss();
+  }
+
+  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
+    // const decorationLayer = this._renderLayers.find(l => l instanceof DecorationRenderLayer);
+    // if (decorationLayer instanceof DecorationRenderLayer) {
+    //   return decorationLayer.registerDecoration(decorationOptions);
+    // }
+    throw new Error('no decoration layer');
   }
 
   private _injectCss(): void {

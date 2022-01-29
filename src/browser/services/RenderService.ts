@@ -12,6 +12,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { IDecorationOptions, IDecoration, IGutterDecorationOptions, IBufferDecorationOptions } from 'xterm';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -83,6 +84,10 @@ export class RenderService extends Disposable implements IRenderService {
       observer.observe(screenElement);
       this.register({ dispose: () => observer.disconnect() });
     }
+  }
+
+  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
+    return this._renderer.registerDecoration(decorationOptions);
   }
 
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {

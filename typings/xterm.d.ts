@@ -428,7 +428,12 @@ declare module 'xterm' {
     onRender: IEvent<HTMLElement>;
   }
 
-  export interface IDecorationOptions extends IDisposable {
+  export interface IDecorationOptions {
+    /**
+     * The type of decoration options
+     */
+    type: 'IBufferDecorationOptions' | 'IGutterDecorationOptions';
+
     /**
     * The line in the terminal where
     * the decoration will be displayed
@@ -451,7 +456,7 @@ declare module 'xterm' {
     /**
      * The type of buffer decoration
      */ 
-    type: 'button' | 'box-border';
+    shape: 'button' | 'box-border';
 
     /*
      * The x position for the decoration.
