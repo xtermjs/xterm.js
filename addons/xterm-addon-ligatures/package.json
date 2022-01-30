@@ -25,9 +25,9 @@
   "keywords": [
     "font",
     "ligature",
+    "terminal",
     "xterm",
-    "xterm.js",
-    "terminal"
+    "xterm.js"
   ],
   "license": "MIT",
   "dependencies": {
