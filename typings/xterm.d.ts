@@ -429,10 +429,6 @@ declare module 'xterm' {
   }
 
   export interface IDecorationOptions {
-    /**
-     * The type of decoration options
-     */
-    type: 'IBufferDecorationOptions' | 'IGutterDecorationOptions';
 
     /**
     * The line in the terminal where

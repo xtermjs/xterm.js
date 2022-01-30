@@ -150,8 +150,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param height The number of rows to fill.
    */
   protected _fillCells(x: number, y: number, width: number, height: number): void {
-    console.log(x*this._scaledCellWidth);
-    console.log(y*this._scaledCellHeight);
     this._ctx.fillRect(
       x * this._scaledCellWidth,
       y * this._scaledCellHeight,
