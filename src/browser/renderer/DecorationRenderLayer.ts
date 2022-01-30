@@ -14,7 +14,7 @@ import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBufferDecorationOptions, IDecoration, IEvent, IGutterDecorationOptions } from 'xterm';
 
 const enum DefaultButton {
-  COLOR = '#4B9CD3'
+  COLOR = '#5DA5D5'
 }
 export class DecorationRenderLayer extends BaseRenderLayer {
   constructor(
@@ -28,7 +28,6 @@ export class DecorationRenderLayer extends BaseRenderLayer {
   ) {
     super(container, 'decoration', zIndex, true, colors, rendererId, bufferService, optionsService);
     this.registerDecoration({ startMarker: new Marker(1), shape: 'button' });
-    this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
   public reset(): void {
 
@@ -82,7 +81,7 @@ class BufferDecoration extends Disposable implements IDecoration {
       this._element.style.position = 'absolute';
       this._element.style.top = '0px';
       this._element.style.right = '5px';
-      addDisposableDomListener(this._element, 'click', e => console.log('circle'));
+      addDisposableDomListener(this._element, 'click', () => console.log('circle'));
       container.parentElement!.append(this._element);
       this._onRender.fire(this._element);
     } else {
