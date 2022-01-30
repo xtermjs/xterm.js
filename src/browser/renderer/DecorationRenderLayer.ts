@@ -5,21 +5,15 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
-import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
-import { CellData } from 'common/buffer/CellData';
 import { Marker } from 'common/buffer/Marker';
 import { EventEmitter, IEventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { ICellData } from 'common/Types';
 import { IBufferDecorationOptions, IDecoration, IEvent, IGutterDecorationOptions } from 'xterm';
 
 const enum DefaultButton {
-  WIDTH = 2,
-  HEIGHT = 1,
-  COLS = 87,
-  MARGIN_RIGHT = 3,
   COLOR = '#4B9CD3'
 }
 export class DecorationRenderLayer extends BaseRenderLayer {
