@@ -47,31 +47,18 @@ export class DecorationRenderLayer extends BaseRenderLayer {
 
   public override resize(dim: IRenderDimensions): void {
     super.resize(dim);
-    this._clearCells(this._bufferService.cols - DefaultButton.MARGIN_RIGHT, 1, 2, 1);
+    this._clearCells(this._bufferService.cols - DefaultButton.MARGIN_RIGHT, 1, 1, 1);
     this.registerDecoration({ type: 'IBufferDecorationOptions', startMarker: new Marker(1), shape: 'button' });
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
     if (decorationOptions.type === 'IBufferDecorationOptions') {
-      const bufferDecoration = new BufferDecoration(decorationOptions.startMarker.line, this._ctx.canvas);
+      const color = decorationOptions.color || DefaultButton.COLOR;
+      const bufferDecoration = new BufferDecoration(decorationOptions.startMarker.line, color, this._ctx.canvas);
       if ('shape' in decorationOptions && decorationOptions.shape === 'button') {
         this._ctx.save();
-        const color = decorationOptions.color || DefaultButton.COLOR;
         const x = 'position' in decorationOptions && decorationOptions.position ? decorationOptions.position : this._bufferService.cols - ((this._bufferService.cols/DefaultButton.COLS) * DefaultButton.MARGIN_RIGHT);
-        if (x && color) {
-          this._ctx.fillStyle = color;
-          this._fillCells(x, decorationOptions.startMarker.line, DefaultButton.WIDTH, DefaultButton.HEIGHT);
-          this._ctx.fillStyle = color;
-          this._fillCharTrueColor(this._cell, x, decorationOptions.startMarker.line);
-          addDisposableDomListener(this._ctx.canvas, 'click', e => {
-            e.stopPropagation();
-            const { x, y } = getRelativeClickPosition(this._ctx.canvas, e);
-            if (this._ctx.isPointInPath(x, y)) {
-              console.log('clicked button');
-            }
-          });
-        }
         this._ctx.restore();
         return bufferDecoration;
       }
@@ -106,13 +93,22 @@ export class BufferDecoration extends Disposable implements IDecoration {
 
   constructor(
     public line: number,
+    color: string,
     container: HTMLElement
   ) {
     super();
     this._element = document.createElement('menu');
-    this._element.textContent = 'hello';
+    this._element.classList.add('decoration');
     this._element.id = 'decoration' + this._id;
-    container.appendChild(this._element);
+    this._element.style.background = color;
+    this._element.style.width = '1px';
+    this._element.style.height = '32px';
+    this._element.style.borderRadius = '64px';
+    this._element.style.border = `4px solid white`;
+    this._element.style.zIndex = '6';
+    this._element.style.position = 'absolute';
+    addDisposableDomListener(this._element, 'click', e =>  console.log('circle'));
+    container.parentElement!.append(this._element);
   }
 
   public dispose(): void {

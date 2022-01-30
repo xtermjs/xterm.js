@@ -76,6 +76,12 @@ pre {
     background-color: #ddd;
 }
 
+.decoration:hover,
+.decoration:focus {
+    box-shadow: 0 0.5em 0.5em -0.4em var(--hover);
+    transform: translateY(-0.25em);
+}
+
 /* Create an active/current tablink class */
 .tab button.active {
     background-color: #ccc;
