@@ -380,94 +380,99 @@ declare module 'xterm' {
    * is trimmed and lines are added or removed. This is a single line that may
    * be part of a larger wrapped line.
    */
-  export interface IMarker extends IDisposable {
+  export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
      */
     readonly id: number;
 
     /**
-     * Whether this marker is disposed.
-     */
-    readonly isDisposed: boolean;
-
-    /**
      * The actual line index in the buffer at this point in time. This is set to
      * -1 if the marker has been disposed.
      */
     readonly line: number;
-
-    /**
-     * Event listener to get notified when the marker gets disposed. Automatic disposal
-     * might happen for a marker, that got invalidated by scrolling out or removal of
-     * a line from the buffer.
-     */
-    onDispose: IEvent<void>;
   }
 
   /**
-   * Represents a decoration in the terminal that is associated with a particular marker.
+   * Represents a decoration in the terminal that is associated with a particular marker and DOM element.
    */
-  export interface IDecoration extends IDisposable {
-    /**
-     * Whether this decoration is disposed.
+  export interface IDecoration extends IDisposableWithEvent {
+    /*
+     * The marker for the decoration in the terminal.
      */
-    readonly isDisposed: boolean;
+    readonly marker: IMarker;
 
     /**
-     * The actual line index in the buffer at this point in time. This is set to
-     * -1 if the decoration has been disposed.
-     */
-    readonly line: number;
-
-    /**
-     * An event fired when the decoration 
-     * is rendered, returns the dom element 
+     * An event fired when the decoration
+     * is rendered, returns the dom element
      * associated with the decoration.
      */
     onRender: IEvent<HTMLElement>;
-  }
-
-  export interface IDecorationOptions {
 
     /**
-    * The line in the terminal where
-    * the decoration will be displayed
-    */
-    startMarker: IMarker;
-
-    /**
-    * The number of milliseconds the decoration
-    * should be displayed for.
-    */
-    displayDuration?: number;
-
-    /**
-     * The color of the decoration
+     * The HTMLElement that gets created after the 
+     * first _onRender call, or undefined if accessed before
+     * that.
      */
-    color?: string 
+    element: HTMLElement | undefined;
   }
 
-  export interface IBufferDecorationOptions extends IDecorationOptions {
+  export interface IDisposableWithEvent extends IDisposable {
     /**
-     * The type of buffer decoration
-     */ 
-    shape: 'button' | 'box-border';
+     * Event listener to get notified when this gets disposed.
+     */
+    onDispose: IEvent<void>;
 
+    /**
+     * Whether this is disposed.
+     */
+    readonly isDisposed: boolean;
+  }
+
+
+  export interface IBufferDecorationOptions {
     /*
-     * The x position for the decoration.
-     * Defaults to the right edge.
+     * Where the decoration will be anchored -
+     * defaults to the left edge.
      */
-    position?: number;
+    anchor?: 'right' | 'left';
+
+    /**
+     * The line in the terminal where
+     * the decoration will be displayed
+     */
+    marker: IMarker;
+
+    /**
+     * The width of the decoration, which defaults to 
+     * cell width
+     */
+    width?: number;
+
+    /**
+     * The height of the decoration, which defaults to 
+     * cell height
+     */
+    height?: number;
+
+    /**
+     * The x position offset relative to the anchor
+     */ 
+    x?: number;
   }
 
-  export interface IGutterDecorationOptions extends IDecorationOptions {
-    /**
-    * The end line in the terminal for
-    * the decoration
-    */
-    endMarker: IMarker;
-  }
+  //   export interface IGutterDecorationOptions {
+  //     /**
+  //  * The line in the terminal where
+  //  * the decoration will be displayed
+  //  */
+  //     startMarker: IMarker;
+  //     /**
+  //     * The end line in the terminal for
+  //     * the decoration
+  //     */
+  //     endMarker: IMarker;
+  //   }
 
   /**
    * The set of localizable strings.
@@ -935,11 +940,11 @@ declare module 'xterm' {
     addMarker(cursorYOffset: number): IMarker | undefined;
 
     /**
-     * (EXPERIMENTAL) Adds a decoration as configured with @param decorationOptions to the 
-     * normal buffer or gutter and returns it.
-     * If the alt buffer is active or the decoration is invalid, undefined is returned.
+     * (EXPERIMENTAL) Adds a decoration to the terminal using
+     *  @param decorationOptions, which takes a markers
+     * and a horizontal aligntment
      */
-    registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration | undefined;
+    registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
 
     /**
      * Gets whether the terminal has an active selection.

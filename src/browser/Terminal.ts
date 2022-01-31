@@ -37,7 +37,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IBufferDecorationOptions, IDecoration, IGutterDecorationOptions } from 'xterm';
+import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IBufferDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -998,7 +998,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration | undefined {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     return this._renderService?.registerDecoration(decorationOptions);
   }
   /**

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferDecorationOptions, IDecoration, IDisposable, IGutterDecorationOptions, IMarker, ISelectionPosition } from 'xterm';
+import { IBufferDecorationOptions, IDecoration, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
@@ -61,7 +61,7 @@ export interface IPublicTerminal extends IDisposable {
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
   addMarker(cursorYOffset: number): IMarker | undefined;
-  registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration | undefined;
+  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
   hasSelection(): boolean;
   getSelection(): string;
   getSelectionPosition(): ISelectionPosition | undefined;

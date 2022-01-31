@@ -15,7 +15,7 @@ import { IBufferService, IOptionsService, ICoreService, IInstantiationService } 
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { DecorationRenderLayer } from 'browser/renderer/DecorationRenderLayer';
-import { IBufferDecorationOptions, IGutterDecorationOptions, IDecoration } from 'xterm';
+import { IBufferDecorationOptions, IDecoration } from 'xterm';
 
 let nextRendererId = 1;
 
@@ -68,12 +68,11 @@ export class Renderer extends Disposable implements IRenderer {
     this.onOptionsChanged();
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     const decorationLayer = this._renderLayers.find(l => l instanceof DecorationRenderLayer);
     if (decorationLayer instanceof DecorationRenderLayer) {
       return decorationLayer.registerDecoration(decorationOptions);
     }
-    throw new Error('no decoration layer');
   }
 
   public dispose(): void {

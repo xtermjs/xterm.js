@@ -6,7 +6,7 @@
 import { IDisposable } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
-import { IBufferDecorationOptions, IDecoration, IGutterDecorationOptions } from 'xterm';
+import { IBufferDecorationOptions, IDecoration } from 'xterm';
 
 export interface IRenderDimensions {
   scaledCharWidth: number;
@@ -54,7 +54,7 @@ export interface IRenderer extends IDisposable {
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
-  registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration;
+  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
 }
 
 export interface IRenderLayer extends IDisposable {

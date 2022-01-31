@@ -12,7 +12,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
-import { IDecorationOptions, IDecoration, IGutterDecorationOptions, IBufferDecorationOptions } from 'xterm';
+import { IDecoration, IBufferDecorationOptions } from 'xterm';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -86,7 +86,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     return this._renderer.registerDecoration(decorationOptions);
   }
 

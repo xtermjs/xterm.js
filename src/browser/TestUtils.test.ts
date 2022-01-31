@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IBufferDecorationOptions, IDecoration, IGutterDecorationOptions, IDecorationOptions } from 'xterm';
+import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IBufferDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -102,7 +102,7 @@ export class MockTerminal implements ITerminal {
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration | undefined {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     throw new Error('Method not implemented.');
   }
   public hasSelection(): boolean {
@@ -293,7 +293,7 @@ export class MockRenderer implements IRenderer {
   public onDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
-  public registerDecoration(decorationOptions: IBufferDecorationOptions | IGutterDecorationOptions): IDecoration {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
 }
@@ -425,7 +425,7 @@ export class MockRenderService implements IRenderService {
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
-  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
 }
