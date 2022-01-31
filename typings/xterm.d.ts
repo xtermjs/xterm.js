@@ -424,14 +424,14 @@ declare module 'xterm' {
      * is rendered, returns the dom element
      * associated with the decoration.
      */
-    onRender: IEvent<HTMLElement>;
+    readonly onRender: IEvent<HTMLElement>;
 
     /**
      * The HTMLElement that gets created after the 
      * first _onRender call, or undefined if accessed before
      * that.
      */
-    element: HTMLElement | undefined;
+    readonly element: HTMLElement | undefined;
   }
 
   export interface IBufferDecorationOptions {
@@ -446,18 +446,6 @@ declare module 'xterm' {
      * defaults to the left edge
      */
     anchor?: 'right' | 'left';
-
-    /**
-     * The width of the decoration, which defaults to 
-     * cell width
-     */
-    width?: number;
-
-    /**
-     * The height of the decoration, which defaults to 
-     * cell height
-     */
-    height?: number;
 
     /**
      * The x position offset relative to the anchor
@@ -946,7 +934,8 @@ declare module 'xterm' {
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
      *  @param decorationOptions, which takes a marker and an optional anchor, 
-     *  width, height, and x offset from the anchor
+     *  width, height, and x offset from the anchor. Returns the decoration or
+     *  undefined if the marker has already been disposed of.
      */
     registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
 
