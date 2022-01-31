@@ -394,6 +394,23 @@ declare module 'xterm' {
   }
 
   /**
+   * Represents a disposable with an 
+   * @param onDispose event listener and
+   * @param isDisposed property.
+   */
+  export interface IDisposableWithEvent extends IDisposable {
+    /**
+     * Event listener to get notified when this gets disposed.
+     */
+    onDispose: IEvent<void>;
+
+    /**
+     * Whether this is disposed.
+     */
+    readonly isDisposed: boolean;
+  }
+
+  /**
    * Represents a decoration in the terminal that is associated with a particular marker and DOM element.
    */
   export interface IDecoration extends IDisposableWithEvent {
@@ -417,31 +434,18 @@ declare module 'xterm' {
     element: HTMLElement | undefined;
   }
 
-  export interface IDisposableWithEvent extends IDisposable {
-    /**
-     * Event listener to get notified when this gets disposed.
-     */
-    onDispose: IEvent<void>;
-
-    /**
-     * Whether this is disposed.
-     */
-    readonly isDisposed: boolean;
-  }
-
-
   export interface IBufferDecorationOptions {
-    /*
-     * Where the decoration will be anchored -
-     * defaults to the left edge.
-     */
-    anchor?: 'right' | 'left';
-
     /**
      * The line in the terminal where
      * the decoration will be displayed
      */
     marker: IMarker;
+
+    /*
+     * Where the decoration will be anchored -
+     * defaults to the left edge
+     */
+    anchor?: 'right' | 'left';
 
     /**
      * The width of the decoration, which defaults to 
@@ -461,18 +465,18 @@ declare module 'xterm' {
     x?: number;
   }
 
-  //   export interface IGutterDecorationOptions {
-  //     /**
-  //  * The line in the terminal where
-  //  * the decoration will be displayed
-  //  */
-  //     startMarker: IMarker;
-  //     /**
-  //     * The end line in the terminal for
-  //     * the decoration
-  //     */
-  //     endMarker: IMarker;
-  //   }
+    export interface IGutterDecorationOptions {
+      /**
+       * The line in the terminal where
+       * the decoration will be displayed
+       */
+      startMarker: IMarker;
+      /**
+       * The end line in the terminal for
+       * the decoration
+       */
+      endMarker: IMarker;
+    }
 
   /**
    * The set of localizable strings.
@@ -941,8 +945,8 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
-     *  @param decorationOptions, which takes a markers
-     * and a horizontal aligntment
+     *  @param decorationOptions, which takes a marker and an optional anchor, 
+     *  width, height, and x offset from the anchor
      */
     registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
 
