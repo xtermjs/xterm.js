@@ -9,6 +9,11 @@
   "types": "typings/xterm-addon-serialize.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
   "scripts": {
     "build": "../../node_modules/.bin/tsc -p .",
     "prepackage": "npm run build",
