@@ -75,16 +75,16 @@ class BufferDecoration extends Disposable implements IDecoration {
     this._element.classList.add('button-buffer-decoration');
     this._element.id = 'button-buffer-decoration-' + this._id;
     this._element.style.background = color;
-    this._element.style.width = '24px';
-    this._element.style.height = '24px';
+    this._element.style.width = '32px';
+    this._element.style.height = '32px';
     this._element.style.borderRadius = '64px';
     this._element.style.border = `4px solid white`;
     this._element.style.zIndex = '6';
     this._element.style.position = 'absolute';
     if (decorationOptions.anchor === 'right') {
-      this._element.style.right = `${decorationOptions.x}px` || '5px';
+      this._element.style.right = decorationOptions.x ? `${decorationOptions.x}px` : '5px';
     } else {
-      this._element.style.right = `${decorationOptions.x}px` || '5px';
+      this._element.style.right = decorationOptions.x ? `${decorationOptions.x}px` : '5px';
     }
     if (this._container.parentElement && this._element) {
       this._container.parentElement.append(this._element);

@@ -451,6 +451,20 @@ declare module 'xterm' {
      * The x position offset relative to the anchor
      */ 
     x?: number;
+
+
+    /**
+     * The width of the decoration in cells, which defaults to 
+     * cell width
+     */
+    width?: number;
+
+    /**
+     * The height of the decoration in cells, which defaults to 
+     * cell height
+     */
+    height?: number;
+
   }
 
     export interface IGutterDecorationOptions {
