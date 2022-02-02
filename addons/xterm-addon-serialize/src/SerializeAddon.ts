@@ -416,7 +416,8 @@ export class SerializeAddon implements ITerminalAddon {
     });
   }
 
-  private _htmlserializeBuffer(terminal: Terminal, buffer: IBuffer, options: Partial<IHtmlSerializeOptions>): string {
+  private _htmlserializeBuffer(terminal: Terminal, options: Partial<IHtmlSerializeOptions>): string {
+    const buffer = terminal.buffer.active;
     const handler = new HTMLSerializeHandler(buffer, terminal);
     const onlySelection = options.onlySelection ?? true;
     if (!onlySelection) {
@@ -499,7 +500,7 @@ export class SerializeAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    return this._htmlserializeBuffer(this._terminal, this._terminal.buffer.normal, options || {});
+    return this._htmlserializeBuffer(this._terminal, options || {});
   }
 
   public dispose(): void { }
