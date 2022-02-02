@@ -412,7 +412,7 @@ export class SerializeAddon implements ITerminalAddon {
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
     return handler.serialize({
       start: { x: maxRows - correctRows, y: 0 },
-      end: { x: maxRows, y: terminal.cols }
+      end: { x: maxRows - 1, y: terminal.cols }
     });
   }
 
@@ -425,7 +425,7 @@ export class SerializeAddon implements ITerminalAddon {
       const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
       return handler.serialize({
         start: { x: maxRows - correctRows, y: 0 },
-        end: { x: maxRows, y: terminal.cols }
+        end: { x: maxRows - 1, y: terminal.cols }
       });
     }
 
