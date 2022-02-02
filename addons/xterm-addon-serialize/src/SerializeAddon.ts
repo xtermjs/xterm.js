@@ -5,7 +5,7 @@
  * (EXPERIMENTAL) This Addon is still under development
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
+import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
 import { IColorSet } from 'browser/Types';
 
 function constrain(value: number, low: number, high: number): number {
@@ -19,18 +19,25 @@ abstract class BaseSerializeHandler {
   ) {
   }
 
-  public serialize(startRow: number, endRow: number): string {
+  public serialize(range: IBufferRange): string {
     // we need two of them to flip between old and new cell
     const cell1 = this._buffer.getNullCell();
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
+    const startRow = range.start.x;
+    const endRow = range.end.x;
+    const startColumn = range.start.y;
+    const endColumn = range.end.y;
+
     this._beforeSerialize(endRow - startRow, startRow, endRow);
 
-    for (let row = startRow; row < endRow; row++) {
+    for (let row = startRow; row <= endRow; row++) {
       const line = this._buffer.getLine(row);
       if (line) {
-        for (let col = 0; col < line.length; col++) {
+        const startLineColumn = row !== range.start.x ? 0 : startColumn;
+        const endLineColumn = row !== range.end.x ? line.length : endColumn;
+        for (let col = startLineColumn; col < endLineColumn; col++) {
           const c = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
           if (!c) {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
@@ -40,7 +47,7 @@ abstract class BaseSerializeHandler {
           oldCell = c;
         }
       }
-      this._rowEnd(row, row === endRow - 1);
+      this._rowEnd(row, row === endRow);
     }
 
     this._afterSerialize();
@@ -400,17 +407,37 @@ export class SerializeAddon implements ITerminalAddon {
   }
 
   private _serializeBuffer(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
-    const maxRows = buffer.length;
+    const maxRows = buffer.length - 1;
     const handler = new StringSerializeHandler(buffer, terminal);
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
-    return handler.serialize(maxRows - correctRows, maxRows);
+    return handler.serialize({
+      start: { x: maxRows - correctRows, y: 0 },
+      end: { x: maxRows, y: 0 }
+    });
   }
 
-  private _htmlserializeBuffer(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
-    const maxRows = buffer.length;
+  private _htmlserializeBuffer(terminal: Terminal, buffer: IBuffer, options: Partial<IHtmlSerializeOptions>): string {
     const handler = new HTMLSerializeHandler(buffer, terminal);
-    const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
-    return handler.serialize(maxRows - correctRows, maxRows);
+    const onlySelection = options.onlySelection ?? true;
+    if (!onlySelection) {
+      const maxRows = buffer.length;
+      const scrollback = options.scrollback;
+      const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
+      return handler.serialize({
+        start: { x: maxRows - correctRows, y: 0 },
+        end: { x: maxRows, y: 0 }
+      });
+    }
+
+    const selection = this._terminal?.getSelectionPosition();
+    if (selection !== undefined) {
+      return handler.serialize({
+        start: { x: selection.startRow, y: selection.startColumn },
+        end: { x: selection.endRow, y: selection.endColumn }
+      });
+    }
+
+    return '';
   }
 
   private _serializeModes(terminal: Terminal): string {
@@ -467,12 +494,12 @@ export class SerializeAddon implements ITerminalAddon {
     return content;
   }
 
-  public htmlserialize(options?: IHtmlSerializeOptions): string {
+  public htmlserialize(options?: Partial<IHtmlSerializeOptions>): string {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    return this._htmlserializeBuffer(this._terminal, this._terminal.buffer.normal, options?.scrollback);
+    return this._htmlserializeBuffer(this._terminal, this._terminal.buffer.normal, options || {});
   }
 
   public dispose(): void { }
@@ -486,7 +513,8 @@ interface ISerializeOptions {
 }
 
 interface IHtmlSerializeOptions {
-  scrollback?: number;
+  scrollback: number;
+  onlySelection: boolean;
 }
 
 export class HTMLSerializeHandler extends BaseSerializeHandler {
@@ -532,8 +560,16 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._htmlContent += '<html><head><meta name=\'generator\' content=\'xtermjs\'/>'
       + '<meta http-equiv=\'Content-Type\' content=\'text/html; charset=UTF-8\'/></head><body><!--StartFragment--><pre>';
-    // TODO: fetch options and remove hardcoded values
-    this._htmlContent += '<div style=\'color: #ffffff; background-color: #000000; font-family: Fira Code, courier-new, courier, monospace; font-size: 15px;\'>';
+
+    const foreground = this._terminal.options.theme?.foreground ?? '#ffffff';
+    const background = this._terminal.options.theme?.background ?? '#000000';
+
+    const globalStyleDefinitions = [];
+    globalStyleDefinitions.push('color: ' + foreground + ';');
+    globalStyleDefinitions.push('background-color: ' + background + ';');
+    globalStyleDefinitions.push('font-family: ' + this._terminal.options.fontFamily + ';');
+    globalStyleDefinitions.push('font-size: ' + this._terminal.options.fontSize + 'px;');
+    this._htmlContent += '<div style=\'' + globalStyleDefinitions.join(' ') + '\'>';
   }
 
   protected _afterSerialize(): void {
