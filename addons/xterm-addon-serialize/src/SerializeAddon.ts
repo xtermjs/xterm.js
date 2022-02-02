@@ -407,7 +407,7 @@ export class SerializeAddon implements ITerminalAddon {
   }
 
   private _serializeBuffer(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
-    const maxRows = buffer.length - 1;
+    const maxRows = buffer.length;
     const handler = new StringSerializeHandler(buffer, terminal);
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
     return handler.serialize({
@@ -425,7 +425,7 @@ export class SerializeAddon implements ITerminalAddon {
       const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
       return handler.serialize({
         start: { x: maxRows - correctRows, y: 0 },
-        end: { x: maxRows, y: 0 }
+        end: { x: maxRows, y: terminal.cols }
       });
     }
 
