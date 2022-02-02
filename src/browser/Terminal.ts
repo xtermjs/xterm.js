@@ -298,7 +298,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         this.viewport?.syncScrollArea();
         break;
       case 'screenReaderMode':
-        if (this.optionsService.options.screenReaderMode) {
+        if (this.optionsService.rawOptions.screenReaderMode) {
           if (!this._accessibilityManager && this._renderService) {
             this._accessibilityManager = new AccessibilityManager(this, this._renderService);
           }
@@ -309,7 +309,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'theme':
-        this._setTheme(this.optionsService.options.theme);
+        this._setTheme(this.optionsService.rawOptions.theme);
         break;
     }
   }
@@ -753,7 +753,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.coreMouseService.onProtocolChange(events => {
       // apply global changes on events
       if (events) {
-        if (this.optionsService.options.logLevel === 'debug') {
+        if (this.optionsService.rawOptions.logLevel === 'debug') {
           this._logService.debug('Binding to mouse events:', this.coreMouseService.explainEvents(events));
         }
         this.element!.classList.add('enable-mouse-events');
@@ -1125,7 +1125,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // other listeners. When screen reader mode is enabled, this could cause issues if the event
     // is handled at a higher level, this is a compromise in order to echo keys to the screen
     // reader.
-    if (!this.optionsService.options.screenReaderMode) {
+    if (!this.optionsService.rawOptions.screenReaderMode) {
       return this.cancel(event, true);
     }
 
@@ -1220,7 +1220,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.options.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }

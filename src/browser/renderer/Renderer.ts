@@ -39,7 +39,7 @@ export class Renderer extends Disposable implements IRenderer {
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
-    const allowTransparency = this._optionsService.options.allowTransparency;
+    const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
       instantiationService.createInstance(TextRenderLayer, this._screenElement, 0, this._colors, allowTransparency, this._id),
       instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
@@ -178,18 +178,18 @@ export class Renderer extends Disposable implements IRenderer {
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.options.lineHeight);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._optionsService.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.options.letterSpacing);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
 
     // Calculate the x coordinate with a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._optionsService.options.letterSpacing / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas

@@ -5,10 +5,11 @@
 
 import { deepStrictEqual, strictEqual, throws } from 'assert';
 import { Terminal } from 'headless/public/Terminal';
+import { ITerminalOptions } from 'xterm-headless';
 
 let term: Terminal;
 
-describe('Headless API Tests', function(): void {
+describe('Headless API Tests', function (): void {
   beforeEach(() => {
     // Create default terminal to be used by most tests
     term = new Terminal();
@@ -119,13 +120,43 @@ describe('Headless API Tests', function(): void {
     strictEqual(term.getOption('scrollback'), 50);
   });
 
+  describe('options', () => {
+    const termOptions = {
+      cols: 80,
+      rows: 24
+    };
+
+    beforeEach(async () => {
+      term = new Terminal(termOptions);
+    });
+    it('get options', () => {
+      const options: ITerminalOptions = term.options;
+      strictEqual(options.cols, 80);
+      strictEqual(options.rows, 24);
+    });
+    it('set options', async () => {
+      const options: ITerminalOptions = term.options;
+      throws(() => options.cols = 40);
+      throws(() => options.rows = 20);
+      term.options.scrollback = 1;
+      strictEqual(term.options.scrollback, 1);
+      term.options= {
+        fontSize: 12,
+        fontFamily: 'Arial'
+      };
+      strictEqual(term.options.fontSize, 12);
+      strictEqual(term.options.fontFamily, 'Arial');
+    });
+  });
+
+
   describe('loadAddon', () => {
     it('constructor', async () => {
       term = new Terminal({ cols: 5 });
       let cols = 0;
       term.loadAddon({
         activate: (t) => cols = t.cols,
-        dispose: () => {}
+        dispose: () => { }
       });
       strictEqual(cols, 5);
     });
@@ -133,7 +164,7 @@ describe('Headless API Tests', function(): void {
     it('dispose (addon)', async () => {
       let disposeCalled = false;
       const addon = {
-        activate: () => {},
+        activate: () => { },
         dispose: () => disposeCalled = true
       };
       term.loadAddon(addon);
@@ -145,7 +176,7 @@ describe('Headless API Tests', function(): void {
     it('dispose (terminal)', async () => {
       let disposeCalled = false;
       term.loadAddon({
-        activate: () => {},
+        activate: () => { },
         dispose: () => disposeCalled = true
       });
       strictEqual(disposeCalled, false);

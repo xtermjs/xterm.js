@@ -18,6 +18,7 @@ const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
 export const isFirefox = userAgent.includes('Firefox');
+export const isLegacyEdge = userAgent.includes('Edge');
 export const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
 
 // Find the users platform. We use this to interpret the meta key

@@ -25,14 +25,14 @@
   "keywords": [
     "font",
     "ligature",
+    "terminal",
     "xterm",
-    "xterm.js",
-    "terminal"
+    "xterm.js"
   ],
   "license": "MIT",
   "dependencies": {
     "font-finder": "^1.1.0",
-    "font-ligatures": "^1.4.0"
+    "font-ligatures": "^1.4.1"
   },
   "devDependencies": {
     "@types/sinon": "^5.0.1",

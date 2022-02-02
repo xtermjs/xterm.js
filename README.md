@@ -185,7 +185,9 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**gdbgui**](https://github.com/cs01/gdbgui): Browser-based frontend to gdb (gnu debugger)
 - [**goormIDE**](https://ide.goorm.io/): Run almost every programming languages with real-time collaboration, live pair programming, and built-in messenger.
 - [**FleetDeck**](https://fleetdeck.io): Remote desktop & virtual terminal
-- [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
+- [**OpenSumi**](https://github.com/opensumi/core): A framework helps you quickly build Cloud or Desktop IDE products.
+- [**KubeSail**](https://kubesail.com): The Self-Hosting Company - uses xterm to allow users to exec into kubernetes pods and build github apps
+- [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
 

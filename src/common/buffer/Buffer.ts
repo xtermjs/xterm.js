@@ -107,7 +107,7 @@ export class Buffer implements IBuffer {
       return rows;
     }
 
-    const correctBufferLength = rows + this._optionsService.options.scrollback;
+    const correctBufferLength = rows + this._optionsService.rawOptions.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
@@ -172,7 +172,7 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.options.windowsMode) {
+            if (this._optionsService.rawOptions.windowsMode) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
@@ -252,7 +252,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !this._optionsService.options.windowsMode;
+    return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -367,6 +367,11 @@ export class Buffer implements IBuffer {
       let srcCol = lastLineLength;
       while (srcLineIndex >= 0) {
         const cellsToCopy = Math.min(srcCol, destCol);
+        if (wrappedLines[destLineIndex] === undefined) {
+          // Sanity check that the line exists, this has been known to fail for an unknown reason
+          // which would stop the reflow from happening if an exception would throw.
+          break;
+        }
         wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
         destCol -= cellsToCopy;
         if (destCol === 0) {
@@ -550,7 +555,7 @@ export class Buffer implements IBuffer {
       i = 0;
     }
 
-    for (; i < this._cols; i += this._optionsService.options.tabStopWidth) {
+    for (; i < this._cols; i += this._optionsService.rawOptions.tabStopWidth) {
       this.tabs[i] = true;
     }
   }
