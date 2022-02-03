@@ -416,9 +416,9 @@ export class SerializeAddon implements ITerminalAddon {
     });
   }
 
-  private _htmlserializeBuffer(terminal: Terminal, options: Partial<IHtmlSerializeOptions>): string {
+  private _serializeBufferAsHTML(terminal: Terminal, options: Partial<IHTMLSerializeOptions>): string {
     const buffer = terminal.buffer.active;
-    const handler = new HTMLSerializeHandler(buffer, terminal);
+    const handler = new HTMLSerializeHandler(buffer, terminal, options);
     const onlySelection = options.onlySelection ?? true;
     if (!onlySelection) {
       const maxRows = buffer.length;
@@ -495,12 +495,12 @@ export class SerializeAddon implements ITerminalAddon {
     return content;
   }
 
-  public htmlserialize(options?: Partial<IHtmlSerializeOptions>): string {
+  public serializeAsHTML(options?: Partial<IHTMLSerializeOptions>): string {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    return this._htmlserializeBuffer(this._terminal, options || {});
+    return this._serializeBufferAsHTML(this._terminal, options || {});
   }
 
   public dispose(): void { }
@@ -513,9 +513,10 @@ interface ISerializeOptions {
   excludeAltBuffer?: boolean;
 }
 
-interface IHtmlSerializeOptions {
+interface IHTMLSerializeOptions {
   scrollback: number;
   onlySelection: boolean;
+  includeGlobalBackground: boolean;
 }
 
 export class HTMLSerializeHandler extends BaseSerializeHandler {
@@ -523,20 +524,12 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   private _htmlContent = '';
 
-  private _inverseStyle = 'color: #000000; background-color: #BFBFBF;';
-  private _blinkStyle = 'text-decoration: blink;';
-  private _boldStyle = 'font-weight: bold;';
-  private _italicStyle = 'font-style: italic;';
-  private _underlineStyle = 'text-decoration: underline;';
-  private _strikethroughStyle = 'text-decoration: line-through;';
-  private _invisibleStyle = 'visibility: hidden;';
-  private _dimStyle = 'opacity: 0.5;';
-
   private _colors: IColorSet;
 
   constructor(
     buffer: IBuffer,
-    private readonly _terminal: Terminal
+    private readonly _terminal: Terminal,
+    private readonly _options: Partial<IHTMLSerializeOptions>
   ) {
     super(buffer);
 
@@ -559,11 +552,14 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _beforeSerialize(rows: number, start: number, end: number): void {
-    this._htmlContent += '<html><head><meta name=\'generator\' content=\'xtermjs\'/>'
-      + '<meta http-equiv=\'Content-Type\' content=\'text/html; charset=UTF-8\'/></head><body><!--StartFragment--><pre>';
+    this._htmlContent += '<html><body><!--StartFragment--><pre>';
 
-    const foreground = this._terminal.options.theme?.foreground ?? '#ffffff';
-    const background = this._terminal.options.theme?.background ?? '#000000';
+    let foreground = '#000000';
+    let background = '#ffffff';
+    if (this._options.includeGlobalBackground ?? true) {
+      foreground = this._terminal.options.theme?.foreground ?? '#ffffff';
+      background = this._terminal.options.theme?.background ?? '#000000';
+    }
 
     const globalStyleDefinitions = [];
     globalStyleDefinitions.push('color: ' + foreground + ';');
@@ -579,7 +575,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    this._htmlContent += '<span>' + this._currentRow + '</span><br/>';
+    this._htmlContent += '<div>' + this._currentRow + '</div>';
     this._currentRow = '';
   }
 
@@ -617,14 +613,14 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         content.push('background-color: ' + bgHexColor + ';');
       }
 
-      if (cell.isInverse()) { content.push(this._inverseStyle); }
-      if (cell.isBold()) { content.push(this._boldStyle); }
-      if (cell.isUnderline()) { content.push(this._underlineStyle); }
-      if (cell.isBlink()) { content.push(this._blinkStyle); }
-      if (cell.isInvisible()) { content.push(this._invisibleStyle); }
-      if (cell.isItalic()) { content.push(this._italicStyle); }
-      if (cell.isDim()) { content.push(this._dimStyle); }
-      if (cell.isStrikethrough()) { content.push(this._strikethroughStyle); }
+      if (cell.isInverse()) { content.push('color: #000000; background-color: #BFBFBF;'); }
+      if (cell.isBold()) { content.push('font-weight: bold;'); }
+      if (cell.isUnderline()) { content.push('text-decoration: underline;'); }
+      if (cell.isBlink()) { content.push('text-decoration: blink;'); }
+      if (cell.isInvisible()) { content.push('visibility: hidden;'); }
+      if (cell.isItalic()) { content.push('font-style: italic;'); }
+      if (cell.isDim()) { content.push('opacity: 0.5;'); }
+      if (cell.isStrikethrough()) { content.push('text-decoration: line-through;'); }
 
       return content;
     }
@@ -647,8 +643,8 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     // handles style change
     if (styleDefinitions) {
       this._currentRow += styleDefinitions.length === 0 ?
-        `</span><span>` :
-        `</span><span style='${styleDefinitions.join(' ')}'>`;
+        '</span><span>' :
+        '</span><span style=\'' + styleDefinitions.join(' ') + '\'>';
     }
 
     // handles actual content

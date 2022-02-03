@@ -24,13 +24,22 @@ declare module 'xterm-addon-serialize' {
      * the state. The cursor will also be positioned to the correct cell. When restoring a terminal
      * it is best to do before `Terminal.open` is called to avoid wasting CPU cycles rendering
      * incomplete frames.
-     * 
+     *
      * It's recommended that you write the serialized data into a terminal of the same size in which
      * it originated from and then resize it after if needed.
-     * 
+     *
      * @param options Custom options to allow control over what gets serialized.
      */
     public serialize(options?: ISerializeOptions): string;
+
+    /**
+     * Serializes terminal rows into a HTML string.  The output of this function can be written
+     * to the OS clipboard. If an application supports pasting HTML, the content of the terminal
+     * is pasted with style options retained.
+     *
+     * @param options Custom options to allow control over what gets serialized.
+     */
+    public serializeAsHTML(options?: Partial<IHTMLSerializeOptions>): string;
 
     /**
      * Disposes the addon.
@@ -55,5 +64,25 @@ declare module 'xterm-addon-serialize' {
      * Whether to exclude the alt buffer from the serialization. False by default.
      */
     excludeAltBuffer?: boolean;
+  }
+
+  export interface IHTMLSerializeOptions {
+    /**
+     * The number of rows in the scrollback buffer to serialize, starting from the bottom of the
+     * scrollback buffer. When not specified, all available rows in the scrollback buffer will be
+     * serialized.
+     */
+    scrollback: number;
+
+    /**
+     * Whether to only serialize the selection. If false, the whole active buffer is serialized in HTML.
+     * True by default.
+     */
+    onlySelection: boolean;
+
+    /**
+     * Whether to include the global background of the terminal. True by default.
+     */
+    includeGlobalBackground: boolean;
   }
 }

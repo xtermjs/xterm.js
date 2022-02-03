@@ -449,12 +449,11 @@ function serializeButtonHandler(): void {
 }
 
 function htmlSerializeButtonHandler(): void {
-  const output = addons.serialize.instance.htmlserialize();
+  const output = addons.serialize.instance.serializeAsHTML();
   document.getElementById('htmlserialize-output').innerText = output;
 
   // Deprecated, but the most supported for now.
-  function listener(e) {
-    e.clipboardData.setData("text/html", output);
+  function listener(e: any) {
     e.clipboardData.setData("text/plain", output);
     e.preventDefault();
   }
