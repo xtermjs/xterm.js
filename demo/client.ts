@@ -454,7 +454,7 @@ function htmlSerializeButtonHandler(): void {
 
   // Deprecated, but the most supported for now.
   function listener(e: any) {
-    e.clipboardData.setData("text/plain", output);
+    e.clipboardData.setData("text/html", output);
     e.preventDefault();
   }
   document.addEventListener("copy", listener);
