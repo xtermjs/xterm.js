@@ -569,8 +569,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._onScroll.event(ev => {
       this.viewport!.syncScrollArea();
       this._selectionService!.refresh();
+      this._decorationsService!.refresh(ev.position);
     }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => {
+      this._selectionService!.refresh();
+    }));
 
     this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
@@ -1003,7 +1006,28 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
-    return this._decorationsService?.registerDecoration(decorationOptions);
+    if (!this._renderService) {
+      throw new Error('cannot register a decoration without a render service');
+    }
+
+    if (!this._decorationsService) {
+      throw new Error('cannot register a decoration without a decorations service');
+    }
+
+    const { actualCellWidth, actualCellHeight } = this._renderService.dimensions;
+    if (actualCellWidth) {
+      decorationOptions.width = decorationOptions.width ? decorationOptions.width * actualCellWidth : actualCellWidth;
+    } else {
+      throw new Error('unknown cell width');
+    }
+
+    if (actualCellHeight) {
+      decorationOptions.height = decorationOptions.height ? decorationOptions.height * actualCellHeight : actualCellHeight;
+    } else {
+      throw new Error('unknown cell height');
+    }
+
+    return this._decorationsService.registerDecoration(decorationOptions, actualCellWidth, actualCellHeight);
   }
   /**
    * Gets whether the terminal has an active selection.
