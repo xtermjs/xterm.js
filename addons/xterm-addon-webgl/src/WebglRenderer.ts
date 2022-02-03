@@ -247,6 +247,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public clear(): void {
+    this._model.clear();
+    this._glyphRenderer.clear(true);
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
