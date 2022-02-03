@@ -54,7 +54,7 @@ export class DecorationsService extends Disposable implements IDecorationsServic
       if (line  < 0 || line > this._bufferService.rows) {
         decoration.element.style.display = 'none';
       } else {
-        decoration.element.style.top = `${(line)*this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.top = `${line *this._renderService.dimensions.scaledCellHeight}px`;
         decoration.element.style.display = 'block';
       }
     }
@@ -129,10 +129,8 @@ class BufferDecoration extends Disposable implements IDecoration {
     this._element.style.width = `${this._decorationOptions.width}px`;
     this._element.style.height = `${this._decorationOptions.height}px`;
     this._element.style.top = `${this._marker.line * this._renderService.dimensions.scaledCellHeight}px`;
-    this._element.style.zIndex = '6';
-    this._element.style.position = 'absolute';
     if (this._decorationOptions.x && this._decorationOptions.x < 0) {
-      throw new Error(`cannot create a decoration with a negative x offset: ${this._decorationOptions.x}`);
+      throw new Error(`Cannot create a decoration with a negative x offset: ${this._decorationOptions.x}`);
     }
     if (this._decorationOptions.anchor === 'right') {
       this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
