@@ -23,7 +23,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { DecorationRenderLayer } from 'browser/renderer/DecorationRenderLayer';
 import { IBufferService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
@@ -117,15 +116,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._charAtlas?.cacheCanvas;
   }
-
-  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
-    const decorationLayer = this._renderLayers.find(l => l instanceof DecorationRenderLayer);
-    if (decorationLayer instanceof DecorationRenderLayer) {
-      return decorationLayer.registerDecoration(decorationOptions);
-    }
-    return undefined;
-  }
-
+  
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render

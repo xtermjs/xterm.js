@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -11,8 +12,9 @@ import { IDisposable } from 'common/Types';
 import { IBufferDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export interface IDecorationsService extends IDisposable {
-  registerDecoration(decorationOptions: IBufferDecorationOptions, cellWidth: number, cellHeight: number): IDecoration | undefined;
-  refresh(y: number): void;
+  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
+  refresh(): void;
+  dispose(): void;
 }
 
 const enum DefaultButton {
@@ -21,36 +23,64 @@ const enum DefaultButton {
 
 export class DecorationsService extends Disposable implements IDecorationsService {
   private _decorations: BufferDecoration[] = [];
-  private _cellWidth: number = 0;
-  private _cellHeight: number = 0;
-  constructor(private readonly _screenElement: HTMLElement, @IBufferService private readonly _bufferService: IBufferService) {
+  private _animationFrame: number | undefined;
+  constructor(private readonly _screenElement: HTMLElement, @IBufferService private readonly _bufferService: IBufferService, @IRenderService private readonly _renderService: IRenderService) {
     super();
   }
-  public registerDecoration(decorationOptions: IBufferDecorationOptions, cellWidth: number, cellHeight: number): IDecoration | undefined {
+  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    this._cellWidth = cellWidth;
-    this._cellHeight = cellHeight;
-    const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._bufferService.buffers.active.y!);
+    this._resolveDimensions(decorationOptions);
+    const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._renderService);
     this._decorations.push(bufferDecoration);
     return bufferDecoration;
   }
 
-  public refresh(y: number): void {
-    for (const decoration of this._decorations) {
-        if (decoration.marker.line < y) {
-      console.log(decoration.marker.line, y);
-      console.log('scrolled', y);
-      console.log('y', this._bufferService.buffers.active.y);
-      console.log('ybase', this._bufferService.buffers.active.ybase);
-      decoration.element.style.bottom = `${(this._bufferService.buffers.active.ybase - decoration.marker.line)*this._cellHeight}px`;
-      decoration.element.style.top = '';
+  public refresh(): void {
+    if (this._animationFrame) {
+      return;
     }
-    
+
+    this._animationFrame = window.requestAnimationFrame(() => this._refresh());
+  }
+
+  private _refresh(): void {
+    for (const decoration of this._decorations) {
+      const adjustedLine = decoration.marker.line - this._bufferService.buffers.active.ydisp;
+      if (adjustedLine  < 0 || adjustedLine > this._bufferService.rows) {
+        console.log('hide', decoration.id, decoration.marker.line,this._bufferService.buffers.active.ydisp, this._bufferService.rows);
+        decoration.element.style.display = 'none';
+      } else {
+        console.log('make visible', decoration.id, adjustedLine*this._renderService.dimensions.scaledCharHeight);
+        decoration.element.style.top = `${(adjustedLine)*this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.display = 'block';
+      }
+    }
+    this._animationFrame = undefined;
+  }
+
+  private _resolveDimensions(decorationOptions: IBufferDecorationOptions): void {
+    if (this._renderService.dimensions.scaledCellWidth) {
+      decorationOptions.width = decorationOptions.width ? decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
+    } else {
+      throw new Error('unknown cell width');
+    }
+
+    if (this._renderService.dimensions.scaledCellHeight) {
+      decorationOptions.height = decorationOptions.height ? decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
+    } else {
+      throw new Error('unknown cell height');
+    }
+  }
+
+  public dispose(): void {
+    if (this._animationFrame) {
+      window.cancelAnimationFrame(this._animationFrame);
+      this._animationFrame = undefined;
+    }
   }
 }
-
 
 export const IDecorationsService = createDecorator<IDecorationsService>('DecorationsService');
 class BufferDecoration extends Disposable implements IDecoration {
@@ -71,26 +101,14 @@ class BufferDecoration extends Disposable implements IDecoration {
   public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
 
   constructor(
-    decorationOptions: IBufferDecorationOptions,
-    private readonly _container: HTMLElement,
-    y: number
+    private readonly _decorationOptions: IBufferDecorationOptions,
+    private readonly _screenElement: HTMLElement,
+    private readonly _renderService: IRenderService
   ) {
     super();
-    this._marker = decorationOptions.marker;
-    this._element = document.createElement('div');
-    this._element.style.width = `${decorationOptions.width}px`;
-    this._element.style.height = `${decorationOptions.height}px`;
-    this._element.style.zIndex = '6';
-    this._element.style.top = `${this._marker.line*decorationOptions.height!}px`;
-    this._element.style.position = 'absolute';
-    if (decorationOptions.anchor === 'right') {
-      this._element.style.right = decorationOptions.x ? `${decorationOptions.x}px` : '5px';
-    } else {
-      this._element.style.left = decorationOptions.x ? `${decorationOptions.x}px` : '5px';
-    }
-    if (this._container && this._element) {
-      this._container.append(this._element);
-    }
+    this._marker = _decorationOptions.marker;
+    this._createElement();
+    this._render();
   }
 
   public dispose(): void {
@@ -104,13 +122,28 @@ class BufferDecoration extends Disposable implements IDecoration {
     super.dispose();
   }
 
-  public render(): void {
-    if (!this._element) {
-      return;
+  private _createElement(): void {
+    this._element = document.createElement('div');
+    this._element.classList.add('xterm-decoration');
+    this._element.style.width = `${this._decorationOptions.width}px`;
+    this._element.style.height = `${this._decorationOptions.height}px`;
+    this._element.style.top = `${this._marker.line * this._renderService.dimensions.scaledCellHeight}px`;
+    this._element.style.zIndex = '6';
+    this._element.style.position = 'absolute';
+    if (this._decorationOptions.x && this._decorationOptions.x < 0) {
+      throw new Error(`cannot create a decoration with a negative x offset: ${this._decorationOptions.x}`);
     }
-    if (this._container.parentElement && !this._container.parentElement.contains(this._element)) {
-      this._container.parentElement.append(this._element);
+    if (this._decorationOptions.anchor === 'right') {
+      this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
+    } else {
+      this._element.style.left = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
     }
-    this._onRender.fire(this._element);
+  }
+
+  private _render(): void {
+    if (this._screenElement && this._element) {
+      this._screenElement.append(this._element);
+      this._onRender.fire(this._element);
+    }
   }
 }
