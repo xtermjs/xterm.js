@@ -17,16 +17,19 @@ export interface IDecorationsService extends IDisposable {
   dispose(): void;
 }
 
-const enum DefaultButton {
-  COLOR = '#5DA5D5'
-}
-
 export class DecorationsService extends Disposable implements IDecorationsService {
+
   private _decorations: BufferDecoration[] = [];
   private _animationFrame: number | undefined;
-  constructor(private readonly _screenElement: HTMLElement, @IBufferService private readonly _bufferService: IBufferService, @IRenderService private readonly _renderService: IRenderService) {
+
+  constructor(
+    private readonly _screenElement: HTMLElement,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IRenderService private readonly _renderService: IRenderService
+  ) {
     super();
   }
+
   public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
@@ -47,13 +50,11 @@ export class DecorationsService extends Disposable implements IDecorationsServic
 
   private _refresh(): void {
     for (const decoration of this._decorations) {
-      const adjustedLine = decoration.marker.line - this._bufferService.buffers.active.ydisp;
-      if (adjustedLine  < 0 || adjustedLine > this._bufferService.rows) {
-        console.log('hide', decoration.id, decoration.marker.line,this._bufferService.buffers.active.ydisp, this._bufferService.rows);
+      const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
+      if (line  < 0 || line > this._bufferService.rows) {
         decoration.element.style.display = 'none';
       } else {
-        console.log('make visible', decoration.id, adjustedLine*this._renderService.dimensions.scaledCharHeight);
-        decoration.element.style.top = `${(adjustedLine)*this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.top = `${(line)*this._renderService.dimensions.scaledCellHeight}px`;
         decoration.element.style.display = 'block';
       }
     }
