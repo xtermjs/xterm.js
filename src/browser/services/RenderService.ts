@@ -65,7 +65,8 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
-    this.register(bufferService.onResize(e => this._fullRefresh()));
+    this.register(bufferService.onResize(() => this._fullRefresh()));
+    this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
