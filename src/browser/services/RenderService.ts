@@ -86,10 +86,6 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
-    return this._renderer.registerDecoration(decorationOptions);
-  }
-
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
 

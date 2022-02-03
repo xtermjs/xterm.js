@@ -3,50 +3,35 @@
  * @license MIT
  */
 
-import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
-import { IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
-import { EventEmitter, IEventEmitter } from 'common/EventEmitter';
+import { IRenderDimensions } from 'browser/renderer/Types';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { IBufferDecorationOptions, IDecoration, IEvent, IMarker } from 'xterm';
+import { createDecorator } from 'common/services/ServiceRegistry';
+import { IDisposable } from 'common/Types';
+import { IBufferDecorationOptions, IDecoration, IMarker } from 'xterm';
+
+export interface IDecorationsService extends IDisposable {
+  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
+}
 
 const enum DefaultButton {
   COLOR = '#5DA5D5'
 }
-export class DecorationRenderLayer extends BaseRenderLayer {
-  private _decorations: IDecoration[] = [];
-  constructor(
-    container: HTMLElement,
-    zIndex: number,
-    colors: IColorSet,
-    rendererId: number,
-    private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
-    @IBufferService bufferService: IBufferService,
-    @IOptionsService optionsService: IOptionsService
-  ) {
-    super(container, 'decoration', zIndex, true, colors, rendererId, bufferService, optionsService);
-    // this.registerDecoration({ startMarker: new Marker(1), shape: 'button' });
+
+export class DecorationsService extends Disposable implements IDecorationsService {
+  constructor(private readonly _screenElement: HTMLElement) {
+    super();
   }
-
-  public onGridChanged(startRow: number, endRow: number): void {
-    for (const decoration of this._decorations) {
-      (decoration as BufferDecoration).render();
-    }
-  }
-
-  public reset(): void {
-
-  }
-
   public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    return new BufferDecoration(decorationOptions, this._ctx.canvas);
+    return new BufferDecoration(decorationOptions, this._screenElement);
   }
 }
 
+
+export const IDecorationsService = createDecorator<IDecorationsService>('DecorationsService');
 class BufferDecoration extends Disposable implements IDecoration {
   private static _nextId = 1;
   private _marker: IMarker;
@@ -86,8 +71,8 @@ class BufferDecoration extends Disposable implements IDecoration {
     } else {
       this._element.style.right = decorationOptions.x ? `${decorationOptions.x}px` : '5px';
     }
-    if (this._container.parentElement && this._element) {
-      this._container.parentElement.append(this._element);
+    if (this._container && this._element) {
+      this._container.append(this._element);
     }
   }
 

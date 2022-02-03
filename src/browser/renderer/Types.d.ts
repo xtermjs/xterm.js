@@ -54,7 +54,6 @@ export interface IRenderer extends IDisposable {
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
-  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
 }
 
 export interface IRenderLayer extends IDisposable {

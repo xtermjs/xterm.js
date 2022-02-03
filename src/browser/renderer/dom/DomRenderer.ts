@@ -13,7 +13,6 @@ import { IOptionsService, IBufferService, IInstantiationService } from 'common/s
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { DecorationRenderLayer } from 'browser/renderer/DecorationRenderLayer';
 import { IBufferDecorationOptions, IDecoration } from 'xterm';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';

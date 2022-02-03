@@ -52,7 +52,6 @@ export interface IRenderService extends IDisposable {
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
-  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;

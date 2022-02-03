@@ -10,11 +10,10 @@ import { IRenderLayer, IRenderer, IRenderDimensions, IRequestRedrawEvent } from 
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifier, ILinkifier2 } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IBufferService, IOptionsService, ICoreService, IInstantiationService } from 'common/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
+import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { DecorationRenderLayer } from 'browser/renderer/DecorationRenderLayer';
 import { IBufferDecorationOptions, IDecoration } from 'xterm';
 
 let nextRendererId = 1;
@@ -46,8 +45,7 @@ export class Renderer extends Disposable implements IRenderer {
       instantiationService.createInstance(TextRenderLayer, this._screenElement, 0, this._colors, allowTransparency, this._id),
       instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
       instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier, linkifier2),
-      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 3, this._colors, this._id, this._onRequestRedraw),
-      instantiationService.createInstance(DecorationRenderLayer, this._screenElement, 4, this._colors, this._id, this._onRequestRedraw)
+      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 3, this._colors, this._id, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -66,13 +64,6 @@ export class Renderer extends Disposable implements IRenderer {
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
     this.onOptionsChanged();
-  }
-
-  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
-    const decorationLayer = this._renderLayers.find(l => l instanceof DecorationRenderLayer);
-    if (decorationLayer instanceof DecorationRenderLayer) {
-      return decorationLayer.registerDecoration(decorationOptions);
-    }
   }
 
   public dispose(): void {
