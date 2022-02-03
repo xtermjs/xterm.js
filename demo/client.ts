@@ -461,8 +461,7 @@ function htmlSerializeButtonHandler(): void {
   document.addEventListener("copy", listener);
   document.execCommand("copy");
   document.removeEventListener("copy", listener);
-  document.getElementById("htmlserialize-output-result").innerText
-            = "Copied to clipboard";
+  document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
 }
 
 

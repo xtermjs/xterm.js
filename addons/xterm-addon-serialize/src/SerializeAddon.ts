@@ -546,7 +546,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   private _padStart(target: string, targetLength: number, padString: string): string {
     targetLength = targetLength >> 0;
-    padString = String(typeof padString !== 'undefined' ? padString : ' ');
+    padString = padString ?? ' ';
     if (target.length > targetLength) {
       return target;
     }
@@ -587,9 +587,9 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     const color = isFg ? cell.getFgColor() : cell.getBgColor();
     if (isFg ? cell.isFgRGB() : cell.isBgRGB()) {
       const rgb = [
-        color >>> 0xFF0000 & 255,
-        color >>> 0xFF00 & 255,
-        color & 255
+        (color >> 16) & 255,
+        (color >>  8) & 255,
+        (color      ) & 255
       ];
       return rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
     }
