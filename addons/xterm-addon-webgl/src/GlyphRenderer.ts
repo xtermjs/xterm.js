@@ -299,30 +299,35 @@ export class GlyphRenderer {
     return this._colors.ansi[idx];
   }
 
-  public onResize(): void {
+  public clear(force?: boolean): void {
     const terminal = this._terminal;
-    const gl = this._gl;
-
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    // Update vertices
     const newCount = terminal.cols * terminal.rows * INDICES_PER_CELL;
-    if (this._vertices.count !== newCount) {
-      this._vertices.count = newCount;
-      this._vertices.attributes = new Float32Array(newCount);
-      for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
-        this._vertices.attributesBuffers[i] = new Float32Array(newCount);
-      }
 
-      let i = 0;
-      for (let y = 0; y < terminal.rows; y++) {
-        for (let x = 0; x < terminal.cols; x++) {
-          this._vertices.attributes[i + 8] = x / terminal.cols;
-          this._vertices.attributes[i + 9] = y / terminal.rows;
-          i += INDICES_PER_CELL;
-        }
+    // Don't clear if not forced and the array length is correct
+    if (!force && this._vertices.count === newCount) {
+      return;
+    }
+
+    // Clear vertices
+    this._vertices.count = newCount;
+    this._vertices.attributes = new Float32Array(newCount);
+    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+      this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+    }
+    let i = 0;
+    for (let y = 0; y < terminal.rows; y++) {
+      for (let x = 0; x < terminal.cols; x++) {
+        this._vertices.attributes[i + 8] = x / terminal.cols;
+        this._vertices.attributes[i + 9] = y / terminal.rows;
+        i += INDICES_PER_CELL;
       }
     }
+  }
+
+  public onResize(): void {
+    const gl = this._gl;
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    this.clear();
   }
 
   public setColors(): void {

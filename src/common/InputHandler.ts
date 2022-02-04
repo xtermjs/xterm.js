@@ -546,7 +546,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // Log debug data, the log level gate is to prevent extra work in this hot path
     if (this._logService.logLevel <= LogLevelEnum.DEBUG) {
-      this._logService.debug(`parsing data${typeof data === 'string' ? ` "${data}"` : ''}`, typeof data === 'string'
+      this._logService.debug(`parsing data${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`, typeof data === 'string'
         ? data.split('').map(e => e.charCodeAt(0))
         : data
       );
