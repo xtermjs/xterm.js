@@ -10,7 +10,7 @@ import { IEvent } from 'common/EventEmitter';
 export type BufferIndex = [number, number];
 
 export interface IBufferStringIteratorResult {
-  range: { first: number, last: number };
+  range: {first: number, last: number};
   content: string;
 }
 
