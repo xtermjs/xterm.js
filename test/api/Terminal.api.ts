@@ -15,7 +15,7 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-describe.only('API Integration Tests', function(): void {
+describe('API Integration Tests', function(): void {
   before(async () => {
     browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
