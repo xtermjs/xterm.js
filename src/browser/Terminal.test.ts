@@ -80,6 +80,21 @@ describe('Terminal', () => {
         term.clear();
       });
     });
+    it.only('should fire a scroll event when scrollback is cleared', () => {
+      return new Promise<void>(async r => {
+        const marker1 = term.addMarker(0);
+        const marker2 = term.addMarker(1);
+        await term.writeP('\n'.repeat(INIT_ROWS));
+        const marker3= term.addMarker(0);
+        const marker4 = term.addMarker(1);
+        marker1?.onDispose(() => r());
+        marker2?.onDispose(() => r());
+        marker3?.onDispose(() => r());
+        marker4?.onDispose(() => r());
+        term.clear();
+        assert.equal(term.markers.length, 0);
+      });
+    });
     it('should fire a key event after a keypress DOM event', (done) => {
       term.onKey(e => {
         assert.equal(typeof e.key, 'string');
