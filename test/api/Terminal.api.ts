@@ -559,6 +559,29 @@ describe('API Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getChars()`), '');
         assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
       });
+
+      it('clearMarkers', async () => {
+        await openTerminal(page, { cols: 5 });
+        await page.evaluate(`
+          window.disposeStack = [];
+          `);
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await page.evaluate(`window.term.addMarker(1)`);
+        await page.evaluate(`window.term.addMarker(2)`);
+        await page.evaluate(`window.term.scrollLines(10)`);
+        await page.evaluate(`window.term.addMarker(3)`);
+        await page.evaluate(`window.term.addMarker(4)`);
+        await page.evaluate(`      
+          for (let i = 0; i < window.term.markers.length; ++i) {
+              const marker = window.term.markers[i];
+              marker.onDispose(() => window.disposeStack.push(marker));
+          }`);
+        await page.evaluate(`window.term.clear()`);
+        assert.equal(await page.evaluate(`window.disposeStack.length`), 4);
+      });
     });
 
     it('active, normal, alternate', async () => {

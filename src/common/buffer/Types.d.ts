@@ -45,6 +45,7 @@ export interface IBuffer {
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
+  clearMarkers(): void;
 }
 
 export interface IBufferSet extends IDisposable {
