@@ -34,7 +34,6 @@ export class DecorationsService extends Disposable implements IDecorationsServic
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    this._resolveDimensions(decorationOptions);
     const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._renderService);
     this._decorations.push(bufferDecoration);
     return bufferDecoration;
@@ -54,25 +53,11 @@ export class DecorationsService extends Disposable implements IDecorationsServic
       if (line  < 0 || line > this._bufferService.rows) {
         decoration.element.style.display = 'none';
       } else {
-        decoration.element.style.top = `${line *this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.top = `${line * this._renderService.dimensions.scaledCellHeight}px`;
         decoration.element.style.display = 'block';
       }
     }
     this._animationFrame = undefined;
-  }
-
-  private _resolveDimensions(decorationOptions: IBufferDecorationOptions): void {
-    if (this._renderService.dimensions.scaledCellWidth) {
-      decorationOptions.width = decorationOptions.width ? decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
-    } else {
-      throw new Error('unknown cell width');
-    }
-
-    if (this._renderService.dimensions.scaledCellHeight) {
-      decorationOptions.height = decorationOptions.height ? decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
-    } else {
-      throw new Error('unknown cell height');
-    }
   }
 
   public dispose(): void {
@@ -126,18 +111,30 @@ class BufferDecoration extends Disposable implements IDecoration {
   private _createElement(): void {
     this._element = document.createElement('div');
     this._element.classList.add('xterm-decoration');
+    this._resolveDimensions();
     this._element.style.width = `${this._decorationOptions.width}px`;
     this._element.style.height = `${this._decorationOptions.height}px`;
-    this._element.style.top = `${this._marker.line * this._renderService.dimensions.scaledCellHeight}px`;
-    if (this._decorationOptions.x && this._decorationOptions.x < 0) {
-      throw new Error(`Cannot create a decoration with a negative x offset: ${this._decorationOptions.x}`);
-    }
     if (this._decorationOptions.anchor === 'right') {
       this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
     } else {
       this._element.style.left = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
     }
   }
+
+  private _resolveDimensions(): void {
+    if (this._renderService.dimensions.scaledCellWidth) {
+      this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
+    } else {
+      throw new Error('unknown cell width');
+    }
+
+    if (this._renderService.dimensions.scaledCellHeight) {
+      this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
+    } else {
+      throw new Error('unknown cell height');
+    }
+  }
+
 
   private _render(): void {
     if (this._screenElement && this._element) {
