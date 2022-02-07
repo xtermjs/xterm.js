@@ -7,7 +7,7 @@ import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, ILogService } from 'common/services/Services';
 import { IDisposable } from 'common/Types';
 import { IBufferDecorationOptions, IDecoration, IMarker } from 'xterm';
 
@@ -28,6 +28,7 @@ export class DecorationsService extends Disposable implements IDecorationsServic
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
+    this._renderService.onRefreshRequest(() => this._refresh());
   }
 
   public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
@@ -43,7 +44,6 @@ export class DecorationsService extends Disposable implements IDecorationsServic
     if (this._animationFrame) {
       return;
     }
-
     this._animationFrame = window.requestAnimationFrame(() => this._refresh());
   }
 
@@ -114,6 +114,11 @@ class BufferDecoration extends Disposable implements IDecoration {
     this._resolveDimensions();
     this._element.style.width = `${this._decorationOptions.width}px`;
     this._element.style.height = `${this._decorationOptions.height}px`;
+
+    if (this._decorationOptions.x && this._decorationOptions.x < 0) {
+      throw new Error(`Decoration options x value cannot be negative, but was ${this._decorationOptions.x}`);
+    }
+
     if (this._decorationOptions.anchor === 'right') {
       this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
     } else {
