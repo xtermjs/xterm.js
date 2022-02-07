@@ -28,14 +28,13 @@ export class DecorationsService extends Disposable implements IDecorationsServic
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._renderService.onRefreshRequest(() => this._refresh());
   }
 
   public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._renderService);
+    const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._renderService, this._bufferService);
     this._decorations.push(bufferDecoration);
     return bufferDecoration;
   }
@@ -89,7 +88,8 @@ class BufferDecoration extends Disposable implements IDecoration {
   constructor(
     private readonly _decorationOptions: IBufferDecorationOptions,
     private readonly _screenElement: HTMLElement,
-    private readonly _renderService: IRenderService
+    private readonly _renderService: IRenderService,
+    private readonly _bufferService: IBufferService
   ) {
     super();
     this._marker = _decorationOptions.marker;
@@ -114,7 +114,7 @@ class BufferDecoration extends Disposable implements IDecoration {
     this._resolveDimensions();
     this._element.style.width = `${this._decorationOptions.width}px`;
     this._element.style.height = `${this._decorationOptions.height}px`;
-
+    this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
     if (this._decorationOptions.x && this._decorationOptions.x < 0) {
       throw new Error(`Decoration options x value cannot be negative, but was ${this._decorationOptions.x}`);
     }
