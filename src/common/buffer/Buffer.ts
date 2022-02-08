@@ -44,7 +44,7 @@ export class Buffer implements IBuffer {
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
   private _rows: number;
-  private _state: string | undefined;
+  private _isClearing: boolean = false;
 
   constructor(
     private _hasScrollback: boolean,
@@ -587,12 +587,12 @@ export class Buffer implements IBuffer {
   }
 
   public clearMarkers(): void {
-    this._state = BufferState.CLEARING;
+    this._isClearing = true;
     for (const marker of this.markers) {
       marker.dispose();
     }
     this.markers = [];
-    this._state = undefined;
+    this._isClearing = false;
   }
 
   public addMarker(y: number): Marker {
@@ -626,7 +626,7 @@ export class Buffer implements IBuffer {
   }
 
   private _removeMarker(marker: Marker): void {
-    if (this._state !== BufferState.CLEARING) {
+    if (!this._isClearing) {
       this.markers.splice(this.markers.indexOf(marker), 1);
     }
   }
