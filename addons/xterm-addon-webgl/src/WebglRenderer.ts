@@ -13,7 +13,7 @@ import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal, IEvent, IDecorationOptions, IDecoration } from 'xterm';
+import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { ITerminal, IColorSet } from 'browser/Types';
@@ -23,7 +23,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IBufferService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -58,10 +57,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     super();
 
     this._core = (this._terminal as any)._core;
+
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
       new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._core, this._onRequestRedraw)
-      // new DecorationRenderLayer(this._core.screenElement!, 3, this._colors, this._id, this._onRequestRedraw)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -116,7 +115,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._charAtlas?.cacheCanvas;
   }
-  
+
   public setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render
@@ -338,8 +337,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
           continue;
         }
 
