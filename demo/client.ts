@@ -149,6 +149,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('decoration').addEventListener('click', decoration);
 }
 
 function createTerminal(): void {
@@ -524,4 +525,11 @@ function loadTest() {
     // Send ^C to get a new prompt
     term._core._onData.fire('\x03');
   });
+}
+
+function decoration() {
+  const marker = term.addMarker(1);
+  const decoration = term.registerDecoration({ marker });
+  decoration.element.style.backgroundColor = 'red';
+  decoration.element.style.position = 'absolute';
 }
