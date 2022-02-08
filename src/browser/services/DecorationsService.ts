@@ -11,13 +11,13 @@ import { IBufferService } from 'common/services/Services';
 import { IDisposable } from 'common/Types';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
-export interface IDecorationsService extends IDisposable {
+export interface IDecorationService extends IDisposable {
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   refresh(): void;
   dispose(): void;
 }
 
-export class DecorationsService extends Disposable implements IDecorationsService {
+export class DecorationService extends Disposable implements IDecorationService {
 
   private _decorations: Decoration[] = [];
   private _animationFrame: number | undefined;
@@ -67,7 +67,7 @@ export class DecorationsService extends Disposable implements IDecorationsServic
   }
 }
 
-export const IDecorationsService = createDecorator<IDecorationsService>('DecorationsService');
+export const IDecorationService = createDecorator<IDecorationService>('DecorationsService');
 class Decoration extends Disposable implements IDecoration {
   private static _nextId = 1;
   private _marker: IMarker;
@@ -117,7 +117,7 @@ class Decoration extends Disposable implements IDecoration {
     this._element.style.height = `${this._decorationOptions.height}px`;
     this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
     if (this._decorationOptions.x && this._decorationOptions.x < 0) {
-      throw new Error(`Decoration options x value cannot be negative, but was ${this._decorationOptions.x}`);
+      throw new Error(`Decoration options x value cannot be negative, but was ${this._decorationOptions.x}.`);
     }
 
     if (this._decorationOptions.anchor === 'right') {
@@ -128,17 +128,11 @@ class Decoration extends Disposable implements IDecoration {
   }
 
   private _resolveDimensions(): void {
-    if (this._renderService.dimensions.scaledCellWidth) {
-      this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
-    } else {
-      throw new Error('unknown cell width');
+    if (!this._renderService.dimensions.scaledCellWidth || !this._renderService.dimensions.scaledCellHeight) {
+      throw new Error(`Cannot resolve dimensions for decoration when scaled cell dimensions are undefined ${this._renderService.dimensions}.`);
     }
-
-    if (this._renderService.dimensions.scaledCellHeight) {
-      this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
-    } else {
-      throw new Error('unknown cell height');
-    }
+    this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
+    this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
   }
 
   private _render(): void {

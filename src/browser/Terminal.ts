@@ -55,7 +55,7 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { toRgbString } from 'common/input/XParseColor';
-import { DecorationsService, IDecorationsService } from 'browser/services/DecorationsService';
+import { DecorationService, IDecorationService } from 'browser/services/DecorationsService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -81,7 +81,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _charSizeService: ICharSizeService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
-  private _decorationsService: IDecorationsService | undefined;
+  private _decorationsService: IDecorationService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
   private _soundService: ISoundService | undefined;
@@ -515,7 +515,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._renderService.onRenderedBufferChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
-    this._decorationsService = this.register(this._instantiationService.createInstance(DecorationsService, this.screenElement));
+    this._decorationsService = this.register(this._instantiationService.createInstance(DecorationService, this.screenElement));
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
@@ -1007,12 +1007,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (!this._decorationsService) {
-      throw new Error('cannot register a decoration without a decorations service');
+    // Disallow decorations on the alt buffer
+    if (this.buffer !== this.buffers.normal) {
+      return undefined;
     }
-
-    return this._decorationsService.registerDecoration(decorationOptions);
+    return this._decorationsService!.registerDecoration(decorationOptions);
   }
+
   /**
    * Gets whether the terminal has an active selection.
    */

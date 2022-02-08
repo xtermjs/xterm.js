@@ -337,8 +337,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
-          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
           continue;
         }
 

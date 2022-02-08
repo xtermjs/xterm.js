@@ -286,6 +286,9 @@ export class MockRenderer implements IRenderer {
   public setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
+    throw new Error('Method not implemented.');
+  }
   public onResize(cols: number, rows: number): void { }
   public onCharSizeChanged(): void { }
   public onBlur(): void { }
@@ -296,9 +299,6 @@ export class MockRenderer implements IRenderer {
   public onDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
-  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
-    throw new Error('Method not implemented.');
-  }
 }
 
 export class MockViewport implements IViewport {
