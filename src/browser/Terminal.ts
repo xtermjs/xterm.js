@@ -569,12 +569,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._onScroll.event(ev => {
       this.viewport!.syncScrollArea();
       this._selectionService!.refresh();
-      this._decorationService!.refresh();
     }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => {
-      this._selectionService!.refresh();
-      this._decorationService!.refresh();
-    }));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
 
     this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);

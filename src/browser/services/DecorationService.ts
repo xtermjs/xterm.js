@@ -20,7 +20,6 @@ export interface IDecorationService extends IDisposable {
 export class DecorationService extends Disposable implements IDecorationService {
 
   private _decorations: Decoration[] = [];
-  private _animationFrame: number | undefined;
 
   constructor(
     private readonly _screenElement: HTMLElement,
@@ -28,6 +27,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
+    this._renderService.onRefreshRequest(() => this.refresh());
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -40,29 +40,20 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public refresh(): void {
-    if (this._animationFrame) {
-      return;
-    }
-    this._animationFrame = window.requestAnimationFrame(() => this._refresh());
-  }
-
-  private _refresh(): void {
     for (const decoration of this._decorations) {
-      const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
-      if (line  < 0 || line > this._bufferService.rows) {
+      if ((decoration.marker.line - this._bufferService.buffers.active.ydisp) < 0 || (decoration.marker.line - this._bufferService.buffers.active.ydisp) > this._bufferService.rows) {
+        // outside of viewport
         decoration.element.style.display = 'none';
       } else {
-        decoration.element.style.top = `${line * this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
         decoration.element.style.display = 'block';
       }
     }
-    this._animationFrame = undefined;
   }
 
   public dispose(): void {
-    if (this._animationFrame) {
-      window.cancelAnimationFrame(this._animationFrame);
-      this._animationFrame = undefined;
+    for (const decoration of this._decorations) {
+      decoration.dispose();
     }
   }
 }
