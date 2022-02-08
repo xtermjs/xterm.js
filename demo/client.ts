@@ -531,5 +531,4 @@ function decoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
   decoration.element.style.backgroundColor = 'red';
-  decoration.element.style.position = 'absolute';
 }
