@@ -464,7 +464,6 @@ declare module 'xterm' {
      * cell height
      */
     height?: number;
-
   }
 
   /**
