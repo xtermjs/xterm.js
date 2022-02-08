@@ -67,7 +67,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 }
 
-export const IDecorationService = createDecorator<IDecorationService>('DecorationsService');
+export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 class Decoration extends Disposable implements IDecoration {
   private static _nextId = 1;
   private _marker: IMarker;
