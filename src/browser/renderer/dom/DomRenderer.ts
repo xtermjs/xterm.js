@@ -152,14 +152,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._injectCss();
   }
 
-  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
-    // const decorationLayer = this._renderLayers.find(l => l instanceof DecorationRenderLayer);
-    // if (decorationLayer instanceof DecorationRenderLayer) {
-    //   return decorationLayer.registerDecoration(decorationOptions);
-    // }
-    throw new Error('no decoration layer');
-  }
-
   private _injectCss(): void {
     if (!this._themeStyleElement) {
       this._themeStyleElement = document.createElement('style');

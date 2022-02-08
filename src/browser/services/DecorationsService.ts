@@ -140,7 +140,6 @@ class Decoration extends Disposable implements IDecoration {
     }
   }
 
-
   private _render(): void {
     if (this._screenElement && this._element) {
       this._screenElement.append(this._element);
