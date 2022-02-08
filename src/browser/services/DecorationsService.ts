@@ -101,6 +101,7 @@ class Decoration extends Disposable implements IDecoration {
     if (this.isDisposed) {
       return;
     }
+    this._screenElement.removeChild(this.element);
     this.isDisposed = true;
     this._marker.dispose();
     // Emit before super.dispose such that dispose listeners get a change to react
