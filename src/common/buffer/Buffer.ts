@@ -16,8 +16,6 @@ import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
-const enum BufferState { CLEARING = 'clearing' }
-
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
  * following information is stored (in high-level):

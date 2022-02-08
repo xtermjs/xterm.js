@@ -50,7 +50,9 @@ export interface IRenderService extends IDisposable {
    */
   onRenderedBufferChange: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
+
   dimensions: IRenderDimensions;
+
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
