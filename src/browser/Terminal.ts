@@ -37,7 +37,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IBufferDecorationOptions, IDecoration } from 'xterm';
+import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -1006,7 +1006,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     if (!this._decorationsService) {
       throw new Error('cannot register a decoration without a decorations service');
     }

@@ -7,19 +7,19 @@ import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IBufferService, ILogService } from 'common/services/Services';
+import { IBufferService } from 'common/services/Services';
 import { IDisposable } from 'common/Types';
-import { IBufferDecorationOptions, IDecoration, IMarker } from 'xterm';
+import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export interface IDecorationsService extends IDisposable {
-  registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   refresh(): void;
   dispose(): void;
 }
 
 export class DecorationsService extends Disposable implements IDecorationsService {
 
-  private _decorations: BufferDecoration[] = [];
+  private _decorations: Decoration[] = [];
   private _animationFrame: number | undefined;
 
   constructor(
@@ -30,13 +30,13 @@ export class DecorationsService extends Disposable implements IDecorationsServic
     super();
   }
 
-  public registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined {
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    const bufferDecoration = new BufferDecoration(decorationOptions, this._screenElement, this._renderService, this._bufferService);
-    this._decorations.push(bufferDecoration);
-    return bufferDecoration;
+    const decoration = new Decoration(decorationOptions, this._screenElement, this._renderService, this._bufferService);
+    this._decorations.push(decoration);
+    return decoration;
   }
 
   public refresh(): void {
@@ -68,11 +68,11 @@ export class DecorationsService extends Disposable implements IDecorationsServic
 }
 
 export const IDecorationsService = createDecorator<IDecorationsService>('DecorationsService');
-class BufferDecoration extends Disposable implements IDecoration {
+class Decoration extends Disposable implements IDecoration {
   private static _nextId = 1;
   private _marker: IMarker;
   private _element: HTMLElement | undefined;
-  private _id: number = BufferDecoration._nextId++;
+  private _id: number = Decoration._nextId++;
   public isDisposed: boolean = false;
 
   public get id(): number { return this._id; }
@@ -86,7 +86,7 @@ class BufferDecoration extends Disposable implements IDecoration {
   public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
 
   constructor(
-    private readonly _decorationOptions: IBufferDecorationOptions,
+    private readonly _decorationOptions: IDecorationOptions,
     private readonly _screenElement: HTMLElement,
     private readonly _renderService: IRenderService,
     private readonly _bufferService: IBufferService

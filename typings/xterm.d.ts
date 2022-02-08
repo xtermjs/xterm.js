@@ -434,7 +434,7 @@ declare module 'xterm' {
     readonly element: HTMLElement | undefined;
   }
 
-  export interface IBufferDecorationOptions {
+  export interface IDecorationOptions {
     /**
      * The line in the terminal where
      * the decoration will be displayed
@@ -466,19 +466,6 @@ declare module 'xterm' {
     height?: number;
 
   }
-
-    export interface IGutterDecorationOptions {
-      /**
-       * The line in the terminal where
-       * the decoration will be displayed
-       */
-      startMarker: IMarker;
-      /**
-       * The end line in the terminal for
-       * the decoration
-       */
-      endMarker: IMarker;
-    }
 
   /**
    * The set of localizable strings.
@@ -951,7 +938,7 @@ declare module 'xterm' {
      *  width, height, and x offset from the anchor. Returns the decoration or
      *  undefined if the marker has already been disposed of.
      */
-    registerDecoration(decorationOptions: IBufferDecorationOptions): IDecoration | undefined;
+    registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
     /**
      * Gets whether the terminal has an active selection.

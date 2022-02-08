@@ -13,7 +13,7 @@ import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal, IEvent, IBufferDecorationOptions, IDecoration } from 'xterm';
+import { Terminal, IEvent, IDecorationOptions, IDecoration } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { ITerminal, IColorSet } from 'browser/Types';

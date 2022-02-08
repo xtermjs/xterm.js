@@ -6,7 +6,7 @@
 import { IDisposable } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
-import { IBufferDecorationOptions, IDecoration } from 'xterm';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 export interface IRenderDimensions {
   scaledCharWidth: number;

@@ -14,7 +14,7 @@ import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IBufferDecorationOptions, IDecoration } from 'xterm';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 let nextRendererId = 1;
 
