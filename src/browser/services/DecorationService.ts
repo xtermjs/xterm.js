@@ -27,6 +27,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
+    this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {

@@ -516,7 +516,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._decorationService = this.register(this._instantiationService.createInstance(DecorationService, this.screenElement));
-    this.register(this._renderService.onRefreshRequest(() => this._decorationService?.refresh()));
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
