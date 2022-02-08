@@ -12,7 +12,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
-import { IDecoration, IDecorationOptions } from 'xterm';
 
 interface ISelectionState {
   start: [number, number] | undefined;
