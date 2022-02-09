@@ -13,6 +13,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   private readonly _decorations: Decoration[] = [];
   private _container: HTMLElement | undefined;
+  private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
   private _bufferService: IBufferService | undefined;
 
@@ -24,6 +25,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   public attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void {
     this._renderService = renderService;
     this._bufferService = bufferService;
+    this._screenElement = screenElement;
     this._container = document.createElement('div');
     this._container.classList.add('xterm-decoration-container');
     screenElement.appendChild(this._container);
@@ -54,6 +56,9 @@ export class DecorationService extends Disposable implements IDecorationService 
   public dispose(): void {
     for (const decoration of this._decorations) {
       decoration.dispose();
+    }
+    if (this._container) {
+      this._screenElement?.removeChild(this._container);
     }
   }
 }
