@@ -29,6 +29,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     screenElement.appendChild(this._container);
     this.refresh();
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
+    this.register(this._renderService.onDimensionsChange(() => this.refresh(true)));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -41,12 +42,12 @@ export class DecorationService extends Disposable implements IDecorationService 
     return decoration;
   }
 
-  public refresh(): void {
+  public refresh(recreate?: boolean): void {
     if (!this._bufferService || !this._renderService) {
       return;
     }
     for (const decoration of this._decorations) {
-      decoration.render(this._bufferService, this._renderService);
+      decoration.render(this._bufferService, this._renderService, recreate);
     }
   }
 
@@ -90,9 +91,9 @@ class Decoration extends Disposable implements IDecoration {
     this.height = options.height || 1;
   }
 
-  public render(bufferService: IBufferService, renderService: IRenderService): void {
-    if (!this._element) {
-      this._createElement(bufferService, renderService);
+  public render(bufferService: IBufferService, renderService: IRenderService, recreate?: boolean): void {
+    if (!this._element || recreate) {
+      this._createElement(bufferService, renderService, recreate);
     }
     if (this._container && this._element && !this._container.contains(this._element)) {
       this._container.append(this._element);
@@ -101,7 +102,10 @@ class Decoration extends Disposable implements IDecoration {
     this._onRender.fire(this._element!);
   }
 
-  private _createElement(bufferService: IBufferService, renderService: IRenderService): void {
+  private _createElement(bufferService: IBufferService, renderService: IRenderService, recreate?: boolean): void {
+    if (recreate) {
+      this._container.removeChild(this._element!);
+    }
     this._element = document.createElement('div');
     this._element.classList.add('xterm-decoration');
     this._element.style.width = `${this.width * renderService.dimensions.scaledCellWidth}px`;
