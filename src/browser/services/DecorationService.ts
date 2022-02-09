@@ -6,7 +6,7 @@
 import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IInstantiationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
@@ -15,16 +15,15 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _container: HTMLElement | undefined;
   private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
-  private _bufferService: IBufferService | undefined;
 
   constructor(
-  ) {
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IInstantiationService private readonly _instantiationService: IInstantiationService) {
     super();
   }
 
-  public attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void {
+  public attachToDom(screenElement: HTMLElement, renderService: IRenderService): void {
     this._renderService = renderService;
-    this._bufferService = bufferService;
     this._screenElement = screenElement;
     this._container = document.createElement('div');
     this._container.classList.add('xterm-decoration-container');
@@ -38,7 +37,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (decorationOptions.marker.isDisposed || !this._container) {
       return undefined;
     }
-    const decoration = new Decoration(decorationOptions, this._container);
+    const decoration = this._instantiationService.createInstance(Decoration, decorationOptions, this._container);
     this._decorations.push(decoration);
     decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
     return decoration;
@@ -49,7 +48,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       return;
     }
     for (const decoration of this._decorations) {
-      decoration.render(this._bufferService, this._renderService, recreate);
+      decoration.render(this._renderService, recreate);
     }
   }
 
@@ -85,7 +84,8 @@ export class Decoration extends Disposable implements IDecoration {
 
   constructor(
     options: IDecorationOptions,
-    private readonly _container: HTMLElement
+    private readonly _container: HTMLElement,
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this.x = options.x ?? 0;
@@ -95,18 +95,18 @@ export class Decoration extends Disposable implements IDecoration {
     this.height = options.height || 1;
   }
 
-  public render(bufferService: IBufferService, renderService: IRenderService, recreate?: boolean): void {
+  public render(renderService: IRenderService, recreate?: boolean): void {
     if (!this._element || recreate) {
-      this._createElement(bufferService, renderService, recreate);
+      this._createElement(renderService, recreate);
     }
     if (this._container && this._element && !this._container.contains(this._element)) {
       this._container.append(this._element);
     }
-    this._refreshStyle(bufferService, renderService);
+    this._refreshStyle(renderService);
     this._onRender.fire(this._element!);
   }
 
-  private _createElement(bufferService: IBufferService, renderService: IRenderService, recreate?: boolean): void {
+  private _createElement(renderService: IRenderService, recreate?: boolean): void {
     if (recreate && this._element) {
       this._container.removeChild(this._element);
     }
@@ -114,9 +114,9 @@ export class Decoration extends Disposable implements IDecoration {
     this._element.classList.add('xterm-decoration');
     this._element.style.width = `${this.width * renderService.dimensions.scaledCellWidth}px`;
     this._element.style.height = `${this.height * renderService.dimensions.scaledCellHeight}px`;
-    this._element.style.top = `${(this.marker.line - bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
+    this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
 
-    if (this.x && this.x > bufferService.cols) {
+    if (this.x && this.x > this._bufferService.cols) {
       this._element!.style.display = 'none';
     }
     if (this.anchor === 'right') {
@@ -139,9 +139,9 @@ export class Decoration extends Disposable implements IDecoration {
     });
   }
 
-  private _refreshStyle(bufferService: IBufferService, renderService: IRenderService): void {
-    const line = this.marker.line - bufferService.buffers.active.ydisp;
-    if (line < 0 || line > bufferService.rows) {
+  private _refreshStyle(renderService: IRenderService): void {
+    const line = this.marker.line - this._bufferService.buffers.active.ydisp;
+    if (line < 0 || line > this._bufferService.rows) {
       // outside of viewport
       this._element!.style.display = 'none';
     } else {
