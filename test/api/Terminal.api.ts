@@ -745,7 +745,9 @@ describe('API Integration Tests', function(): void {
     });
     it('should register a decoration and render it', async () => {
       await openTerminal(page);
+      this.retries(3);
       await openTerminal(page, { rows: 5 });
+      await timeout(20);
       await page.evaluate(`
         for (let i = 0; i < 4; i++) {
           window.term.writeln('foo');
@@ -753,7 +755,7 @@ describe('API Integration Tests', function(): void {
       `);
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker })`);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 1);
+      await pollFor(page, `document.querySelectorAll('.xterm-screen .xterm-decoration').length`, 1);
     });
     it('on resize should dispose of the old decoration and create a new one', async () => {
       await openTerminal(page);
