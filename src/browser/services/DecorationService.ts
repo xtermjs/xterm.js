@@ -6,7 +6,7 @@
 import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IInstantiationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
@@ -14,10 +14,10 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _decorations: Decoration[] = [];
   private _screenElement: HTMLElement | undefined;
 
-
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService,
+    @IInstantiationService private readonly _instantiationService: IInstantiationService
   ) {
     super();
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
@@ -31,18 +31,23 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (decorationOptions.marker.isDisposed || !this._screenElement) {
       return undefined;
     }
-    const decoration = new Decoration(decorationOptions, this._screenElement, this._renderService, this._bufferService);
+    const decoration = this._instantiationService.createInstance(Decoration, decorationOptions, this._screenElement);
     this._decorations.push(decoration);
+    decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
     return decoration;
   }
 
   public refresh(): void {
     for (const decoration of this._decorations) {
-      if ((decoration.marker.line - this._bufferService.buffers.active.ydisp) < 0 || (decoration.marker.line - this._bufferService.buffers.active.ydisp) > this._bufferService.rows) {
+      if (!decoration.element) {
+        continue;
+      }
+      const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
+      if (line < 0 || line > this._bufferService.rows) {
         // outside of viewport
         decoration.element.style.display = 'none';
       } else {
-        decoration.element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
+        decoration.element.style.top = `${line * this._renderService.dimensions.scaledCellHeight}px`;
         decoration.element.style.display = 'block';
       }
     }
@@ -63,7 +68,7 @@ class Decoration extends Disposable implements IDecoration {
   private _element: HTMLElement | undefined;
   public isDisposed: boolean = false;
 
-  public get element(): HTMLElement { return this._element!; }
+  public get element(): HTMLElement | undefined { return this._element; }
   public get marker(): IMarker { return this._marker; }
 
   private _onDispose = new EventEmitter<void>();
@@ -75,16 +80,17 @@ class Decoration extends Disposable implements IDecoration {
   constructor(
     private readonly _decorationOptions: IDecorationOptions,
     private readonly _screenElement: HTMLElement,
-    private readonly _renderService: IRenderService,
-    private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
     this._marker = _decorationOptions.marker;
-    this._createElement();
-    this._render();
+    if (this._marker.line - this._bufferService.buffers.active.ydisp >= 0 && this._marker.line - this._bufferService.buffers.active.ydisp < this._bufferService.rows) {
+      this._render();
+    }
     this.register({
       dispose: () => {
-        if (this.isDisposed) {
+        if (this.isDisposed || !this.element) {
           return;
         }
         this._screenElement.removeChild(this.element);
@@ -121,6 +127,9 @@ class Decoration extends Disposable implements IDecoration {
   }
 
   private _render(): void {
+    if (!this._element) {
+      this._createElement();
+    }
     if (this._screenElement && this._element) {
       this._screenElement.append(this._element);
       this._onRender.fire(this._element);
