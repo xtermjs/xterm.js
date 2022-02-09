@@ -19,7 +19,7 @@ export interface IDecorationService extends IDisposable {
 
 export class DecorationService extends Disposable implements IDecorationService {
 
-  private _decorations: Decoration[] = [];
+  private readonly _decorations: Decoration[] = [];
 
   constructor(
     private readonly _screenElement: HTMLElement,
