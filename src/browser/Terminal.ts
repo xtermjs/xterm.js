@@ -1008,7 +1008,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.buffer !== this.buffers.normal) {
       return undefined;
     }
-    return this.decorationService!.registerDecoration(decorationOptions);
+    return this.decorationService.registerDecoration(decorationOptions);
   }
 
   /**
