@@ -743,19 +743,17 @@ describe('API Integration Tests', function(): void {
       });`);
       assert.equal(await page.evaluate(`window.rendered`), undefined);
     });
-    it('should register a decoration and render it', async () => {
+    it('should register decorations and render them', async () => {
       await openTerminal(page);
-      this.retries(3);
-      await openTerminal(page, { rows: 5 });
-      await timeout(20);
-      await page.evaluate(`
-        for (let i = 0; i < 4; i++) {
-          window.term.writeln('foo');
-        }
-      `);
-      await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker })`);
-      await pollFor(page, `document.querySelectorAll('.xterm-screen .xterm-decoration').length`, 1);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
+      await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+      await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+      await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
+      await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
+      await page.evaluate(`window.term.resize(10, 5)`);
+      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 2);
     });
     it('on resize should dispose of the old decoration and create a new one', async () => {
       await openTerminal(page);
