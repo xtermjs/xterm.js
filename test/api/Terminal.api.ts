@@ -731,7 +731,7 @@ describe('API Integration Tests', function(): void {
     await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   });
 
-  describe.only('registerDecoration', () => {
+  describe('registerDecoration', () => {
     it('should register a decoration', async () => {
       await openTerminal(page);
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
@@ -745,10 +745,17 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });`), undefined);
       assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
     });
-    it.skip('should throw when a negative x offset is provided', async () => {
+    it('should throw when a negative x offset is provided', async () => {
       await openTerminal(page);
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      assert.throws(async () => await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker, x: -2 });`));
+      await page.evaluate(`
+      try {
+        window.decoration = window.term.registerDecoration({ marker: window.marker, x: -2 });
+      } catch (e) {
+        window.throwMessage = e.message;
+      }
+    `);
+      await pollFor(page, 'window.throwMessage', 'Decoration options x value cannot be negative, but was -2.');
       assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
     });
   });

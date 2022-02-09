@@ -173,6 +173,9 @@ export class Terminal implements ITerminalApi {
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     this._checkProposedApi();
+    if (decorationOptions.x) {
+      this._verifyIntegers(decorationOptions.x);
+    }
     return this._core.registerDecoration(decorationOptions);
   }
   public addMarker(cursorYOffset: number): IMarker | undefined {

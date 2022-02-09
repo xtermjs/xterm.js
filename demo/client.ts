@@ -149,7 +149,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
-  document.getElementById('decoration').addEventListener('click', decoration);
+  document.getElementById('decoration').addEventListener('click', addDecoration);
 }
 
 function createTerminal(): void {
@@ -527,7 +527,7 @@ function loadTest() {
   });
 }
 
-function decoration() {
+function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
   decoration.element.style.backgroundColor = 'red';

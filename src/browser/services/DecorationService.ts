@@ -3,26 +3,19 @@
  * @license MIT
  */
 
-import { IRenderService } from 'browser/services/Services';
+import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { createDecorator } from 'common/services/ServiceRegistry';
 import { IBufferService } from 'common/services/Services';
-import { IDisposable } from 'common/Types';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
-
-export interface IDecorationService extends IDisposable {
-  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-  refresh(): void;
-  dispose(): void;
-}
 
 export class DecorationService extends Disposable implements IDecorationService {
 
   private _decorations: Decoration[] = [];
+  private _screenElement: HTMLElement | undefined;
+
 
   constructor(
-    private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -30,8 +23,12 @@ export class DecorationService extends Disposable implements IDecorationService 
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
+  public attachToDom(screenElement: HTMLElement): void {
+    this._screenElement = screenElement;
+  }
+
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (decorationOptions.marker.isDisposed) {
+    if (decorationOptions.marker.isDisposed || !this._screenElement) {
       return undefined;
     }
     const decoration = new Decoration(decorationOptions, this._screenElement, this._renderService, this._bufferService);
@@ -58,15 +55,14 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 }
 
-export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 class Decoration extends Disposable implements IDecoration {
-  private static _nextId = 1;
+  public readonly id: number = Decoration._nextId++;
+  private static _nextId: number = 1;
+
   private _marker: IMarker;
   private _element: HTMLElement | undefined;
-  private _id: number = Decoration._nextId++;
   public isDisposed: boolean = false;
 
-  public get id(): number { return this._id; }
   public get element(): HTMLElement { return this._element!; }
   public get marker(): IMarker { return this._marker; }
 
@@ -86,18 +82,19 @@ class Decoration extends Disposable implements IDecoration {
     this._marker = _decorationOptions.marker;
     this._createElement();
     this._render();
-  }
-
-  public dispose(): void {
-    if (this.isDisposed) {
-      return;
-    }
-    this._screenElement.removeChild(this.element);
-    this.isDisposed = true;
-    this._marker.dispose();
-    // Emit before super.dispose such that dispose listeners get a change to react
-    this._onDispose.fire();
-    super.dispose();
+    this.register({
+      dispose: () => {
+        if (this.isDisposed) {
+          return;
+        }
+        this._screenElement.removeChild(this.element);
+        this.isDisposed = true;
+        this._marker.dispose();
+        // Emit before super.dispose such that dispose listeners get a change to react
+        this._onDispose.fire();
+        super.dispose();
+      }
+    });
   }
 
   private _createElement(): void {
@@ -119,9 +116,6 @@ class Decoration extends Disposable implements IDecoration {
   }
 
   private _resolveDimensions(): void {
-    if (!this._renderService.dimensions.scaledCellWidth || !this._renderService.dimensions.scaledCellHeight) {
-      throw new Error(`Cannot resolve dimensions for decoration when scaled cell dimensions are undefined ${this._renderService.dimensions}.`);
-    }
     this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
     this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
   }

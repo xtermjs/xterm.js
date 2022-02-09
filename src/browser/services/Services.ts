@@ -9,6 +9,7 @@ import { IColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -112,4 +113,12 @@ export interface ICharacterJoinerService {
   register(handler: (text: string) => [number, number][]): number;
   deregister(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
+}
+
+
+export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
+export interface IDecorationService extends IDisposable {
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+  refresh(): void;
+  attachToDom(screenElement: HTMLElement): void;
 }
