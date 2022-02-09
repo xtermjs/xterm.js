@@ -14,17 +14,20 @@ export class DecorationService extends Disposable implements IDecorationService 
   private readonly _decorations: Decoration[] = [];
   private _screenElement: HTMLElement | undefined;
 
+  private _renderService: IRenderService | undefined;
+  private _bufferService: IBufferService | undefined;
+
   constructor(
-    @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService,
     @IInstantiationService private readonly _instantiationService: IInstantiationService
   ) {
     super();
-    this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
-  public attachToDom(screenElement: HTMLElement): void {
+  public attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void {
     this._screenElement = screenElement;
+    this._renderService = renderService;
+    this._bufferService = bufferService;
+    this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -38,6 +41,9 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public refresh(): void {
+    if (!this._bufferService || !this._renderService) {
+      return;
+    }
     for (const decoration of this._decorations) {
       if (!decoration.element) {
         continue;

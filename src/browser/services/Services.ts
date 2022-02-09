@@ -10,6 +10,7 @@ import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectio
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
 import { IDecorationOptions, IDecoration } from 'xterm';
+import { IBufferService } from 'common/services/Services';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -120,5 +121,5 @@ export const IDecorationService = createDecorator<IDecorationService>('Decoratio
 export interface IDecorationService extends IDisposable {
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   refresh(): void;
-  attachToDom(screenElement: HTMLElement): void;
+  attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void;
 }

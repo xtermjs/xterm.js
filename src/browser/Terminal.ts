@@ -578,7 +578,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
-    this.decorationService.attachToDom(this.screenElement);
+    this.decorationService.attachToDom(this.screenElement, this._renderService, this._bufferService);
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
