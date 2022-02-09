@@ -73,12 +73,21 @@ class Decoration extends Disposable implements IDecoration {
   private _onRender = new EventEmitter<HTMLElement>();
   public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
 
+  public x: number;
+  public anchor: 'left' | 'right';
+  public width: number;
+  public height: number;
+
   constructor(
-    private readonly _decorationOptions: IDecorationOptions,
+    options: IDecorationOptions,
     private readonly _container: HTMLElement
   ) {
     super();
-    this._marker = _decorationOptions.marker;
+    this.x = options.x ?? 0;
+    this._marker = options.marker;
+    this.anchor = options.anchor || 'left';
+    this.width = options.width || 1;
+    this.height = options.height || 1;
   }
 
   public render(bufferService: IBufferService, renderService: IRenderService): void {
@@ -95,15 +104,14 @@ class Decoration extends Disposable implements IDecoration {
   private _createElement(bufferService: IBufferService, renderService: IRenderService): void {
     this._element = document.createElement('div');
     this._element.classList.add('xterm-decoration');
-    this._resolveDimensions(renderService);
-    this._element.style.width = `${this._decorationOptions.width}px`;
-    this._element.style.height = `${this._decorationOptions.height}px`;
+    this._element.style.width = `${this.width * renderService.dimensions.scaledCellWidth}px`;
+    this._element.style.height = `${this.height * renderService.dimensions.scaledCellHeight}px`;
     this._element.style.top = `${(this.marker.line - bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
 
-    if (this._decorationOptions.anchor === 'right') {
-      this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * renderService.dimensions.scaledCellWidth}px` : '';
+    if (this.anchor === 'right') {
+      this._element.style.right = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
     } else {
-      this._element.style.left = this._decorationOptions.x ? `${this._decorationOptions.x * renderService.dimensions.scaledCellWidth}px` : '';
+      this._element.style.left = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
     }
     this.register({
       dispose: () => {
@@ -118,11 +126,6 @@ class Decoration extends Disposable implements IDecoration {
         super.dispose();
       }
     });
-  }
-
-  private _resolveDimensions(renderService: IRenderService): void {
-    this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * renderService.dimensions.scaledCellWidth : renderService.dimensions.scaledCellWidth;
-    this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * renderService.dimensions.scaledCellHeight : renderService.dimensions.scaledCellHeight;
   }
 
   private _refreshStyle(bufferService: IBufferService, renderService: IRenderService): void {
