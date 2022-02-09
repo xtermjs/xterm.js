@@ -731,22 +731,50 @@ describe('API Integration Tests', function(): void {
     await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   });
 
-  describe.only('registerDecoration', () => {
-    it('should register a decoration', async () => {
+  describe('registerDecoration', () => {
+    it('should register a decoration but not add the element until the first refresh call', async () => {
       await openTerminal(page);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });`);
-      assert.notEqual(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
+      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });
+      window.decoration.onRender(() => {
+        window.rendered = true;
+      });`);
+      assert.equal(await page.evaluate(`window.rendered`), undefined);
+    });
+    it('should register a decoration and render it', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
+      await page.evaluate(`window.marker = window.term.addMarker(1)`);
+      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });
+      window.decoration.onRender(() => {
+        window.rendered = true;
+      });`);
+      assert.equal(await page.evaluate(`window.rendered`), true);
+    });
+    it('on resize should dispose of the old decoration and create a new one', async () => {
+      await openTerminal(page);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
+      await page.evaluate(`window.marker = window.term.addMarker(1)`);
+      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker })`);
+      await page.evaluate(`window.term.resize(10, 5)`);
+      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 1);
     });
     it('should return undefined when the marker has already been disposed of', async () => {
       await openTerminal(page);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`window.marker.dispose()`);
       assert.equal(await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });`), undefined);
-      assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
     });
     it('should throw when a negative x offset is provided', async () => {
       await openTerminal(page);
+      await writeSync(page, '\\n\\n\\n\\n');
+      await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`
       try {
@@ -756,7 +784,6 @@ describe('API Integration Tests', function(): void {
       }
     `);
       await pollFor(page, 'window.throwMessage', 'This API only accepts positive integers');
-      assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration-container .xterm-decoration')`), undefined);
     });
   });
 

@@ -57,8 +57,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
   }
 }
-
-class Decoration extends Disposable implements IDecoration {
+export class Decoration extends Disposable implements IDecoration {
   private static _nextId = 1;
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
@@ -103,8 +102,8 @@ class Decoration extends Disposable implements IDecoration {
   }
 
   private _createElement(bufferService: IBufferService, renderService: IRenderService, recreate?: boolean): void {
-    if (recreate) {
-      this._container.removeChild(this._element!);
+    if (recreate && this._element) {
+      this._container.removeChild(this._element);
     }
     this._element = document.createElement('div');
     this._element.classList.add('xterm-decoration');
