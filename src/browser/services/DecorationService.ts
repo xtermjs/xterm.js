@@ -6,7 +6,7 @@
 import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IInstantiationService } from 'common/services/Services';
+import { IBufferService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
@@ -18,7 +18,6 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _bufferService: IBufferService | undefined;
 
   constructor(
-    @IInstantiationService private readonly _instantiationService: IInstantiationService
   ) {
     super();
   }
@@ -27,6 +26,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._screenElement = screenElement;
     this._renderService = renderService;
     this._bufferService = bufferService;
+    this.refresh();
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
@@ -34,7 +34,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (decorationOptions.marker.isDisposed || !this._screenElement) {
       return undefined;
     }
-    const decoration = this._instantiationService.createInstance(Decoration, decorationOptions, this._screenElement);
+    const decoration = new Decoration(decorationOptions, this._screenElement);
     this._decorations.push(decoration);
     decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
     return decoration;
@@ -45,17 +45,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       return;
     }
     for (const decoration of this._decorations) {
-      if (!decoration.element) {
-        continue;
-      }
-      const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
-      if (line < 0 || line > this._bufferService.rows) {
-        // outside of viewport
-        decoration.element.style.display = 'none';
-      } else {
-        decoration.element.style.top = `${line * this._renderService.dimensions.scaledCellHeight}px`;
-        decoration.element.style.display = 'block';
-      }
+      decoration.render(this._bufferService, this._renderService);
     }
   }
 
@@ -84,21 +74,42 @@ class Decoration extends Disposable implements IDecoration {
 
   constructor(
     private readonly _decorationOptions: IDecorationOptions,
-    private readonly _screenElement: HTMLElement,
-    @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService
+    private readonly _screenElement: HTMLElement
   ) {
     super();
     this._marker = _decorationOptions.marker;
-    if (this._marker.line - this._bufferService.buffers.active.ydisp >= 0 && this._marker.line - this._bufferService.buffers.active.ydisp < this._bufferService.rows) {
-      this._render();
+  }
+
+  public render(bufferService: IBufferService, renderService: IRenderService): void {
+    if (!this._element) {
+      this._createElement(bufferService, renderService);
+    }
+    if (this._screenElement && this._element && !this._screenElement.contains(this._element)) {
+      this._screenElement.append(this._element);
+    }
+    this._refreshStyle(bufferService, renderService);
+    this._onRender.fire(this._element!);
+  }
+
+  private _createElement(bufferService: IBufferService, renderService: IRenderService): void {
+    this._element = document.createElement('div');
+    this._element.classList.add('xterm-decoration');
+    this._resolveDimensions(renderService);
+    this._element.style.width = `${this._decorationOptions.width}px`;
+    this._element.style.height = `${this._decorationOptions.height}px`;
+    this._element.style.top = `${(this.marker.line - bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
+
+    if (this._decorationOptions.anchor === 'right') {
+      this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * renderService.dimensions.scaledCellWidth}px` : '';
+    } else {
+      this._element.style.left = this._decorationOptions.x ? `${this._decorationOptions.x * renderService.dimensions.scaledCellWidth}px` : '';
     }
     this.register({
       dispose: () => {
-        if (this.isDisposed || !this.element) {
+        if (this.isDisposed) {
           return;
         }
-        this._screenElement.removeChild(this.element);
+        this._screenElement.removeChild(this._element!);
         this.isDisposed = true;
         this._marker.dispose();
         // Emit before super.dispose such that dispose listeners get a change to react
@@ -108,33 +119,19 @@ class Decoration extends Disposable implements IDecoration {
     });
   }
 
-  private _createElement(): void {
-    this._element = document.createElement('div');
-    this._element.classList.add('xterm-decoration');
-    this._resolveDimensions();
-    this._element.style.width = `${this._decorationOptions.width}px`;
-    this._element.style.height = `${this._decorationOptions.height}px`;
-    this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
+  private _resolveDimensions(renderService: IRenderService): void {
+    this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * renderService.dimensions.scaledCellWidth : renderService.dimensions.scaledCellWidth;
+    this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * renderService.dimensions.scaledCellHeight : renderService.dimensions.scaledCellHeight;
+  }
 
-    if (this._decorationOptions.anchor === 'right') {
-      this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
+  private _refreshStyle(bufferService: IBufferService, renderService: IRenderService): void {
+    const line = this.marker.line - bufferService.buffers.active.ydisp;
+    if (line < 0 || line > bufferService.rows) {
+      // outside of viewport
+      this._element!.style.display = 'none';
     } else {
-      this._element.style.left = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';
-    }
-  }
-
-  private _resolveDimensions(): void {
-    this._decorationOptions.width = this._decorationOptions.width ? this._decorationOptions.width * this._renderService.dimensions.scaledCellWidth : this._renderService.dimensions.scaledCellWidth;
-    this._decorationOptions.height = this._decorationOptions.height ? this._decorationOptions.height * this._renderService.dimensions.scaledCellHeight : this._renderService.dimensions.scaledCellHeight;
-  }
-
-  private _render(): void {
-    if (!this._element) {
-      this._createElement();
-    }
-    if (this._screenElement && this._element) {
-      this._screenElement.append(this._element);
-      this._onRender.fire(this._element);
+      this._element!.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
+      this._element!.style.display = 'block';
     }
   }
 }
