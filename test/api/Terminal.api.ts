@@ -748,7 +748,7 @@ describe('API Integration Tests', function(): void {
       await writeSync(page, '\\n\\n\\n\\n');
       await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker }`);
+      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker })`);
       assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 1);
     });
     it('on resize should dispose of the old decoration and create a new one', async () => {
