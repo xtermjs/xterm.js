@@ -111,6 +111,9 @@ export class Decoration extends Disposable implements IDecoration {
     this._element.style.height = `${this.height * renderService.dimensions.scaledCellHeight}px`;
     this._element.style.top = `${(this.marker.line - bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
 
+    if (this.x && this.x > bufferService.cols) {
+      this._element!.style.display = 'none';
+    }
     if (this.anchor === 'right') {
       this._element.style.right = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
     } else {
