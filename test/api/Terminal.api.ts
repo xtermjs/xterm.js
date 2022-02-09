@@ -731,7 +731,7 @@ describe('API Integration Tests', function(): void {
     await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   });
 
-  describe('registerDecoration', () => {
+  describe.only('registerDecoration', () => {
     it('should register a decoration', async () => {
       await openTerminal(page);
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
@@ -756,7 +756,7 @@ describe('API Integration Tests', function(): void {
       }
     `);
       await pollFor(page, 'window.throwMessage', 'This API only accepts positive integers');
-      assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
+      assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration-container .xterm-decoration')`), undefined);
     });
   });
 

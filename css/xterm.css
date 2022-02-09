@@ -174,7 +174,7 @@
     text-decoration: line-through;
 }
 
-.xterm-screen .xterm-decoration {
+.xterm-screen .xterm-decoration-container .xterm-decoration {
 	z-index: 6;
 	position: absolute;
 }

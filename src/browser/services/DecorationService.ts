@@ -12,8 +12,7 @@ import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 export class DecorationService extends Disposable implements IDecorationService {
 
   private readonly _decorations: Decoration[] = [];
-  private _screenElement: HTMLElement | undefined;
-
+  private _container: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
   private _bufferService: IBufferService | undefined;
 
@@ -23,18 +22,20 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void {
-    this._screenElement = screenElement;
     this._renderService = renderService;
     this._bufferService = bufferService;
+    this._container = document.createElement('div');
+    this._container.classList.add('xterm-decoration-container');
+    screenElement.appendChild(this._container);
     this.refresh();
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (decorationOptions.marker.isDisposed || !this._screenElement) {
+    if (decorationOptions.marker.isDisposed || !this._container) {
       return undefined;
     }
-    const decoration = new Decoration(decorationOptions, this._screenElement);
+    const decoration = new Decoration(decorationOptions, this._container);
     this._decorations.push(decoration);
     decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
     return decoration;
@@ -74,7 +75,7 @@ class Decoration extends Disposable implements IDecoration {
 
   constructor(
     private readonly _decorationOptions: IDecorationOptions,
-    private readonly _screenElement: HTMLElement
+    private readonly _container: HTMLElement
   ) {
     super();
     this._marker = _decorationOptions.marker;
@@ -84,8 +85,8 @@ class Decoration extends Disposable implements IDecoration {
     if (!this._element) {
       this._createElement(bufferService, renderService);
     }
-    if (this._screenElement && this._element && !this._screenElement.contains(this._element)) {
-      this._screenElement.append(this._element);
+    if (this._container && this._element && !this._container.contains(this._element)) {
+      this._container.append(this._element);
     }
     this._refreshStyle(bufferService, renderService);
     this._onRender.fire(this._element!);
@@ -109,7 +110,7 @@ class Decoration extends Disposable implements IDecoration {
         if (this.isDisposed) {
           return;
         }
-        this._screenElement.removeChild(this._element!);
+        this._container.removeChild(this._element!);
         this.isDisposed = true;
         this._marker.dispose();
         // Emit before super.dispose such that dispose listeners get a change to react
