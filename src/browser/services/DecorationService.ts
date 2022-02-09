@@ -11,7 +11,7 @@ import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
 
-  private _decorations: Decoration[] = [];
+  private readonly _decorations: Decoration[] = [];
   private _screenElement: HTMLElement | undefined;
 
   constructor(
@@ -61,11 +61,10 @@ export class DecorationService extends Disposable implements IDecorationService 
 }
 
 class Decoration extends Disposable implements IDecoration {
-  public readonly id: number = Decoration._nextId++;
-  private static _nextId: number = 1;
-
-  private _marker: IMarker;
+  private static _nextId = 1;
+  private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
+  private readonly _id: number = Decoration._nextId++;
   public isDisposed: boolean = false;
 
   public get element(): HTMLElement | undefined { return this._element; }

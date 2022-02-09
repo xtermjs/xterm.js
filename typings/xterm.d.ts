@@ -942,7 +942,7 @@ declare module 'xterm' {
      *  @param decorationOptions, which takes a marker and an optional anchor, 
      *  width, height, and x offset from the anchor. Returns the decoration or
      *  undefined if the alt buffer is active or the marker has already been disposed of.
-     *  @throws if the @param decorationOptions includes a negative x offset.
+     *  @throws when options include a negative x offset.
      */
     registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
