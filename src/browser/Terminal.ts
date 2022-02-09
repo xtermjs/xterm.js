@@ -159,6 +159,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.linkifier = this._instantiationService.createInstance(Linkifier);
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
+    this.decorationService = this.register(this._instantiationService.createInstance(DecorationService));
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
@@ -174,8 +175,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
-
-    this.decorationService = this.register(this._instantiationService.createInstance(DecorationService));
   }
 
   /**
@@ -1004,10 +1003,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    // Disallow decorations on the alt buffer
-    if (this.buffer !== this.buffers.normal) {
-      return undefined;
-    }
     return this.decorationService!.registerDecoration(decorationOptions);
   }
 

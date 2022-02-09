@@ -115,9 +115,6 @@ class Decoration extends Disposable implements IDecoration {
     this._element.style.width = `${this._decorationOptions.width}px`;
     this._element.style.height = `${this._decorationOptions.height}px`;
     this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.scaledCellHeight}px`;
-    if (this._decorationOptions.x && this._decorationOptions.x < 0) {
-      throw new Error(`Decoration options x value cannot be negative, but was ${this._decorationOptions.x}.`);
-    }
 
     if (this._decorationOptions.anchor === 'right') {
       this._element.style.right = this._decorationOptions.x ? `${this._decorationOptions.x * this._renderService.dimensions.scaledCellWidth}px` : '';

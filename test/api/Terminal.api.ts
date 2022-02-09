@@ -755,7 +755,7 @@ describe('API Integration Tests', function(): void {
         window.throwMessage = e.message;
       }
     `);
-      await pollFor(page, 'window.throwMessage', 'Decoration options x value cannot be negative, but was -2.');
+      await pollFor(page, 'window.throwMessage', 'This API only accepts positive integers');
       assert.equal(await page.evaluate(`document.querySelector('.xterm-screen .xterm-decoration')`), undefined);
     });
   });

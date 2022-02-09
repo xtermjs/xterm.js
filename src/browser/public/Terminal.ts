@@ -173,9 +173,7 @@ export class Terminal implements ITerminalApi {
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     this._checkProposedApi();
-    if (decorationOptions.x) {
-      this._verifyIntegers(decorationOptions.x);
-    }
+    this._verifyPositiveInteger(decorationOptions.x);
     return this._core.registerDecoration(decorationOptions);
   }
   public addMarker(cursorYOffset: number): IMarker | undefined {
@@ -286,6 +284,12 @@ export class Terminal implements ITerminalApi {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
       }
+    }
+  }
+
+  private _verifyPositiveInteger(value?: number): void {
+    if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
+      throw new Error('This API only accepts positive integers');
     }
   }
 }
