@@ -149,7 +149,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
-  document.getElementById('decoration').addEventListener('click', addDecoration);
+  document.getElementById('add-decoration').addEventListener('click', addDecoration);
 }
 
 function createTerminal(): void {
