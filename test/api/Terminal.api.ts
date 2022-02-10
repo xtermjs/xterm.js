@@ -737,11 +737,8 @@ describe('API Integration Tests', function(): void {
       await writeSync(page, '\\n\\n\\n\\n');
       await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });
-      window.decoration.onRender(() => {
-        window.rendered = true;
-      });`);
-      assert.equal(await page.evaluate(`window.rendered`), undefined);
+      await page.evaluate(`window.term.registerDecoration({ marker: window.marker })`);
+      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 0);
     });
     it('should register decorations and render them', async () => {
       await openTerminal(page);
