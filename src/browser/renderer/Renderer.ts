@@ -10,10 +10,11 @@ import { IRenderLayer, IRenderer, IRenderDimensions, IRequestRedrawEvent } from 
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifier, ILinkifier2 } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IBufferService, IOptionsService, ICoreService, IInstantiationService } from 'common/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
+import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 let nextRendererId = 1;
 

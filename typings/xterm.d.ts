@@ -380,29 +380,96 @@ declare module 'xterm' {
    * is trimmed and lines are added or removed. This is a single line that may
    * be part of a larger wrapped line.
    */
-  export interface IMarker extends IDisposable {
+  export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
      */
     readonly id: number;
 
     /**
-     * Whether this marker is disposed.
-     */
-    readonly isDisposed: boolean;
-
-    /**
      * The actual line index in the buffer at this point in time. This is set to
      * -1 if the marker has been disposed.
      */
     readonly line: number;
+  }
 
+  /**
+   * Represents a disposable with an 
+   * @param onDispose event listener and
+   * @param isDisposed property.
+   */
+  export interface IDisposableWithEvent extends IDisposable {
     /**
-     * Event listener to get notified when the marker gets disposed. Automatic disposal
-     * might happen for a marker, that got invalidated by scrolling out or removal of
-     * a line from the buffer.
+     * Event listener to get notified when this gets disposed.
      */
     onDispose: IEvent<void>;
+
+    /**
+     * Whether this is disposed.
+     */
+    readonly isDisposed: boolean;
+  }
+
+  /**
+   * Represents a decoration in the terminal that is associated with a particular marker and DOM element.
+   */
+  export interface IDecoration extends IDisposableWithEvent {
+    /*
+     * The marker for the decoration in the terminal.
+     */
+    readonly marker: IMarker;
+
+    /**
+     * An event fired when the decoration
+     * is rendered, returns the dom element
+     * associated with the decoration.
+     */
+    readonly onRender: IEvent<HTMLElement>;
+
+    /**
+     * The HTMLElement that gets created after the 
+     * first _onRender call, or undefined if accessed before
+     * that.
+     */
+    readonly element: HTMLElement | undefined;
+  }
+
+  /**
+   * Options provided when registering a decoration
+   * containing a @param marker, @param anchor, 
+   * @param x offset from the anchor, @param width in cells
+   * and @param height in cells.
+   */
+  export interface IDecorationOptions {
+    /**
+     * The line in the terminal where
+     * the decoration will be displayed
+     */
+    marker: IMarker;
+
+    /*
+     * Where the decoration will be anchored -
+     * defaults to the left edge
+     */
+    anchor?: 'right' | 'left';
+
+    /**
+     * The x position offset relative to the anchor
+     */ 
+    x?: number;
+
+
+    /**
+     * The width of the decoration in cells, which defaults to 
+     * cell width
+     */
+    width?: number;
+
+    /**
+     * The height of the decoration in cells, which defaults to 
+     * cell height
+     */
+    height?: number;
   }
 
   /**
@@ -869,6 +936,15 @@ declare module 'xterm' {
      * @deprecated use `registerMarker` instead.
      */
     addMarker(cursorYOffset: number): IMarker | undefined;
+
+    /**
+     * (EXPERIMENTAL) Adds a decoration to the terminal using
+     *  @param decorationOptions, which takes a marker and an optional anchor, 
+     *  width, height, and x offset from the anchor. Returns the decoration or
+     *  undefined if the alt buffer is active or the marker has already been disposed of.
+     *  @throws when options include a negative x offset.
+     */
+    registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
     /**
      * Gets whether the terminal has an active selection.

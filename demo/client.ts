@@ -150,6 +150,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('add-decoration').addEventListener('click', addDecoration);
 }
 
 function createTerminal(): void {
@@ -539,5 +540,14 @@ function loadTest() {
     term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
     // Send ^C to get a new prompt
     term._core._onData.fire('\x03');
+  });
+}
+
+function addDecoration() {
+  const marker = term.addMarker(1);
+  const decoration = term.registerDecoration({ marker });
+  term.write('');
+  decoration.onRender(() => {
+    decoration.element.style.backgroundColor = 'red';
   });
 }

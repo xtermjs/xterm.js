@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { IDecorationOptions, IDecoration, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 
 export interface ITerminal extends IPublicTerminal, ICoreTerminal {
@@ -61,6 +61,7 @@ export interface IPublicTerminal extends IDisposable {
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
   addMarker(cursorYOffset: number): IMarker | undefined;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   hasSelection(): boolean;
   getSelection(): string;
   getSelectionPosition(): ISelectionPosition | undefined;
