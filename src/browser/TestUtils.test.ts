@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ISelectionPosition, ILinkProvider } from 'xterm';
+import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -100,6 +100,9 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+    throw new Error('Method not implemented.');
+  }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     throw new Error('Method not implemented.');
   }
   public hasSelection(): boolean {
@@ -283,6 +286,9 @@ export class MockRenderer implements IRenderer {
   public setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
+    throw new Error('Method not implemented.');
+  }
   public onResize(cols: number, rows: number): void { }
   public onCharSizeChanged(): void { }
   public onBlur(): void { }
@@ -420,6 +426,9 @@ export class MockRenderService implements IRenderService {
     throw new Error('Method not implemented.');
   }
   public dispose(): void {
+    throw new Error('Method not implemented.');
+  }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
 }

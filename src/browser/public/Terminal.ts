@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
 import { ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -171,6 +171,11 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    this._checkProposedApi();
+    this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
+    return this._core.registerDecoration(decorationOptions);
+  }
   public addMarker(cursorYOffset: number): IMarker | undefined {
     return this.registerMarker(cursorYOffset);
   }
@@ -278,6 +283,14 @@ export class Terminal implements ITerminalApi {
     for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
+      }
+    }
+  }
+
+  private _verifyPositiveIntegers(...values: number[]): void {
+    for (const value of values) {
+      if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
+        throw new Error('This API only accepts positive integers');
       }
     }
   }
