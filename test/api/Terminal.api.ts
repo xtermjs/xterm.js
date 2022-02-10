@@ -732,14 +732,6 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('registerDecoration', () => {
-    it('should register a decoration but not add the element until the first refresh call', async () => {
-      await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
-      await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.term.registerDecoration({ marker: window.marker })`);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 0);
-    });
     it('should register decorations and render them', async () => {
       await openTerminal(page);
       await writeSync(page, '\\n\\n\\n\\n');
