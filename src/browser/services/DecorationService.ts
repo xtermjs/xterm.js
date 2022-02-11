@@ -54,16 +54,14 @@ export class DecorationService extends Disposable implements IDecorationService 
     for (const decoration of this._decorations) {
       decoration.dispose();
     }
-    if (this._container) {
-      this._screenElement?.removeChild(this._container);
+    if (this._screenElement && this._container) {
+      this._screenElement.removeChild(this._container);
     }
   }
 }
 export class Decoration extends Disposable implements IDecoration {
-  private static _nextId = 1;
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
-  private readonly _id: number = Decoration._nextId++;
   public isDisposed: boolean = false;
 
   public get element(): HTMLElement | undefined { return this._element; }
