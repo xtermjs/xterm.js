@@ -88,6 +88,7 @@ export class Decoration extends Disposable implements IDecoration {
     super();
     this.x = options.x ?? 0;
     this._marker = options.marker;
+    this._marker.onDispose(() => this.dispose());
     this.anchor = options.anchor || 'left';
     this.width = options.width || 1;
     this.height = options.height || 1;
