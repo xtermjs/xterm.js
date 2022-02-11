@@ -15,9 +15,11 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _container: HTMLElement | undefined;
   private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
+  private _altBufferActive: boolean = false;
 
   constructor(
-    @IInstantiationService private readonly _instantiationService: IInstantiationService) {
+    @IInstantiationService private readonly _instantiationService: IInstantiationService,
+    @IBufferService private readonly _bufferService: IBufferService) {
     super();
   }
 
@@ -29,6 +31,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     screenElement.appendChild(this._container);
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
     this.register(this._renderService.onDimensionsChange(() => this.refresh(true)));
+    this.register(this._bufferService.buffers.onBufferActivate((event) => this._altBufferActive = event.activeBuffer === this._bufferService.buffers.alt));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -46,7 +49,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       return;
     }
     for (const decoration of this._decorations) {
-      decoration.render(this._renderService, recreate);
+      decoration.render(this._renderService, recreate, this._altBufferActive);
     }
   }
 
@@ -92,14 +95,14 @@ export class Decoration extends Disposable implements IDecoration {
     this.height = options.height || 1;
   }
 
-  public render(renderService: IRenderService, recreate?: boolean): void {
+  public render(renderService: IRenderService, recreate?: boolean, altBufferActive?: boolean): void {
     if (!this._element || recreate) {
       this._createElement(renderService, recreate);
     }
     if (this._container && this._element && !this._container.contains(this._element)) {
       this._container.append(this._element);
     }
-    this._refreshStyle(renderService);
+    this._refreshStyle(renderService, altBufferActive);
     this._onRender.fire(this._element!);
   }
 
@@ -140,14 +143,14 @@ export class Decoration extends Disposable implements IDecoration {
     });
   }
 
-  private _refreshStyle(renderService: IRenderService): void {
+  private _refreshStyle(renderService: IRenderService, altBufferActive?: boolean): void {
     const line = this.marker.line - this._bufferService.buffers.active.ydisp;
     if (line < 0 || line > this._bufferService.rows) {
       // outside of viewport
       this._element!.style.display = 'none';
     } else {
       this._element!.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
-      this._element!.style.display = 'block';
+      this._element!.style.display = altBufferActive ? 'none' : 'block';
     }
   }
 }
