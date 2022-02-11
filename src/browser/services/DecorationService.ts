@@ -57,7 +57,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     for (const decoration of this._decorations) {
       decoration.dispose();
     }
-    if (this._screenElement && this._container) {
+    if (this._screenElement && this._container && this._screenElement.contains(this._container)) {
       this._screenElement.removeChild(this._container);
     }
   }
