@@ -106,7 +106,7 @@ export class Decoration extends Disposable implements IDecoration {
   }
 
   private _createElement(renderService: IRenderService, shouldRecreate?: boolean): void {
-    if (shouldRecreate && this._element) {
+    if (shouldRecreate && this._element && this._container.contains(this._element)) {
       this._container.removeChild(this._element);
     }
     this._element = document.createElement('div');
