@@ -16,11 +16,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
 
-  constructor(
-    @IInstantiationService private readonly _instantiationService: IInstantiationService,
-    @IBufferService private readonly _bufferService: IBufferService) {
-    super();
-  }
+  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService) { super(); }
 
   public attachToDom(screenElement: HTMLElement, renderService: IRenderService): void {
     this._renderService = renderService;
@@ -120,7 +116,8 @@ export class Decoration extends Disposable implements IDecoration {
     this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
 
     if (this.x && this.x > this._bufferService.cols) {
-      this._element!.style.display = 'none';
+      // exceeded the container width, so hide
+      this._element.style.display = 'none';
     }
     if (this.anchor === 'right') {
       this._element.style.right = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
@@ -147,13 +144,16 @@ export class Decoration extends Disposable implements IDecoration {
   }
 
   private _refreshStyle(renderService: IRenderService): void {
+    if (!this._element) {
+      return;
+    }
     const line = this.marker.line - this._bufferService.buffers.active.ydisp;
     if (line < 0 || line > this._bufferService.rows) {
       // outside of viewport
-      this._element!.style.display = 'none';
+      this._element.style.display = 'none';
     } else {
-      this._element!.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
-      this._element!.style.display = this._altBufferActive ? 'none' : 'block';
+      this._element.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
+      this._element.style.display = this._altBufferActive ? 'none' : 'block';
     }
   }
 }
