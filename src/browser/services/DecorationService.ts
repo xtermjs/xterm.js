@@ -17,7 +17,6 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _renderService: IRenderService | undefined;
 
   constructor(
-    @IBufferService private readonly _bufferService: IBufferService,
     @IInstantiationService private readonly _instantiationService: IInstantiationService) {
     super();
   }
@@ -28,7 +27,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._container = document.createElement('div');
     this._container.classList.add('xterm-decoration-container');
     screenElement.appendChild(this._container);
-    this.refresh();
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
     this.register(this._renderService.onDimensionsChange(() => this.refresh(true)));
   }
@@ -44,7 +42,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public refresh(recreate?: boolean): void {
-    if (!this._bufferService || !this._renderService) {
+    if (!this._renderService) {
       return;
     }
     for (const decoration of this._decorations) {
