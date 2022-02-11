@@ -27,18 +27,13 @@ const end = ')($|' + negatedPathCharacterSet + ')';
 const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
 function handleLink(event: MouseEvent, uri: string): void {
-  const newWindow = window.open();
-  if (newWindow) {
-    try {
-      newWindow.opener = null;
-    } catch {
-      // no-op, Electron can throw
-    }
-    newWindow.location.href = uri;
-  } else {
-    console.warn('Opening link blocked as opener could not be cleared');
+  try {
+    window.open(uri, 'noopener');
+  } catch (error){
+    console.warn('Opening link blocked due to: ', error);
   }
 }
+
 
 interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
