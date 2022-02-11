@@ -15,7 +15,6 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _container: HTMLElement | undefined;
   private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
-  private _altBufferActive: boolean = false;
 
   constructor(
     @IInstantiationService private readonly _instantiationService: IInstantiationService,
@@ -31,7 +30,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     screenElement.appendChild(this._container);
     this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
     this.register(this._renderService.onDimensionsChange(() => this.refresh(true)));
-    this.register(this._bufferService.buffers.onBufferActivate((event) => this._altBufferActive = event.activeBuffer === this._bufferService.buffers.alt));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -44,12 +42,12 @@ export class DecorationService extends Disposable implements IDecorationService 
     return decoration;
   }
 
-  public refresh(recreate?: boolean): void {
+  public refresh(shouldRecreate?: boolean): void {
     if (!this._renderService) {
       return;
     }
     for (const decoration of this._decorations) {
-      decoration.render(this._renderService, recreate, this._altBufferActive);
+      decoration.render(this._renderService, shouldRecreate);
     }
   }
 
@@ -65,6 +63,8 @@ export class DecorationService extends Disposable implements IDecorationService 
 export class Decoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
+  private _altBufferActive: boolean = false;
+
   public isDisposed: boolean = false;
 
   public get element(): HTMLElement | undefined { return this._element; }
@@ -93,21 +93,24 @@ export class Decoration extends Disposable implements IDecoration {
     this.anchor = options.anchor || 'left';
     this.width = options.width || 1;
     this.height = options.height || 1;
+    this.register(this._bufferService.buffers.onBufferActivate((event) => this._altBufferActive = event.activeBuffer === this._bufferService.buffers.alt));
   }
 
-  public render(renderService: IRenderService, recreate?: boolean, altBufferActive?: boolean): void {
-    if (!this._element || recreate) {
-      this._createElement(renderService, recreate);
+  public render(renderService: IRenderService, shouldRecreate?: boolean): void {
+    if (!this._element || shouldRecreate) {
+      this._createElement(renderService, shouldRecreate);
     }
     if (this._container && this._element && !this._container.contains(this._element)) {
       this._container.append(this._element);
     }
-    this._refreshStyle(renderService, altBufferActive);
-    this._onRender.fire(this._element!);
+    this._refreshStyle(renderService);
+    if (this._element) {
+      this._onRender.fire(this._element);
+    }
   }
 
-  private _createElement(renderService: IRenderService, recreate?: boolean): void {
-    if (recreate && this._element) {
+  private _createElement(renderService: IRenderService, shouldRecreate?: boolean): void {
+    if (shouldRecreate && this._element) {
       this._container.removeChild(this._element);
     }
     this._element = document.createElement('div');
@@ -132,7 +135,7 @@ export class Decoration extends Disposable implements IDecoration {
         if (!this.marker.isDisposed) {
           this.marker.dispose();
         }
-        if (this._element) {
+        if (this._element && this._container.contains(this._element)) {
           this._container.removeChild(this._element);
         }
         this.isDisposed = true;
@@ -143,14 +146,14 @@ export class Decoration extends Disposable implements IDecoration {
     });
   }
 
-  private _refreshStyle(renderService: IRenderService, altBufferActive?: boolean): void {
+  private _refreshStyle(renderService: IRenderService): void {
     const line = this.marker.line - this._bufferService.buffers.active.ydisp;
     if (line < 0 || line > this._bufferService.rows) {
       // outside of viewport
       this._element!.style.display = 'none';
     } else {
       this._element!.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
-      this._element!.style.display = altBufferActive ? 'none' : 'block';
+      this._element!.style.display = this._altBufferActive ? 'none' : 'block';
     }
   }
 }
