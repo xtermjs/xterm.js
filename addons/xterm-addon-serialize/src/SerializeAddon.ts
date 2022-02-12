@@ -419,7 +419,7 @@ export class SerializeAddon implements ITerminalAddon {
   private _serializeBufferAsHTML(terminal: Terminal, options: Partial<IHTMLSerializeOptions>): string {
     const buffer = terminal.buffer.active;
     const handler = new HTMLSerializeHandler(buffer, terminal, options);
-    const onlySelection = options.onlySelection ?? true;
+    const onlySelection = options.onlySelection ?? false;
     if (!onlySelection) {
       const maxRows = buffer.length;
       const scrollback = options.scrollback;
@@ -556,7 +556,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
     let foreground = '#000000';
     let background = '#ffffff';
-    if (this._options.includeGlobalBackground ?? true) {
+    if (this._options.includeGlobalBackground ?? false) {
       foreground = this._terminal.options.theme?.foreground ?? '#ffffff';
       background = this._terminal.options.theme?.background ?? '#000000';
     }

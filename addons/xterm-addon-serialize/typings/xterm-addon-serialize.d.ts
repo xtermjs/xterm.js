@@ -33,9 +33,9 @@ declare module 'xterm-addon-serialize' {
     public serialize(options?: ISerializeOptions): string;
 
     /**
-     * Serializes terminal rows into a HTML string.  The output of this function can be written
-     * to the OS clipboard. If an application supports pasting HTML, the content of the terminal
-     * is pasted with style options retained.
+     * Serializes terminal content as HTML, which can be written to the clipboard using the
+     * `text/html` mimetype. For applications that support it, the pasted text should then retain
+     * its colors/styles.
      *
      * @param options Custom options to allow control over what gets serialized.
      */
@@ -70,18 +70,18 @@ declare module 'xterm-addon-serialize' {
     /**
      * The number of rows in the scrollback buffer to serialize, starting from the bottom of the
      * scrollback buffer. When not specified, all available rows in the scrollback buffer will be
-     * serialized.
+     * serialized. This setting is ignored if {@link IHTMLSerializeOptions.onlySelection} is true.
      */
     scrollback: number;
 
     /**
      * Whether to only serialize the selection. If false, the whole active buffer is serialized in HTML.
-     * True by default.
+     * False by default.
      */
     onlySelection: boolean;
 
     /**
-     * Whether to include the global background of the terminal. True by default.
+     * Whether to include the global background of the terminal. False by default.
      */
     includeGlobalBackground: boolean;
   }
