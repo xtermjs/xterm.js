@@ -1292,6 +1292,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._resetBufferLine(j);
         }
         this._dirtyRowService.markDirty(0);
+        this._bufferService.buffer.clearMarkers();
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
