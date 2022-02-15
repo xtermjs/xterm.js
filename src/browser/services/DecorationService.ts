@@ -59,7 +59,6 @@ export class DecorationService extends Disposable implements IDecorationService 
 export class Decoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
-  private _altBufferActive: boolean = false;
 
   public isDisposed: boolean = false;
 
@@ -89,7 +88,6 @@ export class Decoration extends Disposable implements IDecoration {
     this.anchor = options.anchor || 'left';
     this.width = options.width || 1;
     this.height = options.height || 1;
-    this.register(this._bufferService.buffers.onBufferActivate((event) => this._altBufferActive = event.activeBuffer === this._bufferService.buffers.alt));
   }
 
   public render(renderService: IRenderService, shouldRecreate?: boolean): void {
@@ -153,7 +151,7 @@ export class Decoration extends Disposable implements IDecoration {
       this._element.style.display = 'none';
     } else {
       this._element.style.top = `${line * renderService.dimensions.actualCellHeight}px`;
-      this._element.style.display = this._altBufferActive ? 'none' : 'block';
+      this._element.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }
   }
 }
