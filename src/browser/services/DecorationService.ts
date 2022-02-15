@@ -111,18 +111,18 @@ export class Decoration extends Disposable implements IDecoration {
     }
     this._element = document.createElement('div');
     this._element.classList.add('xterm-decoration');
-    this._element.style.width = `${this.width * renderService.dimensions.scaledCellWidth}px`;
-    this._element.style.height = `${this.height * renderService.dimensions.scaledCellHeight}px`;
-    this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * renderService.dimensions.scaledCellHeight}px`;
+    this._element.style.width = `${this.width * renderService.dimensions.actualCellWidth}px`;
+    this._element.style.height = `${this.height * renderService.dimensions.actualCellHeight}px`;
+    this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * renderService.dimensions.actualCellHeight}px`;
 
     if (this.x && this.x > this._bufferService.cols) {
       // exceeded the container width, so hide
       this._element.style.display = 'none';
     }
     if (this.anchor === 'right') {
-      this._element.style.right = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
+      this._element.style.right = this.x ? `${this.x * renderService.dimensions.actualCellWidth}px` : '';
     } else {
-      this._element.style.left = this.x ? `${this.x * renderService.dimensions.scaledCellWidth}px` : '';
+      this._element.style.left = this.x ? `${this.x * renderService.dimensions.actualCellWidth}px` : '';
     }
     this.register({
       dispose: () => {
@@ -152,7 +152,7 @@ export class Decoration extends Disposable implements IDecoration {
       // outside of viewport
       this._element.style.display = 'none';
     } else {
-      this._element.style.top = `${line * renderService.dimensions.scaledCellHeight}px`;
+      this._element.style.top = `${line * renderService.dimensions.actualCellHeight}px`;
       this._element.style.display = this._altBufferActive ? 'none' : 'block';
     }
   }
