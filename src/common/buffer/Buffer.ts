@@ -595,7 +595,7 @@ export class Buffer implements IBuffer {
       for (const marker of this.markers) {
         marker.dispose();
       }
-    } 
+    }
     this._isClearing = false;
   }
 
