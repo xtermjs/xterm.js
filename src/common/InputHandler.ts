@@ -1218,6 +1218,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.getNullCell(this._eraseAttrData()),
       this._eraseAttrData()
     );
+    this._bufferService.buffer.clearMarkers(y);
     if (clearWrap) {
       line.isWrapped = false;
     }
@@ -1232,6 +1233,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
     line.isWrapped = false;
+    this._bufferService.buffer.clearMarkers(y);
   }
 
   /**
@@ -1292,7 +1294,6 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._resetBufferLine(j);
         }
         this._dirtyRowService.markDirty(0);
-        this._bufferService.buffer.clearMarkers();
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
