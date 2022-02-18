@@ -590,8 +590,8 @@ export class Buffer implements IBuffer {
     if (y) {
       for (const marker of this.markers.filter(m => m.line === y)) {
         marker.dispose();
+        this.markers.splice(this.markers.indexOf(marker), 1);
       }
-      this.markers = this.markers.filter(m => m.line !== y);
     } else {
       for (const marker of this.markers) {
         marker.dispose();
