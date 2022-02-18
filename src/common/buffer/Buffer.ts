@@ -591,10 +591,12 @@ export class Buffer implements IBuffer {
       for (const marker of this.markers.filter(m => m.line === y)) {
         marker.dispose();
       }
+      this.markers = this.markers.filter(m => m.line !== y);
     } else {
       for (const marker of this.markers) {
         marker.dispose();
       }
+      this.markers = [];
     }
     this._isClearing = false;
   }
