@@ -1218,7 +1218,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.getNullCell(this._eraseAttrData()),
       this._eraseAttrData()
     );
-    this._bufferService.buffer.clearMarkers(y);
     if (clearWrap) {
       line.isWrapped = false;
     }
