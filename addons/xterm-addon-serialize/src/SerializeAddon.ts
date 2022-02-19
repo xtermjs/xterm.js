@@ -575,7 +575,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    this._htmlContent += '<div>' + this._currentRow + '</div>';
+    this._htmlContent += '<div><span>' + this._currentRow + '</span></div>';
     this._currentRow = '';
   }
 
