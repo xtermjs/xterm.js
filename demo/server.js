@@ -114,7 +114,7 @@ function startServer() {
     }
     const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
-    term.on('data', function(data) {
+    term.onData(function (data) {
       try {
         send(data);
       } catch (ex) {
