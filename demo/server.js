@@ -56,7 +56,7 @@ function startServer() {
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
     logs[term.pid] = '';
-    term.onData(function (data) {
+    term.onData(function(data) {
       logs[term.pid] += data;
     });
     res.send(term.pid.toString());
@@ -114,7 +114,7 @@ function startServer() {
     }
     const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
-    term.onData(function (data) {
+    term.onData(function(data) {
       try {
         send(data);
       } catch (ex) {
@@ -124,7 +124,7 @@ function startServer() {
     ws.on('message', function(msg) {
       term.write(msg);
     });
-    ws.on('close', function () {
+    ws.on('close', function() {
       term.kill();
       console.log('Closed terminal ' + term.pid);
       // Clean things up
