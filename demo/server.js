@@ -56,7 +56,7 @@ function startServer() {
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
     logs[term.pid] = '';
-    term.on('data', function(data) {
+    term.onData(function (data) {
       logs[term.pid] += data;
     });
     res.send(term.pid.toString());
