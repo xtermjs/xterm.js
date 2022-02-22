@@ -146,8 +146,6 @@ export class Decoration extends Disposable implements IDecoration {
       this._container.removeChild(this._element);
     }
     this.isDisposed = true;
-    // Emit before super.dispose such that dispose listeners get a change to react
     this._onDispose.fire();
-    super.dispose();
   }
 }
