@@ -587,10 +587,12 @@ export class Buffer implements IBuffer {
 
   public clearMarkers(y?: number): void {
     this._isClearing = true;
-    if (y) {
-      for (const marker of this.markers.filter(m => m.line === y)) {
-        marker.dispose();
-        this.markers.splice(this.markers.indexOf(marker), 1);
+    if (y !== undefined) {
+      for (let i = 0; i < this.markers.length; i++) {
+        if (this.markers[i].line === y) {
+          this.markers[i].dispose();
+          this.markers.splice(i, 1);
+        }
       }
     } else {
       for (const marker of this.markers) {
