@@ -122,23 +122,6 @@ export class Decoration extends Disposable implements IDecoration {
     } else {
       this._element.style.left = this.x ? `${this.x * renderService.dimensions.actualCellWidth}px` : '';
     }
-    this.register({
-      dispose: () => {
-        if (this.isDisposed) {
-          return;
-        }
-        if (!this.marker.isDisposed) {
-          this.marker.dispose();
-        }
-        if (this._element && this._container.contains(this._element)) {
-          this._container.removeChild(this._element);
-        }
-        this.isDisposed = true;
-        // Emit before super.dispose such that dispose listeners get a change to react
-        this._onDispose.fire();
-        super.dispose();
-      }
-    });
   }
 
   private _refreshStyle(renderService: IRenderService): void {
@@ -153,5 +136,16 @@ export class Decoration extends Disposable implements IDecoration {
       this._element.style.top = `${line * renderService.dimensions.actualCellHeight}px`;
       this._element.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }
+  }
+
+  public override dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    if (this._element && this._container.contains(this._element)) {
+      this._container.removeChild(this._element);
+    }
+    this.isDisposed = true;
+    this._onDispose.fire();
   }
 }
