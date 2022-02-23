@@ -53,7 +53,6 @@ export class AccessibilityManager extends Disposable {
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
-    this._accessibilityTreeRoot.setAttribute('role', 'document');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
     this._accessibilityTreeRoot.tabIndex = 0;
 
