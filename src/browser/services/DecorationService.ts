@@ -15,6 +15,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _container: HTMLElement | undefined;
   private _screenElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
+  private _animationFrame: number | undefined;
 
   constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService) { super(); }
 
@@ -35,7 +36,18 @@ export class DecorationService extends Disposable implements IDecorationService 
     const decoration = this._instantiationService.createInstance(Decoration, decorationOptions, this._container);
     this._decorations.push(decoration);
     decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
+    this._queueRefresh();
     return decoration;
+  }
+
+  private _queueRefresh(): void {
+    if (this._animationFrame !== undefined) {
+      return;
+    }
+    this._animationFrame = window.requestAnimationFrame(() => {
+      this.refresh();
+      this._animationFrame = undefined;
+    });
   }
 
   public refresh(shouldRecreate?: boolean): void {

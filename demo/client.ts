@@ -530,7 +530,6 @@ function loadTest() {
 function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
-  term.write('');
   decoration.onRender(() => {
     decoration.element.style.backgroundColor = 'red';
   });
