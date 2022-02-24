@@ -124,6 +124,7 @@ export class Decoration extends Disposable implements IDecoration {
     this._element.style.width = `${this.width * renderService.dimensions.actualCellWidth}px`;
     this._element.style.height = `${this.height * renderService.dimensions.actualCellHeight}px`;
     this._element.style.top = `${(this.marker.line - this._bufferService.buffers.active.ydisp) * renderService.dimensions.actualCellHeight}px`;
+    this._element.style.lineHeight = `${this.height * renderService.dimensions.actualCellHeight}px`;
 
     if (this.x && this.x > this._bufferService.cols) {
       // exceeded the container width, so hide
