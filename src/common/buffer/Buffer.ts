@@ -591,7 +591,7 @@ export class Buffer implements IBuffer {
       for (let i = 0; i < this.markers.length; i++) {
         if (this.markers[i].line === y) {
           this.markers[i].dispose();
-          this.markers.splice(i--, 1);
+          this.markers.splice(i, 1);
         }
       }
     } else {
