@@ -147,6 +147,7 @@ if (document.location.pathname === '/test') {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
+  document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
@@ -448,6 +449,21 @@ function serializeButtonHandler(): void {
   }
 }
 
+function htmlSerializeButtonHandler(): void {
+  const output = addons.serialize.instance.serializeAsHTML();
+  document.getElementById('htmlserialize-output').innerText = output;
+
+  // Deprecated, but the most supported for now.
+  function listener(e: any) {
+    e.clipboardData.setData("text/html", output);
+    e.preventDefault();
+  }
+  document.addEventListener("copy", listener);
+  document.execCommand("copy");
+  document.removeEventListener("copy", listener);
+  document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
+}
+
 
 function writeCustomGlyphHandler() {
   term.write('\n\r');
@@ -530,7 +546,6 @@ function loadTest() {
 function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
-  term.write('');
   decoration.onRender(() => {
     decoration.element.style.backgroundColor = 'red';
   });
