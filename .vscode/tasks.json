@@ -18,6 +18,7 @@
       "problemMatcher": []
     },
     {
+      "label": "npm: watch",
       "type": "npm",
       "script": "watch",
       "group": "build",
@@ -28,6 +29,7 @@
       }
     },
     {
+      "label": "npm: start",
       "type": "npm",
       "script": "start",
       "dependsOn": "npm: watch",
