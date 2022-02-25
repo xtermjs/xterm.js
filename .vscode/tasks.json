@@ -18,7 +18,7 @@
       "problemMatcher": []
     },
     {
-      "label": "npm: watch",
+      "label": "watch",
       "type": "npm",
       "script": "watch",
       "group": "build",
@@ -29,10 +29,10 @@
       }
     },
     {
-      "label": "npm: start",
+      "label": "start",
       "type": "npm",
       "script": "start",
-      "dependsOn": "npm: watch",
+      "dependsOn": "watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
@@ -42,7 +42,7 @@
     },
     {
       "label": "Start demo",
-      "dependsOn": "npm: start",
+      "dependsOn": "start",
       "group": {
         "kind": "build",
         "isDefault": true
