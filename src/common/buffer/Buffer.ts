@@ -601,8 +601,8 @@ export class Buffer implements IBuffer {
   }
 
   /**
-   * Clears markers on all lines except for
-   * those on @param excludeY
+   * Clears markers on all lines except for those on a particular line.
+   * @param excludeY The line to exclude.
    */
    public clearAllMarkers(excludeY: number): void {
     this._isClearing = true;
