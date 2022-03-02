@@ -586,7 +586,8 @@ export class Buffer implements IBuffer {
   }
 
   /**
-   * Clears markers on line @param y
+   * Clears markers on single line.
+   * @param y The line to clear.
    */
   public clearMarkers(y: number): void {
     this._isClearing = true;
