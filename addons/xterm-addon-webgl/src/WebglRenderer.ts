@@ -440,18 +440,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.getOption('lineHeight'));
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight!);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._terminal.getOption('lineHeight') === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.getOption('letterSpacing'));
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing!);
 
     // Calculate the x coordinate with a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.getOption('letterSpacing') / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing! / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
