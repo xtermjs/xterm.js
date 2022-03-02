@@ -595,10 +595,14 @@ export class Buffer implements IBuffer {
         }
       }
     } else {
-      for (const marker of this.markers) {
-        marker.dispose();
+      // buffer has been cleared
+      // don't dispose of markers on the current line (0)
+      for (let i = 0; i < this.markers.length; i++) {
+        if (this.markers[i].line !== 0) {
+          this.markers[i].dispose();
+          this.markers.splice(i--, 1);
+        }
       }
-      this.markers = [];
     }
     this._isClearing = false;
   }
