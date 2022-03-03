@@ -257,7 +257,10 @@ export class MockBuffer implements IBuffer {
   public getWhitespaceCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
   }
-  public clearMarkers(): void {
+  public clearMarkers(y: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearAllMarkers(excludeY: number): void {
     throw new Error('Method not implemented.');
   }
 }
