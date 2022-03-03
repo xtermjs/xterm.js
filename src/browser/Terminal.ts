@@ -1232,24 +1232,25 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
-    if (!this._isClearing) {
+    if (this._isClearing) {
+      return false;
+    }
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-      if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
-        if (this._keyPressHandled) {
-          return false;
-        }
-
-        // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
-        // keys could be ignored
-        this._unprocessedDeadKey = false;
-
-        const text = ev.data;
-        this.coreService.triggerDataEvent(text, true);
-
-        this.cancel(ev);
-        return true;
+    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
+      if (this._keyPressHandled) {
+        return false;
       }
+
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
+      this._unprocessedDeadKey = false;
+
+      const text = ev.data;
+      this.coreService.triggerDataEvent(text, true);
+
+      this.cancel(ev);
+      return true;
     }
     return false;
   }
