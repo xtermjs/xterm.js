@@ -106,6 +106,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
+  /**
+   * A buffer clear is in process, so disallow input
+   * in order to avoid improper positioning/duplication.
+   */
+  private _isClearing: boolean = false;
+
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
@@ -1226,24 +1232,25 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    if (!this._isClearing) {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
-      if (this._keyPressHandled) {
-        return false;
+      if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
+        if (this._keyPressHandled) {
+          return false;
+        }
+
+        // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+        // keys could be ignored
+        this._unprocessedDeadKey = false;
+
+        const text = ev.data;
+        this.coreService.triggerDataEvent(text, true);
+
+        this.cancel(ev);
+        return true;
       }
-
-      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
-      // keys could be ignored
-      this._unprocessedDeadKey = false;
-
-      const text = ev.data;
-      this.coreService.triggerDataEvent(text, true);
-
-      this.cancel(ev);
-      return true;
     }
-
     return false;
   }
 
@@ -1297,6 +1304,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
+    this._isClearing = true;
     if (this.buffer.ybase === 0 && this.buffer.y === 0) {
       // Don't clear if it's already clear
       return;
@@ -1312,6 +1320,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
     this.refresh(0, this.rows - 1);
     this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
+    this._isClearing = false;
   }
 
   /**
