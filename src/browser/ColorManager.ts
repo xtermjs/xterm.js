@@ -185,7 +185,7 @@ export class ColorManager implements IColorManager {
       foreground: this.colors.foreground,
       background: this.colors.background,
       cursor: this.colors.cursor,
-      ansi: [...this.colors.ansi]
+      ansi: this.colors.ansi.slice()
     };
   }
 

@@ -544,7 +544,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
       return target;
     }
 
-    targetLength = targetLength - target.length;
+    targetLength -= target.length;
     if (targetLength > padString.length) {
       padString += padString.repeat(targetLength / padString.length);
     }
