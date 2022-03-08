@@ -14,7 +14,7 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, '\' +' + JSON.stringify(str) + '+ \'');
+const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, `' +` + JSON.stringify(str) + `+ '`);
 
 const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
   await writeRawSync(page, str);
