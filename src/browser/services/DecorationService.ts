@@ -15,6 +15,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   private readonly _decorations: Decoration[] = [];
   private _container: HTMLElement | undefined;
   private _screenElement: HTMLElement | undefined;
+  private _viewportElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
   private _animationFrame: number | undefined;
 
@@ -24,9 +25,11 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
 
-  public attachToDom(screenElement: HTMLElement, renderService: IRenderService): void {
+  public attachToDom(scrollbarDecorationNode: HTMLCanvasElement, screenElement: HTMLElement, viewportElement: HTMLElement, renderService: IRenderService): void {
     this._renderService = renderService;
     this._screenElement = screenElement;
+    this._viewportElement = viewportElement;
+    this._scrollbarDecorationNode = scrollbarDecorationNode;
     this._container = document.createElement('div');
     this._container.classList.add('xterm-decoration-container');
     screenElement.appendChild(this._container);
@@ -36,17 +39,14 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (decorationOptions.marker.isDisposed || !this._container) {
+    if (decorationOptions.marker.isDisposed || !this._container || !this._scrollbarDecorationNode) {
       return undefined;
     }
     if (decorationOptions.scrollbarDecorationColor) {
       if (!this._scrollbarDecorationCanvas) {
-        this._scrollbarDecorationNode = document.createElement('canvas');
-        this._scrollbarDecorationNode.classList.add('xterm-decoration-scrollbar');
-        this._screenElement?.parentElement?.appendChild(this._scrollbarDecorationNode);
         this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
       }
-      this._registerScrollbarDecoration(decorationOptions.marker, decorationOptions.scrollbarDecorationColor);
+      return this._registerScrollbarDecoration(decorationOptions.marker, decorationOptions.scrollbarDecorationColor);
     }
     const decoration = this._instantiationService.createInstance(Decoration, decorationOptions, this._container);
     this._decorations.push(decoration);
@@ -82,23 +82,23 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (this._screenElement && this._container && this._screenElement.contains(this._container)) {
       this._screenElement.removeChild(this._container);
     }
+    this._scrollbarDecorations = [];
+    this._scrollbarDecorationNode?.remove();
   }
 
-  private _registerScrollbarDecoration(marker: IMarker, color?: string): HTMLCanvasElement | undefined {
+  private _registerScrollbarDecoration(marker: IMarker, color?: string): IDecoration | undefined {
     this._scrollbarDecorations.push({ marker, color });
-    if (!this._scrollbarDecorationCanvas) {
-      return;
-    }
-    this._addScrollbarDecoration(marker, color);
+    //TODO: marker on dispose
+    return this._addScrollbarDecoration(marker, color);
   }
 
   private _refreshScollbarDecorations(): void {
-    if (!this._scrollbarDecorationCanvas) {
+    if (!this._scrollbarDecorationCanvas || !this._viewportElement) {
       return;
     }
     if (this._scrollbarDecorationNode) {
       this._scrollbarDecorationNode.style.width = '7px';
-      this._scrollbarDecorationNode.style.height = `${this._screenElement?.parentElement!.clientHeight}px`;
+      this._scrollbarDecorationNode.style.height = `${this._viewportElement.clientHeight}px`;
       this._scrollbarDecorationNode.width = Math.floor(7*window.devicePixelRatio);
       this._scrollbarDecorationNode.height = Math.floor(436*window.devicePixelRatio);
     }
@@ -108,8 +108,8 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
   }
 
-  private _addScrollbarDecoration(marker: IMarker, color?: string): void {
-    if (!this._scrollbarDecorationCanvas || !this._screenElement?.parentElement?.clientHeight) {
+  private _addScrollbarDecoration(marker: IMarker, color?: string): IDecoration | undefined {
+    if (!this._scrollbarDecorationCanvas || !this._viewportElement?.clientHeight) {
       return;
     }
     this._scrollbarDecorationCanvas.lineWidth = 1;
@@ -117,8 +117,38 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._scrollbarDecorationCanvas.strokeStyle = color;
     }
     this._scrollbarDecorationCanvas.strokeRect(0,  (marker.line / (this._bufferService.buffers.active.lines.length) * Math.floor(436*window.devicePixelRatio)), Math.floor(7*window.devicePixelRatio), window.devicePixelRatio);
+    if (this._scrollbarDecorationNode) {
+      return new ScrollbarDecoration({marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode);
+    }
+    return undefined;
   }
 }
+export class ScrollbarDecoration extends Disposable implements IDecoration {
+  private readonly _marker: IMarker;
+  private _element: HTMLElement | undefined;
+
+  public isDisposed: boolean = false;
+
+  public get element(): HTMLElement | undefined { return this._element; }
+  public get marker(): IMarker { return this._marker; }
+
+  private _onDispose = new EventEmitter<void>();
+  public get onDispose(): IEvent<void> { return this._onDispose.event; }
+
+  private _onRender = new EventEmitter<HTMLElement>();
+  public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
+
+  constructor(
+    options: IDecorationOptions,
+    element: HTMLCanvasElement
+  ) {
+    super();
+    this._marker = options.marker;
+    this._element = element;
+    this._marker.onDispose(() => this.dispose());
+  }
+}
+
 export class Decoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;

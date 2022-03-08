@@ -121,5 +121,5 @@ export const IDecorationService = createDecorator<IDecorationService>('Decoratio
 export interface IDecorationService extends IDisposable {
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   refresh(): void;
-  attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void;
+  attachToDom(scrollbarDecorationNode: HTMLCanvasElement, screenElement: HTMLElement, viewportElement: HTMLElement, renderService: IRenderService): void;
 }

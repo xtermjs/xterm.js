@@ -70,6 +70,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _viewportElement: HTMLElement | undefined;
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
+  private _scrollbarDecorationNode: HTMLCanvasElement | undefined;
 
   // private _visualBellTimer: number;
 
@@ -471,6 +472,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._viewportElement = document.createElement('div');
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
+
+    //TODO: make this opt in, must be done before the scroll area in order to show up
+    this._scrollbarDecorationNode = document.createElement('canvas');
+    this._scrollbarDecorationNode.classList.add('xterm-decoration-scrollbar');
+    this._viewportElement?.appendChild(this._scrollbarDecorationNode);
+
     this._viewportScrollArea = document.createElement('div');
     this._viewportScrollArea.classList.add('xterm-scroll-area');
     this._viewportElement.appendChild(this._viewportScrollArea);
@@ -577,7 +584,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
-    this.decorationService.attachToDom(this.screenElement, this._renderService, this._bufferService);
+    this.decorationService.attachToDom(this._scrollbarDecorationNode, this.screenElement, this._viewportElement, this._renderService);
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
