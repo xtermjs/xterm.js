@@ -470,6 +470,12 @@ declare module 'xterm' {
      * cell height
      */
     height?: number;
+
+    /**
+     * When provided, renders the decoration in the scrollbar
+     * with the given color
+     */
+    scrollbarDecorationColor?: string;
   }
 
   /**

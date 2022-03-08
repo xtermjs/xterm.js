@@ -178,3 +178,17 @@
 	z-index: 6;
 	position: absolute;
 }
+
+.xterm-decoration-scrollbar {
+    z-index: 7;
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    width: 50px;
+} 
+
+.xterm-decoration-scrollbar.demo-scrollbar {
+  height: 436px;
+  left: 872px;
+  top: 83px;
+} 
