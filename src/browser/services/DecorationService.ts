@@ -10,6 +10,10 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
+const enum ScrollbarConstants {
+  WIDTH = 7
+}
+
 export class DecorationService extends Disposable implements IDecorationService {
 
   private _container: HTMLElement | undefined;
@@ -22,7 +26,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   private _scrollbarDecorationCanvas: CanvasRenderingContext2D | null = null;
   private _scrollbarDecorationNode: HTMLCanvasElement | undefined;
-  private _scrollbarDecorations:  { marker: IMarker, color?: string}[] = [];
+  private _scrollbarDecorations:  { marker: IMarker, color: string }[] = [];
 
   constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
 
@@ -57,16 +61,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     return bufferDecoration;
   }
 
-  private _queueRefresh(): void {
-    if (this._animationFrame !== undefined) {
-      return;
-    }
-    this._animationFrame = window.requestAnimationFrame(() => {
-      this.refresh();
-      this._animationFrame = undefined;
-    });
-  }
-
   public refresh(shouldRecreate?: boolean): void {
     this._refreshBufferDecorations(shouldRecreate);
     this._refreshScollbarDecorations();
@@ -83,9 +77,15 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._scrollbarDecorationNode?.remove();
   }
 
-  private _registerScrollbarDecoration(marker: IMarker, color?: string): IDecoration | undefined {
-    this._scrollbarDecorations.push({ marker, color });
-    return this._addScrollbarDecoration(marker, color);
+
+  private _queueRefresh(): void {
+    if (this._animationFrame !== undefined) {
+      return;
+    }
+    this._animationFrame = window.requestAnimationFrame(() => {
+      this.refresh();
+      this._animationFrame = undefined;
+    });
   }
 
   private _refreshBufferDecorations(shouldRecreate?: boolean): void {
@@ -97,37 +97,49 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
   }
 
+  private _registerScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
+    this._scrollbarDecorations.push({ marker, color });
+    return this._addScrollbarDecoration(marker, color);
+  }
+
   private _refreshScollbarDecorations(): void {
     if (!this._scrollbarDecorationCanvas || !this._viewportElement || !this._scrollbarDecorationNode) {
       return;
     }
-    this._scrollbarDecorationNode.style.width = '7px';
+    this._scrollbarDecorationNode.style.width = `${ScrollbarConstants.WIDTH}px`;
     this._scrollbarDecorationNode.style.height = `${this._viewportElement.clientHeight}px`;
-    this._scrollbarDecorationNode.width = Math.floor(7*window.devicePixelRatio);
-    this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight*window.devicePixelRatio);
+    this._scrollbarDecorationNode.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
+    this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio);
     this._scrollbarDecorationCanvas.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height);
+
     for (const scrollbarDecoration of this._scrollbarDecorations) {
       this._addScrollbarDecoration(scrollbarDecoration.marker, scrollbarDecoration.color);
     }
   }
 
-  private _addScrollbarDecoration(marker: IMarker, color?: string): IDecoration | undefined {
-    if (!this._scrollbarDecorationCanvas || !this._viewportElement?.clientHeight) {
+  private _addScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
+    if (!this._scrollbarDecorationCanvas || !this._scrollbarDecorationNode) {
       return;
     }
     this._scrollbarDecorationCanvas.lineWidth = 1;
-    if (color) {
-      this._scrollbarDecorationCanvas.strokeStyle = color;
-    }
+    this._scrollbarDecorationCanvas.strokeStyle = color;
     this._scrollbarDecorationCanvas.strokeRect(
       0,
-      (marker.line / this._bufferService.buffers.active.lines.length) * Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio),
-      Math.floor(7 * window.devicePixelRatio),
+      this._scrollbarDecorationNode.height * (marker.line / this._bufferService.buffers.active.lines.length),
+      this._scrollbarDecorationNode.width,
       window.devicePixelRatio
     );
     if (this._scrollbarDecorationNode) {
       const scrollbarDecoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode);
-      scrollbarDecoration.onDispose(() => this._scrollbarDecorationCanvas?.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height));
+      scrollbarDecoration.onDispose(() => {
+        this._scrollbarDecorationCanvas?.clearRect(
+          0,
+          0,
+          this._scrollbarDecorationCanvas.canvas.width,
+          this._scrollbarDecorationCanvas.canvas.height
+        );
+      });
+      return scrollbarDecoration;
     }
     return undefined;
   }
