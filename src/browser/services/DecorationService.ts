@@ -171,6 +171,7 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
       this.element.width,
       window.devicePixelRatio
     );
+    this._onRender.fire(this.element);
   }
 
   public override dispose(): void {
