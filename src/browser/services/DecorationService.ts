@@ -29,7 +29,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   private readonly _bufferDecorations: BufferDecoration[] = [];
   private _scrollbarDecorations: ScrollbarDecoration[] = [];
 
-  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService) { super(); }
+  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
 
   public attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement, scrollbarDecorationNode: HTMLCanvasElement): void {
     this._renderService = renderService;
@@ -40,6 +40,9 @@ export class DecorationService extends Disposable implements IDecorationService 
     this.register(this._renderService.onRenderedBufferChange(() => this._refresh()));
     this.register(this._renderService.onDimensionsChange(() => this._refresh(true)));
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshScollbarDecorations()));
+    this.register(this._bufferService.buffers.onBufferActivate(() => {
+      this._scrollbarDecorationNode!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
+    }));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
@@ -87,7 +90,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._bufferDecorationContainer.classList.add('xterm-decoration-container');
       this._screenElement.appendChild(this._bufferDecorationContainer);
     }
-    const decoration = new BufferDecoration(this._instantiationService.createInstance(BufferService), decorationOptions, this._bufferDecorationContainer);
+    const decoration = new BufferDecoration(this._bufferService, decorationOptions, this._bufferDecorationContainer);
     this._bufferDecorations.push(decoration);
     decoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(decoration), 1));
     this._queueRefresh();
@@ -207,6 +210,8 @@ export class BufferDecoration extends Disposable implements IDecoration {
   private _onRender = new EventEmitter<HTMLElement>();
   public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
 
+  private _altBufferIsActive: boolean = false;
+
   public x: number;
   public anchor: 'left' | 'right';
   public width: number;
@@ -224,6 +229,9 @@ export class BufferDecoration extends Disposable implements IDecoration {
     this.anchor = options.anchor || 'left';
     this.width = options.width || 1;
     this.height = options.height || 1;
+    this.register(this._bufferService.buffers.onBufferActivate(() => {
+      this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
+    }));
   }
 
   public render(renderService: IRenderService, shouldRecreate?: boolean): void {
@@ -271,7 +279,7 @@ export class BufferDecoration extends Disposable implements IDecoration {
       this._element.style.display = 'none';
     } else {
       this._element.style.top = `${line * renderService.dimensions.actualCellHeight}px`;
-      this._element.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
+      this._element.style.display = this._altBufferIsActive ? 'none' : 'block';
     }
   }
 
