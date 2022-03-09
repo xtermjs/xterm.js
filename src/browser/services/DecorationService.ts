@@ -134,12 +134,12 @@ export class DecorationService extends Disposable implements IDecorationService 
 
 export class ScrollbarDecoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
-  private _canvas: HTMLCanvasElement | undefined;
+  private _element: HTMLCanvasElement | undefined;
   private _color: string | undefined;
 
   public isDisposed: boolean = false;
 
-  public get element(): HTMLCanvasElement { return this._canvas!; }
+  public get element(): HTMLCanvasElement { return this._element!; }
   public get marker(): IMarker { return this._marker; }
   public get color(): string { return this._color!; }
 
@@ -151,18 +151,20 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
 
   constructor(
     options: IDecorationOptions,
-    canvas: HTMLCanvasElement,
+    private readonly _canvas: HTMLCanvasElement,
     private readonly _ctx: CanvasRenderingContext2D,
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this._marker = options.marker;
-    this._canvas = canvas;
     this._color = options.scrollbarDecorationColor;
     this._marker.onDispose(() => this.dispose());
     this.render();
   }
   public render(): void {
+    if (!this._element) {
+      this._element = this._canvas;
+    }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = this.color;
     this._ctx.strokeRect(

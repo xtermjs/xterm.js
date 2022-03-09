@@ -427,8 +427,8 @@ declare module 'xterm' {
     readonly onRender: IEvent<HTMLElement>;
 
     /**
-     * The HTMLElement that gets created after the 
-     * first _onRender call, or undefined if accessed before
+     * The HTMLElement that gets created or drawn to (for scrollbar decorations)
+     * after the first _onRender call, or undefined if accessed before
      * that.
      */
     readonly element: HTMLElement | undefined;
