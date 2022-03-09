@@ -119,7 +119,6 @@ export interface ICharacterJoinerService {
 
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 export interface IDecorationService extends IDisposable {
-  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-  refresh(): void;
   attachToDom(scrollbarDecorationNode: HTMLCanvasElement, screenElement: HTMLElement, viewportElement: HTMLElement, renderService: IRenderService): void;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 }

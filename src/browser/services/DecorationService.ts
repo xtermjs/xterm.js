@@ -38,8 +38,8 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._container = document.createElement('div');
     this._container.classList.add('xterm-decoration-container');
     screenElement.appendChild(this._container);
-    this.register(this._renderService.onRenderedBufferChange(() => this.refresh()));
-    this.register(this._renderService.onDimensionsChange(() => this.refresh(true)));
+    this.register(this._renderService.onRenderedBufferChange(() => this._refresh()));
+    this.register(this._renderService.onDimensionsChange(() => this._refresh(true)));
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshScollbarDecorations()));
   }
 
@@ -48,22 +48,9 @@ export class DecorationService extends Disposable implements IDecorationService 
       return undefined;
     }
     if (decorationOptions.scrollbarDecorationColor) {
-      if (!this._scrollbarDecorationCanvas) {
-        this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
-      }
-      this._refreshScollbarDecorations();
       return this._registerScrollbarDecoration(decorationOptions.marker, decorationOptions.scrollbarDecorationColor);
     }
-    const bufferDecoration = this._instantiationService.createInstance(BufferDecoration, decorationOptions, this._container);
-    this._bufferDecorations.push(bufferDecoration);
-    bufferDecoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(bufferDecoration), 1));
-    this._queueRefresh();
-    return bufferDecoration;
-  }
-
-  public refresh(shouldRecreate?: boolean): void {
-    this._refreshBufferDecorations(shouldRecreate);
-    this._refreshScollbarDecorations();
+    return this._registerBufferDecoration(decorationOptions);
   }
 
   public dispose(): void {
@@ -77,45 +64,44 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._scrollbarDecorationNode?.remove();
   }
 
+  private _refresh(shouldRecreate?: boolean): void {
+    this._refreshBufferDecorations(shouldRecreate);
+    this._refreshScollbarDecorations();
+  }
 
   private _queueRefresh(): void {
     if (this._animationFrame !== undefined) {
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this.refresh();
+      this._refresh();
       this._animationFrame = undefined;
     });
   }
 
-  private _refreshBufferDecorations(shouldRecreate?: boolean): void {
-    if (!this._renderService) {
+  private _registerBufferDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    if (!this._container) {
       return;
     }
-    for (const bufferDecoration of this._bufferDecorations) {
-      bufferDecoration.render(this._renderService, shouldRecreate);
-    }
+    const bufferDecoration = this._instantiationService.createInstance(BufferDecoration, decorationOptions, this._container);
+    this._bufferDecorations.push(bufferDecoration);
+    bufferDecoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(bufferDecoration), 1));
+    this._queueRefresh();
+    return bufferDecoration;
   }
 
   private _registerScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
+    if (!this._scrollbarDecorationNode) {
+      return;
+    }
+    if (!this._scrollbarDecorationCanvas) {
+      this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
+      this._refreshScollbarDecorations();
+    }
     this._scrollbarDecorations.push({ marker, color });
     return this._addScrollbarDecoration(marker, color);
   }
 
-  private _refreshScollbarDecorations(): void {
-    if (!this._scrollbarDecorationCanvas || !this._viewportElement || !this._scrollbarDecorationNode) {
-      return;
-    }
-    this._scrollbarDecorationNode.style.width = `${ScrollbarConstants.WIDTH}px`;
-    this._scrollbarDecorationNode.style.height = `${this._viewportElement.clientHeight}px`;
-    this._scrollbarDecorationNode.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
-    this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio);
-    this._scrollbarDecorationCanvas.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height);
-
-    for (const scrollbarDecoration of this._scrollbarDecorations) {
-      this._addScrollbarDecoration(scrollbarDecoration.marker, scrollbarDecoration.color);
-    }
-  }
 
   private _addScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
     if (!this._scrollbarDecorationCanvas || !this._scrollbarDecorationNode) {
@@ -143,6 +129,31 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
     return undefined;
   }
+
+  private _refreshBufferDecorations(shouldRecreate?: boolean): void {
+    if (!this._renderService) {
+      return;
+    }
+    for (const bufferDecoration of this._bufferDecorations) {
+      bufferDecoration.render(this._renderService, shouldRecreate);
+    }
+  }
+
+  private _refreshScollbarDecorations(): void {
+    if (!this._scrollbarDecorationCanvas || !this._viewportElement || !this._scrollbarDecorationNode) {
+      return;
+    }
+    this._scrollbarDecorationNode.style.width = `${ScrollbarConstants.WIDTH}px`;
+    this._scrollbarDecorationNode.style.height = `${this._viewportElement.clientHeight}px`;
+    this._scrollbarDecorationNode.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
+    this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio);
+    this._scrollbarDecorationCanvas.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height);
+
+    for (const scrollbarDecoration of this._scrollbarDecorations) {
+      this._addScrollbarDecoration(scrollbarDecoration.marker, scrollbarDecoration.color);
+    }
+  }
+
 }
 export class ScrollbarDecoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
