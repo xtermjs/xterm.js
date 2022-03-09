@@ -101,19 +101,9 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
       this._refreshScollbarDecorations();
     }
-    this._scrollbarDecorationCanvas!.lineWidth = 1;
-    this._scrollbarDecorationCanvas!.strokeStyle = color;
-    this._scrollbarDecorationCanvas!.strokeRect(
-      0,
-      this._scrollbarDecorationNode.height * (marker.line / this._bufferService.buffers.active.lines.length),
-      this._scrollbarDecorationNode.width,
-      window.devicePixelRatio
-    );
-    if (this._scrollbarDecorationNode) {
-      const scrollbarDecoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!, this._viewportElement, this._bufferService);
-      this._scrollDecorations.push(scrollbarDecoration);
-      return scrollbarDecoration;
-    }
+    const scrollbarDecoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!, this._bufferService);
+    this._scrollDecorations.push(scrollbarDecoration);
+    return scrollbarDecoration;
   }
 
   private _refreshBufferDecorations(shouldRecreate?: boolean): void {
@@ -161,7 +151,6 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
     options: IDecorationOptions,
     canvas: HTMLCanvasElement,
     private readonly _ctx: CanvasRenderingContext2D,
-    private readonly _viewport: HTMLElement,
     private readonly _bufferService: IBufferService
   ) {
     super();
