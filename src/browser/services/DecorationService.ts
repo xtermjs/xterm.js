@@ -7,6 +7,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
+import { BufferService } from 'common/services/BufferService';
 import { IBufferService, IInstantiationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
@@ -16,35 +17,33 @@ const enum ScrollbarConstants {
 
 export class DecorationService extends Disposable implements IDecorationService {
 
-  private _container: HTMLElement | undefined;
-  private _screenElement: HTMLElement | undefined;
-  private _viewportElement: HTMLElement | undefined;
   private _renderService: IRenderService | undefined;
   private _animationFrame: number | undefined;
+
+  private _screenElement: HTMLElement | undefined;
+  private _viewportElement: HTMLElement | undefined;
+  private _bufferDecorationContainer: HTMLElement | undefined;
+  private _scrollbarDecorationCanvas: CanvasRenderingContext2D | null = null;
+  private _scrollbarDecorationNode: HTMLCanvasElement | undefined;
 
   private readonly _bufferDecorations: BufferDecoration[] = [];
   private _scrollbarDecorations: ScrollbarDecoration[] = [];
 
-  private _scrollbarDecorationCanvas: CanvasRenderingContext2D | null = null;
-  private _scrollbarDecorationNode: HTMLCanvasElement | undefined;
+  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService) { super(); }
 
-  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
-
-  public attachToDom(scrollbarDecorationNode: HTMLCanvasElement, screenElement: HTMLElement, viewportElement: HTMLElement, renderService: IRenderService): void {
+  public attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement, scrollbarDecorationNode: HTMLCanvasElement): void {
     this._renderService = renderService;
     this._screenElement = screenElement;
     this._viewportElement = viewportElement;
     this._scrollbarDecorationNode = scrollbarDecorationNode;
-    this._container = document.createElement('div');
-    this._container.classList.add('xterm-decoration-container');
-    screenElement.appendChild(this._container);
+
     this.register(this._renderService.onRenderedBufferChange(() => this._refresh()));
     this.register(this._renderService.onDimensionsChange(() => this._refresh(true)));
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshScollbarDecorations()));
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (decorationOptions.marker.isDisposed || !this._container || !this._scrollbarDecorationNode) {
+    if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
     if (decorationOptions.scrollbarDecorationColor) {
@@ -57,11 +56,11 @@ export class DecorationService extends Disposable implements IDecorationService 
     for (const bufferDecoration of this._bufferDecorations) {
       bufferDecoration.dispose();
     }
-    if (this._screenElement && this._container && this._screenElement.contains(this._container)) {
-      this._screenElement.removeChild(this._container);
-    }
     for (const scrollbarDecoration of this._scrollbarDecorations) {
       scrollbarDecoration.dispose();
+    }
+    if (this._screenElement && this._bufferDecorationContainer && this._screenElement.contains(this._bufferDecorationContainer)) {
+      this._screenElement.removeChild(this._bufferDecorationContainer);
     }
     this._scrollbarDecorations = [];
     this._scrollbarDecorationNode?.remove();
@@ -83,10 +82,12 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   private _registerBufferDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (!this._container) {
-      return;
+    if (this._screenElement && !this._bufferDecorationContainer) {
+      this._bufferDecorationContainer = document.createElement('div');
+      this._bufferDecorationContainer.classList.add('xterm-decoration-container');
+      this._screenElement.appendChild(this._bufferDecorationContainer);
     }
-    const decoration = this._instantiationService.createInstance(BufferDecoration, decorationOptions, this._container);
+    const decoration = new BufferDecoration(this._instantiationService.createInstance(BufferService), decorationOptions, this._bufferDecorationContainer);
     this._bufferDecorations.push(decoration);
     decoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(decoration), 1));
     this._queueRefresh();
@@ -101,7 +102,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
       this._refreshScollbarDecorations();
     }
-    const decoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!, this._bufferService);
+    const decoration = this._instantiationService.createInstance(ScrollbarDecoration, { marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!);
     decoration.onDispose(() => this._scrollbarDecorations.splice(this._scrollbarDecorations.indexOf(decoration), 1));
     this._scrollbarDecorations.push(decoration);
     return decoration;
@@ -129,8 +130,8 @@ export class DecorationService extends Disposable implements IDecorationService 
       decoration.render();
     }
   }
-
 }
+
 export class ScrollbarDecoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
   private _canvas: HTMLCanvasElement | undefined;
@@ -152,7 +153,7 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
     options: IDecorationOptions,
     canvas: HTMLCanvasElement,
     private readonly _ctx: CanvasRenderingContext2D,
-    private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this._marker = options.marker;
@@ -209,9 +210,9 @@ export class BufferDecoration extends Disposable implements IDecoration {
   public height: number;
 
   constructor(
+    private readonly _bufferService: IBufferService,
     options: IDecorationOptions,
-    private readonly _container: HTMLElement,
-    @IBufferService private readonly _bufferService: IBufferService
+    private readonly _container?: HTMLElement
   ) {
     super();
     this.x = options.x ?? 0;
@@ -236,7 +237,7 @@ export class BufferDecoration extends Disposable implements IDecoration {
   }
 
   private _createElement(renderService: IRenderService, shouldRecreate?: boolean): void {
-    if (shouldRecreate && this._element && this._container.contains(this._element)) {
+    if (shouldRecreate && this._element && this._container && this._container.contains(this._element)) {
       this._container.removeChild(this._element);
     }
     this._element = document.createElement('div');
@@ -272,7 +273,7 @@ export class BufferDecoration extends Disposable implements IDecoration {
   }
 
   public override dispose(): void {
-    if (this.isDisposed) {
+    if (this.isDisposed || !this._container) {
       return;
     }
     if (this._element && this._container.contains(this._element)) {

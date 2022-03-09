@@ -473,7 +473,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
 
-    //TODO: make this opt in, must be done before the scroll area in order to show up
+    // TODO: make this opt in, must be done before the scroll area in order to show up
     this._scrollbarDecorationNode = document.createElement('canvas');
     this._scrollbarDecorationNode.classList.add('xterm-decoration-scrollbar');
     this._viewportElement?.appendChild(this._scrollbarDecorationNode);
@@ -584,7 +584,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
 
-    this.decorationService.attachToDom(this._scrollbarDecorationNode, this.screenElement, this._viewportElement, this._renderService);
+    this.decorationService.attachToDom(this._renderService, this.screenElement, this._viewportElement, this._scrollbarDecorationNode);
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
