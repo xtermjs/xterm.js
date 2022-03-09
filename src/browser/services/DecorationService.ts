@@ -23,7 +23,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   private _animationFrame: number | undefined;
 
   private readonly _bufferDecorations: BufferDecoration[] = [];
-  private _scrollDecorations: ScrollbarDecoration[] = [];
+  private _scrollbarDecorations: ScrollbarDecoration[] = [];
 
   private _scrollbarDecorationCanvas: CanvasRenderingContext2D | null = null;
   private _scrollbarDecorationNode: HTMLCanvasElement | undefined;
@@ -60,10 +60,10 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (this._screenElement && this._container && this._screenElement.contains(this._container)) {
       this._screenElement.removeChild(this._container);
     }
-    for (const scrollbarDecoration of this._scrollDecorations) {
+    for (const scrollbarDecoration of this._scrollbarDecorations) {
       scrollbarDecoration.dispose();
     }
-    this._scrollDecorations = [];
+    this._scrollbarDecorations = [];
     this._scrollbarDecorationNode?.remove();
   }
 
@@ -86,11 +86,11 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (!this._container) {
       return;
     }
-    const bufferDecoration = this._instantiationService.createInstance(BufferDecoration, decorationOptions, this._container);
-    this._bufferDecorations.push(bufferDecoration);
-    bufferDecoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(bufferDecoration), 1));
+    const decoration = this._instantiationService.createInstance(BufferDecoration, decorationOptions, this._container);
+    this._bufferDecorations.push(decoration);
+    decoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(decoration), 1));
     this._queueRefresh();
-    return bufferDecoration;
+    return decoration;
   }
 
   private _registerScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
@@ -101,17 +101,18 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
       this._refreshScollbarDecorations();
     }
-    const scrollbarDecoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!, this._bufferService);
-    this._scrollDecorations.push(scrollbarDecoration);
-    return scrollbarDecoration;
+    const decoration = new ScrollbarDecoration({ marker, scrollbarDecorationColor: color }, this._scrollbarDecorationNode, this._scrollbarDecorationCanvas!, this._bufferService);
+    decoration.onDispose(() => this._scrollbarDecorations.splice(this._scrollbarDecorations.indexOf(decoration), 1));
+    this._scrollbarDecorations.push(decoration);
+    return decoration;
   }
 
   private _refreshBufferDecorations(shouldRecreate?: boolean): void {
     if (!this._renderService) {
       return;
     }
-    for (const bufferDecoration of this._bufferDecorations) {
-      bufferDecoration.render(this._renderService, shouldRecreate);
+    for (const decoration of this._bufferDecorations) {
+      decoration.render(this._renderService, shouldRecreate);
     }
   }
 
@@ -124,7 +125,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._scrollbarDecorationNode.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
     this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio);
     this._scrollbarDecorationCanvas.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height);
-    for (const decoration of this._scrollDecorations) {
+    for (const decoration of this._scrollbarDecorations) {
       decoration.render();
     }
   }
@@ -172,8 +173,17 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
   }
 
   public override dispose(): void {
-    this._ctx.clearRect(0, 0, this._ctx.canvas.width, this._ctx.canvas.height);
-
+    if (this._isDisposed) {
+      return;
+    }
+    this._ctx.clearRect(
+      0,
+      this.element.height * (this.marker.line / this._bufferService.buffers.active.lines.length),
+      this.element.width,
+      window.devicePixelRatio
+    );
+    this.isDisposed = true;
+    this._onDispose.fire();
     super.dispose();
   }
 }
