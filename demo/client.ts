@@ -553,9 +553,9 @@ function addDecoration() {
 }
 
 function addScrollbarDecoration() {
+  document.querySelector('.xterm-decoration-scrollbar').classList.add('demo-scrollbar');
   term.registerDecoration({marker: term.addMarker(1), scrollbarDecorationColor: 'red'});
   term.registerDecoration({marker: term.addMarker(3), scrollbarDecorationColor: 'green'});
   term.registerDecoration({marker: term.addMarker(5), scrollbarDecorationColor: 'blue'});
-  document.querySelector('.xterm-decoration-scrollbar').classList.add('demo-scrollbar');
 } 
 
