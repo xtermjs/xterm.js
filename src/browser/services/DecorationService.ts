@@ -7,7 +7,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IDecorationService, IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { BufferService } from 'common/services/BufferService';
 import { IBufferService, IInstantiationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
