@@ -80,8 +80,9 @@ export class SearchAddon implements ITerminalAddon {
     // new search, clear out the old decorations
     this._resultDecorations.forEach(d => d.dispose());
     this._resultDecorations = [];
-
     const results: ISearchResult[] = [];
+    searchOptions = searchOptions || {};
+    searchOptions.incremental = false;
     let found = this.findNext(term, searchOptions);
     while (found && !results.find(r => r?.col === this._result?.col && r?.row === this._result?.row)) {
       if (this._result) {
@@ -527,11 +528,12 @@ export class SearchAddon implements ITerminalAddon {
     if (!marker) {
       return undefined;
     }
-    const findResultDecoration = terminal.registerDecoration({ marker, width: result.size });
+    const findResultDecoration = terminal.registerDecoration({ marker });
     findResultDecoration?.onRender((e) => {
       e.style.backgroundColor = 'blue';
       e.style.opacity = '60%';
       e.style.left = `${result.col * e.clientWidth}px`;
+      e.style.width = `${e.clientWidth * result.term.length}px`;
     });
     return findResultDecoration;
   }
