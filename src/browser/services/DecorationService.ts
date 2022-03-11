@@ -142,7 +142,7 @@ export class Decoration extends Disposable implements IDecoration {
       return;
     }
     const line = this.marker.line - this._bufferService.buffers.active.ydisp;
-    if (line < 0 || line > this._bufferService.rows) {
+    if (line < 0 || line >= this._bufferService.rows) {
       // outside of viewport
       this._element.style.display = 'none';
     } else {
