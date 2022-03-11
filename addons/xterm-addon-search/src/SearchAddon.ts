@@ -42,6 +42,8 @@ export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _resultDecorations: IDecoration[] = [];
   private _result: ISearchResult | undefined;
+  private _reset: boolean = false;
+  private _cachedSearchTerm: string | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -54,6 +56,7 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
+    this._terminal.onData(() => this._reset = true);
   }
 
   public dispose(): void { }
@@ -77,6 +80,12 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
+    if (!this._reset && term === this._cachedSearchTerm) {
+      return this.findNext(term, searchOptions);
+    }
+    this._reset = false;
+
+
     // new search, clear out the old decorations
     this._resultDecorations.forEach(d => d.dispose());
     this._resultDecorations = [];
@@ -99,7 +108,7 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
     if (results.length > 0) {
-      // this.findNext(term, searchOptions);
+      this._cachedSearchTerm = term;
     }
     return true;
   }
