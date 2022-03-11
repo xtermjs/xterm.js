@@ -92,6 +92,7 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
+  find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
   findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
 };
@@ -198,6 +199,10 @@ function createTerminal(): void {
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
+
+  addDomListener(actionElements.find, 'keyup', (e) => {
+    addons.search.instance.find(actionElements.find.value, getSearchOptions(e));
+  });
 
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));

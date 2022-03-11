@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IBufferLine, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -41,6 +41,7 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _resultDecorations: IDecoration[] = [];
+  private _result: ISearchResult | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -58,6 +59,52 @@ export class SearchAddon implements ITerminalAddon {
   public dispose(): void { }
 
   /**
+   * Find all instances of the term, selecting the next one with each
+   * enter. If it doesn't exist, do nothing.
+   * @param term The search term.
+   * @param searchOptions Search options.
+   * @return Whether a result was found.
+   */
+  public find(term: string, searchOptions?: ISearchOptions): boolean {
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+
+    if (!term || term.length === 0) {
+      this._terminal.clearSelection();
+      this._resultDecorations.forEach(d => d.dispose());
+      this._resultDecorations = [];
+      return false;
+    }
+
+    // new search, clear out the old decorations
+    this._resultDecorations.forEach(d => d.dispose());
+    this._resultDecorations = [];
+
+    const results: ISearchResult[] = [];
+    let found = this.findNext(term, searchOptions);
+    while (found && !results.find(r => r?.col === this._result?.col && r?.row === this._result?.row)) {
+      if (this._result) {
+        results.push(this._result);
+      }
+      found = this.findNext(term, searchOptions);
+    }
+
+    for (const result of results) {
+      const resultDecoration = this._showResultDecoration(result);
+      if (resultDecoration) {
+        // Add decoration
+        this._resultDecorations.push(resultDecoration);
+      }
+    }
+    if (results.length > 0) {
+      // this.findNext(term, searchOptions);
+    }
+    return true;
+  }
+
+
+  /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term The search term.
@@ -70,6 +117,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (!term || term.length === 0) {
+      this._result = undefined;
       this._terminal.clearSelection();
       return false;
     }
@@ -94,43 +142,42 @@ export class SearchAddon implements ITerminalAddon {
     };
 
     // Search startRow
-    let result = this._findInLine(term, searchPosition, searchOptions);
-
+    this._result = this._findInLine(term, searchPosition, searchOptions);
     // Search from startRow + 1 to end
-    if (!result) {
+    if (!this._result) {
 
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
-        result = this._findInLine(term, searchPosition, searchOptions);
-        if (result) {
+        this._result = this._findInLine(term, searchPosition, searchOptions);
+        if (this._result) {
           break;
         }
       }
     }
     // If we hit the bottom and didn't search from the very top wrap back up
-    if (!result && startRow !== 0) {
+    if (!this._result && startRow !== 0) {
       for (let y = 0; y < startRow; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        result = this._findInLine(term, searchPosition, searchOptions);
-        if (result) {
+        this._result = this._findInLine(term, searchPosition, searchOptions);
+        if (this._result) {
           break;
         }
       }
     }
 
     // If there is only one result, wrap back and return selection if it exists.
-    if (!result && currentSelection) {
+    if (!this._result && currentSelection) {
       searchPosition.startRow = currentSelection.startRow;
       searchPosition.startCol = 0;
-      result = this._findInLine(term, searchPosition, searchOptions);
+      this._result = this._findInLine(term, searchPosition, searchOptions);
     }
 
     // Set selection and scroll if a result was found
-    return true;
+    return this._selectResult(this._result);
   }
 
   /**
@@ -144,31 +191,76 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    this._resultDecorations.forEach(d => d.dispose());
-    this._resultDecorations = [];
 
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
       return false;
     }
-    const results = [];
-    for (let i = this._terminal.buffer.active.viewportY; i < this._terminal.buffer.active.viewportY + this._terminal.rows; i++) {
-      const result = this._findInLine(term, { startCol: 0, startRow: i }, searchOptions);
-      if (result) {
-        results.push(result);
+
+    const isReverseSearch = true;
+    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
+    let startCol = this._terminal.cols;
+    let result: ISearchResult | undefined;
+    const incremental = searchOptions ? searchOptions.incremental : false;
+    let currentSelection: ISelectionPosition | undefined;
+    if (this._terminal.hasSelection()) {
+      currentSelection = this._terminal.getSelectionPosition()!;
+      // Start from selection start if there is a selection
+      startRow = currentSelection.startRow;
+      startCol = currentSelection.startColumn;
+    }
+
+    this._initLinesCache();
+    const searchPosition: ISearchPosition = {
+      startRow,
+      startCol
+    };
+
+    if (incremental) {
+      // Try to expand selection to right first.
+      result = this._findInLine(term, searchPosition, searchOptions, false);
+      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
+      if (!isOldResultHighlighted) {
+        // If selection was not able to be expanded to the right, then try reverse search
+        if (currentSelection) {
+          searchPosition.startRow = currentSelection.endRow;
+          searchPosition.startCol = currentSelection.endColumn;
+        }
+        result = this._findInLine(term, searchPosition, searchOptions, true);
+      }
+    } else {
+      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+    }
+
+    // Search from startRow - 1 to top
+    if (!result) {
+      searchPosition.startCol = Math.max(searchPosition.startCol, this._terminal.cols);
+      for (let y = startRow - 1; y >= 0; y--) {
+        searchPosition.startRow = y;
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (result) {
+          break;
+        }
       }
     }
-    for (const result of results.filter(r => !!r && r.term.length)) {
-      const resultDecoration = this._showResultDecoration(result);
-      if (resultDecoration) {
-        // Add decoration
-        this._resultDecorations.push(resultDecoration);
+    // If we hit the top and didn't search from the very bottom wrap back down
+    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
+      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
+        searchPosition.startRow = y;
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (result) {
+          break;
+        }
       }
     }
-    console.log(results);
-    console.log(this._resultDecorations);
-    return true;
+
+    // If there is only one result, return true.
+    if (!result && currentSelection) return true;
+
+    // Set selection and scroll if a result was found
+    return this._selectResult(result);
   }
+
 
   /**
    * Sets up a line cache with a ttl
@@ -223,7 +315,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}): ISearchResult | undefined {
+  protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
@@ -231,6 +323,10 @@ export class SearchAddon implements ITerminalAddon {
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     const firstLine = terminal.buffer.active.getLine(row);
     if (firstLine?.isWrapped) {
+      if (isReverseSearch) {
+        searchPosition.startCol += terminal.cols;
+        return;
+      }
 
       // This will iterate until we find the line start.
       // When we find it, we will search using the calculated start column.
@@ -254,13 +350,29 @@ export class SearchAddon implements ITerminalAddon {
     let resultIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = RegExp(searchTerm, 'g');
-      const foundTerm = searchRegex.exec(searchStringLine.slice(offset));
-      if (foundTerm && foundTerm[0].length > 0) {
-        resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
-        term = foundTerm[0];
+      let foundTerm: RegExpExecArray | null;
+      if (isReverseSearch) {
+        // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
+        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
+          term = foundTerm[0];
+          searchRegex.lastIndex -= (term.length - 1);
+        }
+      } else {
+        foundTerm = searchRegex.exec(searchStringLine.slice(offset));
+        if (foundTerm && foundTerm[0].length > 0) {
+          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
+          term = foundTerm[0];
+        }
       }
     } else {
-      resultIndex = searchStringLine.indexOf(searchTerm, offset);
+      if (isReverseSearch) {
+        if (offset - searchTerm.length >= 0) {
+          resultIndex = searchStringLine.lastIndexOf(searchTerm, offset - searchTerm.length);
+        }
+      } else {
+        resultIndex = searchStringLine.indexOf(searchTerm, offset);
+      }
     }
 
     if (resultIndex >= 0) {
@@ -384,24 +496,42 @@ export class SearchAddon implements ITerminalAddon {
    * @param result The result to select.
    * @return Whethera result was selected.
    */
+  private _selectResult(result: ISearchResult | undefined): boolean {
+    const terminal = this._terminal!;
+    if (!result) {
+      terminal.clearSelection();
+      return false;
+    }
+    terminal.select(result.col, result.row, result.size);
+    // If it is not in the viewport then we scroll else it just gets selected
+    if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
+      let scroll = result.row - terminal.buffer.active.viewportY;
+      scroll -= Math.floor(terminal.rows / 2);
+      terminal.scrollLines(scroll);
+    }
+    return true;
+  }
+
+  /**
+   * Registers a decoration for the @param result
+   * and @returns the decoration or undefined if
+   * the marker has already been disposed of
+   */
   private _showResultDecoration(result: ISearchResult | undefined): IDecoration | undefined {
     const terminal = this._terminal!;
-    if (!result || result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
+    if (!result) {
       terminal.clearSelection();
       return;
     }
-    const marker = terminal.registerMarker(undefined, result.row - 1);
+    const marker = terminal.registerMarker(undefined, result.row);
     if (!marker) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({ marker, width: result.size });
     findResultDecoration?.onRender((e) => {
-      console.log('rendered', e, result?.term, result?.row);
       e.style.backgroundColor = 'blue';
-      e.style.color = 'white';
       e.style.opacity = '60%';
-      // TODO: use cell width here instead of 10
-      e.style.left = `${(result.col === 0 ? 0 : result.col - 1) * 10}px`;
+      e.style.left = `${result.col * e.clientWidth}px`;
     });
     return findResultDecoration;
   }

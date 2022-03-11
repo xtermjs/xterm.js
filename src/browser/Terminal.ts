@@ -999,8 +999,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return;
     }
     if (row) {
-      console.log(row);
-      return this.buffer.addMarker(row + 1);
+      return this.buffer.addMarker(row);
     }
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
