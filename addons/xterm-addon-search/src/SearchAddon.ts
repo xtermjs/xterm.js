@@ -539,10 +539,12 @@ export class SearchAddon implements ITerminalAddon {
     }
     const findResultDecoration = terminal.registerDecoration({ marker });
     findResultDecoration?.onRender((e) => {
-      e.style.backgroundColor = 'blue';
-      e.style.opacity = '60%';
-      e.style.left = `${result.col * e.clientWidth}px`;
-      e.style.width = `${e.clientWidth * result.term.length}px`;
+      if (!e.classList.contains('xterm-find-result-decoration')) {
+        e.classList.add('xterm-find-result-decoration');
+        // decoration's clientWidth = actualCellWidth
+        e.style.left = `${e.clientWidth * result.col}px`;
+        e.style.width = `${e.clientWidth * result.term.length}px`;
+      }
     });
     return findResultDecoration;
   }
