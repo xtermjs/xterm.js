@@ -101,10 +101,11 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     for (const result of results) {
-      const resultDecoration = this._showResultDecoration(result);
-      if (resultDecoration) {
-        // Add decoration
-        this._resultDecorations.push(resultDecoration);
+      if (result) {
+        const resultDecoration = this._showResultDecoration(result);
+        if (resultDecoration) {
+          this._resultDecorations.push(resultDecoration);
+        }
       }
     }
     if (results.length > 0) {
@@ -142,6 +143,9 @@ export class SearchAddon implements ITerminalAddon {
       currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
+    } else {
+      startRow = this._terminal.buffer.active.cursorY;
+      startCol = this._terminal.buffer.active.cursorX;
     }
 
     this._initLinesCache();
@@ -527,19 +531,15 @@ export class SearchAddon implements ITerminalAddon {
    * and @returns the decoration or undefined if
    * the marker has already been disposed of
    */
-  private _showResultDecoration(result: ISearchResult | undefined): IDecoration | undefined {
+  private _showResultDecoration(result: ISearchResult): IDecoration | undefined {
     const terminal = this._terminal!;
-    if (!result) {
-      terminal.clearSelection();
-      return;
-    }
     const marker = terminal.registerMarker(undefined, result.row);
     if (!marker) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({ marker });
     findResultDecoration?.onRender((e) => {
-      if (!e.classList.contains('xterm-find-result-decoration')) {
+      if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0) {
         e.classList.add('xterm-find-result-decoration');
         // decoration's clientWidth = actualCellWidth
         e.style.left = `${e.clientWidth * result.col}px`;
