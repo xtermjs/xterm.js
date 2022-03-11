@@ -103,7 +103,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       // TODO: make this opt in, must be done before the scroll area in order to show up
       this._scrollbarDecorationNode = document.createElement('canvas');
       this._scrollbarDecorationNode.classList.add('xterm-decoration-scrollbar');
-      this._viewportElement.parentElement.appendChild(this._scrollbarDecorationNode);
+      this._viewportElement.parentElement.insertBefore(this._scrollbarDecorationNode, this._viewportElement);
     }
     if (!this._scrollbarDecorationCanvas) {
       this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
@@ -129,9 +129,9 @@ export class DecorationService extends Disposable implements IDecorationService 
       return;
     }
     this._scrollbarDecorationNode.style.width = `${ScrollbarConstants.WIDTH}px`;
-    this._scrollbarDecorationNode.style.height = `${this._viewportElement.clientHeight}px`;
+    this._scrollbarDecorationNode.style.height = `${this._screenElement!.clientHeight}px`;
     this._scrollbarDecorationNode.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
-    this._scrollbarDecorationNode.height = Math.floor(this._viewportElement.clientHeight * window.devicePixelRatio);
+    this._scrollbarDecorationNode.height = Math.floor(this._screenElement!.clientHeight * window.devicePixelRatio);
     this._scrollbarDecorationCanvas.clearRect(0, 0, this._scrollbarDecorationCanvas.canvas.width, this._scrollbarDecorationCanvas.canvas.height);
     for (const decoration of this._scrollbarDecorations) {
       decoration.render();
