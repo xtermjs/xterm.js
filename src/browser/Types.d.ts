@@ -60,7 +60,7 @@ export interface IPublicTerminal extends IDisposable {
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
-  addMarker(cursorYOffset: number): IMarker | undefined;
+  addMarker(cursorYOffset: number, col?: number, row?: number): IMarker | undefined;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   hasSelection(): boolean;
   getSelection(): string;

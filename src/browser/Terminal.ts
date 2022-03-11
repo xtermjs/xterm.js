@@ -993,12 +993,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker | undefined {
+  public addMarker(cursorYOffset: number, row?: number): IMarker | undefined {
     // Disallow markers on the alt buffer
     if (this.buffer !== this.buffers.normal) {
       return;
     }
-
+    if (row) {
+      console.log(row);
+      return this.buffer.addMarker(row + 1);
+    }
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 

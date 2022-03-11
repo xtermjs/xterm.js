@@ -144,6 +144,8 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    this._resultDecorations.forEach(d => d.dispose());
+    this._resultDecorations = [];
 
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
@@ -388,13 +390,19 @@ export class SearchAddon implements ITerminalAddon {
       terminal.clearSelection();
       return;
     }
-    // TODO:
-    const marker = terminal.registerMarker(undefined, result.col, result.row);
+    const marker = terminal.registerMarker(undefined, result.row - 1);
     if (!marker) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({ marker, width: result.size });
-    findResultDecoration?.onRender((e) => console.log('rendered', e, result?.term, result?.col));
+    findResultDecoration?.onRender((e) => {
+      console.log('rendered', e, result?.term, result?.row);
+      e.style.backgroundColor = 'blue';
+      e.style.color = 'white';
+      e.style.opacity = '60%';
+      // TODO: use cell width here instead of 10
+      e.style.left = `${(result.col === 0 ? 0 : result.col - 1) * 10}px`;
+    });
     return findResultDecoration;
   }
 }
