@@ -180,14 +180,9 @@
 }
 
 .xterm-decoration-scrollbar {
-    z-index: 7;
-    position: sticky;
+    z-index: 6;
+    position: absolute;
     top: 0px;
     right: 0px;
     width: 50px;
-} 
-
-.xterm-decoration-scrollbar.demo-scrollbar {
-  height: 436px;
-  z-index:10;
 } 

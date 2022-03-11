@@ -553,9 +553,8 @@ function addDecoration() {
 }
 
 function addScrollbarDecoration() {
-  document.querySelector('.xterm-decoration-scrollbar')?.classList.add('demo-scrollbar');
   const scrollbarDecorationCanvas = term.registerDecoration({marker: term.addMarker(1), scrollbarDecorationColor: 'red'});
-  scrollbarDecorationCanvas.element!.style.left = `${scrollbarDecorationCanvas.element!.nextElementSibling!.clientWidth + 89}px`;
+  scrollbarDecorationCanvas.element!.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
   term.registerDecoration({marker: term.addMarker(3), scrollbarDecorationColor: 'green'});
   term.registerDecoration({marker: term.addMarker(5), scrollbarDecorationColor: 'blue'});
 } 

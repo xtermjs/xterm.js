@@ -30,11 +30,10 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
 
-  public attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement, scrollbarDecorationNode: HTMLCanvasElement): void {
+  public attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement): void {
     this._renderService = renderService;
     this._screenElement = screenElement;
     this._viewportElement = viewportElement;
-    this._scrollbarDecorationNode = scrollbarDecorationNode;
 
     this.register(this._renderService.onRenderedBufferChange(() => this._refresh()));
     this.register(this._renderService.onDimensionsChange(() => this._refresh(true)));
@@ -97,8 +96,14 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   private _registerScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
-    if (!this._scrollbarDecorationNode || !this._viewportElement) {
+    if (!this._viewportElement?.parentElement) {
       return;
+    }
+    if (!this._scrollbarDecorationNode) {
+      // TODO: make this opt in, must be done before the scroll area in order to show up
+      this._scrollbarDecorationNode = document.createElement('canvas');
+      this._scrollbarDecorationNode.classList.add('xterm-decoration-scrollbar');
+      this._viewportElement.parentElement.appendChild(this._scrollbarDecorationNode);
     }
     if (!this._scrollbarDecorationCanvas) {
       this._scrollbarDecorationCanvas = this._scrollbarDecorationNode.getContext('2d');
