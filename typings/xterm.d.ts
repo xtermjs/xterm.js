@@ -475,7 +475,7 @@ declare module 'xterm' {
      * When provided, renders the decoration in the scrollbar
      * with the given color
      */
-    scrollbarDecorationColor?: string;
+    overviewRulerItemColor?: string;
   }
 
   /**

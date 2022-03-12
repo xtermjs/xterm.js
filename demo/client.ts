@@ -151,7 +151,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
-  document.getElementById('add-scrollbar-decoration').addEventListener('click', addScrollbarDecoration);
+  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
 
 function createTerminal(): void {
@@ -552,10 +552,10 @@ function addDecoration() {
   });
 }
 
-function addScrollbarDecoration() {
-  const scrollbarDecorationCanvas = term.registerDecoration({marker: term.addMarker(1), scrollbarDecorationColor: 'red'});
-  scrollbarDecorationCanvas.element!.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
-  term.registerDecoration({marker: term.addMarker(3), scrollbarDecorationColor: 'green'});
-  term.registerDecoration({marker: term.addMarker(5), scrollbarDecorationColor: 'blue'});
+function addOverviewRuler() {
+  const canvas = term.registerDecoration({marker: term.addMarker(1), overviewRulerItemColor: 'red'});
+  canvas.element!.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerItemColor: 'green'});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerItemColor: 'blue'});
 } 
 
