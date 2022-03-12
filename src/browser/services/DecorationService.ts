@@ -14,6 +14,110 @@ const enum ScrollbarConstants {
   WIDTH = 7
 }
 
+interface IDecorationRenderer {
+  refreshDecorations(shouldRecreate?: boolean): void;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+}
+
+class BufferDecorationRenderer extends Disposable implements IDecorationRenderer {
+  private _decorationContainer: HTMLElement | undefined;
+  private readonly _decorations: BufferDecoration[] = [];
+  private _renderService: IRenderService | undefined;
+
+  constructor(
+    @IBufferService private readonly _bufferService: IBufferService,
+    private readonly _screenElement: HTMLElement) {
+    super();
+    this.register(this._bufferService.buffers.onBufferActivate(() => {
+      // this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
+    }));
+  }
+  public refreshDecorations(shouldRecreate?: boolean): void {
+    if (!this._renderService) {
+      return;
+    }
+    for (const decoration of this._decorations) {
+      decoration.render(this._renderService, shouldRecreate);
+    }
+  }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    if (this._screenElement && !this._decorationContainer) {
+      this._decorationContainer = document.createElement('div');
+      this._decorationContainer.classList.add('xterm-decoration-container');
+      this._screenElement.appendChild(this._decorationContainer);
+    }
+    const decoration = new BufferDecoration(this._bufferService, decorationOptions, this._decorationContainer);
+    this._decorations.push(decoration);
+    decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
+    this.refreshDecorations();
+    return decoration;
+  }
+  public override dispose(): void {
+    if (this._screenElement && this._decorationContainer && this._screenElement.contains(this._decorationContainer)) {
+      this._screenElement.removeChild(this._decorationContainer);
+    }
+    for (const bufferDecoration of this._decorations) {
+      bufferDecoration.dispose();
+    }
+    super.dispose();
+  }
+  public attachToDom(renderService: IRenderService): void {
+    this._renderService = renderService;
+  }
+}
+
+class OverviewRulerRenderer extends Disposable implements IDecorationRenderer  {
+  private _canvas: HTMLCanvasElement | undefined;
+  private _ctx: CanvasRenderingContext2D | null = null;
+  private _decorations: ScrollbarDecoration[] = [];
+
+  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService, private readonly _viewportElement: HTMLElement, private readonly _screenElement: HTMLElement) {
+    super();
+    this.register(this._bufferService.buffers.onBufferActivate(() => {
+      this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
+    }));
+  }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    if (!this._viewportElement.parentElement) {
+      return;
+    }
+    if (!this._canvas) {
+      this._canvas = document.createElement('canvas');
+      this._canvas.classList.add('xterm-decoration-scrollbar');
+      this._viewportElement.parentElement.insertBefore(this._canvas, this._viewportElement);
+    }
+    if (!this._ctx) {
+      this._ctx = this._canvas.getContext('2d');
+      this.refreshDecorations();
+    }
+    const decoration = this._instantiationService.createInstance(ScrollbarDecoration, { marker: decorationOptions.marker, overviewRulerItemColor: decorationOptions.overviewRulerItemColor }, this._canvas, this._ctx!);
+    decoration.onDispose(() => this._decorations.splice(this._decorations.indexOf(decoration), 1));
+    this._decorations.push(decoration);
+    return decoration;
+  }
+  public refreshDecorations(): void {
+    if (!this._canvas || !this._ctx || !this._screenElement) {
+      return;
+    }
+    this._canvas.style.width = `${ScrollbarConstants.WIDTH}px`;
+    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+    this._canvas.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
+    this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    for (const decoration of this._decorations) {
+      decoration.render();
+    }
+  }
+  public override dispose(): void {
+    for (const decoration of this._decorations) {
+      decoration.dispose();
+    }
+    this._decorations = [];
+    this._canvas?.remove();
+    super.dispose();
+  }
+}
+
 export class DecorationService extends Disposable implements IDecorationService {
 
   private _renderService: IRenderService | undefined;
@@ -21,55 +125,50 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   private _screenElement: HTMLElement | undefined;
   private _viewportElement: HTMLElement | undefined;
-  private _bufferDecorationContainer: HTMLElement | undefined;
-  private _overviewRulerCtx: CanvasRenderingContext2D | null = null;
-  private _overviewRulerCanvas: HTMLCanvasElement | undefined;
 
-  private readonly _bufferDecorations: BufferDecoration[] = [];
-  private _overviewRulerDecorations: ScrollbarDecoration[] = [];
+  private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
+  private _bufferDecorationRenderer: BufferDecorationRenderer | undefined;
 
-  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) { super(); }
+  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService) {
+    super();
+  }
 
   public attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement): void {
     this._renderService = renderService;
     this._screenElement = screenElement;
     this._viewportElement = viewportElement;
-
-    this.register(this._renderService.onRenderedBufferChange(() => this._refresh()));
+    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
     this.register(this._renderService.onDimensionsChange(() => this._refresh(true)));
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshScollbarDecorations()));
-    this.register(this._bufferService.buffers.onBufferActivate(() => {
-      this._overviewRulerCanvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
-    }));
+    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
+    if (!this._bufferDecorationRenderer && this._viewportElement && this._screenElement) {
+      // TODO: allow registering before the viewport element exists
+      this._bufferDecorationRenderer = new BufferDecorationRenderer(this._bufferService, this._screenElement);
+      this._bufferDecorationRenderer.attachToDom(renderService);
+    }
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     if (decorationOptions.marker.isDisposed) {
       return undefined;
     }
-    if (decorationOptions.overviewRulerItemColor) {
-      return this._registerScrollbarDecoration(decorationOptions.marker, decorationOptions.overviewRulerItemColor);
+
+    if (decorationOptions.overviewRulerItemColor && this._viewportElement && this._screenElement) {
+      if (!this._overviewRulerRenderer) {
+        this._overviewRulerRenderer = new OverviewRulerRenderer(this._instantiationService, this._bufferService, this._viewportElement, this._screenElement);
+      }
+      return this._overviewRulerRenderer.registerDecoration(decorationOptions);
     }
-    return this._registerBufferDecoration(decorationOptions);
+    return this._bufferDecorationRenderer?.registerDecoration(decorationOptions);
   }
 
   public dispose(): void {
-    for (const bufferDecoration of this._bufferDecorations) {
-      bufferDecoration.dispose();
-    }
-    for (const scrollbarDecoration of this._overviewRulerDecorations) {
-      scrollbarDecoration.dispose();
-    }
-    if (this._screenElement && this._bufferDecorationContainer && this._screenElement.contains(this._bufferDecorationContainer)) {
-      this._screenElement.removeChild(this._bufferDecorationContainer);
-    }
-    this._overviewRulerDecorations = [];
-    this._overviewRulerCanvas?.remove();
+    this._overviewRulerRenderer?.dispose();
+    this._bufferDecorationRenderer?.dispose();
   }
 
   private _refresh(shouldRecreate?: boolean): void {
-    this._refreshBufferDecorations(shouldRecreate);
-    this._refreshScollbarDecorations();
+    this._bufferDecorationRenderer?.refreshDecorations(shouldRecreate);
+    this._overviewRulerRenderer?.refreshDecorations();
   }
 
   private _queueRefresh(): void {
@@ -80,62 +179,6 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._refresh();
       this._animationFrame = undefined;
     });
-  }
-
-  private _registerBufferDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (this._screenElement && !this._bufferDecorationContainer) {
-      this._bufferDecorationContainer = document.createElement('div');
-      this._bufferDecorationContainer.classList.add('xterm-decoration-container');
-      this._screenElement.appendChild(this._bufferDecorationContainer);
-    }
-    const decoration = new BufferDecoration(this._bufferService, decorationOptions, this._bufferDecorationContainer);
-    this._bufferDecorations.push(decoration);
-    decoration.onDispose(() => this._bufferDecorations.splice(this._bufferDecorations.indexOf(decoration), 1));
-    this._queueRefresh();
-    return decoration;
-  }
-
-  private _registerScrollbarDecoration(marker: IMarker, color: string): IDecoration | undefined {
-    if (!this._viewportElement?.parentElement) {
-      return;
-    }
-    if (!this._overviewRulerCanvas) {
-      // TODO: make this opt in, must be done before the scroll area in order to show up
-      this._overviewRulerCanvas = document.createElement('canvas');
-      this._overviewRulerCanvas.classList.add('xterm-decoration-scrollbar');
-      this._viewportElement.parentElement.insertBefore(this._overviewRulerCanvas, this._viewportElement);
-    }
-    if (!this._overviewRulerCtx) {
-      this._overviewRulerCtx = this._overviewRulerCanvas.getContext('2d');
-      this._refreshScollbarDecorations();
-    }
-    const decoration = this._instantiationService.createInstance(ScrollbarDecoration, { marker, overviewRulerItemColor: color }, this._overviewRulerCanvas, this._overviewRulerCtx!);
-    decoration.onDispose(() => this._overviewRulerDecorations.splice(this._overviewRulerDecorations.indexOf(decoration), 1));
-    this._overviewRulerDecorations.push(decoration);
-    return decoration;
-  }
-
-  private _refreshBufferDecorations(shouldRecreate?: boolean): void {
-    if (!this._renderService) {
-      return;
-    }
-    for (const decoration of this._bufferDecorations) {
-      decoration.render(this._renderService, shouldRecreate);
-    }
-  }
-
-  private _refreshScollbarDecorations(): void {
-    if (!this._overviewRulerCtx || !this._viewportElement || !this._overviewRulerCanvas) {
-      return;
-    }
-    this._overviewRulerCanvas.style.width = `${ScrollbarConstants.WIDTH}px`;
-    this._overviewRulerCanvas.style.height = `${this._screenElement!.clientHeight}px`;
-    this._overviewRulerCanvas.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
-    this._overviewRulerCanvas.height = Math.floor(this._screenElement!.clientHeight * window.devicePixelRatio);
-    this._overviewRulerCtx.clearRect(0, 0, this._overviewRulerCtx.canvas.width, this._overviewRulerCtx.canvas.height);
-    for (const decoration of this._overviewRulerDecorations) {
-      decoration.render();
-    }
   }
 }
 
