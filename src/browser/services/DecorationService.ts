@@ -28,9 +28,6 @@ class BufferDecorationRenderer extends Disposable implements IDecorationRenderer
     @IBufferService private readonly _bufferService: IBufferService,
     private readonly _screenElement: HTMLElement) {
     super();
-    this.register(this._bufferService.buffers.onBufferActivate(() => {
-      // this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
-    }));
   }
   public refreshDecorations(shouldRecreate?: boolean): void {
     if (!this._renderService) {
@@ -207,9 +204,9 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
 
   public isDisposed: boolean = false;
 
-  public get element(): HTMLCanvasElement { return this._element!; }
+  public get element(): HTMLCanvasElement | undefined { return this._element; }
   public get marker(): IMarker { return this._marker; }
-  public get color(): string { return this._color!; }
+  public get color(): string | undefined { return this._color; }
 
   private _onDispose = new EventEmitter<void>();
   public get onDispose(): IEvent<void> { return this._onDispose.event; }
@@ -230,6 +227,9 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
     this.render();
   }
   public render(): void {
+    if (!this.color) {
+      throw new Error('No color was provided for the overview ruler decoraiton');
+    }
     if (!this._element) {
       this._element = this._canvas;
     }
@@ -237,21 +237,21 @@ export class ScrollbarDecoration extends Disposable implements IDecoration {
     this._ctx.strokeStyle = this.color;
     this._ctx.strokeRect(
       0,
-      this.element.height * (this.marker.line / this._bufferService.buffers.active.lines.length),
-      this.element.width,
+      Math.round(this._element.height * (this.marker.line / this._bufferService.buffers.active.lines.length)),
+      this._element.width,
       window.devicePixelRatio
     );
-    this._onRender.fire(this.element);
+    this._onRender.fire(this._element);
   }
 
   public override dispose(): void {
-    if (this._isDisposed) {
+    if (this._isDisposed || !this._element) {
       return;
     }
     this._ctx.clearRect(
       0,
-      this.element.height * (this.marker.line / this._bufferService.buffers.active.lines.length),
-      this.element.width,
+      Math.round(this._element.height * (this.marker.line / this._bufferService.buffers.active.lines.length)),
+      this._element.width,
       window.devicePixelRatio
     );
     this.isDisposed = true;
