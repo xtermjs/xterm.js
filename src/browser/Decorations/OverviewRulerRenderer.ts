@@ -23,12 +23,12 @@ export class OverviewRulerRenderer extends Disposable {
   private _x: number | undefined;
 
   constructor(
+    private readonly _viewportElement: HTMLElement,
+    private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService,
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IInstantiationService private readonly _instantiationService: IInstantiationService,
-    private readonly _viewportElement: HTMLElement,
-    private readonly _screenElement: HTMLElement
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
     this._canvas = document.createElement('canvas');

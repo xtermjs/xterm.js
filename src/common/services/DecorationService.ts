@@ -3,19 +3,21 @@
  * @license MIT
  */
 
-
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
+  public serviceBrand: any;
+
+  private readonly _decorations: IInternalDecoration[] = [];
   private _animationFrame: number | undefined;
+
   private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
   public get onDecorationRegistered(): IEvent<IInternalDecoration> { return this._onDecorationRegistered.event; }
   private _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
   public get onDecorationRemoved(): IEvent<IInternalDecoration> { return this._onDecorationRemoved.event; }
-  private _decorations: IInternalDecoration[] = [];
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
 
@@ -45,7 +47,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       this._onDecorationRemoved.fire(decoration);
       decoration.dispose();
     }
-    this._decorations = [];
+    this._decorations.length = 0;
   }
 
   private _queueRefresh(): void {

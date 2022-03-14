@@ -16,10 +16,10 @@ export class BufferDecorationRenderer extends Disposable {
   private _altBufferIsActive: boolean = false;
 
   constructor(
+    private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
-    @IRenderService private readonly _renderService: IRenderService,
-    private readonly _decorationService: IDecorationService,
-    private readonly _screenElement: HTMLElement
+    @IDecorationService private readonly _decorationService: IDecorationService,
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
 

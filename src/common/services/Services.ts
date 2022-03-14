@@ -303,6 +303,7 @@ export interface IUnicodeVersionProvider {
 
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 export interface IDecorationService extends IDisposable {
+  serviceBrand: undefined;
   readonly decorations: IterableIterator<IInternalDecoration>;
   readonly onDecorationRegistered: IEvent<IInternalDecoration>;
   readonly onDecorationRemoved: IEvent<IInternalDecoration>;
