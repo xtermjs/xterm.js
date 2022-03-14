@@ -12,7 +12,6 @@ export class DecorationService extends Disposable implements IDecorationService 
   public serviceBrand: any;
 
   private readonly _decorations: IInternalDecoration[] = [];
-  private _animationFrame: number | undefined;
 
   private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
   public get onDecorationRegistered(): IEvent<IInternalDecoration> { return this._onDecorationRegistered.event; }
@@ -49,33 +48,23 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
     this._decorations.length = 0;
   }
-
-  private _queueRefresh(): void {
-    if (this._animationFrame !== undefined) {
-      return;
-    }
-    this._animationFrame = window.requestAnimationFrame(() => {
-      // this._refresh();
-      this._animationFrame = undefined;
-    });
-  }
 }
 
-class Decoration implements IInternalDecoration {
-  public marker: IMarker;
-  public readonly onRenderEmitter = new EventEmitter<HTMLElement>();
-  public readonly onRender = this.onRenderEmitter.event;
-  private _onDispose = new EventEmitter<void>();
-  public readonly onDispose = this._onDispose.event;
+class Decoration extends Disposable implements IInternalDecoration {
+  public readonly marker: IMarker;
   public element: HTMLElement | undefined;
   public isDisposed: boolean = false;
-  public dispose(): void {
-    throw new Error('Method not implemented.');
-  }
+
+  public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
+  public readonly onRender = this.onRenderEmitter.event;
+  private _onDispose = this.register(new EventEmitter<void>());
+  public readonly onDispose = this._onDispose.event;
+
   constructor(
     public readonly options: IDecorationOptions
   ) {
+    super();
     this.marker = options.marker;
-    this.element = undefined;
+    // TODO: Make sure dispose doesn't need to do anything else?
   }
 }
