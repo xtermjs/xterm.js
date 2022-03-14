@@ -34,6 +34,7 @@ export class BufferDecorationRenderer extends Disposable {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
     }));
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
+    this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
   }
 
   public override dispose(): void {
@@ -100,5 +101,11 @@ export class BufferDecorationRenderer extends Disposable {
       element.style.top = `${line * this._renderService.dimensions.actualCellHeight}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
     }
+  }
+
+  private _removeDecoration(decoration: IInternalDecoration): void {
+    const element = this._decorationElements.get(decoration);
+    element?.remove();
+    this._decorationElements.delete(decoration);
   }
 }
