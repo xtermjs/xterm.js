@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IDecorationRenderer } from 'browser/Decorations/BufferDecorationRenderer';
 import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInstantiationService, IInternalDecoration } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
+
 const enum ScrollbarConstants {
   WIDTH = 7
 }
 
-export class OverviewRulerRenderer extends Disposable implements IDecorationRenderer  {
+export class OverviewRulerRenderer extends Disposable {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D | null;
   private _decorations: ScrollbarDecoration[] = [];
@@ -42,10 +42,10 @@ export class OverviewRulerRenderer extends Disposable implements IDecorationRend
     this.register(this._renderService.onRenderedBufferChange(() => this.refreshDecorations()));
     this.register(this._renderService.onDimensionsChange(() => this.refreshDecorations()));
     this.register(addDisposableDomListener(window, 'resize', () => this.refreshDecorations()));
-    this.register(this._decorationService.onDecorationRegistered(e => this.renderDecoration(e)));
+    this.register(this._decorationService.onDecorationRegistered(e => this.registerDecoration(e)));
     this.register(this._decorationService.onDecorationRemoved(d => d.dispose()));
   }
-  public renderDecoration(decoration: IInternalDecoration): void {
+  public registerDecoration(decoration: IInternalDecoration): void {
     if (!this._ctx || !decoration.options.overviewRulerItemColor) {
       return;
     }

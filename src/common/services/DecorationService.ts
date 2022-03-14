@@ -17,6 +17,8 @@ export class DecorationService extends Disposable implements IDecorationService 
   public get onDecorationRemoved(): IEvent<IInternalDecoration> { return this._onDecorationRemoved.event; }
   private _decorations: IInternalDecoration[] = [];
 
+  public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
+
   constructor() {
     super();
   }
