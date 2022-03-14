@@ -206,11 +206,6 @@ export interface ILinkifier {
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }
-export interface IDecorationService extends IDisposable {
-  readonly onDecorationRegistered: IEvent<IDecorationOptions>;
-  readonly onDecorationRemoved: IEvent<IDecoration>;
-  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-}
 
 interface ILinkState {
   decorations: ILinkDecorations;

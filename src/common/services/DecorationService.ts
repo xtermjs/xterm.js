@@ -6,16 +6,16 @@
 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IDecorationService } from 'common/services/Services';
+import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
   private _animationFrame: number | undefined;
-  private _onDecorationRegistered = this.register(new EventEmitter<IDecorationOptions>());
-  public get onDecorationRegistered(): IEvent<IDecorationOptions> { return this._onDecorationRegistered.event; }
-  private _onDecorationRemoved = this.register(new EventEmitter<IDecoration>());
-  public get onDecorationRemoved(): IEvent<IDecoration> { return this._onDecorationRemoved.event; }
-  private _decorations: IDecoration[] = [];
+  private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
+  public get onDecorationRegistered(): IEvent<IInternalDecoration> { return this._onDecorationRegistered.event; }
+  private _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
+  public get onDecorationRemoved(): IEvent<IInternalDecoration> { return this._onDecorationRemoved.event; }
+  private _decorations: IInternalDecoration[] = [];
 
   constructor() {
     super();
@@ -33,7 +33,7 @@ export class DecorationService extends Disposable implements IDecorationService 
         }
       });
       this._decorations.push(decoration);
-      this._onDecorationRegistered.fire(options);
+      this._onDecorationRegistered.fire(decoration);
     }
     return decoration;
   }
@@ -57,19 +57,21 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 }
 
-class Decoration implements IDecoration {
+class Decoration implements IInternalDecoration {
   public marker: IMarker;
-  private _onRender = new EventEmitter<HTMLElement>();
-  public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
+  public readonly onRenderEmitter = new EventEmitter<HTMLElement>();
+  public readonly onRender = this.onRenderEmitter.event;
   private _onDispose = new EventEmitter<void>();
-  public get onDispose(): IEvent<void> { return this._onDispose.event; }
+  public readonly onDispose = this._onDispose.event;
   public element: HTMLElement | undefined;
   public isDisposed: boolean = false;
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
-  constructor(decorationOptions: IDecorationOptions) {
-    this.marker = decorationOptions?.marker;
+  constructor(
+    public readonly options: IDecorationOptions
+  ) {
+    this.marker = options.marker;
     this.element = undefined;
   }
 }

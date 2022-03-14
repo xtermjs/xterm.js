@@ -4,19 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IDecorationService, IRenderService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { IMarker } from 'common/Types';
 import { IDecoration, IDecorationOptions } from 'xterm';
 
 export interface IDecorationRenderer {
   refreshDecorations(shouldRecreate?: boolean): void;
-  renderDecoration(decoration: IDecoration, decorationOptions: IDecorationOptions): void;
+  renderDecoration(decoration: IInternalDecoration, decorationOptions: IDecorationOptions): void;
 }
 
 export class BufferDecorationRenderer extends Disposable implements IDecorationRenderer {
+  private _animationFrame: number | undefined;
   private _decorationContainer: HTMLElement;
   private readonly _decorations: BufferDecoration[] = [];
   private _altBufferIsActive: boolean = false;
@@ -30,32 +31,40 @@ export class BufferDecorationRenderer extends Disposable implements IDecorationR
     this._decorationContainer = document.createElement('div');
     this._decorationContainer.classList.add('xterm-decoration-container');
     this._screenElement.appendChild(this._decorationContainer);
-    this.register(this._renderService.onRenderedBufferChange(() => this.refreshDecorations()));
-    this.register(this._renderService.onDimensionsChange(() => this.refreshDecorations()));
-    this.register(addDisposableDomListener(window, 'resize', () => this.refreshDecorations()));
+    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
+    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh()));
+    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
     }));
     this.register(this._decorationService.onDecorationRegistered(options => this.renderDecoration(options)));
   }
-  public refreshDecorations(shouldRecreate?: boolean): void {
-    if (!this._renderService) {
+
+  private _queueRefresh(): void {
+    if (this._animationFrame !== undefined) {
       return;
     }
+    this._animationFrame = window.requestAnimationFrame(() => {
+      this.refreshDecorations();
+      this._animationFrame = undefined;
+    });
+  }
+
+  public refreshDecorations(shouldRecreate?: boolean): void {
+    console.log('refresh decorations', this._decorations.length);
     for (const decoration of this._decorations) {
       decoration.render(this._decorationContainer, this._renderService, shouldRecreate);
     }
   }
 
-  public renderDecoration(decorationOptions: IDecorationOptions): void {
-    if (decorationOptions.overviewRulerItemColor) {
-      return;
+  public renderDecoration(decoration: IInternalDecoration): void {
+    const bufferDecoration = new BufferDecoration(this._bufferService, decoration, decoration.options);
+    this._decorations.push(bufferDecoration);
+    // bufferDecoration.render(this._decorationContainer, this._renderService, true);
+    if (this._decorationContainer && bufferDecoration.element && !this._decorationContainer.contains(bufferDecoration.element)) {
+      this._decorationContainer.append(bufferDecoration.element!);
     }
-    const decoration = new BufferDecoration(this._bufferService, decorationOptions);
-    (decoration as BufferDecoration).render(this._decorationContainer, this._renderService, true);
-    if (this._decorationContainer && decoration.element && !this._decorationContainer.contains(decoration.element)) {
-      this._decorationContainer.append(decoration.element!);
-    }
+    this._queueRefresh();
   }
 
   public override dispose(): void {
@@ -68,6 +77,7 @@ export class BufferDecorationRenderer extends Disposable implements IDecorationR
     super.dispose();
   }
 }
+
 export class BufferDecoration extends Disposable implements IDecoration {
   private readonly _marker: IMarker;
   private _element: HTMLElement | undefined;
@@ -85,7 +95,6 @@ export class BufferDecoration extends Disposable implements IDecoration {
   private _onRender = new EventEmitter<HTMLElement>();
   public get onRender(): IEvent<HTMLElement> { return this._onRender.event; }
 
-
   public x: number;
   public anchor: 'left' | 'right';
   public width: number;
@@ -93,6 +102,7 @@ export class BufferDecoration extends Disposable implements IDecoration {
 
   constructor(
     private readonly _bufferService: IBufferService,
+    private readonly _internalDecoration: IInternalDecoration,
     options: IDecorationOptions
   ) {
     super();
@@ -107,16 +117,18 @@ export class BufferDecoration extends Disposable implements IDecoration {
   public render(container: HTMLElement, renderService: IRenderService, shouldRecreate?: boolean): void {
     this._container = container;
     if (!this._element || shouldRecreate) {
-      this._createElement(renderService, shouldRecreate);
+      const element = this._createElement(renderService, shouldRecreate);
+      this._container.appendChild(element);
     }
     this._refreshStyle(renderService);
     if (this._element) {
       console.log('firing on render');
       this._onRender.fire(this._element);
+      this._internalDecoration.onRenderEmitter.fire(this._element!);
     }
   }
 
-  private _createElement(renderService: IRenderService, shouldRecreate?: boolean): void {
+  private _createElement(renderService: IRenderService, shouldRecreate?: boolean): HTMLElement {
     if (shouldRecreate && this._element && this._container && this._container.contains(this._element)) {
       this._container.removeChild(this._element);
     }
@@ -136,6 +148,8 @@ export class BufferDecoration extends Disposable implements IDecoration {
     } else {
       this._element.style.left = this.x ? `${this.x * renderService.dimensions.actualCellWidth}px` : '';
     }
+
+    return this._element;
   }
 
   private _refreshStyle(renderService: IRenderService): void {

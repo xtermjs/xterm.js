@@ -83,11 +83,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
 
+  // TODO: Move into CoreTerminal.ts
+  // common services
+  private _decorationService: DecorationService;
+
   // browser services
   private _charSizeService: ICharSizeService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
-  private _decorationService: DecorationService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
   private _soundService: ISoundService | undefined;

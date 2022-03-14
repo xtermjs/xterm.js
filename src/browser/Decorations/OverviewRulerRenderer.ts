@@ -5,10 +5,10 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IDecorationRenderer } from 'browser/Decorations/BufferDecorationRenderer';
-import { IDecorationService, IRenderService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IInstantiationService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IInstantiationService, IInternalDecoration } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 const enum ScrollbarConstants {
   WIDTH = 7
@@ -45,14 +45,16 @@ export class OverviewRulerRenderer extends Disposable implements IDecorationRend
     this.register(this._decorationService.onDecorationRegistered(e => this.renderDecoration(e)));
     this.register(this._decorationService.onDecorationRemoved(d => d.dispose()));
   }
-  public renderDecoration(decorationOptions: IDecorationOptions): void {
-    if (!this._ctx || !decorationOptions.overviewRulerItemColor) {
+  public renderDecoration(decoration: IInternalDecoration): void {
+    if (!this._ctx || !decoration.options.overviewRulerItemColor) {
       return;
     }
-    const decoration = this._instantiationService.createInstance(ScrollbarDecoration, { marker: decorationOptions.marker, overviewRulerItemColor: decorationOptions.overviewRulerItemColor });
+
+    // TODO: Does this do anything anymore?
+    this._instantiationService.createInstance(ScrollbarDecoration, { marker: decoration.options.marker, overviewRulerItemColor: decoration.options.overviewRulerItemColor });
 
     this._ctx.lineWidth = 1;
-    this._ctx.strokeStyle = decorationOptions.overviewRulerItemColor;
+    this._ctx.strokeStyle = decoration.options.overviewRulerItemColor;
     this._ctx.strokeRect(
       0,
       Math.round(this._canvas.height * (decoration.marker.line / this._bufferService.buffers.active.lines.length)),
