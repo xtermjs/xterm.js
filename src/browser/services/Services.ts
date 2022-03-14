@@ -115,10 +115,9 @@ export interface ICharacterJoinerService {
   deregister(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
 }
-
-
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 export interface IDecorationService extends IDisposable {
-  attachToDom(renderService: IRenderService, screenElement: HTMLElement, viewportElement: HTMLElement): void;
+  readonly onDecorationRegistered: IEvent<IDecorationOptions>;
+  readonly onDecorationRemoved: IEvent<IDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 }

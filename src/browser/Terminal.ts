@@ -45,7 +45,7 @@ import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService, ICharacterJoinerService, IDecorationService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
@@ -55,7 +55,10 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { color, rgba } from 'browser/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { toRgbString } from 'common/input/XParseColor';
-import { DecorationService } from 'browser/services/DecorationService';
+import { BufferDecorationRenderer } from 'browser/Decorations/BufferDecorationRenderer';
+import { OverviewRulerRenderer } from 'browser/Decorations/OverviewRulerRenderer';
+// import { IDecorationService } from 'common/services/Services';
+import { DecorationService } from 'common/services/DecorationService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -71,6 +74,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
 
+  private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
+  private _bufferDecorationRenderer: BufferDecorationRenderer | undefined;
+
   // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
@@ -81,6 +87,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _charSizeService: ICharSizeService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
+  private _decorationService: DecorationService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
   private _soundService: ISoundService | undefined;
@@ -109,7 +116,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
-  public decorationService: IDecorationService;
   private _compositionHelper: ICompositionHelper | undefined;
   private _mouseZoneManager: IMouseZoneManager | undefined;
   private _accessibilityManager: AccessibilityManager | undefined;
@@ -159,7 +165,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.linkifier = this._instantiationService.createInstance(Linkifier);
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
-    this.decorationService = this.register(this._instantiationService.createInstance(DecorationService));
+    this._decorationService = this._instantiationService.createInstance(DecorationService);
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
@@ -577,8 +583,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
-
-    this.decorationService.attachToDom(this._renderService, this.screenElement, this._viewportElement);
+    if (this._decorationService) {
+      this._bufferDecorationRenderer = new BufferDecorationRenderer(this._bufferService, this._renderService, this._decorationService, this.screenElement);
+    }
+    // if (this.options.overviewRulerWidth && this._decorationService) {
+    //   this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._viewportElement, this.screenElement);
+    // }
+    // this.optionsService.onOptionChange(() => {
+    //   if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._renderService && this._viewportElement && this.screenElement && this._decorationService) {
+    //     this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._viewportElement, this.screenElement);
+    //   }});
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
@@ -1004,7 +1018,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    return this.decorationService!.registerDecoration(decorationOptions);
+    return this._decorationService!.registerDecoration(decorationOptions);
   }
 
   /**

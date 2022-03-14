@@ -5,8 +5,9 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -245,6 +246,7 @@ export interface ITerminalOptions {
   windowsMode: boolean;
   windowOptions: IWindowOptions;
   wordSeparator: string;
+  overviewRulerWidth?: number;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -297,4 +299,9 @@ export interface IUnicodeService {
 export interface IUnicodeVersionProvider {
   readonly version: string;
   wcwidth(ucs: number): 0 | 1 | 2;
+}
+export interface IDecorationService extends IDisposable {
+  readonly onDecorationRegistered: IEvent<IDecorationOptions>;
+  readonly onDecorationRemoved: IEvent<IDecoration>;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 }

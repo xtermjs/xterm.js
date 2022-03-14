@@ -9,6 +9,7 @@ import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+import { createDecorator } from 'common/services/ServiceRegistry';
 
 export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   element: HTMLElement | undefined;
@@ -204,6 +205,11 @@ export interface ILinkifier {
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
+}
+export interface IDecorationService extends IDisposable {
+  readonly onDecorationRegistered: IEvent<IDecorationOptions>;
+  readonly onDecorationRemoved: IEvent<IDecoration>;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 }
 
 interface ILinkState {
