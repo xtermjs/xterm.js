@@ -70,8 +70,17 @@ class OverviewRulerRenderer extends Disposable implements IDecorationRenderer  {
   private _canvas: HTMLCanvasElement | undefined;
   private _ctx: CanvasRenderingContext2D | null = null;
   private _decorations: ScrollbarDecoration[] = [];
+  private _width: number | undefined;
+  private _anchor: 'right' | 'left' | undefined;
+  private _x: number | undefined;
 
-  constructor(@IInstantiationService private readonly _instantiationService: IInstantiationService, @IBufferService private readonly _bufferService: IBufferService, private readonly _viewportElement: HTMLElement, private readonly _screenElement: HTMLElement) {
+  constructor(
+    @IInstantiationService private readonly _instantiationService: IInstantiationService,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IRenderService private readonly _renderService: IRenderService,
+    private readonly _viewportElement: HTMLElement,
+    private readonly _screenElement: HTMLElement
+  ) {
     super();
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
@@ -86,6 +95,10 @@ class OverviewRulerRenderer extends Disposable implements IDecorationRenderer  {
       this._canvas.classList.add('xterm-decoration-scrollbar');
       this._viewportElement.parentElement.insertBefore(this._canvas, this._viewportElement);
     }
+    this._width = decorationOptions.width;
+    this._anchor = decorationOptions.anchor;
+    this._x = decorationOptions.x;
+
     if (!this._ctx) {
       this._ctx = this._canvas.getContext('2d');
       this.refreshDecorations();
@@ -96,13 +109,18 @@ class OverviewRulerRenderer extends Disposable implements IDecorationRenderer  {
     return decoration;
   }
   public refreshDecorations(): void {
-    if (!this._canvas || !this._ctx || !this._screenElement) {
+    if (!this._canvas || !this._ctx || !this._screenElement || !this._renderService) {
       return;
     }
-    this._canvas.style.width = `${ScrollbarConstants.WIDTH}px`;
+    this._canvas.style.width = `${this._width || ScrollbarConstants.WIDTH}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor(ScrollbarConstants.WIDTH * window.devicePixelRatio);
+    this._canvas.width = Math.floor((this._width || ScrollbarConstants.WIDTH)* window.devicePixelRatio);
     this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+    if (this._anchor === 'right') {
+      this._canvas.style.right = this._x ? `${this._x * this._renderService.dimensions.actualCellWidth}px` : '';
+    } else {
+      this._canvas.style.left = this._x ? `${this._x * this._renderService.dimensions.actualCellWidth}px` : '';
+    }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorations) {
       decoration.render();
@@ -148,13 +166,13 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    if (decorationOptions.marker.isDisposed) {
+    if (decorationOptions.marker.isDisposed || !this._renderService) {
       return undefined;
     }
 
     if (decorationOptions.overviewRulerItemColor && this._viewportElement && this._screenElement) {
       if (!this._overviewRulerRenderer) {
-        this._overviewRulerRenderer = new OverviewRulerRenderer(this._instantiationService, this._bufferService, this._viewportElement, this._screenElement);
+        this._overviewRulerRenderer = new OverviewRulerRenderer(this._instantiationService, this._bufferService, this._renderService, this._viewportElement, this._screenElement);
       }
       return this._overviewRulerRenderer.registerDecoration(decorationOptions);
     }
