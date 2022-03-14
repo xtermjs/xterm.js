@@ -6,8 +6,8 @@
 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
-import { IDecorationOptions, IDecoration, IMarker, IDisposable, IEvent } from 'xterm';
+import { IDecorationService } from 'common/services/Services';
+import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
   private _animationFrame: number | undefined;
@@ -34,9 +34,6 @@ export class DecorationService extends Disposable implements IDecorationService 
       });
       this._decorations.push(decoration);
       this._onDecorationRegistered.fire(options);
-      decoration.onRender(d => {
-        decoration.setElement(d);
-      });
     }
     return decoration;
   }
@@ -71,11 +68,8 @@ class Decoration implements IDecoration {
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
-  constructor(decorationOptions?: IDecorationOptions) {
-    this.marker = decorationOptions?.marker!;
+  constructor(decorationOptions: IDecorationOptions) {
+    this.marker = decorationOptions?.marker;
     this.element = undefined;
-  }
-  public setElement(element: HTMLElement): void {
-    this.element = element;
   }
 }

@@ -48,11 +48,14 @@ export class BufferDecorationRenderer extends Disposable implements IDecorationR
   }
 
   public renderDecoration(decorationOptions: IDecorationOptions): void {
-    const decoration = new BufferDecoration(this._bufferService, decorationOptions);
-    if (this._decorationContainer && decoration.element && !this._decorationContainer.contains(decoration.element)) {
-      this._decorationContainer.append(decoration.element);
+    if (decorationOptions.overviewRulerItemColor) {
+      return;
     }
+    const decoration = new BufferDecoration(this._bufferService, decorationOptions);
     (decoration as BufferDecoration).render(this._decorationContainer, this._renderService, true);
+    if (this._decorationContainer && decoration.element && !this._decorationContainer.contains(decoration.element)) {
+      this._decorationContainer.append(decoration.element!);
+    }
   }
 
   public override dispose(): void {
@@ -108,6 +111,7 @@ export class BufferDecoration extends Disposable implements IDecoration {
     }
     this._refreshStyle(renderService);
     if (this._element) {
+      console.log('firing on render');
       this._onRender.fire(this._element);
     }
   }

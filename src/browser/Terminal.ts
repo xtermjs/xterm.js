@@ -586,13 +586,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this._decorationService) {
       this._bufferDecorationRenderer = new BufferDecorationRenderer(this._bufferService, this._renderService, this._decorationService, this.screenElement);
     }
-    // if (this.options.overviewRulerWidth && this._decorationService) {
-    //   this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._viewportElement, this.screenElement);
-    // }
-    // this.optionsService.onOptionChange(() => {
-    //   if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._renderService && this._viewportElement && this.screenElement && this._decorationService) {
-    //     this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._viewportElement, this.screenElement);
-    //   }});
+    if (this.options.overviewRulerWidth && this._decorationService) {
+      this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._instantiationService, this._viewportElement, this.screenElement);
+    }
+    this.optionsService.onOptionChange(() => {
+      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._renderService && this._viewportElement && this.screenElement && this._decorationService) {
+        this._overviewRulerRenderer = new OverviewRulerRenderer(this._bufferService, this._renderService, this._decorationService, this._instantiationService, this._viewportElement, this.screenElement);
+      }});
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 

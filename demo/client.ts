@@ -547,8 +547,9 @@ function loadTest() {
 function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
-  decoration.onRender(() => {
-    decoration.element.style.backgroundColor = 'red';
+  decoration.onRender((e) => {
+    console.log(e);
+    e.style.backgroundColor = 'red';
   });
 }
 
@@ -557,5 +558,5 @@ function addOverviewRuler() {
   canvas.element!.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
   term.registerDecoration({marker: term.addMarker(3), overviewRulerItemColor: 'green'});
   term.registerDecoration({marker: term.addMarker(5), overviewRulerItemColor: 'blue'});
-} 
+}
 
