@@ -741,13 +741,13 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
       await openTerminal(page);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 2);
+      await pollFor(page, `document.querySelectorAll('.xterm-screen .xterm-decoration').length`, 2);
     });
     it('should return undefined when the marker has already been disposed of', async () => {
       await openTerminal(page);
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`window.marker.dispose()`);
-      assert.equal(await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });`), undefined);
+      await pollFor(page, `window.decoration = window.term.registerDecoration({ marker: window.marker });`, undefined);
     });
     it('should throw when a negative x offset is provided', async () => {
       await openTerminal(page);
