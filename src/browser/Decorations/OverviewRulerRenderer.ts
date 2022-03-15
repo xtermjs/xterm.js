@@ -79,7 +79,8 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
-    const size = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+    const outerSize = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+    const innerSize = Math.ceil(this._optionsService.options.overviewRulerWidth / 3);
     const position = decoration.options.overviewRulerOptions.position;
     this._ctx.strokeRect(
       !position ||  position === 'left' ? 0 : position === 'right' ? size * 2 + 1: size,
