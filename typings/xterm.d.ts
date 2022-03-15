@@ -266,6 +266,11 @@ declare module 'xterm' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    /**
+     * The width, in pixels, of the canvas for the overview ruler.
+     */
+    overviewRulerWidth?: number;
   }
 
   /**
@@ -394,7 +399,7 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents a disposable with an 
+   * Represents a disposable with an
    * @param onDispose event listener and
    * @param isDisposed property.
    */
@@ -436,7 +441,7 @@ declare module 'xterm' {
 
   /**
    * Options provided when registering a decoration
-   * containing a @param marker, @param anchor, 
+   * containing a @param marker, @param anchor,
    * @param x offset from the anchor, @param width in cells
    * and @param height in cells.
    */
@@ -455,19 +460,19 @@ declare module 'xterm' {
 
     /**
      * The x position offset relative to the anchor
-     */ 
+     */
     x?: number;
 
 
     /**
-     * The width of the decoration in cells, which defaults to 
+     * The width of the decoration in cells, which defaults to
      * cell width or the width in pixels, when an overlayRulerItemColor
      * is provided.
      */
     width?: number;
 
     /**
-     * The height of the decoration in cells, which defaults to 
+     * The height of the decoration in cells, which defaults to
      * cell height
      */
     height?: number;
@@ -946,7 +951,7 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
-     *  @param decorationOptions, which takes a marker and an optional anchor, 
+     *  @param decorationOptions, which takes a marker and an optional anchor,
      *  width, height, and x offset from the anchor. Returns the decoration or
      *  undefined if the alt buffer is active or the marker has already been disposed of.
      *  @throws when options include a negative x offset.

@@ -75,7 +75,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _compositionView: HTMLElement | undefined;
 
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
-  private _bufferDecorationRenderer: BufferDecorationRenderer | undefined;
 
   // private _visualBellTimer: number;
 
@@ -587,16 +586,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
-    if (this._decorationService) {
-      this._bufferDecorationRenderer = this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement);
-    }
-    if (this.options.overviewRulerWidth && this._decorationService) {
-      this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
-    }
-    this.optionsService.onOptionChange(() => {
-      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._renderService && this._viewportElement && this.screenElement && this._decorationService) {
-        this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
-      }});
+    this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement);
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
@@ -614,6 +604,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
 
+    // if (this.options.overviewRulerWidth) {
+    this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+    // }
+    this.optionsService.onOptionChange(() => {
+      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
+        this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+      }});
     // Measure the character size
     this._charSizeService.measure();
 
