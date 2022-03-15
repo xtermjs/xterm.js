@@ -475,10 +475,11 @@ declare module 'xterm' {
     height?: number;
 
     /**
-     * Renders the decoration in the scrollbar
-     * with the given @param color and optional @param position.
-     * If @param position is not set, it will span the full @param overviewRulerWidth, which
-     * must be provided via @TerminalOptions for this to work.
+     * When defined, renders the decoration in the overview ruler to the right
+     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
+     * in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
      */
     overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
   }
