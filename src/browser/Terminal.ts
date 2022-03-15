@@ -583,7 +583,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
-    this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement);
+    this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
@@ -1016,7 +1016,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    return this._decorationService!.registerDecoration(decorationOptions);
+    return this._decorationService.registerDecoration(decorationOptions);
   }
 
   /**

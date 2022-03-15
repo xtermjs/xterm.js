@@ -268,7 +268,8 @@ declare module 'xterm' {
     windowOptions?: IWindowOptions;
 
     /**
-     * The width, in pixels, of the canvas for the overview ruler.
+     * The width, in pixels, of the canvas for the overview ruler. The overview
+     * ruler will be hidden when not set.
      */
     overviewRulerWidth?: number;
   }
@@ -399,7 +400,7 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents a disposable with an
+   * Represents a disposable that tracks is disposed state.
    * @param onDispose event listener and
    * @param isDisposed property.
    */
