@@ -439,11 +439,8 @@ declare module 'xterm' {
     element: HTMLElement | undefined;
   }
 
-  /**
-   * Options provided when registering a decoration
-   * containing a @param marker, @param anchor,
-   * @param x offset from the anchor, @param width in cells
-   * and @param height in cells.
+  /*
+   * Options that define the presentation of the decoration.
    */
   export interface IDecorationOptions {
     /**
