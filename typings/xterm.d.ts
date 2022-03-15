@@ -450,18 +450,18 @@ declare module 'xterm' {
      * The line in the terminal where
      * the decoration will be displayed
      */
-    marker: IMarker;
+    readonly marker: IMarker;
 
     /*
      * Where the decoration will be anchored -
      * defaults to the left edge
      */
-    anchor?: 'right' | 'left';
+    readonly anchor?: 'right' | 'left';
 
     /**
      * The x position offset relative to the anchor
      */
-    x?: number;
+    readonly x?: number;
 
 
     /**
@@ -469,13 +469,13 @@ declare module 'xterm' {
      * cell width or the width in pixels, when an overlayRulerItemColor
      * is provided.
      */
-    width?: number;
+    readonly width?: number;
 
     /**
      * The height of the decoration in cells, which defaults to
      * cell height
      */
-    height?: number;
+    readonly height?: number;
 
     /**
      * Renders the decoration in the scrollbar
@@ -483,7 +483,7 @@ declare module 'xterm' {
      * If @param position is not set, it will span the full @param overviewRulerWidth, which
      * must be provided via @TerminalOptions for this to work.
      */
-    overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
+    readonly overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
   }
 
   /**

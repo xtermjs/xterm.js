@@ -9,8 +9,8 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 
 export class OverviewRulerRenderer extends Disposable {
-  private _canvas: HTMLCanvasElement;
-  private _ctx: CanvasRenderingContext2D | null;
+  private readonly _canvas: HTMLCanvasElement;
+  private readonly _ctx: CanvasRenderingContext2D;
   private readonly _decorationElements: Map<IInternalDecoration, HTMLElement> = new Map();
   private get _width(): number {
     return this._optionsService.options.overviewRulerWidth || 0;
@@ -29,23 +29,27 @@ export class OverviewRulerRenderer extends Disposable {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add('xterm-decoration-overview-ruler');
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
-    this._ctx = this._canvas.getContext('2d');
+    const ctx = this._canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Ctx cannot be null');
+    } else {
+      this._ctx = ctx;
+    }
     this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
     this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
     this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
-    this.refreshDecorations();
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
-    this.register(this._renderService.onRenderedBufferChange(() => this.refreshDecorations()));
-    this.register(this._renderService.onDimensionsChange(() => this.refreshDecorations()));
-    this.register(addDisposableDomListener(window, 'resize', () => this.refreshDecorations()));
+    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
+    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh()));
+    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
       if (o === 'overviewRulerWidth') {
-        this.refreshDecorations();
+        this._queueRefresh();
       }
     }));
   }
@@ -65,9 +69,6 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshStyle(decoration: IInternalDecoration): void {
-    if (!this._ctx || !this._optionsService.options.overviewRulerWidth) {
-      return;
-    }
     if (decoration.options.anchor === 'right') {
       this._canvas.style.right = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
     } else {
@@ -79,7 +80,7 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
-    const size = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+    const size = Math.floor(this._width / 3);
     const position = decoration.options.overviewRulerOptions.position;
     this._ctx.strokeRect(
       !position ||  position === 'left' ? 0 : position === 'right' ? size * 2 + 1: size,
@@ -89,7 +90,7 @@ export class OverviewRulerRenderer extends Disposable {
     );
   }
 
-  public refreshDecorations(): void {
+  private _refreshDecorations(): void {
     this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
     this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
@@ -114,7 +115,7 @@ export class OverviewRulerRenderer extends Disposable {
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this.refreshDecorations();
+      this._refreshDecorations();
       this._animationFrame = undefined;
     });
   }
