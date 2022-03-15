@@ -432,8 +432,8 @@ declare module 'xterm' {
     readonly onRender: IEvent<HTMLElement>;
 
     /**
-     * The HTMLElement that gets created or drawn to (for scrollbar decorations)
-     * after the first _onRender call, or undefined if accessed before
+     * The element that the decoration is rendered to. This will be undefined
+     * until it is rendered for the first time by @{link IDecoration.onRender}.
      * that.
      */
     element: HTMLElement | undefined;
