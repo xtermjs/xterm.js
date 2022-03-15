@@ -470,8 +470,7 @@ declare module 'xterm' {
     width?: number;
 
     /**
-     * The height of the decoration in cells, which defaults to
-     * cell height
+     * The height of the decoration in cells, defaults to 1.
      */
     height?: number;
 
