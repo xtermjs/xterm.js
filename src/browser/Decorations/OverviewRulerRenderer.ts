@@ -12,8 +12,8 @@ import { IBufferService, IDecorationService, IInternalDecoration, IOptionsServic
 // when refreshStyle is called
 // by storing and updating
 // the sizes of the decorations to be drawn
-const workArray = new Uint16Array(3);
-const enum WorkIndex {
+const renderSizes = new Uint16Array(3);
+const enum SizeIndex {
   OUTER_SIZE = 0,
   INNER_SIZE = 0
 }
@@ -55,16 +55,14 @@ export class OverviewRulerRenderer extends Disposable {
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
-      if (o === 'overviewRulerWidth' && this._optionsService.options.overviewRulerWidth) {
-        workArray[WorkIndex.OUTER_SIZE] = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
-        workArray[WorkIndex.INNER_SIZE] = Math.ceil(this._optionsService.options.overviewRulerWidth / 3);
+      if (o === 'overviewRulerWidth') {
+        renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
+        renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
         this._queueRefresh();
       }
     }));
-    if (this._optionsService.options.overviewRulerWidth) {
-      workArray[WorkIndex.OUTER_SIZE] = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
-      workArray[WorkIndex.INNER_SIZE] = Math.ceil(this._optionsService.options.overviewRulerWidth / 3);
-    }
+    renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
+    renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
   }
 
   public override dispose(): void {
@@ -95,10 +93,11 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.lineWidth = !decoration.options.overviewRulerOptions.position ? 2 : 6;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
+
     this._ctx.strokeRect(
-      !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? workArray[WorkIndex.OUTER_SIZE] + workArray[WorkIndex.INNER_SIZE]: workArray[WorkIndex.OUTER_SIZE],
+      !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      !decoration.options.overviewRulerOptions.position ? this._canvas.width : decoration.options.overviewRulerOptions.position === 'center' ? workArray[WorkIndex.INNER_SIZE] : workArray[WorkIndex.OUTER_SIZE],
+      !decoration.options.overviewRulerOptions.position ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
       window.devicePixelRatio
     );
   }
