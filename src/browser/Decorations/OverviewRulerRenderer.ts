@@ -93,7 +93,7 @@ export class OverviewRulerRenderer extends Disposable {
       this._decorationElements.delete(decoration);
       return;
     }
-    this._ctx.lineWidth = 1;
+    this._ctx.lineWidth = !decoration.options.overviewRulerOptions.position ? 2 : 6;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.strokeRect(
       !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? workArray[WorkIndex.OUTER_SIZE] + workArray[WorkIndex.INNER_SIZE]: workArray[WorkIndex.OUTER_SIZE],
