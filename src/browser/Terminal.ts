@@ -604,9 +604,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
 
-    // if (this.options.overviewRulerWidth) {
-    this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
-    // }
+    if (this.options.overviewRulerWidth) {
+      this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+    }
     this.optionsService.onOptionChange(() => {
       if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);

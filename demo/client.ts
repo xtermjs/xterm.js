@@ -553,6 +553,7 @@ function addDecoration() {
 }
 
 function addOverviewRuler() {
+  term.options['overviewRulerWidth'] = 15;
   const canvas = term.registerDecoration({marker: term.addMarker(1), overviewRulerItemColor: 'red'});
   term.registerDecoration({marker: term.addMarker(3), overviewRulerItemColor: 'green'});
   term.registerDecoration({marker: term.addMarker(5), overviewRulerItemColor: 'blue'});
