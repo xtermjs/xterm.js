@@ -122,8 +122,7 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _removeDecoration(decoration: IInternalDecoration): void {
-    const element = this._decorationElements.get(decoration);
-    element?.remove();
+    this._decorationElements.get(decoration)?.remove();
     this._decorationElements.delete(decoration);
   }
 }
