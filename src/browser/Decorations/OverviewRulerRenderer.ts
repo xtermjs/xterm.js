@@ -8,15 +8,13 @@ import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 
-const enum ScrollbarConstants {
-  WIDTH = 15
-}
-
 export class OverviewRulerRenderer extends Disposable {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D | null;
   private readonly _decorationElements: Map<IInternalDecoration, HTMLElement> = new Map();
-
+  private get _width(): number {
+    return this._optionsService.options.overviewRulerWidth || 0;
+  }
   private _animationFrame: number | undefined;
 
   constructor(
@@ -32,9 +30,9 @@ export class OverviewRulerRenderer extends Disposable {
     this._canvas.classList.add('xterm-decoration-overview-ruler');
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     this._ctx = this._canvas.getContext('2d');
-    this._canvas.style.width = `${this._optionsService.options.overviewRulerWidth || ScrollbarConstants.WIDTH}px`;
+    this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor((this._optionsService.options.overviewRulerWidth|| ScrollbarConstants.WIDTH)* window.devicePixelRatio);
+    this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
     this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
     this.refreshDecorations();
     this.register(this._bufferService.buffers.onBufferActivate(() => {
@@ -92,9 +90,9 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   public refreshDecorations(): void {
-    this._canvas.style.width = `${this._optionsService.options.overviewRulerWidth || ScrollbarConstants.WIDTH}px`;
+    this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor((this._optionsService.options.overviewRulerWidth || ScrollbarConstants.WIDTH)* window.devicePixelRatio);
+    this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
     this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
 
     for (const decoration of this._decorationService.decorations) {

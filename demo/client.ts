@@ -556,12 +556,12 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 13;
-  const canvas = term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: 'red' }});
-  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: 'green' }});
-  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: 'blue' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'red', position: 'left' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'green', position: 'center' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'blue', position: 'right' }});
+  const canvas = term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
   canvas.onRender((e) => {
     e.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
   });

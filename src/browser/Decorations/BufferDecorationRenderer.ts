@@ -64,6 +64,8 @@ export class BufferDecorationRenderer extends Disposable {
     if (!element) {
       element = this._createElement(decoration);
       decoration.onDispose(() => this._removeDecoration(decoration));
+      decoration.marker.onDispose(() => decoration.dispose());
+      decoration.element = element;
       this._decorationElements.set(decoration, element);
       this._container.appendChild(element);
     }
@@ -105,11 +107,7 @@ export class BufferDecorationRenderer extends Disposable {
   }
 
   private _removeDecoration(decoration: IInternalDecoration): void {
-    const element = this._decorationElements.get(decoration);
-    if (element && this._container && this._container.contains(element)) {
-      this._container.removeChild(element);
-    }
-    element?.remove();
+    this._decorationElements.get(decoration)?.remove();
     this._decorationElements.delete(decoration);
   }
 }

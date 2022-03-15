@@ -436,7 +436,7 @@ declare module 'xterm' {
      * after the first _onRender call, or undefined if accessed before
      * that.
      */
-    readonly element: HTMLElement | undefined;
+    element: HTMLElement | undefined;
   }
 
   /**
