@@ -556,9 +556,12 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  const canvas = term.registerDecoration({marker: term.addMarker(1), { color }: 'red'});
-  term.registerDecoration({marker: term.addMarker(3), { color }: 'green'});
-  term.registerDecoration({marker: term.addMarker(5), { color }: 'blue'});
+  const canvas = term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: 'red' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: 'green' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: 'blue' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'red', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'green', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: 'blue', position: 'right' }});
   canvas.onRender((e) => {
     e.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
   });

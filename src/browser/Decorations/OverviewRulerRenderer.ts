@@ -67,7 +67,7 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshStyle(decoration: IInternalDecoration): void {
-    if (!this._ctx) {
+    if (!this._ctx || !this._optionsService.options.overviewRulerWidth) {
       return;
     }
     if (decoration.options.anchor === 'right') {
@@ -81,10 +81,12 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
+    const size = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+    const position = decoration.options.overviewRulerOptions.position;
     this._ctx.strokeRect(
-      0,
+      !position ||  position === 'left' ? 0 : position === 'right' ? size * 2 + 1: size,
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      this._canvas.width,
+      !position ? this._canvas.width : position === 'center' ? size + 1 : size,
       window.devicePixelRatio
     );
   }
