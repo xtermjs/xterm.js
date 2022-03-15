@@ -732,7 +732,7 @@ describe('API Integration Tests', function(): void {
   });
 
   describe('registerDecoration', () => {
-    it('should register decorations and not render them', async () => {
+    it('should register decorations and render them', async () => {
       await openTerminal(page);
       await writeSync(page, '\\n\\n\\n\\n');
       await writeSync(page, '\\n\\n\\n\\n');
@@ -742,17 +742,7 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
       await page.evaluate(`window.term.resize(10, 5)`);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 0);
-    });
-    it('on resize should dispose of the old decoration and create a new one', async () => {
-      await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
-      await page.evaluate(`window.marker = window.term.addMarker(1)`);
-      await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker })`);
-      await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-      await page.evaluate(`window.term.resize(10, 5)`);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 1);
+      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 2);
     });
     it('should return undefined when the marker has already been disposed of', async () => {
       await openTerminal(page);
