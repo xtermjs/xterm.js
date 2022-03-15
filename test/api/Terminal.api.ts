@@ -574,7 +574,7 @@ describe('API Integration Tests', function(): void {
         await page.evaluate(`window.term.scrollLines(10)`);
         await page.evaluate(`window.term.addMarker(3)`);
         await page.evaluate(`window.term.addMarker(4)`);
-        await page.evaluate(`      
+        await page.evaluate(`
           for (let i = 0; i < window.term.markers.length; ++i) {
               const marker = window.term.markers[i];
               marker.onDispose(() => window.disposeStack.push(marker));

@@ -63,6 +63,7 @@ export class BufferDecorationRenderer extends Disposable {
     let element = this._decorationElements.get(decoration);
     if (!element) {
       element = this._createElement(decoration);
+      decoration.onDispose(() => this._removeDecoration(decoration));
       this._decorationElements.set(decoration, element);
       this._container.appendChild(element);
     }
