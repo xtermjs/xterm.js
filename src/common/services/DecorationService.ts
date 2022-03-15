@@ -68,8 +68,9 @@ class Decoration extends Disposable implements IInternalDecoration {
     this.marker.onDispose(() => this.dispose());
   }
   public override dispose(): void {
-    this.element?.remove();
     this._onDispose.fire();
+    this.element?.remove();
+    this.element = undefined;
     super.dispose();
   }
 }

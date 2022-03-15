@@ -75,12 +75,12 @@ export class OverviewRulerRenderer extends Disposable {
     } else {
       this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
-    if (!decoration.options.overviewRulerItemColor) {
+    if (!decoration.options.overviewRulerOptions?.color) {
       this._decorationElements.delete(decoration);
       return;
     }
     this._ctx.lineWidth = 1;
-    this._ctx.strokeStyle = decoration.options.overviewRulerItemColor;
+    this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.strokeRect(
       0,
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),

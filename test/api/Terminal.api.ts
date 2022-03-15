@@ -744,18 +744,6 @@ describe('API Integration Tests', function(): void {
       await page.evaluate(`window.term.resize(10, 5)`);
       assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 0);
     });
-    it('should register decorations and render them when open is called', async () => {
-      await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
-      await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
-      await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
-      await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
-      await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
-      await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-      assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 2);
-    });
     it('on resize should dispose of the old decoration and create a new one', async () => {
       await openTerminal(page);
       await writeSync(page, '\\n\\n\\n\\n');

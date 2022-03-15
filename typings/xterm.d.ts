@@ -478,10 +478,12 @@ declare module 'xterm' {
     height?: number;
 
     /**
-     * When provided, renders the decoration in the scrollbar
-     * with the given color
+     * Renders the decoration in the scrollbar
+     * with the given @param color and optional @param position.
+     * If @param position is not set, it will span the full @param overviewRulerWidth, which
+     * must be provided via @TerminalOptions for this to work.
      */
-    overviewRulerItemColor?: string;
+    overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
   }
 
   /**

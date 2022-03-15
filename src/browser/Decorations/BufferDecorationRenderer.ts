@@ -106,6 +106,9 @@ export class BufferDecorationRenderer extends Disposable {
 
   private _removeDecoration(decoration: IInternalDecoration): void {
     const element = this._decorationElements.get(decoration);
+    if (element && this._container && this._container.contains(element)) {
+      this._container.removeChild(element);
+    }
     element?.remove();
     this._decorationElements.delete(decoration);
   }
