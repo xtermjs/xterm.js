@@ -73,7 +73,7 @@ export class OverviewRulerRenderer extends Disposable {
     } else {
       this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
-    if (!decoration.options.overviewRulerOptions?.color) {
+    if (!decoration.options.overviewRulerOptions) {
       this._decorationElements.delete(decoration);
       return;
     }
