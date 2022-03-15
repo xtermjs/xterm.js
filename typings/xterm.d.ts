@@ -465,9 +465,7 @@ declare module 'xterm' {
 
 
     /**
-     * The width of the decoration in cells, which defaults to
-     * cell width or the width in pixels, when an overlayRulerItemColor
-     * is provided.
+     * The width of the decoration in cells, defaults to 1.
      */
     width?: number;
 
