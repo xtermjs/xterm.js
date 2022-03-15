@@ -74,18 +74,19 @@ export class OverviewRulerRenderer extends Disposable {
     } else {
       this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
-    if (!decoration.options.overviewRulerOptions?.color) {
+    if (!decoration.options.overviewRulerOptions) {
       this._decorationElements.delete(decoration);
       return;
     }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
-    const size = Math.floor(this._width / 3);
+    const outerSize = Math.floor(this._width / 3);
+    const innerSize = Math.ceil(this._width / 3);
     const position = decoration.options.overviewRulerOptions.position;
     this._ctx.strokeRect(
-      !position ||  position === 'left' ? 0 : position === 'right' ? size * 2 + 1: size,
+      !position ||  position === 'left' ? 0 : position === 'right' ? outerSize + innerSize: outerSize,
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      !position ? this._canvas.width : position === 'center' ? size + 1 : size,
+      !position ? this._canvas.width : position === 'center' ? innerSize : outerSize,
       window.devicePixelRatio
     );
   }

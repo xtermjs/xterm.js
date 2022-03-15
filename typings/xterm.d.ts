@@ -432,8 +432,8 @@ declare module 'xterm' {
     readonly onRender: IEvent<HTMLElement>;
 
     /**
-     * The HTMLElement that gets created or drawn to (for scrollbar decorations)
-     * after the first _onRender call, or undefined if accessed before
+     * The element that the decoration is rendered to. This will be undefined
+     * until it is rendered for the first time by @{link IDecoration.onRender}.
      * that.
      */
     element: HTMLElement | undefined;
@@ -465,23 +465,21 @@ declare module 'xterm' {
 
 
     /**
-     * The width of the decoration in cells, which defaults to
-     * cell width or the width in pixels, when an overlayRulerItemColor
-     * is provided.
+     * The width of the decoration in cells, defaults to 1.
      */
     readonly width?: number;
 
     /**
-     * The height of the decoration in cells, which defaults to
-     * cell height
+     * The height of the decoration in cells, defaults to 1.
      */
     readonly height?: number;
 
     /**
-     * Renders the decoration in the scrollbar
-     * with the given @param color and optional @param position.
-     * If @param position is not set, it will span the full @param overviewRulerWidth, which
-     * must be provided via @TerminalOptions for this to work.
+     * When defined, renders the decoration in the overview ruler to the right
+     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
+     * in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
      */
     readonly overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
   }
