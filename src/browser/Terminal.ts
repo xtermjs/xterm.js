@@ -57,8 +57,8 @@ import { CharacterJoinerService } from 'browser/services/CharacterJoinerService'
 import { toRgbString } from 'common/input/XParseColor';
 import { BufferDecorationRenderer } from 'browser/Decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/Decorations/OverviewRulerRenderer';
-// import { IDecorationService } from 'common/services/Services';
 import { DecorationService } from 'common/services/DecorationService';
+import { IDecorationService } from 'common/services/Services';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -169,6 +169,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.linkifier = this._instantiationService.createInstance(Linkifier);
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
+    this._instantiationService.setService(IDecorationService, this._decorationService);
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));

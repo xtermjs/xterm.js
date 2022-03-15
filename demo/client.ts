@@ -548,7 +548,6 @@ function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
   decoration.onRender((e) => {
-    console.log('onRender', e);
     e.style.backgroundColor = 'red';
   });
 }
