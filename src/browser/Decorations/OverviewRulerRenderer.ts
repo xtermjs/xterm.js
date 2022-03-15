@@ -8,6 +8,16 @@ import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 
+// This is used to reduce memory usage
+// when refreshStyle is called
+// by storing and updating
+// the sizes of the decorations to be drawn
+const workArray = new Uint16Array(3);
+const enum WorkIndex {
+  OUTER_SIZE = 0,
+  INNER_SIZE = 0
+}
+
 export class OverviewRulerRenderer extends Disposable {
   private readonly _canvas: HTMLCanvasElement;
   private readonly _ctx: CanvasRenderingContext2D;
@@ -40,15 +50,21 @@ export class OverviewRulerRenderer extends Disposable {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
     this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
-    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh(true)));
+    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh(true, true)));
     this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh(true)));
-    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
+    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
-      if (o === 'overviewRulerWidth') {
+      if (o === 'overviewRulerWidth' && this._optionsService.options.overviewRulerWidth) {
+        workArray[WorkIndex.OUTER_SIZE] = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+        workArray[WorkIndex.INNER_SIZE] = Math.ceil(this._optionsService.options.overviewRulerWidth / 3);
         this._queueRefresh();
       }
     }));
+    if (this._optionsService.options.overviewRulerWidth) {
+      workArray[WorkIndex.OUTER_SIZE] = Math.floor(this._optionsService.options.overviewRulerWidth / 3);
+      workArray[WorkIndex.INNER_SIZE] = Math.ceil(this._optionsService.options.overviewRulerWidth / 3);
+    }
   }
 
   public override dispose(): void {
@@ -65,11 +81,13 @@ export class OverviewRulerRenderer extends Disposable {
     super.dispose();
   }
 
-  private _refreshStyle(decoration: IInternalDecoration): void {
-    if (decoration.options.anchor === 'right') {
-      this._canvas.style.right = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
-    } else {
-      this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
+  private _refreshStyle(decoration: IInternalDecoration, updateAnchor?: boolean): void {
+    if (updateAnchor) {
+      if (decoration.options.anchor === 'right') {
+        this._canvas.style.right = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
+      } else {
+        this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
+      }
     }
     if (!decoration.options.overviewRulerOptions) {
       this._decorationElements.delete(decoration);
@@ -77,18 +95,15 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.lineWidth = 1;
     this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
-    const outerSize = Math.floor(this._width / 3);
-    const innerSize = Math.ceil(this._width / 3);
-    const position = decoration.options.overviewRulerOptions.position;
     this._ctx.strokeRect(
-      !position ||  position === 'left' ? 0 : position === 'right' ? outerSize + innerSize: outerSize,
+      !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? workArray[WorkIndex.OUTER_SIZE] + workArray[WorkIndex.INNER_SIZE]: workArray[WorkIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      !position ? this._canvas.width : position === 'center' ? innerSize : outerSize,
+      !decoration.options.overviewRulerOptions.position ? this._canvas.width : decoration.options.overviewRulerOptions.position === 'center' ? workArray[WorkIndex.INNER_SIZE] : workArray[WorkIndex.OUTER_SIZE],
       window.devicePixelRatio
     );
   }
 
-  private _refreshDecorations(updateCanvasDimensions?: boolean): void {
+  private _refreshDecorations(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (updateCanvasDimensions) {
       this._canvas.style.width = `${this._width}px`;
       this._canvas.style.height = `${this._screenElement.clientHeight}px`;
@@ -97,25 +112,25 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
-      this._renderDecoration(decoration);
+      this._renderDecoration(decoration, updateAnchor);
     }
   }
 
-  private _renderDecoration(decoration: IInternalDecoration): void {
+  private _renderDecoration(decoration: IInternalDecoration, updateAnchor?: boolean): void {
     const element = this._decorationElements.get(decoration);
     if (!element) {
       this._decorationElements.set(decoration, this._canvas);
     }
-    this._refreshStyle(decoration);
+    this._refreshStyle(decoration, updateAnchor);
     decoration.onRenderEmitter.fire(this._canvas);
   }
 
-  private _queueRefresh(updateCanvasDimensions?: boolean): void {
+  private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (this._animationFrame !== undefined) {
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this._refreshDecorations(updateCanvasDimensions);
+      this._refreshDecorations(updateCanvasDimensions, updateAnchor);
       this._animationFrame = undefined;
     });
   }

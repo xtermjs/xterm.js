@@ -563,7 +563,7 @@ function addOverviewRuler() {
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
   canvas.onRender((e) => {
-    e.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 5}px`;
+    e.style.left = `${document.querySelector('.xterm-viewport').clientWidth + 1}px`;
   });
 }
 
