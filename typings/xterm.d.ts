@@ -400,7 +400,7 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents a disposable with an
+   * Represents a disposable that tracks is disposed state.
    * @param onDispose event listener and
    * @param isDisposed property.
    */
