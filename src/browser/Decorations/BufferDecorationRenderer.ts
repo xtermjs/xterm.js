@@ -109,6 +109,5 @@ export class BufferDecorationRenderer extends Disposable {
   private _removeDecoration(decoration: IInternalDecoration): void {
     this._decorationElements.get(decoration)?.remove();
     this._decorationElements.delete(decoration);
-    decoration.dispose();
   }
 }

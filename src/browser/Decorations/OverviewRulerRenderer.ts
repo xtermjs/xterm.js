@@ -35,16 +35,13 @@ export class OverviewRulerRenderer extends Disposable {
     } else {
       this._ctx = ctx;
     }
-    this._canvas.style.width = `${this._width}px`;
-    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
-    this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._queueRefresh(true);
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
     this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
-    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh()));
-    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
+    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh(true)));
+    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh(true)));
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
@@ -91,12 +88,14 @@ export class OverviewRulerRenderer extends Disposable {
     );
   }
 
-  private _refreshDecorations(): void {
-    this._canvas.style.width = `${this._width}px`;
-    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
-    this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
-
+  private _refreshDecorations(updateCanvasDimensions?: boolean): void {
+    if (updateCanvasDimensions) {
+      this._canvas.style.width = `${this._width}px`;
+      this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+      this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
+      this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+    }
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
       this._renderDecoration(decoration);
     }
@@ -111,12 +110,12 @@ export class OverviewRulerRenderer extends Disposable {
     decoration.onRenderEmitter.fire(this._canvas);
   }
 
-  private _queueRefresh(): void {
+  private _queueRefresh(updateCanvasDimensions?: boolean): void {
     if (this._animationFrame !== undefined) {
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this._refreshDecorations();
+      this._refreshDecorations(updateCanvasDimensions);
       this._animationFrame = undefined;
     });
   }
