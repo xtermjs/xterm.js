@@ -29,7 +29,7 @@ export class OverviewRulerRenderer extends Disposable {
   ) {
     super();
     this._canvas = document.createElement('canvas');
-    this._canvas.classList.add('xterm-decoration-scrollbar');
+    this._canvas.classList.add('xterm-decoration-overview-ruler');
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     this._ctx = this._canvas.getContext('2d');
     this._canvas.style.width = `${this._optionsService.options.overviewRulerWidth || ScrollbarConstants.WIDTH}px`;

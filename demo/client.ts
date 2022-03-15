@@ -548,7 +548,9 @@ function addDecoration() {
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker });
   decoration.onRender((e) => {
-    e.style.backgroundColor = 'red';
+    if (e.classList.value === 'xterm-decoration') {
+      e.style.backgroundColor = 'red';
+    }
   });
 }
 
