@@ -1016,7 +1016,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    return this._decorationService!.registerDecoration(decorationOptions);
+    return this._decorationService.registerDecoration(decorationOptions);
   }
 
   /**
