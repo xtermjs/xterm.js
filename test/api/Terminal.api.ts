@@ -731,31 +731,26 @@ describe('API Integration Tests', function(): void {
     await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   });
 
-  describe('registerDecoration', () => {
-    it('should register decorations and render them', async () => {
-      await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
+  describe.only('registerDecoration', () => {
+    it('should register decorations and render them when terminal open is called', async () => {
+      await page.evaluate(`window.term = new Terminal({})`);
+      await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+      await page.waitForSelector('.xterm-text-layer');
       await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
       await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
       await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
-      await page.evaluate(`window.term.resize(10, 5)`);
+      await openTerminal(page);
       assert.equal(await page.evaluate(`document.querySelectorAll('.xterm-screen .xterm-decoration').length`), 2);
     });
     it('should return undefined when the marker has already been disposed of', async () => {
       await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`window.marker.dispose()`);
       assert.equal(await page.evaluate(`window.decoration = window.term.registerDecoration({ marker: window.marker });`), undefined);
     });
     it('should throw when a negative x offset is provided', async () => {
       await openTerminal(page);
-      await writeSync(page, '\\n\\n\\n\\n');
-      await writeSync(page, '\\n\\n\\n\\n');
       await page.evaluate(`window.marker = window.term.addMarker(1)`);
       await page.evaluate(`
       try {
