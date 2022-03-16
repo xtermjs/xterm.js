@@ -441,17 +441,20 @@ declare module 'xterm' {
 
     /**
      * The options for the overview ruler that can be updated.
-     * This will only take effect when
-     * @param overviewRulerOptions were provided initially.
+     * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
+     * were provided initially.
      */
      overviewRulerOptions?: Pick<IDecorationOverviewRulerOptions, 'color'>;
   }
 
 
-interface IDecorationOverviewRulerOptions {
-  color: string;
-  position?: 'left' | 'center' | 'right';
-}
+  /**
+   * Overview ruler decoration options
+   */
+  interface IDecorationOverviewRulerOptions {
+    color: string;
+    position?: 'left' | 'center' | 'right';
+  }
 
   /*
    * Options that define the presentation of the decoration.
