@@ -61,7 +61,6 @@ export class OverviewRulerRenderer extends Disposable {
         this._queueRefresh();
       }
     }));
-    console.log(this._width/3);
     renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
     renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
   }
