@@ -92,7 +92,7 @@ export class OverviewRulerRenderer extends Disposable {
       return;
     }
     this._ctx.lineWidth = 1;
-    this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
+    this._ctx.fillStyle = decoration.overviewRulerOptions?.color || decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
       !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
