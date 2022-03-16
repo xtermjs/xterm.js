@@ -434,15 +434,15 @@ declare module 'xterm' {
 
     /**
      * The element that the decoration is rendered to. This will be undefined
-     * until it is rendered for the first time by @{link IDecoration.onRender}.
+     * until it is rendered for the first time by {@link IDecoration.onRender}.
      * that.
      */
     element: HTMLElement | undefined;
 
     /**
      * The options for the overview ruler that can be updated.
-     * This will only take effect when @param overviewRulerOptions
-     * were provided initially.
+     * This will only take effect when
+     * @param overviewRulerOptions were provided initially.
      */
      overviewRulerOptions?: Pick<IDecorationOverviewRulerOptions, 'color'>;
   }
