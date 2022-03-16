@@ -9,6 +9,7 @@ import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+import { createDecorator } from 'common/services/ServiceRegistry';
 
 export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   element: HTMLElement | undefined;
