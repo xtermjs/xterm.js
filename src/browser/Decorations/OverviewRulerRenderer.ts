@@ -15,7 +15,7 @@ import { IBufferService, IDecorationService, IInternalDecoration, IOptionsServic
 const renderSizes = new Uint16Array(3);
 const enum SizeIndex {
   OUTER_SIZE = 0,
-  INNER_SIZE = 0
+  INNER_SIZE = 1
 }
 
 export class OverviewRulerRenderer extends Disposable {
@@ -91,13 +91,14 @@ export class OverviewRulerRenderer extends Disposable {
       this._decorationElements.delete(decoration);
       return;
     }
-    this._ctx.lineWidth = !decoration.options.overviewRulerOptions.position ? 2 : 6;
-    this._ctx.strokeStyle = decoration.options.overviewRulerOptions.color;
-    this._ctx.strokeRect(
+    this._ctx.lineWidth = 1;
+    this._ctx.fillStyle = decoration.overviewRulerOptions?.color || decoration.options.overviewRulerOptions.color;
+    this._ctx.fillRect(
       !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      !decoration.options.overviewRulerOptions.position ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
-      window.devicePixelRatio
+      !decoration.options.overviewRulerOptions.position ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
+      // when a position is provided, the element has less width, so increase its height
+      window.devicePixelRatio * (decoration.options.overviewRulerOptions.position ? 6 : 2)
     );
   }
 
@@ -120,7 +121,6 @@ export class OverviewRulerRenderer extends Disposable {
       this._decorationElements.set(decoration, this._canvas);
     }
     this._refreshStyle(decoration, updateAnchor);
-    decoration.onRenderEmitter.fire(this._canvas);
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
