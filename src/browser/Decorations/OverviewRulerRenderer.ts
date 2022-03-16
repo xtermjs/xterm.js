@@ -121,7 +121,6 @@ export class OverviewRulerRenderer extends Disposable {
       this._decorationElements.set(decoration, this._canvas);
     }
     this._refreshStyle(decoration, updateAnchor);
-    decoration.onRenderEmitter.fire(this._canvas);
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
