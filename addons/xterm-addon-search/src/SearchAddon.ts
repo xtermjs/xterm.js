@@ -537,7 +537,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!marker) {
       return undefined;
     }
-    const findResultDecoration = terminal.registerDecoration({ marker });
+    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'yellow' } });
     findResultDecoration?.onRender((e) => {
       if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0) {
         e.classList.add('xterm-find-result-decoration');

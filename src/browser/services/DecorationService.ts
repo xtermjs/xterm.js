@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { IDecorationService, IRenderService } from 'browser/services/Services';
+import { IRenderService } from 'browser/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IInstantiationService } from 'common/services/Services';
+import { IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { IDecorationOptions, IDecoration, IMarker } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
