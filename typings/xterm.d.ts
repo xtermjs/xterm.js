@@ -440,7 +440,9 @@ declare module 'xterm' {
     element: HTMLElement | undefined;
 
     /**
-     * The color for the decoration.
+     * The color to be used for the overview ruler decoration.
+     * This will only take effect when @param overviewRulerOptions
+     * were provided initially.
      */
     overviewRulerDecorationColor: string | undefined;
   }
