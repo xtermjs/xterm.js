@@ -438,6 +438,11 @@ declare module 'xterm' {
      * that.
      */
     element: HTMLElement | undefined;
+
+    /**
+     * The color for the decoration.
+     */
+    overviewRulerDecorationColor: string | undefined;
   }
 
   /*
