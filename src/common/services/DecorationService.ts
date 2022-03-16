@@ -60,8 +60,6 @@ class Decoration extends Disposable implements IInternalDecoration {
   private _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
-  public overviewRulerDecorationColor: string | undefined;
-
   constructor(
     public readonly options: IDecorationOptions
   ) {

@@ -440,12 +440,18 @@ declare module 'xterm' {
     element: HTMLElement | undefined;
 
     /**
-     * The color to be used for the overview ruler decoration.
+     * The options for the overview ruler that can be updated.
      * This will only take effect when @param overviewRulerOptions
      * were provided initially.
      */
-    overviewRulerDecorationColor: string | undefined;
+     overviewRulerOptions?: IDecorationOverviewRulerOptions;
   }
+
+
+interface IDecorationOverviewRulerOptions {
+  color: string;
+  position?: 'left' | 'center' | 'right';
+}
 
   /*
    * Options that define the presentation of the decoration.
@@ -486,7 +492,7 @@ declare module 'xterm' {
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
-    readonly overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right'}
+    overviewRulerOptions?: IDecorationOverviewRulerOptions
   }
 
   /**
