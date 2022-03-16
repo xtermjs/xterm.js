@@ -44,7 +44,7 @@ export class SearchAddon implements ITerminalAddon {
   private _result: ISearchResult | undefined;
   private _reset: boolean = false;
   private _cachedSearchTerm: string | undefined;
-  private _cachedResults: ISearchResult[] = [];
+  private _selectedDecoration: IDecoration | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -82,11 +82,9 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (!this._reset && term === this._cachedSearchTerm) {
-      // this._resultDecorations.forEach(d => d.dispose());
-      // this._resultDecorations = [];
-      // for (const decoration of this._cachedResults) {
-      //   this._showResultDecoration(decoration);
-      // }
+      for (const decoration of this._resultDecorations) {
+        decoration.overviewRulerOptions = { color: 'orange' };
+      }
       return this.findNext(term, searchOptions);
     }
     this._reset = false;
@@ -94,18 +92,18 @@ export class SearchAddon implements ITerminalAddon {
 
     // new search, clear out the old decorations
     this._resultDecorations.forEach(d => d.dispose());
-    this._resultDecorations = [];
+    const results: ISearchResult[] = [];
     searchOptions = searchOptions || {};
     searchOptions.incremental = false;
     let found = this.findNext(term, searchOptions);
-    while (found && !this._cachedResults.find(r => r?.col === this._result?.col && r?.row === this._result?.row)) {
+    while (found && !results.find(r => r?.col === this._result?.col && r?.row === this._result?.row)) {
       if (this._result) {
-        this._cachedResults.push(this._result);
+        results.push(this._result);
       }
       found = this.findNext(term, searchOptions);
     }
 
-    for (const result of this._cachedResults) {
+    for (const result of results) {
       if (result) {
         const resultDecoration = this._showResultDecoration(result);
         if (resultDecoration) {
@@ -113,7 +111,7 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-    if (this._cachedResults.length > 0) {
+    if (results.length > 0) {
       this._cachedSearchTerm = term;
     }
     return true;
@@ -517,6 +515,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _selectResult(result: ISearchResult | undefined): boolean {
     const terminal = this._terminal!;
+    this._selectedDecoration?.dispose();
     if (!result) {
       terminal.clearSelection();
       return false;
@@ -524,7 +523,7 @@ export class SearchAddon implements ITerminalAddon {
     terminal.select(result.col, result.row, result.size);
     const marker = terminal.registerMarker(undefined, result.row);
     if (marker) {
-      terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'yellow' } });
+      this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue' } });
     }
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
@@ -547,7 +546,7 @@ export class SearchAddon implements ITerminalAddon {
       return undefined;
     }
     terminal.options.overviewRulerWidth = 10;
-    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue' } });
+    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'orange' } });
     findResultDecoration?.onRender((e) => {
       if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0 && !e.classList.contains('xterm-decoration-overview-ruler')) {
         e.classList.add('xterm-find-result-decoration');
