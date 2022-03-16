@@ -548,11 +548,7 @@ function addDecoration() {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
   const decoration = term.registerDecoration({ marker, overviewRulerOptions: { color: '#ef2929'} });
-  decoration.onRender((e) => {
-    if (e.classList.value === 'xterm-decoration') {
-      e.style.backgroundColor = '#ef2929';
-    }
-  });
+  decoration.onRender((e) => e.style.backgroundColor = '#ef2929');
 }
 
 function addOverviewRuler() {
