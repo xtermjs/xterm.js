@@ -62,6 +62,14 @@ export class SearchAddon implements ITerminalAddon {
 
   public dispose(): void { }
 
+  public clear(): void {
+    this._terminal?.clearSelection();
+    this._resultDecorations.forEach(d => d.dispose());
+    this._selectedDecoration?.dispose();
+    this._resultDecorations = [];
+    this._reset = true;
+  }
+
   /**
    * Find all instances of the term, selecting the next one with each
    * enter. If it doesn't exist, do nothing.
@@ -75,9 +83,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (!term || term.length === 0) {
-      this._terminal.clearSelection();
-      this._resultDecorations.forEach(d => d.dispose());
-      this._resultDecorations = [];
+      this.clear();
       return false;
     }
 
@@ -92,7 +98,6 @@ export class SearchAddon implements ITerminalAddon {
 
     // new search, clear out the old decorations
     this._resultDecorations.forEach(d => d.dispose());
-    console.log('clearing');
     const results: ISearchResult[] = [];
     searchOptions = searchOptions || {};
     searchOptions.incremental = false;
@@ -103,7 +108,6 @@ export class SearchAddon implements ITerminalAddon {
       }
       found = this.findNext(term, searchOptions);
     }
-    console.log(results);
     for (const result of results) {
       if (result) {
         const resultDecoration = this._showResultDecoration(result);
@@ -542,10 +546,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _showResultDecoration(result: ISearchResult): IDecoration | undefined {
     const terminal = this._terminal!;
-    // for demo to work
-    // const marker = terminal.registerMarker(undefined, result.row);
     const marker = terminal.registerMarker(undefined, result.row);
-    console.log(result.row, marker?.line);
     if (!marker) {
       return undefined;
     }
