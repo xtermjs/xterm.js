@@ -94,11 +94,10 @@ export class OverviewRulerRenderer extends Disposable {
     this._ctx.lineWidth = 1;
     this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
-      !decoration.options.overviewRulerOptions.position ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
+      decoration.options.overviewRulerOptions.position === 'full' ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      !decoration.options.overviewRulerOptions.position ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
-      // when a position is provided, the element has less width, so increase its height
-      window.devicePixelRatio * (decoration.options.overviewRulerOptions.position ? 6 : 2)
+      decoration.options.overviewRulerOptions.position === 'full' ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
+      window.devicePixelRatio * (decoration.options.overviewRulerOptions.position === 'full' ? 2 : 6)
     );
   }
 
