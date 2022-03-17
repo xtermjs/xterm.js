@@ -92,6 +92,7 @@ export class SearchAddon implements ITerminalAddon {
 
     // new search, clear out the old decorations
     this._resultDecorations.forEach(d => d.dispose());
+    console.log('clearing');
     const results: ISearchResult[] = [];
     searchOptions = searchOptions || {};
     searchOptions.incremental = false;
@@ -102,7 +103,7 @@ export class SearchAddon implements ITerminalAddon {
       }
       found = this.findNext(term, searchOptions);
     }
-
+    console.log(results);
     for (const result of results) {
       if (result) {
         const resultDecoration = this._showResultDecoration(result);
@@ -541,7 +542,10 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _showResultDecoration(result: ISearchResult): IDecoration | undefined {
     const terminal = this._terminal!;
+    // for demo to work
+    // const marker = terminal.registerMarker(undefined, result.row);
     const marker = terminal.registerMarker(undefined, result.row);
+    console.log(result.row, marker?.line);
     if (!marker) {
       return undefined;
     }
