@@ -7,8 +7,6 @@
  * to be stable and consumed by external programs.
  */
 
-import { IModelDecorationOverviewRulerOptions } from 'vs/editor/common/model';
-
 /// <reference lib="dom"/>
 
 declare module 'xterm' {
@@ -432,14 +430,14 @@ declare module 'xterm' {
      * is rendered, returns the dom element
      * associated with the decoration.
      */
-    readonly onRender: IEvent<HTMLElement>;
+    readonly onRender: IEvent<HTMLLIElement>;
 
     /**
      * The element that the decoration is rendered to. This will be undefined
      * until it is rendered for the first time by {@link IDecoration.onRender}.
      * that.
      */
-    element: HTMLElement | undefined;
+    element: HTMLLIElement | undefined;
 
     /**
      * The options for the overview ruler that can be updated.
@@ -679,7 +677,7 @@ declare module 'xterm' {
     /**
      * The element containing the terminal.
      */
-    readonly element: HTMLElement | undefined;
+    readonly element: HTMLLIElement | undefined;
 
     /**
      * The textarea that accepts input for the terminal.
