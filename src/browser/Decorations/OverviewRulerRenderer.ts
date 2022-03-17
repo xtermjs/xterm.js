@@ -67,12 +67,7 @@ export class OverviewRulerRenderer extends Disposable {
 
   public override dispose(): void {
     for (const decoration of this._decorationElements) {
-      this._ctx?.clearRect(
-        0,
-        Math.round(this._canvas.height * (decoration[0].marker.line / this._bufferService.buffers.active.lines.length)),
-        this._canvas.width,
-        window.devicePixelRatio
-      );
+      decoration[0].dispose();
     }
     this._decorationElements.clear();
     this._canvas?.remove();
@@ -118,6 +113,15 @@ export class OverviewRulerRenderer extends Disposable {
     const element = this._decorationElements.get(decoration);
     if (!element) {
       this._decorationElements.set(decoration, this._canvas);
+      decoration.onDispose(() => {
+        this._ctx?.clearRect(
+          !decoration!.options!.overviewRulerOptions?.position ||  decoration!.options!.overviewRulerOptions?.position === 'left' ? 0 : decoration!.options!.overviewRulerOptions?.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
+          Math.round(this._canvas.height * (decoration!.options!.marker.line / this._bufferService.buffers.active.lines.length)),
+          !decoration!.options!.overviewRulerOptions?.position ? this._width : decoration!.options!.overviewRulerOptions?.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
+          // when a position is provided, the element has less width, so increase its height
+          window.devicePixelRatio * (decoration!.options!.overviewRulerOptions?.position ? 6 : 2)
+        );
+      });
     }
     this._refreshStyle(decoration, updateAnchor);
   }
