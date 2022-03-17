@@ -7,6 +7,8 @@
  * to be stable and consumed by external programs.
  */
 
+import { IModelDecorationOverviewRulerOptions } from 'vs/editor/common/model';
+
 /// <reference lib="dom"/>
 
 declare module 'xterm' {
@@ -479,7 +481,7 @@ declare module 'xterm' {
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
-    readonly overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right' | 'full'}
+    readonly overviewRulerOptions?: IModelDecorationOverviewRulerOptions
   }
 
   /**
