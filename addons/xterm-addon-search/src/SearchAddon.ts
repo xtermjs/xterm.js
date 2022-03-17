@@ -528,7 +528,7 @@ export class SearchAddon implements ITerminalAddon {
     terminal.select(result.col, result.row, result.size);
     const marker = terminal.registerMarker(undefined, result.row);
     if (marker) {
-      this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue' } });
+      this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue', position: 'center' } });
     }
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
@@ -550,10 +550,11 @@ export class SearchAddon implements ITerminalAddon {
     if (!marker) {
       return undefined;
     }
+    // TODO: remove/move?
     terminal.options.overviewRulerWidth = 10;
-    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'orange' } });
+    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'orange', position: 'center' } });
     findResultDecoration?.onRender((e) => {
-      if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0 && !e.classList.contains('xterm-decoration-overview-ruler')) {
+      if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0) {
         e.classList.add('xterm-find-result-decoration');
         // decoration's clientWidth = actualCellWidth
         e.style.left = `${e.clientWidth * result.col}px`;
