@@ -65,6 +65,9 @@ class Decoration extends Disposable implements IInternalDecoration {
   ) {
     super();
     this.marker = options.marker;
+    if (this.options.overviewRulerOptions && !this.options.overviewRulerOptions.position) {
+      this.options.overviewRulerOptions.position = 'full';
+    }
   }
   public override dispose(): void {
     this._onDispose.fire();

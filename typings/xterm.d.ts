@@ -479,7 +479,7 @@ declare module 'xterm' {
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
-    readonly overviewRulerOptions?: { color: string; position: 'left' | 'center' | 'right' | 'full'}
+    readonly overviewRulerOptions?: { color: string; position?: 'left' | 'center' | 'right' | 'full'}
   }
 
   /**
