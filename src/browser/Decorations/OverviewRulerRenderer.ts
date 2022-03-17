@@ -92,7 +92,7 @@ export class OverviewRulerRenderer extends Disposable {
       return;
     }
     this._ctx.lineWidth = 1;
-    this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
+    this._ctx.fillStyle = decoration.overviewRulerOptions?.color || decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
       decoration.options.overviewRulerOptions.position === 'full' ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
       Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
@@ -120,7 +120,6 @@ export class OverviewRulerRenderer extends Disposable {
       this._decorationElements.set(decoration, this._canvas);
     }
     this._refreshStyle(decoration, updateAnchor);
-    decoration.onRenderEmitter.fire(this._canvas);
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
