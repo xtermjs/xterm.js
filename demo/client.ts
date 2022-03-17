@@ -151,6 +151,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
+  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
 
 function createTerminal(): void {
@@ -544,9 +545,19 @@ function loadTest() {
 }
 
 function addDecoration() {
+  term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
-  const decoration = term.registerDecoration({ marker });
-  decoration.onRender(() => {
-    decoration.element.style.backgroundColor = 'red';
-  });
+  const decoration = term.registerDecoration({ marker, overviewRulerOptions: { color: '#ef2929'} });
+  decoration.onRender((e) => e.style.backgroundColor = '#ef2929');
 }
+
+function addOverviewRuler() {
+  term.options['overviewRulerWidth'] = 15;
+  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+}
+
