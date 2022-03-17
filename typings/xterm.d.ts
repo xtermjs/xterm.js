@@ -430,14 +430,14 @@ declare module 'xterm' {
      * is rendered, returns the dom element
      * associated with the decoration.
      */
-    readonly onRender: IEvent<HTMLLIElement>;
+    readonly onRender: IEvent<HTMLElement>;
 
     /**
      * The element that the decoration is rendered to. This will be undefined
      * until it is rendered for the first time by {@link IDecoration.onRender}.
      * that.
      */
-    element: HTMLLIElement | undefined;
+    element: HTMLElement | undefined;
 
     /**
      * The options for the overview ruler that can be updated.
@@ -677,7 +677,7 @@ declare module 'xterm' {
     /**
      * The element containing the terminal.
      */
-    readonly element: HTMLLIElement | undefined;
+    readonly element: HTMLElement | undefined;
 
     /**
      * The textarea that accepts input for the terminal.
