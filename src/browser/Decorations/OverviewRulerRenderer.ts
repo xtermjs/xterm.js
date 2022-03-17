@@ -113,7 +113,7 @@ export class OverviewRulerRenderer extends Disposable {
     const element = this._decorationElements.get(decoration);
     if (!element) {
       this._decorationElements.set(decoration, this._canvas);
-      decoration[0].onDispose(() => (this._queueRefresh()));
+      decoration.onDispose(() => this._queueRefresh());
     }
     this._refreshStyle(decoration, updateAnchor);
   }
