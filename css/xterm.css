@@ -180,7 +180,7 @@
 }
 
 .xterm-find-result-decoration {
-   opacity: 60%;
+   opacity: 0.6;
 }
 
 .xterm-decoration-overview-ruler {
