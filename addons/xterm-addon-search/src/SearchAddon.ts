@@ -50,6 +50,7 @@ export class SearchAddon implements ITerminalAddon {
   private _selectedDecoration: IDecoration | undefined;
   private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
   private _searchResults:  Map<string, ISearchResult> = new Map();
+  private _onDataDisposable: IDisposable | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -62,10 +63,13 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._terminal.onData(() => this._dataChanged = true);
+    this._onDataDisposable = this._terminal.onData(() => this._dataChanged = true);
   }
 
-  public dispose(): void { }
+  public dispose(): void {
+    this.clear();
+    this._onDataDisposable?.dispose();
+  }
 
   public clear(): void {
     this._terminal?.clearSelection();
@@ -576,7 +580,6 @@ export class SearchAddon implements ITerminalAddon {
       element.style.left = `${element.clientWidth * result.col}px`;
       element.style.width = `${element.clientWidth * result.term.length}px`;
       element.style.backgroundColor = color;
-      element.style.color = color;
     }
   }
 
