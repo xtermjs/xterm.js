@@ -144,8 +144,8 @@ export class OverviewRulerRenderer extends Disposable {
   private _refreshCanvasDimensions(): void {
     this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.floor(this._width * window.devicePixelRatio);
-    this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._canvas.width = Math.round(this._width * window.devicePixelRatio);
+    this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
     this._refreshDrawConstants();
   }
 
