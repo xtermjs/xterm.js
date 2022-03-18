@@ -11,8 +11,6 @@ export interface ISearchOptions {
   caseSensitive?: boolean;
   incremental?: boolean;
   highlightAllMatches?: boolean;
-  startRow?: number;
-  startCol?: number;
 }
 
 export interface ISearchPosition {
@@ -50,6 +48,7 @@ export class SearchAddon implements ITerminalAddon {
   private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
   private _searchResults:  Map<string, ISearchResult> = new Map();
   private _onDataDisposable: IDisposable | undefined;
+  private _addToPrior: boolean = false;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -107,12 +106,7 @@ export class SearchAddon implements ITerminalAddon {
       if (!this._dataChanged) {
         return this._findAndSelectNext(term, searchOptions);
       }
-      // set start row and col to avoid redoing work
-      const key = Array.from(this._searchResults.keys()).pop()?.split('-');
-      if (key?.length === 2) {
-        searchOptions.startRow = Number.parseInt(key[0]);
-        searchOptions.startCol = Number.parseInt(key[1]) + 1;
-      }
+      this._addToPrior = true;
     } else {
       // new search, clear out the old decorations
       this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
@@ -147,6 +141,9 @@ export class SearchAddon implements ITerminalAddon {
     if (this._dataChanged) {
       this._dataChanged = false;
     }
+    if (this._addToPrior) {
+      this._addToPrior = false;
+    }
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
     }
@@ -161,8 +158,16 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    let startCol = searchOptions?.startCol || 0;
-    let startRow = searchOptions?.startRow || 0;
+    let startCol = 0;
+    let startRow = 0;
+    if (searchOptions?.highlightAllMatches && this._addToPrior) {
+      // set start row and col to avoid redoing work
+      const key = Array.from(this._searchResults.keys()).pop()?.split('-');
+      if (key?.length === 2) {
+        startRow = Number.parseInt(key[0]);
+        startCol = Number.parseInt(key[1]) + 1;
+      }
+    }
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
@@ -247,9 +252,19 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
+    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
+    let startCol = this._terminal.cols;
     const isReverseSearch = true;
-    let startRow = searchOptions?.startRow || this._terminal.buffer.active.baseY + this._terminal.rows;
-    let startCol = searchOptions?.startCol || this._terminal.cols;
+    // if (searchOptions?.highlightAllMatches && this._addToPrior) {
+    //   // set start row and col to avoid redoing work
+    //   // TODO: fix this will mess with the order that they're iterated through
+    //   const key = Array.from(this._searchResults.keys()).pop()?.split('-');
+    //   if (key?.length === 2) {
+    //     startRow = Number.parseInt(key[0]);
+    //     startCol = Number.parseInt(key[1]) + 1;
+    //   }
+    // }
+
     const incremental = searchOptions ? searchOptions.incremental : false;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
