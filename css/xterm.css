@@ -180,9 +180,9 @@
 }
 
 .xterm-find-result-decoration {
-   background-color: grey;
    opacity: 60%;
 }
+
 .xterm-decoration-overview-ruler {
     z-index: 7;
     position: absolute;

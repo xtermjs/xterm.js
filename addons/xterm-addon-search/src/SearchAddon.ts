@@ -62,7 +62,6 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    // TODO: should this be using on buffer changed instead?
     this._terminal.onData(() => this._dataChanged = true);
   }
 
@@ -578,8 +577,9 @@ export class SearchAddon implements ITerminalAddon {
         // decoration's clientWidth = actualCellWidth
         e.style.left = `${e.clientWidth * result.col}px`;
         e.style.width = `${e.clientWidth * result.term.length}px`;
-      }
-    });
+        e.style.backgroundColor = color;
+        e.style.color = color;
+      }});
     return findResultDecoration;
   }
 }
