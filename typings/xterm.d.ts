@@ -954,6 +954,7 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
+     * @param row The y position of the marker.
      * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number, row?: number): IMarker | undefined;
