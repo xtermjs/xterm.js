@@ -7,8 +7,6 @@
  * to be stable and consumed by external programs.
  */
 
-import { IModelDecorationOverviewRulerOptions } from 'vs/editor/common/model';
-
 /// <reference lib="dom"/>
 
 declare module 'xterm' {

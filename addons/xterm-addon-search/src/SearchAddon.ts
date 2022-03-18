@@ -91,25 +91,22 @@ export class SearchAddon implements ITerminalAddon {
       this.clear();
       return false;
     }
-
+    searchOptions = searchOptions || {};
     if (term === this._cachedSearchTerm) {
       if (!this._dataChanged) {
         return this.findNext(term, searchOptions);
       }
-      // set start row to avoid redoing work
-      searchOptions = searchOptions || {};
+      // set start row and col to avoid redoing work
       const key = Array.from(this._searchResults.keys()).pop()?.split('-');
       if (key?.length === 2) {
         searchOptions.startRow = Number.parseInt(key[0]) + 1;
         searchOptions.startCol = Number.parseInt(key[1]);
-        console.log(searchOptions.startRow, searchOptions.startCol);
       }
     } else {
       // new search, clear out the old decorations
       this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
       this._resultDecorations.clear();
       this._searchResults.clear();
-      searchOptions = searchOptions || {};
     }
 
     searchOptions.incremental = false;
@@ -166,7 +163,7 @@ export class SearchAddon implements ITerminalAddon {
       currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
-    } else {
+    } else if (!startRow) {
       startRow = this._terminal.buffer.active.cursorY;
       startCol = this._terminal.buffer.active.cursorX;
     }
