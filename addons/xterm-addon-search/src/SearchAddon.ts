@@ -547,7 +547,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     terminal.select(result.col, result.row, result.size);
     if (color) {
-      const marker = terminal.registerMarker(undefined, result.row);
+      const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color } });
         this._selectedDecoration?.onRender((e) => this._applyStyles(e, color, result));
@@ -591,7 +591,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _createResultDecoration(result: ISearchResult, color: string): IDecoration | undefined {
     const terminal = this._terminal!;
-    const marker = terminal.registerMarker(undefined, result.row);
+    const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
     if (!marker) {
       return undefined;
     }

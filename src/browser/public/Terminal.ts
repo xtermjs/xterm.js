@@ -166,13 +166,10 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number = 0, row?: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
-    if (row) {
-      this._verifyPositiveIntegers(row);
-    }
-    return this._core.addMarker(cursorYOffset, row);
+    return this._core.addMarker(cursorYOffset);
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     this._checkProposedApi();
