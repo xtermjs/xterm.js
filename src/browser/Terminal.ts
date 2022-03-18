@@ -99,6 +99,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _keyDownHandled: boolean = false;
 
   /**
+   * Records whether a keydown event has occured since the last keyup event, i.e. whether a key
+   * is currently "pressed".
+   */
+  private _keyDownSeen: boolean = false;
+
+  /**
    * Records whether the keypress event has already been handled and triggered a data event, if so
    * the input event should not trigger a data event but should still print to the textarea so
    * screen readers will announce it.
@@ -1085,6 +1091,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
+    this._keyDownSeen = true;
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
@@ -1170,6 +1177,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   protected _keyUp(ev: KeyboardEvent): void {
+    this._keyDownSeen = false;
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return;
     }
@@ -1243,7 +1252,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
   protected _inputEvent(ev: InputEvent): boolean {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
-    if (ev.data && ev.inputType === 'insertText' && !ev.composed && !this.optionsService.rawOptions.screenReaderMode) {
+    // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
+    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }

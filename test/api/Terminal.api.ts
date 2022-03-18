@@ -770,8 +770,8 @@ describe('API Integration Tests', function(): void {
         await page.waitForSelector('.xterm-text-layer');
         await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
         await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
-        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red' } })`);
-        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
         await openTerminal(page);
         await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
       });
@@ -781,8 +781,8 @@ describe('API Integration Tests', function(): void {
         await page.waitForSelector('.xterm-text-layer');
         await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
         await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
-        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red' } })`);
-        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
         await openTerminal(page);
         await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 1);
       });
