@@ -143,7 +143,14 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
-      this._renderDecoration(decoration, updateAnchor);
+      if (decoration.options.overviewRulerOptions!.position !== 'full') {
+        this._renderDecoration(decoration, updateAnchor);
+      }
+    }
+    for (const decoration of this._decorationService.decorations) {
+      if (decoration.options.overviewRulerOptions!.position === 'full') {
+        this._renderDecoration(decoration, updateAnchor);
+      }
     }
   }
 
