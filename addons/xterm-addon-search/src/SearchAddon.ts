@@ -40,9 +40,9 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
-  private _resultDecorations: IDecoration[] = [];
+  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
   private _result: ISearchResult | undefined;
-  private _reset: boolean = false;
+  private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
   /**
@@ -57,17 +57,18 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._terminal.onData(() => this._reset = true);
+    // TODO: should this be using on buffer changed instead?
+    this._terminal.onData(() => this._dataChanged = true);
   }
 
   public dispose(): void { }
 
   public clear(): void {
     this._terminal?.clearSelection();
-    this._resultDecorations.forEach(d => d.dispose());
-    this._selectedDecoration?.dispose();
-    this._resultDecorations = [];
-    this._reset = true;
+    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
+    this._resultDecorations.clear();
+    this._cachedSearchTerm = undefined;
+    this._dataChanged = true;
   }
 
   /**
@@ -86,18 +87,18 @@ export class SearchAddon implements ITerminalAddon {
       this.clear();
       return false;
     }
-
-    if (!this._reset && term === this._cachedSearchTerm) {
-      for (const decoration of this._resultDecorations) {
-        decoration.overviewRulerOptions = { color: 'orange' };
-      }
+    if (!this._dataChanged && term === this._cachedSearchTerm) {
       return this.findNext(term, searchOptions);
     }
-    this._reset = false;
-
+    if (this._dataChanged && term === this._cachedSearchTerm) {
+      // TODO:
+      // add to decorations instead of starting from scratch
+      // by looking at resultDecoration.keys()[resultDecoration.length]
+      // to ybase
+    }
 
     // new search, clear out the old decorations
-    this._resultDecorations.forEach(d => d.dispose());
+    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
     const results: ISearchResult[] = [];
     searchOptions = searchOptions || {};
     searchOptions.incremental = false;
@@ -112,9 +113,14 @@ export class SearchAddon implements ITerminalAddon {
       if (result) {
         const resultDecoration = this._showResultDecoration(result);
         if (resultDecoration) {
-          this._resultDecorations.push(resultDecoration);
+          const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
+          decorationsForLine.push(resultDecoration);
+          this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
         }
       }
+    }
+    if (this._dataChanged) {
+      this._dataChanged = false;
     }
     if (results.length > 0) {
       this._cachedSearchTerm = term;
@@ -528,7 +534,7 @@ export class SearchAddon implements ITerminalAddon {
     terminal.select(result.col, result.row, result.size);
     const marker = terminal.registerMarker(undefined, result.row);
     if (marker) {
-      this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue', position: 'center' } });
+      this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'blue' } });
     }
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
@@ -552,7 +558,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     // TODO: remove/move?
     terminal.options.overviewRulerWidth = 10;
-    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: 'orange', position: 'center' } });
+    const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: 'orange', position: 'center' } });
     findResultDecoration?.onRender((e) => {
       if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0) {
         e.classList.add('xterm-find-result-decoration');
