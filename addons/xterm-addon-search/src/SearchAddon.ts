@@ -546,6 +546,7 @@ export class SearchAddon implements ITerminalAddon {
       const marker = terminal.registerMarker(undefined, result.row);
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color } });
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, color, result));
       }
     }
 
@@ -556,6 +557,20 @@ export class SearchAddon implements ITerminalAddon {
       terminal.scrollLines(scroll);
     }
     return true;
+  }
+
+  private _applyStyles(element: HTMLElement, color: string, result: ISearchResult): void {
+    if (element.clientWidth <= 0) {
+      return;
+    }
+    if (!element.classList.contains('xterm-find-result-decoration')) {
+      element.classList.add('xterm-find-result-decoration');
+      // decoration's clientWidth = actualCellWidth
+      element.style.left = `${element.clientWidth * result.col}px`;
+      element.style.width = `${element.clientWidth * result.term.length}px`;
+      element.style.backgroundColor = color;
+      element.style.color = color;
+    }
   }
 
   /**
@@ -571,15 +586,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color, position: 'center' } });
-    findResultDecoration?.onRender((e) => {
-      if (!e.classList.contains('xterm-find-result-decoration') && result.term.length && e.clientWidth > 0) {
-        e.classList.add('xterm-find-result-decoration');
-        // decoration's clientWidth = actualCellWidth
-        e.style.left = `${e.clientWidth * result.col}px`;
-        e.style.width = `${e.clientWidth * result.term.length}px`;
-        e.style.backgroundColor = color;
-        e.style.color = color;
-      }});
+    findResultDecoration?.onRender((e) => this._applyStyles(e, color, result));
     return findResultDecoration;
   }
 }
