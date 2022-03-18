@@ -135,7 +135,10 @@ export class OverviewRulerRenderer extends Disposable {
     this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
       /* x */ drawX[decoration.options.overviewRulerOptions.position!],
-      /* y */ Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
+      /* y */ Math.round(
+        (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
+        (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
+      ),
       /* w */ drawWidth[decoration.options.overviewRulerOptions.position!],
       /* h */ drawHeight[decoration.options.overviewRulerOptions.position!]
     );
