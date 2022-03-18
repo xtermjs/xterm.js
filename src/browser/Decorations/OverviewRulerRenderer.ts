@@ -18,6 +18,13 @@ const enum SizeIndex {
   INNER_SIZE = 1
 }
 
+const positionHeights = {
+  full: 2,
+  left: 6,
+  center: 6,
+  right: 6
+};
+
 export class OverviewRulerRenderer extends Disposable {
   private readonly _canvas: HTMLCanvasElement;
   private readonly _ctx: CanvasRenderingContext2D;
@@ -38,6 +45,7 @@ export class OverviewRulerRenderer extends Disposable {
     super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add('xterm-decoration-overview-ruler');
+    this._refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
@@ -56,13 +64,14 @@ export class OverviewRulerRenderer extends Disposable {
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
       if (o === 'overviewRulerWidth') {
-        renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
-        renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
+        renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._canvas.width / 3);
+        renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._canvas.width / 3);
         this._queueRefresh();
       }
     }));
-    renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
-    renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
+    console.log('width', this._canvas.width);
+    renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._canvas.width / 3);
+    renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._canvas.width / 3);
   }
 
   public override dispose(): void {
@@ -89,19 +98,31 @@ export class OverviewRulerRenderer extends Disposable {
     this._ctx.lineWidth = 1;
     this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
-      decoration.options.overviewRulerOptions.position === 'full' ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
-      Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      decoration.options.overviewRulerOptions.position === 'full' ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
-      window.devicePixelRatio * (decoration.options.overviewRulerOptions.position === 'full' ? 2 : 6)
+      /* x */ decoration.options.overviewRulerOptions.position === 'full' || decoration.options.overviewRulerOptions.position === 'left'
+        ? 0
+        : decoration.options.overviewRulerOptions.position === 'right'
+          ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]
+          : renderSizes[SizeIndex.OUTER_SIZE],
+      /* y */ Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
+      /* w */ decoration.options.overviewRulerOptions.position === 'full'
+        ? this._canvas.width
+        : decoration.options.overviewRulerOptions.position === 'center'
+          ? renderSizes[SizeIndex.INNER_SIZE]
+          : renderSizes[SizeIndex.OUTER_SIZE],
+      /* h */ window.devicePixelRatio * positionHeights[decoration.options.overviewRulerOptions.position!]
     );
+  }
+
+  private _refreshCanvasDimensions(): void {
+    this._canvas.style.width = `${this._width}px`;
+    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+    this._canvas.width = Math.floor(this._width * window.devicePixelRatio);
+    this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
   }
 
   private _refreshDecorations(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (updateCanvasDimensions) {
-      this._canvas.style.width = `${this._width}px`;
-      this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-      this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
-      this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+      this._refreshCanvasDimensions();
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
