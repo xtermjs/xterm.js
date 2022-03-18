@@ -120,7 +120,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (searchOptions.overviewRulerResultDecorationColor && searchOptions.overviewRulerSelectionDecorationColor) {
       this._searchResults.forEach(result => {
-        const resultDecoration = this._showResultDecoration(result, searchOptions!.overviewRulerResultDecorationColor!);
+        const resultDecoration = this._createResultDecoration(result, searchOptions!.overviewRulerResultDecorationColor!);
         if (resultDecoration) {
           const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
           decorationsForLine.push(resultDecoration);
@@ -532,7 +532,7 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Selects and scrolls to a result.
    * @param result The result to select.
-   * @return Whethera result was selected.
+   * @return Whether a result was selected.
    */
   private _selectResult(result: ISearchResult | undefined, color?: string): boolean {
     const terminal = this._terminal!;
@@ -559,6 +559,13 @@ export class SearchAddon implements ITerminalAddon {
     return true;
   }
 
+  /**
+   * Applies styles to the decoration when it is rendered
+   * @param element the decoration's element
+   * @param color the color to apply
+   * @param result the search result associated with the decoration
+   * @returns
+   */
   private _applyStyles(element: HTMLElement, color: string, result: ISearchResult): void {
     if (element.clientWidth <= 0) {
       return;
@@ -574,17 +581,17 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   /**
-   * Registers a decoration for the @param result
-   * and @returns the decoration or undefined if
-   * the marker has already been disposed of
+   * Creates a decoration for the result and applies styles
+   * @param result the search result for which to create the decoration
+   * @param color the color to use for the decoration
+   * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _showResultDecoration(result: ISearchResult, color: string): IDecoration | undefined {
+  private _createResultDecoration(result: ISearchResult, color: string): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(undefined, result.row);
     if (!marker) {
       return undefined;
     }
-
     const findResultDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color, position: 'center' } });
     findResultDecoration?.onRender((e) => this._applyStyles(e, color, result));
     return findResultDecoration;
