@@ -272,6 +272,18 @@ declare module 'xterm' {
      * ruler will be hidden when not set.
      */
     overviewRulerWidth?: number;
+
+    /**
+     * The color for all find result decorations
+     * in the overview ruler
+     */
+    findResultDecorationColor?: string;
+
+    /**
+     * The color for the currently selected decoration
+     * when all matches are displayed
+     */
+    findResultSelectedDecorationColor?: string;
   }
 
   /**

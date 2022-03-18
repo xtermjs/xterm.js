@@ -109,8 +109,7 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     incremental: e.key !== `Enter`,
-    overviewRulerResultDecorationColor: '#555753',
-    overviewRulerSelectionDecorationColor: '#ef2929'
+    highlightAllMatches: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked,
   };
 }
 
@@ -202,11 +201,6 @@ function createTerminal(): void {
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
-
-  addDomListener(actionElements.find, 'keyup', (e) => {
-    term.options.overviewRulerWidth = 10;
-    addons.search.instance.find(actionElements.find.value, getSearchOptions(e));
-  });
 
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
