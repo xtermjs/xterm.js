@@ -100,8 +100,8 @@ export class SearchAddon implements ITerminalAddon {
       // set start row and col to avoid redoing work
       const key = Array.from(this._searchResults.keys()).pop()?.split('-');
       if (key?.length === 2) {
-        searchOptions.startRow = Number.parseInt(key[0]) + 1;
-        searchOptions.startCol = Number.parseInt(key[1]);
+        searchOptions.startRow = Number.parseInt(key[0]);
+        searchOptions.startCol = Number.parseInt(key[1]) + 1;
       }
     } else {
       // new search, clear out the old decorations
