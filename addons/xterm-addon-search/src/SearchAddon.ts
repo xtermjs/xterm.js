@@ -10,6 +10,8 @@ export interface ISearchOptions {
   wholeWord?: boolean;
   caseSensitive?: boolean;
   incremental?: boolean;
+  startRow?: number;
+  startCol?: number;
 }
 
 export interface ISearchPosition {
@@ -40,11 +42,12 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
-  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
   private _result: ISearchResult | undefined;
   private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
+  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
+  private _searchResults:  Map<string, ISearchResult> = new Map();
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -65,6 +68,7 @@ export class SearchAddon implements ITerminalAddon {
 
   public clear(): void {
     this._terminal?.clearSelection();
+    this._searchResults.clear();
     this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
     this._resultDecorations.clear();
     this._cachedSearchTerm = undefined;
@@ -87,42 +91,47 @@ export class SearchAddon implements ITerminalAddon {
       this.clear();
       return false;
     }
-    if (!this._dataChanged && term === this._cachedSearchTerm) {
-      return this.findNext(term, searchOptions);
-    }
-    if (this._dataChanged && term === this._cachedSearchTerm) {
-      // TODO:
-      // add to decorations instead of starting from scratch
-      // by looking at resultDecoration.keys()[resultDecoration.length]
-      // to ybase
+
+    if (term === this._cachedSearchTerm) {
+      if (!this._dataChanged) {
+        return this.findNext(term, searchOptions);
+      }
+      // set start row to avoid redoing work
+      searchOptions = searchOptions || {};
+      const key = Array.from(this._searchResults.keys()).pop()?.split('-');
+      if (key?.length === 2) {
+        searchOptions.startRow = Number.parseInt(key[0]) + 1;
+        searchOptions.startCol = Number.parseInt(key[1]);
+        console.log(searchOptions.startRow, searchOptions.startCol);
+      }
+    } else {
+      // new search, clear out the old decorations
+      this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
+      this._resultDecorations.clear();
+      this._searchResults.clear();
+      searchOptions = searchOptions || {};
     }
 
-    // new search, clear out the old decorations
-    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
-    const results: ISearchResult[] = [];
-    searchOptions = searchOptions || {};
     searchOptions.incremental = false;
     let found = this.findNext(term, searchOptions);
-    while (found && !results.find(r => r?.col === this._result?.col && r?.row === this._result?.row)) {
+    while (found && (!this._result || !this._searchResults.get(`${this._result.row}-${this._result.col}`))) {
       if (this._result) {
-        results.push(this._result);
+        this._searchResults.set(`${this._result.row}-${this._result.col}`, this._result);
       }
       found = this.findNext(term, searchOptions);
     }
-    for (const result of results) {
-      if (result) {
-        const resultDecoration = this._showResultDecoration(result);
-        if (resultDecoration) {
-          const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
-          decorationsForLine.push(resultDecoration);
-          this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
-        }
+    this._searchResults.forEach(result => {
+      const resultDecoration = this._showResultDecoration(result);
+      if (resultDecoration) {
+        const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
+        decorationsForLine.push(resultDecoration);
+        this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
-    }
+    });
     if (this._dataChanged) {
       this._dataChanged = false;
     }
-    if (results.length > 0) {
+    if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
     }
     return true;
@@ -147,8 +156,8 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    let startCol = 0;
-    let startRow = 0;
+    let startCol = searchOptions?.startCol || 0;
+    let startRow = searchOptions?.startRow || 0;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       const incremental = searchOptions ? searchOptions.incremental : false;
