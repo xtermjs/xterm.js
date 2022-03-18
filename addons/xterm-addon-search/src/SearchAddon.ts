@@ -91,10 +91,10 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    return searchOptions?.highlightAllMatches ? this._highlightAllMatches(term, searchOptions) : this._findAndSelectNext(term, searchOptions);
+    return searchOptions?.highlightAllMatches ? this._highlightAllMatches(term, searchOptions, 'next') : this._findAndSelectNext(term, searchOptions);
   }
 
-  private _highlightAllMatches(term: string, searchOptions: ISearchOptions): boolean {
+  private _highlightAllMatches(term: string, searchOptions: ISearchOptions, type: 'next' | 'previous'): boolean {
     if (!this._terminal) {
       throw new Error('cannot find all matches with no terminal');
     }
@@ -129,12 +129,12 @@ export class SearchAddon implements ITerminalAddon {
       this._terminal.options.findResultSelectedDecorationColor = '#ef2929';
     }
     searchOptions.incremental = false;
-    let found = this._findAndSelectNext(term, searchOptions);
+    let found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     while (found && (!this._result || !this._searchResults.get(`${this._result.row}-${this._result.col}`))) {
       if (this._result) {
         this._searchResults.set(`${this._result.row}-${this._result.col}`, this._result);
       }
-      found = this._findAndSelectNext(term, searchOptions);
+      found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result);
@@ -232,16 +232,24 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    return searchOptions?.highlightAllMatches ? this._highlightAllMatches(term, searchOptions, 'previous') : this._findAndSelectPrevious(term, searchOptions);
+  }
 
-    if (!term || term.length === 0) {
-      this._terminal.clearSelection();
+  private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+
+    if (!this._terminal || !term || term.length === 0) {
+      this._result = undefined;
+      this._terminal?.clearSelection();
+      this.clear();
       return false;
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
-    let startCol = this._terminal.cols;
-    let result: ISearchResult | undefined;
+    let startRow = searchOptions?.startRow || this._terminal.buffer.active.baseY + this._terminal.rows;
+    let startCol = searchOptions?.startCol || this._terminal.cols;
     const incremental = searchOptions ? searchOptions.incremental : false;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
@@ -259,49 +267,48 @@ export class SearchAddon implements ITerminalAddon {
 
     if (incremental) {
       // Try to expand selection to right first.
-      result = this._findInLine(term, searchPosition, searchOptions, false);
-      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
+      this._result = this._findInLine(term, searchPosition, searchOptions, false);
+      const isOldResultHighlighted = this._result && this._result.row === startRow && this._result.col === startCol;
       if (!isOldResultHighlighted) {
         // If selection was not able to be expanded to the right, then try reverse search
         if (currentSelection) {
           searchPosition.startRow = currentSelection.endRow;
           searchPosition.startCol = currentSelection.endColumn;
         }
-        result = this._findInLine(term, searchPosition, searchOptions, true);
+        this._result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
-      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+      this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
     }
 
     // Search from startRow - 1 to top
-    if (!result) {
+    if (!this._result) {
       searchPosition.startCol = Math.max(searchPosition.startCol, this._terminal.cols);
       for (let y = startRow - 1; y >= 0; y--) {
         searchPosition.startRow = y;
-        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-        if (result) {
+        this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (this._result) {
           break;
         }
       }
     }
     // If we hit the top and didn't search from the very bottom wrap back down
-    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
+    if (!this._result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
       for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
         searchPosition.startRow = y;
-        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-        if (result) {
+        this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (this._result) {
           break;
         }
       }
     }
 
     // If there is only one result, return true.
-    if (!result && currentSelection) return true;
+    if (!this._result && currentSelection) return true;
 
-    // Set selection and scroll if a result was found
-    return this._selectResult(result, searchOptions?.highlightAllMatches);
+    // Set selection and scroll if a this._result was found
+    return this._selectResult(this._result, searchOptions?.highlightAllMatches);
   }
-
 
   /**
    * Sets up a line cache with a ttl
