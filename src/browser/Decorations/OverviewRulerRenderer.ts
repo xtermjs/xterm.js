@@ -8,30 +8,20 @@ import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 
-// This is used to reduce memory usage
-// when refreshStyle is called
-// by storing and updating
-// the sizes of the decorations to be drawn
-const renderSizes = new Uint16Array(3);
-const enum SizeIndex {
-  OUTER_SIZE = 0,
-  INNER_SIZE = 1
-}
-
+// Helper objects to avoid excessive calculation and garbage collection during rendering. These are
+// static values for each render and can be accessed using the decoration position as the key.
 const drawHeight = {
   full: 0,
   left: 0,
   center: 0,
   right: 0
 };
-
 const drawWidth = {
   full: 0,
   left: 0,
   center: 0,
   right: 0
 };
-
 const drawX = {
   full: 0,
   left: 0,
@@ -78,16 +68,11 @@ export class OverviewRulerRenderer extends Disposable {
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
       if (o === 'overviewRulerWidth') {
-        // renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._canvas.width / 3);
-        // renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._canvas.width / 3);
         this._refreshDrawConstants();
         this._queueRefresh();
       }
     }));
-    console.log('width', this._canvas.width);
     this._refreshDrawConstants();
-    // renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._canvas.width / 3);
-    // renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._canvas.width / 3);
   }
 
   public override dispose(): void {
