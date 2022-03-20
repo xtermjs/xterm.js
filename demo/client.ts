@@ -559,5 +559,7 @@ function addOverviewRuler() {
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
 }
 

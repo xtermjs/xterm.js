@@ -8,15 +8,26 @@ import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 
-// This is used to reduce memory usage
-// when refreshStyle is called
-// by storing and updating
-// the sizes of the decorations to be drawn
-const renderSizes = new Uint16Array(3);
-const enum SizeIndex {
-  OUTER_SIZE = 0,
-  INNER_SIZE = 1
-}
+// Helper objects to avoid excessive calculation and garbage collection during rendering. These are
+// static values for each render and can be accessed using the decoration position as the key.
+const drawHeight = {
+  full: 0,
+  left: 0,
+  center: 0,
+  right: 0
+};
+const drawWidth = {
+  full: 0,
+  left: 0,
+  center: 0,
+  right: 0
+};
+const drawX = {
+  full: 0,
+  left: 0,
+  center: 0,
+  right: 0
+};
 
 export class OverviewRulerRenderer extends Disposable {
   private readonly _canvas: HTMLCanvasElement;
@@ -38,6 +49,7 @@ export class OverviewRulerRenderer extends Disposable {
     super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add('xterm-decoration-overview-ruler');
+    this._refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
@@ -56,13 +68,11 @@ export class OverviewRulerRenderer extends Disposable {
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
     this.register(this._optionsService.onOptionChange(o => {
       if (o === 'overviewRulerWidth') {
-        renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
-        renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
+        this._refreshDrawConstants();
         this._queueRefresh();
       }
     }));
-    renderSizes[SizeIndex.OUTER_SIZE] = Math.floor(this._width / 3);
-    renderSizes[SizeIndex.INNER_SIZE] = Math.ceil(this._width / 3);
+    this._refreshDrawConstants();
   }
 
   public override dispose(): void {
@@ -72,6 +82,26 @@ export class OverviewRulerRenderer extends Disposable {
     this._decorationElements.clear();
     this._canvas?.remove();
     super.dispose();
+  }
+
+  private _refreshDrawConstants(): void {
+    // width
+    const outerWidth = Math.floor(this._canvas.width / 3);
+    const innerWidth = Math.ceil(this._canvas.width / 3);
+    drawWidth.full = this._canvas.width;
+    drawWidth.left = outerWidth;
+    drawWidth.center = innerWidth;
+    drawWidth.right = outerWidth;
+    // height
+    drawHeight.full = Math.round(2 * window.devicePixelRatio);
+    drawHeight.left = Math.round(6 * window.devicePixelRatio);
+    drawHeight.center = Math.round(6 * window.devicePixelRatio);
+    drawHeight.right = Math.round(6 * window.devicePixelRatio);
+    // x
+    drawX.full = 0;
+    drawX.left = 0;
+    drawX.center = drawWidth.left;
+    drawX.right = drawWidth.left + drawWidth.center;
   }
 
   private _refreshStyle(decoration: IInternalDecoration, updateAnchor?: boolean): void {
@@ -89,23 +119,38 @@ export class OverviewRulerRenderer extends Disposable {
     this._ctx.lineWidth = 1;
     this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
     this._ctx.fillRect(
-      decoration.options.overviewRulerOptions.position === 'full' ||  decoration.options.overviewRulerOptions.position === 'left' ? 0 : decoration.options.overviewRulerOptions.position === 'right' ? renderSizes[SizeIndex.OUTER_SIZE] + renderSizes[SizeIndex.INNER_SIZE]: renderSizes[SizeIndex.OUTER_SIZE],
-      Math.round(this._canvas.height * (decoration.options.marker.line / this._bufferService.buffers.active.lines.length)),
-      decoration.options.overviewRulerOptions.position === 'full' ? this._width : decoration.options.overviewRulerOptions.position === 'center' ? renderSizes[SizeIndex.INNER_SIZE] : renderSizes[SizeIndex.OUTER_SIZE],
-      window.devicePixelRatio * (decoration.options.overviewRulerOptions.position === 'full' ? 2 : 6)
+      /* x */ drawX[decoration.options.overviewRulerOptions.position!],
+      /* y */ Math.round(
+        (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
+        (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
+      ),
+      /* w */ drawWidth[decoration.options.overviewRulerOptions.position!],
+      /* h */ drawHeight[decoration.options.overviewRulerOptions.position!]
     );
+  }
+
+  private _refreshCanvasDimensions(): void {
+    this._canvas.style.width = `${this._width}px`;
+    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+    this._canvas.width = Math.round(this._width * window.devicePixelRatio);
+    this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._refreshDrawConstants();
   }
 
   private _refreshDecorations(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (updateCanvasDimensions) {
-      this._canvas.style.width = `${this._width}px`;
-      this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-      this._canvas.width = Math.floor((this._width)* window.devicePixelRatio);
-      this._canvas.height = Math.floor(this._screenElement.clientHeight * window.devicePixelRatio);
+      this._refreshCanvasDimensions();
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
-      this._renderDecoration(decoration, updateAnchor);
+      if (decoration.options.overviewRulerOptions!.position !== 'full') {
+        this._renderDecoration(decoration, updateAnchor);
+      }
+    }
+    for (const decoration of this._decorationService.decorations) {
+      if (decoration.options.overviewRulerOptions!.position === 'full') {
+        this._renderDecoration(decoration, updateAnchor);
+      }
     }
   }
 
