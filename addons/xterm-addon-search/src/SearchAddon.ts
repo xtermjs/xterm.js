@@ -69,7 +69,7 @@ export class SearchAddon implements ITerminalAddon {
     this._onDataDisposable = this._terminal.onData(() => {
       this._dataChanged = true;
       setTimeout(() => {
-        if (this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
+        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
           this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions,'previous');
         }
       }, 200);
