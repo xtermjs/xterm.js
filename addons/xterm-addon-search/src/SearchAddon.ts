@@ -53,6 +53,7 @@ export class SearchAddon implements ITerminalAddon {
   private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
   private _searchResults:  Map<string, ISearchResult> = new Map();
   private _onDataDisposable: IDisposable | undefined;
+  private _lastSearchOptions: ISearchOptions | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -65,7 +66,13 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this._terminal.onData(() => this._dataChanged = true);
+    this._onDataDisposable = this._terminal.onData(() => {
+      //TODO: debounce
+      this._dataChanged = true;
+      if (this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
+        this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions,'previous');
+      }
+    });
   }
 
   public dispose(): void {
@@ -94,10 +101,11 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    this._lastSearchOptions = searchOptions;
     return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, 'next') : this._findAndSelectNext(term, searchOptions);
   }
 
-  private _highlightAllMatches(term: string, searchOptions: ISearchOptions, type: 'next' | 'previous'): boolean {
+  private _highlightAllMatches(term: string, searchOptions: ISearchOptions, selectionType: 'next' | 'previous'): boolean {
     if (!this._terminal) {
       throw new Error('cannot find all matches with no terminal');
     }
@@ -107,7 +115,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     searchOptions = searchOptions || {};
     if (term === this._cachedSearchTerm && !this._dataChanged) {
-      return type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
+      return selectionType === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     }
     // new search, clear out the old decorations
     this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
@@ -118,12 +126,12 @@ export class SearchAddon implements ITerminalAddon {
       this._terminal.options.overviewRulerWidth = 10;
     }
     searchOptions.incremental = false;
-    let found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
+    let found = selectionType === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     while (found && (!this._result || !this._searchResults.get(`${this._result.row}-${this._result.col}`))) {
       if (this._result) {
         this._searchResults.set(`${this._result.row}-${this._result.col}`, this._result);
       }
-      found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
+      found = selectionType === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations);
@@ -221,6 +229,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    this._lastSearchOptions = searchOptions;
     return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, 'previous') : this._findAndSelectPrevious(term, searchOptions);
   }
 
