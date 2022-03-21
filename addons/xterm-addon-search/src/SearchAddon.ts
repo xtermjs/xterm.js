@@ -53,6 +53,7 @@ export class SearchAddon implements ITerminalAddon {
   private _searchResults:  Map<string, ISearchResult> = new Map();
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
+  private _highlightTimeout: number | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -67,7 +68,10 @@ export class SearchAddon implements ITerminalAddon {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => {
       this._dataChanged = true;
-      setTimeout(() => {
+      if (this._highlightTimeout) {
+        window.clearTimeout(this._highlightTimeout);
+      }
+      this._highlightTimeout = setTimeout(() => {
         if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
           this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
         }
