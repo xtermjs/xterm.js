@@ -67,11 +67,12 @@ export class SearchAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => {
-      //TODO: debounce
       this._dataChanged = true;
-      if (this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
-        this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions,'previous');
-      }
+      setTimeout(() => {
+        if (this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
+          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions,'previous');
+        }
+      }, 200);
     });
   }
 
