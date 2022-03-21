@@ -50,14 +50,6 @@ declare module 'xterm-addon-search' {
     public dispose(): void;
 
     /**
-     * Find all instances of the term, selecting the next one with each
-     * enter. If it doesn't exist, do nothing.
-     * @param term The search term.
-     * @param searchOptions The options for the search.
-     */
-      public find(term: string, searchOptions?: ISearchOptions): boolean;
-
-    /**
      * Search forwards for the next result that matches the search term and
      * options.
      * @param term The search term.
