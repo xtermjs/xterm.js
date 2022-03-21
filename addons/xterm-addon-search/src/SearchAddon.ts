@@ -169,9 +169,6 @@ export class SearchAddon implements ITerminalAddon {
       currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
-    } else if (!startRow) {
-      startRow = this._terminal.buffer.active.cursorY;
-      startCol = this._terminal.buffer.active.cursorX;
     }
 
     this._initLinesCache();
