@@ -92,7 +92,6 @@ export class SearchAddon implements ITerminalAddon {
   private _disposeDecorations(): void {
     this._resultDecorations.forEach(decorations => {
       for (const d of decorations) {
-        console.log('dispose', d);
         d.dispose();
       }
     });
@@ -137,9 +136,6 @@ export class SearchAddon implements ITerminalAddon {
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
       this._searchResults.set(`${result.row}-${result.col}`, result);
       result = this._find(term, result.row, result.col + 1, searchOptions);
-    }
-    if (!this._terminal.options.overviewRulerWidth) {
-      this._terminal.options.overviewRulerWidth = 10;
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
@@ -644,7 +640,6 @@ export class SearchAddon implements ITerminalAddon {
     if (!marker || !decorations?.matchColor) {
       return undefined;
     }
-
     const findResultDecoration = terminal.registerDecoration(
       { marker,
         overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
