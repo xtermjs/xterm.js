@@ -109,7 +109,7 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     incremental: e.key !== `Enter`,
-    highlightAllMatches: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked,
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? { matchColor: '#555753', selectedColor: '#ef2929' } : undefined
   };
 }
 

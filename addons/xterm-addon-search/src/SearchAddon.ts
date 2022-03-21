@@ -10,7 +10,12 @@ export interface ISearchOptions {
   wholeWord?: boolean;
   caseSensitive?: boolean;
   incremental?: boolean;
-  highlightAllMatches?: boolean;
+  decorations?: IDecorationColor;
+}
+
+interface IDecorationColor {
+  matchColor: string;
+  selectedColor: string;
 }
 
 export interface ISearchPosition {
@@ -90,7 +95,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    return searchOptions?.highlightAllMatches ? this._highlightAllMatches(term, searchOptions, 'next') : this._findAndSelectNext(term, searchOptions);
+    return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, 'next') : this._findAndSelectNext(term, searchOptions);
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions, type: 'next' | 'previous'): boolean {
@@ -116,12 +121,6 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal.options.overviewRulerWidth) {
       this._terminal.options.overviewRulerWidth = 10;
     }
-    if (!this._terminal.options.findResultDecorationColor) {
-      this._terminal.options.findResultDecorationColor = '#555753';
-    }
-    if (!this._terminal.options.findResultSelectedDecorationColor) {
-      this._terminal.options.findResultSelectedDecorationColor = '#ef2929';
-    }
     searchOptions.incremental = false;
     let found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     while (found && (!this._result || !this._searchResults.get(`${this._result.row}-${this._result.col}`))) {
@@ -131,7 +130,7 @@ export class SearchAddon implements ITerminalAddon {
       found = type === 'next' ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     }
     this._searchResults.forEach(result => {
-      const resultDecoration = this._createResultDecoration(result);
+      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations);
       if (resultDecoration) {
         const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
         decorationsForLine.push(resultDecoration);
@@ -160,7 +159,7 @@ export class SearchAddon implements ITerminalAddon {
 
     let startCol = 0;
     let startRow = 0;
-    if (searchOptions?.highlightAllMatches && this._addToPrior) {
+    if (searchOptions?.decorations && this._addToPrior) {
       // set start row and col to avoid redoing work
       const key = Array.from(this._searchResults.keys()).pop()?.split('-');
       if (key?.length === 2) {
@@ -224,7 +223,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(this._result, searchOptions?.highlightAllMatches);
+    return this._selectResult(this._result, searchOptions?.decorations);
   }
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
@@ -237,7 +236,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    return searchOptions?.highlightAllMatches ? this._highlightAllMatches(term, searchOptions, 'previous') : this._findAndSelectPrevious(term, searchOptions);
+    return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, 'previous') : this._findAndSelectPrevious(term, searchOptions);
   }
 
   private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
@@ -322,7 +321,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._result && currentSelection) return true;
 
     // Set selection and scroll if a this._result was found
-    return this._selectResult(this._result, searchOptions?.highlightAllMatches);
+    return this._selectResult(this._result, searchOptions?.decorations);
   }
 
   /**
@@ -559,7 +558,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param result The result to select.
    * @return Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined, highlightAllMatches?: boolean): boolean {
+  private _selectResult(result: ISearchResult | undefined, decorations?: IDecorationColor): boolean {
     const terminal = this._terminal!;
     this._selectedDecoration?.dispose();
     if (!result) {
@@ -567,11 +566,11 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.size);
-    if (this._terminal?.options.findResultSelectedDecorationColor && highlightAllMatches) {
+    if (decorations?.selectedColor) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
-        this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: this._terminal!.options.findResultSelectedDecorationColor } });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, this._terminal!.options.findResultSelectedDecorationColor!, result));
+        this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: decorations.selectedColor } });
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
       }
     }
 
@@ -610,17 +609,17 @@ export class SearchAddon implements ITerminalAddon {
    * @param color the color to use for the decoration
    * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _createResultDecoration(result: ISearchResult): IDecoration | undefined {
+  private _createResultDecoration(result: ISearchResult, decorations?: IDecorationColor): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker || !this._terminal?.options.findResultDecorationColor) {
+    if (!marker || !decorations?.matchColor) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration(
       { marker,
-        overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: this._terminal.options.findResultDecorationColor, position: 'center' }
+        overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
       });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, this._terminal!.options.findResultDecorationColor!, result));
+    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
     return findResultDecoration;
   }
 }
