@@ -133,7 +133,9 @@ export class SearchAddon implements ITerminalAddon {
         this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
-    this._dataChanged = false;
+    if (this._dataChanged) {
+      this._dataChanged = false;
+    }
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
     }
