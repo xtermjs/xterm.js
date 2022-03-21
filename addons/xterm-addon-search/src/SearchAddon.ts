@@ -10,10 +10,10 @@ export interface ISearchOptions {
   wholeWord?: boolean;
   caseSensitive?: boolean;
   incremental?: boolean;
-  decorations?: IDecorationColor;
+  decorations?: ISearchDecorationOptions;
 }
 
-interface IDecorationColor {
+interface ISearchDecorationOptions {
   matchColor: string;
   selectedColor: string;
 }
@@ -541,7 +541,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param result The result to select.
    * @return Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined, decorations?: IDecorationColor): boolean {
+  private _selectResult(result: ISearchResult | undefined, decorations?: ISearchDecorationOptions): boolean {
     const terminal = this._terminal!;
     this._selectedDecoration?.dispose();
     if (!result) {
@@ -592,7 +592,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param color the color to use for the decoration
    * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _createResultDecoration(result: ISearchResult, decorations?: IDecorationColor): IDecoration | undefined {
+  private _createResultDecoration(result: ISearchResult, decorations?: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
     if (!marker || !decorations?.matchColor) {
