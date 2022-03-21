@@ -64,5 +64,10 @@ declare module 'xterm-addon-search' {
        * @param searchOptions The options for the search.
        */
       public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
+
+      /**
+       * Clears the decorations and selection
+       */
+      public clearDecorations(): void;
   }
 }

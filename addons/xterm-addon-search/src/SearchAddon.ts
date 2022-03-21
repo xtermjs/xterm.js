@@ -82,11 +82,11 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   public dispose(): void {
-    this.clear();
+    this.clearDecorations();
     this._onDataDisposable?.dispose();
   }
 
-  public clear(): void {
+  public clearDecorations(): void {
     this._selectedDecoration?.dispose();
     this._terminal?.clearSelection();
     this._searchResults.clear();
@@ -116,7 +116,7 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('cannot find all matches with no terminal');
     }
     if (!term || term.length === 0) {
-      this.clear();
+      this.clearDecorations();
       return false;
     }
     searchOptions = searchOptions || {};
@@ -160,7 +160,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal || !term || term.length === 0) {
       this._result = undefined;
       this._terminal?.clearSelection();
-      this.clear();
+      this.clearDecorations();
       return false;
     }
 
@@ -244,7 +244,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal || !term || term.length === 0) {
       this._result = undefined;
       this._terminal?.clearSelection();
-      this.clear();
+      this.clearDecorations();
       return false;
     }
 
