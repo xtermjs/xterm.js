@@ -5,11 +5,6 @@
 
 import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
 
-const enum SelectionType {
-  NEXT = 0,
-  PREVIOUS = 1
-}
-
 export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
@@ -51,7 +46,6 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
-  private _result: ISearchResult | undefined;
   private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
@@ -75,7 +69,7 @@ export class SearchAddon implements ITerminalAddon {
       this._dataChanged = true;
       setTimeout(() => {
         if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
-          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions, SelectionType.PREVIOUS);
+          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
         }
       }, 200);
     });
@@ -96,7 +90,11 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   private _disposeDecorations(): void {
-    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
+    this._resultDecorations.forEach(decorations => {
+      for (const d of decorations) {
+        d.dispose();
+      }
+    });
     this._resultDecorations.clear();
   }
 
@@ -112,38 +110,38 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, SelectionType.NEXT) : this._findAndSelectNext(term, searchOptions);
+    const findNextResult = this._findNextAndSelect(term, searchOptions);
+    if (searchOptions?.decorations) {
+      this._highlightAllMatches(term, searchOptions);
+    }
+    return findNextResult;
   }
 
-  private _highlightAllMatches(term: string, searchOptions: ISearchOptions, selectionType: SelectionType): boolean {
+  private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
     if (!this._terminal) {
-      throw new Error('cannot find all matches with no terminal');
+      throw new Error('Cannot use addon until it has been loaded');
     }
     if (!term || term.length === 0) {
       this.clearDecorations();
-      return false;
+      return;
     }
     searchOptions = searchOptions || {};
     if (term === this._cachedSearchTerm && !this._dataChanged) {
-      return selectionType === SelectionType.NEXT ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
+      return;
     }
     // new search, clear out the old decorations
     this._disposeDecorations();
     this._searchResults.clear();
-
+    let result = this._find(term, 0, 0, searchOptions);
+    while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
+      this._searchResults.set(`${result.row}-${result.col}`, result);
+      result = this._find(term, result.row, result.col + 1, searchOptions);
+    }
     if (!this._terminal.options.overviewRulerWidth) {
       this._terminal.options.overviewRulerWidth = 10;
     }
-    searchOptions.incremental = false;
-    let found = selectionType === SelectionType.NEXT ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
-    while (found && (!this._result || !this._searchResults.get(`${this._result.row}-${this._result.col}`))) {
-      if (this._result) {
-        this._searchResults.set(`${this._result.row}-${this._result.col}`, this._result);
-      }
-      found = selectionType === SelectionType.NEXT ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
-    }
     this._searchResults.forEach(result => {
-      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations);
+      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
       if (resultDecoration) {
         const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
         decorationsForLine.push(resultDecoration);
@@ -156,12 +154,49 @@ export class SearchAddon implements ITerminalAddon {
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
     }
-    return this._searchResults.size > 0;
   }
 
-  private _findAndSelectNext(term: string, searchOptions?: ISearchOptions): boolean {
+  private _find(term: string, startRow?: number, startCol?: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
     if (!this._terminal || !term || term.length === 0) {
-      this._result = undefined;
+      this._terminal?.clearSelection();
+      this.clearDecorations();
+      return undefined;
+    }
+    let result: ISearchResult | undefined = undefined;
+    startCol = startCol || 0;
+    startRow = startRow ?? 0;
+
+    this._initLinesCache();
+
+    const searchPosition: ISearchPosition = {
+      startRow,
+      startCol
+    };
+
+    // Search startRow
+    result = this._findInLine(term, searchPosition, searchOptions);
+    // Search from startRow + 1 to end
+    if (!result) {
+
+      for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
+        searchPosition.startRow = y;
+        searchPosition.startCol = 0;
+        // If the current line is wrapped line, increase index of column to ignore the previous scan
+        // Otherwise, reset beginning column index to zero with set new unwrapped line index
+        result = this._findInLine(term, searchPosition, searchOptions);
+        if (result) {
+          break;
+        }
+      }
+    }
+    if (result && searchOptions?.decorations) {
+      this._createResultDecoration(result, searchOptions?.decorations);
+    }
+    return result;
+  }
+
+  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+    if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
       return false;
@@ -187,42 +222,42 @@ export class SearchAddon implements ITerminalAddon {
     };
 
     // Search startRow
-    this._result = this._findInLine(term, searchPosition, searchOptions);
+    let result = this._findInLine(term, searchPosition, searchOptions);
     // Search from startRow + 1 to end
-    if (!this._result) {
+    if (!result) {
 
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
-        this._result = this._findInLine(term, searchPosition, searchOptions);
-        if (this._result) {
+        result = this._findInLine(term, searchPosition, searchOptions);
+        if (result) {
           break;
         }
       }
     }
     // If we hit the bottom and didn't search from the very top wrap back up
-    if (!this._result && startRow !== 0) {
+    if (!result && startRow !== 0) {
       for (let y = 0; y < startRow; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        this._result = this._findInLine(term, searchPosition, searchOptions);
-        if (this._result) {
+        result = this._findInLine(term, searchPosition, searchOptions);
+        if (result) {
           break;
         }
       }
     }
 
     // If there is only one result, wrap back and return selection if it exists.
-    if (!this._result && currentSelection) {
+    if (!result && currentSelection) {
       searchPosition.startRow = currentSelection.startRow;
       searchPosition.startCol = 0;
-      this._result = this._findInLine(term, searchPosition, searchOptions);
+      result = this._findInLine(term, searchPosition, searchOptions);
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(this._result, searchOptions?.decorations);
+    return this._selectResult(result, searchOptions?.decorations);
   }
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
@@ -236,16 +271,20 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    return searchOptions?.decorations ? this._highlightAllMatches(term, searchOptions, SelectionType.PREVIOUS) : this._findAndSelectPrevious(term, searchOptions);
+    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
+    if (searchOptions?.decorations) {
+      this._highlightAllMatches(term, searchOptions);
+    }
+    return findPreviousResult;
   }
 
   private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-
+    let result: ISearchResult | undefined;
     if (!this._terminal || !term || term.length === 0) {
-      this._result = undefined;
+      result = undefined;
       this._terminal?.clearSelection();
       this.clearDecorations();
       return false;
@@ -272,47 +311,47 @@ export class SearchAddon implements ITerminalAddon {
 
     if (incremental) {
       // Try to expand selection to right first.
-      this._result = this._findInLine(term, searchPosition, searchOptions, false);
-      const isOldResultHighlighted = this._result && this._result.row === startRow && this._result.col === startCol;
+      result = this._findInLine(term, searchPosition, searchOptions, false);
+      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
       if (!isOldResultHighlighted) {
         // If selection was not able to be expanded to the right, then try reverse search
         if (currentSelection) {
           searchPosition.startRow = currentSelection.endRow;
           searchPosition.startCol = currentSelection.endColumn;
         }
-        this._result = this._findInLine(term, searchPosition, searchOptions, true);
+        result = this._findInLine(term, searchPosition, searchOptions, true);
       }
     } else {
-      this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
     }
 
     // Search from startRow - 1 to top
-    if (!this._result) {
+    if (!result) {
       searchPosition.startCol = Math.max(searchPosition.startCol, this._terminal.cols);
       for (let y = startRow - 1; y >= 0; y--) {
         searchPosition.startRow = y;
-        this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-        if (this._result) {
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (result) {
           break;
         }
       }
     }
     // If we hit the top and didn't search from the very bottom wrap back down
-    if (!this._result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
+    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
       for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
         searchPosition.startRow = y;
-        this._result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-        if (this._result) {
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        if (result) {
           break;
         }
       }
     }
 
     // If there is only one result, return true.
-    if (!this._result && currentSelection) return true;
+    if (!result && currentSelection) return true;
 
-    // Set selection and scroll if a this._result was found
-    return this._selectResult(this._result, searchOptions?.decorations);
+    // Set selection and scroll if a result was found
+    return this._selectResult(result, searchOptions?.decorations);
   }
 
   /**
@@ -600,7 +639,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param color the color to use for the decoration
    * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _createResultDecoration(result: ISearchResult, decorations?: ISearchDecorationOptions): IDecoration | undefined {
+  private _createResultDecoration(result: ISearchResult, decorations: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
     if (!marker || !decorations?.matchColor) {
