@@ -76,7 +76,7 @@ declare module 'xterm-addon-search' {
      * @param term The search term.
      * @param searchOptions The options for the search.
      */
-     public findNext(term: string, searchOptions?: ISearchOptions): boolean;
+    public findNext(term: string, searchOptions?: ISearchOptions): boolean;
 
     /**
      * Search backwards for the previous result that matches the search term and
