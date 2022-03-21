@@ -601,6 +601,7 @@ export class SearchAddon implements ITerminalAddon {
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: decorations.selectedColor } });
         this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
+        this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
 
@@ -650,6 +651,7 @@ export class SearchAddon implements ITerminalAddon {
         overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
       });
     findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
+    findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }
 }
