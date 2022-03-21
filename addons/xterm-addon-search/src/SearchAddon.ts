@@ -626,10 +626,10 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      // decoration's clientWidth = actualCellWidth
       element.style.left = `${element.clientWidth * result.col}px`;
       element.style.width = `${element.clientWidth * result.term.length}px`;
       element.style.backgroundColor = color;
+      element.style.opacity = '0.6';
     }
   }
 
