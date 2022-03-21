@@ -90,10 +90,14 @@ export class SearchAddon implements ITerminalAddon {
     this._selectedDecoration?.dispose();
     this._terminal?.clearSelection();
     this._searchResults.clear();
-    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
-    this._resultDecorations.clear();
+    this._disposeDecorations();
     this._cachedSearchTerm = undefined;
     this._dataChanged = true;
+  }
+
+  private _disposeDecorations(): void {
+    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
+    this._resultDecorations.clear();
   }
 
   /**
@@ -124,8 +128,7 @@ export class SearchAddon implements ITerminalAddon {
       return selectionType === SelectionType.NEXT ? this._findAndSelectNext(term, searchOptions) : this._findAndSelectPrevious(term, searchOptions);
     }
     // new search, clear out the old decorations
-    this._resultDecorations.forEach(decorations => decorations.forEach(d=> d.dispose()));
-    this._resultDecorations.clear();
+    this._disposeDecorations();
     this._searchResults.clear();
 
     if (!this._terminal.options.overviewRulerWidth) {
