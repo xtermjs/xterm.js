@@ -1017,6 +1017,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.buffer !== this.buffers.normal) {
       return;
     }
+
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
