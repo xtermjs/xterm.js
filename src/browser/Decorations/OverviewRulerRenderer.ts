@@ -143,10 +143,12 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
-      if (!decoration.options.overviewRulerOptions?.position) {
-        continue;
+      if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position !== 'full') {
+        this._renderDecoration(decoration, updateAnchor);
       }
-      if (decoration.options.overviewRulerOptions.position !== 'full') {
+    }
+    for (const decoration of this._decorationService.decorations) {
+      if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position === 'full') {
         this._renderDecoration(decoration, updateAnchor);
       }
     }
