@@ -49,7 +49,7 @@ export class OverviewRulerRenderer extends Disposable {
     super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add('xterm-decoration-overview-ruler');
-    this._refreshCanvasDimensions();
+    this.refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
@@ -129,7 +129,7 @@ export class OverviewRulerRenderer extends Disposable {
     );
   }
 
-  private _refreshCanvasDimensions(): void {
+  public refreshCanvasDimensions(): void {
     this._canvas.style.width = `${this._width}px`;
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
     this._canvas.width = Math.round(this._width * window.devicePixelRatio);
@@ -139,7 +139,7 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshDecorations(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (updateCanvasDimensions) {
-      this._refreshCanvasDimensions();
+      this.refreshCanvasDimensions();
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
