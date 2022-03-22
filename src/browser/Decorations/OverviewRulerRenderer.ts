@@ -38,9 +38,10 @@ export class OverviewRulerRenderer extends Disposable {
   }
   private _animationFrame: number | undefined;
 
-  private _canvasHeight: number | undefined;
-  private _canvasWidth: number | undefined;
   private _shouldUpdateDimensions: boolean | undefined = true;
+  private _shouldUpdateAnchor: boolean | undefined = true;
+
+  private _containerHeight: number | undefined;
 
   constructor(
     private readonly _viewportElement: HTMLElement,
@@ -61,27 +62,53 @@ export class OverviewRulerRenderer extends Disposable {
     } else {
       this._ctx = ctx;
     }
-    this._queueRefresh(true);
+    this._registerDecorationListeners();
+    this._registerBufferChangeListeners();
+    this._registerDimensionChangeListeners();
+  }
+
+  /**
+   * On decoration add or remove, redraw
+   */
+  private _registerDecorationListeners(): void {
+    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
+    this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
+  }
+
+  /**
+   * On buffer change, redraw
+   * and hide the canvas if the alt buffer is active
+   */
+  private _registerBufferChangeListeners(): void {
+    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
-    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
-    this.register(this._renderService.onRender(() => {
-      if (this._canvasHeight !== this._screenElement.clientHeight) {
+  }
+  /**
+   * On dimension change, update canvas dimensions
+   * and then redraw
+   */
+  private _registerDimensionChangeListeners(): void {
+    // container height changed
+    this.register(this._renderService.onRender((): void => {
+      if (!this._containerHeight || this._containerHeight !== this._screenElement.clientHeight) {
+        this._queueRefresh(true);
+        this._containerHeight = this._screenElement.clientHeight;
+      }
+    }));
+    // overview ruler width changed
+    this.register(this._optionsService.onOptionChange(o => {
+      if (o === 'overviewRulerWidth') {
         this._queueRefresh(true);
       }
     }));
-    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh(true, true)));
-    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh(true)));
-    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
-    this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
-    this.register(this._optionsService.onOptionChange(o => {
-      if (o === 'overviewRulerWidth') {
-        this._refreshDrawConstants();
-        this._queueRefresh();
-      }
+    // device pixel ratio changed
+    this.register(addDisposableDomListener(window, 'resize', () => {
+      this._queueRefresh(true);
     }));
-    this._refreshDrawConstants();
+    // set the canvas dimensions
+    this._queueRefresh(true);
   }
 
   public override dispose(): void {
@@ -113,8 +140,8 @@ export class OverviewRulerRenderer extends Disposable {
     drawX.right = drawWidth.left + drawWidth.center;
   }
 
-  private _refreshStyle(decoration: IInternalDecoration, updateAnchor?: boolean): void {
-    if (updateAnchor) {
+  private _refreshStyle(decoration: IInternalDecoration): void {
+    if (this._shouldUpdateAnchor) {
       if (decoration.options.anchor === 'right') {
         this._canvas.style.right = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
       } else {
@@ -139,58 +166,49 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshCanvasDimensions(): void {
-    let updated = false;
-    if (this._canvasWidth !== this._width) {
-      this._canvas.style.width = `${this._width}px`;
-      this._canvas.width = Math.round(this._width * window.devicePixelRatio);
-      this._canvasWidth = this._canvas.width;
-      updated = true;
-    }
-    if (this._canvasHeight !== Math.round(this._screenElement.clientHeight * window.devicePixelRatio)) {
-      this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-      this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
-      this._canvasHeight = this._canvas.height;
-      updated = true;
-    }
-    if (updated) {
-      this._refreshDrawConstants();
-    }
+    this._canvas.style.width = `${this._width}px`;
+    this._canvas.width = Math.round(this._width * window.devicePixelRatio);
+    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+    this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._refreshDrawConstants();
   }
 
-  private _refreshDecorations(updateAnchor?: boolean): void {
+  private _refreshDecorations(): void {
     if (this._shouldUpdateDimensions) {
       this._refreshCanvasDimensions();
-      this._shouldUpdateDimensions = false;
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
       if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position !== 'full') {
-        this._renderDecoration(decoration, updateAnchor);
+        this._renderDecoration(decoration);
       }
     }
     for (const decoration of this._decorationService.decorations) {
       if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position === 'full') {
-        this._renderDecoration(decoration, updateAnchor);
+        this._renderDecoration(decoration);
       }
     }
+    this._shouldUpdateDimensions = false;
+    this._shouldUpdateAnchor = false;
   }
 
-  private _renderDecoration(decoration: IInternalDecoration, updateAnchor?: boolean): void {
+  private _renderDecoration(decoration: IInternalDecoration): void {
     const element = this._decorationElements.get(decoration);
     if (!element) {
       this._decorationElements.set(decoration, this._canvas);
       decoration.onDispose(() => this._queueRefresh());
     }
-    this._refreshStyle(decoration, updateAnchor);
+    this._refreshStyle(decoration);
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
+    this._shouldUpdateDimensions = updateCanvasDimensions || this._shouldUpdateDimensions;
+    this._shouldUpdateAnchor = updateAnchor || this._shouldUpdateAnchor;
     if (this._animationFrame !== undefined) {
-      this._shouldUpdateDimensions = updateCanvasDimensions || this._shouldUpdateDimensions;
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this._refreshDecorations(updateAnchor);
+      this._refreshDecorations();
       this._animationFrame = undefined;
     });
   }
