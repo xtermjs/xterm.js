@@ -97,7 +97,7 @@ export class BufferDecorationRenderer extends Disposable {
 
   private _refreshStyle(decoration: IInternalDecoration, element: HTMLElement): void {
     const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
-    if (line < 0 || line > this._bufferService.rows) {
+    if (line < 0 || line >= this._bufferService.rows) {
       // outside of viewport
       element.style.display = 'none';
     } else {

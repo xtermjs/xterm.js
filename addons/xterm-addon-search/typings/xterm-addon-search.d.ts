@@ -32,6 +32,27 @@ declare module 'xterm-addon-search' {
      * `findNext`, not `findPrevious`.
      */
     incremental?: boolean;
+
+    /**
+     * When set, will highlight all instances of the word on search and show
+     * them in the overview ruler if it's enabled.
+     */
+    decorations?: ISearchDecorationOptions;
+  }
+
+  /**
+   * Options for showing decorations when searching.
+   */
+  interface ISearchDecorationOptions {
+    /**
+     * The color of a match.
+     */
+    matchColor: string;
+
+    /**
+     * The color for the currently selected match.
+     */
+    selectedColor: string;
   }
 
   /**
@@ -64,5 +85,10 @@ declare module 'xterm-addon-search' {
      * @param searchOptions The options for the search.
      */
     public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
+
+    /**
+     * Clears the decorations and selection
+     */
+    public clearDecorations(): void;
   }
 }

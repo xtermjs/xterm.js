@@ -3,13 +3,19 @@
  * @license MIT
  */
 
-import { Terminal, IBufferLine, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
   caseSensitive?: boolean;
   incremental?: boolean;
+  decorations?: ISearchDecorationOptions;
+}
+
+interface ISearchDecorationOptions {
+  matchColor: string;
+  selectedColor: string;
 }
 
 export interface ISearchPosition {
@@ -40,7 +46,14 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
-
+  private _dataChanged: boolean = false;
+  private _cachedSearchTerm: string | undefined;
+  private _selectedDecoration: IDecoration | undefined;
+  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
+  private _searchResults:  Map<string, ISearchResult> = new Map();
+  private _onDataDisposable: IDisposable | undefined;
+  private _lastSearchOptions: ISearchOptions | undefined;
+  private _highlightTimeout: number | undefined;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -53,9 +66,41 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
+    this._onDataDisposable = this._terminal.onData(() => {
+      this._dataChanged = true;
+      if (this._highlightTimeout) {
+        window.clearTimeout(this._highlightTimeout);
+      }
+      this._highlightTimeout = setTimeout(() => {
+        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
+          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
+        }
+      }, 200);
+    });
   }
 
-  public dispose(): void { }
+  public dispose(): void {
+    this.clearDecorations();
+    this._onDataDisposable?.dispose();
+  }
+
+  public clearDecorations(): void {
+    this._selectedDecoration?.dispose();
+    this._terminal?.clearSelection();
+    this._searchResults.clear();
+    this._disposeDecorations();
+    this._cachedSearchTerm = undefined;
+    this._dataChanged = true;
+  }
+
+  private _disposeDecorations(): void {
+    this._resultDecorations.forEach(decorations => {
+      for (const d of decorations) {
+        d.dispose();
+      }
+    });
+    this._resultDecorations.clear();
+  }
 
   /**
    * Find the next instance of the term, then scroll to and select it. If it
@@ -68,9 +113,90 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    this._lastSearchOptions = searchOptions;
+    const findNextResult = this._findNextAndSelect(term, searchOptions);
+    if (searchOptions?.decorations) {
+      this._highlightAllMatches(term, searchOptions);
+    }
+    return findNextResult;
+  }
 
+  private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
     if (!term || term.length === 0) {
-      this._terminal.clearSelection();
+      this.clearDecorations();
+      return;
+    }
+    searchOptions = searchOptions || {};
+    if (term === this._cachedSearchTerm && !this._dataChanged) {
+      return;
+    }
+    // new search, clear out the old decorations
+    this._disposeDecorations();
+    this._searchResults.clear();
+    let result = this._find(term, 0, 0, searchOptions);
+    while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
+      this._searchResults.set(`${result.row}-${result.col}`, result);
+      result = this._find(term, result.row, result.col + 1, searchOptions);
+    }
+    this._searchResults.forEach(result => {
+      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
+      if (resultDecoration) {
+        const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
+        decorationsForLine.push(resultDecoration);
+        this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
+      }
+    });
+    if (this._dataChanged) {
+      this._dataChanged = false;
+    }
+    if (this._searchResults.size > 0) {
+      this._cachedSearchTerm = term;
+    }
+  }
+
+  private _find(term: string, startRow?: number, startCol?: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
+    if (!this._terminal || !term || term.length === 0) {
+      this._terminal?.clearSelection();
+      this.clearDecorations();
+      return undefined;
+    }
+    let result: ISearchResult | undefined = undefined;
+    startCol = startCol || 0;
+    startRow = startRow ?? 0;
+
+    this._initLinesCache();
+
+    const searchPosition: ISearchPosition = {
+      startRow,
+      startCol
+    };
+
+    // Search startRow
+    result = this._findInLine(term, searchPosition, searchOptions);
+    // Search from startRow + 1 to end
+    if (!result) {
+
+      for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
+        searchPosition.startRow = y;
+        searchPosition.startCol = 0;
+        // If the current line is wrapped line, increase index of column to ignore the previous scan
+        // Otherwise, reset beginning column index to zero with set new unwrapped line index
+        result = this._findInLine(term, searchPosition, searchOptions);
+        if (result) {
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+    if (!this._terminal || !term || term.length === 0) {
+      this._terminal?.clearSelection();
+      this.clearDecorations();
       return false;
     }
 
@@ -95,7 +221,6 @@ export class SearchAddon implements ITerminalAddon {
 
     // Search startRow
     let result = this._findInLine(term, searchPosition, searchOptions);
-
     // Search from startRow + 1 to end
     if (!result) {
 
@@ -130,9 +255,8 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result);
+    return this._selectResult(result, searchOptions?.decorations);
   }
-
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
@@ -144,16 +268,30 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    this._lastSearchOptions = searchOptions;
+    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
+    if (searchOptions?.decorations) {
+      this._highlightAllMatches(term, searchOptions);
+    }
+    return findPreviousResult;
+  }
 
-    if (!term || term.length === 0) {
-      this._terminal.clearSelection();
+  private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+    let result: ISearchResult | undefined;
+    if (!this._terminal || !term || term.length === 0) {
+      result = undefined;
+      this._terminal?.clearSelection();
+      this.clearDecorations();
       return false;
     }
 
-    const isReverseSearch = true;
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
-    let result: ISearchResult | undefined;
+    const isReverseSearch = true;
+
     const incremental = searchOptions ? searchOptions.incremental : false;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
@@ -211,7 +349,7 @@ export class SearchAddon implements ITerminalAddon {
     if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result);
+    return this._selectResult(result, searchOptions?.decorations);
   }
 
   /**
@@ -446,15 +584,25 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Selects and scrolls to a result.
    * @param result The result to select.
-   * @return Whethera result was selected.
+   * @return Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined): boolean {
+  private _selectResult(result: ISearchResult | undefined, decorations?: ISearchDecorationOptions): boolean {
     const terminal = this._terminal!;
+    this._selectedDecoration?.dispose();
     if (!result) {
       terminal.clearSelection();
       return false;
     }
     terminal.select(result.col, result.row, result.size);
+    if (decorations?.selectedColor) {
+      const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
+      if (marker) {
+        this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: decorations.selectedColor } });
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
+        this._selectedDecoration?.onDispose(() => marker.dispose());
+      }
+    }
+
     // If it is not in the viewport then we scroll else it just gets selected
     if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
       let scroll = result.row - terminal.buffer.active.viewportY;
@@ -462,5 +610,46 @@ export class SearchAddon implements ITerminalAddon {
       terminal.scrollLines(scroll);
     }
     return true;
+  }
+
+  /**
+   * Applies styles to the decoration when it is rendered
+   * @param element the decoration's element
+   * @param color the color to apply
+   * @param result the search result associated with the decoration
+   * @returns
+   */
+  private _applyStyles(element: HTMLElement, color: string, result: ISearchResult): void {
+    if (element.clientWidth <= 0) {
+      return;
+    }
+    if (!element.classList.contains('xterm-find-result-decoration')) {
+      element.classList.add('xterm-find-result-decoration');
+      element.style.left = `${element.clientWidth * result.col}px`;
+      element.style.width = `${element.clientWidth * result.term.length}px`;
+      element.style.backgroundColor = color;
+      element.style.opacity = '0.6';
+    }
+  }
+
+  /**
+   * Creates a decoration for the result and applies styles
+   * @param result the search result for which to create the decoration
+   * @param color the color to use for the decoration
+   * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
+   */
+  private _createResultDecoration(result: ISearchResult, decorations: ISearchDecorationOptions): IDecoration | undefined {
+    const terminal = this._terminal!;
+    const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
+    if (!marker || !decorations?.matchColor) {
+      return undefined;
+    }
+    const findResultDecoration = terminal.registerDecoration(
+      { marker,
+        overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
+      });
+    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
+    findResultDecoration?.onDispose(() => marker.dispose());
+    return findResultDecoration;
   }
 }

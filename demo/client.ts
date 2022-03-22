@@ -92,6 +92,7 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
+  find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
   findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
 };
@@ -107,7 +108,8 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`
+    incremental: e.key !== `Enter`,
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? { matchColor: '#555753', selectedColor: '#ef2929' } : undefined
   };
 }
 
