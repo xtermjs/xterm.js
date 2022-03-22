@@ -111,7 +111,6 @@ export class OverviewRulerRenderer extends Disposable {
     drawX.left = 0;
     drawX.center = drawWidth.left;
     drawX.right = drawWidth.left + drawWidth.center;
-    this._shouldUpdateDimensions = false;
   }
 
   private _refreshStyle(decoration: IInternalDecoration, updateAnchor?: boolean): void {
@@ -161,6 +160,7 @@ export class OverviewRulerRenderer extends Disposable {
   private _refreshDecorations(updateAnchor?: boolean): void {
     if (this._shouldUpdateDimensions) {
       this._refreshCanvasDimensions();
+      this._shouldUpdateDimensions = false;
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
