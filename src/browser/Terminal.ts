@@ -175,9 +175,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
-    this.register(this._inputHandler.onRequestRefreshRows((start, end) => {
-      this.refresh(start, end);
-    }));
+    this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
@@ -909,7 +907,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public refresh(start: number, end: number): void {
     this._renderService?.refreshRows(start, end);
-    this._overviewRulerRenderer?.refreshCanvasDimensions();
   }
 
   /**

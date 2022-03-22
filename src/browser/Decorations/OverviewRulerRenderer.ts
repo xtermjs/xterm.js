@@ -38,6 +38,10 @@ export class OverviewRulerRenderer extends Disposable {
   }
   private _animationFrame: number | undefined;
 
+  private _canvasHeight: number | undefined;
+  private _canvasWidth: number | undefined;
+  private _shouldUpdateDimensions: boolean | undefined = true;
+
   constructor(
     private readonly _viewportElement: HTMLElement,
     private readonly _screenElement: HTMLElement,
@@ -49,7 +53,7 @@ export class OverviewRulerRenderer extends Disposable {
     super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add('xterm-decoration-overview-ruler');
-    this.refreshCanvasDimensions();
+    this._refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
@@ -62,6 +66,11 @@ export class OverviewRulerRenderer extends Disposable {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
     this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
+    this.register(this._renderService.onRender(() => {
+      if (this._canvasHeight !== this._screenElement.clientHeight) {
+        this._queueRefresh(true);
+      }
+    }));
     this.register(this._renderService.onDimensionsChange(() => this._queueRefresh(true, true)));
     this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh(true)));
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
@@ -102,6 +111,7 @@ export class OverviewRulerRenderer extends Disposable {
     drawX.left = 0;
     drawX.center = drawWidth.left;
     drawX.right = drawWidth.left + drawWidth.center;
+    this._shouldUpdateDimensions = false;
   }
 
   private _refreshStyle(decoration: IInternalDecoration, updateAnchor?: boolean): void {
@@ -122,24 +132,35 @@ export class OverviewRulerRenderer extends Disposable {
       /* x */ drawX[decoration.options.overviewRulerOptions.position!],
       /* y */ Math.round(
         (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
-        (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
+      (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
       ),
       /* w */ drawWidth[decoration.options.overviewRulerOptions.position!],
       /* h */ drawHeight[decoration.options.overviewRulerOptions.position!]
     );
   }
 
-  public refreshCanvasDimensions(): void {
-    this._canvas.style.width = `${this._width}px`;
-    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.width = Math.round(this._width * window.devicePixelRatio);
-    this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
-    this._refreshDrawConstants();
+  private _refreshCanvasDimensions(): void {
+    let updated = false;
+    if (this._canvasWidth !== this._width) {
+      this._canvas.style.width = `${this._width}px`;
+      this._canvas.width = Math.round(this._width * window.devicePixelRatio);
+      this._canvasWidth = this._canvas.width;
+      updated = true;
+    }
+    if (this._canvasHeight !== Math.round(this._screenElement.clientHeight * window.devicePixelRatio)) {
+      this._canvas.style.height = `${this._screenElement.clientHeight}px`;
+      this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
+      this._canvasHeight = this._canvas.height;
+      updated = true;
+    }
+    if (updated) {
+      this._refreshDrawConstants();
+    }
   }
 
-  private _refreshDecorations(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
-    if (updateCanvasDimensions) {
-      this.refreshCanvasDimensions();
+  private _refreshDecorations(updateAnchor?: boolean): void {
+    if (this._shouldUpdateDimensions) {
+      this._refreshCanvasDimensions();
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     for (const decoration of this._decorationService.decorations) {
@@ -165,10 +186,11 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
     if (this._animationFrame !== undefined) {
+      this._shouldUpdateDimensions = updateCanvasDimensions || this._shouldUpdateDimensions;
       return;
     }
     this._animationFrame = window.requestAnimationFrame(() => {
-      this._refreshDecorations(updateCanvasDimensions, updateAnchor);
+      this._refreshDecorations(updateAnchor);
       this._animationFrame = undefined;
     });
   }
