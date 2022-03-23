@@ -172,8 +172,8 @@ export class SearchAddon implements ITerminalAddon {
       this.clearDecorations();
       return undefined;
     }
-    if (startRow > this._terminal.rows || startCol > this._terminal.cols) {
-      throw new Error(`Invalid row: ${startRow} or col: ${startCol} to search in terminal with ${this._terminal.rows} rows and ${this._terminal.cols} cols`);
+    if (startCol > this._terminal.cols) {
+      throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
     }
 
     let result: ISearchResult | undefined = undefined;
