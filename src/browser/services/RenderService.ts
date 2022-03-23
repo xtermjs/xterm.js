@@ -39,8 +39,10 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
+  private _onRenderedBufferChange = new EventEmitter<{ start: number, end: number }>();
+  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRenderedBufferChange.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
 
@@ -122,8 +124,9 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {
-      this._onRender.fire({ start, end });
+      this._onRenderedBufferChange.fire({ start, end });
     }
+    this._onRender.fire({ start, end });
     this._isNextRenderRedrawOnly = true;
   }
 
