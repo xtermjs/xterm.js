@@ -50,6 +50,10 @@ export interface IRenderService extends IDisposable {
    * or selections are rendered.
    */
   onRenderedBufferChange: IEvent<{ start: number, end: number }>;
+  /**
+   * Fires on render
+   */
+  onRender: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;

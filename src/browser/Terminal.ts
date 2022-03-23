@@ -613,7 +613,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.optionsService.onOptionChange(() => {
       if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
-      }});
+      }
+    });
     // Measure the character size
     this._charSizeService.measure();
 
