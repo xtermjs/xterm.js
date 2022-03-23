@@ -45,14 +45,34 @@ declare module 'xterm-addon-search' {
    */
   interface ISearchDecorationOptions {
     /**
-     * The color of a match.
+     * The background color of a match.
      */
-    matchColor: string;
+    matchBackground?: string;
 
     /**
-     * The color for the currently selected match.
+     * The border color of a match
      */
-    selectedColor: string;
+    matchBorder?: string;
+
+    /**
+     * The overview ruler color of a match.
+     */
+    matchOverviewRuler: string;
+
+    /**
+     * The background color for the currently selected match.
+     */
+    selectedBackground?: string;
+
+    /**
+     * The border color of the currently selected match.
+     */
+    selectedBorder?: string;
+
+    /**
+     * The overview ruler color of the currently selected match.
+     */
+    selectedColorOverviewRuler: string;
   }
 
   /**
