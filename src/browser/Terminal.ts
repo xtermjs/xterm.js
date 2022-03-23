@@ -26,7 +26,7 @@ import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
-import { C0 } from 'common/data/EscapeSequences';
+import { C0, C1 } from 'common/data/EscapeSequences';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
 import { Linkifier } from 'browser/Linkifier';
@@ -224,7 +224,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
             const channels = color.toColorRGB(acc === 'ansi'
               ? this._colorManager.colors.ansi[req.index]
               : this._colorManager.colors[acc]);
-            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C0.BEL}`);
+            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1.ST}`);
             break;
           case ColorRequestType.SET:
             if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
