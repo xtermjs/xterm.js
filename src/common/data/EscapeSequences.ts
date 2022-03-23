@@ -148,6 +148,6 @@ export namespace C1 {
   /** Application Program Command */
   export const APC = '\x9f';
 }
-export const C1_ESCAPED = {
-  ST: `{C0.ESC}\\`
-};
+export namespace C1_ESCAPED {
+  export const ST = `${C0.ESC}\\`;
+}
