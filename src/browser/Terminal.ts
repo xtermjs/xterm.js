@@ -224,7 +224,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
             const channels = color.toColorRGB(acc === 'ansi'
               ? this._colorManager.colors.ansi[req.index]
               : this._colorManager.colors[acc]);
-            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1.ST}`);
+            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}ESC \9c`);
             break;
           case ColorRequestType.SET:
             if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);

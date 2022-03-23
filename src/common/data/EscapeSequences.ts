@@ -119,8 +119,6 @@ export namespace C1 {
   export const DCS = '\x90';
   /** Private Use 1 */
   export const PU1 = '\x91';
-  /** String Terminator */
-  export const ST = '\x912';
   /** Private Use 2 */
   export const PU2 = '\x92';
   /** Set Transmit State */
