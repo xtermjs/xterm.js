@@ -139,7 +139,12 @@ export class SearchAddon implements ITerminalAddon {
     let result = this._find(term, 0, 0, searchOptions);
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
       this._searchResults.set(`${result.row}-${result.col}`, result);
-      result = this._find(term, result.row, result.col + 1, searchOptions);
+      result = this._find(
+        term,
+        result.col + result.term.length >= this._terminal.cols ? result.row + 1 : result.row,
+        result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
+        searchOptions
+      );
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
@@ -157,15 +162,13 @@ export class SearchAddon implements ITerminalAddon {
     }
   }
 
-  private _find(term: string, startRow?: number, startCol?: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
+  private _find(term: string, startRow: number, startCol: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
       return undefined;
     }
     let result: ISearchResult | undefined = undefined;
-    startCol = startCol || 0;
-    startRow = startRow ?? 0;
 
     this._initLinesCache();
 
