@@ -60,19 +60,19 @@ declare module 'xterm-addon-search' {
     matchOverviewRuler: string;
 
     /**
-     * The background color for the currently selected match.
+     * The background color for the currently active match.
      */
-    selectedBackground?: string;
+    activeMatchBackground?: string;
 
     /**
-     * The border color of the currently selected match.
+     * The border color of the currently active match.
      */
-    selectedBorder?: string;
+    activeMatchBorder?: string;
 
     /**
-     * The overview ruler color of the currently selected match.
+     * The overview ruler color of the currently active match.
      */
-    selectedColorOverviewRuler: string;
+    activeMatchColorOverviewRuler: string;
   }
 
   /**

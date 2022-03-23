@@ -113,9 +113,9 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
       matchBackground: '#55575380',
       matchBorder: '#555753',
       matchOverviewRuler: '#555753',
-      selectedBackground: '#ef292980',
-      selectedBorder: '#ef2929',
-      selectedColorOverviewRuler: '#ef2929'
+      activeMatchBackground: '#ef292980',
+      activeMatchBorder: '#ef2929',
+      activeMatchColorOverviewRuler: '#ef2929'
     } : undefined
   };
 }

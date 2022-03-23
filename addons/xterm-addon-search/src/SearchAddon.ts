@@ -17,9 +17,9 @@ interface ISearchDecorationOptions {
   matchBackground?: string;
   matchBorder?: string;
   matchOverviewRuler: string;
-  selectedBackground?: string;
-  selectedBorder?: string;
-  selectedColorOverviewRuler: string;
+  activeMatchBackground?: string;
+  activeMatchBorder?: string;
+  activeMatchColorOverviewRuler: string;
 }
 
 export interface ISearchPosition {
@@ -605,16 +605,16 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.size);
-    if (decorations?.selectedColorOverviewRuler) {
+    if (decorations?.activeMatchColorOverviewRuler) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({
           marker,
           overviewRulerOptions: {
-            color: decorations.selectedColorOverviewRuler
+            color: decorations.activeMatchColorOverviewRuler
           }
         });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedBackground, decorations.selectedBorder, result));
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.activeMatchBackground, decorations.activeMatchBorder, result));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
