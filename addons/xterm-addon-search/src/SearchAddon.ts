@@ -54,6 +54,7 @@ export class SearchAddon implements ITerminalAddon {
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
+  private _searchResultIndex: number = 1;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -102,6 +103,10 @@ export class SearchAddon implements ITerminalAddon {
     this._resultDecorations.clear();
   }
 
+  public getSearchResultCount(): string {
+    return `${this._searchResultIndex}%${this._searchResults?.size || 0}`;
+  }
+
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
@@ -116,6 +121,7 @@ export class SearchAddon implements ITerminalAddon {
     this._lastSearchOptions = searchOptions;
     const findNextResult = this._findNextAndSelect(term, searchOptions);
     if (searchOptions?.decorations) {
+      this._searchResultIndex++;
       this._highlightAllMatches(term, searchOptions);
     }
     return findNextResult;
@@ -271,6 +277,7 @@ export class SearchAddon implements ITerminalAddon {
     this._lastSearchOptions = searchOptions;
     const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
     if (searchOptions?.decorations) {
+      this._searchResultIndex--;
       this._highlightAllMatches(term, searchOptions);
     }
     return findPreviousResult;
