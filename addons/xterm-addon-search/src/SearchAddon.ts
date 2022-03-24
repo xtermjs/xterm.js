@@ -168,8 +168,8 @@ export class SearchAddon implements ITerminalAddon {
       this.clearDecorations();
       return undefined;
     }
-    if (startRow > this._terminal.rows || startCol > this._terminal.cols) {
-      throw new Error(`Invalid row: ${startRow} or col: ${startCol} to search in terminal with ${this._terminal.rows} rows and ${this._terminal.cols} cols`);
+    if (startRow > this._terminal.buffer.active.baseY + this._terminal.rows || startCol > this._terminal.cols) {
+      throw new Error(`Invalid row: ${startRow} or col: ${startCol} to search in terminal with ${this._terminal.buffer.active.baseY + this._terminal.rows} rows and ${this._terminal.cols} cols`);
     }
 
     let result: ISearchResult | undefined = undefined;
@@ -604,7 +604,12 @@ export class SearchAddon implements ITerminalAddon {
     if (decorations?.selectedColor) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
-        this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: decorations.selectedColor } });
+        this._selectedDecoration = terminal.registerDecoration({
+          marker,
+          x: result.col,
+          width: result.size,
+          overviewRulerOptions: { color: decorations.selectedColor }
+        });
         this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
@@ -632,8 +637,6 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      element.style.left = `${element.clientWidth * result.col}px`;
-      element.style.width = `${element.clientWidth * result.term.length}px`;
       element.style.backgroundColor = color;
       element.style.opacity = '0.6';
     }
@@ -651,10 +654,12 @@ export class SearchAddon implements ITerminalAddon {
     if (!marker || !decorations?.matchColor) {
       return undefined;
     }
-    const findResultDecoration = terminal.registerDecoration(
-      { marker,
-        overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
-      });
+    const findResultDecoration = terminal.registerDecoration({
+      marker,
+      x: result.col,
+      width: result.size,
+      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
+    });
     findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
