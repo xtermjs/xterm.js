@@ -610,6 +610,8 @@ export class SearchAddon implements ITerminalAddon {
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({
           marker,
+          x: result.col,
+          width: result.size,
           overviewRulerOptions: {
             color: decorations.activeMatchColorOverviewRuler
           }
@@ -642,8 +644,6 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      element.style.left = `${element.clientWidth * result.col}px`;
-      element.style.width = `${element.clientWidth * result.term.length}px`;
       if (backgroundColor) {
         element.style.backgroundColor = backgroundColor;
       }
@@ -667,6 +667,8 @@ export class SearchAddon implements ITerminalAddon {
     }
     const findResultDecoration = terminal.registerDecoration({
       marker,
+      x: result.col,
+      width: result.size,
       overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : {
         color: decorations.matchOverviewRuler, position: 'center'
       }
