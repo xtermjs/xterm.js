@@ -109,7 +109,14 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     incremental: e.key !== `Enter`,
-    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? { matchColor: '#555753', selectedColor: '#ef2929' } : undefined
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
+      matchBackground: '#55575380',
+      matchBorder: '#555753',
+      matchOverviewRuler: '#555753',
+      activeMatchBackground: '#ef292980',
+      activeMatchBorder: '#ef2929',
+      activeMatchColorOverviewRuler: '#ef2929'
+    } : undefined
   };
 }
 

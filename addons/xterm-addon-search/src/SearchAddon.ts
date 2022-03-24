@@ -14,8 +14,12 @@ export interface ISearchOptions {
 }
 
 interface ISearchDecorationOptions {
-  matchColor: string;
-  selectedColor: string;
+  matchBackground?: string;
+  matchBorder?: string;
+  matchOverviewRuler: string;
+  activeMatchBackground?: string;
+  activeMatchBorder?: string;
+  activeMatchColorOverviewRuler: string;
 }
 
 export interface ISearchPosition {
@@ -168,8 +172,8 @@ export class SearchAddon implements ITerminalAddon {
       this.clearDecorations();
       return undefined;
     }
-    if (startRow > this._terminal.buffer.active.baseY + this._terminal.rows || startCol > this._terminal.cols) {
-      throw new Error(`Invalid row: ${startRow} or col: ${startCol} to search in terminal with ${this._terminal.buffer.active.baseY + this._terminal.rows} rows and ${this._terminal.cols} cols`);
+    if (startCol > this._terminal.cols) {
+      throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
     }
 
     let result: ISearchResult | undefined = undefined;
@@ -601,16 +605,18 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.size);
-    if (decorations?.selectedColor) {
+    if (decorations?.activeMatchColorOverviewRuler) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({
           marker,
           x: result.col,
           width: result.size,
-          overviewRulerOptions: { color: decorations.selectedColor }
+          overviewRulerOptions: {
+            color: decorations.activeMatchColorOverviewRuler
+          }
         });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.activeMatchBackground, decorations.activeMatchBorder, result));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
@@ -627,18 +633,23 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Applies styles to the decoration when it is rendered
    * @param element the decoration's element
-   * @param color the color to apply
+   * @param backgroundColor the background color to apply
+   * @param borderColor the border color to apply
    * @param result the search result associated with the decoration
    * @returns
    */
-  private _applyStyles(element: HTMLElement, color: string, result: ISearchResult): void {
+  private _applyStyles(element: HTMLElement, backgroundColor: string | undefined, borderColor: string | undefined, result: ISearchResult): void {
     if (element.clientWidth <= 0) {
       return;
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      element.style.backgroundColor = color;
-      element.style.opacity = '0.6';
+      if (backgroundColor) {
+        element.style.backgroundColor = backgroundColor;
+      }
+      if (borderColor) {
+        element.style.outline = `1px solid ${borderColor}`;
+      }
     }
   }
 
@@ -651,16 +662,18 @@ export class SearchAddon implements ITerminalAddon {
   private _createResultDecoration(result: ISearchResult, decorations: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker || !decorations?.matchColor) {
+    if (!marker || !decorations?.matchOverviewRuler) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({
       marker,
       x: result.col,
       width: result.size,
-      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
+      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : {
+        color: decorations.matchOverviewRuler, position: 'center'
+      }
     });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
+    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchBackground, decorations.matchBorder, result));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }
