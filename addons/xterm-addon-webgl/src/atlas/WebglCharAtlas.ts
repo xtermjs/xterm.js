@@ -238,7 +238,7 @@ export class WebglCharAtlas implements IDisposable {
           const bg = this._config.colors.background.css;
           if (bg.length === 9) {
             // Remove bg alpha channel if present
-            return bg.substr(0, 7);
+            return bg.slice(0, 7);
           }
           return bg;
         }
