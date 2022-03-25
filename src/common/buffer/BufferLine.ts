@@ -12,9 +12,9 @@ import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 /**
  * buffer memory layout:
  *
- *   |             uint32_t             |        uint32_t         |        uint32_t         |
- *   |             `content`            |          `FG`           |          `BG`           |
- *   | wcwidth(2) comb(1) codepoint(21) | flags(8) R(8) G(8) B(8) | flags(8) R(8) G(8) B(8) |
+ *   |                     uint32_t                  |        uint32_t         |        uint32_t         |
+ *   |                    `content`                  |          `FG`           |          `BG`           |
+ *   | wcwidth(2) protected(1) comb(1) codepoint(21) | flags(8) R(8) G(8) B(8) | flags(8) R(8) G(8) B(8) |
  */
 
 
@@ -106,6 +106,9 @@ export class BufferLine implements IBufferLine {
    */
   public getWidth(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+  }
+  public getProtected(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_PROTECTED_MASK;
   }
 
   /** Test whether content has width. */
@@ -201,11 +204,11 @@ export class BufferLine implements IBufferLine {
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
    */
-  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
+  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs, is_protected: number = 0): void {
     if (bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = eAttrs;
     }
-    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
+    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT) | (is_protected << 22);
     this._data[index * CELL_SIZE + Cell.FG] = fg;
     this._data[index * CELL_SIZE + Cell.BG] = bg;
   }

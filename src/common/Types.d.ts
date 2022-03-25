@@ -177,7 +177,7 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs, is_protected?: number): void;
   addCodepointToCell(index: number, codePoint: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
   deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
@@ -191,6 +191,7 @@ export interface IBufferLine {
 
   /* direct access to cell attrs */
   getWidth(index: number): number;
+  getProtected(index: number): number;
   hasWidth(index: number): number;
   getFg(index: number): number;
   getBg(index: number): number;

@@ -58,6 +58,8 @@ export const enum Content {
    */
   HAS_CONTENT_MASK = 0x3FFFFF,
 
+  IS_PROTECTED_MASK = 0x400000,  // 1 << 22
+
   /**
    * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
    *              read:   `width = (content & Content.widthMask) >> Content.widthShift;`
@@ -68,8 +70,10 @@ export const enum Content {
    *                      shortcut if precondition `0 <= width <= 3` is met:
    *                      `content |= width << Content.widthShift;`
    */
-  WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22
+  //WIDTH_MASK = 0xC00000,   // 3 << 22
+  //WIDTH_SHIFT = 22
+  WIDTH_MASK = 0x1800000,   // 3 << 23
+  WIDTH_SHIFT = 23
 }
 
 export const enum Attributes {

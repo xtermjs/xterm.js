@@ -99,6 +99,9 @@ export enum WindowsOptionsReportType {
   GET_CELL_SIZE_PIXELS = 1
 }
 
+// FIXME: add to terminal settings somewhere
+let is_protected = false;
+
 // create a warning log if an async handler takes longer than the limit (in ms)
 const SLOW_ASYNC_LIMIT = 5000;
 
@@ -335,9 +338,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
     this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
     this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplayProtected(params));
     this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLineProtected(params));
     this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
     this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
     this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
@@ -369,6 +372,21 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+
+    // DECSCA quick hack
+    this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => {
+      switch (params.params[0]) {
+        case 1:
+          is_protected = true;
+          break;
+        case 0:
+        case 2:
+          is_protected = false;
+          break;
+      }
+      return true;
+    });
+    
 
     /**
      * execute handler
@@ -612,9 +630,11 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._dirtyRowService.markDirty(this._activeBuffer.y);
 
+    const _is_protected = is_protected ? 1 : 0; // FIXME: pull from terminal settings
+
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended, _is_protected);
     }
 
     for (let pos = start; pos < end; ++pos) {
@@ -663,7 +683,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         if (wraparoundMode) {
           // clear left over cells to the right
           while (this._activeBuffer.x < cols) {
-            bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+            bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended, _is_protected);
           }
           this._activeBuffer.x = 0;
           this._activeBuffer.y++;
@@ -703,7 +723,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended, _is_protected);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -711,7 +731,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended, _is_protected);
         }
       }
     }
@@ -1223,6 +1243,21 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  private _eraseInBufferLineProtected(y: number, start: number, end: number, clearWrap: boolean = false): void {
+    // TODO: also apply fullwidth edge cases from Bufferline.replaceCells
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+    const fillCellData = this._activeBuffer.getNullCell(this._eraseAttrData());
+    while (start < end  && start < line.length) {
+      if (!line.getProtected(start)) {
+        line.setCell(start, fillCellData);
+      }
+      start++;
+    }
+    if (clearWrap) {
+      line.isWrapped = false;
+    }
+  }
+
   /**
    * Helper method to reset cells in a terminal row.
    * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
@@ -1231,6 +1266,17 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
+    this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
+    line.isWrapped = false;
+  }
+  private _resetBufferLineProtected(y: number): void {
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+    const fillCellData = this._activeBuffer.getNullCell(this._eraseAttrData());
+    for (let i = 0; i < line.length; ++i) {
+      if (!line.getProtected(i)) {
+        line.setCell(i, fillCellData);
+      }
+    }
     this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
     line.isWrapped = false;
   }
@@ -1308,6 +1354,55 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     return true;
   }
+  public eraseInDisplayProtected(params: IParams): boolean {
+    this._restrictCursor(this._bufferService.cols);
+    let j;
+    switch (params.params[0]) {
+      case 0:
+        j = this._activeBuffer.y;
+        this._dirtyRowService.markDirty(j);
+        this._eraseInBufferLineProtected(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        for (; j < this._bufferService.rows; j++) {
+          this._resetBufferLineProtected(j);
+        }
+        this._dirtyRowService.markDirty(j);
+        break;
+      case 1:
+        j = this._activeBuffer.y;
+        this._dirtyRowService.markDirty(j);
+        // Deleted front part of line and everything before. This line will no longer be wrapped.
+        this._eraseInBufferLineProtected(j, 0, this._activeBuffer.x + 1, true);
+        if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
+          // Deleted entire previous line. This next line can no longer be wrapped.
+          this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
+        }
+        while (j--) {
+          this._resetBufferLineProtected(j);
+        }
+        this._dirtyRowService.markDirty(0);
+        break;
+      case 2:
+        j = this._bufferService.rows;
+        this._dirtyRowService.markDirty(j - 1);
+        while (j--) {
+          this._resetBufferLineProtected(j);
+        }
+        this._dirtyRowService.markDirty(0);
+        break;
+      case 3:
+        // Clear scrollback (everything not in viewport)
+        const scrollBackSize = this._activeBuffer.lines.length - this._bufferService.rows;
+        if (scrollBackSize > 0) {
+          this._activeBuffer.lines.trimStart(scrollBackSize);
+          this._activeBuffer.ybase = Math.max(this._activeBuffer.ybase - scrollBackSize, 0);
+          this._activeBuffer.ydisp = Math.max(this._activeBuffer.ydisp - scrollBackSize, 0);
+          // Force a scroll event to refresh viewport
+          this._onScroll.fire(0);
+        }
+        break;
+    }
+    return true;
+  }
 
   /**
    * CSI Ps K  Erase in Line (EL).
@@ -1342,6 +1437,22 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 2:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true);
+        break;
+    }
+    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    return true;
+  }
+  public eraseInLineProtected(params: IParams): boolean {
+    this._restrictCursor(this._bufferService.cols);
+    switch (params.params[0]) {
+      case 0:
+        this._eraseInBufferLineProtected(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        break;
+      case 1:
+        this._eraseInBufferLineProtected(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false);
+        break;
+      case 2:
+        this._eraseInBufferLineProtected(this._activeBuffer.y, 0, this._bufferService.cols, true);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);
