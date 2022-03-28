@@ -414,10 +414,10 @@ function drawPatternChar(
     let b: number;
     let a: number;
     if (fillStyle.startsWith('#')) {
-      r = parseInt(fillStyle.substr(1, 2), 16);
-      g = parseInt(fillStyle.substr(3, 2), 16);
-      b = parseInt(fillStyle.substr(5, 2), 16);
-      a = fillStyle.length > 7 && parseInt(fillStyle.substr(7, 2), 16) || 1;
+      r = parseInt(fillStyle.slice(1, 3), 16);
+      g = parseInt(fillStyle.slice(3, 5), 16);
+      b = parseInt(fillStyle.slice(5, 7), 16);
+      a = fillStyle.length > 7 && parseInt(fillStyle.slice(7, 9), 16) || 1;
     } else if (fillStyle.startsWith('rgba')) {
       ([r, g, b, a] = fillStyle.substring(5, fillStyle.length - 1).split(',').map(e => parseFloat(e)));
     } else {

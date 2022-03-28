@@ -141,13 +141,6 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshStyle(decoration: IInternalDecoration): void {
-    if (this._shouldUpdateAnchor) {
-      if (decoration.options.anchor === 'right') {
-        this._canvas.style.right = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
-      } else {
-        this._canvas.style.left = decoration.options.x ? `${decoration.options.x * this._renderService.dimensions.actualCellWidth}px` : '';
-      }
-    }
     if (!decoration.options.overviewRulerOptions) {
       this._decorationElements.delete(decoration);
       return;
