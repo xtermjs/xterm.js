@@ -106,6 +106,9 @@ export class SearchAddon implements ITerminalAddon {
     this._resultDecorations.clear();
   }
 
+  /**
+   * @returns the last search result count or 0
+   */
   public getSearchResultCount(): number {
     return this._searchResults?.size || 0;
   }
