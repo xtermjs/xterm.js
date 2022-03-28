@@ -14,8 +14,12 @@ export interface ISearchOptions {
 }
 
 interface ISearchDecorationOptions {
-  matchColor: string;
-  selectedColor: string;
+  matchBackground?: string;
+  matchBorder?: string;
+  matchOverviewRuler: string;
+  activeMatchBackground?: string;
+  activeMatchBorder?: string;
+  activeMatchColorOverviewRuler: string;
 }
 
 export interface ISearchPosition {
@@ -145,7 +149,12 @@ export class SearchAddon implements ITerminalAddon {
     let result = this._find(term, 0, 0, searchOptions);
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
       this._searchResults.set(`${result.row}-${result.col}`, result);
-      result = this._find(term, result.row, result.col + 1, searchOptions);
+      result = this._find(
+        term,
+        result.col + result.term.length >= this._terminal.cols ? result.row + 1 : result.row,
+        result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
+        searchOptions
+      );
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
@@ -163,15 +172,17 @@ export class SearchAddon implements ITerminalAddon {
     }
   }
 
-  private _find(term: string, startRow?: number, startCol?: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
+  private _find(term: string, startRow: number, startCol: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
       return undefined;
     }
+    if (startCol > this._terminal.cols) {
+      throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
+    }
+
     let result: ISearchResult | undefined = undefined;
-    startCol = startCol || 0;
-    startRow = startRow ?? 0;
 
     this._initLinesCache();
 
@@ -601,11 +612,18 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
     terminal.select(result.col, result.row, result.size);
-    if (decorations?.selectedColor) {
+    if (decorations?.activeMatchColorOverviewRuler) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
-        this._selectedDecoration = terminal.registerDecoration({ marker, overviewRulerOptions: { color: decorations.selectedColor } });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.selectedColor, result));
+        this._selectedDecoration = terminal.registerDecoration({
+          marker,
+          x: result.col,
+          width: result.size,
+          overviewRulerOptions: {
+            color: decorations.activeMatchColorOverviewRuler
+          }
+        });
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.activeMatchBackground, decorations.activeMatchBorder, result));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
@@ -622,20 +640,23 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Applies styles to the decoration when it is rendered
    * @param element the decoration's element
-   * @param color the color to apply
+   * @param backgroundColor the background color to apply
+   * @param borderColor the border color to apply
    * @param result the search result associated with the decoration
    * @returns
    */
-  private _applyStyles(element: HTMLElement, color: string, result: ISearchResult): void {
+  private _applyStyles(element: HTMLElement, backgroundColor: string | undefined, borderColor: string | undefined, result: ISearchResult): void {
     if (element.clientWidth <= 0) {
       return;
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      element.style.left = `${element.clientWidth * result.col}px`;
-      element.style.width = `${element.clientWidth * result.term.length}px`;
-      element.style.backgroundColor = color;
-      element.style.opacity = '0.6';
+      if (backgroundColor) {
+        element.style.backgroundColor = backgroundColor;
+      }
+      if (borderColor) {
+        element.style.outline = `1px solid ${borderColor}`;
+      }
     }
   }
 
@@ -648,14 +669,18 @@ export class SearchAddon implements ITerminalAddon {
   private _createResultDecoration(result: ISearchResult, decorations: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker || !decorations?.matchColor) {
+    if (!marker || !decorations?.matchOverviewRuler) {
       return undefined;
     }
-    const findResultDecoration = terminal.registerDecoration(
-      { marker,
-        overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : { color: decorations.matchColor, position: 'center' }
-      });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchColor, result));
+    const findResultDecoration = terminal.registerDecoration({
+      marker,
+      x: result.col,
+      width: result.size,
+      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : {
+        color: decorations.matchOverviewRuler, position: 'center'
+      }
+    });
+    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchBackground, decorations.matchBorder, result));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }

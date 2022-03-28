@@ -260,9 +260,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -280,9 +280,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -300,9 +300,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -320,9 +320,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -356,9 +356,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
