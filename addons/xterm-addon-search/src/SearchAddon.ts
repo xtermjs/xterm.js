@@ -180,7 +180,7 @@ export class SearchAddon implements ITerminalAddon {
    * if decorations aren't enabled
    */
   public get resultCount(): number | undefined {
-    return this._searchResults?.size || undefined;
+    return this._searchResults?.size;
   }
 
   /**
