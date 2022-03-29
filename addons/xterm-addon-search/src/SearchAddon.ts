@@ -131,6 +131,8 @@ export class SearchAddon implements ITerminalAddon {
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
+  private _resultIndex: number | undefined;
+
   private readonly _onDidChangeResults = new EventEmitter<void>();
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
@@ -176,30 +178,26 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   /**
-   * @returns the last search result count or undefined
-   * if decorations aren't enabled
-   */
-  public get resultCount(): number | undefined {
-    return this._searchResults?.size || undefined;
-  }
-
-  /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number } {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    const findNextResult = this._findNextAndSelect(term, searchOptions);
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    return findNextResult;
+    // if (term !== this._cachedSearchTerm) {
+    //   this._resultIndex = undefined;
+    //   this.clearDecorations();
+    // }
+    const findNextResult = this._findNextAndSelect(term, searchOptions);
+    return this._resultIndex ? { resultIndex: this._resultIndex!, resultCount: this._searchResults?.size || 0 } : findNextResult;
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -298,6 +296,16 @@ export class SearchAddon implements ITerminalAddon {
       this.clearDecorations();
       return false;
     }
+    if (this._searchResults) {
+      if (!this._resultIndex) {
+        this._resultIndex = 1;
+      } else {
+        this._resultIndex++;
+        if (this._resultIndex > this._searchResults.size) {
+          this._resultIndex = 1;
+        }
+      }
+    }
 
     let startCol = 0;
     let startRow = 0;
@@ -352,7 +360,6 @@ export class SearchAddon implements ITerminalAddon {
       searchPosition.startCol = 0;
       result = this._findInLine(term, searchPosition, searchOptions);
     }
-
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations);
   }
@@ -363,16 +370,20 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number } {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    return findPreviousResult;
+    // if (term !== this._cachedSearchTerm) {
+    //   this._resultIndex = undefined;
+    //   this.clearDecorations();
+    // }
+    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
+    return this._resultIndex ? { resultIndex: this._resultIndex, resultCount: this._searchResults?.size || 0 }: findPreviousResult;
   }
 
   private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
@@ -387,6 +398,16 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
+    if (this._searchResults) {
+      if (!this._resultIndex) {
+        this._resultIndex = this._searchResults?.size;
+      } else {
+        this._resultIndex--;
+        if (this._resultIndex === 0) {
+          this._resultIndex = this._searchResults?.size;
+        }
+      }
+    }
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
@@ -443,7 +464,6 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-
     // If there is only one result, return true.
     if (!result && currentSelection) return true;
 
