@@ -53,7 +53,7 @@ export class SearchAddon implements ITerminalAddon {
   private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
-  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
+  private _resultDecorations: Map<number, IDecoration[]> | undefined;
   private _searchResults:  Map<string, ISearchResult> | undefined;
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
@@ -76,7 +76,7 @@ export class SearchAddon implements ITerminalAddon {
         window.clearTimeout(this._highlightTimeout);
       }
       this._highlightTimeout = setTimeout(() => {
-        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
+        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations?.size && this._resultDecorations.size > 0 && this._lastSearchOptions) {
           this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
         }
       }, 200);
@@ -98,6 +98,9 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   private _disposeDecorations(): void {
+    if (!this._resultDecorations) {
+      return;
+    }
     this._resultDecorations.forEach(decorations => {
       for (const d of decorations) {
         d.dispose();
@@ -138,7 +141,10 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     if (!this._searchResults) {
-      this._searchResults = new Map();
+      this._searchResults = new Map<string, ISearchResult>();
+    }
+    if (!this._resultDecorations) {
+      this._resultDecorations = new Map<number, IDecoration[]>();
     }
     if (!term || term.length === 0) {
       this.clearDecorations();
@@ -164,9 +170,9 @@ export class SearchAddon implements ITerminalAddon {
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
       if (resultDecoration) {
-        const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
+        const decorationsForLine = this._resultDecorations!.get(resultDecoration.marker.line) || [];
         decorationsForLine.push(resultDecoration);
-        this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
+        this._resultDecorations!.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
     if (this._dataChanged) {
