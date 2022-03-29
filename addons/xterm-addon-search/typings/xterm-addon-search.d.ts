@@ -110,5 +110,11 @@ declare module 'xterm-addon-search' {
      * Clears the decorations and selection
      */
     public clearDecorations(): void;
+
+    /**
+     * @returns the last search result count or undefined
+     * if decorations aren't enabled
+     */
+    public get resultCount(): number;
   }
 }

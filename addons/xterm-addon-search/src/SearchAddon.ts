@@ -107,10 +107,10 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   /**
-   * @returns the last search result count or 0
-   * if there are no results or decorations aren't enabled
+   * @returns the last search result count or undefined
+   * if decorations aren't enabled
    */
-  public getSearchResultCount(): number {
+  public get resultCount(): number {
     return this._searchResults?.size || 0;
   }
 
