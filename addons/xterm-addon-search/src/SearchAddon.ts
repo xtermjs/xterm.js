@@ -4,6 +4,69 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
+interface IListener<T, U = void> {
+  (arg1: T, arg2: U): void;
+}
+
+export interface IEvent<T, U = void> {
+  (listener: (arg1: T, arg2: U) => any): IDisposable;
+}
+
+export interface IEventEmitter<T, U = void> {
+  event: IEvent<T, U>;
+  fire(arg1: T, arg2: U): void;
+  dispose(): void;
+}
+
+export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
+  private _listeners: IListener<T, U>[] = [];
+  private _event?: IEvent<T, U>;
+  private _disposed: boolean = false;
+
+  public get event(): IEvent<T, U> {
+    if (!this._event) {
+      this._event = (listener: (arg1: T, arg2: U) => any) => {
+        this._listeners.push(listener);
+        const disposable = {
+          dispose: () => {
+            if (!this._disposed) {
+              for (let i = 0; i < this._listeners.length; i++) {
+                if (this._listeners[i] === listener) {
+                  this._listeners.splice(i, 1);
+                  return;
+                }
+              }
+            }
+          }
+        };
+        return disposable;
+      };
+    }
+    return this._event;
+  }
+
+  public fire(arg1: T, arg2: U): void {
+    const queue: IListener<T, U>[] = [];
+    for (let i = 0; i < this._listeners.length; i++) {
+      queue.push(this._listeners[i]);
+    }
+    for (let i = 0; i < queue.length; i++) {
+      queue[i].call(undefined, arg1, arg2);
+    }
+  }
+
+  public dispose(): void {
+    if (this._listeners) {
+      this._listeners.length = 0;
+    }
+    this._disposed = true;
+  }
+}
+
+export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): IDisposable {
+  return from(e => to.fire(e));
+}
+
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -67,6 +130,9 @@ export class SearchAddon implements ITerminalAddon {
   private _linesCacheTimeoutId = 0;
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
+
+  private readonly _onDidChangeResults = new EventEmitter<void>();
+  public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -154,6 +220,8 @@ export class SearchAddon implements ITerminalAddon {
     if (term === this._cachedSearchTerm && !this._dataChanged) {
       return;
     }
+    const dataDrivenChange = term === this._cachedSearchTerm && this._dataChanged;
+    const lastSearchCount = this._searchResults.size;
     // new search, clear out the old decorations
     this._disposeDecorations();
     this._searchResults.clear();
@@ -180,6 +248,9 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
+    }
+    if (dataDrivenChange && lastSearchCount !== this._searchResults.size) {
+      this._onDidChangeResults.fire();
     }
   }
 

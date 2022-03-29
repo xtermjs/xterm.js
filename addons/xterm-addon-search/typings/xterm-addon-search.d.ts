@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, IDisposable, ITerminalAddon } from 'xterm';
+import { IEvent } from 'node-pty';
+import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-search' {
   /**
@@ -116,5 +117,11 @@ declare module 'xterm-addon-search' {
      * if decorations aren't enabled
      */
     public get resultCount(): number | undefined;
+
+    /**
+     * An event listener for when the search results change
+     * as a result of the buffer changing
+     */
+    onDidChangeResults: IEvent<void>;
   }
 }
