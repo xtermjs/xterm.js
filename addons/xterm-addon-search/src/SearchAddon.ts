@@ -686,7 +686,7 @@ export class SearchAddon implements ITerminalAddon {
       marker,
       x: result.col,
       width: result.size,
-      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : {
+      overviewRulerOptions: this._resultDecorations?.get(marker.line) && !this._dataChanged ? undefined : {
         color: decorations.matchOverviewRuler, position: 'center'
       }
     });
