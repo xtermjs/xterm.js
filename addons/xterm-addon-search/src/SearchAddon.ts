@@ -54,7 +54,7 @@ export class SearchAddon implements ITerminalAddon {
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
   private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
-  private _searchResults:  Map<string, ISearchResult> = new Map();
+  private _searchResults:  Map<string, ISearchResult> | undefined;
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
@@ -91,7 +91,7 @@ export class SearchAddon implements ITerminalAddon {
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
     this._terminal?.clearSelection();
-    this._searchResults.clear();
+    this._searchResults?.clear();
     this._disposeDecorations();
     this._cachedSearchTerm = undefined;
     this._dataChanged = true;
@@ -110,8 +110,8 @@ export class SearchAddon implements ITerminalAddon {
    * @returns the last search result count or undefined
    * if decorations aren't enabled
    */
-  public get resultCount(): number {
-    return this._searchResults?.size || 0;
+  public get resultCount(): number | undefined {
+    return this._searchResults?.size || undefined;
   }
 
   /**
@@ -136,6 +136,9 @@ export class SearchAddon implements ITerminalAddon {
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
+    }
+    if (!this._searchResults) {
+      this._searchResults = new Map();
     }
     if (!term || term.length === 0) {
       this.clearDecorations();

@@ -115,6 +115,6 @@ declare module 'xterm-addon-search' {
      * @returns the last search result count or undefined
      * if decorations aren't enabled
      */
-    public get resultCount(): number;
+    public get resultCount(): number | undefined;
   }
 }
