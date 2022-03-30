@@ -87,6 +87,7 @@ export class SearchAddon implements ITerminalAddon {
         }, 200);
       }
     });
+    this.onDidChangeResults((results) => console.log(results));
   }
 
   public dispose(): void {
@@ -127,7 +128,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     const next = this._findNextAndSelect(term, searchOptions);
     if (searchOptions?.decorations) {
-      if (next && this._resultIndex && this._searchResults?.size) {
+      if (next && this._resultIndex !== undefined && this._searchResults?.size) {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
       } else {
         this._onDidChangeResults.fire(undefined);
@@ -281,12 +282,12 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._searchResults) {
-      if (!this._resultIndex) {
-        this._resultIndex = 1;
+      if (this._resultIndex === undefined) {
+        this._resultIndex = 0;
       } else {
         this._resultIndex++;
-        if (this._resultIndex > this._searchResults.size) {
-          this._resultIndex = 1;
+        if (this._resultIndex >= this._searchResults.size) {
+          this._resultIndex = 0;
         }
       }
     }
@@ -390,12 +391,12 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._searchResults) {
-      if (!this._resultIndex) {
-        this._resultIndex = this._searchResults?.size;
+      if (this._resultIndex === undefined) {
+        this._resultIndex = this._searchResults?.size - 1;
       } else {
         this._resultIndex--;
-        if (this._resultIndex === 0) {
-          this._resultIndex = this._searchResults?.size;
+        if (this._resultIndex === -1) {
+          this._resultIndex = this._searchResults?.size - 1;
         }
       }
     }
