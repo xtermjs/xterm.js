@@ -13,10 +13,26 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ]
+    ],
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ]
+    }
   },
   "include": [
     "./**/*",
     "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
+    }
   ]
 }
