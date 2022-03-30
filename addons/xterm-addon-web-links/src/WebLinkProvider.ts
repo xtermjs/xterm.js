@@ -72,22 +72,19 @@ export class LinkComputer {
 
       let endX = stringIndex + text.length;
       let endY = startLineIndex + 1;
-
       while (endX > terminal.cols) {
         endX -= terminal.cols;
         endY++;
       }
 
-      const range = {
-        start: {
-          x: stringIndex + 1,
-          y: startLineIndex + 1
-        },
-        end: {
-          x: endX,
-          y: endY
-        }
-      };
+      let startX = stringIndex + 1;
+      let startY = startLineIndex + 1;
+      while (startX > terminal.cols) {
+        startX -= terminal.cols;
+        startY++;
+      }
+
+      const range = {start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
       result.push({ range, text, activate });
     }
