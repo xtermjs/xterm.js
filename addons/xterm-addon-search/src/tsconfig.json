@@ -17,9 +17,6 @@
     "paths": {
       "common/*": [
         "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
       ]
     }
   },
@@ -30,9 +27,6 @@
   "references": [
     {
       "path": "../../../src/common"
-    },
-    {
-      "path": "../../../src/browser"
     }
   ]
 }

@@ -59,7 +59,6 @@ export class SearchAddon implements ITerminalAddon {
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
-  private _previousWasLastCall: boolean = true;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -88,7 +87,6 @@ export class SearchAddon implements ITerminalAddon {
         }, 200);
       }
     });
-    this.onDidChangeResults((e) => console.log(e));
   }
 
   public dispose(): void {
@@ -128,12 +126,13 @@ export class SearchAddon implements ITerminalAddon {
       this._highlightAllMatches(term, searchOptions);
     }
     const next = this._findNextAndSelect(term, searchOptions);
-    if (next && this._resultIndex && this._searchResults?.size) {
-      this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size });
-    } else if (searchOptions?.decorations) {
-      this._onDidChangeResults.fire(undefined);
+    if (searchOptions?.decorations) {
+      if (next && this._resultIndex && this._searchResults?.size) {
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+      } else {
+        this._onDidChangeResults.fire(undefined);
+      }
     }
-    this._previousWasLastCall = false;
     return next;
   }
 
@@ -225,22 +224,13 @@ export class SearchAddon implements ITerminalAddon {
       this.clearDecorations();
       return false;
     }
-    if (this._searchResults) {
-      if (!this._resultIndex) {
-        this._resultIndex = 1;
-      } else {
-        this._resultIndex++;
-        if (this._resultIndex > this._searchResults.size) {
-          this._resultIndex = 1;
-        }
-      }
-    }
+
 
     let startCol = 0;
     let startRow = 0;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
-      const incremental = searchOptions && !(searchOptions.decorations && this._previousWasLastCall) ? searchOptions.incremental : false;
+      const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
       currentSelection = this._terminal.getSelectionPosition()!;
@@ -289,6 +279,20 @@ export class SearchAddon implements ITerminalAddon {
       searchPosition.startCol = 0;
       result = this._findInLine(term, searchPosition, searchOptions);
     }
+
+    if (currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
+      if (this._searchResults) {
+        if (!this._resultIndex) {
+          this._resultIndex = 1;
+        } else {
+          this._resultIndex++;
+          if (this._resultIndex > this._searchResults.size) {
+            this._resultIndex = 1;
+          }
+        }
+      }
+    }
+
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations);
   }
@@ -307,17 +311,18 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    const previous = this._findAndSelectPrevious(term, searchOptions);
-    if (previous && this._resultIndex && this._searchResults?.size) {
-      this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size });
-    } else if (searchOptions?.decorations) {
-      this._onDidChangeResults.fire(undefined);
+    const previous = this._findPreviousAndSelect(term, searchOptions);
+    if (searchOptions?.decorations) {
+      if (previous && this._resultIndex && this._searchResults?.size) {
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+      } else {
+        this._onDidChangeResults.fire(undefined);
+      }
     }
-    this._previousWasLastCall = true;
     return previous;
   }
 
-  private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -329,21 +334,11 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    if (this._searchResults) {
-      if (!this._resultIndex) {
-        this._resultIndex = this._searchResults?.size;
-      } else {
-        this._resultIndex--;
-        if (this._resultIndex === 0) {
-          this._resultIndex = this._searchResults?.size;
-        }
-      }
-    }
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
 
-    const incremental = searchOptions && !(searchOptions.decorations && !this._previousWasLastCall) ? searchOptions.incremental : false;
+    const incremental = searchOptions ? searchOptions.incremental : false;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       currentSelection = this._terminal.getSelectionPosition()!;
@@ -395,6 +390,20 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
+
+    if (currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
+      if (this._searchResults) {
+        if (!this._resultIndex) {
+          this._resultIndex = this._searchResults?.size;
+        } else {
+          this._resultIndex--;
+          if (this._resultIndex === 0) {
+            this._resultIndex = this._searchResults?.size;
+          }
+        }
+      }
+    }
+
     // If there is only one result, return true.
     if (!result && currentSelection) return true;
 
