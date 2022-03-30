@@ -88,6 +88,7 @@ export class SearchAddon implements ITerminalAddon {
         }
       }, 200);
     });
+    this.onDidChangeResults((e) => console.log(e));
   }
 
   public dispose(): void {
@@ -98,22 +99,17 @@ export class SearchAddon implements ITerminalAddon {
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
     this._searchResults?.clear();
-    this._disposeDecorations();
-    this._cachedSearchTerm = undefined;
-    this._dataChanged = true;
-    this._resultIndex = undefined;
-  }
-
-  private _disposeDecorations(): void {
-    if (!this._resultDecorations) {
-      return;
-    }
-    this._resultDecorations.forEach(decorations => {
+    this._resultDecorations?.forEach(decorations => {
       for (const d of decorations) {
         d.dispose();
       }
     });
-    this._resultDecorations.clear();
+    this._resultDecorations?.clear();
+    this._cachedSearchTerm = undefined;
+    this._searchResults = undefined;
+    this._resultDecorations = undefined;
+    this._dataChanged = true;
+    this._resultIndex = undefined;
   }
 
   /**
@@ -145,12 +141,6 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    if (!this._searchResults) {
-      this._searchResults = new Map<string, ISearchResult>();
-    }
-    if (!this._resultDecorations) {
-      this._resultDecorations = new Map<number, IDecoration[]>();
-    }
     if (!term || term.length === 0) {
       this.clearDecorations();
       return;
@@ -162,7 +152,9 @@ export class SearchAddon implements ITerminalAddon {
 
     // new search, clear out the old decorations
     this.clearDecorations();
-    this._searchResults.clear();
+    this._searchResults = new Map<string, ISearchResult>();
+    this._resultDecorations = new Map<number, IDecoration[]>();
+    const resultDecorations = this._resultDecorations;
     let result = this._find(term, 0, 0, searchOptions);
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
       this._searchResults.set(`${result.row}-${result.col}`, result);
@@ -176,9 +168,9 @@ export class SearchAddon implements ITerminalAddon {
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
       if (resultDecoration) {
-        const decorationsForLine = this._resultDecorations!.get(resultDecoration.marker.line) || [];
+        const decorationsForLine = resultDecorations.get(resultDecoration.marker.line) || [];
         decorationsForLine.push(resultDecoration);
-        this._resultDecorations!.set(resultDecoration.marker.line, decorationsForLine);
+        resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
     if (this._dataChanged) {
