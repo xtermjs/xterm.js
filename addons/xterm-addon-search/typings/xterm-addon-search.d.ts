@@ -98,7 +98,7 @@ declare module 'xterm-addon-search' {
      * @returns the result index and result count if decorations are provided or a boolean
      * indicating if there was a match
      */
-    public findNext(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number };
+    public findNext(term: string, searchOptions?: ISearchOptions): boolean;
 
     /**
      * Search backwards for the previous result that matches the search term and
@@ -108,7 +108,7 @@ declare module 'xterm-addon-search' {
      * @returns the result index and result count if decorations are provided or a boolean
      * indicating if there was a match
      */
-    public findPrevious(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number };
+    public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
 
     /**
      * Clears the decorations and selection
@@ -116,9 +116,9 @@ declare module 'xterm-addon-search' {
     public clearDecorations(): void;
 
     /**
-     * An event listener for when the search results change
-     * as a result of the buffer changing
+     * Fired when the search results or the selected result changes.
+     * Provides undefined when there are no results.
      */
-    onDidChangeResults: IEvent<void>;
+    onDidChangeResults: IEvent< { resultIndex: number, resultCount: number } | undefined>;
   }
 }

@@ -59,6 +59,7 @@ export class SearchAddon implements ITerminalAddon {
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
+  private _previousWasLastCall: boolean = true;
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -71,7 +72,7 @@ export class SearchAddon implements ITerminalAddon {
 
   private _resultIndex: number | undefined;
 
-  private readonly _onDidChangeResults = new EventEmitter<void>();
+  private readonly _onDidChangeResults = new EventEmitter<{resultIndex: number, resultCount: number} | undefined>();
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
@@ -83,7 +84,7 @@ export class SearchAddon implements ITerminalAddon {
       }
       this._highlightTimeout = setTimeout(() => {
         if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations?.size && this._resultDecorations.size > 0 && this._lastSearchOptions) {
-          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
+          this.findPrevious(this._cachedSearchTerm, this._lastSearchOptions);
         }
       }, 200);
     });
@@ -96,7 +97,6 @@ export class SearchAddon implements ITerminalAddon {
 
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
-    // this._terminal?.clearSelection();
     this._searchResults?.clear();
     this._disposeDecorations();
     this._cachedSearchTerm = undefined;
@@ -123,7 +123,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number } {
+  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -131,8 +131,14 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    const findNextResult = this._findNextAndSelect(term, searchOptions);
-    return this._resultIndex ? { resultIndex: this._resultIndex!, resultCount: this._searchResults?.size || 0 } : findNextResult;
+    const next = this._findNextAndSelect(term, searchOptions);
+    if (next && this._resultIndex && this._searchResults?.size) {
+      this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size });
+    } else if (searchOptions?.decorations) {
+      this._onDidChangeResults.fire(undefined);
+    }
+    this._previousWasLastCall = false;
+    return next;
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -153,8 +159,7 @@ export class SearchAddon implements ITerminalAddon {
     if (term === this._cachedSearchTerm && !this._dataChanged) {
       return;
     }
-    const dataDrivenChange = term === this._cachedSearchTerm && this._dataChanged;
-    const lastSearchCount = this._searchResults.size;
+
     // new search, clear out the old decorations
     this.clearDecorations();
     this._searchResults.clear();
@@ -181,9 +186,6 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
-    }
-    if (dataDrivenChange && lastSearchCount !== this._searchResults.size) {
-      this._onDidChangeResults.fire();
     }
   }
 
@@ -246,7 +248,7 @@ export class SearchAddon implements ITerminalAddon {
     let startRow = 0;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
-      const incremental = searchOptions ? searchOptions.incremental : false;
+      const incremental = searchOptions && !(searchOptions.decorations && this._previousWasLastCall) ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
       currentSelection = this._terminal.getSelectionPosition()!;
@@ -305,7 +307,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean | { resultIndex: number, resultCount: number } {
+  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -313,8 +315,14 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
-    return this._resultIndex ? { resultIndex: this._resultIndex, resultCount: this._searchResults?.size || 0 }: findPreviousResult;
+    const previous = this._findAndSelectPrevious(term, searchOptions);
+    if (previous && this._resultIndex && this._searchResults?.size) {
+      this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size });
+    } else if (searchOptions?.decorations) {
+      this._onDidChangeResults.fire(undefined);
+    }
+    this._previousWasLastCall = true;
+    return previous;
   }
 
   private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
@@ -343,7 +351,7 @@ export class SearchAddon implements ITerminalAddon {
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
 
-    const incremental = searchOptions ? searchOptions.incremental : false;
+    const incremental = searchOptions && !(searchOptions.decorations && !this._previousWasLastCall) ? searchOptions.incremental : false;
     let currentSelection: ISelectionPosition | undefined;
     if (this._terminal.hasSelection()) {
       currentSelection = this._terminal.getSelectionPosition()!;
