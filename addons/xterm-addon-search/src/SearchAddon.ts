@@ -280,7 +280,7 @@ export class SearchAddon implements ITerminalAddon {
       result = this._findInLine(term, searchPosition, searchOptions);
     }
 
-    if (currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
+    if (!currentSelection || currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
       if (this._searchResults) {
         if (!this._resultIndex) {
           this._resultIndex = 1;
@@ -391,7 +391,7 @@ export class SearchAddon implements ITerminalAddon {
       }
     }
 
-    if (currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
+    if (!currentSelection || currentSelection?.startColumn !== result?.col || currentSelection?.startRow !== result?.row) {
       if (this._searchResults) {
         if (!this._resultIndex) {
           this._resultIndex = this._searchResults?.size;
