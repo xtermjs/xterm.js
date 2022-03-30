@@ -5,9 +5,10 @@
 
 import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
 
-interface ILinkProviderOptions {
+export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
   leave?(event: MouseEvent, text: string): void;
+  urlRegex?: RegExp;
 }
 
 export class WebLinkProvider implements ILinkProvider {
