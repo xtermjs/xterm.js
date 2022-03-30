@@ -87,7 +87,6 @@ export class SearchAddon implements ITerminalAddon {
         }, 200);
       }
     });
-    this.onDidChangeResults((results) => console.log(results));
   }
 
   public dispose(): void {
@@ -312,7 +311,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     const previous = this._findPreviousAndSelect(term, searchOptions);
     if (searchOptions?.decorations) {
-      if (previous && this._resultIndex && this._searchResults?.size) {
+      if (previous && this._resultIndex !== undefined && this._searchResults?.size) {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
       } else {
         this._onDidChangeResults.fire(undefined);
