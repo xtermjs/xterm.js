@@ -82,11 +82,11 @@ export class SearchAddon implements ITerminalAddon {
       if (this._highlightTimeout) {
         window.clearTimeout(this._highlightTimeout);
       }
-      this._highlightTimeout = setTimeout(() => {
-        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations?.size && this._resultDecorations.size > 0 && this._lastSearchOptions) {
-          this.findPrevious(this._cachedSearchTerm, this._lastSearchOptions);
-        }
-      }, 200);
+      if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
+        this._highlightTimeout = setTimeout(() => {
+          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
+        }, 200);
+      }
     });
     this.onDidChangeResults((e) => console.log(e));
   }

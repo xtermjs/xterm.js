@@ -95,8 +95,6 @@ declare module 'xterm-addon-search' {
      * options.
      * @param term The search term.
      * @param searchOptions The options for the search.
-     * @returns the result index and result count if decorations are provided or a boolean
-     * indicating if there was a match
      */
     public findNext(term: string, searchOptions?: ISearchOptions): boolean;
 
@@ -105,8 +103,6 @@ declare module 'xterm-addon-search' {
      * options.
      * @param term The search term.
      * @param searchOptions The options for the search.
-     * @returns the result index and result count if decorations are provided or a boolean
-     * indicating if there was a match
      */
     public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
 
