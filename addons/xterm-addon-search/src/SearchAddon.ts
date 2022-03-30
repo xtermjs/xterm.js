@@ -182,6 +182,7 @@ export class SearchAddon implements ITerminalAddon {
       this._cachedSearchTerm = term;
     }
     if (dataDrivenChange && lastSearchCount !== this._searchResults.size) {
+      // When data is added to the buffer that yields new search results, fire this so the match result count can be updated
       this._onDidChangeResults.fire();
     }
   }
