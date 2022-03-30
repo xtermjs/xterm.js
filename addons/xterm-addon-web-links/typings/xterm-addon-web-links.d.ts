@@ -49,5 +49,10 @@ declare module 'xterm-addon-web-links' {
      * happen even when tooltipCallback hasn't fired for the link yet.
      */
     leave?(event: MouseEvent, text: string): void;
+
+    /** 
+     * A callback to use instead of the default one.
+    */
+    urlRegex?: RegExp;
   }
 }
