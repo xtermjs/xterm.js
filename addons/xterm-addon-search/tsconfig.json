@@ -3,6 +3,8 @@
   "include": [],
   "references": [
     { "path": "./src" },
-    { "path": "./test" }
+    { "path": "./test" },
+    { "path": "../../src/common" },
+    { "path": "../../src/browser" }
   ]
 }
