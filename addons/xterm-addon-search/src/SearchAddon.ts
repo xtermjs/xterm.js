@@ -96,7 +96,6 @@ export class SearchAddon implements ITerminalAddon {
 
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
-    // this._terminal?.clearSelection();
     this._searchResults?.clear();
     this._disposeDecorations();
     this._cachedSearchTerm = undefined;
