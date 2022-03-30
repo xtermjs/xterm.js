@@ -158,11 +158,12 @@ export class SearchAddon implements ITerminalAddon {
 
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
-    this._terminal?.clearSelection();
+    // this._terminal?.clearSelection();
     this._searchResults?.clear();
     this._disposeDecorations();
     this._cachedSearchTerm = undefined;
     this._dataChanged = true;
+    this._resultIndex = undefined;
   }
 
   private _disposeDecorations(): void {
@@ -192,10 +193,6 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    // if (term !== this._cachedSearchTerm) {
-    //   this._resultIndex = undefined;
-    //   this.clearDecorations();
-    // }
     const findNextResult = this._findNextAndSelect(term, searchOptions);
     return this._resultIndex ? { resultIndex: this._resultIndex!, resultCount: this._searchResults?.size || 0 } : findNextResult;
   }
@@ -221,7 +218,7 @@ export class SearchAddon implements ITerminalAddon {
     const dataDrivenChange = term === this._cachedSearchTerm && this._dataChanged;
     const lastSearchCount = this._searchResults.size;
     // new search, clear out the old decorations
-    this._disposeDecorations();
+    this.clearDecorations();
     this._searchResults.clear();
     let result = this._find(term, 0, 0, searchOptions);
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
@@ -378,10 +375,6 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    // if (term !== this._cachedSearchTerm) {
-    //   this._resultIndex = undefined;
-    //   this.clearDecorations();
-    // }
     const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
     return this._resultIndex ? { resultIndex: this._resultIndex, resultCount: this._searchResults?.size || 0 }: findPreviousResult;
   }
