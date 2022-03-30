@@ -112,9 +112,10 @@ declare module 'xterm-addon-search' {
     public clearDecorations(): void;
 
     /**
-     * Fired when the search results or the selected result changes.
-     * Provides undefined when there are no results.
+     * When decorations are enabled, fires when
+     * the search results or the selected result changes,
+     * returning undefined if there are no matches.
      */
-    onDidChangeResults: IEvent< { resultIndex: number, resultCount: number } | undefined>;
+    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number } | undefined>;
   }
 }
