@@ -104,11 +104,11 @@ function getNextBetaVersion(packageJson) {
     return `${nextStableVersion}-${tag}.1`;
   }
   const latestPublishedVersion = publishedVersions.sort((a, b) => {
-    const aVersion = parseInt(a.substr(a.search(/\d+$/)));
-    const bVersion = parseInt(b.substr(b.search(/\d+$/)));
+    const aVersion = parseInt(a.slice(a.search(/\d+$/)));
+    const bVersion = parseInt(b.slice(b.search(/\d+$/)));
     return aVersion > bVersion ? -1 : 1;
   })[0];
-  const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/\d+$/)), 10);
+  const latestTagVersion = parseInt(latestPublishedVersion.slice(latestPublishedVersion.search(/\d+$/)), 10);
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 

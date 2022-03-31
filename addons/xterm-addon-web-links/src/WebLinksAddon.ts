@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable, IViewportRange } from 'xterm';
-import { WebLinkProvider } from './WebLinkProvider';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
+import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -38,12 +38,6 @@ function handleLink(event: MouseEvent, uri: string): void {
   } else {
     console.warn('Opening link blocked as opener could not be cleared');
   }
-}
-
-interface ILinkProviderOptions {
-  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
-  leave?(event: MouseEvent, text: string): void;
-  urlRegex?: RegExp;
 }
 
 export class WebLinksAddon implements ITerminalAddon {
