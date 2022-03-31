@@ -11,7 +11,7 @@ import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
-import { ILinkifier2 } from 'browser/Types';
+import { IBufferRange, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -1002,8 +1002,12 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   protected _selectLineAt(line: number): void {
     const wrappedRange = this._bufferService.buffer.getWrappedRangeForLine(line);
+    const range: IBufferRange = {
+      start: { x: 0, y: wrappedRange.first },
+      end: { x: this._bufferService.cols - 1, y: wrappedRange.last }
+    };
     this._model.selectionStart = [0, wrappedRange.first];
-    this._model.selectionEnd = [this._bufferService.cols, wrappedRange.last];
-    this._model.selectionStartLength = 0;
+    this._model.selectionEnd = undefined;
+    this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
   }
 }
