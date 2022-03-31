@@ -229,7 +229,7 @@ describe('Mouse Tracking Tests', async () => {
       window.calls = [];
       window.term.onData(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
       window.term.onBinary(e => calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
-      window.term.setOption('fontSize', ${fontSize});
+      window.term.options.fontSize = ${fontSize};
       window.term.resize(${cols}, ${rows});
     `);
   });

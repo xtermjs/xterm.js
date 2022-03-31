@@ -28,21 +28,21 @@ export function generateConfig(scaledCellWidth: number, scaledCellHeight: number
     contrastCache: colors.contrastCache
   };
   return {
-    customGlyphs: terminal.getOption('customGlyphs'),
+    customGlyphs: terminal.options.customGlyphs!,
     devicePixelRatio: window.devicePixelRatio,
-    letterSpacing: terminal.getOption('letterSpacing'),
-    lineHeight: terminal.getOption('lineHeight'),
+    letterSpacing: terminal.options.letterSpacing!,
+    lineHeight: terminal.options.lineHeight!,
     scaledCellWidth,
     scaledCellHeight,
     scaledCharWidth,
     scaledCharHeight,
-    fontFamily: terminal.getOption('fontFamily'),
-    fontSize: terminal.getOption('fontSize'),
-    fontWeight: terminal.getOption('fontWeight') as FontWeight,
-    fontWeightBold: terminal.getOption('fontWeightBold') as FontWeight,
-    allowTransparency: terminal.getOption('allowTransparency'),
-    drawBoldTextInBrightColors: terminal.getOption('drawBoldTextInBrightColors'),
-    minimumContrastRatio: terminal.getOption('minimumContrastRatio'),
+    fontFamily: terminal.options.fontFamily!,
+    fontSize: terminal.options.fontSize!,
+    fontWeight: terminal.options.fontWeight as FontWeight,
+    fontWeightBold: terminal.options.fontWeightBold as FontWeight,
+    allowTransparency: terminal.options.allowTransparency!,
+    drawBoldTextInBrightColors: terminal.options.drawBoldTextInBrightColors!,
+    minimumContrastRatio: terminal.options.minimumContrastRatio!,
     colors: clonedColors
   };
 }

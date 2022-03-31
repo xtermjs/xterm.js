@@ -362,7 +362,7 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
       it('14 - GetWinSizePixels', async function(): Promise<any> {
-        await page.evaluate(`window.term.setOption('windowOptions', { getWinSizePixels: true }); `);
+        await page.evaluate(`window.term.options.windowOptions = { getWinSizePixels: true }; `);
         await page.evaluate(`(() => {
             window._stack = [];
             const _h = window.term.onData(data => window._stack.push(data));
@@ -373,7 +373,7 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
       it('16 - GetCellSizePixels', async function(): Promise<any> {
-        await page.evaluate(`window.term.setOption('windowOptions', { getCellSizePixels: true }); `);
+        await page.evaluate(`window.term.options.windowOptions = { getCellSizePixels: true }; `);
         await page.evaluate(`(() => {
             window._stack = [];
             const _h = window.term.onData(data => window._stack.push(data));
