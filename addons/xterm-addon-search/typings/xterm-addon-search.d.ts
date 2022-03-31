@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 
 declare module 'xterm-addon-search' {
   /**
@@ -110,5 +110,12 @@ declare module 'xterm-addon-search' {
      * Clears the decorations and selection
      */
     public clearDecorations(): void;
+
+    /**
+     * When decorations are enabled, fires when
+     * the search results or the selected result changes,
+     * returning undefined if there are no matches.
+     */
+    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number } | undefined>;
   }
 }

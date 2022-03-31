@@ -4,6 +4,7 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon, ISelectionPosition, IDecoration } from 'xterm';
+import { EventEmitter } from 'common/EventEmitter';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -53,8 +54,8 @@ export class SearchAddon implements ITerminalAddon {
   private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
-  private _resultDecorations: Map<number, IDecoration[]> = new Map<number, IDecoration[]>();
-  private _searchResults:  Map<string, ISearchResult> = new Map();
+  private _resultDecorations: Map<number, IDecoration[]> | undefined;
+  private _searchResults:  Map<string, ISearchResult> | undefined;
   private _onDataDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
@@ -68,6 +69,11 @@ export class SearchAddon implements ITerminalAddon {
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
+  private _resultIndex: number | undefined;
+
+  private readonly _onDidChangeResults = new EventEmitter<{resultIndex: number, resultCount: number} | undefined>();
+  public readonly onDidChangeResults = this._onDidChangeResults.event;
+
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => {
@@ -75,11 +81,11 @@ export class SearchAddon implements ITerminalAddon {
       if (this._highlightTimeout) {
         window.clearTimeout(this._highlightTimeout);
       }
-      this._highlightTimeout = setTimeout(() => {
-        if (this._lastSearchOptions?.decorations && this._cachedSearchTerm && this._resultDecorations.size > 0 && this._lastSearchOptions) {
-          this._highlightAllMatches(this._cachedSearchTerm, this._lastSearchOptions);
-        }
-      }, 200);
+      if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
+        this._highlightTimeout = setTimeout(() => {
+          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
+        }, 200);
+      }
     });
   }
 
@@ -90,20 +96,18 @@ export class SearchAddon implements ITerminalAddon {
 
   public clearDecorations(): void {
     this._selectedDecoration?.dispose();
-    this._terminal?.clearSelection();
-    this._searchResults.clear();
-    this._disposeDecorations();
-    this._cachedSearchTerm = undefined;
-    this._dataChanged = true;
-  }
-
-  private _disposeDecorations(): void {
-    this._resultDecorations.forEach(decorations => {
+    this._searchResults?.clear();
+    this._resultDecorations?.forEach(decorations => {
       for (const d of decorations) {
         d.dispose();
       }
     });
-    this._resultDecorations.clear();
+    this._resultDecorations?.clear();
+    this._cachedSearchTerm = undefined;
+    this._searchResults = undefined;
+    this._resultDecorations = undefined;
+    this._dataChanged = true;
+    this._resultIndex = undefined;
   }
 
   /**
@@ -118,11 +122,18 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    const findNextResult = this._findNextAndSelect(term, searchOptions);
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    return findNextResult;
+    const next = this._findNextAndSelect(term, searchOptions);
+    if (searchOptions?.decorations) {
+      if (next && this._resultIndex !== undefined && this._searchResults?.size) {
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+      } else {
+        this._onDidChangeResults.fire(undefined);
+      }
+    }
+    return next;
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -137,9 +148,12 @@ export class SearchAddon implements ITerminalAddon {
     if (term === this._cachedSearchTerm && !this._dataChanged) {
       return;
     }
+
     // new search, clear out the old decorations
-    this._disposeDecorations();
-    this._searchResults.clear();
+    this.clearDecorations();
+    this._searchResults = new Map<string, ISearchResult>();
+    this._resultDecorations = new Map<number, IDecoration[]>();
+    const resultDecorations = this._resultDecorations;
     let result = this._find(term, 0, 0, searchOptions);
     while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
       this._searchResults.set(`${result.row}-${result.col}`, result);
@@ -153,9 +167,9 @@ export class SearchAddon implements ITerminalAddon {
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
       if (resultDecoration) {
-        const decorationsForLine = this._resultDecorations.get(resultDecoration.marker.line) || [];
+        const decorationsForLine = resultDecorations.get(resultDecoration.marker.line) || [];
         decorationsForLine.push(resultDecoration);
-        this._resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
+        resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
     if (this._dataChanged) {
@@ -211,6 +225,7 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
+
     let startCol = 0;
     let startRow = 0;
     let currentSelection: ISelectionPosition | undefined;
@@ -265,6 +280,17 @@ export class SearchAddon implements ITerminalAddon {
       result = this._findInLine(term, searchPosition, searchOptions);
     }
 
+    if (this._searchResults) {
+      if (this._resultIndex === undefined) {
+        this._resultIndex = 0;
+      } else {
+        this._resultIndex++;
+        if (this._resultIndex >= this._searchResults.size) {
+          this._resultIndex = 0;
+        }
+      }
+    }
+
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations);
   }
@@ -280,14 +306,21 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    const findPreviousResult = this._findAndSelectPrevious(term, searchOptions);
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    return findPreviousResult;
+    const previous = this._findPreviousAndSelect(term, searchOptions);
+    if (searchOptions?.decorations) {
+      if (previous && this._resultIndex !== undefined && this._searchResults?.size) {
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+      } else {
+        this._onDidChangeResults.fire(undefined);
+      }
+    }
+    return previous;
   }
 
-  private _findAndSelectPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -352,6 +385,17 @@ export class SearchAddon implements ITerminalAddon {
         result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
           break;
+        }
+      }
+    }
+
+    if (this._searchResults) {
+      if (this._resultIndex === undefined) {
+        this._resultIndex = this._searchResults?.size - 1;
+      } else {
+        this._resultIndex--;
+        if (this._resultIndex === -1) {
+          this._resultIndex = this._searchResults?.size - 1;
         }
       }
     }
@@ -669,7 +713,7 @@ export class SearchAddon implements ITerminalAddon {
       marker,
       x: result.col,
       width: result.size,
-      overviewRulerOptions: this._resultDecorations.get(marker.line) && !this._dataChanged ? undefined : {
+      overviewRulerOptions: this._resultDecorations?.get(marker.line) && !this._dataChanged ? undefined : {
         color: decorations.matchOverviewRuler, position: 'center'
       }
     });
