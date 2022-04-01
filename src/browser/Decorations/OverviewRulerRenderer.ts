@@ -150,10 +150,10 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshColorZonePadding(): void {
     this._colorZoneStore.setPadding({
-      full: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2)),
-      left: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.left / 2)),
-      center: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.center / 2)),
-      right: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.right / 2))
+      full: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * drawHeight.full),
+      left: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * drawHeight.left),
+      center: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * drawHeight.center),
+      right: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * drawHeight.right)
     });
     this._lastKnownBufferLength = this._bufferService.buffers.normal.lines.length;
   }
@@ -196,7 +196,6 @@ export class OverviewRulerRenderer extends Disposable {
     // TODO: Is _decorationElements needed?
 
     this._ctx.fillStyle = zone.color;
-    console.log('zone height', drawHeight[zone.position || 'full']);
     this._ctx.fillRect(
       /* x */ drawX[zone.position || 'full'],
       /* y */ Math.round(

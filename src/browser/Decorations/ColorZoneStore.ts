@@ -26,7 +26,12 @@ export interface IColorZone {
 
 export class ColorZoneStore implements IColorZoneStore {
   private _zones: IColorZone[] = [];
-  public get zones(): IColorZone[] { return this._zones; }
+
+  // The zone pool is used to keep zone objects from being freed between clearing the color zone
+  // store and fetching the zones. This helps reduce GC pressure since the color zones are
+  // accumulated on potentially every scroll event.
+  private _zonePool: IColorZone[] = [];
+  private _zonePoolIndex = 0;
 
   private _linePadding: { [position: string]: number } = {
     full: 0,
@@ -35,8 +40,15 @@ export class ColorZoneStore implements IColorZoneStore {
     right: 0
   };
 
+  public get zones(): IColorZone[] {
+    // Trim the zone pool to free unused memory
+    this._zonePool.length = Math.min(this._zonePool.length, this._zones.length);
+    return this._zones;
+  }
+
   public clear(): void {
     this._zones.length = 0;
+    this._zonePoolIndex = 0;
   }
 
   public addDecoration(decoration: IInternalDecoration): void {
@@ -50,22 +62,33 @@ export class ColorZoneStore implements IColorZoneStore {
           return;
         }
         if (this._lineAdjacentToZone(z, decoration.marker.line, decoration.options.overviewRulerOptions.position)) {
+          console.log('add line to zone');
           this._addLineToZone(z, decoration.marker.line);
           return;
         }
       }
     }
-    // TODO: Track zones in an object pool to reduce GC
+    // Create using zone pool if possible
+    if (this._zonePoolIndex < this._zonePool.length) {
+      this._zonePool[this._zonePoolIndex].color = decoration.options.overviewRulerOptions.color;
+      this._zonePool[this._zonePoolIndex].position = decoration.options.overviewRulerOptions.position;
+      this._zonePool[this._zonePoolIndex].startBufferLine = decoration.marker.line;
+      this._zonePool[this._zonePoolIndex].endBufferLine = decoration.marker.line;
+      this._zones.push(this._zonePool[this._zonePoolIndex++]);
+      return;
+    }
+    // Create
     this._zones.push({
       color: decoration.options.overviewRulerOptions.color,
       position: decoration.options.overviewRulerOptions.position,
       startBufferLine: decoration.marker.line,
       endBufferLine: decoration.marker.line
     });
+    this._zonePool.push(this._zones[this._zones.length - 1]);
+    this._zonePoolIndex++;
   }
 
   public setPadding(padding: { [position: string]: number }): void {
-    console.log('padding', padding);
     this._linePadding = padding;
   }
 
@@ -78,8 +101,8 @@ export class ColorZoneStore implements IColorZoneStore {
 
   private _lineAdjacentToZone(zone: IColorZone, line: number, position: IColorZone['position']): boolean {
     return (
-      (line >= zone.startBufferLine - this._linePadding[position || 'full'] * 2) &&
-      (line <= zone.endBufferLine + this._linePadding[position || 'full'] * 2)
+      (line >= zone.startBufferLine - this._linePadding[position || 'full']) &&
+      (line <= zone.endBufferLine + this._linePadding[position || 'full'])
     );
   }
 
