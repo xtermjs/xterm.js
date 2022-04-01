@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { ColorZoneStore, IColorZoneStore } from 'browser/Decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
@@ -33,6 +34,7 @@ export class OverviewRulerRenderer extends Disposable {
   private readonly _canvas: HTMLCanvasElement;
   private readonly _ctx: CanvasRenderingContext2D;
   private readonly _decorationElements: Map<IInternalDecoration, HTMLElement> = new Map();
+  private readonly _colorZoneStore: IColorZoneStore = new ColorZoneStore();
   private get _width(): number {
     return this._optionsService.options.overviewRulerWidth || 0;
   }
@@ -40,6 +42,7 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _shouldUpdateDimensions: boolean | undefined = true;
   private _shouldUpdateAnchor: boolean | undefined = true;
+  private _lastKnownBufferLength: number = 0;
 
   private _containerHeight: number | undefined;
 
@@ -83,6 +86,11 @@ export class OverviewRulerRenderer extends Disposable {
     this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
+    }));
+    this.register(this._bufferService.onScroll(() => {
+      if (this._lastKnownBufferLength !== this._bufferService.buffers.normal.lines.length) {
+        this._refreshColorZonePadding();
+      }
     }));
   }
   /**
@@ -140,6 +148,17 @@ export class OverviewRulerRenderer extends Disposable {
     drawX.right = drawWidth.left + drawWidth.center;
   }
 
+  private _refreshColorZonePadding(): void {
+    const nonFullPadding = Math.ceil(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2));
+    this._colorZoneStore.setPadding({
+      full: Math.ceil(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2)),
+      left: nonFullPadding,
+      center: nonFullPadding,
+      right: nonFullPadding
+    });
+    this._lastKnownBufferLength = this._bufferService.buffers.normal.lines.length;
+  }
+
   private _refreshStyle(decoration: IInternalDecoration): void {
     if (!decoration.options.overviewRulerOptions) {
       this._decorationElements.delete(decoration);
@@ -151,7 +170,7 @@ export class OverviewRulerRenderer extends Disposable {
       /* x */ drawX[decoration.options.overviewRulerOptions.position!],
       /* y */ Math.round(
         (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
-      (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
+        (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
       ),
       /* w */ drawWidth[decoration.options.overviewRulerOptions.position!],
       /* h */ drawHeight[decoration.options.overviewRulerOptions.position!]
@@ -164,6 +183,7 @@ export class OverviewRulerRenderer extends Disposable {
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
     this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
     this._refreshDrawConstants();
+    this._refreshColorZonePadding();
   }
 
   private _refreshDecorations(): void {
@@ -171,7 +191,9 @@ export class OverviewRulerRenderer extends Disposable {
       this._refreshCanvasDimensions();
     }
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this._colorZoneStore.clear();
     for (const decoration of this._decorationService.decorations) {
+      this._colorZoneStore.addDecoration(decoration);
       if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position !== 'full') {
         this._renderDecoration(decoration);
       }
@@ -181,6 +203,7 @@ export class OverviewRulerRenderer extends Disposable {
         this._renderDecoration(decoration);
       }
     }
+    console.log('zones', this._colorZoneStore.zones);
     this._shouldUpdateDimensions = false;
     this._shouldUpdateAnchor = false;
   }
