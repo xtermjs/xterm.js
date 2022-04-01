@@ -150,10 +150,10 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshColorZonePadding(): void {
     this._colorZoneStore.setPadding({
-      full: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2),
-      left: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.left / 2),
-      center: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.center / 2),
-      right: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.right / 2)
+      full: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2)),
+      left: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.left / 2)),
+      center: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.center / 2)),
+      right: Math.floor(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.right / 2))
     });
     this._lastKnownBufferLength = this._bufferService.buffers.normal.lines.length;
   }
@@ -177,8 +177,16 @@ export class OverviewRulerRenderer extends Disposable {
       this._colorZoneStore.addDecoration(decoration);
     }
     this._ctx.lineWidth = 1;
-    for (const zone of this._colorZoneStore.zones) {
-      this._renderColorZone(zone);
+    const zones = this._colorZoneStore.zones;
+    for (const zone of zones) {
+      if (zone.position !== 'full') {
+        this._renderColorZone(zone);
+      }
+    }
+    for (const zone of zones) {
+      if (zone.position === 'full') {
+        this._renderColorZone(zone);
+      }
     }
     this._shouldUpdateDimensions = false;
     this._shouldUpdateAnchor = false;
