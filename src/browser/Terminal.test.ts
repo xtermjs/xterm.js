@@ -231,7 +231,7 @@ describe('Terminal', () => {
       });
       term.paste('foo');
     });
-    it('should sanitize \n chars', done => {
+    it('should sanitize \\n chars', done => {
       term.onData(e => {
         assert.equal(e, '\rfoo\rbar\r');
         done();

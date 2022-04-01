@@ -556,8 +556,8 @@ function loadTest() {
 function addDecoration() {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
-  const decoration = term.registerDecoration({ marker, overviewRulerOptions: { color: '#ef2929'} });
-  decoration.onRender((e) => e.style.backgroundColor = '#ef2929');
+  const decoration = term.registerDecoration({ marker, overviewRulerOptions: { color: '#ef292980', position: 'left' } });
+  decoration.onRender((e) => e.style.backgroundColor = '#ef292980');
 }
 
 function addOverviewRuler() {
