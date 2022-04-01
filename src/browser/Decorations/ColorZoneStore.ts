@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IInternalDecoration } from 'common/services/Services';
-import { IDecorationOverviewRulerOptions } from 'xterm';
 
 export interface IColorZoneStore {
   readonly zones: IColorZone[];
@@ -48,13 +47,10 @@ export class ColorZoneStore implements IColorZoneStore {
       if (z.color === decoration.options.overviewRulerOptions.color &&
           z.position === decoration.options.overviewRulerOptions.position) {
         if (this._lineIntersectsZone(z, decoration.marker.line)) {
-          console.log('intersects, skip');
-          // this._addLineToZone(z, decoration.marker.line);
           return;
         }
         if (this._lineAdjacentToZone(z, decoration.marker.line, decoration.options.overviewRulerOptions.position)) {
           this._addLineToZone(z, decoration.marker.line);
-          console.log('adjacent, add');
           return;
         }
       }
@@ -82,8 +78,8 @@ export class ColorZoneStore implements IColorZoneStore {
 
   private _lineAdjacentToZone(zone: IColorZone, line: number, position: IColorZone['position']): boolean {
     return (
-      (line >= zone.startBufferLine - 1 - this._linePadding[position || 'full'] * 2) &&
-      (line <= zone.endBufferLine + 1 + this._linePadding[position || 'full'] * 2)
+      (line >= zone.startBufferLine - this._linePadding[position || 'full'] * 2) &&
+      (line <= zone.endBufferLine + this._linePadding[position || 'full'] * 2)
     );
   }
 

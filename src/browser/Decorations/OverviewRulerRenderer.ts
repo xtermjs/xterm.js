@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ColorZoneStore, IColorZoneStore } from 'browser/Decorations/ColorZoneStore';
+import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/Decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
@@ -149,32 +149,13 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshColorZonePadding(): void {
-    const nonFullPadding = Math.ceil(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2));
     this._colorZoneStore.setPadding({
-      full: Math.ceil(this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2)),
-      left: nonFullPadding,
-      center: nonFullPadding,
-      right: nonFullPadding
+      full: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.full / 2),
+      left: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.left / 2),
+      center: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.center / 2),
+      right: this._bufferService.buffers.active.lines.length / (this._canvas.height - 1) * (drawHeight.right / 2)
     });
     this._lastKnownBufferLength = this._bufferService.buffers.normal.lines.length;
-  }
-
-  private _refreshStyle(decoration: IInternalDecoration): void {
-    if (!decoration.options.overviewRulerOptions) {
-      this._decorationElements.delete(decoration);
-      return;
-    }
-    this._ctx.lineWidth = 1;
-    this._ctx.fillStyle = decoration.options.overviewRulerOptions.color;
-    this._ctx.fillRect(
-      /* x */ drawX[decoration.options.overviewRulerOptions.position!],
-      /* y */ Math.round(
-        (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
-        (decoration.options.marker.line / this._bufferService.buffers.active.lines.length) - drawHeight[decoration.options.overviewRulerOptions.position!] / 2
-      ),
-      /* w */ drawWidth[decoration.options.overviewRulerOptions.position!],
-      /* h */ drawHeight[decoration.options.overviewRulerOptions.position!]
-    );
   }
 
   private _refreshCanvasDimensions(): void {
@@ -194,27 +175,32 @@ export class OverviewRulerRenderer extends Disposable {
     this._colorZoneStore.clear();
     for (const decoration of this._decorationService.decorations) {
       this._colorZoneStore.addDecoration(decoration);
-      if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position !== 'full') {
-        this._renderDecoration(decoration);
-      }
     }
-    for (const decoration of this._decorationService.decorations) {
-      if (decoration.options.overviewRulerOptions && decoration.options.overviewRulerOptions.position === 'full') {
-        this._renderDecoration(decoration);
-      }
+    this._ctx.lineWidth = 1;
+    for (const zone of this._colorZoneStore.zones) {
+      this._renderColorZone(zone);
     }
-    console.log('zones', this._colorZoneStore.zones);
     this._shouldUpdateDimensions = false;
     this._shouldUpdateAnchor = false;
   }
 
-  private _renderDecoration(decoration: IInternalDecoration): void {
-    const element = this._decorationElements.get(decoration);
-    if (!element) {
-      this._decorationElements.set(decoration, this._canvas);
-      decoration.onDispose(() => this._queueRefresh());
-    }
-    this._refreshStyle(decoration);
+  private _renderColorZone(zone: IColorZone): void {
+    // TODO: Is _decorationElements needed?
+
+    this._ctx.fillStyle = zone.color;
+    console.log('zone height', drawHeight[zone.position || 'full']);
+    this._ctx.fillRect(
+      /* x */ drawX[zone.position || 'full'],
+      /* y */ Math.round(
+        (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
+        (zone.startBufferLine / this._bufferService.buffers.active.lines.length) - drawHeight[zone.position || 'full'] / 2
+      ),
+      /* w */ drawWidth[zone.position || 'full'],
+      /* h */ Math.round(
+        (this._canvas.height - 1) * // -1 to ensure at least 2px are allowed for decoration on last line
+        ((zone.endBufferLine - zone.startBufferLine) / this._bufferService.buffers.active.lines.length) + drawHeight[zone.position || 'full']
+      )
+    );
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
