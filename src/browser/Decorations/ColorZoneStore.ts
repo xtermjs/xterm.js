@@ -24,6 +24,11 @@ export interface IColorZone {
   endBufferLine: number;
 }
 
+interface IMinimalDecorationForColorZone {
+  marker: Pick<IInternalDecoration['marker'], 'line'>;
+  options: Pick<IInternalDecoration['options'], 'overviewRulerOptions'>;
+}
+
 export class ColorZoneStore implements IColorZoneStore {
   private _zones: IColorZone[] = [];
 
@@ -51,7 +56,7 @@ export class ColorZoneStore implements IColorZoneStore {
     this._zonePoolIndex = 0;
   }
 
-  public addDecoration(decoration: IInternalDecoration): void {
+  public addDecoration(decoration: IMinimalDecorationForColorZone): void {
     if (!decoration.options.overviewRulerOptions) {
       return;
     }
@@ -62,7 +67,6 @@ export class ColorZoneStore implements IColorZoneStore {
           return;
         }
         if (this._lineAdjacentToZone(z, decoration.marker.line, decoration.options.overviewRulerOptions.position)) {
-          console.log('add line to zone');
           this._addLineToZone(z, decoration.marker.line);
           return;
         }
