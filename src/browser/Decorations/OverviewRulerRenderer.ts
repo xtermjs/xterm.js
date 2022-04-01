@@ -33,7 +33,6 @@ const drawX = {
 export class OverviewRulerRenderer extends Disposable {
   private readonly _canvas: HTMLCanvasElement;
   private readonly _ctx: CanvasRenderingContext2D;
-  private readonly _decorationElements: Map<IInternalDecoration, HTMLElement> = new Map();
   private readonly _colorZoneStore: IColorZoneStore = new ColorZoneStore();
   private get _width(): number {
     return this._optionsService.options.overviewRulerWidth || 0;
@@ -75,7 +74,6 @@ export class OverviewRulerRenderer extends Disposable {
    */
   private _registerDecorationListeners(): void {
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
-    this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
   }
 
   /**
@@ -120,10 +118,6 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   public override dispose(): void {
-    for (const decoration of this._decorationElements) {
-      decoration[0].dispose();
-    }
-    this._decorationElements.clear();
     this._canvas?.remove();
     super.dispose();
   }
@@ -220,10 +214,5 @@ export class OverviewRulerRenderer extends Disposable {
       this._refreshDecorations();
       this._animationFrame = undefined;
     });
-  }
-
-  private _removeDecoration(decoration: IInternalDecoration): void {
-    this._decorationElements.get(decoration)?.remove();
-    this._decorationElements.delete(decoration);
   }
 }
