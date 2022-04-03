@@ -1097,7 +1097,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
-    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey
+    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
