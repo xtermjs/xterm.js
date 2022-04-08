@@ -562,7 +562,6 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
   term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
   term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
   term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
