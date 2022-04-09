@@ -444,7 +444,7 @@ declare module 'xterm' {
      * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
      * were provided initially.
      */
-     overviewRulerOptions?: Pick<IDecorationOverviewRulerOptions, 'color'>;
+     options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
   }
 
 
