@@ -145,9 +145,6 @@ export class SearchAddon implements ITerminalAddon {
       return;
     }
     searchOptions = searchOptions || {};
-    if (term === this._cachedSearchTerm && !this._dataChanged) {
-      return;
-    }
 
     // new search, clear out the old decorations
     this.clearDecorations();
