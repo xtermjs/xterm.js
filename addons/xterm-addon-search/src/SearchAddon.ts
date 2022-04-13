@@ -51,7 +51,6 @@ const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
-  private _dataChanged: boolean = false;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
   private _resultDecorations: Map<number, IDecoration[]> | undefined;
@@ -77,7 +76,6 @@ export class SearchAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => {
-      this._dataChanged = true;
       if (this._highlightTimeout) {
         window.clearTimeout(this._highlightTimeout);
       }
@@ -106,7 +104,6 @@ export class SearchAddon implements ITerminalAddon {
     this._cachedSearchTerm = undefined;
     this._searchResults = undefined;
     this._resultDecorations = undefined;
-    this._dataChanged = true;
     this._resultIndex = undefined;
   }
 
@@ -169,9 +166,6 @@ export class SearchAddon implements ITerminalAddon {
         resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
-    if (this._dataChanged) {
-      this._dataChanged = false;
-    }
     if (this._searchResults.size > 0) {
       this._cachedSearchTerm = term;
     }
