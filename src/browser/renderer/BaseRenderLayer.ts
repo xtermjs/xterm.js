@@ -428,6 +428,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _getContrastColor(cell: CellData): IColor | undefined {
+    if (cell.content !== 4194304) {
+      if (cell.getAsCharData()[3] >= 57344 && cell.getAsCharData()[3] <=  63743) {
+        return undefined;
+      }
+    }
     if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
       return undefined;
     }
