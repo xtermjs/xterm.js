@@ -428,7 +428,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _getContrastColor(cell: CellData): IColor | undefined {
-    if (cell.getCode() >= 57344 && cell.getCode() <=  63743) {
+      const codepoint = cell.getCode();
+      if (57344 <= codepoint && codepoint <=  63743) {
       // powerline chars #3739
       return undefined;
     }
