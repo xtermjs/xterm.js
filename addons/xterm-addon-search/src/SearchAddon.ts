@@ -81,7 +81,7 @@ export class SearchAddon implements ITerminalAddon {
       }
       if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
         this._highlightTimeout = setTimeout(() => {
-          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
+          this._highlightAllMatches(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
         }, 200);
       }
     });
