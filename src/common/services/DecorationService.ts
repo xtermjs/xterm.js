@@ -35,6 +35,7 @@ export class DecorationService extends Disposable implements IDecorationService 
           const index = this._decorations.indexOf(decoration);
           if (index >= 0) {
             this._decorations.splice(this._decorations.indexOf(decoration), 1);
+            this._onDecorationRemoved.fire(decoration);
           }
         }
       });

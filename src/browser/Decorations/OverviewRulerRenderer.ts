@@ -74,6 +74,7 @@ export class OverviewRulerRenderer extends Disposable {
    */
   private _registerDecorationListeners(): void {
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
+    this.register(this._decorationService.onDecorationRemoved(() => this._queueRefresh(undefined, true)));
   }
 
   /**
