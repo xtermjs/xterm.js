@@ -431,7 +431,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // skip empty cells
     if (cell.content !== 4194304) {
       if (cell.getAsCharData()[3] >= 57344 && cell.getAsCharData()[3] <=  63743) {
-        powerline characters https://github.com/xtermjs/xterm.js/issues/3739
+        // powerline chars #3739
         return undefined;
       }
     }
