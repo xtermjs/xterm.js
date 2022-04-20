@@ -14,7 +14,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet, IColor } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { isPowerlineGlyph, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'browser/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
@@ -428,12 +428,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _getContrastColor(cell: CellData): IColor | undefined {
-    const codepoint = cell.getCode();
-    if (57344 <= codepoint && codepoint <=  63743) {
-      // powerline chars #3739
-      return undefined;
-    }
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode())) {
       return undefined;
     }
 
