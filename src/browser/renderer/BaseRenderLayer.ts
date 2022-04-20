@@ -428,6 +428,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _getContrastColor(cell: CellData): IColor | undefined {
+    const codepoint = cell.getCode();
+    if (57344 <= codepoint && codepoint <=  63743) {
+      // powerline chars #3739
+      return undefined;
+    }
     if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
       return undefined;
     }

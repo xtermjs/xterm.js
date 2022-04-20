@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -178,7 +178,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg])) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -188,13 +188,13 @@ export class DomRendererRowFactory {
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
           );
-          if (!this._applyMinimumContrast(charElement, this._colors.background, color)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell)) {
             this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
           }
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
@@ -224,8 +224,9 @@ export class DomRendererRowFactory {
     return fragment;
   }
 
-  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
+  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData): boolean {
+    const codepoint = cell.getCode();
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || 57344 <= codepoint && codepoint <=  63743) {
       return false;
     }
 
