@@ -216,8 +216,8 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string {
-    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
+  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, isPowerLineGlyph: boolean): string {
+    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, isPowerLineGlyph);
     if (minimumContrastCss) {
       return minimumContrastCss;
     }
@@ -281,8 +281,8 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): string | undefined {
-    if (this._config.minimumContrastRatio === 1) {
+  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, isPowerLineGlyph: boolean): string | undefined {
+    if (this._config.minimumContrastRatio === 1 || isPowerLineGlyph) {
       return undefined;
     }
 
@@ -370,13 +370,6 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
-    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold);
-
-    // Apply alpha to dim the character
-    if (dim) {
-      this._tmpCtx.globalAlpha = DIM_OPACITY;
-    }
-
     // Check if the char is a powerline glyph, these will be restricted to a single cell glyph, no
     // padding on either side that are allowed for other glyphs since they are designed to be pixel
     // perfect but may render with "bad" anti-aliasing
@@ -386,6 +379,12 @@ export class WebglCharAtlas implements IDisposable {
       if (code >= 0xE0A0 && code <= 0xE0D6) {
         isPowerlineGlyph = true;
       }
+    }
+    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, isPowerlineGlyph);
+
+    // Apply alpha to dim the character
+    if (dim) {
+      this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
