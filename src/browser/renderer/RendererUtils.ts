@@ -9,3 +9,7 @@ export function throwIfFalsy<T>(value: T | undefined | null): T {
   }
   return value;
 }
+
+export function isPowerlineGlyph(cell: number): boolean {
+
+}
