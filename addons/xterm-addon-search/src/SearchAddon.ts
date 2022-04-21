@@ -122,15 +122,7 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    const next = this._findNextAndSelect(term, searchOptions);
-    if (searchOptions?.decorations) {
-      if (next && this._resultIndex !== undefined && this._searchResults?.size) {
-        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
-      } else {
-        this._onDidChangeResults.fire(undefined);
-      }
-    }
-    return next;
+    return this._fireResults(this._findNextAndSelect(term, searchOptions), searchOptions);
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -157,6 +149,11 @@ export class SearchAddon implements ITerminalAddon {
         result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
         searchOptions
       );
+      if (this._searchResults.size > 10000) {
+        this.clearDecorations();
+        this._resultIndex = -1;
+        return;
+      }
     }
     this._searchResults.forEach(result => {
       const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
@@ -300,15 +297,20 @@ export class SearchAddon implements ITerminalAddon {
     if (searchOptions?.decorations) {
       this._highlightAllMatches(term, searchOptions);
     }
-    const previous = this._findPreviousAndSelect(term, searchOptions);
+    return this._fireResults(this._findPreviousAndSelect(term, searchOptions), searchOptions);
+  }
+
+  private _fireResults(found: boolean, searchOptions?: ISearchOptions): boolean {
     if (searchOptions?.decorations) {
-      if (previous && this._resultIndex !== undefined && this._searchResults?.size) {
+      if (found && this._resultIndex !== undefined && this._searchResults?.size) {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+      } else if (this._resultIndex === -1) {
+        this._onDidChangeResults.fire({ resultIndex: -1, resultCount: -1 });
       } else {
         this._onDidChangeResults.fire(undefined);
       }
     }
-    return previous;
+    return found;
   }
 
   private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
