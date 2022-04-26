@@ -82,7 +82,7 @@ export class SearchAddon implements ITerminalAddon {
       }
       if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
         this._highlightTimeout = setTimeout(() => {
-          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: false , resetSelection: true });
+          this._highlightAllMatches(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true , resetSelection: true });
         }, 200);
       }
     });
@@ -129,7 +129,9 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      this._highlightAllMatches(term, searchOptions);
+      if (!this._resultIndex || !(this._resultIndex === -1 && term === this._cachedSearchTerm)) {
+        this._highlightAllMatches(term, searchOptions);
+      }
     }
     return this._fireResults(this._findNextAndSelect(term, searchOptions), searchOptions);
   }
@@ -225,7 +227,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
-      this._resultIndex = undefined;
+      this._resultIndex =  -1;
       this._terminal.clearSelection();
     }
 
@@ -310,7 +312,9 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      this._highlightAllMatches(term, searchOptions);
+      if (!this._resultIndex || !(this._resultIndex === -1 && term === this._cachedSearchTerm)) {
+        this._highlightAllMatches(term, searchOptions);
+      }
     }
     return this._fireResults(this._findPreviousAndSelect(term, searchOptions), searchOptions);
   }
@@ -342,7 +346,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
-      this._resultIndex = undefined;
+      this._resultIndex = -1;
       this._terminal.clearSelection();
     }
 
