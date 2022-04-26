@@ -101,10 +101,8 @@ export class SearchAddon implements ITerminalAddon {
       }
     });
     this._resultDecorations?.clear();
-    this._cachedSearchTerm = undefined;
     this._searchResults = undefined;
     this._resultDecorations = undefined;
-    this._resultIndex = undefined;
   }
 
   /**
@@ -149,7 +147,7 @@ export class SearchAddon implements ITerminalAddon {
         result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
         searchOptions
       );
-      if (this._searchResults.size > 2000) {
+      if (this._searchResults.size > 1000) {
         this.clearDecorations();
         this._resultIndex = -1;
         return;
@@ -210,9 +208,15 @@ export class SearchAddon implements ITerminalAddon {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
+      this._cachedSearchTerm = undefined;
+      this._resultIndex = undefined;
       return false;
     }
 
+    if (this._cachedSearchTerm !== term) {
+      this._resultIndex = undefined;
+      this._terminal.clearSelection();
+    }
 
     let startCol = 0;
     let startRow = 0;
@@ -278,7 +282,7 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-
+    this._cachedSearchTerm = term;
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations);
   }
@@ -322,7 +326,13 @@ export class SearchAddon implements ITerminalAddon {
       result = undefined;
       this._terminal?.clearSelection();
       this.clearDecorations();
+      this._resultIndex = undefined;
       return false;
+    }
+
+    if (this._cachedSearchTerm !== term) {
+      this._resultIndex = undefined;
+      this._terminal.clearSelection();
     }
 
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
@@ -383,7 +393,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._searchResults) {
-      if (this._resultIndex === undefined) {
+      if (this._resultIndex === undefined || this._resultIndex < 0) {
         this._resultIndex = this._searchResults?.size - 1;
       } else {
         this._resultIndex--;
@@ -392,6 +402,8 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
+
+    this._cachedSearchTerm = term;
 
     // If there is only one result, return true.
     if (!result && currentSelection) return true;
