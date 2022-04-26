@@ -12,6 +12,7 @@ export interface ISearchOptions {
   caseSensitive?: boolean;
   incremental?: boolean;
   decorations?: ISearchDecorationOptions;
+  resetSelection?: boolean;
 }
 
 interface ISearchDecorationOptions {
@@ -81,7 +82,17 @@ export class SearchAddon implements ITerminalAddon {
       }
       if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
         this._highlightTimeout = setTimeout(() => {
-          this._highlightAllMatches(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
+          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: false , resetSelection: true });
+        }, 200);
+      }
+    });
+    this._terminal.onResize(() => {
+      if (this._highlightTimeout) {
+        window.clearTimeout(this._highlightTimeout);
+      }
+      if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
+        this._highlightTimeout = setTimeout(() => {
+          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: false, resetSelection: true });
         }, 200);
       }
     });
@@ -213,7 +224,7 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
+    if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
       this._resultIndex = undefined;
       this._terminal.clearSelection();
     }
@@ -330,7 +341,7 @@ export class SearchAddon implements ITerminalAddon {
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
+    if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
       this._resultIndex = undefined;
       this._terminal.clearSelection();
     }
