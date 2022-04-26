@@ -92,7 +92,7 @@ export class SearchAddon implements ITerminalAddon {
       }
       if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
         this._highlightTimeout = setTimeout(() => {
-          this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: false, resetSelection: true });
+          this._highlightAllMatches(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true });
         }, 200);
       }
     });
@@ -129,11 +129,11 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (!this._resultIndex || !(this._resultIndex === -1 && term === this._cachedSearchTerm)) {
+      if (this._resultIndex || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
-    return this._fireResults(this._findNextAndSelect(term, searchOptions), searchOptions);
+    return this._fireResults(term, this._findNextAndSelect(term, searchOptions), searchOptions);
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -162,7 +162,7 @@ export class SearchAddon implements ITerminalAddon {
       );
       if (this._searchResults.size > 1000) {
         this.clearDecorations();
-        this._resultIndex = -1;
+        this._resultIndex = undefined;
         return;
       }
     }
@@ -174,9 +174,6 @@ export class SearchAddon implements ITerminalAddon {
         resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
       }
     });
-    if (this._searchResults.size > 0) {
-      this._cachedSearchTerm = term;
-    }
   }
 
   private _find(term: string, startRow: number, startCol: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
@@ -222,12 +219,12 @@ export class SearchAddon implements ITerminalAddon {
       this._terminal?.clearSelection();
       this.clearDecorations();
       this._cachedSearchTerm = undefined;
-      this._resultIndex = undefined;
+      this._resultIndex = -1;
       return false;
     }
 
-    if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
-      this._resultIndex =  -1;
+    if (this._cachedSearchTerm !== term) {
+      this._resultIndex = undefined;
       this._terminal.clearSelection();
     }
 
@@ -295,7 +292,6 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-    this._cachedSearchTerm = term;
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations);
   }
@@ -311,15 +307,13 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    if (searchOptions?.decorations) {
-      if (!this._resultIndex || !(this._resultIndex === -1 && term === this._cachedSearchTerm)) {
-        this._highlightAllMatches(term, searchOptions);
-      }
+    if (searchOptions?.decorations && (this._resultIndex || term !== this._cachedSearchTerm)) {
+      this._highlightAllMatches(term, searchOptions);
     }
-    return this._fireResults(this._findPreviousAndSelect(term, searchOptions), searchOptions);
+    return this._fireResults(term, this._findPreviousAndSelect(term, searchOptions), searchOptions);
   }
 
-  private _fireResults(found: boolean, searchOptions?: ISearchOptions): boolean {
+  private _fireResults(term: string, found: boolean, searchOptions?: ISearchOptions): boolean {
     if (searchOptions?.decorations) {
       if (found && this._resultIndex !== undefined && this._searchResults?.size) {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
@@ -329,6 +323,7 @@ export class SearchAddon implements ITerminalAddon {
         this._onDidChangeResults.fire(undefined);
       }
     }
+    this._cachedSearchTerm = term;
     return found;
   }
 
@@ -341,12 +336,12 @@ export class SearchAddon implements ITerminalAddon {
       result = undefined;
       this._terminal?.clearSelection();
       this.clearDecorations();
-      this._resultIndex = undefined;
+      this._resultIndex = -1;
       return false;
     }
 
-    if (this._cachedSearchTerm !== term || searchOptions?.resetSelection) {
-      this._resultIndex = -1;
+    if (this._cachedSearchTerm !== term) {
+      this._resultIndex = undefined;
       this._terminal.clearSelection();
     }
 
@@ -417,8 +412,6 @@ export class SearchAddon implements ITerminalAddon {
         }
       }
     }
-
-    this._cachedSearchTerm = term;
 
     // If there is only one result, return true.
     if (!result && currentSelection) return true;

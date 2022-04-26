@@ -213,8 +213,6 @@ function createTerminal(): void {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
 
-  addons.search.instance.onDidChangeResults((e) => console.log(e));
-
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
   });
