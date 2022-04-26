@@ -159,7 +159,7 @@ export class SearchAddon implements ITerminalAddon {
         result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
         searchOptions
       );
-      if (this._searchResults.size > 2000) {
+      if (this._searchResults.size > 1000) {
         this.clearDecorations();
         this._resultIndex = undefined;
         return;

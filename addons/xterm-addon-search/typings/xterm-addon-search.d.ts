@@ -115,7 +115,7 @@ declare module 'xterm-addon-search' {
      * When decorations are enabled, fires when
      * the search results change.
      * @returns -1 if there are no matches and
-     * @returns undefined when the threshold of 2k results
+     * @returns undefined when the threshold of 1k results
      * is exceeded and decorations are disposed of.
      */
     readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number } | undefined>;
