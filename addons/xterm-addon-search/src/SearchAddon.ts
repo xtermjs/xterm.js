@@ -102,7 +102,7 @@ export class SearchAddon implements ITerminalAddon {
     this._onDataDisposable?.dispose();
   }
 
-  public clearDecorations(): void {
+  public clearDecorations(internal?: boolean): void {
     this._selectedDecoration?.dispose();
     this._searchResults?.clear();
     this._resultDecorations?.forEach(decorations => {
@@ -113,6 +113,13 @@ export class SearchAddon implements ITerminalAddon {
     this._resultDecorations?.clear();
     this._searchResults = undefined;
     this._resultDecorations = undefined;
+    if (!internal) {
+      // we want to keep _cachedSearchTerm defined if this is
+      // an internal call
+      // so that when the buffer changes,
+      // we can use that to search for new matches
+      this._cachedSearchTerm = undefined;
+    }
   }
 
   /**
@@ -146,7 +153,7 @@ export class SearchAddon implements ITerminalAddon {
     searchOptions = searchOptions || {};
 
     // new search, clear out the old decorations
-    this.clearDecorations();
+    this.clearDecorations(true);
     this._searchResults = new Map<string, ISearchResult>();
     this._resultDecorations = new Map<number, IDecoration[]>();
     const resultDecorations = this._resultDecorations;
