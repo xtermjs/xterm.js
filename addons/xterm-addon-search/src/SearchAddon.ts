@@ -113,6 +113,7 @@ export class SearchAddon implements ITerminalAddon {
     this._resultDecorations?.clear();
     this._searchResults = undefined;
     this._resultDecorations = undefined;
+    this._cachedSearchTerm = undefined;
   }
 
   /**
