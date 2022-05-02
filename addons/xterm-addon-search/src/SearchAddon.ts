@@ -99,7 +99,7 @@ export class SearchAddon implements ITerminalAddon {
     this._onResizeDisposable?.dispose();
   }
 
-  public clearDecorations(internal?: boolean): void {
+  public clearDecorations(retainCachedSearchTerm?: boolean): void {
     this._selectedDecoration?.dispose();
     this._searchResults?.clear();
     this._resultDecorations?.forEach(decorations => {
@@ -110,7 +110,7 @@ export class SearchAddon implements ITerminalAddon {
     this._resultDecorations?.clear();
     this._searchResults = undefined;
     this._resultDecorations = undefined;
-    if (!internal) {
+    if (!retainCachedSearchTerm) {
       // we want to keep _cachedSearchTerm defined if this is
       // an internal call
       // so that when the buffer changes,
