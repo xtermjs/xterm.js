@@ -111,10 +111,6 @@ export class SearchAddon implements ITerminalAddon {
     this._searchResults = undefined;
     this._resultDecorations = undefined;
     if (!retainCachedSearchTerm) {
-      // we want to keep _cachedSearchTerm defined if this is
-      // an internal call
-      // so that when the buffer changes,
-      // we can use that to search for new matches
       this._cachedSearchTerm = undefined;
     }
   }
