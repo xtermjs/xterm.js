@@ -11,7 +11,5 @@ export function throwIfFalsy<T>(value: T | undefined | null): T {
 }
 
 export function isPowerlineGlyph(codepoint: number): boolean {
-  // This range was established via
-  // https://apw-bash-settings.readthedocs.io/en/latest/fontpatching.html
-  return 0xE000 <= codepoint && codepoint <=  0xF8FF;
+  return 0xE0A0 <= codepoint && codepoint <=  0xE0D6;
 }
