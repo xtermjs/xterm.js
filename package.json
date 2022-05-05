@@ -85,6 +85,6 @@
     "webpack": "^5.61.0",
     "webpack-cli": "^4.9.1",
     "ws": "^8.2.3",
-    "xterm-benchmark": "^0.3.0"
+    "xterm-benchmark": "^0.3.1"
   }
 }
