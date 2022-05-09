@@ -128,7 +128,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._resultIndex || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
+      if (this._resultIndex !== undefined || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -306,7 +306,7 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    if (searchOptions?.decorations && (this._resultIndex || term !== this._cachedSearchTerm)) {
+    if (searchOptions?.decorations && (this._resultIndex !== undefined || term !== this._cachedSearchTerm)) {
       this._highlightAllMatches(term, searchOptions);
     }
     return this._fireResults(term, this._findPreviousAndSelect(term, searchOptions), searchOptions);
