@@ -175,6 +175,8 @@ export class DomRendererRowFactory {
 
       // Apply any decoration foreground/background overrides
       const decorations = this._decorationService.getDecorationsOnLine(row);
+      let bgOverride: IColor | undefined;
+      let fgOverride: IColor | undefined;
       for (const d of decorations) {
         const xmin = d.options.x ?? 0;
         const xmax = xmin + (d.options.width ?? 1);
@@ -182,10 +184,12 @@ export class DomRendererRowFactory {
           if (d.backgroundColorRGB) {
             bgColorMode = Attributes.CM_RGB;
             bg = d.backgroundColorRGB.rgba >> 8;
+            bgOverride = d.backgroundColorRGB;
           }
           if (d.foregroundColorRGB) {
             fgColorMode = Attributes.CM_RGB;
             fg = d.foregroundColorRGB.rgba >> 8;
+            fgOverride = d.foregroundColorRGB;
           }
         }
       }
@@ -198,7 +202,7 @@ export class DomRendererRowFactory {
             fg += 8;
           }
           // TODO: Pass in bg override
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, undefined, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -208,13 +212,13 @@ export class DomRendererRowFactory {
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
           );
-          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell, bgOverride, fgOverride)) {
             this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
           }
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell, undefined, undefined)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
@@ -228,7 +232,7 @@ export class DomRendererRowFactory {
           charElement.classList.add(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          this._addStyle(charElement, `background-color:#${padStart(bg.toString(16), '0', 6)}`);
+          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -244,18 +248,23 @@ export class DomRendererRowFactory {
     return fragment;
   }
 
-  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData): boolean {
+  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
     if (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode())) {
       return false;
     }
 
-    // Try get from cache first
-    let adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    // Try get from cache first, only use the cache when there are no decoration overrides
+    let adjustedColor: IColor | undefined | null = undefined;
+    if (!bgOverride || !fgOverride) {
+      adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.rawOptions.minimumContrastRatio);
-      this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
+      if (!bgOverride || !fgOverride) {
+        this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+      }
     }
 
     if (adjustedColor) {
