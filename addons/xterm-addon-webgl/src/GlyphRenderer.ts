@@ -11,7 +11,8 @@ import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
-import { IColorSet, IColor } from 'browser/Types';
+import { IColor } from 'common/Types';
+import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 

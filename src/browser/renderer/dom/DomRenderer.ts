@@ -11,7 +11,7 @@ import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Typ
 import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'browser/Color';
+import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';

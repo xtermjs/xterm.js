@@ -3,10 +3,11 @@
  * @license MIT
  */
 
+import { css } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
-import { IColorRGB } from 'common/Types';
+import { IColor } from 'common/Types';
 import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
 
 export class DecorationService extends Disposable implements IDecorationService {
@@ -75,11 +76,11 @@ class Decoration extends Disposable implements IInternalDecoration {
   public readonly onDispose = this._onDispose.event;
 
   // TODO: React to changes on options
-  private _cachedBg: IColorRGB | undefined | null = null;
-  public get backgroundColorRGB(): IColorRGB | undefined {
+  private _cachedBg: IColor | undefined | null = null;
+  public get backgroundColorRGB(): IColor | undefined {
     if (this._cachedBg === null) {
       if (this.options.backgroundColor) {
-        this._cachedBg = toColorRGB(this.options.backgroundColor);
+        this._cachedBg = css.toColor(this.options.backgroundColor);
       } else {
         this._cachedBg = undefined;
       }
@@ -88,11 +89,11 @@ class Decoration extends Disposable implements IInternalDecoration {
   }
 
   // TODO: React to changes on options
-  private _cachedFg: IColorRGB | undefined | null = null;
-  public get foregroundColorRGB(): IColorRGB | undefined {
+  private _cachedFg: IColor | undefined | null = null;
+  public get foregroundColorRGB(): IColor | undefined {
     if (this._cachedFg === null) {
       if (this.options.foregroundColor) {
-        this._cachedFg = toColorRGB(this.options.foregroundColor);
+        this._cachedFg = css.toColor(this.options.foregroundColor);
       } else {
         this._cachedFg = undefined;
       }
@@ -118,12 +119,4 @@ class Decoration extends Disposable implements IInternalDecoration {
     this._onDispose.fire();
     super.dispose();
   }
-}
-
-function toColorRGB(css: string): IColorRGB {
-  // #rrggbb
-  if (css.length === 7) {
-    return [parseInt(css.slice(1, 3), 16), parseInt(css.slice(3, 5), 16), parseInt(css.slice(5, 7), 16)];
-  }
-  throw new Error('css.toColor: Unsupported css format');
 }

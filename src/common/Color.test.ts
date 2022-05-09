@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { channels, color, css, rgb, rgba, toPaddedHex, contrastRatio } from 'browser/Color';
+import { channels, color, css, rgb, rgba, toPaddedHex, contrastRatio } from 'common/Color';
 
 describe('Color', () => {
 

@@ -162,7 +162,7 @@ export class MockUnicodeService implements IUnicodeService {
 
 export class MockDecorationService implements IDecorationService {
   public serviceBrand: any;
-  public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); };
+  public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); }
   public onDecorationRegistered = new EventEmitter<IInternalDecoration>().event;
   public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }

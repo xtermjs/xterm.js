@@ -11,7 +11,7 @@ import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
-import { css } from 'browser/Color';
+import { css } from 'common/Color';
 import { MockCharacterJoinerService } from 'browser/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {

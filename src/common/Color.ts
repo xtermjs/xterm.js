@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IColor } from 'browser/Types';
-import { IColorRGB } from 'common/Types';
+import { IColor, IColorRGB } from 'common/Types';
 
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).

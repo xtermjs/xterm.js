@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData } from 'common/Types';
+import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { color, rgba } from 'browser/Color';
-import { IColorSet, IColor } from 'browser/Types';
+import { color, rgba } from 'common/Color';
+import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
@@ -181,11 +181,11 @@ export class DomRendererRowFactory {
         if (x >= xmin && x < xmax) {
           if (d.backgroundColorRGB) {
             bgColorMode = Attributes.CM_RGB;
-            bg = (d.backgroundColorRGB[0] << 16) | (d.backgroundColorRGB[1]) << 8 | d.backgroundColorRGB[2];
+            bg = d.backgroundColorRGB.rgba >> 8;
           }
           if (d.foregroundColorRGB) {
             fgColorMode = Attributes.CM_RGB;
-            fg = (d.foregroundColorRGB[0] << 16) | (d.foregroundColorRGB[1]) << 8 | d.foregroundColorRGB[2];
+            fg = d.foregroundColorRGB.rgba >> 8;
           }
         }
       }
