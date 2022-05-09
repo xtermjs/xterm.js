@@ -105,7 +105,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     this._cacheMap.prealloc(capacity);
 
     // This is useful for debugging
-    // document.body.appendChild(this._cacheCanvas);
+    document.body.appendChild(this._cacheCanvas);
   }
 
   public dispose(): void {

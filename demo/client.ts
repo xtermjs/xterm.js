@@ -559,7 +559,7 @@ function addDecoration() {
   const decoration = term.registerDecoration({
     marker,
     backgroundColor: '#00FF00',
-    foregroundColor: '#000000',
+    foregroundColor: '#00FE00',
     overviewRulerOptions: { color: '#ef292980', position: 'left' }
   });
   decoration.onRender((e: HTMLElement) => {

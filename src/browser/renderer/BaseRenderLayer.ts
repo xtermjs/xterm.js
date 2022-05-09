@@ -13,7 +13,7 @@ import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { isPowerlineGlyph, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
@@ -52,7 +52,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected _colors: IColorSet,
     private _rendererId: number,
     protected readonly _bufferService: IBufferService,
-    protected readonly _optionsService: IOptionsService
+    protected readonly _optionsService: IOptionsService,
+    protected readonly _decorationService: IDecorationService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -294,7 +295,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
-    const contrastColor = this._getContrastColor(cell);
+    const contrastColor = this._getContrastColor(cell, x, y);
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
@@ -427,15 +428,35 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * window.devicePixelRatio}px ${this._optionsService.rawOptions.fontFamily}`;
   }
 
-  private _getContrastColor(cell: CellData): IColor | undefined {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode())) {
+  private _getContrastColor(cell: CellData, x: number, y: number): IColor | undefined {
+    // Get any decoration foreground/background overrides, this must be fetched before the early
+    // exist but applied after inverse
+    const decorations = this._decorationService.getDecorationsOnLine(y);
+    let bgOverride: number | undefined;
+    let fgOverride: number | undefined;
+    for (const d of decorations) {
+      const xmin = d.options.x ?? 0;
+      const xmax = xmin + (d.options.width ?? 1);
+      if (x >= xmin && x < xmax) {
+        if (d.backgroundColorRGB) {
+          bgOverride = d.backgroundColorRGB.rgba;
+        }
+        if (d.foregroundColorRGB) {
+          fgOverride = d.foregroundColorRGB.rgba;
+        }
+      }
+    }
+
+    if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode()))) {
       return undefined;
     }
 
-    // Try get from cache first
-    const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
-    if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+    if (!bgOverride && !fgOverride) {
+      // Try get from cache
+      const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
+      if (adjustedColor !== undefined) {
+        return adjustedColor || undefined;
+      }
     }
 
     let fgColor = cell.getFgColor();
@@ -453,13 +474,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       bgColorMode = temp2;
     }
 
-    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
+    const bgRgba = this._resolveBackgroundRgba(bgOverride !== undefined ? Attributes.CM_RGB : bgColorMode, bgOverride ?? bgColor, isInverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
-    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
+    let result = rgba.ensureContrastRatio(bgOverride ?? bgRgba, fgOverride ?? fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
 
     if (!result) {
-      this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
-      return undefined;
+      if (!bgOverride && !fgOverride) {
+        this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
+        return undefined;
+      }
+      // If it was an override and there was no contrast change, set as the result
+      // TODO: This is white when it should be green
+      result = fgRgba;
     }
 
     const color: IColor = {
@@ -470,7 +496,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       ),
       rgba: result
     };
-    this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+    if (!bgOverride && !fgOverride) {
+      this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+    }
 
     return color;
   }

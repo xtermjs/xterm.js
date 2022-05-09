@@ -173,7 +173,8 @@ export class DomRendererRowFactory {
         bgColorMode = temp2;
       }
 
-      // Apply any decoration foreground/background overrides
+      // Apply any decoration foreground/background overrides, this must happen after inverse has
+      // been applied
       const decorations = this._decorationService.getDecorationsOnLine(row);
       let bgOverride: IColor | undefined;
       let fgOverride: IColor | undefined;
