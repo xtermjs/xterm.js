@@ -7,7 +7,7 @@ import { IBufferLine, ICellData } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'browser/Color';
 import { IColorSet, IColor } from 'browser/Types';
 import { ICharacterJoinerService } from 'browser/services/Services';
@@ -33,7 +33,8 @@ export class DomRendererRowFactory {
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IDecorationService private readonly _decorationService: IDecorationService
   ) {
   }
 
@@ -172,6 +173,23 @@ export class DomRendererRowFactory {
         bgColorMode = temp2;
       }
 
+      // Apply any decoration foreground/background overrides
+      const decorations = this._decorationService.getDecorationsOnLine(row);
+      for (const d of decorations) {
+        const xmin = d.options.x ?? 0;
+        const xmax = xmin + (d.options.width ?? 1);
+        if (x >= xmin && x < xmax) {
+          if (d.backgroundColorRGB) {
+            bgColorMode = Attributes.CM_RGB;
+            bg = (d.backgroundColorRGB[0] << 16) | (d.backgroundColorRGB[1]) << 8 | d.backgroundColorRGB[2];
+          }
+          if (d.foregroundColorRGB) {
+            fgColorMode = Attributes.CM_RGB;
+            fg = (d.foregroundColorRGB[0] << 16) | (d.foregroundColorRGB[1]) << 8 | d.foregroundColorRGB[2];
+          }
+        }
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
@@ -179,6 +197,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
+          // TODO: Pass in bg override
           if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }

@@ -444,7 +444,8 @@ declare module 'xterm' {
      * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
      * were provided initially.
      */
-     options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
+    options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
+    //  options: Pick<IDecorationOptions, 'overviewRulerOptions' | 'backgroundColor' | 'foregroundColor'>;
   }
 
 
@@ -487,6 +488,18 @@ declare module 'xterm' {
      * The height of the decoration in cells, defaults to 1.
      */
     readonly height?: number;
+
+    /**
+     * The background color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    backgroundColor?: string;
+
+    /**
+     * The foreground color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    foregroundColor?: string;
 
     /**
      * When defined, renders the decoration in the overview ruler to the right
