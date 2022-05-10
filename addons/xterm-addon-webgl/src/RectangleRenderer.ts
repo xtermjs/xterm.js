@@ -255,35 +255,8 @@ export class RectangleRenderer {
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
-        // Get any decoration foreground/background overrides
-        const decorations = this._decorationService.getDecorationsOnLine(y);
-        let bgOverride: number | undefined;
-        let fgOverride: number | undefined;
-        for (const d of decorations) {
-          const xmin = d.options.x ?? 0;
-          const xmax = xmin + (d.options.width ?? 1);
-          if (x >= xmin && x < xmax) {
-            if (d.backgroundColorRGB) {
-              bgOverride = d.backgroundColorRGB.rgba;
-            }
-            if (d.foregroundColorRGB) {
-              fgOverride = d.foregroundColorRGB.rgba;
-            }
-          }
-        }
-
-        // Convert any overrides from rgba to the fg/bg packed format:
-        // Non RGB attributes from model + RGB from override + force RGB color mode
-        if (bgOverride !== undefined) {
-          bgOverride = (model.cells[modelIndex + RENDER_MODEL_BG_OFFSET] & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
-        }
-        if (fgOverride !== undefined) {
-          fgOverride = (model.cells[modelIndex + RENDER_MODEL_FG_OFFSET] & ~Attributes.RGB_MASK) | fgOverride >> 8 | Attributes.CM_RGB;
-        }
-
-        // TODO: This isn't handling invert correctly
-        const bg = bgOverride ?? model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
-        const fg = fgOverride ?? model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
+        const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
+        const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
 
         const inverse = !!(fg & FgFlags.INVERSE);
         if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {

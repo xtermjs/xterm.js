@@ -12,7 +12,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -53,7 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
-    decorationService: IDecorationService,
+    private readonly _decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -97,8 +97,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions, decorationService);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions, decorationService);
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions, _decorationService);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions, _decorationService);
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
@@ -333,14 +333,58 @@ export class WebglRenderer extends Disposable implements IRenderer {
         let code = cell.getCode();
         const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
+        let bg = cell.bg;
+        let fg = cell.fg;
+
+        // Get any decoration foreground/background overrides, this happens on the model to avoid
+        // spreading decoration override logic throughout the different sub-renderers
+        const decorations = this._decorationService.getDecorationsOnLine(y);
+        let bgOverride: number | undefined;
+        let fgOverride: number | undefined;
+        for (const d of decorations) {
+          const xmin = d.options.x ?? 0;
+          const xmax = xmin + (d.options.width ?? 1);
+          if (x >= xmin && x < xmax) {
+            if (d.backgroundColorRGB) {
+              bgOverride = d.backgroundColorRGB.rgba;
+            }
+            if (d.foregroundColorRGB) {
+              fgOverride = d.foregroundColorRGB.rgba;
+            }
+          }
+        }
+
+        // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+        // ahead of time in order to use the correct cache key
+        if (bgOverride !== undefined) {
+          // Non-RGB attributes from model + override + force RGB color mode
+          if (fg & FgFlags.INVERSE) {
+            bgOverride = (bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride >> 8 : fg) | Attributes.CM_RGB;
+          } else {
+            bgOverride = (bg & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
+          }
+        }
+        if (fgOverride !== undefined) {
+          // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
+          if (fg & FgFlags.INVERSE) {
+            fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride >> 8 : bg) | Attributes.CM_RGB;
+          } else {
+            fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride >> 8 | Attributes.CM_RGB;
+          }
+        }
+
+        // Use the override if it exists
+        bg = bgOverride ?? bg;
+        fg = fgOverride ?? fg;
+
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
         }
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
           continue;
         }
 
@@ -351,10 +395,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = cell.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = cell.fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
 
-        this._glyphRenderer.updateCell(x, y, code, cell.bg, cell.fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
 
         if (isJoined) {
           // Restore work cell
@@ -365,8 +409,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
             this._model.cells[j] = NULL_CELL_CODE;
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = fg;
           }
         }
       }
