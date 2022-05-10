@@ -179,7 +179,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
       // Get any decoration foreground/background overrides, this must be fetched before the early
       // exist but applied after inverse
-      const decorations = this._decorationService.getDecorationsOnLine(y);
+      const decorations = this._decorationService.getDecorationsOnLine(this._bufferService.buffer.ydisp + y);
       for (const d of decorations) {
         const xmin = d.options.x ?? 0;
         const xmax = xmin + (d.options.width ?? 1);
