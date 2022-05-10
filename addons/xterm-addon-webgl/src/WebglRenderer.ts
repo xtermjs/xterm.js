@@ -335,7 +335,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
-        this._loadColorsForCell(x, y);
+        this._loadColorsForCell(x, row);
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
