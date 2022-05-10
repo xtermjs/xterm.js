@@ -23,6 +23,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { IDecorationService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -52,6 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
+    decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -95,8 +97,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions, decorationService);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions, decorationService);
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();

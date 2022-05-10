@@ -15,6 +15,7 @@ import { IColor } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { IDecorationService } from 'common/services/Services';
 
 interface IVertices {
   attributes: Float32Array;
@@ -100,7 +101,8 @@ export class GlyphRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private readonly _decorationService: IDecorationService
   ) {
     const gl = this._gl;
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
@@ -188,10 +190,48 @@ export class GlyphRenderer {
     if (!this._atlas) {
       return;
     }
+
+    // Get any decoration foreground/background overrides
+    const decorations = this._decorationService.getDecorationsOnLine(y);
+    let bgOverride: number | undefined;
+    let fgOverride: number | undefined;
+    for (const d of decorations) {
+      const xmin = d.options.x ?? 0;
+      const xmax = xmin + (d.options.width ?? 1);
+      if (x >= xmin && x < xmax) {
+        if (d.backgroundColorRGB) {
+          bgOverride = d.backgroundColorRGB.rgba;
+        }
+        if (d.foregroundColorRGB) {
+          fgOverride = d.foregroundColorRGB.rgba;
+        }
+      }
+    }
+
+    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+    // ahead of time in order to use the correct cache key
+    if (bgOverride !== undefined) {
+      // Non-RGB attributes from model + override + force RGB color mode
+      if (fg & FgFlags.INVERSE) {
+        bgOverride = (bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride >> 8 : fg) | Attributes.CM_RGB;
+      } else {
+        bgOverride = (bg & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
+      }
+    }
+    if (fgOverride !== undefined) {
+      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
+      if (fg & FgFlags.INVERSE) {
+        fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride >> 8 : bg) | Attributes.CM_RGB;
+      } else {
+        fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride >> 8 | Attributes.CM_RGB;
+      }
+    }
+
+    // Get the glyph
     if (chars && chars.length > 1) {
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bgOverride ?? bg, fgOverride ?? fg);
     }
 
     // Fill empty if no glyph was found
