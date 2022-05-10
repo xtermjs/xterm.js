@@ -75,7 +75,6 @@ class Decoration extends Disposable implements IInternalDecoration {
   private _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
-  // TODO: React to changes on options
   private _cachedBg: IColor | undefined | null = null;
   public get backgroundColorRGB(): IColor | undefined {
     if (this._cachedBg === null) {
@@ -88,7 +87,6 @@ class Decoration extends Disposable implements IInternalDecoration {
     return this._cachedBg;
   }
 
-  // TODO: React to changes on options
   private _cachedFg: IColor | undefined | null = null;
   public get foregroundColorRGB(): IColor | undefined {
     if (this._cachedFg === null) {
