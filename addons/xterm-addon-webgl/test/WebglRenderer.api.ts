@@ -875,12 +875,65 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe('decoration color overrides', async () => {
-    await page.evaluate(`
-      window.term.registerDecoration({
-        x:
-      });
-    `);
+  describe.only('decoration color overrides', async () => {
+    if (areTestsEnabled) {
+      before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true }));
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
+
+    itWebgl('foregroundColor', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `█`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    itWebgl('foregroundColor should ignore inverse', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\\x1b[7m█\\x1b0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    itWebgl('backgroundColor', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = ` `;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    itWebgl('backgroundColor should ignore inverse', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\\x1b[7m \\x1b0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
   });
 });
 

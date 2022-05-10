@@ -12,7 +12,6 @@ import { IColor } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { IDecorationService } from 'common/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -80,8 +79,7 @@ export class RectangleRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions,
-    private readonly _decorationService: IDecorationService
+    private _dimensions: IRenderDimensions
   ) {
     const gl = this._gl;
 
@@ -254,10 +252,8 @@ export class RectangleRenderer {
       let currentInverse = false;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-
         const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
         const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
-
         const inverse = !!(fg & FgFlags.INVERSE);
         if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color

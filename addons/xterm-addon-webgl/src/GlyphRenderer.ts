@@ -9,13 +9,12 @@ import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRaster
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_BG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
 import { IColor } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IDecorationService } from 'common/services/Services';
 
 interface IVertices {
   attributes: Float32Array;
@@ -101,8 +100,7 @@ export class GlyphRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions,
-    private readonly _decorationService: IDecorationService
+    private _dimensions: IRenderDimensions
   ) {
     const gl = this._gl;
     const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
