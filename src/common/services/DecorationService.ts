@@ -32,6 +32,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
     const decoration = new Decoration(options);
     if (decoration) {
+      const markerDispose = decoration.marker.onDispose(() => decoration.dispose());
       decoration.onDispose(() => {
         if (decoration) {
           const index = this._decorations.indexOf(decoration);
@@ -39,6 +40,7 @@ export class DecorationService extends Disposable implements IDecorationService 
             this._decorations.splice(this._decorations.indexOf(decoration), 1);
             this._onDecorationRemoved.fire(decoration);
           }
+          markerDispose.dispose();
         }
       });
       this._decorations.push(decoration);
