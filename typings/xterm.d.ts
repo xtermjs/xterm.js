@@ -498,7 +498,7 @@ declare module 'xterm' {
      * The foreground color of the cell(s). When 2 decorations both set the foreground color the
      * last registered decoration will be used. Only the `#RRGGBB` format is supported.
      */
-     readonly foregroundColor?: string;
+    readonly foregroundColor?: string;
 
     /**
      * When defined, renders the decoration in the overview ruler to the right

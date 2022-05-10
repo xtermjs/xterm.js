@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { Browser, Page } from 'playwright';
 import { ITheme } from 'xterm';
-import { getBrowserType, launchBrowser, openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { getBrowserType, launchBrowser, openTerminal, pollFor, timeout, writeSync } from '../../../out-test/api/TestUtils';
 import { ITerminalOptions } from '../../../src/common/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -745,18 +745,18 @@ describe('WebGL Renderer Integration Tests', async () => {
       await page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       await pollFor(page, () => getCellColor(1, 1), [176, 180, 180, 255]);
       await pollFor(page, () => getCellColor(2, 1), [238, 158, 158, 255]);
-      await pollFor(page, () => getCellColor(3, 1), [197, 223, 171, 255]);
-      await pollFor(page, () => getCellColor(4, 1), [235, 221, 158, 255]);
-      await pollFor(page, () => getCellColor(5, 1), [124, 156, 198, 255]);
-      await pollFor(page, () => getCellColor(6, 1), [183, 165, 187, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [152, 198, 110, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [208, 179, 49, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [161, 183, 215, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [191, 174, 194, 255]);
       await pollFor(page, () => getCellColor(7, 1), [110, 197, 198, 255]);
       await pollFor(page, () => getCellColor(8, 1), [211, 215, 207, 255]);
       await pollFor(page, () => getCellColor(1, 2), [183, 185, 183, 255]);
       await pollFor(page, () => getCellColor(2, 2), [249, 156, 156, 255]);
       await pollFor(page, () => getCellColor(3, 2), [138, 226, 52, 255]);
       await pollFor(page, () => getCellColor(4, 2), [252, 233, 79, 255]);
-      await pollFor(page, () => getCellColor(5, 2), [114, 159, 207, 255]);
-      await pollFor(page, () => getCellColor(6, 2), [190, 152, 185, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [154, 186, 221, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [203, 173, 199, 255]);
       // Unchanged
       await pollFor(page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
       await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
@@ -813,18 +813,18 @@ describe('WebGL Renderer Integration Tests', async () => {
       await page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       await pollFor(page, () => getCellColor(1, 1), [46, 52, 54, 255]);
       await pollFor(page, () => getCellColor(2, 1), [132, 0, 0, 255]);
-      await pollFor(page, () => getCellColor(3, 1), [78, 154, 6, 255]);
-      await pollFor(page, () => getCellColor(4, 1), [114, 93, 0, 255]);
-      await pollFor(page, () => getCellColor(5, 1), [19, 40, 68, 255]);
-      await pollFor(page, () => getCellColor(6, 1), [60, 40, 64, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [36, 72, 0, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [72, 59, 0, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [32, 64, 106, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [75, 51, 80, 255]);
       await pollFor(page, () => getCellColor(7, 1), [0, 71, 72, 255]);
       await pollFor(page, () => getCellColor(8, 1), [64, 64, 63, 255]);
       await pollFor(page, () => getCellColor(1, 2), [61, 63, 59, 255]);
       await pollFor(page, () => getCellColor(2, 2), [125, 19, 19, 255]);
-      await pollFor(page, () => getCellColor(3, 2), [89, 146, 32, 255]);
-      await pollFor(page, () => getCellColor(4, 2), [105, 98, 32, 255]);
-      await pollFor(page, () => getCellColor(5, 2), [36, 52, 70, 255]);
-      await pollFor(page, () => getCellColor(6, 2), [64, 45, 63, 255]);
+      await pollFor(page, () => getCellColor(3, 2), [40, 67, 13, 255]);
+      await pollFor(page, () => getCellColor(4, 2), [67, 63, 19, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [45, 65, 87, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [81, 57, 78, 255]);
       await pollFor(page, () => getCellColor(7, 2), [13, 67, 67, 255]);
       await pollFor(page, () => getCellColor(8, 2), [64, 64, 64, 255]);
     });
@@ -873,6 +873,14 @@ describe('WebGL Renderer Integration Tests', async () => {
       // Inverse background should be opaque
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
     });
+  });
+
+  describe('decoration color overrides', async () => {
+    await page.evaluate(`
+      window.term.registerDecoration({
+        x:
+      });
+    `);
   });
 });
 
