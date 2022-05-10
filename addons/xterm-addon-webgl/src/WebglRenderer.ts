@@ -32,6 +32,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
+  private _workColors: { fg: number, bg: number } = { fg: 0, bg: 0 };
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -333,49 +334,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
         let code = cell.getCode();
         const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
-        let bg = cell.bg;
-        let fg = cell.fg;
-
-        // Get any decoration foreground/background overrides, this happens on the model to avoid
-        // spreading decoration override logic throughout the different sub-renderers
-        const decorations = this._decorationService.getDecorationsOnLine(y);
-        let bgOverride: number | undefined;
-        let fgOverride: number | undefined;
-        for (const d of decorations) {
-          const xmin = d.options.x ?? 0;
-          const xmax = xmin + (d.options.width ?? 1);
-          if (x >= xmin && x < xmax) {
-            if (d.backgroundColorRGB) {
-              bgOverride = d.backgroundColorRGB.rgba;
-            }
-            if (d.foregroundColorRGB) {
-              fgOverride = d.foregroundColorRGB.rgba;
-            }
-          }
-        }
-
-        // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
-        // ahead of time in order to use the correct cache key
-        if (bgOverride !== undefined) {
-          // Non-RGB attributes from model + override + force RGB color mode
-          if (fg & FgFlags.INVERSE) {
-            bgOverride = (bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride >> 8 : fg) | Attributes.CM_RGB;
-          } else {
-            bgOverride = (bg & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
-          }
-        }
-        if (fgOverride !== undefined) {
-          // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-          if (fg & FgFlags.INVERSE) {
-            fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride >> 8 : bg) | Attributes.CM_RGB;
-          } else {
-            fgOverride = (fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride >> 8 | Attributes.CM_RGB;
-          }
-        }
-
-        // Use the override if it exists
-        bg = bgOverride ?? bg;
-        fg = fgOverride ?? fg;
+        // Load colors/resolve overrides into work colors
+        this._loadColorsForCell(x, y);
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
@@ -383,8 +343,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg) {
           continue;
         }
 
@@ -395,10 +355,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, bg, fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars);
 
         if (isJoined) {
           // Restore work cell
@@ -409,8 +369,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
             this._model.cells[j] = NULL_CELL_CODE;
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = fg;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
           }
         }
       }
@@ -420,6 +380,56 @@ export class WebglRenderer extends Disposable implements IRenderer {
       // Model could be updated but the selection is unchanged
       this._glyphRenderer.updateSelection(this._model);
     }
+  }
+
+  /**
+   * Loads colors for the cell into the work colors object. This resolves overrides/inverse if
+   * necessary which is why the work cell object is not used.
+   */
+  private _loadColorsForCell(x: number, y: number): void {
+    this._workColors.bg = this._workCell.bg;
+    this._workColors.fg = this._workCell.fg;
+
+    // Get any decoration foreground/background overrides, this happens on the model to avoid
+    // spreading decoration override logic throughout the different sub-renderers
+    const decorations = this._decorationService.getDecorationsOnLine(y);
+    let bgOverride: number | undefined;
+    let fgOverride: number | undefined;
+    for (const d of decorations) {
+      const xmin = d.options.x ?? 0;
+      const xmax = xmin + (d.options.width ?? 1);
+      if (x >= xmin && x < xmax) {
+        if (d.backgroundColorRGB) {
+          bgOverride = d.backgroundColorRGB.rgba;
+        }
+        if (d.foregroundColorRGB) {
+          fgOverride = d.foregroundColorRGB.rgba;
+        }
+      }
+    }
+
+    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+    // ahead of time in order to use the correct cache key
+    if (bgOverride !== undefined) {
+      // Non-RGB attributes from model + override + force RGB color mode
+      if (this._workColors.fg & FgFlags.INVERSE) {
+        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride >> 8 : this._workColors.fg) | Attributes.CM_RGB;
+      } else {
+        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
+      }
+    }
+    if (fgOverride !== undefined) {
+      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
+      if (this._workColors.fg & FgFlags.INVERSE) {
+        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride >> 8 : this._workColors.bg) | Attributes.CM_RGB;
+      } else {
+        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride >> 8 | Attributes.CM_RGB;
+      }
+    }
+
+    // Use the override if it exists
+    this._workColors.bg = bgOverride ?? this._workColors.bg;
+    this._workColors.fg = fgOverride ?? this._workColors.fg;
   }
 
   private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
