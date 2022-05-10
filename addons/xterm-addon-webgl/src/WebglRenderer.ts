@@ -400,10 +400,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       const xmax = xmin + (d.options.width ?? 1);
       if (x >= xmin && x < xmax) {
         if (d.backgroundColorRGB) {
-          bgOverride = d.backgroundColorRGB.rgba;
+          bgOverride = (d.backgroundColorRGB.rgba >> 8) >>> 0 & 0xFFFFFF;
         }
         if (d.foregroundColorRGB) {
-          fgOverride = d.foregroundColorRGB.rgba;
+          fgOverride = (d.foregroundColorRGB.rgba >> 8) >>> 0 & 0xFFFFFF;
         }
       }
     }
@@ -413,17 +413,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (bgOverride !== undefined) {
       // Non-RGB attributes from model + override + force RGB color mode
       if (this._workColors.fg & FgFlags.INVERSE) {
-        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride >> 8 : this._workColors.fg) | Attributes.CM_RGB;
+        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride : this._workColors.fg) | Attributes.CM_RGB;
       } else {
-        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | bgOverride >> 8 | Attributes.CM_RGB;
+        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
       }
     }
     if (fgOverride !== undefined) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
       if (this._workColors.fg & FgFlags.INVERSE) {
-        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride >> 8 : this._workColors.bg) | Attributes.CM_RGB;
+        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride : this._workColors.bg) | Attributes.CM_RGB;
       } else {
-        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride >> 8 | Attributes.CM_RGB;
+        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
       }
     }
 
