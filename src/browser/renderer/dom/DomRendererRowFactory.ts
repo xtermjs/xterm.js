@@ -184,12 +184,12 @@ export class DomRendererRowFactory {
         if (x >= xmin && x < xmax) {
           if (d.backgroundColorRGB) {
             bgColorMode = Attributes.CM_RGB;
-            bg = d.backgroundColorRGB.rgba >> 8;
+            bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
             bgOverride = d.backgroundColorRGB;
           }
           if (d.foregroundColorRGB) {
             fgColorMode = Attributes.CM_RGB;
-            fg = d.foregroundColorRGB.rgba >> 8;
+            fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
             fgOverride = d.foregroundColorRGB;
           }
         }

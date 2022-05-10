@@ -110,10 +110,10 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     incremental: e.key !== `Enter`,
     decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
-      matchBackground: '#55575380',
+      matchBackground: '#232422',
       matchBorder: '#555753',
       matchOverviewRuler: '#555753',
-      activeMatchBackground: '#ef292980',
+      activeMatchBackground: '#ef2929',
       activeMatchBorder: '#ef2929',
       activeMatchColorOverviewRuler: '#ef2929'
     } : undefined
