@@ -479,13 +479,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     let result = rgba.ensureContrastRatio(bgOverride ?? bgRgba, fgOverride ?? fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
 
     if (!result) {
-      if (!bgOverride && !fgOverride) {
+      if (!fgOverride) {
         this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
         return undefined;
       }
       // If it was an override and there was no contrast change, set as the result
-      // TODO: This is white when it should be green
-      result = fgRgba;
+      result = fgOverride;
     }
 
     const color: IColor = {
