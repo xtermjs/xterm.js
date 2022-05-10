@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncer } from 'browser/Types';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 interface ISelectionState {
@@ -54,6 +54,7 @@ export class RenderService extends Disposable implements IRenderService {
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService
   ) {
     super();
@@ -67,6 +68,9 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
+    // TODO: This will slow things down
+    this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
+    this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
