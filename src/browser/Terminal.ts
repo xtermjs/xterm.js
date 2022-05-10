@@ -1358,6 +1358,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._setup();
     super.reset();
     this._selectionService?.reset();
+    this._decorationService.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;

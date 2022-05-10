@@ -308,6 +308,7 @@ export interface IDecorationService extends IDisposable {
   readonly onDecorationRegistered: IEvent<IInternalDecoration>;
   readonly onDecorationRemoved: IEvent<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+  reset(): void;
   /** Iterates over the decorations on a line (in no particular order). */
   getDecorationsOnLine(line: number): IterableIterator<IInternalDecoration>;
 }

@@ -49,6 +49,13 @@ export class DecorationService extends Disposable implements IDecorationService 
     return decoration;
   }
 
+  public reset(): void {
+    for (let i = 0; i < this._decorations.length; i++) {
+      this._decorations[0].dispose();
+    }
+    this._decorations.length = 0;
+  }
+
   public *getDecorationsOnLine(line: number): IterableIterator<IInternalDecoration> {
     // TODO: This could be made much faster if _decorations was sorted by line (and col?)
     for (const d of this.decorations) {
