@@ -326,7 +326,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
-    const atlasDidDraw = this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
+
+    // Don't try cache the glyph if it uses any decoration foreground/background override.
+    let hasOverrides = false;
+    const decorations = this._decorationService.getDecorationsOnLine(y);
+    for (const d of decorations) {
+      const xmin = d.options.x ?? 0;
+      const xmax = xmin + (d.options.width ?? 1);
+      if (x >= xmin && x < xmax) {
+        if (d.backgroundColorRGB || d.foregroundColorRGB) {
+          hasOverrides = true;
+          break;
+        }
+      }
+    }
+
+    const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
     if (!atlasDidDraw) {
       this._drawUncachedChars(cell, x, y);
