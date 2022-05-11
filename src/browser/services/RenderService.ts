@@ -69,7 +69,7 @@ export class RenderService extends Disposable implements IRenderService {
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
-    this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
+    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
@@ -135,7 +135,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._fireOnCanvasResize();
   }
 
-  public changeOptions(): void {
+  private _handleOptionsChanged(): void {
     this._renderer.onOptionsChanged();
     this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();

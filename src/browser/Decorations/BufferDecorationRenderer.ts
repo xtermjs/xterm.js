@@ -14,6 +14,7 @@ export class BufferDecorationRenderer extends Disposable {
 
   private _animationFrame: number | undefined;
   private _altBufferIsActive: boolean = false;
+  private _dimensionsChanged: boolean = false;
 
   constructor(
     private readonly _screenElement: HTMLElement,
@@ -28,7 +29,10 @@ export class BufferDecorationRenderer extends Disposable {
     this._screenElement.appendChild(this._container);
 
     this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
-    this.register(this._renderService.onDimensionsChange(() => this._queueRefresh()));
+    this.register(this._renderService.onDimensionsChange(() => {
+      this._dimensionsChanged = true;
+      this._queueRefresh();
+    }));
     this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
@@ -70,6 +74,9 @@ export class BufferDecorationRenderer extends Disposable {
       this._container.appendChild(element);
     }
     this._refreshStyle(decoration, element);
+    if (this._dimensionsChanged) {
+      this._refreshXPosition(decoration, element);
+    }
     decoration.onRenderEmitter.fire(element);
   }
 
@@ -86,11 +93,7 @@ export class BufferDecorationRenderer extends Disposable {
       // exceeded the container width, so hide
       element.style.display = 'none';
     }
-    if ((decoration.options.anchor || 'left') === 'right') {
-      element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
-    } else {
-      element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
-    }
+    this._refreshXPosition(decoration, element, x);
 
     return element;
   }
@@ -103,6 +106,14 @@ export class BufferDecorationRenderer extends Disposable {
     } else {
       element.style.top = `${line * this._renderService.dimensions.actualCellHeight}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
+    }
+  }
+
+  private _refreshXPosition(decoration: IInternalDecoration, element: HTMLElement, x: number = decoration.options.x ?? 0): void {
+    if ((decoration.options.anchor || 'left') === 'right') {
+      element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+    } else {
+      element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
   }
 
