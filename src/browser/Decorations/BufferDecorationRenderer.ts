@@ -66,7 +66,7 @@ export class BufferDecorationRenderer extends Disposable {
   private _renderDecoration(decoration: IInternalDecoration): void {
     this._refreshStyle(decoration);
     if (this._dimensionsChanged) {
-      this._refreshXPosition(decoration, element);
+      this._refreshXPosition(decoration);
     }
   }
 
@@ -83,7 +83,7 @@ export class BufferDecorationRenderer extends Disposable {
       // exceeded the container width, so hide
       element.style.display = 'none';
     }
-    this._refreshXPosition(decoration, element, x);
+    this._refreshXPosition(decoration);
 
     return element;
   }
@@ -111,11 +111,15 @@ export class BufferDecorationRenderer extends Disposable {
     }
   }
 
-  private _refreshXPosition(decoration: IInternalDecoration, element: HTMLElement, x: number = decoration.options.x ?? 0): void {
+  private _refreshXPosition(decoration: IInternalDecoration): void {
+    if (!decoration.element) {
+      return;
+    }
+    const x = decoration.options.x ?? 0;
     if ((decoration.options.anchor || 'left') === 'right') {
-      element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      decoration.element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
     } else {
-      element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      decoration.element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
   }
 
