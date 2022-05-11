@@ -74,9 +74,11 @@ describe('SortedList', () => {
     list.insert(8);
     list.insert(6);
     assertList([5, 5, 5, 6, 8, 8]);
+    deepStrictEqual(Array.from(list.getKeyIterator(1)), []);
     deepStrictEqual(Array.from(list.getKeyIterator(5)), [5, 5, 5]);
     deepStrictEqual(Array.from(list.getKeyIterator(6)), [6]);
     deepStrictEqual(Array.from(list.getKeyIterator(8)), [8, 8]);
+    deepStrictEqual(Array.from(list.getKeyIterator(9)), []);
   });
   it('clear', () => {
     list.insert(1);

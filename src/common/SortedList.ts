@@ -3,6 +3,11 @@
  * @license MIT
  */
 
+/**
+ * A generic list that is maintained in sorted order and allows values with duplicate keys. This
+ * list is based on binary search and as such locating a key will take O(log n) amortized, this
+ * includes the by key iterator.
+ */
 export class SortedList<T> {
   private readonly _array: T[] = [];
 
@@ -47,6 +52,9 @@ export class SortedList<T> {
       return;
     }
     let i = this._search(key, 0, this._array.length - 1);
+    if (i < 0 || i >= this._array.length) {
+      return;
+    }
     if (this._getKey(this._array[i]) !== key) {
       return;
     }

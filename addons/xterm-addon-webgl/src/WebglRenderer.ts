@@ -419,7 +419,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (this._workColors.fg & FgFlags.INVERSE) {
       if (bgOverride !== undefined && fgOverride === undefined) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
-        debugger;
         if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
           fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
