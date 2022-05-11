@@ -128,7 +128,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._resultIndex || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
+      if (this._resultIndex !== undefined || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -306,7 +306,7 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    if (searchOptions?.decorations && (this._resultIndex || term !== this._cachedSearchTerm)) {
+    if (searchOptions?.decorations && (this._resultIndex !== undefined || term !== this._cachedSearchTerm)) {
       this._highlightAllMatches(term, searchOptions);
     }
     return this._fireResults(term, this._findPreviousAndSelect(term, searchOptions), searchOptions);
@@ -693,7 +693,6 @@ export class SearchAddon implements ITerminalAddon {
    * @param element the decoration's element
    * @param backgroundColor the background color to apply
    * @param borderColor the border color to apply
-   * @param result the search result associated with the decoration
    * @returns
    */
   private _applyStyles(element: HTMLElement, backgroundColor: string | undefined, borderColor: string | undefined): void {
@@ -714,13 +713,13 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Creates a decoration for the result and applies styles
    * @param result the search result for which to create the decoration
-   * @param color the color to use for the decoration
+   * @param options the options for the decoration
    * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _createResultDecoration(result: ISearchResult, decorations: ISearchDecorationOptions): IDecoration | undefined {
+  private _createResultDecoration(result: ISearchResult, options: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker || !decorations?.matchOverviewRuler) {
+    if (!marker || !options?.matchOverviewRuler) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({
@@ -728,10 +727,10 @@ export class SearchAddon implements ITerminalAddon {
       x: result.col,
       width: result.size,
       overviewRulerOptions: this._resultDecorations?.get(marker.line) ? undefined : {
-        color: decorations.matchOverviewRuler, position: 'center'
+        color: options.matchOverviewRuler, position: 'center'
       }
     });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, decorations.matchBackground, decorations.matchBorder));
+    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBackground, options.matchBorder));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }

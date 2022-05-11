@@ -64,20 +64,10 @@ export class BufferDecorationRenderer extends Disposable {
   }
 
   private _renderDecoration(decoration: IInternalDecoration): void {
-    let element = this._decorationElements.get(decoration);
-    if (!element) {
-      element = this._createElement(decoration);
-      decoration.onDispose(() => this._removeDecoration(decoration));
-      decoration.marker.onDispose(() => decoration.dispose());
-      decoration.element = element;
-      this._decorationElements.set(decoration, element);
-      this._container.appendChild(element);
-    }
-    this._refreshStyle(decoration, element);
+    this._refreshStyle(decoration);
     if (this._dimensionsChanged) {
       this._refreshXPosition(decoration, element);
     }
-    decoration.onRenderEmitter.fire(element);
   }
 
   private _createElement(decoration: IInternalDecoration): HTMLElement {
@@ -98,14 +88,26 @@ export class BufferDecorationRenderer extends Disposable {
     return element;
   }
 
-  private _refreshStyle(decoration: IInternalDecoration, element: HTMLElement): void {
+  private _refreshStyle(decoration: IInternalDecoration): void {
     const line = decoration.marker.line - this._bufferService.buffers.active.ydisp;
     if (line < 0 || line >= this._bufferService.rows) {
       // outside of viewport
-      element.style.display = 'none';
+      if (decoration.element) {
+        decoration.element.style.display = 'none';
+        decoration.onRenderEmitter.fire(decoration.element);
+      }
     } else {
+      let element = this._decorationElements.get(decoration);
+      if (!element) {
+        decoration.onDispose(() => this._removeDecoration(decoration));
+        element = this._createElement(decoration);
+        decoration.element = element;
+        this._decorationElements.set(decoration, element);
+        this._container.appendChild(element);
+      }
       element.style.top = `${line * this._renderService.dimensions.actualCellHeight}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
+      decoration.onRenderEmitter.fire(element);
     }
   }
 
