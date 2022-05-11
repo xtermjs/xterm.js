@@ -175,23 +175,18 @@ export class DomRendererRowFactory {
 
       // Apply any decoration foreground/background overrides, this must happen after inverse has
       // been applied
-      const decorations = this._decorationService.getDecorationsOnLine(row);
       let bgOverride: IColor | undefined;
       let fgOverride: IColor | undefined;
-      for (const d of decorations) {
-        const xmin = d.options.x ?? 0;
-        const xmax = xmin + (d.options.width ?? 1);
-        if (x >= xmin && x < xmax) {
-          if (d.backgroundColorRGB) {
-            bgColorMode = Attributes.CM_RGB;
-            bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-            bgOverride = d.backgroundColorRGB;
-          }
-          if (d.foregroundColorRGB) {
-            fgColorMode = Attributes.CM_RGB;
-            fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-            fgOverride = d.foregroundColorRGB;
-          }
+      for (const d of this._decorationService.getDecorationsAtCell(x, row)) {
+        if (d.backgroundColorRGB) {
+          bgColorMode = Attributes.CM_RGB;
+          bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          bgOverride = d.backgroundColorRGB;
+        }
+        if (d.foregroundColorRGB) {
+          fgColorMode = Attributes.CM_RGB;
+          fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          fgOverride = d.foregroundColorRGB;
         }
       }
 

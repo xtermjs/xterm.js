@@ -56,11 +56,25 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations.length = 0;
   }
 
-  public *getDecorationsOnLine(line: number): IterableIterator<IInternalDecoration> {
+  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> {
     // TODO: This could be made much faster if _decorations was sorted by line (and col?)
     for (const d of this.decorations) {
       if (d.marker.line === line) {
         yield d;
+      }
+    }
+  }
+
+  public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> {
+    let xmin = 0;
+    let xmax = 0;
+    for (const d of this.decorations) {
+      if (d.marker.line === line) {
+        xmin = d.options.x ?? 0;
+        xmax = xmin + (d.options.width ?? 1);
+        if (x >= xmin && x < xmax) {
+          yield d;
+        }
       }
     }
   }

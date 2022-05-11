@@ -167,6 +167,7 @@ export class MockDecorationService implements IDecorationService {
   public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
-  public *getDecorationsOnLine(line: number): IterableIterator<IInternalDecoration> { }
+  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> { }
+  public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> { }
   public dispose(): void { }
 }

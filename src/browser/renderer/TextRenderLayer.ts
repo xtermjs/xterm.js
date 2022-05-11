@@ -179,14 +179,9 @@ export class TextRenderLayer extends BaseRenderLayer {
 
       // Get any decoration foreground/background overrides, this must be fetched before the early
       // exist but applied after inverse
-      const decorations = this._decorationService.getDecorationsOnLine(this._bufferService.buffer.ydisp + y);
-      for (const d of decorations) {
-        const xmin = d.options.x ?? 0;
-        const xmax = xmin + (d.options.width ?? 1);
-        if (x >= xmin && x < xmax) {
-          if (d.backgroundColorRGB) {
-            nextFillStyle = d.backgroundColorRGB.css;
-          }
+      for (const d of this._decorationService.getDecorationsAtCell(x, this._bufferService.buffer.ydisp + y)) {
+        if (d.backgroundColorRGB) {
+          nextFillStyle = d.backgroundColorRGB.css;
         }
       }
 

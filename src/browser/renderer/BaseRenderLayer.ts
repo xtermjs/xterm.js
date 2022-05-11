@@ -329,15 +329,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Don't try cache the glyph if it uses any decoration foreground/background override.
     let hasOverrides = false;
-    const decorations = this._decorationService.getDecorationsOnLine(y);
-    for (const d of decorations) {
-      const xmin = d.options.x ?? 0;
-      const xmax = xmin + (d.options.width ?? 1);
-      if (x >= xmin && x < xmax) {
-        if (d.backgroundColorRGB || d.foregroundColorRGB) {
-          hasOverrides = true;
-          break;
-        }
+    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+      if (d.backgroundColorRGB || d.foregroundColorRGB) {
+        hasOverrides = true;
+        break;
       }
     }
 
@@ -446,19 +441,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _getContrastColor(cell: CellData, x: number, y: number): IColor | undefined {
     // Get any decoration foreground/background overrides, this must be fetched before the early
     // exist but applied after inverse
-    const decorations = this._decorationService.getDecorationsOnLine(y);
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
-    for (const d of decorations) {
-      const xmin = d.options.x ?? 0;
-      const xmax = xmin + (d.options.width ?? 1);
-      if (x >= xmin && x < xmax) {
-        if (d.backgroundColorRGB) {
-          bgOverride = d.backgroundColorRGB.rgba;
-        }
-        if (d.foregroundColorRGB) {
-          fgOverride = d.foregroundColorRGB.rgba;
-        }
+    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+      if (d.backgroundColorRGB) {
+        bgOverride = d.backgroundColorRGB.rgba;
+      }
+      if (d.foregroundColorRGB) {
+        fgOverride = d.foregroundColorRGB.rgba;
       }
     }
 
