@@ -110,11 +110,11 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     incremental: e.key !== `Enter`,
     decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
-      matchBackground: '#55575380',
+      matchBackground: '#232422',
       matchBorder: '#555753',
       matchOverviewRuler: '#555753',
-      activeMatchBackground: '#ef292980',
-      activeMatchBorder: '#ef2929',
+      activeMatchBackground: '#ef2929',
+      activeMatchBorder: '#ffffff',
       activeMatchColorOverviewRuler: '#ef2929'
     } : undefined
   };
@@ -556,8 +556,16 @@ function loadTest() {
 function addDecoration() {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
-  const decoration = term.registerDecoration({ marker, overviewRulerOptions: { color: '#ef292980', position: 'left' } });
-  decoration.onRender((e) => e.style.backgroundColor = '#ef292980');
+  const decoration = term.registerDecoration({
+    marker,
+    backgroundColor: '#00FF00',
+    foregroundColor: '#00FE00',
+    overviewRulerOptions: { color: '#ef292980', position: 'left' }
+  });
+  decoration.onRender((e: HTMLElement) => {
+    e.style.right = '100%';
+    e.style.backgroundColor = '#ef292980';
+  });
 }
 
 function addOverviewRuler() {

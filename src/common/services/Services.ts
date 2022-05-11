@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -308,8 +308,15 @@ export interface IDecorationService extends IDisposable {
   readonly onDecorationRegistered: IEvent<IInternalDecoration>;
   readonly onDecorationRemoved: IEvent<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+  reset(): void;
+  /** Iterates over the decorations at a line (in no particular order). */
+  getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
+  /** Iterates over the decorations at a cell (in no particular order). */
+  getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration>;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
+  readonly backgroundColorRGB: IColor | undefined;
+  readonly foregroundColorRGB: IColor | undefined;
   readonly onRenderEmitter: IEventEmitter<HTMLElement>;
 }

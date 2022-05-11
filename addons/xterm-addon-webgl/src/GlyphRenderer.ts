@@ -9,9 +9,10 @@ import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRaster
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_BG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
 import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
-import { IColorSet, IColor } from 'browser/Types';
+import { IColor } from 'common/Types';
+import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 
@@ -187,6 +188,8 @@ export class GlyphRenderer {
     if (!this._atlas) {
       return;
     }
+
+    // Get the glyph
     if (chars && chars.length > 1) {
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
     } else {

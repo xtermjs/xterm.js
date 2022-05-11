@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData } from 'common/Types';
+import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IOptionsService } from 'common/services/Services';
-import { color, rgba } from 'browser/Color';
-import { IColorSet, IColor } from 'browser/Types';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { color, rgba } from 'common/Color';
+import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
@@ -33,7 +33,8 @@ export class DomRendererRowFactory {
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IDecorationService private readonly _decorationService: IDecorationService
   ) {
   }
 
@@ -172,6 +173,23 @@ export class DomRendererRowFactory {
         bgColorMode = temp2;
       }
 
+      // Apply any decoration foreground/background overrides, this must happen after inverse has
+      // been applied
+      let bgOverride: IColor | undefined;
+      let fgOverride: IColor | undefined;
+      for (const d of this._decorationService.getDecorationsAtCell(x, row)) {
+        if (d.backgroundColorRGB) {
+          bgColorMode = Attributes.CM_RGB;
+          bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          bgOverride = d.backgroundColorRGB;
+        }
+        if (d.foregroundColorRGB) {
+          fgColorMode = Attributes.CM_RGB;
+          fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          fgOverride = d.foregroundColorRGB;
+        }
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
@@ -179,7 +197,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, undefined, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -189,13 +207,13 @@ export class DomRendererRowFactory {
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
           );
-          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell, bgOverride, fgOverride)) {
             this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
           }
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell, undefined, undefined)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
@@ -209,7 +227,7 @@ export class DomRendererRowFactory {
           charElement.classList.add(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          this._addStyle(charElement, `background-color:#${padStart(bg.toString(16), '0', 6)}`);
+          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -225,18 +243,23 @@ export class DomRendererRowFactory {
     return fragment;
   }
 
-  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData): boolean {
+  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
     if (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode())) {
       return false;
     }
 
-    // Try get from cache first
-    let adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    // Try get from cache first, only use the cache when there are no decoration overrides
+    let adjustedColor: IColor | undefined | null = undefined;
+    if (!bgOverride || !fgOverride) {
+      adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.rawOptions.minimumContrastRatio);
-      this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
+      if (!bgOverride || !fgOverride) {
+        this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+      }
     }
 
     if (adjustedColor) {
