@@ -396,9 +396,6 @@ export class MockRenderService implements IRenderService {
   public resize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  public _handleOptionsChanged(): void {
-    throw new Error('Method not implemented.');
-  }
   public setRenderer(renderer: IRenderer): void {
     throw new Error('Method not implemented.');
   }
