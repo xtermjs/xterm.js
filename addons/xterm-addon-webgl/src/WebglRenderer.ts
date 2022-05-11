@@ -412,18 +412,32 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // ahead of time in order to use the correct cache key
     if (bgOverride !== undefined) {
       // Non-RGB attributes from model + override + force RGB color mode
-      if (this._workColors.fg & FgFlags.INVERSE) {
-        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | (fgOverride !== undefined ? fgOverride : this._workColors.fg) | Attributes.CM_RGB;
-      } else {
-        bgOverride = (this._workColors.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
-      }
+      bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
     }
     if (fgOverride !== undefined) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      if (this._workColors.fg & FgFlags.INVERSE) {
-        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | (bgOverride !== undefined ? bgOverride : this._workColors.bg) | Attributes.CM_RGB;
-      } else {
-        fgOverride = (this._workColors.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
+      fgOverride = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
+    }
+
+    // Handle case where inverse was specified by only one of bgOverride or fgOverride was set,
+    // resolving the other inverse color and setting the inverse flag if needed.
+    if (this._workColors.fg & FgFlags.INVERSE) {
+      if (bgOverride !== undefined && fgOverride === undefined) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        debugger;
+        if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
+      }
+      if (bgOverride === undefined && fgOverride !== undefined) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
       }
     }
 

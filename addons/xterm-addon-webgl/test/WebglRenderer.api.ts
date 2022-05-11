@@ -875,9 +875,9 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe.only('decoration color overrides', async () => {
+  describe('decoration color overrides', async () => {
     if (areTestsEnabled) {
-      before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true }));
+      before(async () => setupBrowser({ rendererType: 'dom' }));
       after(async () => browser.close());
       beforeEach(async () => page.evaluate(`window.term.reset()`));
     }
@@ -904,9 +904,23 @@ describe('WebGL Renderer Integration Tests', async () => {
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `\\x1b[7m█\\x1b0m`;
+      const data = `\\x1b[7m█\\x1b[0m`;
       await writeSync(page, data);
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    itWebgl('foregroundColor should ignore inverse (only fg on decoration)', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          foregroundColor: '#ff0000'
+        });
+      `);
+      const data = `\\x1b[7m█ \\x1b[0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]); // inverse foreground of '█' should be decoration fg override
+      await pollFor(page, () => getCellColor(2, 1), [255, 255, 255, 255]); // inverse background of ' ' should be default foreground
     });
     itWebgl('backgroundColor', async () => {
       await page.evaluate(`
@@ -930,9 +944,23 @@ describe('WebGL Renderer Integration Tests', async () => {
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `\\x1b[7m \\x1b0m`;
+      const data = `\\x1b[7m \\x1b[0m`;
       await writeSync(page, data);
       await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    itWebgl('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+      const data = `\\x1b[7m█ \\x1b[0m`;
+      await writeSync(page, data);
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          backgroundColor: '#0000ff'
+        });
+      `);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
+      await pollFor(page, () => getCellColor(2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
     });
   });
 });
