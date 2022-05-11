@@ -4,8 +4,7 @@
  */
 
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
-import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
-import { fill } from 'common/TypedArrayUtils';
+import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
 import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
@@ -50,7 +49,6 @@ void main() {
 
 interface IVertices {
   attributes: Float32Array;
-  selection: Float32Array;
   count: number;
 }
 
@@ -67,12 +65,10 @@ export class RectangleRenderer {
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
   private _bgFloat!: Float32Array;
-  private _selectionFloat!: Float32Array;
 
   private _vertices: IVertices = {
     count: 0,
-    attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY),
-    selection: new Float32Array(3 * INDICES_PER_RECTANGLE)
+    attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY)
   };
 
   constructor(
@@ -138,11 +134,6 @@ export class RectangleRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributes, gl.DYNAMIC_DRAW);
     gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
-
-    // Bind selection buffer and draw
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this._vertices.selection, gl.DYNAMIC_DRAW);
-    gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, 3);
   }
 
   public onResize(): void {
@@ -156,7 +147,6 @@ export class RectangleRenderer {
 
   private _updateCachedColors(): void {
     this._bgFloat = this._colorToFloat32Array(this._colors.background);
-    this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
   }
 
   private _updateViewportRectangle(): void {
@@ -170,73 +160,6 @@ export class RectangleRenderer {
       this._terminal.rows * this._dimensions.scaledCellHeight,
       this._bgFloat
     );
-  }
-
-  public updateSelection(model: ISelectionRenderModel): void {
-    const terminal = this._terminal;
-
-    if (!model.hasSelection) {
-      fill(this._vertices.selection, 0, 0);
-      return;
-    }
-
-    if (model.columnSelectMode) {
-      const startCol = model.startCol;
-      const width = model.endCol - startCol;
-      const height = model.viewportCappedEndRow - model.viewportCappedStartRow + 1;
-      this._addRectangleFloat(
-        this._vertices.selection,
-        0,
-        startCol * this._dimensions.scaledCellWidth,
-        model.viewportCappedStartRow * this._dimensions.scaledCellHeight,
-        width * this._dimensions.scaledCellWidth,
-        height * this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-      fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE);
-    } else {
-      // Draw first row
-      const startCol = model.viewportStartRow === model.viewportCappedStartRow ? model.startCol : 0;
-      const startRowEndCol = model.viewportCappedStartRow === model.viewportEndRow ? model.endCol : terminal.cols;
-      this._addRectangleFloat(
-        this._vertices.selection,
-        0,
-        startCol * this._dimensions.scaledCellWidth,
-        model.viewportCappedStartRow * this._dimensions.scaledCellHeight,
-        (startRowEndCol - startCol) * this._dimensions.scaledCellWidth,
-        this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-
-      // Draw middle rows
-      const middleRowsCount = Math.max(model.viewportCappedEndRow - model.viewportCappedStartRow - 1, 0);
-      this._addRectangleFloat(
-        this._vertices.selection,
-        INDICES_PER_RECTANGLE,
-        0,
-        (model.viewportCappedStartRow + 1) * this._dimensions.scaledCellHeight,
-        terminal.cols * this._dimensions.scaledCellWidth,
-        middleRowsCount * this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-
-      // Draw final row
-      if (model.viewportCappedStartRow !== model.viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = model.viewportEndRow === model.viewportCappedEndRow ? model.endCol : terminal.cols;
-        this._addRectangleFloat(
-          this._vertices.selection,
-          INDICES_PER_RECTANGLE * 2,
-          0,
-          model.viewportCappedEndRow * this._dimensions.scaledCellHeight,
-          endCol * this._dimensions.scaledCellWidth,
-          this._dimensions.scaledCellHeight,
-          this._selectionFloat
-        );
-      } else {
-        fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE * 2);
-      }
-    }
   }
 
   public updateBackgrounds(model: IRenderModel): void {

@@ -167,10 +167,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
     this._rectangleRenderer.onResize();
-    if (this._model.selection.hasSelection) {
-      // Update selection as dimensions have changed
-      this._rectangleRenderer.updateSelection(this._model.selection);
-    }
 
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
@@ -201,10 +197,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
-
     this._updateSelectionModel(start, end, columnSelectMode);
-
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._requestRedrawViewport();
   }
 
   public onCursorMove(): void {
@@ -246,7 +240,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._charAtlas?.clearTexture();
     this._model.clear();
     this._updateModel(0, this._terminal.rows - 1);
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._requestRedrawViewport();
   }
 
   public clear(): void {
@@ -292,7 +286,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Render
     this._rectangleRenderer.render();
-    this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
+    this._glyphRenderer.render(this._model);
   }
 
   private _updateModel(start: number, end: number): void {
@@ -376,10 +370,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
-    if (this._model.selection.hasSelection) {
-      // Model could be updated but the selection is unchanged
-      this._glyphRenderer.updateSelection(this._model);
-    }
   }
 
   /**
@@ -390,16 +380,22 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._workColors.bg = this._workCell.bg;
     this._workColors.fg = this._workCell.fg;
 
-    // Get any decoration foreground/background overrides, this happens on the model to avoid
-    // spreading decoration override logic throughout the different sub-renderers
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
+
+    // Apply the selection color if needed
+    if (this._isCellSelected(x, y)) {
+      bgOverride = this._colors.selectionOpaque.rgba >> 8 & 0xFFFFFF;
+    }
+
+    // Get any decoration foreground/background overrides, this happens on the model to avoid
+    // spreading decoration override logic throughout the different sub-renderers
     for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
       if (d.backgroundColorRGB) {
-        bgOverride = (d.backgroundColorRGB.rgba >> 8) >>> 0 & 0xFFFFFF;
+        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
       }
       if (d.foregroundColorRGB) {
-        fgOverride = (d.foregroundColorRGB.rgba >> 8) >>> 0 & 0xFFFFFF;
+        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
       }
     }
 
@@ -440,13 +436,27 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._workColors.fg = fgOverride ?? this._workColors.fg;
   }
 
+  private _isCellSelected(x: number, y: number): boolean {
+    if (!this._model.selection.hasSelection) {
+      return false;
+    }
+    y -= this._terminal.buffer.active.viewportY;
+    if (this._model.selection.columnSelectMode) {
+      return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
+        x < this._model.selection.endCol && y < this._model.selection.viewportCappedEndRow;
+    }
+    return (y > this._model.selection.viewportStartRow && y < this._model.selection.viewportEndRow) ||
+      (this._model.selection.viewportStartRow === this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol && x < this._model.selection.endCol) ||
+      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportEndRow && x < this._model.selection.endCol) ||
+      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol);
+  }
+
   private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     const terminal = this._terminal;
 
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
       this._model.clearSelection();
-      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -459,7 +469,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // No need to draw the selection
     if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
       this._model.clearSelection();
-      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -471,8 +480,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
     this._model.selection.startCol = start[0];
     this._model.selection.endCol = end[0];
-
-    this._rectangleRenderer.updateSelection(this._model.selection);
   }
 
   /**
@@ -545,6 +552,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // This fixes 110% and 125%, not 150% or 175% though
     this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
     this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+  }
+
+  private _requestRedrawViewport(): void {
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 }
 
