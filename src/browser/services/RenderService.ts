@@ -68,13 +68,16 @@ export class RenderService extends Disposable implements IRenderService {
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
-    // TODO: This will slow things down
-    this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
-    this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+
+    // Do a full refresh whenever any decoration is added or removed. This may not actually result
+    // in changes but since decorations should be used sparingly or added/removed all in the same
+    // frame this should have minimal performance impact.
+    this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
+    this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));

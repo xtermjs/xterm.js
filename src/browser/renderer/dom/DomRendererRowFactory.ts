@@ -197,7 +197,6 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          // TODO: Pass in bg override
           if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, undefined, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }

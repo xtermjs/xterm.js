@@ -68,7 +68,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     let xmin = 0;
     let xmax = 0;
     for (const d of this._decorations.getKeyIterator(line)) {
-      console.log('d', d);
       xmin = d.options.x ?? 0;
       xmax = xmin + (d.options.width ?? 1);
       if (x >= xmin && x < xmax) {
