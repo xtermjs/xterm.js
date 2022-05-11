@@ -76,7 +76,7 @@ export class BufferDecorationRenderer extends Disposable {
   private _createElement(decoration: IInternalDecoration): HTMLElement {
     const element = document.createElement('div');
     element.classList.add('xterm-decoration');
-    element.style.width = `${(decoration.options.width || 1) * this._renderService.dimensions.actualCellWidth}px`;
+    element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.actualCellWidth)}px`;
     element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.actualCellHeight}px`;
     element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.actualCellHeight}px`;
     element.style.lineHeight = `${this._renderService.dimensions.actualCellHeight}px`;
