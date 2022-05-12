@@ -443,13 +443,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // exist but applied after inverse
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
+    let isTop = false;
     for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+      if (d.options.layer !== 'top' && isTop) {
+        continue;
+      }
       if (d.backgroundColorRGB) {
         bgOverride = d.backgroundColorRGB.rgba;
       }
       if (d.foregroundColorRGB) {
         fgOverride = d.foregroundColorRGB.rgba;
       }
+      isTop = d.options.layer === 'top';
     }
 
     if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode()))) {

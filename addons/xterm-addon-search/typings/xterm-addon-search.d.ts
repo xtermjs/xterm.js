@@ -112,6 +112,13 @@ declare module 'xterm-addon-search' {
     public clearDecorations(): void;
 
     /**
+     * Clears the active result decoration, this decoration is applied on top of the selection so
+     * removing it will reveal the selection underneath. This is intended to be called on the search
+     * textarea's `blur` event.
+     */
+    public clearActiveDecoration(): void;
+
+    /**
      * When decorations are enabled, fires when
      * the search results change.
      * @returns -1 if there are no matches and

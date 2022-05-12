@@ -380,17 +380,28 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._workColors.bg = this._workCell.bg;
     this._workColors.fg = this._workCell.fg;
 
+    // Get any foreground/background overrides, this happens on the model to avoid spreading
+    // override logic throughout the different sub-renderers
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
+
+    // Apply decorations on the bottom layer
+    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'bottom')) {
+      if (d.backgroundColorRGB) {
+        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
+      if (d.foregroundColorRGB) {
+        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
+    }
 
     // Apply the selection color if needed
     if (this._isCellSelected(x, y)) {
       bgOverride = this._colors.selectionOpaque.rgba >> 8 & 0xFFFFFF;
     }
 
-    // Get any decoration foreground/background overrides, this happens on the model to avoid
-    // spreading decoration override logic throughout the different sub-renderers
-    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+    // Apply decorations on the top layer
+    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'top')) {
       if (d.backgroundColorRGB) {
         bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
       }

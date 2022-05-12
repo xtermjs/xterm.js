@@ -312,7 +312,7 @@ export interface IDecorationService extends IDisposable {
   /** Iterates over the decorations at a line (in no particular order). */
   getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
   /** Iterates over the decorations at a cell (in no particular order). */
-  getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration>;
+  getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration>;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;

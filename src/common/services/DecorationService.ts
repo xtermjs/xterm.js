@@ -64,13 +64,13 @@ export class DecorationService extends Disposable implements IDecorationService 
     return this._decorations.getKeyIterator(line);
   }
 
-  public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> {
+  public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
     for (const d of this._decorations.getKeyIterator(line)) {
       xmin = d.options.x ?? 0;
       xmax = xmin + (d.options.width ?? 1);
-      if (x >= xmin && x < xmax) {
+      if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
         yield d;
       }
     }

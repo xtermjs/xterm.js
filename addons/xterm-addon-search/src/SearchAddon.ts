@@ -115,6 +115,11 @@ export class SearchAddon implements ITerminalAddon {
     }
   }
 
+  public clearActiveDecoration(): void {
+    this._selectedDecoration?.dispose();
+    this._selectedDecoration = undefined;
+  }
+
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
@@ -655,7 +660,7 @@ export class SearchAddon implements ITerminalAddon {
    */
   private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;
-    this._selectedDecoration?.dispose();
+    this.clearActiveDecoration();
     if (!result) {
       terminal.clearSelection();
       return false;
@@ -669,6 +674,7 @@ export class SearchAddon implements ITerminalAddon {
           x: result.col,
           width: result.size,
           backgroundColor: options.activeMatchBackground,
+          layer: 'top',
           overviewRulerOptions: {
             color: options.activeMatchColorOverviewRuler
           }
