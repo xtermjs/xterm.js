@@ -79,7 +79,6 @@ export class SearchAddon implements ITerminalAddon {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => this._updateMatches());
     this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
-    this.onDidChangeResults((results) => console.log(results));
   }
 
   private _updateMatches(): void {
