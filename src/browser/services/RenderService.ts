@@ -95,6 +95,10 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
+  public getAnimationFrame(): boolean {
+    return this._renderDebouncer.requestAnimationFrame();
+  }
+
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
 
