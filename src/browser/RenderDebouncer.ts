@@ -27,7 +27,7 @@ export class RenderDebouncer implements IRenderDebouncer {
   }
 
   public requestAnimationFrame(): boolean {
-    return !this._animationFrame;
+    return this._animationFrame === undefined;
   }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {

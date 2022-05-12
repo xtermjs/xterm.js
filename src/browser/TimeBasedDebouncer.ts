@@ -27,6 +27,10 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     private readonly _debounceThresholdMS = RENDER_DEBOUNCE_THRESHOLD_MS
   ) {
   }
+  public requestAnimationFrame(): boolean {
+    const refreshRequestTime: number = Date.now();
+    return refreshRequestTime - this._lastRefreshMs >= this._debounceThresholdMS;
+  }
 
   public dispose(): void {
     if (this._refreshTimeoutID) {
