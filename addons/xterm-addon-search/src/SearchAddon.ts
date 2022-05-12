@@ -79,6 +79,7 @@ export class SearchAddon implements ITerminalAddon {
     this._terminal = terminal;
     this._onDataDisposable = this._terminal.onData(() => this._updateMatches());
     this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
+    this.onDidChangeResults((results) => console.log(results));
   }
 
   private _updateMatches(): void {
@@ -88,6 +89,7 @@ export class SearchAddon implements ITerminalAddon {
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
       this._highlightTimeout = setTimeout(() => {
         this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true, noScroll: true });
+        this._resultIndex = this._searchResults ? this._searchResults.size -1 : -1;
         this._onDidChangeResults.fire({ resultIndex: this._searchResults ? this._searchResults.size - 1 : -1, resultCount: this._searchResults ? this._searchResults.size : -1 });
       }, 200);
     }
