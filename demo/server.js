@@ -114,6 +114,9 @@ function startServer() {
     }
     const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
+    // WARNING: This is a naive implementation that will not throttle the flow of data. This means
+    // it could flood the communication channel and make the terminal unresponsive. Learn more about
+    // the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
     term.on('data', function(data) {
       try {
         send(data);
