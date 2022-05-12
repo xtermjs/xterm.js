@@ -61,6 +61,7 @@ export class BufferDecorationRenderer extends Disposable {
     for (const decoration of this._decorationService.decorations) {
       this._renderDecoration(decoration);
     }
+    this._dimensionsChanged = false;
   }
 
   private _renderDecoration(decoration: IInternalDecoration): void {
