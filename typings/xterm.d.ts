@@ -501,6 +501,16 @@ declare module 'xterm' {
     readonly foregroundColor?: string;
 
     /**
+     * What layer to render the decoration at when {@link backgroundColor} or
+     * {@link foregroundColor} are used. `'bottom'` will render under the selection, `'top`' will
+     * render above the selection\*.
+     *
+     * *\* The selection will render on top regardless of layer on the canvas renderer due to how
+     * it renders selection separately.*
+     */
+    readonly layer?: 'bottom' | 'top';
+
+    /**
      * When defined, renders the decoration in the overview ruler to the right
      * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
      * in order to see the overview ruler.
