@@ -36,6 +36,7 @@
  */
 
 .xterm {
+    cursor: text;
     position: relative;
     user-select: none;
     -ms-user-select: none;
@@ -122,10 +123,6 @@
     top: 0;
     left: -9999em;
     line-height: normal;
-}
-
-.xterm {
-    cursor: text;
 }
 
 .xterm.enable-mouse-events {
