@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/Decorations/ColorZoneStore';
+import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';

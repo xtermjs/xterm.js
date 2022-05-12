@@ -55,8 +55,8 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { color, rgba } from 'common/Color';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { toRgbString } from 'common/input/XParseColor';
-import { BufferDecorationRenderer } from 'browser/Decorations/BufferDecorationRenderer';
-import { OverviewRulerRenderer } from 'browser/Decorations/OverviewRulerRenderer';
+import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
+import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 
