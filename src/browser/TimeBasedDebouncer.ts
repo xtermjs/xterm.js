@@ -43,17 +43,13 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    this.requestAnimationFrame(() => this._innerRefresh());
-  }
-
-  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
     // Only refresh if the time since last refresh is above a threshold, otherwise wait for
     // enough time to pass before refreshing again.
     const refreshRequestTime: number = Date.now();
     if (refreshRequestTime - this._lastRefreshMs >= this._debounceThresholdMS) {
       // Enough time has lapsed since the last refresh; refresh immediately
       this._lastRefreshMs = refreshRequestTime;
-      callback(0);
+      this._innerRefresh();
     } else if (!this._additionalRefreshRequested) {
       // This is the first additional request throttled; set up trailing refresh
       const elapsed = refreshRequestTime - this._lastRefreshMs;
@@ -62,12 +58,11 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
 
       this._refreshTimeoutID = window.setTimeout(() => {
         this._lastRefreshMs = Date.now();
-        callback(0);
+        this._innerRefresh();
         this._additionalRefreshRequested = false;
         this._refreshTimeoutID = undefined; // No longer need to clear the timeout
       }, waitPeriodBeforeTrailingRefresh);
     }
-    return undefined;
   }
 
   private _innerRefresh(): void {

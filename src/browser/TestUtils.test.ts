@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IDecorationOpt
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
+import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -390,7 +390,7 @@ export class MockRenderService implements IRenderService {
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
+  public addRefreshCallback(callback: FrameRequestCallback): number | undefined {
     throw new Error('Method not implemented.');
   }
   public clearTextureAtlas(): void {

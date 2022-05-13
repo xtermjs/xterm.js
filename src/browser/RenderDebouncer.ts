@@ -3,16 +3,17 @@
  * @license MIT
  */
 
-import { IRenderDebouncer } from 'browser/Types';
+import { IRenderDebouncer, IRenderDebouncerWithCallback } from 'browser/Types';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
  */
-export class RenderDebouncer implements IRenderDebouncer {
+export class RenderDebouncer implements IRenderDebouncerWithCallback {
   private _rowStart: number | undefined;
   private _rowEnd: number | undefined;
   private _rowCount: number | undefined;
   private _animationFrame: number | undefined;
+  private _refreshCallbacks: FrameRequestCallback[] = [];
 
   constructor(
     private _renderCallback: (start: number, end: number) => void
@@ -26,12 +27,8 @@ export class RenderDebouncer implements IRenderDebouncer {
     }
   }
 
-  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
-    if (this._animationFrame) {
-      return;
-    }
-
-    this._animationFrame = window.requestAnimationFrame(() => callback(0));
+  public addRefreshCallback(callback: FrameRequestCallback): number | undefined {
+    this._refreshCallbacks.push(callback);
     return this._animationFrame;
   }
 
@@ -44,7 +41,11 @@ export class RenderDebouncer implements IRenderDebouncer {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    this.requestAnimationFrame(() => this._innerRefresh());
+    if (this._animationFrame) {
+      return;
+    }
+
+    this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
   }
 
   private _innerRefresh(): void {
@@ -64,5 +65,10 @@ export class RenderDebouncer implements IRenderDebouncer {
 
     // Run render callback
     this._renderCallback(start, end);
+
+    for (const callback of this._refreshCallbacks) {
+      callback(0);
+    }
+    this._refreshCallbacks = [];
   }
 }

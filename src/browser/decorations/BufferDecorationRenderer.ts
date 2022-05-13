@@ -47,7 +47,7 @@ export class BufferDecorationRenderer extends Disposable {
     if (this._animationFrame !== undefined) {
       return;
     }
-    this._animationFrame = this._renderService.requestAnimationFrame(() => {
+    this._animationFrame = this._renderService.addRefreshCallback(() => {
       this.refreshDecorations();
       this._animationFrame = undefined;
     });
