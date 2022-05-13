@@ -150,15 +150,42 @@ export namespace rgb {
  * Helper functions where the source type is "rgba" (number: 0xrrggbbaa).
  */
 export namespace rgba {
+  /**
+   * Given a foreground color and a background color, either increase or reduce the luminance of the
+   * foreground color until the specified contrast ratio is met. If pure white or black is hit
+   * without the contrast ratio being met, go the other direction using the background color as the
+   * foreground color and take either the first or second result depending on which has the higher
+   * contrast ratio.
+   *
+   * `undefined` will be returned if the contrast ratio is already met.
+   *
+   * @param bgRgba The background color in rgba format.
+   * @param fgRgba The foreground color in rgba format.
+   * @param ratio The contrast ratio to achieve.
+   */
   export function ensureContrastRatio(bgRgba: number, fgRgba: number, ratio: number): number | undefined {
     const bgL = rgb.relativeLuminance(bgRgba >> 8);
     const fgL = rgb.relativeLuminance(fgRgba >> 8);
     const cr = contrastRatio(bgL, fgL);
     if (cr < ratio) {
       if (fgL < bgL) {
-        return reduceLuminance(bgRgba, fgRgba, ratio);
+        const resultA = reduceLuminance(bgRgba, fgRgba, ratio);
+        const resultARatio = contrastRatio(bgL, rgb.relativeLuminance(resultA >> 8));
+        if (resultARatio < ratio) {
+          const resultB = increaseLuminance(bgRgba, bgRgba, ratio);
+          const resultBRatio = contrastRatio(bgL, rgb.relativeLuminance(resultB >> 8));
+          return resultARatio > resultBRatio ? resultA : resultB;
+        }
+        return resultA;
       }
-      return increaseLuminance(bgRgba, fgRgba, ratio);
+      const resultA = increaseLuminance(bgRgba, fgRgba, ratio);
+      const resultARatio = contrastRatio(bgL, rgb.relativeLuminance(resultA >> 8));
+      if (resultARatio < ratio) {
+        const resultB = reduceLuminance(bgRgba, bgRgba, ratio);
+        const resultBRatio = contrastRatio(bgL, rgb.relativeLuminance(resultB >> 8));
+        return resultARatio > resultBRatio ? resultA : resultB;
+      }
+      return resultA;
     }
     return undefined;
   }
