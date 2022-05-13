@@ -26,7 +26,6 @@ export class Viewport extends Disposable implements IViewport {
   private _lastRecordedBufferHeight: number = 0;
   private _lastTouchY: number = 0;
   private _lastScrollTop: number = 0;
-  private _lastHadScrollBar: boolean = false;
   private _activeBuffer: IBuffer;
   private _renderDimensions: IRenderDimensions;
 
@@ -54,7 +53,6 @@ export class Viewport extends Disposable implements IViewport {
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
     // therefore we account for a standard amount to make it visible
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
-    this._lastHadScrollBar = true;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
 
     // Track properties used in performance critical code manually to avoid using slow getters
@@ -109,17 +107,6 @@ export class Viewport extends Disposable implements IViewport {
       this._viewportElement.scrollTop = scrollTop;
     }
 
-    // Update scroll bar width
-    if (this._optionsService.rawOptions.scrollback === 0) {
-      this.scrollBarWidth = 0;
-    } else {
-      this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
-    }
-    this._lastHadScrollBar = this.scrollBarWidth > 0;
-
-    const elementStyle = window.getComputedStyle(this._element);
-    const elementPadding = parseInt(elementStyle.paddingLeft) + parseInt(elementStyle.paddingRight);
-    this._viewportElement.style.width = (this._renderService.dimensions.actualCellWidth * (this._bufferService.cols) + this.scrollBarWidth + (this._lastHadScrollBar ? elementPadding : 0)).toString() + 'px';
     this._refreshAnimationFrame = null;
   }
 
@@ -150,11 +137,6 @@ export class Viewport extends Disposable implements IViewport {
     if (this._renderDimensions.scaledCellHeight !== this._currentScaledCellHeight) {
       this._refresh(immediate);
       return;
-    }
-
-    // If the scroll bar visibility changed
-    if (this._lastHadScrollBar !== (this._optionsService.rawOptions.scrollback > 0)) {
-      this._refresh(immediate);
     }
   }
 
