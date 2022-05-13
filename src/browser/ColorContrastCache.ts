@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IColor, IColorContrastCache } from 'browser/Types';
+import { IColorContrastCache } from 'browser/Types';
+import { IColor } from 'common/Types';
 
 export class ColorContrastCache implements IColorContrastCache {
   private _color: { [bg: number]: { [fg: number]: IColor | null | undefined } | undefined } = {};

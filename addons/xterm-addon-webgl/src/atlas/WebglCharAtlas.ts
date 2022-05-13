@@ -8,10 +8,10 @@ import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
-import { IColor } from 'browser/Types';
+import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { channels, rgba } from 'browser/Color';
+import { channels, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 

@@ -444,7 +444,7 @@ declare module 'xterm' {
      * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
      * were provided initially.
      */
-     options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
+    options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
   }
 
 
@@ -487,6 +487,28 @@ declare module 'xterm' {
      * The height of the decoration in cells, defaults to 1.
      */
     readonly height?: number;
+
+    /**
+     * The background color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly backgroundColor?: string;
+
+    /**
+     * The foreground color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly foregroundColor?: string;
+
+    /**
+     * What layer to render the decoration at when {@link backgroundColor} or
+     * {@link foregroundColor} are used. `'bottom'` will render under the selection, `'top`' will
+     * render above the selection\*.
+     *
+     * *\* The selection will render on top regardless of layer on the canvas renderer due to how
+     * it renders selection separately.*
+     */
+    readonly layer?: 'bottom' | 'top';
 
     /**
      * When defined, renders the decoration in the overview ruler to the right

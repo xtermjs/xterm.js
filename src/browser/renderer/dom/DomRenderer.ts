@@ -9,9 +9,9 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'browser/Color';
+import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -87,11 +87,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
 
-    this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
   }
 
   public dispose(): void {
@@ -361,7 +361,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerText = '';
-
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;

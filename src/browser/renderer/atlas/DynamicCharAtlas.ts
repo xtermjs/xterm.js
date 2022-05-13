@@ -9,9 +9,9 @@ import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
-import { IColor } from 'browser/Types';
+import { IColor } from 'common/Types';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { color } from 'browser/Color';
+import { color } from 'common/Color';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

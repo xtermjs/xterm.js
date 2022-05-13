@@ -115,6 +115,11 @@ export class SearchAddon implements ITerminalAddon {
     }
   }
 
+  public clearActiveDecoration(): void {
+    this._selectedDecoration?.dispose();
+    this._selectedDecoration = undefined;
+  }
+
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
@@ -653,26 +658,28 @@ export class SearchAddon implements ITerminalAddon {
    * @param result The result to select.
    * @return Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined, decorations?: ISearchDecorationOptions, noScroll?: boolean): boolean {
+  private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;
-    this._selectedDecoration?.dispose();
+    this.clearActiveDecoration();
     if (!result) {
       terminal.clearSelection();
       return false;
     }
     terminal.select(result.col, result.row, result.size);
-    if (decorations?.activeMatchColorOverviewRuler) {
+    if (options) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
         this._selectedDecoration = terminal.registerDecoration({
           marker,
           x: result.col,
           width: result.size,
+          backgroundColor: options.activeMatchBackground,
+          layer: 'top',
           overviewRulerOptions: {
-            color: decorations.activeMatchColorOverviewRuler
+            color: options.activeMatchColorOverviewRuler
           }
         });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, decorations.activeMatchBackground, decorations.activeMatchBorder));
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, options.activeMatchBorder));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
@@ -695,15 +702,12 @@ export class SearchAddon implements ITerminalAddon {
    * @param borderColor the border color to apply
    * @returns
    */
-  private _applyStyles(element: HTMLElement, backgroundColor: string | undefined, borderColor: string | undefined): void {
+  private _applyStyles(element: HTMLElement, borderColor: string | undefined): void {
     if (element.clientWidth <= 0) {
       return;
     }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
-      if (backgroundColor) {
-        element.style.backgroundColor = backgroundColor;
-      }
       if (borderColor) {
         element.style.outline = `1px solid ${borderColor}`;
       }
@@ -719,18 +723,20 @@ export class SearchAddon implements ITerminalAddon {
   private _createResultDecoration(result: ISearchResult, options: ISearchDecorationOptions): IDecoration | undefined {
     const terminal = this._terminal!;
     const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker || !options?.matchOverviewRuler) {
+    if (!marker) {
       return undefined;
     }
     const findResultDecoration = terminal.registerDecoration({
       marker,
       x: result.col,
       width: result.size,
+      backgroundColor: options.matchBackground,
       overviewRulerOptions: this._resultDecorations?.get(marker.line) ? undefined : {
-        color: options.matchOverviewRuler, position: 'center'
+        color: options.matchOverviewRuler,
+        position: 'center'
       }
     });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBackground, options.matchBorder));
+    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBorder));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }

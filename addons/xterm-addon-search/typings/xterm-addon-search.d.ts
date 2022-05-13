@@ -45,12 +45,12 @@ declare module 'xterm-addon-search' {
    */
   interface ISearchDecorationOptions {
     /**
-     * The background color of a match.
+     * The background color of a match, this must use #RRGGBB format.
      */
     matchBackground?: string;
 
     /**
-     * The border color of a match
+     * The border color of a match.
      */
     matchBorder?: string;
 
@@ -60,7 +60,7 @@ declare module 'xterm-addon-search' {
     matchOverviewRuler: string;
 
     /**
-     * The background color for the currently active match.
+     * The background color for the currently active match, this must use #RRGGBB format.
      */
     activeMatchBackground?: string;
 
@@ -110,6 +110,13 @@ declare module 'xterm-addon-search' {
      * Clears the decorations and selection
      */
     public clearDecorations(): void;
+
+    /**
+     * Clears the active result decoration, this decoration is applied on top of the selection so
+     * removing it will reveal the selection underneath. This is intended to be called on the search
+     * textarea's `blur` event.
+     */
+    public clearActiveDecoration(): void;
 
     /**
      * When decorations are enabled, fires when

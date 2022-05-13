@@ -102,6 +102,11 @@ export interface ICharset {
 }
 
 export type CharData = [number, string, number, number];
+
+export interface IColor {
+  css: string;
+  rgba: number; // 32-bit int with rgba in each byte
+}
 export type IColorRGB = [number, number, number];
 
 export interface IExtendedAttrs {

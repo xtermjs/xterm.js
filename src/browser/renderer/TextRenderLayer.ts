@@ -11,7 +11,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
@@ -37,9 +37,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     rendererId: number,
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
-    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService
+    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
+    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = new GridCache<CharData>();
   }
 
@@ -174,6 +175,19 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else if (cell.isBgPalette()) {
         nextFillStyle = this._colors.ansi[cell.getBgColor()].css;
+      }
+
+      // Get any decoration foreground/background overrides, this must be fetched before the early
+      // exist but applied after inverse
+      let isTop = false;
+      for (const d of this._decorationService.getDecorationsAtCell(x, this._bufferService.buffer.ydisp + y)) {
+        if (d.options.layer !== 'top' && isTop) {
+          continue;
+        }
+        if (d.backgroundColorRGB) {
+          nextFillStyle = d.backgroundColorRGB.css;
+        }
+        isTop = d.options.layer === 'top';
       }
 
       if (prevFillStyle === null) {
