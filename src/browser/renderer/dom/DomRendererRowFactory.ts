@@ -195,6 +195,11 @@ export class DomRendererRowFactory {
         isTop = d.options.layer === 'top';
       }
 
+      // If it's a top decoration, render on above the selection
+      if (isTop) {
+        charElement.classList.add(`xterm-decoration-top`);
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
