@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
+import { IColorManager, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { channels, color, css } from 'browser/Color';
+import { channels, color, css } from 'common/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
-import { ColorIndex } from 'common/Types';
+import { ColorIndex, IColor } from 'common/Types';
 
 
 interface IRestoreColorSet {
@@ -185,7 +185,7 @@ export class ColorManager implements IColorManager {
       foreground: this.colors.foreground,
       background: this.colors.background,
       cursor: this.colors.cursor,
-      ansi: [...this.colors.ansi]
+      ansi: this.colors.ansi.slice()
     };
   }
 

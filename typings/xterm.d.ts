@@ -266,6 +266,12 @@ declare module 'xterm' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    /**
+     * The width, in pixels, of the canvas for the overview ruler. The overview
+     * ruler will be hidden when not set.
+     */
+    overviewRulerWidth?: number;
   }
 
   /**
@@ -394,7 +400,7 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents a disposable with an 
+   * Represents a disposable that tracks is disposed state.
    * @param onDispose event listener and
    * @param isDisposed property.
    */
@@ -427,49 +433,91 @@ declare module 'xterm' {
     readonly onRender: IEvent<HTMLElement>;
 
     /**
-     * The HTMLElement that gets created after the 
-     * first _onRender call, or undefined if accessed before
+     * The element that the decoration is rendered to. This will be undefined
+     * until it is rendered for the first time by {@link IDecoration.onRender}.
      * that.
      */
-    readonly element: HTMLElement | undefined;
+    element: HTMLElement | undefined;
+
+    /**
+     * The options for the overview ruler that can be updated.
+     * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
+     * were provided initially.
+     */
+    options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
   }
 
+
   /**
-   * Options provided when registering a decoration
-   * containing a @param marker, @param anchor, 
-   * @param x offset from the anchor, @param width in cells
-   * and @param height in cells.
+   * Overview ruler decoration options
+   */
+  interface IDecorationOverviewRulerOptions {
+    color: string;
+    position?: 'left' | 'center' | 'right' | 'full';
+  }
+
+  /*
+   * Options that define the presentation of the decoration.
    */
   export interface IDecorationOptions {
     /**
      * The line in the terminal where
      * the decoration will be displayed
      */
-    marker: IMarker;
+    readonly marker: IMarker;
 
     /*
      * Where the decoration will be anchored -
      * defaults to the left edge
      */
-    anchor?: 'right' | 'left';
+    readonly anchor?: 'right' | 'left';
 
     /**
      * The x position offset relative to the anchor
-     */ 
-    x?: number;
+     */
+    readonly x?: number;
 
 
     /**
-     * The width of the decoration in cells, which defaults to 
-     * cell width
+     * The width of the decoration in cells, defaults to 1.
      */
-    width?: number;
+    readonly width?: number;
 
     /**
-     * The height of the decoration in cells, which defaults to 
-     * cell height
+     * The height of the decoration in cells, defaults to 1.
      */
-    height?: number;
+    readonly height?: number;
+
+    /**
+     * The background color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly backgroundColor?: string;
+
+    /**
+     * The foreground color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly foregroundColor?: string;
+
+    /**
+     * What layer to render the decoration at when {@link backgroundColor} or
+     * {@link foregroundColor} are used. `'bottom'` will render under the selection, `'top`' will
+     * render above the selection\*.
+     *
+     * *\* The selection will render on top regardless of layer on the canvas renderer due to how
+     * it renders selection separately.*
+     */
+    readonly layer?: 'bottom' | 'top';
+
+    /**
+     * When defined, renders the decoration in the overview ruler to the right
+     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
+     * in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
+     */
+    overviewRulerOptions?: IDecorationOverviewRulerOptions
   }
 
   /**
@@ -939,7 +987,7 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
-     *  @param decorationOptions, which takes a marker and an optional anchor, 
+     *  @param decorationOptions, which takes a marker and an optional anchor,
      *  width, height, and x offset from the anchor. Returns the decoration or
      *  undefined if the alt buffer is active or the marker has already been disposed of.
      *  @throws when options include a negative x offset.

@@ -340,6 +340,9 @@ describe('SelectionService', () => {
       buffer.lines.set(0, stringToRow('foo bar'));
       selectionService.selectLineAt(0);
       assert.equal(selectionService.selectionText, 'foo bar', 'The selected text is correct');
+      assert.deepEqual(selectionService.model.selectionStart, [0, 0]);
+      assert.deepEqual(selectionService.model.selectionEnd, undefined);
+      assert.deepEqual(selectionService.model.selectionStartLength, 20);
       assert.deepEqual(selectionService.model.finalSelectionStart, [0, 0]);
       assert.deepEqual(selectionService.model.finalSelectionEnd, [bufferService.cols, 0], 'The actual selection spans the entire column');
     });
@@ -350,6 +353,9 @@ describe('SelectionService', () => {
       buffer.lines.set(1, line2);
       selectionService.selectLineAt(0);
       assert.equal(selectionService.selectionText, 'foobar', 'The selected text is correct');
+      assert.deepEqual(selectionService.model.selectionStart, [0, 0]);
+      assert.deepEqual(selectionService.model.selectionEnd, undefined);
+      assert.deepEqual(selectionService.model.selectionStartLength, 40);
       assert.deepEqual(selectionService.model.finalSelectionStart, [0, 0]);
       assert.deepEqual(selectionService.model.finalSelectionEnd, [bufferService.cols, 1], 'The actual selection spans the entire column');
     });

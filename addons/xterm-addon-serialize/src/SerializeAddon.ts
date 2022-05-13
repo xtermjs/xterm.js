@@ -7,6 +7,7 @@
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
 import { IColorSet } from 'browser/Types';
+import { IAttributeData } from 'common/Types';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -62,17 +63,17 @@ abstract class BaseSerializeHandler {
   protected _serializeString(): string { return ''; }
 }
 
-function equalFg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalFg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.getFgColorMode() === cell2.getFgColorMode()
     && cell1.getFgColor() === cell2.getFgColor();
 }
 
-function equalBg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.getBgColorMode() === cell2.getBgColorMode()
     && cell1.getBgColor() === cell2.getBgColor();
 }
 
-function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.isInverse() === cell2.isInverse()
     && cell1.isBold() === cell2.isBold()
     && cell1.isUnderline() === cell2.isUnderline()
@@ -229,7 +230,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._nullCellCount = 0;
   }
 
-  private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): number[] {
+  private _diffStyle(cell: IBufferCell | IAttributeData, oldCell: IBufferCell): number[] {
     const sgrSeq: number[] = [];
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);
@@ -393,6 +394,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
       moveRight(realCursorCol - this._lastCursorCol);
     }
 
+    // Restore the cursor's current style, see https://github.com/xtermjs/xterm.js/issues/3677
+    // HACK: Internal API access since it's awkward to expose this in the API and serialize will
+    // likely be the only consumer
+    const curAttrData: IAttributeData = (this._terminal as any)._core._inputHandler._curAttrData;
+    const sgrSeq = this._diffStyle(curAttrData, this._cursorStyle);
+    if (sgrSeq.length > 0) {
+      content += `\u001b[${sgrSeq.join(';')}m`;
+    }
+
     return content;
   }
 }
@@ -544,7 +554,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
       return target;
     }
 
-    targetLength = targetLength - target.length;
+    targetLength -= target.length;
     if (targetLength > padString.length) {
       padString += padString.repeat(targetLength / padString.length);
     }

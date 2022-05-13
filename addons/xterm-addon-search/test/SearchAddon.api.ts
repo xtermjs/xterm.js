@@ -134,7 +134,7 @@ describe('Search Tests', function(): void {
             .replace(/\n/g, '\\n\\r');
         }
         fixture = fixture
-          .replace(/'/g, '\\\'');
+          .replace(/'/g, `\\'`);
       });
       it('should find all occurrences using findNext', async () => {
         await writeSync(page, fixture);

@@ -257,7 +257,10 @@ export class MockBuffer implements IBuffer {
   public getWhitespaceCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
   }
-  public clearMarkers(): void {
+  public clearMarkers(y: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearAllMarkers(excludeY: number): void {
     throw new Error('Method not implemented.');
   }
 }
@@ -368,6 +371,7 @@ export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
   public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,

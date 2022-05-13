@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncer } from 'browser/Types';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
 interface ISelectionState {
@@ -39,8 +39,10 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
+  private _onRenderedBufferChange = new EventEmitter<{ start: number, end: number }>();
+  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRenderedBufferChange.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRenderedBufferChange(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
 
@@ -52,6 +54,7 @@ export class RenderService extends Disposable implements IRenderService {
     screenElement: HTMLElement,
     @IOptionsService optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService
   ) {
     super();
@@ -69,6 +72,12 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
     this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+
+    // Do a full refresh whenever any decoration is added or removed. This may not actually result
+    // in changes but since decorations should be used sparingly or added/removed all in the same
+    // frame this should have minimal performance impact.
+    this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
+    this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
     // No need to register this as renderer is explicitly disposed in RenderService.dispose
     this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
@@ -122,8 +131,9 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {
-      this._onRender.fire({ start, end });
+      this._onRenderedBufferChange.fire({ start, end });
     }
+    this._onRender.fire({ start, end });
     this._isNextRenderRedrawOnly = true;
   }
 

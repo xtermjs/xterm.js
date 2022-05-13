@@ -34,7 +34,7 @@ export function enableLigatures(term: Terminal): void {
 
   term.registerCharacterJoiner((text: string): [number, number][] => {
     // If the font hasn't been loaded yet, load it and return an empty result
-    const termFont = term.getOption('fontFamily');
+    const termFont = term.options.fontFamily;
     if (
       termFont &&
       (loadingState === LoadingState.UNLOADED || currentFontName !== termFont)
@@ -48,20 +48,20 @@ export function enableLigatures(term: Terminal): void {
         .then(f => {
           // Another request may have come in while we were waiting, so make
           // sure our font is still vaild.
-          if (currentCallFontName === term.getOption('fontFamily')) {
+          if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.LOADED;
             font = f;
 
             // Only refresh things if we actually found a font
             if (f) {
-              term.refresh(0, term.getOption('rows') - 1);
+              term.refresh(0, term.options.rows! - 1);
             }
           }
         })
         .catch(e => {
           // Another request may have come in while we were waiting, so make
           // sure our font is still vaild.
-          if (currentCallFontName === term.getOption('fontFamily')) {
+          if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.FAILED;
             font = undefined;
             loadError = e;

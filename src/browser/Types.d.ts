@@ -5,7 +5,7 @@
 
 import { IDecorationOptions, IDecoration, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
-import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
+import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
@@ -110,11 +110,6 @@ export interface IBrowser {
 export interface IColorManager {
   colors: IColorSet;
   onOptionsChange(key: string): void;
-}
-
-export interface IColor {
-  css: string;
-  rgba: number; // 32-bit int with rgba in each byte
 }
 
 export interface IColorSet {

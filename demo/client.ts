@@ -92,6 +92,7 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
+  find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
   findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
 };
@@ -107,7 +108,15 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`
+    incremental: e.key !== `Enter`,
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
+      matchBackground: '#232422',
+      matchBorder: '#555753',
+      matchOverviewRuler: '#555753',
+      activeMatchBackground: '#ef2929',
+      activeMatchBorder: '#ffffff',
+      activeMatchColorOverviewRuler: '#ef2929'
+    } : undefined
   };
 }
 
@@ -151,6 +160,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
+  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
 
 function createTerminal(): void {
@@ -202,9 +212,14 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
-
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+  });
+  addDomListener(actionElements.findNext, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
+  });
+  addDomListener(actionElements.findPrevious, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
   });
 
   // fit is called within a setTimeout, cols and rows need this.
@@ -544,9 +559,29 @@ function loadTest() {
 }
 
 function addDecoration() {
+  term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
-  const decoration = term.registerDecoration({ marker });
-  decoration.onRender(() => {
-    decoration.element.style.backgroundColor = 'red';
+  const decoration = term.registerDecoration({
+    marker,
+    backgroundColor: '#00FF00',
+    foregroundColor: '#00FE00',
+    overviewRulerOptions: { color: '#ef292980', position: 'left' }
+  });
+  decoration.onRender((e: HTMLElement) => {
+    e.style.right = '100%';
+    e.style.backgroundColor = '#ef292980';
   });
 }
+
+function addOverviewRuler() {
+  term.options['overviewRulerWidth'] = 15;
+  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+}
+

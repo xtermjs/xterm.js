@@ -50,6 +50,10 @@ export interface IRenderService extends IDisposable {
    * or selections are rendered.
    */
   onRenderedBufferChange: IEvent<{ start: number, end: number }>;
+  /**
+   * Fires on render
+   */
+  onRender: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
@@ -114,12 +118,4 @@ export interface ICharacterJoinerService {
   register(handler: (text: string) => [number, number][]): number;
   deregister(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
-}
-
-
-export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
-export interface IDecorationService extends IDisposable {
-  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-  refresh(): void;
-  attachToDom(screenElement: HTMLElement, renderService: IRenderService, bufferService: IBufferService): void;
 }

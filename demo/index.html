@@ -28,7 +28,7 @@
         </div>
         <div id="options" class="tabContent">
           <h3>Options</h3>
-          <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.setOption</code> function.</p>
+          <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.options</code> property.</p>
           <div id="options-container"></div>
         </div>
         <div id="addons" class="tabContent">
@@ -43,6 +43,7 @@
             <label><input type="checkbox" id="regex"/>Use regex</label>
             <label><input type="checkbox" id="case-sensitive"/>Case sensitive</label>
             <label><input type="checkbox" id="whole-word"/>Whole word</label>
+            <label><input type="checkbox" id="highlight-all-matches" checked/>Highlight All Matches</label>
           </div>
           <h4>SerializeAddon</h4>
           <div>
@@ -69,6 +70,7 @@
             <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
             <button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button>
             <button id="add-decoration" title="Add a decoration to the terminal">Decoration</button>
+            <button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button>
           </div>
         </div>
       </div>
