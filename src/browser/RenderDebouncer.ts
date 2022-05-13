@@ -26,8 +26,13 @@ export class RenderDebouncer implements IRenderDebouncer {
     }
   }
 
-  public requestAnimationFrame(): boolean {
-    return this._animationFrame === undefined;
+  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
+    if (this._animationFrame) {
+      return;
+    }
+
+    this._animationFrame = window.requestAnimationFrame(() => callback(0));
+    return this._animationFrame;
   }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
@@ -39,11 +44,7 @@ export class RenderDebouncer implements IRenderDebouncer {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    if (this._animationFrame) {
-      return;
-    }
-
-    this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+    this.requestAnimationFrame(() => this._innerRefresh());
   }
 
   private _innerRefresh(): void {

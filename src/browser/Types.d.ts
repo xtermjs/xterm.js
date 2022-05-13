@@ -308,5 +308,5 @@ export interface ICharacterJoiner {
 
 export interface IRenderDebouncer extends IDisposable {
   refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
-  requestAnimationFrame(): boolean;
+  requestAnimationFrame(callback: FrameRequestCallback): number | undefined;
 }

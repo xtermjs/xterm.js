@@ -95,8 +95,8 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public getAnimationFrame(): boolean {
-    return this._renderDebouncer.requestAnimationFrame();
+  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
+    return this._renderDebouncer.requestAnimationFrame(callback);
   }
 
   private _onIntersectionChange(entry: IntersectionObserverEntry): void {

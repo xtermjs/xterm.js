@@ -12,6 +12,7 @@ export class BufferDecorationRenderer extends Disposable {
   private readonly _container: HTMLElement;
   private readonly _decorationElements: Map<IInternalDecoration, HTMLElement> = new Map();
 
+  private _animationFrame: number | undefined;
   private _altBufferIsActive: boolean = false;
 
   constructor(
@@ -43,10 +44,13 @@ export class BufferDecorationRenderer extends Disposable {
   }
 
   private _queueRefresh(): void {
-    if (!this._renderService.getAnimationFrame()) {
+    if (this._animationFrame !== undefined) {
       return;
     }
-    this.refreshDecorations();
+    this._animationFrame = this._renderService.requestAnimationFrame(() => {
+      this.refreshDecorations();
+      this._animationFrame = undefined;
+    });
   }
 
   public refreshDecorations(): void {

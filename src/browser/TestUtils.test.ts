@@ -390,7 +390,7 @@ export class MockRenderService implements IRenderService {
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  public getAnimationFrame(): boolean {
+  public requestAnimationFrame(callback: FrameRequestCallback): number | undefined {
     throw new Error('Method not implemented.');
   }
   public clearTextureAtlas(): void {

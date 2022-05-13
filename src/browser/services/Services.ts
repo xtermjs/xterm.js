@@ -73,7 +73,7 @@ export interface IRenderService extends IDisposable {
   onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   onCursorMove(): void;
   clear(): void;
-  getAnimationFrame(): boolean;
+  requestAnimationFrame(callback: FrameRequestCallback): number | undefined;
 }
 
 export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
