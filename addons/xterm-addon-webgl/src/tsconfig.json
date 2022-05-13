@@ -20,6 +20,7 @@
       ]
     },
     "strict": true,
+    "downlevelIteration": true,
     "types": [
       "../../../node_modules/@types/mocha"
     ]

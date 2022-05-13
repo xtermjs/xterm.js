@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IColor } from 'browser/Types';
-import { IColorRGB } from 'common/Types';
+import { IColor, IColorRGB } from 'common/Types';
 
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
@@ -173,13 +172,13 @@ export namespace rgba {
     let fgR = (fgRgba >> 24) & 0xFF;
     let fgG = (fgRgba >> 16) & 0xFF;
     let fgB = (fgRgba >>  8) & 0xFF;
-    let cr = contrastRatio(rgb.relativeLuminance2(fgR, fgB, fgG), rgb.relativeLuminance2(bgR, bgG, bgB));
+    let cr = contrastRatio(rgb.relativeLuminance2(fgR, fgG, fgB), rgb.relativeLuminance2(bgR, bgG, bgB));
     while (cr < ratio && (fgR > 0 || fgG > 0 || fgB > 0)) {
       // Reduce by 10% until the ratio is hit
       fgR -= Math.max(0, Math.ceil(fgR * 0.1));
       fgG -= Math.max(0, Math.ceil(fgG * 0.1));
       fgB -= Math.max(0, Math.ceil(fgB * 0.1));
-      cr = contrastRatio(rgb.relativeLuminance2(fgR, fgB, fgG), rgb.relativeLuminance2(bgR, bgG, bgB));
+      cr = contrastRatio(rgb.relativeLuminance2(fgR, fgG, fgB), rgb.relativeLuminance2(bgR, bgG, bgB));
     }
     return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
   }
@@ -193,13 +192,13 @@ export namespace rgba {
     let fgR = (fgRgba >> 24) & 0xFF;
     let fgG = (fgRgba >> 16) & 0xFF;
     let fgB = (fgRgba >>  8) & 0xFF;
-    let cr = contrastRatio(rgb.relativeLuminance2(fgR, fgB, fgG), rgb.relativeLuminance2(bgR, bgG, bgB));
+    let cr = contrastRatio(rgb.relativeLuminance2(fgR, fgG, fgB), rgb.relativeLuminance2(bgR, bgG, bgB));
     while (cr < ratio && (fgR < 0xFF || fgG < 0xFF || fgB < 0xFF)) {
       // Increase by 10% until the ratio is hit
       fgR = Math.min(0xFF, fgR + Math.ceil((255 - fgR) * 0.1));
       fgG = Math.min(0xFF, fgG + Math.ceil((255 - fgG) * 0.1));
       fgB = Math.min(0xFF, fgB + Math.ceil((255 - fgB) * 0.1));
-      cr = contrastRatio(rgb.relativeLuminance2(fgR, fgB, fgG), rgb.relativeLuminance2(bgR, bgG, bgB));
+      cr = contrastRatio(rgb.relativeLuminance2(fgR, fgG, fgB), rgb.relativeLuminance2(bgR, bgG, bgB));
     }
     return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
   }

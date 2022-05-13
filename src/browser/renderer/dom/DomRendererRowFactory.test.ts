@@ -10,8 +10,8 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags,
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { MockCoreService, MockOptionsService } from 'common/TestUtils.test';
-import { css } from 'browser/Color';
+import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
+import { css } from 'common/Color';
 import { MockCharacterJoinerService } from 'browser/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {
@@ -49,7 +49,8 @@ describe('DomRendererRowFactory', () => {
       } as any,
       new MockCharacterJoinerService(),
       new MockOptionsService({ drawBoldTextInBrightColors: true }),
-      new MockCoreService()
+      new MockCoreService(),
+      new MockDecorationService()
     );
     lineData = createEmptyLineData(2);
   });
