@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderDebouncer, IRenderDebouncerWithCallback } from 'browser/Types';
+import { IRenderDebouncerWithCallback } from 'browser/Types';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
@@ -27,10 +27,10 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
     }
   }
 
-  public addRefreshCallback(callback: FrameRequestCallback): number | undefined {
+  public addRefreshCallback(callback: FrameRequestCallback): number {
     this._refreshCallbacks.push(callback);
     if (!this._animationFrame) {
-          this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+      this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
     }
     return this._animationFrame;
   }
@@ -54,6 +54,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   private _innerRefresh(): void {
     // Make sure values are set
     if (this._rowStart === undefined || this._rowEnd === undefined || this._rowCount === undefined) {
+      this._runRefreshCallbacks();
       return;
     }
 
@@ -68,7 +69,10 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
 
     // Run render callback
     this._renderCallback(start, end);
+    this._runRefreshCallbacks();
+  }
 
+  private _runRefreshCallbacks(): void {
     for (const callback of this._refreshCallbacks) {
       callback(0);
     }

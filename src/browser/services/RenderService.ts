@@ -171,7 +171,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._fullRefresh();
   }
 
-  public addRefreshCallback(callback: FrameRequestCallback): number | undefined {
+  public addRefreshCallback(callback: FrameRequestCallback): number {
     return this._renderDebouncer.addRefreshCallback(callback);
   }
 

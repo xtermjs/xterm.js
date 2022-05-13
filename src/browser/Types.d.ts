@@ -311,5 +311,5 @@ export interface IRenderDebouncer extends IDisposable {
 }
 
 export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
-  addRefreshCallback(callback: FrameRequestCallback): number | undefined;
+  addRefreshCallback(callback: FrameRequestCallback): number;
 }

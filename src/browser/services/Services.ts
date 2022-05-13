@@ -58,7 +58,7 @@ export interface IRenderService extends IDisposable {
 
   dimensions: IRenderDimensions;
 
-  addRefreshCallback(callback: FrameRequestCallback): number | undefined;
+  addRefreshCallback(callback: FrameRequestCallback): number;
 
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
