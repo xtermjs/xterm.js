@@ -498,7 +498,10 @@ export class SearchAddon implements ITerminalAddon {
       return this._findInLine(term, searchPosition, searchOptions);
     }
     let cache = this._linesCache?.[row];
-    if (!cache) {
+    if (!cache || cache[0] === '') {
+      // sometimes the search refresh happens before the
+      // buffer has content for a given line, so if the cached
+      // line is empty, check it again to avoid issues like #3794
       cache = this._translateBufferLineToStringWithWrap(row, true);
       if (this._linesCache) {
         this._linesCache[row] = cache;
