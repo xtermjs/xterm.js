@@ -16,6 +16,7 @@ import { Terminal } from 'browser/Terminal';
 import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -447,5 +448,56 @@ export class MockCharacterJoinerService implements ICharacterJoinerService {
   }
   public getJoinedCharacters(row: number): [number, number][] {
     return [];
+  }
+}
+
+export class MockSelectionService implements ISelectionService {
+  public serviceBrand: undefined;
+  public selectionText: string = '';
+  public hasSelection: boolean = false;
+  public selectionStart: [number, number] | undefined;
+  public selectionEnd: [number, number] | undefined;
+  public onLinuxMouseSelection = new EventEmitter<string>().event;
+  public onRequestRedraw = new EventEmitter<ISelectionRedrawRequestEvent>().event;
+  public onRequestScrollLines = new EventEmitter<ISelectionRequestScrollLinesEvent>().event;
+  public onSelectionChange = new EventEmitter<void>().event;
+  public disable(): void {
+    throw new Error('Method not implemented.');
+  }
+  public enable(): void {
+    throw new Error('Method not implemented.');
+  }
+  public reset(): void {
+    throw new Error('Method not implemented.');
+  }
+  public setSelection(row: number, col: number, length: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public selectAll(): void {
+    throw new Error('Method not implemented.');
+  }
+  public selectLines(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearSelection(): void {
+    throw new Error('Method not implemented.');
+  }
+  public rightClickSelect(event: MouseEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  public shouldColumnSelect(event: MouseEvent | KeyboardEvent): boolean {
+    throw new Error('Method not implemented.');
+  }
+  public shouldForceSelection(event: MouseEvent): boolean {
+    throw new Error('Method not implemented.');
+  }
+  public refresh(isLinuxMouseSelection?: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public onMouseDown(event: MouseEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  public isCellInSelection(x: number, y: number): boolean {
+    return false;
   }
 }

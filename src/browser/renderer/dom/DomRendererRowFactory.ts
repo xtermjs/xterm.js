@@ -7,10 +7,10 @@ import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
@@ -34,7 +34,9 @@ export class DomRendererRowFactory {
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
-    @IDecorationService private readonly _decorationService: IDecorationService
+    @IDecorationService private readonly _decorationService: IDecorationService,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ISelectionService private readonly _selectionService: ISelectionService
   ) {
   }
 
@@ -193,6 +195,14 @@ export class DomRendererRowFactory {
           fgOverride = d.foregroundColorRGB;
         }
         isTop = d.options.layer === 'top';
+      }
+
+      // Apply selection foreground if applicable
+      if (!isTop) {
+        if (this._colors.selectionForeground && this._selectionService.isCellInSelection(x, row)) {
+          fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+          fgOverride = this._colors.selectionForeground;
+        }
       }
 
       // If it's a top decoration, render above the selection

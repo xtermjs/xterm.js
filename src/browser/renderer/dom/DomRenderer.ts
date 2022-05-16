@@ -281,6 +281,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
     }
 
+    this.renderRows(0, this._bufferService.rows - 1);
+
     // Selection does not exist
     if (!start || !end) {
       return;
