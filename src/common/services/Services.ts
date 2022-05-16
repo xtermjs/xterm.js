@@ -259,6 +259,7 @@ export interface ITheme {
   cursor?: string;
   cursorAccent?: string;
   selection?: string;
+  selectionForeground?: string;
   black?: string;
   red?: string;
   green?: string;

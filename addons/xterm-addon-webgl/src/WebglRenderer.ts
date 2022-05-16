@@ -398,6 +398,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Apply the selection color if needed
     if (this._isCellSelected(x, y)) {
       bgOverride = this._colors.selectionOpaque.rgba >> 8 & 0xFFFFFF;
+      if (this._colors.selectionForeground) {
+        fgOverride = this._colors.selectionForeground.rgba >> 8 && 0xFFFFFF;
+      }
     }
 
     // Apply decorations on the top layer

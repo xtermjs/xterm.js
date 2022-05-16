@@ -23,6 +23,7 @@ export function generateConfig(scaledCellWidth: number, scaledCellHeight: number
     cursorAccent: NULL_COLOR,
     selectionTransparent: NULL_COLOR,
     selectionOpaque: NULL_COLOR,
+    selectionForeground: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice(),
