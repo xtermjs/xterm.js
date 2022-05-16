@@ -303,7 +303,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
       // Add listener for rerendering
       if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRenderedBufferChange(e => {
+        this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
           // When start is 0 a scroll most likely occurred, make sure links above the fold also get
           // cleared.
           const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;

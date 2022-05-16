@@ -27,7 +27,7 @@ export class BufferDecorationRenderer extends Disposable {
     this._container.classList.add('xterm-decoration-container');
     this._screenElement.appendChild(this._container);
 
-    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
+    this.register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
     this.register(this._renderService.onDimensionsChange(() => this._queueRefresh()));
     this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
