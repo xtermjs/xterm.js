@@ -167,7 +167,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
     this._rectangleRenderer.onResize();
-
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
