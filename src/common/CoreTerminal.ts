@@ -140,7 +140,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
-    this.register(forwardEvent( this._writeBuffer.onBufferContentsChange, this._onBufferContentsChange));
+    this.register(forwardEvent(this._writeBuffer.onBufferContentsChange, this._onBufferContentsChange));
   }
 
   public dispose(): void {
