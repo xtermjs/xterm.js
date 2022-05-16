@@ -840,10 +840,15 @@ declare module 'xterm' {
     onRender: IEvent<{ start: number, end: number }>;
 
     /**
-     * Adds an event listener for when a chunk of data has been
-     * processed in the write buffer.
+     * Adds an event listener for when data has been parsed by the terminal,
+     * after {@link write} is called. This event is useful to listen for any
+     * changes in the buffer.
+     * 
+     * This fires at most once per frame, after data parsing completes. Note
+     * that this can fire when there are still writes pending if there is a lot
+     * of data.
      */
-    onBufferContentsChange: IEvent<void>;
+    onWriteParsed: IEvent<void>;
 
     /**
      * Adds an event listener for when the terminal is resized. The event value
