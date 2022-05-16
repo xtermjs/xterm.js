@@ -18,6 +18,7 @@ import { isPowerlineGlyph, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
+import { ISelectionService } from 'browser/services/Services';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -53,7 +54,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     private _rendererId: number,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
-    protected readonly _decorationService: IDecorationService
+    protected readonly _decorationService: IDecorationService,
+    protected readonly _selectionService: ISelectionService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -455,6 +457,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         fgOverride = d.foregroundColorRGB.rgba;
       }
       isTop = d.options.layer === 'top';
+    }
+
+    // Apply selection foreground if applicable
+    if (!isTop) {
+      if (this._colors.selectionForeground && this._selectionService.isCellInSelection(x, y)) {
+        fgOverride = this._colors.selectionForeground.rgba;
+      }
     }
 
     if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode()))) {

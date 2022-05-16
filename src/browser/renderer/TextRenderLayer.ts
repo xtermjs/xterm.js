@@ -12,7 +12,7 @@ import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
 /**
@@ -38,9 +38,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
-    @IDecorationService decorationService: IDecorationService
+    @IDecorationService decorationService: IDecorationService,
+    @ISelectionService selectionService: ISelectionService
   ) {
-    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService);
+    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService, selectionService);
     this._state = new GridCache<CharData>();
   }
 
