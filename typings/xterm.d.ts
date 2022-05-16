@@ -840,6 +840,12 @@ declare module 'xterm' {
     onRender: IEvent<{ start: number, end: number }>;
 
     /**
+     * Adds an event listener for when a chunk of data has been
+     * processed in the write buffer.
+     */
+    onBufferContentsChange: IEvent<void>;
+
+    /**
      * Adds an event listener for when the terminal is resized. The event value
      * contains the new size.
      * @returns an `IDisposable` to stop listening.

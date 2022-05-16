@@ -30,6 +30,7 @@ export class MockTerminal implements ITerminal {
   public onBlur!: IEvent<void>;
   public onFocus!: IEvent<void>;
   public onA11yChar!: IEvent<string>;
+  public onBufferContentsChange!: IEvent<void>;
   public onA11yTab!: IEvent<number>;
   public onCursorMove!: IEvent<void>;
   public onLineFeed!: IEvent<void>;
