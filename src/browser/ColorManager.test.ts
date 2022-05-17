@@ -34,7 +34,7 @@ describe('ColorManager', () => {
   describe('constructor', () => {
     it('should fill all colors with values', () => {
       for (const key of Object.keys(cm.colors)) {
-        if (key !== 'ansi' && key !== 'contrastCache') {
+        if (key !== 'ansi' && key !== 'contrastCache' && key !== 'selectionForeground') {
           // A #rrggbb or rgba(...)
           assert.ok((cm.colors as any)[key].css.length >= 7);
         }
