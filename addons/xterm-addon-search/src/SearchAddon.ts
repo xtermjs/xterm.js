@@ -77,7 +77,7 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this._terminal.onBufferContentsChange(() => this._updateMatches());
+    this._onDataDisposable = this._terminal.onWriteParsed(() => this._updateMatches());
     this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
   }
 

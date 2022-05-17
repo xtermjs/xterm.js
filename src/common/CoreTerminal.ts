@@ -68,8 +68,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   protected _onScroll = new EventEmitter<IScrollEvent, void>();
-  public get onBufferContentsChange(): IEvent<void> { return this._onBufferContentsChange.event; }
-  protected _onBufferContentsChange = new EventEmitter<void>();
+  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
+  protected _onWriteParsed = new EventEmitter<void>();
   /**
    * Internally we track the source of the scroll but this is meaningless outside the library so
    * it's filtered out.
@@ -140,7 +140,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
-    this.register(forwardEvent(this._writeBuffer.onBufferContentsChange, this._onBufferContentsChange));
+    this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public dispose(): void {
