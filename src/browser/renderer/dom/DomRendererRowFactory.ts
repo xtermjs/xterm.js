@@ -200,6 +200,7 @@ export class DomRendererRowFactory {
       // Apply selection foreground if applicable
       if (!isTop) {
         if (this._colors.selectionForeground && this._selectionService.isCellInSelection(x, row)) {
+          fgColorMode = Attributes.CM_RGB;
           fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
           fgOverride = this._colors.selectionForeground;
         }
