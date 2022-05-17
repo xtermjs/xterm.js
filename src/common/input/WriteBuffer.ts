@@ -4,6 +4,8 @@
  * @license MIT
  */
 
+import { EventEmitter, IEvent } from 'common/EventEmitter';
+
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
 /**
@@ -44,6 +46,8 @@ export class WriteBuffer {
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
+  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
+  private _onWriteParsed = new EventEmitter<void>();
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
 
@@ -220,5 +224,6 @@ export class WriteBuffer {
       this._pendingData = 0;
       this._bufferOffset = 0;
     }
+    this._onWriteParsed.fire();
   }
 }

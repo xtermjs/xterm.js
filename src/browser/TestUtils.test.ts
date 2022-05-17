@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IDecorationOpt
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
+import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -31,6 +31,7 @@ export class MockTerminal implements ITerminal {
   public onBlur!: IEvent<void>;
   public onFocus!: IEvent<void>;
   public onA11yChar!: IEvent<string>;
+  public onWriteParsed!: IEvent<void>;
   public onA11yTab!: IEvent<number>;
   public onCursorMove!: IEvent<void>;
   public onLineFeed!: IEvent<void>;
@@ -371,7 +372,7 @@ export class MockMouseService implements IMouseService {
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {
@@ -391,13 +392,13 @@ export class MockRenderService implements IRenderService {
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
+  public addRefreshCallback(callback: FrameRequestCallback): number {
+    throw new Error('Method not implemented.');
+  }
   public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }
   public resize(cols: number, rows: number): void {
-    throw new Error('Method not implemented.');
-  }
-  public changeOptions(): void {
     throw new Error('Method not implemented.');
   }
   public setRenderer(renderer: IRenderer): void {
