@@ -9,7 +9,6 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from 'browser/renderer/atlas/CharAtlasUtils';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ISelectionService } from 'browser/services/Services';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
@@ -23,10 +22,9 @@ export class LinkRenderLayer extends BaseRenderLayer {
     linkifier2: ILinkifier2,
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
-    @IDecorationService decorationService: IDecorationService,
-    @ISelectionService selectionService: ISelectionService
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, selectionService);
+    super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
     linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
 

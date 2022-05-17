@@ -7,7 +7,6 @@ import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ISelectionService } from 'browser/services/Services';
 
 interface ISelectionState {
   start?: [number, number];
@@ -26,10 +25,9 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     rendererId: number,
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
-    @IDecorationService decorationService: IDecorationService,
-    @ISelectionService selectionService: ISelectionService
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, selectionService);
+    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     this._clearState();
   }
 
@@ -56,6 +54,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    super.onSelectionChanged(start, end, columnSelectMode);
+
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;

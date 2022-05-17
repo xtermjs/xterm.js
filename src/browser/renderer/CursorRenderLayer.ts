@@ -10,7 +10,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
-import { ICoreBrowserService, ISelectionService } from 'browser/services/Services';
+import { ICoreBrowserService } from 'browser/services/Services';
 
 interface ICursorState {
   x: number;
@@ -41,10 +41,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     @IOptionsService optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IDecorationService decorationService: IDecorationService,
-    @ISelectionService selectionService: ISelectionService
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, selectionService);
+    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = {
       x: 0,
       y: 0,

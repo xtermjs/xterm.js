@@ -18,7 +18,6 @@ import { isPowerlineGlyph, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
-import { ISelectionService } from 'browser/services/Services';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -29,6 +28,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCellHeight: number = 0;
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
+
+  private _selectionStart: [number, number] | undefined;
+  private _selectionEnd: [number, number] | undefined;
+  private _columnSelectMode: boolean = false;
 
   protected _charAtlas: BaseCharAtlas | undefined;
 
@@ -54,8 +57,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     private _rendererId: number,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
-    protected readonly _decorationService: IDecorationService,
-    protected readonly _selectionService: ISelectionService
+    protected readonly _decorationService: IDecorationService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -82,7 +84,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onFocus(): void {}
   public onCursorMove(): void {}
   public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
+
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this._columnSelectMode = columnSelectMode;
+  }
 
   public setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
@@ -461,7 +468,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Apply selection foreground if applicable
     if (!isTop) {
-      if (this._colors.selectionForeground && this._selectionService.isCellInSelection(x, y)) {
+      if (this._colors.selectionForeground && this._isCellInSelection(x, y)) {
         fgOverride = this._colors.selectionForeground.rgba;
       }
     }
@@ -554,6 +561,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         }
         return this._colors.foreground.rgba;
     }
+  }
+
+  private _isCellInSelection(x: number, y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    return (y > start[1] && y < end[1]) ||
+        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+        (start[1] < end[1] && y === end[1] && x < end[0]) ||
+        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 
