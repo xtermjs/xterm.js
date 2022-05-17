@@ -35,7 +35,6 @@ export class DomRendererRowFactory {
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
     @IDecorationService private readonly _decorationService: IDecorationService,
-    @IBufferService private readonly _bufferService: IBufferService,
     @ISelectionService private readonly _selectionService: ISelectionService
   ) {
   }
