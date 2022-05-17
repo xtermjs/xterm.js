@@ -52,6 +52,8 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   }
 
   private _innerRefresh(): void {
+    this._animationFrame = undefined;
+
     // Make sure values are set
     if (this._rowStart === undefined || this._rowEnd === undefined || this._rowCount === undefined) {
       this._runRefreshCallbacks();
@@ -65,7 +67,6 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
     // Reset debouncer (this happens before render callback as the render could trigger it again)
     this._rowStart = undefined;
     this._rowEnd = undefined;
-    this._animationFrame = undefined;
 
     // Run render callback
     this._renderCallback(start, end);
