@@ -30,6 +30,7 @@ export class MockTerminal implements ITerminal {
   public onBlur!: IEvent<void>;
   public onFocus!: IEvent<void>;
   public onA11yChar!: IEvent<string>;
+  public onWriteParsed!: IEvent<void>;
   public onA11yTab!: IEvent<number>;
   public onCursorMove!: IEvent<void>;
   public onLineFeed!: IEvent<void>;
@@ -370,7 +371,7 @@ export class MockMouseService implements IMouseService {
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {

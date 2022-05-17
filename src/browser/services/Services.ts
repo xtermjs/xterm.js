@@ -49,7 +49,7 @@ export interface IRenderService extends IDisposable {
    * Fires when buffer changes are rendered. This does not fire when only cursor
    * or selections are rendered.
    */
-  onRenderedBufferChange: IEvent<{ start: number, end: number }>;
+  onRenderedViewportChange: IEvent<{ start: number, end: number }>;
   /**
    * Fires on render
    */

@@ -74,6 +74,7 @@ export class Terminal implements ITerminalApi {
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {

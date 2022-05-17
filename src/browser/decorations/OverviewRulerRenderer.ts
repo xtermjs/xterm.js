@@ -82,7 +82,7 @@ export class OverviewRulerRenderer extends Disposable {
    * and hide the canvas if the alt buffer is active
    */
   private _registerBufferChangeListeners(): void {
-    this.register(this._renderService.onRenderedBufferChange(() => this._queueRefresh()));
+    this.register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
