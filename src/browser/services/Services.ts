@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
@@ -57,6 +57,8 @@ export interface IRenderService extends IDisposable {
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
+
+  addRefreshCallback(callback: FrameRequestCallback): number;
 
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;

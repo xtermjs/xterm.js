@@ -309,3 +309,7 @@ export interface ICharacterJoiner {
 export interface IRenderDebouncer extends IDisposable {
   refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
 }
+
+export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
+  addRefreshCallback(callback: FrameRequestCallback): number;
+}

@@ -9,7 +9,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IRenderDebouncer } from 'browser/Types';
+import { IColorSet, IRenderDebouncer, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
@@ -22,7 +22,7 @@ interface ISelectionState {
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
-  private _renderDebouncer: IRenderDebouncer;
+  private _renderDebouncer: IRenderDebouncerWithCallback;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _isPaused: boolean = false;
@@ -169,6 +169,10 @@ export class RenderService extends Disposable implements IRenderService {
     // Force a refresh
     this._needsSelectionRefresh = true;
     this._fullRefresh();
+  }
+
+  public addRefreshCallback(callback: FrameRequestCallback): number {
+    return this._renderDebouncer.addRefreshCallback(callback);
   }
 
   private _fullRefresh(): void {
