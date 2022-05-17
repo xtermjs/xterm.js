@@ -569,6 +569,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (!start || !end) {
       return false;
     }
+    if (this._columnSelectMode) {
+      return x >= start[0] && y >= start[1] &&
+        x < end[0] && y < end[1];
+    }
     return (y > start[1] && y < end[1]) ||
         (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
         (start[1] < end[1] && y === end[1] && x < end[0]) ||

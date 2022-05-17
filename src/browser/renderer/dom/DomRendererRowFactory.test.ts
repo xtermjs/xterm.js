@@ -50,8 +50,7 @@ describe('DomRendererRowFactory', () => {
       new MockCharacterJoinerService(),
       new MockOptionsService({ drawBoldTextInBrightColors: true }),
       new MockCoreService(),
-      new MockDecorationService(),
-      new MockSelectionService()
+      new MockDecorationService()
     );
     lineData = createEmptyLineData(2);
   });

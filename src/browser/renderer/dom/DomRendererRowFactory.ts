@@ -28,19 +28,28 @@ export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 export class DomRendererRowFactory {
   private _workCell: CellData = new CellData();
 
+  private _selectionStart: [number, number] | undefined;
+  private _selectionEnd: [number, number] | undefined;
+  private _columnSelectMode: boolean = false;
+
   constructor(
     private readonly _document: Document,
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
-    @IDecorationService private readonly _decorationService: IDecorationService,
-    @ISelectionService private readonly _selectionService: ISelectionService
+    @IDecorationService private readonly _decorationService: IDecorationService
   ) {
   }
 
   public setColors(colors: IColorSet): void {
     this._colors = colors;
+  }
+
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this._columnSelectMode = columnSelectMode;
   }
 
   public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
@@ -198,7 +207,7 @@ export class DomRendererRowFactory {
 
       // Apply selection foreground if applicable
       if (!isTop) {
-        if (this._colors.selectionForeground && this._selectionService.isCellInSelection(x, row)) {
+        if (this._colors.selectionForeground && this._isCellInSelection(x, row)) {
           fgColorMode = Attributes.CM_RGB;
           fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
           fgOverride = this._colors.selectionForeground;
@@ -292,6 +301,22 @@ export class DomRendererRowFactory {
 
   private _addStyle(element: HTMLElement, style: string): void {
     element.setAttribute('style', `${element.getAttribute('style') || ''}${style};`);
+  }
+
+  private _isCellInSelection(x: number, y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    if (this._columnSelectMode) {
+      return x >= start[0] && y >= start[1] &&
+        x < end[0] && y < end[1];
+    }
+    return (y > start[1] && y < end[1]) ||
+        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+        (start[1] < end[1] && y === end[1] && x < end[0]) ||
+        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 
