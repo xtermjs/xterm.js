@@ -54,6 +54,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    super.onSelectionChanged(start, end, columnSelectMode);
+
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;

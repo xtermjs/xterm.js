@@ -102,6 +102,7 @@ export interface ISelectionService {
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;
   onMouseDown(event: MouseEvent): void;
+  isCellInSelection(x: number, y: number): boolean;
 }
 
 export const ISoundService = createDecorator<ISoundService>('SoundService');

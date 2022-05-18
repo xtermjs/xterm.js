@@ -308,6 +308,15 @@ export class SelectionService extends Disposable implements ISelectionService {
     return this._areCoordsInSelection(coords, start, end);
   }
 
+  public isCellInSelection(x: number, y: number): boolean {
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    return this._areCoordsInSelection([x, y], start, end);
+  }
+
   protected _areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
     return (coords[1] > start[1] && coords[1] < end[1]) ||
         (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||

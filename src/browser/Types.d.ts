@@ -121,6 +121,7 @@ export interface IColorSet {
   selectionTransparent: IColor;
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
+  selectionForeground: IColor | undefined;
   ansi: IColor[];
   contrastCache: IColorContrastCache;
 }

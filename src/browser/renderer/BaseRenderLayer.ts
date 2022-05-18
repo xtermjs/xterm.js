@@ -29,6 +29,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
+  private _selectionStart: [number, number] | undefined;
+  private _selectionEnd: [number, number] | undefined;
+  private _columnSelectMode: boolean = false;
+
   protected _charAtlas: BaseCharAtlas | undefined;
 
   /**
@@ -80,7 +84,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onFocus(): void {}
   public onCursorMove(): void {}
   public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
+
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this._columnSelectMode = columnSelectMode;
+  }
 
   public setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
@@ -457,6 +466,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       isTop = d.options.layer === 'top';
     }
 
+    // Apply selection foreground if applicable
+    if (!isTop) {
+      if (this._colors.selectionForeground && this._isCellInSelection(x, y)) {
+        fgOverride = this._colors.selectionForeground.rgba;
+      }
+    }
+
     if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode()))) {
       return undefined;
     }
@@ -545,6 +561,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         }
         return this._colors.foreground.rgba;
     }
+  }
+
+  private _isCellInSelection(x: number, y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    if (this._columnSelectMode) {
+      return x >= start[0] && y >= start[1] &&
+        x < end[0] && y < end[1];
+    }
+    return (y > start[1] && y < end[1]) ||
+        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+        (start[1] < end[1] && y === end[1] && x < end[0]) ||
+        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 

@@ -288,6 +288,8 @@ declare module 'xterm' {
     cursorAccent?: string;
     /** The selection background color (can be transparent) */
     selection?: string;
+    /** The selection foreground color */
+    selectionForeground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */

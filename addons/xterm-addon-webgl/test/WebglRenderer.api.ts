@@ -875,6 +875,25 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
+  describe('selectionForeground', () => {
+    if (areTestsEnabled) {
+      before(async () => setupBrowser({ rendererType: 'dom' }));
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
+
+    itWebgl('transparent background inverse', async () => {
+      const theme: ITheme = {
+        selectionForeground: '#ff0000'
+      };
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\\x1b[7m█\x1b[0m`;
+      await writeSync(page, data);
+      await page.evaluate(`window.term.selectAll()`);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
+
   describe('decoration color overrides', async () => {
     if (areTestsEnabled) {
       before(async () => setupBrowser({ rendererType: 'dom' }));

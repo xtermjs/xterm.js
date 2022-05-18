@@ -119,6 +119,10 @@ export class Renderer extends Disposable implements IRenderer {
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
+    // Selection foreground requires a full re-render
+    if (this._colors.selectionForeground) {
+      this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
+    }
   }
 
   public onCursorMove(): void {
