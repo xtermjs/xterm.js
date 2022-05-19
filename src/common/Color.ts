@@ -94,36 +94,50 @@ export namespace color {
  */
 export namespace css {
   export function toColor(css: string): IColor {
-    switch (css.length) {
-      case 4: // #rgb
-        return {
-          css,
-          rgba: channels.toRgba(
-            parseInt(css.slice(1, 2).repeat(2), 16),
-            parseInt(css.slice(2, 3).repeat(2), 16),
-            parseInt(css.slice(3, 4).repeat(2), 16)
-          )
-        };
-      case 5: // #rgba
-        return {
-          css,
-          rgba: channels.toRgba(
-            parseInt(css.slice(1, 2).repeat(2), 16),
-            parseInt(css.slice(2, 3).repeat(2), 16),
-            parseInt(css.slice(3, 4).repeat(2), 16),
-            parseInt(css.slice(4, 5).repeat(2), 16)
-          )
-        };
-      case 7: // #rrggbb
-        return {
-          css,
-          rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
-        };
-      case 9: // #rrggbbaa
-        return {
-          css,
-          rgba: parseInt(css.slice(1), 16) >>> 0
-        };
+    if (css.match(/#[0-9a-f]{3,8}/i)) {
+      switch (css.length) {
+        case 4: // #rgb
+          return {
+            css,
+            rgba: channels.toRgba(
+              parseInt(css.slice(1, 2).repeat(2), 16),
+              parseInt(css.slice(2, 3).repeat(2), 16),
+              parseInt(css.slice(3, 4).repeat(2), 16)
+            )
+          };
+        case 5: // #rgba
+          return {
+            css,
+            rgba: channels.toRgba(
+              parseInt(css.slice(1, 2).repeat(2), 16),
+              parseInt(css.slice(2, 3).repeat(2), 16),
+              parseInt(css.slice(3, 4).repeat(2), 16),
+              parseInt(css.slice(4, 5).repeat(2), 16)
+            )
+          };
+        case 7: // #rrggbb
+          return {
+            css,
+            rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
+          };
+        case 9: // #rrggbbaa
+          return {
+            css,
+            rgba: parseInt(css.slice(1), 16) >>> 0
+          };
+      }
+    }
+    const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(\d{1,3})\s*)?\)/);
+    if (rgbaMatch) { // rgb() or rgba()
+      return {
+        css,
+        rgba: channels.toRgba(
+          parseInt(rgbaMatch[1]), // r
+          parseInt(rgbaMatch[2]), // g
+          parseInt(rgbaMatch[3]), // b
+          rgbaMatch[5] === undefined ? 0xFF : parseInt(rgbaMatch[5]) // a?
+        )
+      };
     }
     throw new Error('css.toColor: Unsupported css format');
   }
