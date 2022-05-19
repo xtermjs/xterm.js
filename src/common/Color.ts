@@ -95,6 +95,25 @@ export namespace color {
 export namespace css {
   export function toColor(css: string): IColor {
     switch (css.length) {
+      case 4: // #rgb
+        return {
+          css,
+          rgba: channels.toRgba(
+            parseInt(css.slice(1, 2).repeat(2), 16),
+            parseInt(css.slice(2, 3).repeat(2), 16),
+            parseInt(css.slice(3, 4).repeat(2), 16)
+          )
+        };
+      case 5: // #rgba
+        return {
+          css,
+          rgba: channels.toRgba(
+            parseInt(css.slice(1, 2).repeat(2), 16),
+            parseInt(css.slice(2, 3).repeat(2), 16),
+            parseInt(css.slice(3, 4).repeat(2), 16),
+            parseInt(css.slice(4, 5).repeat(2), 16)
+          )
+        };
       case 7: // #rrggbb
         return {
           css,
