@@ -153,6 +153,44 @@ describe('Color', () => {
 
   describe('css', () => {
     describe('toColor', () => {
+      it('should convert the #rgb format to an IColor', () => {
+        assert.deepEqual(css.toColor('#000'), { css: '#000', rgba: 0x000000FF });
+        assert.deepEqual(css.toColor('#111'), { css: '#111', rgba: 0x111111FF });
+        assert.deepEqual(css.toColor('#222'), { css: '#222', rgba: 0x222222FF });
+        assert.deepEqual(css.toColor('#333'), { css: '#333', rgba: 0x333333FF });
+        assert.deepEqual(css.toColor('#444'), { css: '#444', rgba: 0x444444FF });
+        assert.deepEqual(css.toColor('#555'), { css: '#555', rgba: 0x555555FF });
+        assert.deepEqual(css.toColor('#666'), { css: '#666', rgba: 0x666666FF });
+        assert.deepEqual(css.toColor('#777'), { css: '#777', rgba: 0x777777FF });
+        assert.deepEqual(css.toColor('#888'), { css: '#888', rgba: 0x888888FF });
+        assert.deepEqual(css.toColor('#999'), { css: '#999', rgba: 0x999999FF });
+        assert.deepEqual(css.toColor('#aaa'), { css: '#aaa', rgba: 0xaaaaaaFF });
+        assert.deepEqual(css.toColor('#bbb'), { css: '#bbb', rgba: 0xbbbbbbFF });
+        assert.deepEqual(css.toColor('#ccc'), { css: '#ccc', rgba: 0xccccccFF });
+        assert.deepEqual(css.toColor('#ddd'), { css: '#ddd', rgba: 0xddddddFF });
+        assert.deepEqual(css.toColor('#eee'), { css: '#eee', rgba: 0xeeeeeeFF });
+        assert.deepEqual(css.toColor('#fff'), { css: '#fff', rgba: 0xffffffFF });
+        assert.deepEqual(css.toColor('#fff'), { css: '#fff', rgba: 0xffffffFF });
+      });
+      it('should convert the #rgb format to an IColor', () => {
+        assert.deepEqual(css.toColor('#0000'), { css: '#0000', rgba: 0x00000000 });
+        assert.deepEqual(css.toColor('#1111'), { css: '#1111', rgba: 0x11111111 });
+        assert.deepEqual(css.toColor('#2222'), { css: '#2222', rgba: 0x22222222 });
+        assert.deepEqual(css.toColor('#3333'), { css: '#3333', rgba: 0x33333333 });
+        assert.deepEqual(css.toColor('#4444'), { css: '#4444', rgba: 0x44444444 });
+        assert.deepEqual(css.toColor('#5555'), { css: '#5555', rgba: 0x55555555 });
+        assert.deepEqual(css.toColor('#6666'), { css: '#6666', rgba: 0x66666666 });
+        assert.deepEqual(css.toColor('#7777'), { css: '#7777', rgba: 0x77777777 });
+        assert.deepEqual(css.toColor('#8888'), { css: '#8888', rgba: 0x88888888 });
+        assert.deepEqual(css.toColor('#9999'), { css: '#9999', rgba: 0x99999999 });
+        assert.deepEqual(css.toColor('#aaaa'), { css: '#aaaa', rgba: 0xaaaaaaaa });
+        assert.deepEqual(css.toColor('#bbbb'), { css: '#bbbb', rgba: 0xbbbbbbbb });
+        assert.deepEqual(css.toColor('#cccc'), { css: '#cccc', rgba: 0xcccccccc });
+        assert.deepEqual(css.toColor('#dddd'), { css: '#dddd', rgba: 0xdddddddd });
+        assert.deepEqual(css.toColor('#eeee'), { css: '#eeee', rgba: 0xeeeeeeee });
+        assert.deepEqual(css.toColor('#ffff'), { css: '#ffff', rgba: 0xffffffff });
+        assert.deepEqual(css.toColor('#ffff'), { css: '#ffff', rgba: 0xffffffff });
+      });
       it('should convert the #rrggbb format to an IColor', () => {
         assert.deepEqual(css.toColor('#000000'), { css: '#000000', rgba: 0x000000FF });
         assert.deepEqual(css.toColor('#101010'), { css: '#101010', rgba: 0x101010FF });
