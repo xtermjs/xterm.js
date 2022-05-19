@@ -792,6 +792,9 @@ describe('API Integration Tests', function(): void {
   describe('registerLinkProvider', () => {
     it('should fire provideLinks when hovering cells', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -811,6 +814,9 @@ describe('API Integration Tests', function(): void {
 
     it('should fire hover and leave events on the link', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -846,6 +852,9 @@ describe('API Integration Tests', function(): void {
 
     it('should work fine when hover and leave callbacks are not provided', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -886,18 +895,12 @@ describe('API Integration Tests', function(): void {
 
     it('should fire activate events when clicking the link', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'a b c');
-
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
-
-      // Focus terminal to avoid a render event clearing the active link
-      const dims = await getDimensions();
-      await moveMouseCell(page, dims, 5, 5);
-      await page.mouse.down();
-      await page.mouse.up();
-      await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
-
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -913,6 +916,7 @@ describe('API Integration Tests', function(): void {
           }
         });
       `);
+      const dims = await getDimensions();
       await moveMouseCell(page, dims, 3, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'hover 1']);
       await page.mouse.down();
@@ -933,6 +937,9 @@ describe('API Integration Tests', function(): void {
 
     it('should work when multiple links are provided on the same line', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -979,6 +986,9 @@ describe('API Integration Tests', function(): void {
 
     it('should dispose links when hovering away', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
