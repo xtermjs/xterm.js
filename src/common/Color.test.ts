@@ -238,10 +238,10 @@ describe('Color', () => {
       });
       it('should convert the rgba() format to an IColor', () => {
         assert.deepEqual(css.toColor('rgba(0, 0, 0, 0)'), { css: 'rgba(0, 0, 0, 0)', rgba: 0x00000000 });
-        assert.deepEqual(css.toColor('rgba(80, 0, 0, 80)'), { css: 'rgba(80, 0, 0, 80)', rgba: 0x50000050 });
-        assert.deepEqual(css.toColor('rgba(0, 80, 0, 80)'), { css: 'rgba(0, 80, 0, 80)', rgba: 0x00500050 });
-        assert.deepEqual(css.toColor('rgba(0, 0, 80, 80)'), { css: 'rgba(0, 0, 80, 80)', rgba: 0x00005050 });
-        assert.deepEqual(css.toColor('rgba(255, 255, 255, 255)'), { css: 'rgba(255, 255, 255, 255)', rgba: 0xffffffff });
+        assert.deepEqual(css.toColor('rgba(80, 0, 0, 0.5)'), { css: 'rgba(80, 0, 0, 0.5)', rgba: 0x50000080 });
+        assert.deepEqual(css.toColor('rgba(0, 80, 0, 0.5)'), { css: 'rgba(0, 80, 0, 0.5)', rgba: 0x00500080 });
+        assert.deepEqual(css.toColor('rgba(0, 0, 80, 0.5)'), { css: 'rgba(0, 0, 80, 0.5)', rgba: 0x00005080 });
+        assert.deepEqual(css.toColor('rgba(255, 255, 255, 1)'), { css: 'rgba(255, 255, 255, 1)', rgba: 0xffffffff });
       });
     });
   });

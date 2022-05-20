@@ -127,7 +127,7 @@ export namespace css {
           };
       }
     }
-    const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(\d{1,3})\s*)?\)/);
+    const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
     if (rgbaMatch) { // rgb() or rgba()
       return {
         css,
@@ -135,7 +135,7 @@ export namespace css {
           parseInt(rgbaMatch[1]), // r
           parseInt(rgbaMatch[2]), // g
           parseInt(rgbaMatch[3]), // b
-          rgbaMatch[5] === undefined ? 0xFF : parseInt(rgbaMatch[5]) // a?
+          Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF) // a?
         )
       };
     }
