@@ -151,7 +151,7 @@ describe('Color', () => {
     });
   });
 
-  describe.only('css', () => {
+  describe('css', () => {
     describe('toColor', () => {
       it('should convert the #rgb format to an IColor', () => {
         assert.deepEqual(css.toColor('#000'), { css: '#000000', rgba: 0x000000FF });
