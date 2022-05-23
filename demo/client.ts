@@ -575,6 +575,10 @@ function powerlineSymbolTest() {
   term.writeln(`0xB_                      ${s('\ue0b4')}${s('\ue0b5')}${s('\ue0b6')}${s('\ue0b7')}${s('\ue0b8')}${s('\ue0b9')}${s('\ue0ba')}${s('\ue0bb')}${s('\ue0bc')}${s('\ue0bd')}${s('\ue0be')}${s('\ue0bf')}`);
   term.writeln(`0xC_  ${s('\ue0c0')}${s('\ue0c1')}${s('\ue0c2')}${s('\ue0c3')}${s('\ue0c4')}${s('\ue0c5')}${s('\ue0c6')}${s('\ue0c7')}${s('\ue0c8')}${s('\ue0c9')}${s('\ue0ca')}${s('\ue0cb')}${s('\ue0cc')}${s('\ue0cd')}${s('\ue0be')}${s('\ue0bf')}`);
   term.writeln(`0xD_  ${s('\ue0d0')}${s('\ue0d1')}${s('\ue0d2')}     ${s('\ue0d4')}`);
+  term.writeln('');
+  term.writeln('Sample of nerd fonts icons:');
+  term.writeln('    nf-linux-apple (\\uF302) \uf302');
+  term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
 }
 
 function addDecoration() {
