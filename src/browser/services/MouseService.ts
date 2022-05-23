@@ -17,6 +17,7 @@ export class MouseService implements IMouseService {
 
   public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     return getCoords(
+      window,
       event,
       element,
       colCount,
