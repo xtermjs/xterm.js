@@ -5,7 +5,13 @@
 
 export function getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
   const rect = element.getBoundingClientRect();
-  return [event.clientX - rect.left, event.clientY - rect.top];
+  const elementStyle = window.getComputedStyle(element);
+  const leftPadding = parseInt(elementStyle.getPropertyValue('padding-left'));
+  const topPadding = parseInt(elementStyle.getPropertyValue('padding-top'));
+  return [
+    event.clientX - rect.left - leftPadding,
+    event.clientY - rect.top - topPadding
+  ];
 }
 
 /**
