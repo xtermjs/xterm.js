@@ -104,6 +104,7 @@ export class ColorManager implements IColorManager {
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selectionTransparent: DEFAULT_SELECTION,
       selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      selectionForeground: undefined,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
     };
@@ -128,6 +129,15 @@ export class ColorManager implements IColorManager {
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selectionTransparent = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
     this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selectionTransparent);
+    const nullColor: IColor = {
+      css: '',
+      rgba: 0
+    };
+    this.colors.selectionForeground = theme.selectionForeground ? this._parseColor(theme.selectionForeground, nullColor) : undefined;
+    if (this.colors.selectionForeground === nullColor) {
+      this.colors.selectionForeground = undefined;
+    }
+
     /**
      * If selection color is opaque, blend it with background with 0.3 opacity
      * Issue #2737

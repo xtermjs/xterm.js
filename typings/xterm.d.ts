@@ -288,6 +288,8 @@ declare module 'xterm' {
     cursorAccent?: string;
     /** The selection background color (can be transparent) */
     selection?: string;
+    /** The selection foreground color */
+    selectionForeground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */
@@ -838,6 +840,17 @@ declare module 'xterm' {
      * @returns an `IDisposable` to stop listening.
      */
     onRender: IEvent<{ start: number, end: number }>;
+
+    /**
+     * Adds an event listener for when data has been parsed by the terminal,
+     * after {@link write} is called. This event is useful to listen for any
+     * changes in the buffer.
+     * 
+     * This fires at most once per frame, after data parsing completes. Note
+     * that this can fire when there are still writes pending if there is a lot
+     * of data.
+     */
+    onWriteParsed: IEvent<void>;
 
     /**
      * Adds an event listener for when the terminal is resized. The event value

@@ -183,3 +183,8 @@
     right: 0;
     pointer-events: none;
 }
+
+.xterm-decoration-top {
+    z-index: 2;
+    position: relative;
+}

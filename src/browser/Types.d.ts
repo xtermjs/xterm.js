@@ -44,6 +44,7 @@ export interface IPublicTerminal extends IDisposable {
   onSelectionChange: IEvent<void>;
   onRender: IEvent<{ start: number, end: number }>;
   onResize: IEvent<{ cols: number, rows: number }>;
+  onWriteParsed: IEvent<void>;
   onTitleChange: IEvent<string>;
   onBell: IEvent<void>;
   blur(): void;
@@ -120,6 +121,7 @@ export interface IColorSet {
   selectionTransparent: IColor;
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
+  selectionForeground: IColor | undefined;
   ansi: IColor[];
   contrastCache: IColorContrastCache;
 }
@@ -308,4 +310,8 @@ export interface ICharacterJoiner {
 
 export interface IRenderDebouncer extends IDisposable {
   refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
+}
+
+export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
+  addRefreshCallback(callback: FrameRequestCallback): number;
 }

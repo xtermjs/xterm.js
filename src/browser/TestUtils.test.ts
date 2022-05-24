@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IDecorationOpt
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler } from 'browser/Types';
+import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -16,6 +16,7 @@ import { Terminal } from 'browser/Terminal';
 import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -30,6 +31,7 @@ export class MockTerminal implements ITerminal {
   public onBlur!: IEvent<void>;
   public onFocus!: IEvent<void>;
   public onA11yChar!: IEvent<string>;
+  public onWriteParsed!: IEvent<void>;
   public onA11yTab!: IEvent<number>;
   public onCursorMove!: IEvent<void>;
   public onLineFeed!: IEvent<void>;
@@ -370,7 +372,7 @@ export class MockMouseService implements IMouseService {
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  public onRenderedBufferChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {
@@ -390,13 +392,13 @@ export class MockRenderService implements IRenderService {
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
+  public addRefreshCallback(callback: FrameRequestCallback): number {
+    throw new Error('Method not implemented.');
+  }
   public clearTextureAtlas(): void {
     throw new Error('Method not implemented.');
   }
   public resize(cols: number, rows: number): void {
-    throw new Error('Method not implemented.');
-  }
-  public changeOptions(): void {
     throw new Error('Method not implemented.');
   }
   public setRenderer(renderer: IRenderer): void {
@@ -447,5 +449,56 @@ export class MockCharacterJoinerService implements ICharacterJoinerService {
   }
   public getJoinedCharacters(row: number): [number, number][] {
     return [];
+  }
+}
+
+export class MockSelectionService implements ISelectionService {
+  public serviceBrand: undefined;
+  public selectionText: string = '';
+  public hasSelection: boolean = false;
+  public selectionStart: [number, number] | undefined;
+  public selectionEnd: [number, number] | undefined;
+  public onLinuxMouseSelection = new EventEmitter<string>().event;
+  public onRequestRedraw = new EventEmitter<ISelectionRedrawRequestEvent>().event;
+  public onRequestScrollLines = new EventEmitter<ISelectionRequestScrollLinesEvent>().event;
+  public onSelectionChange = new EventEmitter<void>().event;
+  public disable(): void {
+    throw new Error('Method not implemented.');
+  }
+  public enable(): void {
+    throw new Error('Method not implemented.');
+  }
+  public reset(): void {
+    throw new Error('Method not implemented.');
+  }
+  public setSelection(row: number, col: number, length: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public selectAll(): void {
+    throw new Error('Method not implemented.');
+  }
+  public selectLines(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public clearSelection(): void {
+    throw new Error('Method not implemented.');
+  }
+  public rightClickSelect(event: MouseEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  public shouldColumnSelect(event: MouseEvent | KeyboardEvent): boolean {
+    throw new Error('Method not implemented.');
+  }
+  public shouldForceSelection(event: MouseEvent): boolean {
+    throw new Error('Method not implemented.');
+  }
+  public refresh(isLinuxMouseSelection?: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public onMouseDown(event: MouseEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  public isCellInSelection(x: number, y: number): boolean {
+    return false;
   }
 }

@@ -77,7 +77,7 @@ export class SearchAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this._terminal.onData(() => this._updateMatches());
+    this._onDataDisposable = this._terminal.onWriteParsed(() => this._updateMatches());
     this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
   }
 
@@ -88,6 +88,7 @@ export class SearchAddon implements ITerminalAddon {
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
       this._highlightTimeout = setTimeout(() => {
         this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true, noScroll: true });
+        this._resultIndex = this._searchResults ? this._searchResults.size -1 : -1;
         this._onDidChangeResults.fire({ resultIndex: this._searchResults ? this._searchResults.size - 1 : -1, resultCount: this._searchResults ? this._searchResults.size : -1 });
       }, 200);
     }
@@ -679,7 +680,7 @@ export class SearchAddon implements ITerminalAddon {
             color: options.activeMatchColorOverviewRuler
           }
         });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, options.activeMatchBorder));
+        this._selectedDecoration?.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true));
         this._selectedDecoration?.onDispose(() => marker.dispose());
       }
     }
@@ -702,7 +703,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param borderColor the border color to apply
    * @returns
    */
-  private _applyStyles(element: HTMLElement, borderColor: string | undefined): void {
+  private _applyStyles(element: HTMLElement, borderColor: string | undefined, isActiveResult: boolean): void {
     if (element.clientWidth <= 0) {
       return;
     }
@@ -711,6 +712,9 @@ export class SearchAddon implements ITerminalAddon {
       if (borderColor) {
         element.style.outline = `1px solid ${borderColor}`;
       }
+    }
+    if (isActiveResult) {
+      element.classList.add('xterm-find-active-result-decoration');
     }
   }
 
@@ -736,7 +740,7 @@ export class SearchAddon implements ITerminalAddon {
         position: 'center'
       }
     });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBorder));
+    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBorder, false));
     findResultDecoration?.onDispose(() => marker.dispose());
     return findResultDecoration;
   }

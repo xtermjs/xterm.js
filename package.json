@@ -76,7 +76,7 @@
     "mustache": "^4.2.0",
     "node-pty": "^0.10.1",
     "nyc": "^15.1.0",
-    "playwright": "^1.16.2",
+    "playwright": "^1.22.1",
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
     "ts-loader": "^9.1.2",
