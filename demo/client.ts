@@ -94,7 +94,8 @@ const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
   find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
-  findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
+  findPrevious: <HTMLInputElement>document.querySelector('#find-previous'),
+  findResults: document.querySelector('#find-results')
 };
 const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
@@ -398,8 +399,11 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    if(name === 'unicode11' && checkbox.checked) {
+    if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
+    }
+    if (name === 'search' && checkbox.checked) {
+      addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
@@ -411,6 +415,8 @@ function initAddons(term: TerminalType): void {
           }, 0);
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
+        } else if (name === 'search') {
+          addon.instance.onDidChangeResults(e => updateFindResults(e));
         }
       } else {
         if (name === 'webgl') {
@@ -437,6 +443,16 @@ function initAddons(term: TerminalType): void {
   const container = document.getElementById('addons-container');
   container.innerHTML = '';
   container.appendChild(fragment);
+}
+
+function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined) {
+  let content: string;
+  if (e === undefined) {
+    content = 'undefined';
+  } else {
+    content = `index: ${e.resultIndex}, count: ${e.resultCount}`;
+  }
+  actionElements.findResults.textContent = content;
 }
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
