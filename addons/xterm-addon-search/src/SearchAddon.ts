@@ -610,7 +610,8 @@ export class SearchAddon implements ITerminalAddon {
           break;
         }
         if (cell.getWidth()) {
-          offset += cell.getChars().length;
+          // Treat null characters as whitespace to align with the translateToString API
+          offset += cell.getCode() === 0 ? 1 : cell.getChars().length;
         }
       }
       lineIndex++;

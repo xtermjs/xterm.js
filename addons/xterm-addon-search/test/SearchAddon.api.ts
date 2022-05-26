@@ -379,6 +379,21 @@ describe('Search Tests', function(): void {
       });
     });
   });
+  describe('#3834 lines with null characters before search terms', () => {
+    // This case can be triggered by the prompt when using starship under conpty
+    it('should find all matches on a line containing null characters', async () => {
+      await page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+      // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
+      await writeSync(page, '\\x1b[CHi Hi');
+      assert.strictEqual(await page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+      assert.deepStrictEqual(await page.evaluate('window.calls'), [
+        { resultCount: 2, resultIndex: 1 }
+      ]);
+    });
+  });
 });
 
 function makeData(length: number): string {
