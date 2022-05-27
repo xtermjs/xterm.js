@@ -206,12 +206,20 @@ export class DomRendererRowFactory {
       }
 
       // Apply selection foreground if applicable
+      const isInSelection = this._isCellInSelection(x, row);
       if (!isTop) {
-        if (this._colors.selectionForeground && this._isCellInSelection(x, row)) {
+        if (this._colors.selectionForeground && isInSelection) {
           fgColorMode = Attributes.CM_RGB;
           fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
           fgOverride = this._colors.selectionForeground;
         }
+      }
+
+      // If in the selection, force the element to be above the selection to improve contrast and
+      // support opaque selections
+      if (isInSelection) {
+        bgOverride = this._colors.selectionOpaque;
+        isTop = true;
       }
 
       // If it's a top decoration, render above the selection
@@ -226,7 +234,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, undefined, undefined)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, bgOverride, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -242,7 +250,7 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell, undefined, undefined)) {
+          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell, bgOverride, undefined)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
@@ -279,16 +287,14 @@ export class DomRendererRowFactory {
 
     // Try get from cache first, only use the cache when there are no decoration overrides
     let adjustedColor: IColor | undefined | null = undefined;
-    if (!bgOverride || !fgOverride) {
-      adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    if (!bgOverride && !fgOverride) {
+      adjustedColor = this._colors.contrastCache.getColor(bg.rgba, fg.rgba);
     }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
       adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
-      if (!bgOverride || !fgOverride) {
-        this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
-      }
+      this._colors.contrastCache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {
