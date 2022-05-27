@@ -88,6 +88,7 @@ export class OverviewRulerRenderer extends Disposable {
     }));
     this.register(this._bufferService.onScroll(() => {
       if (this._lastKnownBufferLength !== this._bufferService.buffers.normal.lines.length) {
+        this._refreshDrawHeightConstants();
         this._refreshColorZonePadding();
       }
     }));
@@ -132,15 +133,23 @@ export class OverviewRulerRenderer extends Disposable {
     drawWidth.center = innerWidth;
     drawWidth.right = outerWidth;
     // height
-    drawHeight.full = Math.round(2 * window.devicePixelRatio);
-    drawHeight.left = Math.round(6 * window.devicePixelRatio);
-    drawHeight.center = Math.round(6 * window.devicePixelRatio);
-    drawHeight.right = Math.round(6 * window.devicePixelRatio);
+    this._refreshDrawHeightConstants();
     // x
     drawX.full = 0;
     drawX.left = 0;
     drawX.center = drawWidth.left;
     drawX.right = drawWidth.left + drawWidth.center;
+  }
+
+  private _refreshDrawHeightConstants(): void {
+    drawHeight.full = Math.round(2 * window.devicePixelRatio);
+    // Calculate actual pixels per line
+    const pixelsPerLine = this._canvas.height / this._bufferService.buffer.lines.length;
+    // Clamp actual pixels within a range
+    const nonFullHeight = Math.round(Math.max(Math.min(pixelsPerLine, 12), 6) * window.devicePixelRatio);
+    drawHeight.left = nonFullHeight;
+    drawHeight.center = nonFullHeight;
+    drawHeight.right = nonFullHeight;
   }
 
   private _refreshColorZonePadding(): void {
