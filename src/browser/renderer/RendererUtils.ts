@@ -16,3 +16,11 @@ export function isPowerlineGlyph(codepoint: number): boolean {
   // ratio standards
   return 0xE0A0 <= codepoint && codepoint <=  0xE0D6;
 }
+
+function isBoxGlyph(codepoint: number): boolean {
+  return 0x2500 <= codepoint && codepoint <= 0x257F;
+}
+
+export function excludeFromContrastRatioDemands(codepoint: number): boolean {
+  return isPowerlineGlyph(codepoint) || isBoxGlyph(codepoint);
+}

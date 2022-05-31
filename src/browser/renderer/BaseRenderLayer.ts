@@ -14,7 +14,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { isPowerlineGlyph, throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
@@ -473,7 +473,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     }
 
-    if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode()))) {
+    if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode()))) {
       return undefined;
     }
 
