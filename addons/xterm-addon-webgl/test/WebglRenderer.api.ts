@@ -688,7 +688,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe('minimumContrastRatio', async () => {
+  describe.skip('minimumContrastRatio', async () => {
     if (areTestsEnabled) {
       before(async () => setupBrowser());
       after(async () => browser.close());
