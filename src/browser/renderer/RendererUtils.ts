@@ -18,7 +18,7 @@ export function isPowerlineGlyph(codepoint: number): boolean {
 }
 
 function isBoxOrBlockGlyph(codepoint: number): boolean {
-  return (0x2500 <= codepoint && codepoint <= 0x257F) || (0x2580 <= codepoint && codepoint <= 0x259F);
+  return (0x2500 <= codepoint && codepoint <= 0x259F);
 }
 
 export function excludeFromContrastRatioDemands(codepoint: number): boolean {
