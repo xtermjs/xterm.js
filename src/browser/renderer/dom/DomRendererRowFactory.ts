@@ -219,6 +219,28 @@ export class DomRendererRowFactory {
         charElement.classList.add(`xterm-decoration-top`);
       }
 
+      // Background
+      let resolvedBg: IColor;
+      switch (bgColorMode) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          resolvedBg = this._colors.ansi[bg];
+          charElement.classList.add(`xterm-bg-${bg}`);
+          break;
+        case Attributes.CM_RGB:
+          resolvedBg = rgba.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
+          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          if (isInverse) {
+            resolvedBg = this._colors.foreground;
+            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
+          } else {
+            resolvedBg = this._colors.background;
+          }
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
@@ -226,7 +248,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg], cell, undefined, undefined)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, this._colors.ansi[fg], cell, bgOverride, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -236,32 +258,16 @@ export class DomRendererRowFactory {
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
           );
-          if (!this._applyMinimumContrast(charElement, this._colors.background, color, cell, bgOverride, fgOverride)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, color, cell, bgOverride, fgOverride)) {
             this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
           }
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground, cell, undefined, undefined)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, this._colors.foreground, cell, undefined, undefined)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
-          }
-      }
-
-      // Background
-      switch (bgColorMode) {
-        case Attributes.CM_P16:
-        case Attributes.CM_P256:
-          charElement.classList.add(`xterm-bg-${bg}`);
-          break;
-        case Attributes.CM_RGB:
-          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
-          break;
-        case Attributes.CM_DEFAULT:
-        default:
-          if (isInverse) {
-            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
           }
       }
 
