@@ -12,7 +12,7 @@ import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -281,7 +281,7 @@ export class DomRendererRowFactory {
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || isPowerlineGlyph(cell.getCode())) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode())) {
       return false;
     }
 
