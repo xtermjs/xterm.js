@@ -84,7 +84,7 @@ export class BufferDecorationRenderer extends Disposable {
       // exceeded the container width, so hide
       element.style.display = 'none';
     }
-    this._refreshXPosition(decoration);
+    this._refreshXPosition(decoration, element);
 
     return element;
   }
@@ -112,15 +112,15 @@ export class BufferDecorationRenderer extends Disposable {
     }
   }
 
-  private _refreshXPosition(decoration: IInternalDecoration): void {
-    if (!decoration.element) {
+  private _refreshXPosition(decoration: IInternalDecoration, element: HTMLElement | undefined = decoration.element): void {
+    if (!element) {
       return;
     }
     const x = decoration.options.x ?? 0;
     if ((decoration.options.anchor || 'left') === 'right') {
-      decoration.element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
     } else {
-      decoration.element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
     }
   }
 

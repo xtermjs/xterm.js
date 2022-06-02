@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { openTerminal, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
+import { openTerminal, writeSync, launchBrowser, timeout } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from 'playwright';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -23,8 +23,6 @@ describe('Search Tests', function(): void {
     await page.setViewportSize({ width, height });
     await page.goto(APP);
     await openTerminal(page);
-    await page.evaluate(`window.search = new SearchAddon();`);
-    await page.evaluate(`window.term.loadAddon(window.search);`);
   });
 
   after(() => {
@@ -32,7 +30,12 @@ describe('Search Tests', function(): void {
   });
 
   beforeEach(async () => {
-    await page.evaluate(`window.term.reset()`);
+    await page.evaluate(`
+      window.term.reset()
+      window.search?.dispose();
+      window.search = new SearchAddon();
+      window.term.loadAddon(window.search);
+    `);
   });
 
   it('Simple Search', async () => {
@@ -120,6 +123,176 @@ describe('Search Tests', function(): void {
     });
   });
 
+  describe('onDidChangeResults', async () => {
+    describe('findNext', () => {
+      it('should not fire unless the decorations option is set', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc');
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a')`), true);
+        assert.strictEqual(await page.evaluate('window.calls.length'), 0);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate('window.calls.length'), 1);
+      });
+      it('should fire with correct event values', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c');
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: -1, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: -1, resultIndex: -1 },
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 3, resultIndex: 1 },
+          { resultCount: 3, resultIndex: 2 }
+        ]);
+      });
+      it('should fire with correct event values (incremental)', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc aabc');
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: -1, resultIndex: -1 }
+        ]);
+      });
+    });
+    describe('findPrevious', () => {
+      it('should not fire unless the decorations option is set', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc');
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a')`), true);
+        assert.strictEqual(await page.evaluate('window.calls.length'), 0);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate('window.calls.length'), 1);
+      });
+      it('should fire with correct event values', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c');
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        await timeout(2000);
+        assert.strictEqual(await page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: -1, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: -1, resultIndex: -1 },
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 3, resultIndex: 1 },
+          { resultCount: 3, resultIndex: 0 }
+        ]);
+      });
+      it('should fire with correct event values (incremental)', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc aabc');
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: -1, resultIndex: -1 }
+        ]);
+      });
+    });
+  });
+
   describe('Regression tests', () => {
     describe('#2444 wrapped line content not being found', () => {
       let fixture: string;
@@ -204,6 +377,21 @@ describe('Search Tests', function(): void {
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
         assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
       });
+    });
+  });
+  describe('#3834 lines with null characters before search terms', () => {
+    // This case can be triggered by the prompt when using starship under conpty
+    it('should find all matches on a line containing null characters', async () => {
+      await page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+      // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
+      await writeSync(page, '\\x1b[CHi Hi');
+      assert.strictEqual(await page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+      assert.deepStrictEqual(await page.evaluate('window.calls'), [
+        { resultCount: 2, resultIndex: 1 }
+      ]);
     });
   });
 });

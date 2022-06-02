@@ -94,7 +94,8 @@ const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
   find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
-  findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
+  findPrevious: <HTMLInputElement>document.querySelector('#find-previous'),
+  findResults: document.querySelector('#find-results')
 };
 const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
@@ -159,6 +160,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -397,8 +399,11 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    if(name === 'unicode11' && checkbox.checked) {
+    if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
+    }
+    if (name === 'search' && checkbox.checked) {
+      addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
@@ -410,6 +415,8 @@ function initAddons(term: TerminalType): void {
           }, 0);
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
+        } else if (name === 'search') {
+          addon.instance.onDidChangeResults(e => updateFindResults(e));
         }
       } else {
         if (name === 'webgl') {
@@ -436,6 +443,16 @@ function initAddons(term: TerminalType): void {
   const container = document.getElementById('addons-container');
   container.innerHTML = '';
   container.appendChild(fragment);
+}
+
+function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined) {
+  let content: string;
+  if (e === undefined) {
+    content = 'undefined';
+  } else {
+    content = `index: ${e.resultIndex}, count: ${e.resultCount}`;
+  }
+  actionElements.findResults.textContent = content;
 }
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
@@ -556,6 +573,28 @@ function loadTest() {
     // Send ^C to get a new prompt
     term._core._onData.fire('\x03');
   });
+}
+
+function powerlineSymbolTest() {
+  function s(char: string): string {
+    return `${char} \x1b[7m${char}\x1b[0m  `;
+  }
+  term.write('\n\n\r');
+  term.writeln('Standard powerline symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_  ${s('\ue0a0')}${s('\ue0a1')}${s('\ue0a2')}`);
+  term.writeln(`0xB_  ${s('\ue0b0')}${s('\ue0b1')}${s('\ue0b2')}${s('\ue0b3')}`);
+  term.writeln('');
+  term.writeln('Powerline extra symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_                 ${s('\ue0a3')}`);
+  term.writeln(`0xB_                      ${s('\ue0b4')}${s('\ue0b5')}${s('\ue0b6')}${s('\ue0b7')}${s('\ue0b8')}${s('\ue0b9')}${s('\ue0ba')}${s('\ue0bb')}${s('\ue0bc')}${s('\ue0bd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xC_  ${s('\ue0c0')}${s('\ue0c1')}${s('\ue0c2')}${s('\ue0c3')}${s('\ue0c4')}${s('\ue0c5')}${s('\ue0c6')}${s('\ue0c7')}${s('\ue0c8')}${s('\ue0c9')}${s('\ue0ca')}${s('\ue0cb')}${s('\ue0cc')}${s('\ue0cd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xD_  ${s('\ue0d0')}${s('\ue0d1')}${s('\ue0d2')}     ${s('\ue0d4')}`);
+  term.writeln('');
+  term.writeln('Sample of nerd fonts icons:');
+  term.writeln('    nf-linux-apple (\\uF302) \uf302');
+  term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
 }
 
 function addDecoration() {

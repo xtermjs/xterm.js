@@ -94,17 +94,40 @@ export namespace color {
  */
 export namespace css {
   export function toColor(css: string): IColor {
-    switch (css.length) {
-      case 7: // #rrggbb
-        return {
-          css,
-          rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
-        };
-      case 9: // #rrggbbaa
-        return {
-          css,
-          rgba: parseInt(css.slice(1), 16) >>> 0
-        };
+    if (css.match(/#[0-9a-f]{3,8}/i)) {
+      switch (css.length) {
+        case 4: { // #rgb
+          const r = parseInt(css.slice(1, 2).repeat(2), 16);
+          const g = parseInt(css.slice(2, 3).repeat(2), 16);
+          const b = parseInt(css.slice(3, 4).repeat(2), 16);
+          return rgba.toColor(r, g, b);
+        }
+        case 5: { // #rgba
+          const r = parseInt(css.slice(1, 2).repeat(2), 16);
+          const g = parseInt(css.slice(2, 3).repeat(2), 16);
+          const b = parseInt(css.slice(3, 4).repeat(2), 16);
+          const a = parseInt(css.slice(4, 5).repeat(2), 16);
+          return rgba.toColor(r, g, b, a);
+        }
+        case 7: // #rrggbb
+          return {
+            css,
+            rgba: (parseInt(css.slice(1), 16) << 8 | 0xFF) >>> 0
+          };
+        case 9: // #rrggbbaa
+          return {
+            css,
+            rgba: parseInt(css.slice(1), 16) >>> 0
+          };
+      }
+    }
+    const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
+    if (rgbaMatch) { // rgb() or rgba()
+      const r = parseInt(rgbaMatch[1]);
+      const g = parseInt(rgbaMatch[2]);
+      const b = parseInt(rgbaMatch[3]);
+      const a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
+      return rgba.toColor(r, g, b, a);
     }
     throw new Error('css.toColor: Unsupported css format');
   }
@@ -235,10 +258,10 @@ export namespace rgba {
     return [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
   }
 
-  export function toColor(r: number, g: number, b: number): IColor {
+  export function toColor(r: number, g: number, b: number, a?: number): IColor {
     return {
-      css: channels.toCss(r, g, b),
-      rgba: channels.toRgba(r, g, b)
+      css: channels.toCss(r, g, b, a),
+      rgba: channels.toRgba(r, g, b, a)
     };
   }
 }

@@ -226,7 +226,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionTransparent.css};` +
+      ` background-color: ${this._colors.selectionOpaque.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {

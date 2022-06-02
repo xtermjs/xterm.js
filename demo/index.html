@@ -40,6 +40,7 @@
           <div style= "display:flex; flex-direction:column;">
             <label>Find next <input id="find-next"/></label>
             <label>Find previous <input id="find-previous"/></label>
+            <div>Results: <span id="find-results"></span></div>
             <label><input type="checkbox" id="regex"/>Use regex</label>
             <label><input type="checkbox" id="case-sensitive"/>Case sensitive</label>
             <label><input type="checkbox" id="whole-word"/>Whole word</label>
@@ -69,6 +70,7 @@
             <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
             <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
             <button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button>
+            <button id="powerline-symbol-test" title="Write powerline symbol characters to the terminal (\ue0a0+)">Powerline symbol test</button>
             <button id="add-decoration" title="Add a decoration to the terminal">Decoration</button>
             <button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button>
           </div>
