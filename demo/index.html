@@ -67,12 +67,21 @@
         <div id="test" class="tabContent">
           <h3>Test</h3>
           <div style="display: inline-block; margin-right: 16px;">
-            <button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button>
-            <button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button>
-            <button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button>
-            <button id="powerline-symbol-test" title="Write powerline symbol characters to the terminal (\ue0a0+)">Powerline symbol test</button>
-            <button id="add-decoration" title="Add a decoration to the terminal">Decoration</button>
-            <button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button>
+            <dl>
+              <dt>Lifecycle</dt>
+              <dd><button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button></dd>
+
+              <dt>Performance</dt>
+              <dd><button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button></dd>
+
+              <dt>Styles</dt>
+              <dd><button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button></dd>
+              <dd><button id="powerline-symbol-test" title="Write powerline symbol characters to the terminal (\ue0a0+)">Powerline symbol test</button></dd>
+
+              <dt>Decorations</dt>
+              <dd><button id="add-decoration" title="Add a decoration to the terminal">Decoration</button></dd>
+              <dd><button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button></dd>
+            </dl>
           </div>
         </div>
       </div>
