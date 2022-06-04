@@ -5,7 +5,7 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ColorManager } from 'browser/ColorManager';
+import { ColorManager, DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 
 describe('ColorManager', () => {
   let cm: ColorManager;
@@ -308,6 +308,25 @@ describe('ColorManager', () => {
       assert.equal(cm.colors.background.css, '#0000FF');
       // FG reverts back to default
       assert.equal(cm.colors.foreground.css, '#ffffff');
+    });
+
+    it('should set all extended ansi colors in reverse order', () => {
+      cm.setTheme({
+        extendedAnsi: DEFAULT_ANSI_COLORS.map(a => a.css).slice().reverse()
+      });
+
+      for (let ansiColor = 16; ansiColor <= 255; ansiColor++){
+        assert.equal(cm.colors.ansi[ansiColor].css, DEFAULT_ANSI_COLORS[255 + 16 - ansiColor].css);
+      }
+    });
+
+    it('should set one extended ansi colors and keep the other default', () => {
+      cm.setTheme({
+        extendedAnsi: [ '#ffffff' ]
+      });
+
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+      assert.equal(cm.colors.ansi[17].css, DEFAULT_ANSI_COLORS[17].css);
     });
   });
 });

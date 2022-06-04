@@ -162,6 +162,11 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[13] = this._parseColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
     this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
+    if (theme.extendedAnsi) {
+      for (let ansiColor = 0; ansiColor < theme.extendedAnsi.length && ansiColor <= 255 - 16; ansiColor++) {
+        this.colors.ansi[ansiColor + 16] = this._parseColor(theme.extendedAnsi[ansiColor], DEFAULT_ANSI_COLORS[ansiColor + 16]);
+      }
+    }
     // Clear our the cache
     this._contrastCache.clear();
     this._updateRestoreColors();
