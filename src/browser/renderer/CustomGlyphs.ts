@@ -325,6 +325,35 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
   '╰': { [Style.NORMAL]: 'C.5,0,.5,.5,1,.5' }
 };
 
+interface IVectorShape {
+  d: string;
+  type: VectorType;
+}
+
+const enum VectorType {
+  FILL,
+  STROKE
+}
+
+/**
+ * This contains the definitions of the primarily used box drawing characters as vector shapes. The
+ * reason these characters are defined specially is to avoid common problems if a user's font has
+ * not been patched with powerline characters and also to get pixel perfect rendering as rendering
+ * issues can occur around AA/SPAA.
+ *
+ * Original symbols defined in https://github.com/powerline/fontpatcher
+ */
+export const powerlineDefinitions: { [index: string]: IVectorShape } = {
+  // Right triangle solid
+  '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.FILL },
+  // Right triangle line
+  '\u{E0B1}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.STROKE },
+  // Left triangle solid
+  '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL },
+  // Left triangle line
+  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE }
+};
+
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
  * successfully drawn.
@@ -352,6 +381,12 @@ export function tryDrawCustomChar(
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
     drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    return true;
+  }
+
+  const powerlineDefinition = powerlineDefinitions[c];
+  if (powerlineDefinition) {
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
     return true;
   }
 
@@ -516,6 +551,38 @@ function drawBoxDrawingChar(
     ctx.stroke();
     ctx.closePath();
   }
+}
+
+function drawPowerlineChar(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: IVectorShape,
+  xOffset: number,
+  yOffset: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number
+): void {
+  ctx.beginPath();
+  ctx.lineWidth = window.devicePixelRatio;
+  for (const instruction of charDefinition.d.split(' ')) {
+    const type = instruction[0];
+    const f = svgToCanvasInstructionMap[type];
+    if (!f) {
+      console.error(`Could not find drawing instructions for "${type}"`);
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset));
+  }
+  if (charDefinition.type === VectorType.STROKE) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
+  ctx.closePath();
 }
 
 function clamp(value: number, max: number, min: number = 0): number {
