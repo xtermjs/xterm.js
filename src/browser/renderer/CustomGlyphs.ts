@@ -328,6 +328,8 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
 interface IVectorShape {
   d: string;
   type: VectorType;
+  /** Padding to apply to the vector's x axis in CSS pixels. */
+  horizontalPadding?: number;
 }
 
 const enum VectorType {
@@ -347,11 +349,11 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Right triangle solid
   '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.FILL },
   // Right triangle line
-  '\u{E0B1}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.STROKE },
+  '\u{E0B1}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.STROKE, horizontalPadding: 0.5 },
   // Left triangle solid
   '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL },
   // Left triangle line
-  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE }
+  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE, horizontalPadding: 0.5 }
 };
 
 /**
@@ -574,7 +576,7 @@ function drawPowerlineChar(
     if (!args[0] || !args[1]) {
       continue;
     }
-    f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset));
+    f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, charDefinition.horizontalPadding));
   }
   if (charDefinition.type === VectorType.STROKE) {
     ctx.strokeStyle = ctx.fillStyle;
@@ -595,7 +597,7 @@ const svgToCanvasInstructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
 };
 
-function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number): number[] {
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, horizontalPadding: number = 0): number[] {
   const result = args.map(e => parseFloat(e) || parseInt(e));
 
   if (result.length < 2) {
@@ -604,14 +606,14 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
 
   for (let x = 0; x < result.length; x += 2) {
     // Translate from 0-1 to 0-cellWidth
-    result[x] *= cellWidth;
+    result[x] *= cellWidth - (horizontalPadding * 2 * window.devicePixelRatio);
     // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
     // line at 100% devicePixelRatio
     if (result[x] !== 0) {
       result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
     }
     // Apply the cell's offset (ie. x*cellWidth)
-    result[x] += xOffset;
+    result[x] += xOffset + (horizontalPadding * window.devicePixelRatio);
   }
 
   for (let y = 1; y < result.length; y += 2) {
