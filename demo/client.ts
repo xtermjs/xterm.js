@@ -585,6 +585,32 @@ function powerlineSymbolTest() {
   term.writeln(`0xA_  ${s('\ue0a0')}${s('\ue0a1')}${s('\ue0a2')}`);
   term.writeln(`0xB_  ${s('\ue0b0')}${s('\ue0b1')}${s('\ue0b2')}${s('\ue0b3')}`);
   term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b1 \x1b[0;40m\ue0b0` +
+    ` 0 \ue0b1 \x1b[30;41m\ue0b0\x1b[39m` +
+    ` 1 \ue0b1 \x1b[31;42m\ue0b0\x1b[39m` +
+    ` 2 \ue0b1 \x1b[32;43m\ue0b0\x1b[39m` +
+    ` 3 \ue0b1 \x1b[33;44m\ue0b0\x1b[39m` +
+    ` 4 \ue0b1 \x1b[34;45m\ue0b0\x1b[39m` +
+    ` 5 \ue0b1 \x1b[35;46m\ue0b0\x1b[39m` +
+    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[39m` +
+    ` 7 \ue0b1 \x1b[37;49m\ue0b0\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b3 \x1b[0;7;40m\ue0b2\x1b[27m` +
+    ` 0 \ue0b3 \x1b[7;30;41m\ue0b2\x1b[27;39m` +
+    ` 1 \ue0b3 \x1b[7;31;42m\ue0b2\x1b[27;39m` +
+    ` 2 \ue0b3 \x1b[7;32;43m\ue0b2\x1b[27;39m` +
+    ` 3 \ue0b3 \x1b[7;33;44m\ue0b2\x1b[27;39m` +
+    ` 4 \ue0b3 \x1b[7;34;45m\ue0b2\x1b[27;39m` +
+    ` 5 \ue0b3 \x1b[7;35;46m\ue0b2\x1b[27;39m` +
+    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;39m` +
+    ` 7 \ue0b3 \x1b[7;37;49m\ue0b2\x1b[0m`
+  );
+  term.writeln('');
   term.writeln('Powerline extra symbols:');
   term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
   term.writeln(`0xA_                 ${s('\ue0a3')}`);
