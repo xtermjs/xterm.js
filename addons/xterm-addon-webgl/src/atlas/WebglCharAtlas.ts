@@ -322,9 +322,14 @@ export class WebglCharAtlas implements IDisposable {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedWidth = this._config.scaledCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
+    }
+    // Include line height when drawing glyphs
+    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    if (this._tmpCanvas.height < allowedHeight) {
+      this._tmpCanvas.height = allowedHeight;
     }
     this._tmpCtx.save();
 
@@ -485,7 +490,7 @@ export class WebglCharAtlas implements IDisposable {
    */
   private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
     boundingBox.top = 0;
-    const height = restrictedGlyph ? this._config.scaledCharHeight : this._tmpCanvas.height;
+    const height = this._config.scaledCellHeight;
     const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
