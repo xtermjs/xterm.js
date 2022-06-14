@@ -207,8 +207,12 @@ export class SelectionService extends Disposable implements ISelectionService {
         return '';
       }
 
+      // For column selection it's not enough to rely on final selection's swapping of reversed
+      // values, it also needs the x coordinates to swap independently of the y coordinate is needed
+      const startCol = start[0] < end[0] ? start[0] : end[0];
+      const endCol = start[0] < end[0] ? end[0] : start[0];
       for (let i = start[1]; i <= end[1]; i++) {
-        const lineText = buffer.translateBufferLineToString(i, true, start[0], end[0]);
+        const lineText = buffer.translateBufferLineToString(i, true, startCol, endCol);
         result.push(lineText);
       }
     } else {
