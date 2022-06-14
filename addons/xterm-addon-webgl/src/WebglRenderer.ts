@@ -455,8 +455,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     y -= this._terminal.buffer.active.viewportY;
     if (this._model.selection.columnSelectMode) {
-      return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
-        x < this._model.selection.endCol && y < this._model.selection.viewportCappedEndRow;
+      if (this._model.selection.startCol <= this._model.selection.endCol) {
+        return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
+          x < this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
+      }
+      return x < this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
+        x >= this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
     }
     return (y > this._model.selection.viewportStartRow && y < this._model.selection.viewportEndRow) ||
       (this._model.selection.viewportStartRow === this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol && x < this._model.selection.endCol) ||
