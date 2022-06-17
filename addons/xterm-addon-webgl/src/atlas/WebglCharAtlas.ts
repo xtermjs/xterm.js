@@ -490,7 +490,7 @@ export class WebglCharAtlas implements IDisposable {
    */
   private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
     boundingBox.top = 0;
-    const height = this._config.scaledCellHeight;
+    const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
     const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
