@@ -10,7 +10,7 @@ import { IEvent } from 'common/EventEmitter';
 export type BufferIndex = [number, number];
 
 export interface IBufferStringIteratorResult {
-  range: {first: number, last: number};
+  range: { first: number, last: number };
   content: string;
 }
 
@@ -46,7 +46,7 @@ export interface IBuffer {
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
   clearMarkers(y: number): void;
-  clearAllMarkers(excludeY: number): void;
+  clearAllMarkers(): void;
 }
 
 export interface IBufferSet extends IDisposable {
