@@ -703,10 +703,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
           but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
           break;
         case 'wheel':
-          const amount = self.viewport!.getLinesScrolled(ev as WheelEvent)
+          const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
 
           if (amount === 0) {
-            return false
+            return false;
           }
 
           action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
