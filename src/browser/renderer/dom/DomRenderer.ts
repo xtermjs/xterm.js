@@ -226,7 +226,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionTransparent.css};` +
+      ` background-color: ${this._colors.selectionOpaque.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {
@@ -304,8 +304,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     const documentFragment = document.createDocumentFragment();
 
     if (columnSelectMode) {
+      const isXFlipped = start[0] > end[0];
       documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, start[0], end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
+        this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
       );
     } else {
       // Draw first row

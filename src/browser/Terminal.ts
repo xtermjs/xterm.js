@@ -703,10 +703,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
           but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
           break;
         case 'wheel':
-          // only UP/DOWN wheel events are respected
-          if ((ev as WheelEvent).deltaY !== 0) {
-            action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+          const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
+
+          if (amount === 0) {
+            return false;
           }
+
+          action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
           but = CoreMouseButton.WHEEL;
           break;
         default:
@@ -1096,14 +1099,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    if (!this._compositionHelper!.keydown(event)) {
+    // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
+    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
+
+    if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this._bufferService.scrollToBottom();
       }
       return false;
     }
 
-    if (event.key === 'Dead' || event.key === 'AltGraph') {
+    if (!shouldIgnoreComposition && (event.key === 'Dead' || event.key === 'AltGraph')) {
       this._unprocessedDeadKey = true;
     }
 
@@ -1334,7 +1340,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // Don't clear if it's already clear
       return;
     }
-    this.buffer.clearAllMarkers(0);
+    this.buffer.clearAllMarkers();
     this.buffer.lines.set(0, this.buffer.lines.get(this.buffer.ybase + this.buffer.y)!);
     this.buffer.lines.length = 1;
     this.buffer.ydisp = 0;

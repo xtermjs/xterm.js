@@ -601,16 +601,13 @@ export class Buffer implements IBuffer {
   }
 
   /**
-   * Clears markers on all lines except for those on a particular line.
-   * @param excludeY The line to exclude.
+   * Clears markers on all lines
    */
-  public clearAllMarkers(excludeY: number): void {
+  public clearAllMarkers(): void {
     this._isClearing = true;
     for (let i = 0; i < this.markers.length; i++) {
-      if (this.markers[i].line !== excludeY) {
-        this.markers[i].dispose();
-        this.markers.splice(i--, 1);
-      }
+      this.markers[i].dispose();
+      this.markers.splice(i--, 1);
     }
     this._isClearing = false;
   }
@@ -671,7 +668,7 @@ export class Buffer implements IBuffer {
 export class BufferStringIterator implements IBufferStringIterator {
   private _current: number;
 
-  constructor (
+  constructor(
     private _buffer: IBuffer,
     private _trimRight: boolean,
     private _startIndex: number = 0,

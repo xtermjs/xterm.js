@@ -12,7 +12,7 @@ import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { css } from 'common/Color';
-import { MockCharacterJoinerService, MockSelectionService } from 'browser/TestUtils.test';
+import { MockCharacterJoinerService } from 'browser/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -184,7 +184,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-2">a</span>'
+          '<span class="xterm-bg-2 xterm-fg-1">a</span>'
         );
       });
 
@@ -195,7 +195,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-257">a</span>'
+          '<span class="xterm-bg-257 xterm-fg-1">a</span>'
         );
       });
 
@@ -205,7 +205,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-257 xterm-bg-1">a</span>'
+          '<span class="xterm-bg-1 xterm-fg-257">a</span>'
         );
       });
 
@@ -230,7 +230,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="color:#010203;background-color:#040506;">a</span>'
+          '<span style="background-color:#040506;color:#010203;">a</span>'
         );
       });
 
@@ -241,7 +241,27 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span style="color:#040506;background-color:#010203;">a</span>'
+          '<span style="background-color:#010203;color:#040506;">a</span>'
+        );
+      });
+    });
+
+    describe('selectionForeground', () => {
+      it('should force selected cells with content to be rendered above the background', () => {
+        lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+        lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+        rowFactory.onSelectionChanged([1, 0], [2, 0], false);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+        assert.equal(getFragmentHtml(fragment),
+          '<span>a</span><span class="xterm-decoration-top">b</span>'
+        );
+      });
+      it('should force whitespace cells to be rendered above the background', () => {
+        lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+        rowFactory.onSelectionChanged([0, 0], [2, 0], false);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+        assert.equal(getFragmentHtml(fragment),
+          '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'
         );
       });
     });

@@ -262,7 +262,7 @@ export class MockBuffer implements IBuffer {
   public clearMarkers(y: number): void {
     throw new Error('Method not implemented.');
   }
-  public clearAllMarkers(excludeY: number): void {
+  public clearAllMarkers(): void {
     throw new Error('Method not implemented.');
   }
 }

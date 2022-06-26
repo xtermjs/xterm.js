@@ -134,7 +134,7 @@ export class SearchAddon implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._resultIndex !== undefined || this._cachedSearchTerm && term !== this._cachedSearchTerm) {
+      if (this._resultIndex !== undefined || this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -288,7 +288,9 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._searchResults) {
-      if (this._resultIndex === undefined) {
+      if (this._searchResults.size === 0) {
+        this._resultIndex = -1;
+      } else if (this._resultIndex === undefined) {
         this._resultIndex = 0;
       } else {
         this._resultIndex++;
@@ -312,8 +314,10 @@ export class SearchAddon implements ITerminalAddon {
       throw new Error('Cannot use addon until it has been loaded');
     }
     this._lastSearchOptions = searchOptions;
-    if (searchOptions?.decorations && (this._resultIndex !== undefined || term !== this._cachedSearchTerm)) {
-      this._highlightAllMatches(term, searchOptions);
+    if (searchOptions?.decorations) {
+      if (this._resultIndex !== undefined || this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
+        this._highlightAllMatches(term, searchOptions);
+      }
     }
     return this._fireResults(term, this._findPreviousAndSelect(term, searchOptions), searchOptions);
   }
@@ -408,12 +412,14 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (this._searchResults) {
-      if (this._resultIndex === undefined || this._resultIndex < 0) {
-        this._resultIndex = this._searchResults?.size - 1;
+      if (this._searchResults.size === 0) {
+        this._resultIndex = -1;
+      } else if (this._resultIndex === undefined || this._resultIndex < 0) {
+        this._resultIndex = this._searchResults.size - 1;
       } else {
         this._resultIndex--;
         if (this._resultIndex === -1) {
-          this._resultIndex = this._searchResults?.size - 1;
+          this._resultIndex = this._searchResults.size - 1;
         }
       }
     }
@@ -604,7 +610,8 @@ export class SearchAddon implements ITerminalAddon {
           break;
         }
         if (cell.getWidth()) {
-          offset += cell.getChars().length;
+          // Treat null characters as whitespace to align with the translateToString API
+          offset += cell.getCode() === 0 ? 1 : cell.getChars().length;
         }
       }
       lineIndex++;

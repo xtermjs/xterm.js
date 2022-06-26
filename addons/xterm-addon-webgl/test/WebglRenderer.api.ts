@@ -718,9 +718,10 @@ describe('WebGL Renderer Integration Tests', async () => {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
+      // Block characters ignore block elements so a different char is used here
       await writeSync(page,
-        `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
-        `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
+        `\\x1b[30m■\\x1b[31m■\\x1b[32m■\\x1b[33m■\\x1b[34m■\\x1b[35m■\\x1b[36m■\\x1b[37m■\\r\\n` +
+        `\\x1b[90m■\\x1b[91m■\\x1b[92m■\\x1b[93m■\\x1b[94m■\\x1b[95m■\\x1b[96m■\\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
       await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
@@ -786,9 +787,10 @@ describe('WebGL Renderer Integration Tests', async () => {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
+      // Block characters ignore block elements so a different char is used here
       await writeSync(page,
-        `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
-        `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
+        `\\x1b[30m■\\x1b[31m■\\x1b[32m■\\x1b[33m■\\x1b[34m■\\x1b[35m■\\x1b[36m■\\x1b[37m■\\r\\n` +
+        `\\x1b[90m■\\x1b[91m■\\x1b[92m■\\x1b[93m■\\x1b[94m■\\x1b[95m■\\x1b[96m■\\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
       await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);

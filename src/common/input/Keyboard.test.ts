@@ -13,6 +13,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
   shiftKey?: boolean;
   metaKey?: boolean;
   keyCode?: number;
+  code?: string;
   key?: string;
   type?: string;
 }, partialOptions: {
@@ -26,6 +27,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
     shiftKey: partialEvent.shiftKey || false,
     metaKey: partialEvent.metaKey || false,
     keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : 0,
+    code: partialEvent.code || '',
     key: partialEvent.key || '',
     type: partialEvent.type || ''
   };
@@ -311,6 +313,10 @@ describe('Keyboard', () => {
     it('should handle uppercase letters', () => {
       assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 65, key: 'A' }).key, 'A');
       assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 49, key: '!' }).key, '!');
+    });
+
+    it('should return proper sequence for ctrl+@', () => {
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\x00');
     });
 
   });

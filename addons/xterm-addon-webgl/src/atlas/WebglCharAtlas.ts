@@ -13,7 +13,7 @@ import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { channels, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
-import { isPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -217,8 +217,8 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, isPowerLineGlyph: boolean): string {
-    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, isPowerLineGlyph);
+  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): string {
+    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands);
     if (minimumContrastCss) {
       return minimumContrastCss;
     }
@@ -282,8 +282,8 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, isPowerLineGlyph: boolean): string | undefined {
-    if (this._config.minimumContrastRatio === 1 || isPowerLineGlyph) {
+  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): string | undefined {
+    if (this._config.minimumContrastRatio === 1 || excludeFromContrastRatioDemands) {
       return undefined;
     }
 
@@ -322,9 +322,14 @@ export class WebglCharAtlas implements IDisposable {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = this._config.scaledCharWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedWidth = this._config.scaledCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
+    }
+    // Include line height when drawing glyphs
+    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    if (this._tmpCanvas.height < allowedHeight) {
+      this._tmpCanvas.height = allowedHeight;
     }
     this._tmpCtx.save();
 
@@ -372,7 +377,7 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerLineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
-    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, powerLineGlyph);
+    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
 
     // Apply alpha to dim the character
     if (dim) {
@@ -485,7 +490,7 @@ export class WebglCharAtlas implements IDisposable {
    */
   private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
     boundingBox.top = 0;
-    const height = restrictedGlyph ? this._config.scaledCharHeight : this._tmpCanvas.height;
+    const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
     const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
