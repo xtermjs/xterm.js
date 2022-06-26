@@ -13,6 +13,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
   shiftKey?: boolean;
   metaKey?: boolean;
   keyCode?: number;
+  code?: string;
   key?: string;
   type?: string;
 }, partialOptions: {
@@ -26,6 +27,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
     shiftKey: partialEvent.shiftKey || false,
     metaKey: partialEvent.metaKey || false,
     keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : 0,
+    code: partialEvent.code || '',
     key: partialEvent.key || '',
     type: partialEvent.type || ''
   };

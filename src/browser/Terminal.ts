@@ -1099,14 +1099,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    if (!this._compositionHelper!.keydown(event)) {
+    // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
+    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
+
+    if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this._bufferService.scrollToBottom();
       }
       return false;
     }
 
-    if (event.key === 'Dead' || event.key === 'AltGraph') {
+    if (!shouldIgnoreComposition && (event.key === 'Dead' || event.key === 'AltGraph')) {
       this._unprocessedDeadKey = true;
     }
 
