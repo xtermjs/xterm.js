@@ -1140,6 +1140,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
+    // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
+    // letters cannot be input while caps lock is on.
+    if (event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
+      if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
+        return true;
+      }
+    }
+
     if (this._unprocessedDeadKey) {
       this._unprocessedDeadKey = false;
       return true;
