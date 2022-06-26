@@ -1140,13 +1140,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
-    if (event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1 && (
-      (event.keyCode >= 65 && event.keyCode <= 90) ||
-      (event.keyCode >= 97 && event.keyCode <= 122)
-    )) {
-      // Include only keys in A-Z/a-z.
-      // HACK: Need process these key events in 'onkeypress' to fix a IME bug on macOS Chrome. fix for #2457
-      return true;
+    // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
+    // letters cannot be input while caps lock is on.
+    if (event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
+      if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
+        return true;
+      }
     }
 
     if (this._unprocessedDeadKey) {
