@@ -16,7 +16,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     cursor: undefined,
     cursorAccent: undefined,
     selection: undefined,
-    ansi: [...colors.ansi]
+    ansi: colors.ansi.slice()
   };
   return {
     devicePixelRatio: window.devicePixelRatio,

@@ -136,7 +136,7 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public registerMarker(cursorYOffset: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);

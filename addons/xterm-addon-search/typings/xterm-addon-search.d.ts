@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, IDisposable, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 
 declare module 'xterm-addon-search' {
   /**
@@ -32,6 +32,47 @@ declare module 'xterm-addon-search' {
      * `findNext`, not `findPrevious`.
      */
     incremental?: boolean;
+
+    /**
+     * When set, will highlight all instances of the word on search and show
+     * them in the overview ruler if it's enabled.
+     */
+    decorations?: ISearchDecorationOptions;
+  }
+
+  /**
+   * Options for showing decorations when searching.
+   */
+  interface ISearchDecorationOptions {
+    /**
+     * The background color of a match, this must use #RRGGBB format.
+     */
+    matchBackground?: string;
+
+    /**
+     * The border color of a match.
+     */
+    matchBorder?: string;
+
+    /**
+     * The overview ruler color of a match.
+     */
+    matchOverviewRuler: string;
+
+    /**
+     * The background color for the currently active match, this must use #RRGGBB format.
+     */
+    activeMatchBackground?: string;
+
+    /**
+     * The border color of the currently active match.
+     */
+    activeMatchBorder?: string;
+
+    /**
+     * The overview ruler color of the currently active match.
+     */
+    activeMatchColorOverviewRuler: string;
   }
 
   /**
@@ -64,5 +105,26 @@ declare module 'xterm-addon-search' {
      * @param searchOptions The options for the search.
      */
     public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
+
+    /**
+     * Clears the decorations and selection
+     */
+    public clearDecorations(): void;
+
+    /**
+     * Clears the active result decoration, this decoration is applied on top of the selection so
+     * removing it will reveal the selection underneath. This is intended to be called on the search
+     * textarea's `blur` event.
+     */
+    public clearActiveDecoration(): void;
+
+    /**
+     * When decorations are enabled, fires when
+     * the search results change.
+     * @returns -1 if there are no matches and
+     * @returns undefined when the threshold of 1k results
+     * is exceeded and decorations are disposed of.
+     */
+    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number } | undefined>;
   }
 }

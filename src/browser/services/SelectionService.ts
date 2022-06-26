@@ -11,7 +11,7 @@ import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
-import { ILinkifier2 } from 'browser/Types';
+import { IBufferRange, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
@@ -207,8 +207,12 @@ export class SelectionService extends Disposable implements ISelectionService {
         return '';
       }
 
+      // For column selection it's not enough to rely on final selection's swapping of reversed
+      // values, it also needs the x coordinates to swap independently of the y coordinate is needed
+      const startCol = start[0] < end[0] ? start[0] : end[0];
+      const endCol = start[0] < end[0] ? end[0] : start[0];
       for (let i = start[1]; i <= end[1]; i++) {
-        const lineText = buffer.translateBufferLineToString(i, true, start[0], end[0]);
+        const lineText = buffer.translateBufferLineToString(i, true, startCol, endCol);
         result.push(lineText);
       }
     } else {
@@ -308,6 +312,15 @@ export class SelectionService extends Disposable implements ISelectionService {
     return this._areCoordsInSelection(coords, start, end);
   }
 
+  public isCellInSelection(x: number, y: number): boolean {
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    return this._areCoordsInSelection([x, y], start, end);
+  }
+
   protected _areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
     return (coords[1] > start[1] && coords[1] < end[1]) ||
         (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
@@ -393,7 +406,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
+    let offset = getCoordsRelativeToElement(window, event, this._screenElement)[1];
     const terminalHeight = this._renderService.dimensions.canvasHeight;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -771,6 +784,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.selectionStart = [col, row];
     this._model.selectionStartLength = length;
     this.refresh();
+    this._fireEventIfSelectionChanged();
   }
 
   public rightClickSelect(ev: MouseEvent): void {
@@ -1002,8 +1016,12 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   protected _selectLineAt(line: number): void {
     const wrappedRange = this._bufferService.buffer.getWrappedRangeForLine(line);
+    const range: IBufferRange = {
+      start: { x: 0, y: wrappedRange.first },
+      end: { x: this._bufferService.cols - 1, y: wrappedRange.last }
+    };
     this._model.selectionStart = [0, wrappedRange.first];
-    this._model.selectionEnd = [this._bufferService.cols, wrappedRange.last];
-    this._model.selectionStartLength = 0;
+    this._model.selectionEnd = undefined;
+    this._model.selectionStartLength = getRangeLength(range, this._bufferService.cols);
   }
 }

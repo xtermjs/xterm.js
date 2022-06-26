@@ -643,7 +643,7 @@ declare module 'xterm-headless' {
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset: number): IMarker | undefined;
+    registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /**
      * @deprecated use `registerMarker` instead.

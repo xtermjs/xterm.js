@@ -9,9 +9,9 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'browser/Color';
+import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -87,11 +87,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
 
-    this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
   }
 
   public dispose(): void {
@@ -226,7 +226,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionTransparent.css};` +
+      ` background-color: ${this._colors.selectionOpaque.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {
@@ -281,6 +281,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
     }
 
+    this._rowFactory.onSelectionChanged(start, end, columnSelectMode);
+    this.renderRows(0, this._bufferService.rows - 1);
+
     // Selection does not exist
     if (!start || !end) {
       return;
@@ -301,8 +304,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     const documentFragment = document.createDocumentFragment();
 
     if (columnSelectMode) {
+      const isXFlipped = start[0] > end[0];
       documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, start[0], end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
+        this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
       );
     } else {
       // Draw first row
@@ -361,7 +365,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerText = '';
-
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;

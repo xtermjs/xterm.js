@@ -5,7 +5,7 @@
 
 import { IDecorationOptions, IDecoration, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
-import { ICoreTerminal, CharData, ITerminalOptions } from 'common/Types';
+import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
@@ -44,6 +44,7 @@ export interface IPublicTerminal extends IDisposable {
   onSelectionChange: IEvent<void>;
   onRender: IEvent<{ start: number, end: number }>;
   onResize: IEvent<{ cols: number, rows: number }>;
+  onWriteParsed: IEvent<void>;
   onTitleChange: IEvent<string>;
   onBell: IEvent<void>;
   blur(): void;
@@ -112,11 +113,6 @@ export interface IColorManager {
   onOptionsChange(key: string): void;
 }
 
-export interface IColor {
-  css: string;
-  rgba: number; // 32-bit int with rgba in each byte
-}
-
 export interface IColorSet {
   foreground: IColor;
   background: IColor;
@@ -125,6 +121,7 @@ export interface IColorSet {
   selectionTransparent: IColor;
   /** The selection blended on top of background. */
   selectionOpaque: IColor;
+  selectionForeground: IColor | undefined;
   ansi: IColor[];
   contrastCache: IColorContrastCache;
 }
@@ -313,4 +310,8 @@ export interface ICharacterJoiner {
 
 export interface IRenderDebouncer extends IDisposable {
   refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void;
+}
+
+export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
+  addRefreshCallback(callback: FrameRequestCallback): number;
 }

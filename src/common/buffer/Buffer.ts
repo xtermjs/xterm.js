@@ -585,20 +585,29 @@ export class Buffer implements IBuffer {
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
 
-  public clearMarkers(y?: number): void {
+  /**
+   * Clears markers on single line.
+   * @param y The line to clear.
+   */
+  public clearMarkers(y: number): void {
     this._isClearing = true;
-    if (y !== undefined) {
-      for (let i = 0; i < this.markers.length; i++) {
-        if (this.markers[i].line === y) {
-          this.markers[i].dispose();
-          this.markers.splice(i, 1);
-        }
+    for (let i = 0; i < this.markers.length; i++) {
+      if (this.markers[i].line === y) {
+        this.markers[i].dispose();
+        this.markers.splice(i--, 1);
       }
-    } else {
-      for (const marker of this.markers) {
-        marker.dispose();
-      }
-      this.markers = [];
+    }
+    this._isClearing = false;
+  }
+
+  /**
+   * Clears markers on all lines
+   */
+  public clearAllMarkers(): void {
+    this._isClearing = true;
+    for (let i = 0; i < this.markers.length; i++) {
+      this.markers[i].dispose();
+      this.markers.splice(i--, 1);
     }
     this._isClearing = false;
   }
@@ -659,7 +668,7 @@ export class Buffer implements IBuffer {
 export class BufferStringIterator implements IBufferStringIterator {
   private _current: number;
 
-  constructor (
+  constructor(
     private _buffer: IBuffer,
     private _trimRight: boolean,
     private _startIndex: number = 0,

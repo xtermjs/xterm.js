@@ -74,6 +74,7 @@ export class Terminal implements ITerminalApi {
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
@@ -166,7 +167,7 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);

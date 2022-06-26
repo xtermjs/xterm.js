@@ -5,7 +5,7 @@
 
 
 // 'rgb:' rule - matching: r/g/b | rr/gg/bb | rrr/ggg/bbb | rrrr/gggg/bbbb (hex digits)
-const RGB_REX = /^([\da-f]{1})\/([\da-f]{1})\/([\da-f]{1})$|^([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})$|^([\da-f]{3})\/([\da-f]{3})\/([\da-f]{3})$|^([\da-f]{4})\/([\da-f]{4})\/([\da-f]{4})$/;
+const RGB_REX = /^([\da-f])\/([\da-f])\/([\da-f])$|^([\da-f]{2})\/([\da-f]{2})\/([\da-f]{2})$|^([\da-f]{3})\/([\da-f]{3})\/([\da-f]{3})$|^([\da-f]{4})\/([\da-f]{4})\/([\da-f]{4})$/;
 // '#...' rule - matching any hex digits
 const HASH_REX = /^[\da-f]+$/;
 

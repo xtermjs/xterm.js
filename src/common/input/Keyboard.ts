@@ -230,6 +230,8 @@ export function evaluateKeyboardEvent(
       // page up
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_UP;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[5~';
       }
@@ -238,6 +240,8 @@ export function evaluateKeyboardEvent(
       // page down
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_DOWN;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[6~';
       }
@@ -366,6 +370,9 @@ export function evaluateKeyboardEvent(
       } else if (ev.key && ev.ctrlKey) {
         if (ev.key === '_') { // ^_
           result.key = C0.US;
+        }
+        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
+          result.key = C0.NUL;
         }
       }
       break;

@@ -92,8 +92,10 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
+  find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
-  findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
+  findPrevious: <HTMLInputElement>document.querySelector('#find-previous'),
+  findResults: document.querySelector('#find-results')
 };
 const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
@@ -107,7 +109,15 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`
+    incremental: e.key !== `Enter`,
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
+      matchBackground: '#232422',
+      matchBorder: '#555753',
+      matchOverviewRuler: '#555753',
+      activeMatchBackground: '#ef2929',
+      activeMatchBorder: '#ffffff',
+      activeMatchColorOverviewRuler: '#ef2929'
+    } : undefined
   };
 }
 
@@ -150,7 +160,9 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
+  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
 
 function createTerminal(): void {
@@ -202,9 +214,14 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
-
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+  });
+  addDomListener(actionElements.findNext, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
+  });
+  addDomListener(actionElements.findPrevious, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
   });
 
   // fit is called within a setTimeout, cols and rows need this.
@@ -382,8 +399,11 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    if(name === 'unicode11' && checkbox.checked) {
+    if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
+    }
+    if (name === 'search' && checkbox.checked) {
+      addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
@@ -395,6 +415,8 @@ function initAddons(term: TerminalType): void {
           }, 0);
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
+        } else if (name === 'search') {
+          addon.instance.onDidChangeResults(e => updateFindResults(e));
         }
       } else {
         if (name === 'webgl') {
@@ -421,6 +443,16 @@ function initAddons(term: TerminalType): void {
   const container = document.getElementById('addons-container');
   container.innerHTML = '';
   container.appendChild(fragment);
+}
+
+function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined) {
+  let content: string;
+  if (e === undefined) {
+    content = 'undefined';
+  } else {
+    content = `index: ${e.resultIndex}, count: ${e.resultCount}`;
+  }
+  actionElements.findResults.textContent = content;
 }
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
@@ -543,11 +575,78 @@ function loadTest() {
   });
 }
 
+function powerlineSymbolTest() {
+  function s(char: string): string {
+    return `${char} \x1b[7m${char}\x1b[0m  `;
+  }
+  term.write('\n\n\r');
+  term.writeln('Standard powerline symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_  ${s('\ue0a0')}${s('\ue0a1')}${s('\ue0a2')}`);
+  term.writeln(`0xB_  ${s('\ue0b0')}${s('\ue0b1')}${s('\ue0b2')}${s('\ue0b3')}`);
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b1 \x1b[0;40m\ue0b0` +
+    ` 0 \ue0b1 \x1b[30;41m\ue0b0\x1b[39m` +
+    ` 1 \ue0b1 \x1b[31;42m\ue0b0\x1b[39m` +
+    ` 2 \ue0b1 \x1b[32;43m\ue0b0\x1b[39m` +
+    ` 3 \ue0b1 \x1b[33;44m\ue0b0\x1b[39m` +
+    ` 4 \ue0b1 \x1b[34;45m\ue0b0\x1b[39m` +
+    ` 5 \ue0b1 \x1b[35;46m\ue0b0\x1b[39m` +
+    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[39m` +
+    ` 7 \ue0b1 \x1b[37;49m\ue0b0\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b3 \x1b[0;7;40m\ue0b2\x1b[27m` +
+    ` 0 \ue0b3 \x1b[7;30;41m\ue0b2\x1b[27;39m` +
+    ` 1 \ue0b3 \x1b[7;31;42m\ue0b2\x1b[27;39m` +
+    ` 2 \ue0b3 \x1b[7;32;43m\ue0b2\x1b[27;39m` +
+    ` 3 \ue0b3 \x1b[7;33;44m\ue0b2\x1b[27;39m` +
+    ` 4 \ue0b3 \x1b[7;34;45m\ue0b2\x1b[27;39m` +
+    ` 5 \ue0b3 \x1b[7;35;46m\ue0b2\x1b[27;39m` +
+    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;39m` +
+    ` 7 \ue0b3 \x1b[7;37;49m\ue0b2\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln('Powerline extra symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_                 ${s('\ue0a3')}`);
+  term.writeln(`0xB_                      ${s('\ue0b4')}${s('\ue0b5')}${s('\ue0b6')}${s('\ue0b7')}${s('\ue0b8')}${s('\ue0b9')}${s('\ue0ba')}${s('\ue0bb')}${s('\ue0bc')}${s('\ue0bd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xC_  ${s('\ue0c0')}${s('\ue0c1')}${s('\ue0c2')}${s('\ue0c3')}${s('\ue0c4')}${s('\ue0c5')}${s('\ue0c6')}${s('\ue0c7')}${s('\ue0c8')}${s('\ue0c9')}${s('\ue0ca')}${s('\ue0cb')}${s('\ue0cc')}${s('\ue0cd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xD_  ${s('\ue0d0')}${s('\ue0d1')}${s('\ue0d2')}     ${s('\ue0d4')}`);
+  term.writeln('');
+  term.writeln('Sample of nerd fonts icons:');
+  term.writeln('    nf-linux-apple (\\uF302) \uf302');
+  term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
+}
+
 function addDecoration() {
+  term.options['overviewRulerWidth'] = 15;
   const marker = term.addMarker(1);
-  const decoration = term.registerDecoration({ marker });
-  term.write('');
-  decoration.onRender(() => {
-    decoration.element.style.backgroundColor = 'red';
+  const decoration = term.registerDecoration({
+    marker,
+    backgroundColor: '#00FF00',
+    foregroundColor: '#00FE00',
+    overviewRulerOptions: { color: '#ef292980', position: 'left' }
+  });
+  decoration.onRender((e: HTMLElement) => {
+    e.style.right = '100%';
+    e.style.backgroundColor = '#ef292980';
   });
 }
+
+function addOverviewRuler() {
+  term.options['overviewRulerWidth'] = 15;
+  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+}
+

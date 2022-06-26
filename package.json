@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "4.17.0",
+  "version": "4.18.0",
   "main": "lib/xterm.js",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
@@ -76,7 +76,7 @@
     "mustache": "^4.2.0",
     "node-pty": "^0.10.1",
     "nyc": "^15.1.0",
-    "playwright": "^1.16.2",
+    "playwright": "^1.22.1",
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
     "ts-loader": "^9.1.2",
@@ -85,6 +85,6 @@
     "webpack": "^5.61.0",
     "webpack-cli": "^4.9.1",
     "ws": "^8.2.3",
-    "xterm-benchmark": "^0.3.0"
+    "xterm-benchmark": "^0.3.1"
   }
 }

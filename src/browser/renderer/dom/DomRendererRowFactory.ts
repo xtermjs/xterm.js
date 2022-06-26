@@ -3,15 +3,16 @@
  * @license MIT
  */
 
-import { IBufferLine } from 'common/Types';
+import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IOptionsService } from 'common/services/Services';
-import { color, rgba } from 'browser/Color';
-import { IColorSet, IColor } from 'browser/Types';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { color, rgba } from 'common/Color';
+import { IColorSet } from 'browser/Types';
+import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
+import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -27,17 +28,28 @@ export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 export class DomRendererRowFactory {
   private _workCell: CellData = new CellData();
 
+  private _selectionStart: [number, number] | undefined;
+  private _selectionEnd: [number, number] | undefined;
+  private _columnSelectMode: boolean = false;
+
   constructor(
     private readonly _document: Document,
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IDecorationService private readonly _decorationService: IDecorationService
   ) {
   }
 
   public setColors(colors: IColorSet): void {
     this._colors = colors;
+  }
+
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this._columnSelectMode = columnSelectMode;
   }
 
   public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
@@ -171,6 +183,72 @@ export class DomRendererRowFactory {
         bgColorMode = temp2;
       }
 
+      // Apply any decoration foreground/background overrides, this must happen after inverse has
+      // been applied
+      let bgOverride: IColor | undefined;
+      let fgOverride: IColor | undefined;
+      let isTop = false;
+      for (const d of this._decorationService.getDecorationsAtCell(x, row)) {
+        if (d.options.layer !== 'top' && isTop) {
+          continue;
+        }
+        if (d.backgroundColorRGB) {
+          bgColorMode = Attributes.CM_RGB;
+          bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          bgOverride = d.backgroundColorRGB;
+        }
+        if (d.foregroundColorRGB) {
+          fgColorMode = Attributes.CM_RGB;
+          fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+          fgOverride = d.foregroundColorRGB;
+        }
+        isTop = d.options.layer === 'top';
+      }
+
+      // Apply selection foreground if applicable
+      const isInSelection = this._isCellInSelection(x, row);
+      if (!isTop) {
+        if (this._colors.selectionForeground && isInSelection) {
+          fgColorMode = Attributes.CM_RGB;
+          fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+          fgOverride = this._colors.selectionForeground;
+        }
+      }
+
+      // If in the selection, force the element to be above the selection to improve contrast and
+      // support opaque selections
+      if (isInSelection) {
+        bgOverride = this._colors.selectionOpaque;
+        isTop = true;
+      }
+
+      // If it's a top decoration, render above the selection
+      if (isTop) {
+        charElement.classList.add(`xterm-decoration-top`);
+      }
+
+      // Background
+      let resolvedBg: IColor;
+      switch (bgColorMode) {
+        case Attributes.CM_P16:
+        case Attributes.CM_P256:
+          resolvedBg = this._colors.ansi[bg];
+          charElement.classList.add(`xterm-bg-${bg}`);
+          break;
+        case Attributes.CM_RGB:
+          resolvedBg = rgba.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
+          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
+          break;
+        case Attributes.CM_DEFAULT:
+        default:
+          if (isInverse) {
+            resolvedBg = this._colors.foreground;
+            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
+          } else {
+            resolvedBg = this._colors.background;
+          }
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
@@ -178,7 +256,7 @@ export class DomRendererRowFactory {
           if (cell.isBold() && fg < 8 && this._optionsService.rawOptions.drawBoldTextInBrightColors) {
             fg += 8;
           }
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.ansi[fg])) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, this._colors.ansi[fg], cell, bgOverride, undefined)) {
             charElement.classList.add(`xterm-fg-${fg}`);
           }
           break;
@@ -188,32 +266,16 @@ export class DomRendererRowFactory {
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
           );
-          if (!this._applyMinimumContrast(charElement, this._colors.background, color)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, color, cell, bgOverride, fgOverride)) {
             this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
           }
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, this._colors.background, this._colors.foreground)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, this._colors.foreground, cell, bgOverride, undefined)) {
             if (isInverse) {
               charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
-          }
-      }
-
-      // Background
-      switch (bgColorMode) {
-        case Attributes.CM_P16:
-        case Attributes.CM_P256:
-          charElement.classList.add(`xterm-bg-${bg}`);
-          break;
-        case Attributes.CM_RGB:
-          this._addStyle(charElement, `background-color:#${padStart(bg.toString(16), '0', 6)}`);
-          break;
-        case Attributes.CM_DEFAULT:
-        default:
-          if (isInverse) {
-            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
           }
       }
 
@@ -224,18 +286,21 @@ export class DomRendererRowFactory {
     return fragment;
   }
 
-  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1) {
+  private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode())) {
       return false;
     }
 
-    // Try get from cache first
-    let adjustedColor = this._colors.contrastCache.getColor(this._workCell.bg, this._workCell.fg);
+    // Try get from cache first, only use the cache when there are no decoration overrides
+    let adjustedColor: IColor | undefined | null = undefined;
+    if (!bgOverride && !fgOverride) {
+      adjustedColor = this._colors.contrastCache.getColor(bg.rgba, fg.rgba);
+    }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bg, fg, this._optionsService.rawOptions.minimumContrastRatio);
-      this._colors.contrastCache.setColor(this._workCell.bg, this._workCell.fg, adjustedColor ?? null);
+      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
+      this._colors.contrastCache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {
@@ -248,6 +313,26 @@ export class DomRendererRowFactory {
 
   private _addStyle(element: HTMLElement, style: string): void {
     element.setAttribute('style', `${element.getAttribute('style') || ''}${style};`);
+  }
+
+  private _isCellInSelection(x: number, y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    if (this._columnSelectMode) {
+      if (start[0] <= end[0]) {
+        return x >= start[0] && y >= start[1] &&
+          x < end[0] && y <= end[1];
+      }
+      return x < start[0] && y >= start[1] &&
+        x >= end[0] && y <= end[1];
+    }
+    return (y > start[1] && y < end[1]) ||
+        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+        (start[1] < end[1] && y === end[1] && x < end[0]) ||
+        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 

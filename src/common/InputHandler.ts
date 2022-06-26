@@ -1231,8 +1231,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
+    this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
     line.isWrapped = false;
-    this._bufferService.buffer.clearMarkers(y);
   }
 
   /**
