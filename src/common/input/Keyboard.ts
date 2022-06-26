@@ -371,6 +371,9 @@ export function evaluateKeyboardEvent(
         if (ev.key === '_') { // ^_
           result.key = C0.US;
         }
+        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
+          result.key = C0.NUL;
+        }
       }
       break;
   }
