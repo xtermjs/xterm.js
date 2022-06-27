@@ -191,6 +191,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**libv86 Terminal Forwarding**](https://github.com/hello-smile6/libv86-terminal-forwarding): Peer-to-peer SSH for the web, using WebRTC via [Bugout](https://github.com/chr15m/bugout) for data transfer and [v86](https://github.com/copy/v86) for web-based virtualization.
 - [**hack.courses**](https://hack.courses): Interactive Linux and command-line classes using xterm.js to expose a real terminal available for everyone.
 - [**Render**](https://render.com): Platform-as-a-service for your apps, websites, and databases using xterm.js to provide a command prompt for user containers and for streaming build and runtime logs.
+- [**CloudTTY**](https://github.com/cloudtty/cloudtty): A Friendly Kubernetes CloudShell (Web Terminal).
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
