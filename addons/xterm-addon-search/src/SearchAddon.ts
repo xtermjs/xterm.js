@@ -55,7 +55,7 @@ export class SearchAddon implements ITerminalAddon {
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
   private _resultDecorations: Map<number, IDecoration[]> | undefined;
-  private _searchResults:  Map<string, ISearchResult> | undefined;
+  private _searchResults: Map<string, ISearchResult> | undefined;
   private _onDataDisposable: IDisposable | undefined;
   private _onResizeDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
@@ -72,7 +72,7 @@ export class SearchAddon implements ITerminalAddon {
 
   private _resultIndex: number | undefined;
 
-  private readonly _onDidChangeResults = new EventEmitter<{resultIndex: number, resultCount: number} | undefined>();
+  private readonly _onDidChangeResults = new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>();
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
@@ -87,9 +87,9 @@ export class SearchAddon implements ITerminalAddon {
     }
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
       this._highlightTimeout = setTimeout(() => {
-        this.findPrevious(this._cachedSearchTerm!,  { ...this._lastSearchOptions, incremental: true, noScroll: true });
-        this._resultIndex = this._searchResults ? this._searchResults.size -1 : -1;
-        this._onDidChangeResults.fire({ resultIndex: this._searchResults ? this._searchResults.size - 1 : -1, resultCount: this._searchResults ? this._searchResults.size : -1 });
+        this.findPrevious(this._cachedSearchTerm!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
+        this._resultIndex = this._searchResults ? this._searchResults.size - 1 : -1;
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
       }, 200);
     }
   }
@@ -324,10 +324,8 @@ export class SearchAddon implements ITerminalAddon {
 
   private _fireResults(term: string, found: boolean, searchOptions?: ISearchOptions): boolean {
     if (searchOptions?.decorations) {
-      if (found && this._resultIndex !== undefined && this._searchResults?.size) {
+      if (this._resultIndex !== undefined && this._searchResults?.size !== undefined) {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
-      } else if (this._resultIndex === -1) {
-        this._onDidChangeResults.fire({ resultIndex: -1, resultCount: -1 });
       } else {
         this._onDidChangeResults.fire(undefined);
       }
@@ -693,7 +691,7 @@ export class SearchAddon implements ITerminalAddon {
     }
 
     if (!noScroll) {
-    // If it is not in the viewport then we scroll else it just gets selected
+      // If it is not in the viewport then we scroll else it just gets selected
       if (result.row >= (terminal.buffer.active.viewportY + terminal.rows) || result.row < terminal.buffer.active.viewportY) {
         let scroll = result.row - terminal.buffer.active.viewportY;
         scroll -= Math.floor(terminal.rows / 2);

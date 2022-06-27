@@ -16,8 +16,8 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-describe('Search Tests', function(): void {
-  before(async function(): Promise<any> {
+describe('Search Tests', function (): void {
+  before(async function (): Promise<any> {
     browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
@@ -155,7 +155,7 @@ describe('Search Tests', function(): void {
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
-          { resultCount: -1, resultIndex: -1 }
+          { resultCount: 0, resultIndex: -1 }
         ]);
         assert.strictEqual(await page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         assert.strictEqual(await page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
@@ -163,7 +163,7 @@ describe('Search Tests', function(): void {
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
-          { resultCount: -1, resultIndex: -1 },
+          { resultCount: 0, resultIndex: -1 },
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 3, resultIndex: 1 },
           { resultCount: 3, resultIndex: 2 }
@@ -203,7 +203,7 @@ describe('Search Tests', function(): void {
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
-          { resultCount: -1, resultIndex: -1 }
+          { resultCount: 0, resultIndex: -1 }
         ]);
       });
     });
@@ -239,7 +239,7 @@ describe('Search Tests', function(): void {
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
-          { resultCount: -1, resultIndex: -1 }
+          { resultCount: 0, resultIndex: -1 }
         ]);
         assert.strictEqual(await page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         assert.strictEqual(await page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
@@ -247,7 +247,7 @@ describe('Search Tests', function(): void {
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
-          { resultCount: -1, resultIndex: -1 },
+          { resultCount: 0, resultIndex: -1 },
           { resultCount: 3, resultIndex: 2 },
           { resultCount: 3, resultIndex: 1 },
           { resultCount: 3, resultIndex: 0 }
@@ -287,7 +287,7 @@ describe('Search Tests', function(): void {
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 0 },
-          { resultCount: -1, resultIndex: -1 }
+          { resultCount: 0, resultIndex: -1 }
         ]);
       });
     });
