@@ -35,7 +35,7 @@ declare module 'xterm-addon-fit' {
     /**
      * Gets the proposed dimensions that will be used for a fit.
      */
-    public proposeDimensions(): ITerminalDimensions;
+    public proposeDimensions(): ITerminalDimensions | undefined;
   }
 
   /**
