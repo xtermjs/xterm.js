@@ -193,6 +193,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Render**](https://render.com): Platform-as-a-service for your apps, websites, and databases using xterm.js to provide a command prompt for user containers and for streaming build and runtime logs.
 - [**CloudTTY**](https://github.com/cloudtty/cloudtty): A Friendly Kubernetes CloudShell (Web Terminal).
 - [**Go SSH Web Client**](https://github.com/wuchihsu/go-ssh-web-client): A simple SSH web client using Go, WebSocket and Xterm.js.
+- [**web3os**](https://web3os.sh): A decentralized operating system for the next web
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
