@@ -51,6 +51,13 @@ export abstract class Disposable implements IDisposable {
 }
 
 /**
+ * Wrap a function in a disposable.
+ */
+export function toDisposable(f: () => void): IDisposable {
+  return { dispose: f };
+}
+
+/**
  * Dispose of all disposables in an array and set its length to 0.
  */
 export function disposeArray(disposables: IDisposable[]): void {

@@ -11,6 +11,7 @@ import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 interface IVertices {
   attributes: Float32Array;
@@ -69,7 +70,7 @@ const INDICES_PER_CELL = 10;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
-export class GlyphRenderer {
+export class GlyphRenderer  extends Disposable {
   private _atlas: WebglCharAtlas | undefined;
 
   private _program: WebGLProgram;
@@ -96,9 +97,11 @@ export class GlyphRenderer {
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
+    super();
+
     const gl = this._gl;
-    const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
-    this._program = program;
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
@@ -112,6 +115,7 @@ export class GlyphRenderer {
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     const unitQuadVerticesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadVerticesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, unitQuadVertices, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
@@ -121,11 +125,13 @@ export class GlyphRenderer {
     // unitQuadVertuces to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
     this._attributesBuffer = throwIfFalsy(gl.createBuffer());
+    this.register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.OFFSET);
     gl.vertexAttribPointer(VertexAttribLocations.OFFSET, 2, gl.FLOAT, false, BYTES_PER_CELL, 0);
@@ -145,6 +151,7 @@ export class GlyphRenderer {
 
     // Setup empty texture atlas
     this._atlasTexture = throwIfFalsy(gl.createTexture());
+    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture)));
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
