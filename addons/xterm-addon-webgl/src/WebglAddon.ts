@@ -45,6 +45,7 @@ export class WebglAddon implements ITerminalAddon {
     const renderService: IRenderService = (this._terminal as any)._core._renderService;
     renderService.setRenderer((this._terminal as any)._core._createRenderer());
     renderService.onResize(this._terminal.cols, this._terminal.rows);
+    this._renderer?.dispose();
     this._renderer = undefined;
   }
 
