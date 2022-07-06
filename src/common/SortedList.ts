@@ -35,6 +35,9 @@ export class SortedList<T> {
     }
     const key = this._getKey(value);
     let i = this._search(key, 0, this._array.length - 1);
+    if (i === -1) {
+      return false;
+    }
     if (this._getKey(this._array[i]) !== key) {
       return false;
     }
