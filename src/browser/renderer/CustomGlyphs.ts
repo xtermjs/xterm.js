@@ -361,7 +361,7 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Left semi-circle solid,
   '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL },
   // Left semi-circle line,
-     '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE }
+'\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE }
 };
 
 /**
