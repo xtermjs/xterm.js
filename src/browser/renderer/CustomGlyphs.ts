@@ -353,7 +353,15 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Left triangle solid
   '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL },
   // Left triangle line
-  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE, horizontalPadding: 0.5 }
+  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE, horizontalPadding: 0.5 },
+  // Right semi-circle solid,
+  '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL },
+  // Right semi-circle line,
+  '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, horizontalPadding: 0.5 },
+  // Left semi-circle solid,
+  '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL },
+  // Left semi-circle line,
+  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, horizontalPadding: 0.5 }
 };
 
 /**
