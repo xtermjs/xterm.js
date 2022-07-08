@@ -312,7 +312,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           const range = joinedRanges.shift()!;
 
           // We already know the exact start and end column of the joined range,
-          // so we get the string and width representing it directly
+          // so we get the string and width representing it directly.
           cell = new JoinedCellData(
             cell,
             line!.translateToString(true, range[0], range[1]),
