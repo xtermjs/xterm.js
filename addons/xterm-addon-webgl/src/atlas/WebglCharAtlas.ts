@@ -588,7 +588,8 @@ export class WebglCharAtlas implements IDisposable {
 }
 
 /**
- * Makes a partiicular rgb color in an ImageData completely transparent.
+ * Makes a particular rgb color and colors that are nearly the same in an ImageData completely
+ * transparent.
  * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
 function clearColor(imageData: ImageData, color: IColor): boolean {
@@ -597,9 +598,9 @@ function clearColor(imageData: ImageData, color: IColor): boolean {
   const g = color.rgba >>> 16 & 0xFF;
   const b = color.rgba >>> 8 & 0xFF;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
-    if (imageData.data[offset] === r &&
-        imageData.data[offset + 1] === g &&
-        imageData.data[offset + 2] === b) {
+    if (Math.abs(imageData.data[offset] - r) +
+        Math.abs(imageData.data[offset + 1] - g) +
+        Math.abs(imageData.data[offset + 2] - b) < 35) {
       imageData.data[offset + 3] = 0;
     } else {
       isEmpty = false;
