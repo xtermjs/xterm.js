@@ -252,7 +252,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[38;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[38;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -312,7 +312,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[7;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[7;48;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -348,7 +348,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[8;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[8;48;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -369,7 +369,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;${i};0;0m█\x1b[0m`;
+          data += `\\x1b[38;2;${i};0;0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -405,7 +405,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;0;${i};0m█\x1b[0m`;
+          data += `\\x1b[38;2;0;${i};0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -441,7 +441,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;0;0;${i}m█\x1b[0m`;
+          data += `\\x1b[38;2;0;0;${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -477,7 +477,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[38;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -567,7 +567,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;0;${i};0m█\x1b[0m`;
+          data += `\\x1b[7;48;2;0;${i};0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -603,7 +603,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;0;0;${i}m█\x1b[0m`;
+          data += `\\x1b[7;48;2;0;0;${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -639,7 +639,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[7;48;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -674,7 +674,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[8;48;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[8;48;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -870,7 +870,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         background: '#ff000080'
       };
       await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\\x1b[7m█\x1b[0m`;
+      const data = `\\x1b[7m█\\x1b[0m`;
       await writeSync(page, data);
       // Inverse background should be opaque
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
@@ -889,7 +889,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         selectionForeground: '#ff0000'
       };
       await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\\x1b[7m█\x1b[0m`;
+      const data = `\\x1b[7m█\\x1b[0m`;
       await writeSync(page, data);
       await page.evaluate(`window.term.selectAll()`);
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);

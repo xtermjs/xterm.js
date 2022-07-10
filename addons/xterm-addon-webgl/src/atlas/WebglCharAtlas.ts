@@ -11,7 +11,7 @@ import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { channels, rgba } from 'common/Color';
+import { channels, color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
@@ -217,10 +217,10 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getForegroundCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): string {
-    const minimumContrastCss = this._getMinimumContrastCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands);
-    if (minimumContrastCss) {
-      return minimumContrastCss;
+  private _getForegroundColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor {
+    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands);
+    if (minimumContrastColor) {
+      return minimumContrastColor;
     }
 
     switch (fgColorMode) {
@@ -229,21 +229,17 @@ export class WebglCharAtlas implements IDisposable {
         if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
           fgColor += 8;
         }
-        return this._getColorFromAnsiIndex(fgColor).css;
+        return this._getColorFromAnsiIndex(fgColor);
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(fgColor);
-        return channels.toCss(arr[0], arr[1], arr[2]);
+        return rgba.toColor(arr[0], arr[1], arr[2]);
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          const bg = this._config.colors.background.css;
-          if (bg.length === 9) {
-            // Remove bg alpha channel if present
-            return bg.slice(0, 7);
-          }
-          return bg;
+          // Inverse should always been opaque, even when transparency is used
+          return color.opaque(this._config.colors.background);
         }
-        return this._config.colors.foreground.css;
+        return this._config.colors.foreground;
     }
   }
 
@@ -282,13 +278,13 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  private _getMinimumContrastCss(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): string | undefined {
+  private _getMinimumContrastColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor | undefined {
     if (this._config.minimumContrastRatio === 1 || excludeFromContrastRatioDemands) {
       return undefined;
     }
 
     // Try get from cache first
-    const adjustedColor = this._config.colors.contrastCache.getCss(bg, fg);
+    const adjustedColor = this._config.colors.contrastCache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
       return adjustedColor || undefined;
     }
@@ -298,18 +294,18 @@ export class WebglCharAtlas implements IDisposable {
     const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio);
 
     if (!result) {
-      this._config.colors.contrastCache.setCss(bg, fg, null);
+      this._config.colors.contrastCache.setColor(bg, fg, null);
       return undefined;
     }
 
-    const css = channels.toCss(
+    const color = rgba.toColor(
       (result >> 24) & 0xFF,
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF
     );
-    this._config.colors.contrastCache.setCss(bg, fg, css);
+    this._config.colors.contrastCache.setColor(bg, fg, color);
 
-    return css;
+    return color;
   }
 
   private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
@@ -377,7 +373,8 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerLineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
-    this._tmpCtx.fillStyle = this._getForegroundCss(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
+    const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
+    this._tmpCtx.fillStyle = foregroundColor.css;
 
     // Apply alpha to dim the character
     if (dim) {
@@ -401,12 +398,12 @@ export class WebglCharAtlas implements IDisposable {
     // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
     // try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
           this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
           if (!isBeyondCellBounds) {
             break;
           }
@@ -441,14 +438,8 @@ export class WebglCharAtlas implements IDisposable {
       0, 0, this._tmpCanvas.width, this._tmpCanvas.height
     );
 
-    // TODO: Support transparency
-    // let isEmpty = false;
-    // if (!this._config.allowTransparency) {
-    //   isEmpty = clearColor(imageData, backgroundColor);
-    // }
-
     // Clear out the background color and determine if the glyph is empty.
-    const isEmpty = clearColor(imageData, backgroundColor);
+    const isEmpty = clearColor(imageData, backgroundColor, foregroundColor, this._config.allowTransparency);
 
     // Handle empty glyphs
     if (isEmpty) {
@@ -592,20 +583,44 @@ export class WebglCharAtlas implements IDisposable {
  * transparent.
  * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
-function clearColor(imageData: ImageData, color: IColor): boolean {
+function clearColor(imageData: ImageData, bg: IColor, fg: IColor, allowTransparency: boolean): boolean {
+  // Get color channels
+  const r = bg.rgba >>> 24;
+  const g = bg.rgba >>> 16 & 0xFF;
+  const b = bg.rgba >>> 8 & 0xFF;
+  const fgR = fg.rgba >>> 24;
+  const fgG = fg.rgba >>> 16 & 0xFF;
+  const fgB = fg.rgba >>> 8 & 0xFF;
+
+  // Calculate a threshold that when below a color will be treated as transpart when the sum of
+  // channel value differs. This helps improve rendering when glyphs overlap with others. This
+  // threshold is calculated relative to the difference between the background and foreground to
+  // ensure important details of the glyph are always shown, even when the contrast ratio is low.
+  // The number 12 is largely arbitrary to ensure the pixels that escape the cell in the test case
+  // were covered (fg=#8ae234, bg=#c4a000).
+  const threshold = Math.floor((Math.abs(r - fgR) + Math.abs(g - fgG) + Math.abs(b - fgB)) / 12);
+
+  // Set alpha channel of relevent pixels to 0
   let isEmpty = true;
-  const r = color.rgba >>> 24;
-  const g = color.rgba >>> 16 & 0xFF;
-  const b = color.rgba >>> 8 & 0xFF;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
-    if (Math.abs(imageData.data[offset] - r) +
-        Math.abs(imageData.data[offset + 1] - g) +
-        Math.abs(imageData.data[offset + 2] - b) < 35) {
+    if (imageData.data[offset] === r &&
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
-      isEmpty = false;
+      // Check the threshold only when transparency is not allowed only as overlapping isn't an
+      // issue for transparency glyphs.
+      if (!allowTransparency &&
+          (Math.abs(imageData.data[offset] - r) +
+          Math.abs(imageData.data[offset + 1] - g) +
+          Math.abs(imageData.data[offset + 2] - b)) < threshold) {
+        imageData.data[offset + 3] = 0;
+      } else {
+        isEmpty = false;
+      }
     }
   }
+
   return isEmpty;
 }
 
