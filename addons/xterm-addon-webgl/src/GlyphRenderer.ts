@@ -169,11 +169,11 @@ export class GlyphRenderer  extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars);
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string, lastBg: number): void {
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars, lastBg);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars?: string): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars: string, lastBg: number): void {
     const terminal = this._terminal;
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
@@ -203,18 +203,34 @@ export class GlyphRenderer  extends Disposable {
       return;
     }
 
-    // a_origin
-    array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
-    array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
-    // a_size
-    array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
-    array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
-    // a_texcoord
-    array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x;
-    array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
-    // a_texsize
-    array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
-    array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    if (bg !== lastBg && rasterizedGlyph.offset.x > 0) {
+      const clippedPixels = rasterizedGlyph.offset.x;
+      // a_origin
+      array[i    ] = this._dimensions.scaledCharLeft;
+      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      // a_size
+      array[i + 2] = (rasterizedGlyph.size.x - clippedPixels) / this._dimensions.scaledCanvasWidth;
+      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      // a_texcoord
+      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x + clippedPixels / this._atlas.cacheCanvas.width;
+      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      // a_texsize
+      array[i + 6] = rasterizedGlyph.sizeClipSpace.x - clippedPixels / this._atlas.cacheCanvas.width;
+      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    } else {
+      // a_origin
+      array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
+      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      // a_size
+      array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
+      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      // a_texcoord
+      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x;
+      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      // a_texsize
+      array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
+      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    }
     // a_cellpos only changes on resize
   }
 

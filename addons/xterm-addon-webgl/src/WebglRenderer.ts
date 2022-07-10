@@ -291,6 +291,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
     let cell: ICellData = this._workCell;
+    let lastBg: number = 0;
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -298,7 +299,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._model.lineLengths[y] = 0;
       const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < terminal.cols; x++) {
+        lastBg = this._workColors.bg;
         line.loadCell(x, cell);
+
+        if (x === 0) {
+          lastBg = this._workColors.bg;
+        }
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -351,7 +357,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -360,7 +366,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
+            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
