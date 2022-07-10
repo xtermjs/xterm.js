@@ -35,6 +35,8 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   termName?: string;
 }
 
+export type CursorStyle = 'block' | 'underline' | 'bar';
+
 export type XtermListener = (...args: any[]) => void;
 
 /**
