@@ -6,6 +6,7 @@
 import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
+import { CursorStyle } from 'common/Types';
 
 // Source: https://freesound.org/people/altemark/sounds/45759/
 // This sound is released under the Creative Commons Attribution 3.0 Unported
@@ -123,6 +124,14 @@ export class OptionsService implements IOptionsService {
 
   private _sanitizeAndValidateOption(key: string, value: any): any {
     switch (key) {
+      case 'cursorStyle':
+        if (!value) {
+          value = DEFAULT_OPTIONS[key];
+        }
+        if (!isCursorStyle(value)) {
+          throw new Error(`"${value}" is not a valid value for ${key}`);
+        }
+        break;
       case 'bellStyle':
       case 'cursorStyle':
       case 'rendererType':
@@ -175,4 +184,8 @@ export class OptionsService implements IOptionsService {
   public getOption(key: string): any {
     return this.options[key];
   }
+}
+
+function isCursorStyle(value: unknown): value is CursorStyle {
+  return value === 'block' || value === 'underline' || value === 'bar';
 }
