@@ -111,9 +111,14 @@ export class ColorManager implements IColorManager {
     this._updateRestoreColors();
   }
 
-  public onOptionsChange(key: string): void {
-    if (key === 'minimumContrastRatio') {
-      this._contrastCache.clear();
+  public onOptionsChange(key: string, value: any): void {
+    switch (key) {
+      case 'minimumContrastRatio':
+        this._contrastCache.clear();
+        break;
+      case 'allowTransparency':
+        this.allowTransparency = value;
+        break;
     }
   }
 

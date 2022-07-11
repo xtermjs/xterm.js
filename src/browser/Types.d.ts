@@ -110,7 +110,7 @@ export interface IBrowser {
 
 export interface IColorManager {
   colors: IColorSet;
-  onOptionsChange(key: string): void;
+  onOptionsChange(key: string, value: any): void;
 }
 
 export interface IColorSet {

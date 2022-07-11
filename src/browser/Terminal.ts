@@ -517,7 +517,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._theme = this.options.theme || this._theme;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
-    this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e)));
+    this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e, this.optionsService.rawOptions[e])));
     this._colorManager.setTheme(this._theme);
 
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
