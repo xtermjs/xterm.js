@@ -180,10 +180,16 @@ const enum Style {
 }
 
 /**
+ * @param xp The percentage of 15% of the x axis.
+ * @param yp The percentage of 15% of the x axis on the y axis.
+ */
+type DrawFunctionDefinition = (xp: number, yp: number) => string;
+
+/**
  * This contains the definitions of all box drawing characters in the format of SVG paths (ie. the
  * svg d attribute).
  */
-export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
+export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | DrawFunctionDefinition } | undefined } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
   '━': { [Style.BOLD]:   Shapes.LEFT_TO_RIGHT },
@@ -319,10 +325,10 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
   '┋': { [Style.BOLD]:   Shapes.FOUR_DASHES_VERTICAL },
 
   // Curved
-  '╭': { [Style.NORMAL]: 'C.5,1,.5,.5,1,.5' },
-  '╮': { [Style.NORMAL]: 'C.5,1,.5,.5,0,.5' },
-  '╯': { [Style.NORMAL]: 'C.5,0,.5,.5,0,.5' },
-  '╰': { [Style.NORMAL]: 'C.5,0,.5,.5,1,.5' }
+  '╭': { [Style.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5` },
+  '╮': { [Style.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5` },
+  '╯': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5` },
+  '╰': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5` }
 };
 
 interface IVectorShape {
