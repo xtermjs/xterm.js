@@ -217,7 +217,7 @@ export interface ITerminalOptions {
   cols: number;
   convertEol: boolean;
   cursorBlink: boolean;
-  cursorStyle: CursorStyle,
+  cursorStyle: CursorStyle;
   cursorWidth: number;
   customGlyphs: boolean;
   disableStdin: boolean;
