@@ -19,7 +19,7 @@ export class DecorationService extends Disposable implements IDecorationService 
    * while marker line values do change, they should all change by the same amount so this should
    * never become out of order.
    */
-  private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e.marker.line);
+  private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
 
   private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
   public get onDecorationRegistered(): IEvent<IInternalDecoration> { return this._onDecorationRegistered.event; }
@@ -27,10 +27,6 @@ export class DecorationService extends Disposable implements IDecorationService 
   public get onDecorationRemoved(): IEvent<IInternalDecoration> { return this._onDecorationRemoved.event; }
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
-
-  constructor() {
-    super();
-  }
 
   public registerDecoration(options: IDecorationOptions): IDecoration | undefined {
     if (options.marker.isDisposed) {

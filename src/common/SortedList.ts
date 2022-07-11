@@ -34,6 +34,9 @@ export class SortedList<T> {
       return false;
     }
     const key = this._getKey(value);
+    if (key === undefined) {
+      return false;
+    }
     let i = this._search(key, 0, this._array.length - 1);
     if (i === -1) {
       return false;
@@ -75,10 +78,11 @@ export class SortedList<T> {
       return min;
     }
     let mid = Math.floor((min + max) / 2);
-    if (this._getKey(this._array[mid]) > key) {
+    const midKey = this._getKey(this._array[mid]);
+    if (midKey > key) {
       return this._search(key, min, mid - 1);
     }
-    if (this._getKey(this._array[mid]) < key) {
+    if (midKey < key) {
       return this._search(key, mid + 1, max);
     }
     // Value found! Since keys can be duplicates, move the result index back to the lowest index
