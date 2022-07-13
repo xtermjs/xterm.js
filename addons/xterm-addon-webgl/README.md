@@ -2,6 +2,7 @@
 
 An addon for [xterm.js](https://github.com/xtermjs/xterm.js) that enables a WebGL2-based renderer. This addon requires xterm.js v4+.
 
+
 ### Install
 
 ```bash
