@@ -489,3 +489,14 @@ interface IParseStack {
   decodedLength: number;
   position: number;
 }
+
+/**
+ * Tracks the current hyperlink. Since these are treated as extended attirbutes, these get passed on
+ * to the linkifier when anything is printed. Doing it this way ensures that even when the cursor
+ * moves around unexpectedly the link is tracked, as opposed to using a start position and
+ * finalizing it at the end.
+ */
+export interface IHyperlinkIdentifier {
+  id?: string;
+  uri: string;
+}

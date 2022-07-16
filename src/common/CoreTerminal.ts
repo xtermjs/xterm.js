@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, disposeArray } from 'common/Lifecycle';
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum, ITerminalOptions } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
@@ -39,6 +39,7 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+import { OscLinkifier } from 'common/OscLinkifier';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -56,6 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public readonly optionsService: IOptionsService;
 
   protected _inputHandler: InputHandler;
+  private _oscLinkifier: OscLinkifier;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
@@ -120,9 +122,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(ICharsetService, this._charsetService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this.coreMouseService, this.unicodeService);
+    this._inputHandler = this.register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this.coreMouseService, this.unicodeService));
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
-    this.register(this._inputHandler);
 
     // Setup listeners
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
@@ -141,6 +142,26 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+
+    // OSC Linkifier
+    this._oscLinkifier = this._instantiationService.createInstance(OscLinkifier);
+    let activeHyperlink = false;
+    this.register(this._inputHandler.onStartHyperlink(e => {
+      if (activeHyperlink) {
+        return;
+      }
+      activeHyperlink = true;
+      this._oscLinkifier.startHyperlink(e);
+      const disposables: IDisposable[] = [];
+      disposables.push(this._inputHandler.onPrintChar(() => {
+        this._oscLinkifier.addCellToLink(this._bufferService.buffer.x, this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+      }));
+      disposables.push(this._inputHandler.onFinishHyperlink(() => {
+        this._oscLinkifier.finishHyperlink();
+        disposeArray(disposables);
+        activeHyperlink = false;
+      }));
+    }));
   }
 
   public dispose(): void {
