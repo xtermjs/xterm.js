@@ -39,7 +39,7 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
-import { OscLinkifier } from 'common/OscLinkifier';
+import { OscLinkStore } from 'common/OscLinkStore';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -57,7 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public readonly optionsService: IOptionsService;
 
   protected _inputHandler: InputHandler;
-  protected _oscLinkifier: OscLinkifier;
+  protected _oscLinkStore: OscLinkStore;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
@@ -144,20 +144,20 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
 
     // OSC Linkifier
-    this._oscLinkifier = this._instantiationService.createInstance(OscLinkifier);
+    this._oscLinkStore = this._instantiationService.createInstance(OscLinkStore);
     let activeHyperlink = false;
     this.register(this._inputHandler.onStartHyperlink(e => {
       if (activeHyperlink) {
         return;
       }
       activeHyperlink = true;
-      this._oscLinkifier.startHyperlink(e);
+      this._oscLinkStore.startHyperlink(e);
       const disposables: IDisposable[] = [];
       disposables.push(this._inputHandler.onPrintChar(() => {
-        this._oscLinkifier.addCellToLink(this._bufferService.buffer.x, this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+        this._oscLinkStore.addCellToLink(this._bufferService.buffer.x, this._bufferService.buffer.ybase + this._bufferService.buffer.y);
       }));
       disposables.push(this._inputHandler.onFinishHyperlink(() => {
-        this._oscLinkifier.finishHyperlink();
+        this._oscLinkStore.finishHyperlink();
         disposeArray(disposables);
         activeHyperlink = false;
       }));

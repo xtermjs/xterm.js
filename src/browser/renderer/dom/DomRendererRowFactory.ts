@@ -7,13 +7,13 @@ import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
-import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
+import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
-import { OscLinkifier } from 'common/OscLinkifier';
+import { OscLinkStore } from 'common/OscLinkStore';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -37,7 +37,7 @@ export class DomRendererRowFactory {
   constructor(
     private readonly _document: Document,
     private _colors: IColorSet,
-    private readonly _oscLinkifier: OscLinkifier,
+    private readonly _oscLinkStore: OscLinkStore,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
@@ -72,7 +72,7 @@ export class DomRendererRowFactory {
       }
     }
 
-    const links = this._oscLinkifier.getByLine(row);
+    const links = this._oscLinkStore.getByLine(row);
     console.log(`links for line ${row}`, links);
 
     for (let x = 0; x < lineLength; x++) {

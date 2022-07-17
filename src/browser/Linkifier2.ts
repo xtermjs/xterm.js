@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations, ILinkWithState } from 'browser/Types';
+import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations, ILinkWithState, IBufferRange } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { IOscLink, OscLinkStore } from 'common/OscLinkStore';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _element: HTMLElement | undefined;
@@ -32,6 +33,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
 
   constructor(
+    private readonly _oscLinkStore: OscLinkStore,
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
@@ -129,6 +131,18 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._activeLine = position.y;
     }
     let linkProvided = false;
+
+    // If there is an OSC link, use that
+    const oscLinks = this._oscLinkStore.getByLine(position.y - 1);
+    const oscLink = oscLinks.find(e => e.ranges.some(p => position.x >= p.x && position.x < p.x + p.length));
+    console.log('oscLink hovered!', oscLink);
+    if (oscLink) {
+      const linkWithState = this._oscLinkToLinkWithState(oscLink, position);
+      if (linkWithState) {
+        this._handleNewLink(linkWithState);
+        return;
+      }
+    }
 
     // There is no link cached, so ask for one
     for (const [i, linkProvider] of this._linkProviders.entries()) {
@@ -393,5 +407,25 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
   private _createLinkUnderlineEvent(x1: number, y1: number, x2: number, y2: number, fg: number | undefined): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._bufferService.cols, fg };
+  }
+
+  private _oscLinkToLinkWithState(oscLink: IOscLink, position: IBufferCellPosition): ILinkWithState | undefined {
+    // TODO: Support returning all ranges so they get highlighted correctly across lines
+    const range = oscLink.ranges.find(e => e.y.line === position.y - 1);
+    if (!range) {
+      return undefined;
+    }
+    return {
+      link: {
+        activate(e, text) {
+          console.log('activate', e, text);
+        },
+        range: {
+          start: { x: range.x, y: range.y.line + 1 },
+          end: { x: range.x + range.length, y: range.y.line + 1 }
+        },
+        text: oscLink.id.uri
+      }
+    };
   }
 }

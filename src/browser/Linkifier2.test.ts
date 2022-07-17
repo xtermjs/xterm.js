@@ -11,7 +11,7 @@ import { ILink } from 'browser/Types';
 
 class TestLinkifier2 extends Linkifier2 {
   constructor(bufferService: IBufferService) {
-    super(bufferService);
+    super(null!, bufferService);
   }
 
   public set currentLink(link: any) {

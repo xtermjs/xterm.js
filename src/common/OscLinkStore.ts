@@ -6,7 +6,7 @@
 import { IBufferService } from 'common/services/Services';
 import { IHyperlinkIdentifier, IMarker } from 'common/Types';
 
-export class OscLinkifier {
+export class OscLinkStore {
   private _currentHyperlink?: IPendingOscLink;
 
   // private _linkMap: Map<string, Map<string, Link>> = new Map();
@@ -92,7 +92,7 @@ export class OscLinkifier {
   }
 }
 
-interface IOscLink {
+export interface IOscLink {
   id: IHyperlinkIdentifier;
   ranges: IMarkerRange[];
 }
