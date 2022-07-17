@@ -123,7 +123,7 @@ class LinkStore {
   }
 
   public add(linkIdentifier: IHyperlinkIdentifier, link: IOscLink): void {
-    // TODO: Handle dispose
+    // TODO: Remove links when markers dispose
     if (!linkIdentifier.id) {
       this._entriesNoId.push(link);
       return;
@@ -131,8 +131,9 @@ class LinkStore {
     if (!this._entriesById[linkIdentifier.id]) {
       this._entriesById[linkIdentifier.id] = {};
     }
-    if (this._entriesById[linkIdentifier.id]![linkIdentifier.uri]) {
-      link.ranges.push(...link.ranges);
+    const existingLink = this._entriesById[linkIdentifier.id]![linkIdentifier.uri];
+    if (existingLink) {
+      existingLink.ranges.push(...link.ranges);
     } else {
       this._entriesById[linkIdentifier.id]![linkIdentifier.uri] = link;
     }
@@ -168,12 +169,4 @@ class LinkStore {
     }
     return result;
   }
-
-  // TODO: Is this needed?
-  // public getLinkById(linkIdentifier: IHyperlinkIdentifier): IOscLink | undefined {
-  //   if (!linkIdentifier.id) {
-  //     throw new Error('NYI'); // TODO: Implement
-  //   }
-  //   return this._entriesById[linkIdentifier.id] ? this._entriesById[linkIdentifier.id]![linkIdentifier.uri] : undefined;
-  // }
 }
