@@ -134,7 +134,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     // If there is an OSC link, use that
     const oscLinks = this._oscLinkStore.getLinksByLine(position.y - 1);
     const oscLink = oscLinks.find(e => e.ranges.some(p => position.x >= p.x && position.x <= p.x + p.length));
-    console.log('oscLink hovered!', oscLink);
     if (oscLink) {
       const linkWithState = this._oscLinkToLinkWithState(oscLink, position);
       if (linkWithState) {
