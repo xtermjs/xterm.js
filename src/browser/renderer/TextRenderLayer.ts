@@ -4,14 +4,14 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { CharData, ICellData } from 'common/Types';
+import { CharData, ICellData, IOscLink } from 'common/Types';
 import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IDecorationService, IOscLinkService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
@@ -38,7 +38,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
-    @IDecorationService decorationService: IDecorationService
+    @IDecorationService decorationService: IDecorationService,
+    @IOscLinkService private readonly _oscLinkService: IOscLinkService
   ) {
     super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = new GridCache<CharData>();
@@ -224,12 +225,18 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(firstRow: number, lastRow: number): void {
+    let hasLink = true;
+    const links: IOscLink[][] = [];
+    for (let line = firstRow; line <= lastRow; line++) {
+      links.push(this._oscLinkService.getLinksByLine(line));
+    }
     this._forEachCell(firstRow, lastRow, (cell, x, y) => {
+      hasLink = links[y - firstRow].some(e => e.ranges.some(p => x >= p.x && x < p.x + p.length));
       if (cell.isInvisible()) {
         return;
       }
       this._drawChars(cell, x, y);
-      if (cell.isUnderline() || cell.isStrikethrough()) {
+      if (cell.isUnderline() || cell.isStrikethrough() || hasLink) {
         this._ctx.save();
 
         if (cell.isInverse()) {
@@ -263,6 +270,9 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
         if (cell.isUnderline()) {
           this._fillBottomLineAtCells(x, y, cell.getWidth());
+        }
+        if (hasLink) {
+          this._dashedUnderlineAtCells(x, y, cell.getWidth());
         }
         this._ctx.restore();
       }

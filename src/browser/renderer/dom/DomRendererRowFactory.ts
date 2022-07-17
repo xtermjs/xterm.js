@@ -73,7 +73,6 @@ export class DomRendererRowFactory {
     }
 
     const links = this._oscLinkService.getLinksByLine(row);
-    console.log(`links for line ${row}`, links);
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);

@@ -196,6 +196,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       window.devicePixelRatio);
   }
 
+  protected _dashedUnderlineAtCells(x: number, y: number, width: number = 1): void {
+    const third = Math.floor(this._scaledCellWidth / 3);
+    const yPx = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */;
+    this._ctx.save();
+    this._ctx.strokeStyle = this._ctx.fillStyle;
+    this._ctx.setLineDash([third, this._scaledCellWidth - third * 2, third * 2, this._scaledCellWidth - third * 2, third]);
+    this._ctx.beginPath();
+    this._ctx.moveTo(x * this._scaledCellWidth, yPx);
+    this._ctx.lineTo((x + width) * this._scaledCellWidth, yPx);
+    this._ctx.stroke();
+    this._ctx.restore();
+  }
+
   /**
    * Fills a 1px line (2px on HDPI) at the left of the cell. This uses the
    * existing fillStyle on the context.
