@@ -9,7 +9,6 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { is256Color } from 'browser/renderer/atlas/CharAtlasUtils';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { OscLinkStore } from 'common/OscLinkStore';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;

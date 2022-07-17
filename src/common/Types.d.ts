@@ -500,3 +500,14 @@ export interface IHyperlinkIdentifier {
   id?: string;
   uri: string;
 }
+
+export interface IOscLink {
+  id: IHyperlinkIdentifier;
+  ranges: IMarkerRange[];
+}
+
+export interface IMarkerRange {
+  x: number;
+  y: IMarker;
+  length: number;
+}

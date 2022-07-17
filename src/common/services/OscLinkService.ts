@@ -3,10 +3,12 @@
  * @license MIT
  */
 
-import { IBufferService } from 'common/services/Services';
-import { IHyperlinkIdentifier, IMarker } from 'common/Types';
+import { IBufferService, IOscLinkService } from 'common/services/Services';
+import { IHyperlinkIdentifier, IMarker, IMarkerRange, IOscLink } from 'common/Types';
 
-export class OscLinkStore {
+export class OscLinkService implements IOscLinkService {
+  public serviceBrand: any;
+
   private _currentHyperlink?: IPendingOscLink;
 
   // private _linkMap: Map<string, Map<string, Link>> = new Map();
@@ -54,7 +56,7 @@ export class OscLinkStore {
     this._currentHyperlink.cells.push(cell);
   }
 
-  public getByLine(y: number): IOscLink[] {
+  public getLinksByLine(y: number): IOscLink[] {
     return this._linkStore.getByLine(y);
   }
 
@@ -91,21 +93,9 @@ export class OscLinkStore {
   }
 }
 
-export interface IOscLink {
-  id: IHyperlinkIdentifier;
-  ranges: IMarkerRange[];
-}
-
 interface IPendingOscLink {
   id: IHyperlinkIdentifier;
   cells: IMarkerCell[];
-}
-
-interface IMarkerRange {
-  // TODO: How to handle wrapped lines?
-  x: number;
-  y: IMarker;
-  length: number;
 }
 
 interface IMarkerCell {

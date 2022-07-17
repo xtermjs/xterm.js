@@ -169,7 +169,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._setup();
 
     this.linkifier = this._instantiationService.createInstance(Linkifier);
-    this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2, this._oscLinkStore));
+    this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
@@ -632,7 +632,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
       case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2, this._oscLinkStore);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }

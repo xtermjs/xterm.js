@@ -4,13 +4,12 @@
  */
 
 import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent, ILinkDecorations, ILinkWithState, IBufferRange } from 'browser/Types';
-import { IDisposable } from 'common/Types';
+import { IDisposable, IOscLink } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOscLinkService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IOscLink, OscLinkStore } from 'common/OscLinkStore';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _element: HTMLElement | undefined;
@@ -33,7 +32,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
 
   constructor(
-    private readonly _oscLinkStore: OscLinkStore,
+    @IOscLinkService private readonly _oscLinkStore: IOscLinkService,
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
@@ -133,7 +132,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     let linkProvided = false;
 
     // If there is an OSC link, use that
-    const oscLinks = this._oscLinkStore.getByLine(position.y - 1);
+    const oscLinks = this._oscLinkStore.getLinksByLine(position.y - 1);
     const oscLink = oscLinks.find(e => e.ranges.some(p => position.x >= p.x && position.x < p.x + p.length));
     console.log('oscLink hovered!', oscLink);
     if (oscLink) {

@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle, IHyperlinkIdentifier, IOscLink } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -320,4 +320,13 @@ export interface IInternalDecoration extends IDecoration {
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
   readonly onRenderEmitter: IEventEmitter<HTMLElement>;
+}
+
+export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
+export interface IOscLinkService {
+  serviceBrand: undefined;
+  startHyperlink(linkId: IHyperlinkIdentifier): void;
+  finishHyperlink(): void;
+  addCellToLink(x: number, y: number, width: number): void;
+  getLinksByLine(y: number): IOscLink[];
 }

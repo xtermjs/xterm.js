@@ -9,11 +9,11 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService, IDecorationService, IOscLinkService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { OscLinkStore } from 'common/OscLinkStore';
+import { OscLinkService } from 'common/services/OscLinkService';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -50,11 +50,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _viewportElement: HTMLElement,
     linkifier: ILinkifier,
     linkifier2: ILinkifier2,
-    oscLinkStore: OscLinkStore,
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @IBufferService private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @IOscLinkService private readonly _oscLinkService: IOscLinkService
   ) {
     super();
     this._rowContainer = document.createElement('div');
@@ -83,7 +83,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors, oscLinkStore);
+    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
