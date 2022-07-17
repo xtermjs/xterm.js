@@ -632,7 +632,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
       case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2, this._oscLinkifier);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }

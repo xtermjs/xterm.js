@@ -13,11 +13,13 @@ import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
+import { OscLinkifier } from 'common/OscLinkifier';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const UNDERLINE_CLASS = 'xterm-underline';
+export const LINK_CLASS = 'xterm-link';
 export const STRIKETHROUGH_CLASS = 'xterm-strikethrough';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
@@ -35,6 +37,7 @@ export class DomRendererRowFactory {
   constructor(
     private readonly _document: Document,
     private _colors: IColorSet,
+    private readonly _oscLinkifier: OscLinkifier,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
@@ -69,6 +72,9 @@ export class DomRendererRowFactory {
       }
     }
 
+    const links = this._oscLinkifier.getByLine(row);
+    console.log(`links for line ${row}`, links);
+
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
       let width = this._workCell.getWidth();
@@ -81,6 +87,7 @@ export class DomRendererRowFactory {
       // If true, indicates that the current character(s) to draw were joined.
       let isJoined = false;
       let lastCharX = x;
+      const hasLink = links.some(e => e.ranges.some(p => x >= p.x && x < p.x + p.length));
 
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
@@ -163,6 +170,13 @@ export class DomRendererRowFactory {
         charElement.textContent = WHITESPACE_CELL_CHAR;
       } else {
         charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
+      }
+
+      if (hasLink) {
+        charElement.classList.add(LINK_CLASS);
+        if (charElement.textContent === WHITESPACE_CELL_CHAR) {
+          charElement.innerHTML = '&nbsp;';
+        }
       }
 
       if (cell.isStrikethrough()) {

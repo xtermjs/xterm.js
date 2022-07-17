@@ -13,6 +13,7 @@ import { IOptionsService, IBufferService, IInstantiationService, IDecorationServ
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { OscLinkifier } from 'common/OscLinkifier';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -47,8 +48,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
-    private readonly _linkifier: ILinkifier,
-    private readonly _linkifier2: ILinkifier2,
+    linkifier: ILinkifier,
+    linkifier2: ILinkifier2,
+    oscLinkifier: OscLinkifier,
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -81,17 +83,17 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors);
+    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors, oscLinkifier);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this.register(this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
-    this.register(this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
+    this.register(linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
 
-    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
-    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
+    this.register(linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
   }
 
   public dispose(): void {

@@ -10,8 +10,9 @@ export class OscLinkifier {
   private _currentHyperlink?: IPendingOscLink;
 
   // private _linkMap: Map<string, Map<string, Link>> = new Map();
-  private _linksByLine: Map<number, IOscLink> = new Map();
-  private _linksById: Map<string, Map<string, IOscLink>> = new Map();
+  // private _linksByLine: Map<number, IOscLink> = new Map();
+  // private _linksById: Map<string, Map<string, IOscLink>> = new Map();
+  private _linkStore = new LinkStore();
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
@@ -31,6 +32,10 @@ export class OscLinkifier {
       return;
     }
     const ranges = this._convertCellsToRanges(this._currentHyperlink.cells);
+    this._linkStore.add(this._currentHyperlink.id, {
+      id: this._currentHyperlink.id,
+      ranges
+    });
     console.log('finalize links', this._currentHyperlink, ranges);
     this._currentHyperlink = undefined;
     // TODO: Finalize link
@@ -47,6 +52,10 @@ export class OscLinkifier {
       cell = { x, y: this._bufferService.buffer.addMarker(y) };
     }
     this._currentHyperlink.cells.push(cell);
+  }
+
+  public getByLine(y: number): IOscLink[] {
+    return this._linkStore.getByLine(y);
   }
 
   /**
@@ -84,6 +93,7 @@ export class OscLinkifier {
 }
 
 interface IOscLink {
+  id: IHyperlinkIdentifier;
   ranges: IMarkerRange[];
 }
 
@@ -95,11 +105,75 @@ interface IPendingOscLink {
 interface IMarkerRange {
   // TODO: How to handle wrapped lines?
   x: number;
-  length: number;
   y: IMarker;
+  length: number;
 }
 
 interface IMarkerCell {
   x: number;
   y: IMarker;
+}
+
+class LinkStore {
+  private _entriesNoId: IOscLink[] = [];
+  private _entriesById: { [id: string]: { [link: string]: IOscLink | undefined } | undefined } = {};
+
+  public clear(): void {
+    this._entriesById = {};
+  }
+
+  public add(linkIdentifier: IHyperlinkIdentifier, link: IOscLink): void {
+    // TODO: Handle dispose
+    if (!linkIdentifier.id) {
+      this._entriesNoId.push(link);
+      return;
+    }
+    if (!this._entriesById[linkIdentifier.id]) {
+      this._entriesById[linkIdentifier.id] = {};
+    }
+    if (this._entriesById[linkIdentifier.id]![linkIdentifier.uri]) {
+      link.ranges.push(...link.ranges);
+    } else {
+      this._entriesById[linkIdentifier.id]![linkIdentifier.uri] = link;
+    }
+  }
+
+  public getAll(): IOscLink[] {
+    const result = this._entriesNoId.slice();
+    const ids = Object.keys(this._entriesById);
+    for (const id of ids) {
+      const byUri = this._entriesById[id];
+      if (!byUri) {
+        continue;
+      }
+      const uris = Object.keys(byUri);
+      for (const uri of uris) {
+        const link = byUri[uri];
+        if (link) {
+          result.push(link);
+        }
+      }
+    }
+    return result;
+  }
+
+  public getByLine(y: number): IOscLink[] {
+    // This is very much not optimized, creating a new array and iterating over everything on each
+    // request.
+    const result: IOscLink[] = [];
+    for (const link of this.getAll()) {
+      if (link.ranges.some(e => e.y.line === y)) {
+        result.push(link);
+      }
+    }
+    return result;
+  }
+
+  // TODO: Is this needed?
+  // public getLinkById(linkIdentifier: IHyperlinkIdentifier): IOscLink | undefined {
+  //   if (!linkIdentifier.id) {
+  //     throw new Error('NYI'); // TODO: Implement
+  //   }
+  //   return this._entriesById[linkIdentifier.id] ? this._entriesById[linkIdentifier.id]![linkIdentifier.uri] : undefined;
+  // }
 }

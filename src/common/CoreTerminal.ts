@@ -57,7 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public readonly optionsService: IOptionsService;
 
   protected _inputHandler: InputHandler;
-  private _oscLinkifier: OscLinkifier;
+  protected _oscLinkifier: OscLinkifier;
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 

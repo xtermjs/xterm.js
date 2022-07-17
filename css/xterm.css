@@ -167,6 +167,10 @@
     text-decoration: underline;
 }
 
+.xterm-link {
+    text-decoration: underline dashed;
+}
+
 .xterm-strikethrough {
     text-decoration: line-through;
 }

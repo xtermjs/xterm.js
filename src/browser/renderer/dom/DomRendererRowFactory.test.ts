@@ -47,6 +47,7 @@ describe('DomRendererRowFactory', () => {
           css.toColor('#eeeeec')
         ]
       } as any,
+      null!, // TODO: Fix
       new MockCharacterJoinerService(),
       new MockOptionsService({ drawBoldTextInBrightColors: true }),
       new MockCoreService(),
