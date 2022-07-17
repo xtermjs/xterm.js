@@ -41,15 +41,15 @@ export class OscLinkStore {
     // TODO: Finalize link
   }
 
-  public addCellToLink(x: number, y: number): void {
+  public addCellToLink(x: number, y: number, width: number): void {
     if (!this._currentHyperlink) {
       return;
     }
     let cell: IMarkerCell;
     if (this._currentHyperlink.cells.length > 0 && y === this._currentHyperlink.cells[this._currentHyperlink.cells.length - 1].y.line) {
-      cell = { x, y: this._currentHyperlink.cells[this._currentHyperlink.cells.length - 1].y };
+      cell = { x, y: this._currentHyperlink.cells[this._currentHyperlink.cells.length - 1].y, width };
     } else {
-      cell = { x, y: this._bufferService.buffer.addMarker(y) };
+      cell = { x, y: this._bufferService.buffer.addMarker(y), width };
     }
     this._currentHyperlink.cells.push(cell);
   }
@@ -70,19 +70,18 @@ export class OscLinkStore {
     let currentRange: IMarkerRange = {
       x: lastCell.x,
       y: lastCell.y,
-      // TODO: Wide chars
-      length: 1
+      length: lastCell.width
     };
     const ranges: IMarkerRange[] = [currentRange];
     for (let i = 1; i < cells.length; i++) {
       currentCell = cells[i];
-      if (currentCell.y.line === lastCell.y.line && currentCell.x === lastCell.x + 1) {
-        currentRange.length++;
+      if (currentCell.y.line === lastCell.y.line && currentCell.x === lastCell.x + lastCell.width) {
+        currentRange.length += currentCell.width;
       } else {
         currentRange = {
           x: currentCell.x,
           y: currentCell.y,
-          length: 1
+          length: currentCell.width
         };
         ranges.push(currentRange);
       }
@@ -112,6 +111,7 @@ interface IMarkerRange {
 interface IMarkerCell {
   x: number;
   y: IMarker;
+  width: number;
 }
 
 class LinkStore {

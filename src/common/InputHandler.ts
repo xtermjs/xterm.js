@@ -266,8 +266,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onColor = new EventEmitter<IColorEvent>();
   public get onColor(): IEvent<IColorEvent> { return this._onColor.event; }
-  private _onPrintChar = new EventEmitter<void>();
-  public get onPrintChar(): IEvent<void> { return this._onPrintChar.event; }
+  private _onPrintChar = new EventEmitter<number/* width */>();
+  public get onPrintChar(): IEvent<number/* width */> { return this._onPrintChar.event; }
   private _onStartHyperlink = new EventEmitter<IHyperlinkIdentifier>();
   public get onStartHyperlink(): IEvent<IHyperlinkIdentifier> { return this._onStartHyperlink.event; }
   private _onFinishHyperlink = new EventEmitter<void>();
@@ -646,7 +646,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      this._onPrintChar.fire();
+      this._onPrintChar.fire(chWidth);
 
       // insert combining char at last cursor position
       // this._activeBuffer.x should never be 0 for a combining char

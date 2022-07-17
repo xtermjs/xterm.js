@@ -153,8 +153,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       activeHyperlink = true;
       this._oscLinkStore.startHyperlink(e);
       const disposables: IDisposable[] = [];
-      disposables.push(this._inputHandler.onPrintChar(() => {
-        this._oscLinkStore.addCellToLink(this._bufferService.buffer.x, this._bufferService.buffer.ybase + this._bufferService.buffer.y);
+      disposables.push(this._inputHandler.onPrintChar(width => {
+        this._oscLinkStore.addCellToLink(this._bufferService.buffer.x, this._bufferService.buffer.ybase + this._bufferService.buffer.y, width);
       }));
       disposables.push(this._inputHandler.onFinishHyperlink(() => {
         this._oscLinkStore.finishHyperlink();
