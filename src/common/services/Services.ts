@@ -276,6 +276,7 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+  extendedAnsi?: string[];
 }
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');

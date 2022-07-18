@@ -322,6 +322,8 @@ declare module 'xterm' {
     brightCyan?: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
     brightWhite?: string;
+    /** ANSI extended colors (16-255) */
+    extendedAnsi?: string[];
   }
 
   /**
@@ -845,7 +847,7 @@ declare module 'xterm' {
      * Adds an event listener for when data has been parsed by the terminal,
      * after {@link write} is called. This event is useful to listen for any
      * changes in the buffer.
-     * 
+     *
      * This fires at most once per frame, after data parsing completes. Note
      * that this can fire when there are still writes pending if there is a lot
      * of data.

@@ -267,6 +267,8 @@ declare module 'xterm-headless' {
     brightCyan?: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
     brightWhite?: string;
+    /** ANSI extended colors (16-255) */
+    extendedAnsi?: string[];
   }
 
   /**
