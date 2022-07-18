@@ -39,7 +39,7 @@ jobs:
 
 - job: macOS
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-11'
   steps:
   - task: NodeTool@0
     inputs:
