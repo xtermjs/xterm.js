@@ -151,6 +151,7 @@ export class ColorManager implements IColorManager {
       const opacity = 0.3;
       this.colors.selectionTransparent = color.opacity(this.colors.selectionTransparent, opacity);
     }
+    this.colors.ansi = DEFAULT_ANSI_COLORS.slice();
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
