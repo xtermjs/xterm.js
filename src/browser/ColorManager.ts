@@ -168,9 +168,9 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
     if (theme.extendedAnsi) {
-      const colorCount = Math.max(theme.extendedAnsi.length + 16, 256);
-      for (let i = 16; i < colorCount; i++) {
-        this.colors.ansi[i] = this._parseColor(theme.extendedAnsi[i - 16], DEFAULT_ANSI_COLORS[i]);
+      const colorCount = Math.min(this.colors.ansi.length - 16, theme.extendedAnsi.length);
+      for (let i = 0; i < colorCount; i++) {
+        this.colors.ansi[i + 16] = this._parseColor(theme.extendedAnsi[i], DEFAULT_ANSI_COLORS[i + 16]);
       }
     }
     // Clear our the cache

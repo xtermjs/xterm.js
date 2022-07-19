@@ -315,14 +315,14 @@ describe('ColorManager', () => {
         extendedAnsi: DEFAULT_ANSI_COLORS.map(a => a.css).slice().reverse()
       });
 
-      for (let ansiColor = 16; ansiColor <= 255; ansiColor++){
+      for (let ansiColor = 16; ansiColor <= 255; ansiColor++) {
         assert.equal(cm.colors.ansi[ansiColor].css, DEFAULT_ANSI_COLORS[255 + 16 - ansiColor].css);
       }
     });
 
     it('should set one extended ansi colors and keep the other default', () => {
       cm.setTheme({
-        extendedAnsi: [ '#ffffff' ]
+        extendedAnsi: ['#ffffff']
       });
 
       assert.equal(cm.colors.ansi[16].css, '#ffffff');
