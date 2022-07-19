@@ -194,6 +194,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**CloudTTY**](https://github.com/cloudtty/cloudtty): A Friendly Kubernetes CloudShell (Web Terminal).
 - [**Go SSH Web Client**](https://github.com/wuchihsu/go-ssh-web-client): A simple SSH web client using Go, WebSocket and Xterm.js.
 - [**web3os**](https://web3os.sh): A decentralized operating system for the next web
+- [**Cratecode**](https://cratecode.com): Learn to program for free through interactive online lessons. Cratecode uses xterm.js to give users access to their own Linux environment.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
