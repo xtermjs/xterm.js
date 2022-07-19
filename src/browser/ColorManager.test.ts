@@ -320,13 +320,33 @@ describe('ColorManager', () => {
       }
     });
 
-    it('should set one extended ansi colors and keep the other default', () => {
+    it('should set one extended ansi color and keep the other default', () => {
       cm.setTheme({
         extendedAnsi: ['#ffffff']
       });
 
       assert.equal(cm.colors.ansi[16].css, '#ffffff');
       assert.equal(cm.colors.ansi[17].css, DEFAULT_ANSI_COLORS[17].css);
+    });
+
+    it('should set extended ansi colors to the default after setting to something', () => {
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+
+      cm.setTheme({
+        extendedAnsi: []
+      });
+      assert.equal(cm.colors.ansi[16].css, DEFAULT_ANSI_COLORS[16].css);
+
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+
+      cm.setTheme({});
+      assert.equal(cm.colors.ansi[16].css, DEFAULT_ANSI_COLORS[16].css);
     });
   });
 });
