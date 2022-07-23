@@ -5,7 +5,7 @@
 
 import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
@@ -155,14 +155,17 @@ export class DomRendererRowFactory {
         charElement.classList.add(DIM_CLASS);
       }
 
-      if (cell.isUnderline()) {
-        charElement.classList.add(UNDERLINE_CLASS);
-      }
-
       if (cell.isInvisible()) {
         charElement.textContent = WHITESPACE_CELL_CHAR;
       } else {
         charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
+      }
+
+      if (cell.isUnderline()) {
+        charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
+        if (charElement.textContent === ' ') {
+          charElement.innerHTML = '&nbsp;';
+        }
       }
 
       if (cell.isStrikethrough()) {
