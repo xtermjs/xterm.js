@@ -333,8 +333,7 @@ export class WebglCharAtlas implements IDisposable {
 
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
-    // TODO: Use packed ext format
-    this._workAttributeData.extended.underlineStyle = ext;
+    this._workAttributeData.extended.ext = ext;
 
     const invisible = !!this._workAttributeData.isInvisible();
     if (invisible) {
@@ -423,6 +422,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
       if (underline) {
+        console.log('ext', ext, this._workAttributeData.extended.underlineColor, this._workAttributeData.extended.underlineStyle);
         const xLeft = padding;
         const xRight = padding + this._config.scaledCharWidth;
         const yMid = padding + this._config.scaledCharHeight - yOffset;

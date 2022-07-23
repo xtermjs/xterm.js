@@ -4,7 +4,7 @@
  */
 
 import { IAttributeData, IColorRGB, IExtendedAttrs } from 'common/Types';
-import { Attributes, FgFlags, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
+import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from 'common/buffer/Constants';
 
 export class AttributeData implements IAttributeData {
   public static toColorRGB(value: number): IColorRGB {
@@ -127,26 +127,32 @@ export class AttributeData implements IAttributeData {
  * Holds information about different underline styles and color.
  */
 export class ExtendedAttrs implements IExtendedAttrs {
-  // underline style, NONE is empty
-  private _underlineStyle: UnderlineStyle = UnderlineStyle.NONE;
-  public get underlineStyle(): UnderlineStyle { return this._underlineStyle; }
+  private _ext: number = 0;
+  public get ext(): number { return this._ext; }
+  public set ext(value: number) { this._ext = value; }
+
+  public get underlineStyle(): UnderlineStyle {
+    return (this._ext & ExtFlags.UNDERLINE_STYLE) >> 26;
+  }
   public set underlineStyle(value: UnderlineStyle) {
-    this._underlineStyle = value;
+    this._ext &= ~ExtFlags.UNDERLINE_STYLE;
+    this._ext |= (value << 26) & ExtFlags.UNDERLINE_STYLE;
   }
 
-  // underline color, -1 is empty (same as FG)
-  private _underlineColor: number = -1;
-  public get underlineColor(): number { return this._underlineColor; }
+  public get underlineColor(): number {
+    return this._ext & (Attributes.CM_MASK | Attributes.RGB_MASK);
+  }
   public set underlineColor(value: number) {
-    this._underlineColor = value;
+    this._ext &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+    this._ext |= value & (Attributes.CM_MASK | Attributes.RGB_MASK);
   }
 
   constructor(
     underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
     underlineColor: number = -1
   ) {
-    this._underlineStyle = underlineStyle;
-    this._underlineColor = underlineColor;
+    this.underlineStyle = underlineStyle;
+    this.underlineColor = underlineColor;
   }
 
   public clone(): IExtendedAttrs {

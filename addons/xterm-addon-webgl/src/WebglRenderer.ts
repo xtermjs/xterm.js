@@ -384,8 +384,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _loadColorsForCell(x: number, y: number): void {
     this._workColors.bg = this._workCell.bg;
     this._workColors.fg = this._workCell.fg;
-    // TODO: Use extended packed format as key
-    this._workColors.ext = this._workCell.extended.underlineStyle;
+    this._workColors.ext = this._workCell.extended.ext;
 
     // Get any foreground/background overrides, this happens on the model to avoid spreading
     // override logic throughout the different sub-renderers

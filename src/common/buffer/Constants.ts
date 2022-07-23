@@ -130,6 +130,13 @@ export const enum BgFlags {
   HAS_EXTENDED = 0x10000000
 }
 
+export const enum ExtFlags {
+  /**
+   * bit 27..32 (upper 3 unused)
+   */
+  UNDERLINE_STYLE = 0x1C000000
+}
+
 export const enum UnderlineStyle {
   NONE = 0,
   SINGLE = 1,
