@@ -396,6 +396,7 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw underline
     if (underline) {
+      this._tmpCtx.save();
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
@@ -413,13 +414,15 @@ export class WebglCharAtlas implements IDisposable {
       }
       // Underline style/stroke
       this._tmpCtx.beginPath();
+
+      // TODO: Support letter spacing
       const xLeft = padding;
       const xRight = padding + this._config.scaledCharWidth;
+      const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
       const yMid = padding + this._config.scaledCharHeight - yOffset;
+      const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
       switch (this._workAttributeData.extended.underlineStyle) {
         case UnderlineStyle.DOUBLE:
-          const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
-          const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
           this._tmpCtx.moveTo(xLeft, yTop);
           this._tmpCtx.lineTo(xRight, yTop);
           this._tmpCtx.moveTo(xLeft, yBot);
@@ -429,7 +432,19 @@ export class WebglCharAtlas implements IDisposable {
           const xMid = padding + this._config.scaledCharWidth / 2;
           const yMidBot = Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
           const yMidTop = Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
-          this._tmpCtx.moveTo(xLeft, yMid);
+          // Clip the left and right edges of the underline such that it can be drawn just outside
+          // the edge of the cell to ensure a continuous stroke when there are multiple underlined
+          // glyphs adjacent to one another.
+          const clipRegion = new Path2D();
+          clipRegion.rect(xLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
+          this._tmpCtx.clip(clipRegion);
+          // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+          this._tmpCtx.moveTo(xLeft - this._config.scaledCharWidth / 2, yMid);
+          this._tmpCtx.bezierCurveTo(
+            xLeft - this._config.scaledCharWidth / 2, yMidTop,
+            xLeft, yMidTop,
+            xLeft, yMid
+          );
           this._tmpCtx.bezierCurveTo(
             xLeft, yMidBot,
             xMid, yMidBot,
@@ -439,6 +454,11 @@ export class WebglCharAtlas implements IDisposable {
             xMid, yMidTop,
             xRight, yMidTop,
             xRight, yMid
+          );
+          this._tmpCtx.bezierCurveTo(
+            xRight, yMidBot,
+            xRight + this._config.scaledCellWidth / 2, yMidBot,
+            xRight + this._config.scaledCellWidth / 2, yMid
           );
           break;
         case UnderlineStyle.DOTTED:
@@ -458,6 +478,7 @@ export class WebglCharAtlas implements IDisposable {
           break;
       }
       this._tmpCtx.stroke();
+      this._tmpCtx.restore();
 
       // Draw stroke in the background color for non custom characters in order to give an outline
       // between the text and the underline
