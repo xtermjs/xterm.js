@@ -30,7 +30,7 @@ export class AttributeData implements IAttributeData {
   // data
   public fg = 0;
   public bg = 0;
-  public extended = new ExtendedAttrs();
+  public extended: IExtendedAttrs = new ExtendedAttrs();
 
   // flags
   public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
@@ -127,12 +127,27 @@ export class AttributeData implements IAttributeData {
  * Holds information about different underline styles and color.
  */
 export class ExtendedAttrs implements IExtendedAttrs {
+  // underline style, NONE is empty
+  private _underlineStyle: UnderlineStyle = UnderlineStyle.NONE;
+  public get underlineStyle(): UnderlineStyle { return this._underlineStyle; }
+  public set underlineStyle(value: UnderlineStyle) {
+    this._underlineStyle = value;
+  }
+
+  // underline color, -1 is empty (same as FG)
+  private _underlineColor: number = -1;
+  public get underlineColor(): number { return this._underlineColor; }
+  public set underlineColor(value: number) {
+    this._underlineColor = value;
+  }
+
   constructor(
-    // underline style, NONE is empty
-    public underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
-    // underline color, -1 is empty (same as FG)
-    public underlineColor: number = -1
-  ) {}
+    underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
+    underlineColor: number = -1
+  ) {
+    this._underlineStyle = underlineStyle;
+    this._underlineColor = underlineColor;
+  }
 
   public clone(): IExtendedAttrs {
     return new ExtendedAttrs(this.underlineStyle, this.underlineColor);
