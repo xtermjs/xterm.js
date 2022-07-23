@@ -6,7 +6,7 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, Attributes, DEFAULT_EXT } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
@@ -106,7 +106,7 @@ export class WebglCharAtlas implements IDisposable {
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
       this._cacheMap[i] = {
         [DEFAULT_COLOR]: {
           [DEFAULT_COLOR]: {
@@ -179,7 +179,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(key, bg, fg);
+      rasterizedGlyph = this._drawToCache(key, bg, fg, ext);
       rasterizedGlyphSetFg[ext] = rasterizedGlyph;
     }
 
@@ -312,7 +312,7 @@ export class WebglCharAtlas implements IDisposable {
     return color;
   }
 
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
@@ -333,6 +333,8 @@ export class WebglCharAtlas implements IDisposable {
 
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
+    // TODO: Use packed ext format
+    this._workAttributeData.extended.underlineStyle = ext;
 
     const invisible = !!this._workAttributeData.isInvisible();
     if (invisible) {
@@ -421,8 +423,22 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
       if (underline) {
-        this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
-        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+        console.log('underline', this._workAttributeData.extended.underlineStyle);
+        switch (this._workAttributeData.extended.underlineStyle) {
+          case UnderlineStyle.DOUBLE:
+            break;
+          case UnderlineStyle.CURLY:
+            break;
+          case UnderlineStyle.DOTTED:
+            break;
+          case UnderlineStyle.DASHED:
+            break;
+          case UnderlineStyle.SINGLE:
+          default:
+            this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
+            this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+            break;
+        }
       }
       if (strikethrough) {
         this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);

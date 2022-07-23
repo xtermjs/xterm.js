@@ -32,7 +32,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
-  private _workColors: { fg: number, bg: number } = { fg: 0, bg: 0 };
+  private _workColors: { fg: number, bg: number, ext: number } = { fg: 0, bg: 0, ext: 0 };
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -357,7 +357,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars, lastBg);
+        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, this._workColors.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -366,7 +366,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
@@ -384,6 +384,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _loadColorsForCell(x: number, y: number): void {
     this._workColors.bg = this._workCell.bg;
     this._workColors.fg = this._workCell.fg;
+    // TODO: Use extended packed format as key
+    this._workColors.ext = this._workCell.extended.underlineStyle;
 
     // Get any foreground/background overrides, this happens on the model to avoid spreading
     // override logic throughout the different sub-renderers
