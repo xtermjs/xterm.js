@@ -325,7 +325,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCanvas.width = allowedWidth;
     }
     // Include line height when drawing glyphs
-    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 4;
     if (this._tmpCanvas.height < allowedHeight) {
       this._tmpCanvas.height = allowedHeight;
     }
@@ -386,7 +386,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
-    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
+    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
     let drawSuccess = false;
@@ -417,26 +417,54 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw underline and strikethrough
     if (underline || strikethrough) {
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
       if (underline) {
-        console.log('underline', this._workAttributeData.extended.underlineStyle);
+        const xLeft = padding;
+        const xRight = padding + this._config.scaledCharWidth;
+        const yMid = padding + this._config.scaledCharHeight - yOffset;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
+            const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
+            const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
+            this._tmpCtx.moveTo(xLeft, yTop);
+            this._tmpCtx.lineTo(xRight, yTop);
+            this._tmpCtx.moveTo(xLeft, yBot);
+            this._tmpCtx.lineTo(xRight, yBot);
             break;
           case UnderlineStyle.CURLY:
+            const xMid = padding + this._config.scaledCharWidth / 2;
+            const yMidBot = Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+            const yMidTop = Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+            this._tmpCtx.moveTo(xLeft, yMid);
+            this._tmpCtx.bezierCurveTo(
+              xLeft, yMidBot,
+              xMid, yMidBot,
+              xMid, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xMid, yMidTop,
+              xRight, yMidTop,
+              xRight, yMid
+            );
             break;
           case UnderlineStyle.DOTTED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+            this._tmpCtx.moveTo(xLeft, yMid);
+            this._tmpCtx.lineTo(xRight, yMid);
             break;
           case UnderlineStyle.DASHED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+            this._tmpCtx.moveTo(xLeft, yMid);
+            this._tmpCtx.lineTo(xRight, yMid);
             break;
           case UnderlineStyle.SINGLE:
           default:
-            this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
-            this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
+            this._tmpCtx.moveTo(xLeft, yMid);
+            this._tmpCtx.lineTo(xRight, yMid);
             break;
         }
       }
@@ -445,7 +473,6 @@ export class WebglCharAtlas implements IDisposable {
         this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
       }
       this._tmpCtx.stroke();
-      this._tmpCtx.closePath();
     }
 
     this._tmpCtx.restore();
