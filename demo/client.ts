@@ -655,8 +655,8 @@ function underlineTest() {
   function u(style: number): string {
     return `\x1b[4:${style}m`;
   }
-  function c(): string {
-    return '\x1b[0m';
+  function c(color: string): string {
+    return `\x1b[58:${color}m`;
   }
   term.write('\n\n\r');
   term.writeln('Underline styles:');
@@ -666,6 +666,33 @@ function underlineTest() {
   term.writeln(`${u(3)}4:3m - Curly`);
   term.writeln(`${u(4)}4:4m - Dotted`);
   term.writeln(`${u(5)}4:5m - Dashed\x1b[0m`);
+  term.writeln('');
+  term.writeln(`Underline colors (256 color mode):`);
+  for (let i = 0; i < 256; i++) {
+    term.write((i !== 0 ? '\x1b[0m, ' : '') + u(1 + i % 5) + c('5:' + i) + i);
+  }
+  term.writeln(`\n\n\rUnderline colors (true color mode):`);
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${v}:${v}:${v}`) + (i < 4 ? 'grey'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${v}:${0}:${0}`) + (i < 3 ? 'red'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${0}:${v}:${0}`) + (i < 5 ? 'green'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${0}:${0}:${v}`) + (i < 4 ? 'blue'[i] : ' '));
+  }
+  term.write('\x1b[0m\n\r');
 }
 
 function addDecoration() {
