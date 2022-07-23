@@ -201,6 +201,7 @@ export interface ILinkifier {
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
+  dispose(): void;
 }
 
 interface ILinkState {
@@ -219,6 +220,7 @@ export interface ILinkifier2 {
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+  dispose(): void;
 }
 
 export interface ILinkMatcherOptions {

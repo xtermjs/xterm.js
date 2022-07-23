@@ -53,6 +53,12 @@ export class Linkifier implements ILinkifier {
     };
   }
 
+  public dispose(): void {
+    this._onShowLinkUnderline.dispose();
+    this._onHideLinkUnderline.dispose();
+    this._onLinkTooltip.dispose();
+  }
+
   /**
    * Attaches the linkifier to the DOM, enabling linkification.
    * @param mouseZoneManager The mouse zone manager to register link zones with.

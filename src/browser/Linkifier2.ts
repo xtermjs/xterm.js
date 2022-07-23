@@ -38,6 +38,13 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
   }
 
+  public dispose(): void {
+    super.dispose();
+    this._onShowLinkUnderline.dispose();
+    this._onHideLinkUnderline.dispose();
+    this._lastMouseEvent = undefined;
+  }
+
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     this._linkProviders.push(linkProvider);
     return {

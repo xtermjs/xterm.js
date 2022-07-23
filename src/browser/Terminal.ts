@@ -247,8 +247,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
     super.dispose();
     this._renderService?.dispose();
     this._customKeyEventHandler = undefined;
+    this._overviewRulerRenderer?.dispose();
+    this._overviewRulerRenderer = undefined;
     this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
+    this.linkifier.dispose();
+    this.linkifier2.dispose();
   }
 
   protected _setup(): void {
