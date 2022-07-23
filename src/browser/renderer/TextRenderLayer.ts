@@ -264,12 +264,17 @@ export class TextRenderLayer extends BaseRenderLayer {
         if (cell.isUnderline()) {
           switch (cell.extended.underlineStyle) {
             case UnderlineStyle.DOUBLE:
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), -window.devicePixelRatio);
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), window.devicePixelRatio);
               break;
             case UnderlineStyle.CURLY:
+              this._curlyUnderlineAtCell(x, y, cell.getWidth());
               break;
             case UnderlineStyle.DOTTED:
+              this._dottedUnderlineAtCell(x, y, cell.getWidth());
               break;
             case UnderlineStyle.DASHED:
+              this._dashedUnderlineAtCell(x, y, cell.getWidth());
               break;
             case UnderlineStyle.SINGLE:
             default:
