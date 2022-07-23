@@ -192,9 +192,11 @@ export class GlyphRenderer  extends Disposable {
 
     // Get the glyph
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
+      // TODO: Use actual ext
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, 0);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg);
+      // TODO: Use actual ext
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg, 0);
     }
 
     // Fill empty if no glyph was found

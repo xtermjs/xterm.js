@@ -6,12 +6,12 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes, DEFAULT_EXT } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { channels, color, rgba } from 'common/Color';
+import { color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
@@ -109,7 +109,9 @@ export class WebglCharAtlas implements IDisposable {
       const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
         [DEFAULT_COLOR]: {
-          [DEFAULT_COLOR]: rasterizedGlyph
+          [DEFAULT_COLOR]: {
+            [DEFAULT_EXT]: rasterizedGlyph
+          }
         }
       };
     }
@@ -137,48 +139,50 @@ export class WebglCharAtlas implements IDisposable {
     this._didWarmUp = false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
-    let rasterizedGlyphSet = this._cacheMapCombined[chars];
-    if (!rasterizedGlyphSet) {
-      rasterizedGlyphSet = {};
-      this._cacheMapCombined[chars] = rasterizedGlyphSet;
-    }
-    let rasterizedGlyph: IRasterizedGlyph | undefined;
-    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (rasterizedGlyphSetBg) {
-      rasterizedGlyph = rasterizedGlyphSetBg[fg];
-    }
-    if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, bg, fg);
-      if (!rasterizedGlyphSet[bg]) {
-        rasterizedGlyphSet[bg] = {};
-      }
-      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
-    }
-    return rasterizedGlyph;
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext);
+  }
+
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext);
   }
 
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
-    let rasterizedGlyphSet = this._cacheMap[code];
+  private _getFromCacheMap(
+    cacheMap: { [key: string | number]: IRasterizedGlyphSet },
+    key: string | number,
+    bg: number,
+    fg: number,
+    ext: number
+  ): IRasterizedGlyph {
+    let rasterizedGlyphSet = cacheMap[key];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
-      this._cacheMap[code] = rasterizedGlyphSet;
+      this._cacheMapCombined[key] = rasterizedGlyphSet;
     }
+
+    let rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (!rasterizedGlyphSetBg) {
+      rasterizedGlyphSetBg = {};
+      rasterizedGlyphSet[bg] = rasterizedGlyphSetBg;
+    }
+
     let rasterizedGlyph: IRasterizedGlyph | undefined;
-    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (rasterizedGlyphSetBg) {
-      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    let rasterizedGlyphSetFg = rasterizedGlyphSetBg[fg];
+    if (!rasterizedGlyphSetFg) {
+      rasterizedGlyphSetFg = {};
+      rasterizedGlyphSetBg[fg] = rasterizedGlyphSetFg;
+    } else {
+      rasterizedGlyph = rasterizedGlyphSetFg[ext];
     }
+
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, bg, fg);
-      if (!rasterizedGlyphSet[bg]) {
-        rasterizedGlyphSet[bg] = {};
-      }
-      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(key, bg, fg);
+      rasterizedGlyphSetFg[ext] = rasterizedGlyph;
     }
+
     return rasterizedGlyph;
   }
 
@@ -308,8 +312,6 @@ export class WebglCharAtlas implements IDisposable {
     return color;
   }
 
-  private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(chars: string, bg: number, fg: number): IRasterizedGlyph;
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
