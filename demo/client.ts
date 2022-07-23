@@ -660,6 +660,7 @@ function underlineTest() {
   }
   term.write('\n\n\r');
   term.writeln('Underline styles:');
+  term.writeln('');
   term.writeln(`${u(0)}4:0m - No underline`);
   term.writeln(`${u(1)}4:1m - Straight`);
   term.writeln(`${u(2)}4:2m - Double`);
@@ -668,11 +669,12 @@ function underlineTest() {
   term.writeln(`${u(5)}4:5m - Dashed\x1b[0m`);
   term.writeln('');
   term.writeln(`Underline colors (256 color mode):`);
+  term.writeln('');
   for (let i = 0; i < 256; i++) {
     term.write((i !== 0 ? '\x1b[0m, ' : '') + u(1 + i % 5) + c('5:' + i) + i);
   }
-  term.writeln(`\n\n\rUnderline colors (true color mode):`);
-  term.write('\n\r');
+  term.writeln(`\x1b[0m\n\n\rUnderline colors (true color mode):`);
+  term.writeln('');
   for (let i = 0; i < 80; i++) {
     const v = Math.round(i / 79 * 255);
     term.write(u(1) + c(`2:0:${v}:${v}:${v}`) + (i < 4 ? 'grey'[i] : ' '));
