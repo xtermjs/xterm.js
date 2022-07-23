@@ -393,38 +393,6 @@ export class WebglCharAtlas implements IDisposable {
       drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
-    // Draw the character
-    if (!drawSuccess) {
-      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
-    }
-
-    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
-    // try for a maximum of 5 pixels.
-    if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
-      if (isBeyondCellBounds) {
-        for (let offset = 1; offset <= 5; offset++) {
-          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
-          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
-          if (!isBeyondCellBounds) {
-            break;
-          }
-        }
-      }
-    }
-
-    // Draw underline
-    if (strikethrough) {
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
-      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
-      this._tmpCtx.lineWidth = lineWidth;
-      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
-      this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      this._tmpCtx.stroke();
-    }
 
     // Draw underline
     if (underline) {
@@ -489,6 +457,52 @@ export class WebglCharAtlas implements IDisposable {
           this._tmpCtx.lineTo(xRight, yMid);
           break;
       }
+      this._tmpCtx.stroke();
+
+      // Draw stroke in the background color for non custom characters in order to give an outline
+      // between the text and the underline
+      if (!drawSuccess) {
+        // This only works when transparency is disabled because it's not clear how to clear stroked
+        // text
+        if (!this._config.allowTransparency) {
+          // This translates to 1/2 the line width in either direction
+          this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
+          this._tmpCtx.strokeStyle = backgroundColor.css;
+          this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+        }
+      }
+    }
+
+    // Draw the character
+    if (!drawSuccess) {
+      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+    }
+
+    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
+    // try for a maximum of 5 pixels.
+    if (chars === '_' && !this._config.allowTransparency) {
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
+      if (isBeyondCellBounds) {
+        for (let offset = 1; offset <= 5; offset++) {
+          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
+          if (!isBeyondCellBounds) {
+            break;
+          }
+        }
+      }
+    }
+
+    // Draw strokethrough
+    if (strikethrough) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
     }
 
