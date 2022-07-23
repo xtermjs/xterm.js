@@ -185,17 +185,15 @@ export class GlyphRenderer  extends Disposable {
       return;
     }
 
-    let rasterizedGlyph: IRasterizedGlyph;
     if (!this._atlas) {
       return;
     }
 
     // Get the glyph
+    let rasterizedGlyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      // TODO: Use actual ext
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
     } else {
-      // TODO: Use actual ext
       rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 

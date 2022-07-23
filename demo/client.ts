@@ -210,6 +210,9 @@ function createTerminal(): void {
   term.open(terminalContainer);
   addons.fit.instance!.fit();
   typedTerm.loadAddon(addons.webgl.instance);
+  setTimeout(() => {
+    document.body.appendChild(addons.webgl.instance.textureAtlas);
+  }, 0);
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);

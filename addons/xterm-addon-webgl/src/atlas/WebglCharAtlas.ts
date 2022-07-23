@@ -160,7 +160,7 @@ export class WebglCharAtlas implements IDisposable {
     let rasterizedGlyphSet = cacheMap[key];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
-      this._cacheMapCombined[key] = rasterizedGlyphSet;
+      cacheMap[key] = rasterizedGlyphSet;
     }
 
     let rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
