@@ -8,7 +8,7 @@ import { CharData, ICellData } from 'common/Types';
 import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
@@ -262,7 +262,20 @@ export class TextRenderLayer extends BaseRenderLayer {
           this._fillMiddleLineAtCells(x, y, cell.getWidth());
         }
         if (cell.isUnderline()) {
-          this._fillBottomLineAtCells(x, y, cell.getWidth());
+          switch (cell.extended.underlineStyle) {
+            case UnderlineStyle.DOUBLE:
+              break;
+            case UnderlineStyle.CURLY:
+              break;
+            case UnderlineStyle.DOTTED:
+              break;
+            case UnderlineStyle.DASHED:
+              break;
+            case UnderlineStyle.SINGLE:
+            default:
+              this._fillBottomLineAtCells(x, y, cell.getWidth());
+              break;
+          }
         }
         this._ctx.restore();
       }
