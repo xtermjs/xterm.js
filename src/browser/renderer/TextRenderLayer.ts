@@ -262,6 +262,18 @@ export class TextRenderLayer extends BaseRenderLayer {
           this._fillMiddleLineAtCells(x, y, cell.getWidth());
         }
         if (cell.isUnderline()) {
+          const color = cell.extended.underlineColor;
+          if (!cell.isUnderlineColorDefault()) {
+            if (cell.isUnderlineColorRGB()) {
+              this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
+            } else {
+              let fg = cell.getUnderlineColor();
+              if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+                fg += 8;
+              }
+              this._ctx.fillStyle = this._colors.ansi[fg].css;
+            }
+          }
           switch (cell.extended.underlineStyle) {
             case UnderlineStyle.DOUBLE:
               this._fillBottomLineAtCells(x, y, cell.getWidth(), -window.devicePixelRatio);
