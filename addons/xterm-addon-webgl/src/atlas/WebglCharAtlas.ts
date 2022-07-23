@@ -414,63 +414,80 @@ export class WebglCharAtlas implements IDisposable {
       }
     }
 
-    // Draw underline and strikethrough
-    if (underline || strikethrough) {
+    // Draw underline
+    if (strikethrough) {
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      if (underline) {
-        console.log('ext', ext, this._workAttributeData.extended.underlineColor, this._workAttributeData.extended.underlineStyle);
-        const xLeft = padding;
-        const xRight = padding + this._config.scaledCharWidth;
-        const yMid = padding + this._config.scaledCharHeight - yOffset;
-        switch (this._workAttributeData.extended.underlineStyle) {
-          case UnderlineStyle.DOUBLE:
-            const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
-            const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
-            this._tmpCtx.moveTo(xLeft, yTop);
-            this._tmpCtx.lineTo(xRight, yTop);
-            this._tmpCtx.moveTo(xLeft, yBot);
-            this._tmpCtx.lineTo(xRight, yBot);
-            break;
-          case UnderlineStyle.CURLY:
-            const xMid = padding + this._config.scaledCharWidth / 2;
-            const yMidBot = Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
-            const yMidTop = Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
-            this._tmpCtx.moveTo(xLeft, yMid);
-            this._tmpCtx.bezierCurveTo(
-              xLeft, yMidBot,
-              xMid, yMidBot,
-              xMid, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xMid, yMidTop,
-              xRight, yMidTop,
-              xRight, yMid
-            );
-            break;
-          case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-            this._tmpCtx.moveTo(xLeft, yMid);
-            this._tmpCtx.lineTo(xRight, yMid);
-            break;
-          case UnderlineStyle.DASHED:
-            this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-            this._tmpCtx.moveTo(xLeft, yMid);
-            this._tmpCtx.lineTo(xRight, yMid);
-            break;
-          case UnderlineStyle.SINGLE:
-          default:
-            this._tmpCtx.moveTo(xLeft, yMid);
-            this._tmpCtx.lineTo(xRight, yMid);
-            break;
+      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.stroke();
+    }
+
+    // Draw underline
+    if (underline) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
+      // Underline color
+      if (this._workAttributeData.isUnderlineColorDefault()) {
+        this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      } else if (this._workAttributeData.isUnderlineColorRGB()) {
+        this._tmpCtx.strokeStyle = `rgb(${AttributeData.toColorRGB(this._workAttributeData.getUnderlineColor()).join(',')})`;
+      } else {
+        let fg = this._workAttributeData.getUnderlineColor();
+        if (this._config.drawBoldTextInBrightColors && this._workAttributeData.isBold() && fg < 8) {
+          fg += 8;
         }
+        this._tmpCtx.strokeStyle = this._getColorFromAnsiIndex(fg).css;
       }
-      if (strikethrough) {
-        this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      // Underline style/stroke
+      this._tmpCtx.beginPath();
+      const xLeft = padding;
+      const xRight = padding + this._config.scaledCharWidth;
+      const yMid = padding + this._config.scaledCharHeight - yOffset;
+      switch (this._workAttributeData.extended.underlineStyle) {
+        case UnderlineStyle.DOUBLE:
+          const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
+          const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
+          this._tmpCtx.moveTo(xLeft, yBot);
+          this._tmpCtx.lineTo(xRight, yBot);
+          break;
+        case UnderlineStyle.CURLY:
+          const xMid = padding + this._config.scaledCharWidth / 2;
+          const yMidBot = Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+          const yMidTop = Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.bezierCurveTo(
+            xLeft, yMidBot,
+            xMid, yMidBot,
+            xMid, yMid
+          );
+          this._tmpCtx.bezierCurveTo(
+            xMid, yMidTop,
+            xRight, yMidTop,
+            xRight, yMid
+          );
+          break;
+        case UnderlineStyle.DOTTED:
+          this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
+        case UnderlineStyle.DASHED:
+          this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
+        case UnderlineStyle.SINGLE:
+        default:
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
       }
       this._tmpCtx.stroke();
     }
