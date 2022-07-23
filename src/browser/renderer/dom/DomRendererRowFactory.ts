@@ -13,6 +13,7 @@ import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -165,6 +166,17 @@ export class DomRendererRowFactory {
         charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
         if (charElement.textContent === ' ') {
           charElement.innerHTML = '&nbsp;';
+        }
+        if (!cell.isUnderlineColorDefault()) {
+          if (cell.isUnderlineColorRGB()) {
+            charElement.style.textDecorationColor = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
+          } else {
+            let fg = cell.getUnderlineColor();
+            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+              fg += 8;
+            }
+            charElement.style.textDecorationColor = this._colors.ansi[fg].css;
+          }
         }
       }
 

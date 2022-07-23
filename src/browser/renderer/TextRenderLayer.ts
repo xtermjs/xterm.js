@@ -262,7 +262,6 @@ export class TextRenderLayer extends BaseRenderLayer {
           this._fillMiddleLineAtCells(x, y, cell.getWidth());
         }
         if (cell.isUnderline()) {
-          const color = cell.extended.underlineColor;
           if (!cell.isUnderlineColorDefault()) {
             if (cell.isUnderlineColorRGB()) {
               this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
