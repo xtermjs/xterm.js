@@ -16,6 +16,7 @@ import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'co
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
 import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
@@ -95,31 +96,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
-
-    // Observe any resizes to the canvas and extract the actual pixel size of the canvas if the
-    // devicePixelContentBoxSize API is supported. This allows correcting rounding errors when
-    // converting between CSS pixels and device pixels which causes blurry rendering when device
-    // pixel ratio is not a round number.
-    let observer: ResizeObserver | undefined = new ResizeObserver((entries) => {
-      const entry = entries.find((entry) => entry.target === this._canvas);
-      if (!entry) {
-        return;
-      }
-
-      // Disconnect if devicePixelContentBoxSize isn't supported by the browser
-      if (!('devicePixelContentBoxSize' in entry)) {
-        observer?.disconnect();
-        observer = undefined;
-        return;
-      }
-
-      this._setCanvasDevicePixelDimensions(
-        entry.devicePixelContentBoxSize[0].inlineSize,
-        entry.devicePixelContentBoxSize[0].blockSize
-      );
-    });
-    observer.observe(this._canvas, { box: ['device-pixel-content-box'] } as any);
-    this.register(toDisposable(() => observer?.disconnect()));
+    this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 

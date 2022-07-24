@@ -14,6 +14,7 @@ import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
 
 let nextRendererId = 1;
 
@@ -63,31 +64,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
 
-    // Observe any resizes to the canvas and extract the actual pixel size of the canvas if the
-    // devicePixelContentBoxSize API is supported. This allows correcting rounding errors when
-    // converting between CSS pixels and device pixels which causes blurry rendering when device
-    // pixel ratio is not a round number.
-    const observedCanvas = this._renderLayers[0].canvas;
-    let observer: ResizeObserver | undefined = new ResizeObserver((entries) => {
-      const entry = entries.find((entry) => entry.target === observedCanvas);
-      if (!entry) {
-        return;
-      }
-
-      // Disconnect if devicePixelContentBoxSize isn't supported by the browser
-      if (!('devicePixelContentBoxSize' in entry)) {
-        observer?.disconnect();
-        observer = undefined;
-        return;
-      }
-
-      this._setCanvasDevicePixelDimensions(
-        entry.devicePixelContentBoxSize[0].inlineSize,
-        entry.devicePixelContentBoxSize[0].blockSize
-      );
-    });
-    observer.observe(observedCanvas, { box: ['device-pixel-content-box'] } as any);
-    this.register(toDisposable(() => observer?.disconnect()));
+    this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this.onOptionsChanged();
   }
