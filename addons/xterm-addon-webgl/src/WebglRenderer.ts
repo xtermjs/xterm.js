@@ -579,14 +579,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / this._devicePixelRatio);
     this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / this._devicePixelRatio);
 
-    // Get the CSS dimensions of an individual cell.
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._devicePixelRatio;
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._devicePixelRatio;
+    // Get the CSS dimensions of an individual cell. This needs to be derived from the calculated
+    // device pixel canvas value above. CharMeasure.width/height by itself is insufficient when the
+    // page is not at 100% zoom level as CharMeasure is measured in CSS pixels, but the actual char
+    // size on the canvas can differ.
+    this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
+    this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
-    this.dimensions.scaledCanvasHeight = width;
-    this.dimensions.scaledCanvasWidth = height;
+    if (this.dimensions.scaledCanvasWidth === width && this.dimensions.scaledCanvasHeight === height) {
+      return;
+    }
+    this.dimensions.scaledCanvasWidth = width;
+    this.dimensions.scaledCanvasHeight = height;
     this._canvas.width = width;
     this._canvas.height = height;
     this._requestRedrawViewport();
