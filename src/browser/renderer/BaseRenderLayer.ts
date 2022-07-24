@@ -48,6 +48,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     italic: false
   };
 
+  public get canvas(): HTMLCanvasElement { return this._canvas; }
+
   constructor(
     private _container: HTMLElement,
     id: string,

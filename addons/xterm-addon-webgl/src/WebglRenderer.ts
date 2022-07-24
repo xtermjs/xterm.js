@@ -579,13 +579,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / this._devicePixelRatio);
     this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / this._devicePixelRatio);
 
-    // Get the _actual_ dimensions of an individual cell. This needs to be derived from the
-    // canvas CSS dimensions calculated above which takes into account device pixel ratio.
-    // `CharMeasure.width`/`height` by itself is insufficient when device pixel ratio is not a round
-    // number as CharMeasure is measured in CSS pixels, since the actual device pixel char size will
-    // differ.
-    this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
-    this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+    // Get the CSS dimensions of an individual cell.
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._devicePixelRatio;
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._devicePixelRatio;
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
