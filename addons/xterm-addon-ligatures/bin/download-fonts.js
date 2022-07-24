@@ -22,10 +22,13 @@ const fontsFolder = path.join(__dirname, '../fonts');
 async function download() {
   await mkdirp(fontsFolder);
 
-  await downloadFiraCode();
-  await downloadIosevka();
-
-  console.log('Loaded all fonts for testing')
+  try {
+    await downloadFiraCode();
+    await downloadIosevka();
+    console.log('Loaded all fonts for testing')
+  } catch (e) {
+    console.warn('Fonts failed to download, ligature tests will not work', e);
+  }
 }
 
 async function downloadFiraCode() {
