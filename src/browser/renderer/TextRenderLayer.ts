@@ -181,9 +181,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       // Apply dim to the background, this is relatively slow as the CSS is re-parsed but dim is
       // rarely used
       if (nextFillStyle && cell.isDim()) {
-        console.log('old', nextFillStyle);
         nextFillStyle = color.multiplyOpacity(css.toColor(nextFillStyle), 0.5).css;
-        console.log('new', nextFillStyle);
       }
 
       // Get any decoration foreground/background overrides, this must be fetched before the early

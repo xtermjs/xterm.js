@@ -345,6 +345,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     }
 
+    console.log(`draw char ${cell.getChars()} with style`, this._ctx.fillStyle);
     const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
     if (!atlasDidDraw) {
