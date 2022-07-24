@@ -84,6 +84,11 @@ export namespace color {
     };
   }
 
+  export function multiplyOpacity(color: IColor, factor: number): IColor {
+    const a = color.rgba & 0xFF;
+    return opacity(color, (a * factor) / 0xFF);
+  }
+
   export function toColorRGB(color: IColor): IColorRGB {
     return [(color.rgba >> 24) & 0xFF, (color.rgba >> 16) & 0xFF, (color.rgba >> 8) & 0xFF];
   }

@@ -12,7 +12,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -24,6 +24,7 @@ import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IDecorationService } from 'common/services/Services';
+import { color, rgba as rgbaNs } from 'common/Color';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -416,6 +417,46 @@ export class WebglRenderer extends Disposable implements IRenderer {
       if (d.foregroundColorRGB) {
         fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
       }
+    }
+
+    // Apply dim if there is no override yet as it's the default color, this requires resolving the
+    // attribute color ahead of time because it's a derivative of it
+    if (this._workColors.bg & BgFlags.DIM) {
+      // TODO: Share logic
+      let rgba: number | undefined;
+      if (this._workColors.fg & FgFlags.INVERSE) {
+        switch (this._workColors.fg & Attributes.CM_MASK) {
+          case Attributes.CM_P16:
+          case Attributes.CM_P256:
+            rgba = this._colors.ansi[this._workColors.fg & Attributes.PCOLOR_MASK].rgba;
+            break;
+          case Attributes.CM_RGB:
+            rgba = (this._workColors.fg & Attributes.RGB_MASK) << 8;
+            break;
+          case Attributes.CM_DEFAULT:
+          default:
+            rgba = this._colors.foreground.rgba;
+        }
+      } else {
+        switch (this._workColors.bg& Attributes.CM_MASK) {
+          case Attributes.CM_P16:
+          case Attributes.CM_P256:
+            rgba = this._colors.ansi[this._workColors.bg& Attributes.PCOLOR_MASK].rgba;
+            break;
+          case Attributes.CM_RGB:
+            rgba = (this._workColors.bg& Attributes.RGB_MASK) << 8;
+            break;
+          case Attributes.CM_DEFAULT:
+          default:
+            rgba = this._colors.background.rgba;
+        }
+      }
+      bgOverride = color.blend(this._colors.background, rgbaNs.toColor(
+        (rgba >> 24) & 0xFF,
+        (rgba >> 16) & 0xFF,
+        (rgba >>  8) & 0xFF,
+        0x80 // 50% opacity
+      )).rgba >> 8 & 0xFFFFFF;
     }
 
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag

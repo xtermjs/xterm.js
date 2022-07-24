@@ -249,6 +249,13 @@ export class DomRendererRowFactory {
           }
       }
 
+      // If there is no background override by now it's the original color, so apply dim if needed
+      if (!bgOverride) {
+        if (cell.isDim()) {
+          bgOverride = color.multiplyOpacity(resolvedBg, 0.5);
+        }
+      }
+
       // Foreground
       switch (fgColorMode) {
         case Attributes.CM_P16:
