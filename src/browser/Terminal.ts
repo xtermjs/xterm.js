@@ -1017,11 +1017,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public addMarker(cursorYOffset: number): IMarker | undefined {
-    // Disallow markers on the alt buffer
-    if (this.buffer !== this.buffers.normal) {
-      return;
-    }
-
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
