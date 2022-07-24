@@ -419,46 +419,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
 
-    // Apply dim if there is no override yet as it's the default color, this requires resolving the
-    // attribute color ahead of time because it's a derivative of it
-    if (this._workColors.bg & BgFlags.DIM) {
-      // TODO: Share logic
-      let rgba: number | undefined;
-      if (this._workColors.fg & FgFlags.INVERSE) {
-        switch (this._workColors.fg & Attributes.CM_MASK) {
-          case Attributes.CM_P16:
-          case Attributes.CM_P256:
-            rgba = this._colors.ansi[this._workColors.fg & Attributes.PCOLOR_MASK].rgba;
-            break;
-          case Attributes.CM_RGB:
-            rgba = (this._workColors.fg & Attributes.RGB_MASK) << 8;
-            break;
-          case Attributes.CM_DEFAULT:
-          default:
-            rgba = this._colors.foreground.rgba;
-        }
-      } else {
-        switch (this._workColors.bg& Attributes.CM_MASK) {
-          case Attributes.CM_P16:
-          case Attributes.CM_P256:
-            rgba = this._colors.ansi[this._workColors.bg& Attributes.PCOLOR_MASK].rgba;
-            break;
-          case Attributes.CM_RGB:
-            rgba = (this._workColors.bg& Attributes.RGB_MASK) << 8;
-            break;
-          case Attributes.CM_DEFAULT:
-          default:
-            rgba = this._colors.background.rgba;
-        }
-      }
-      bgOverride = color.blend(this._colors.background, rgbaNs.toColor(
-        (rgba >> 24) & 0xFF,
-        (rgba >> 16) & 0xFF,
-        (rgba >>  8) & 0xFF,
-        0x80 // 50% opacity
-      )).rgba >> 8 & 0xFFFFFF;
-    }
-
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key
     if (bgOverride !== undefined) {

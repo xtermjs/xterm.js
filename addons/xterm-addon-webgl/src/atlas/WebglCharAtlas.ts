@@ -189,7 +189,7 @@ export class WebglCharAtlas implements IDisposable {
     return this._config.colors.ansi[idx];
   }
 
-  private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean): IColor {
+  private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean, dim: boolean): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
@@ -197,50 +197,76 @@ export class WebglCharAtlas implements IDisposable {
       return TRANSPARENT_COLOR;
     }
 
+    let result: IColor;
     switch (bgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        return this._getColorFromAnsiIndex(bgColor);
+        result = this._getColorFromAnsiIndex(bgColor);
+        break;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(bgColor);
         // TODO: This object creation is slow
-        return {
-          rgba: bgColor << 8,
-          css: `#${toPaddedHex(arr[0])}${toPaddedHex(arr[1])}${toPaddedHex(arr[2])}`
-        };
+        result = rgba.toColor(arr[0], arr[1], arr[2]);
+        break;
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          return this._config.colors.foreground;
+          result = this._config.colors.foreground;
+        } else {
+          result = this._config.colors.background;
         }
-        return this._config.colors.background;
+        break;
     }
+
+    if (dim) {
+      // Blend here instead of using opacity because transparent colors mess with clipping the
+      // glyph's bounding box
+      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, 0.5));
+    }
+
+    return result;
   }
 
-  private _getForegroundColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor {
-    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands);
+  private _getForegroundColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, dim: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor {
+    // TODO: Pass dim along to get min contrast?
+    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, false, bold, excludeFromContrastRatioDemands);
     if (minimumContrastColor) {
       return minimumContrastColor;
     }
 
+    let result: IColor;
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
         if (this._config.drawBoldTextInBrightColors && bold && fgColor < 8) {
           fgColor += 8;
         }
-        return this._getColorFromAnsiIndex(fgColor);
+        result = this._getColorFromAnsiIndex(fgColor);
+        break;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(fgColor);
-        return rgba.toColor(arr[0], arr[1], arr[2]);
+        result = rgba.toColor(arr[0], arr[1], arr[2]);
+        break;
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          // Inverse should always been opaque, even when transparency is used
-          return color.opaque(this._config.colors.background);
+          result = this._config.colors.background;
+        } else {
+          result = this._config.colors.foreground;
         }
-        return this._config.colors.foreground;
     }
+
+    // Always use an opaque color regardless of allowTransparency
+    if (this._config.allowTransparency) {
+      result = color.opaque(result);
+    }
+
+    // Apply dim to the color, opacity is fine to use for the foreground color
+    if (dim) {
+      result = color.multiplyOpacity(result, 0.5);
+    }
+
+    return result;
   }
 
   private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
@@ -357,7 +383,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // draw the background
-    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse);
+    const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse, dim);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -373,13 +399,8 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerLineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
-    const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
+    const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
-
-    // Apply alpha to dim the character
-    if (dim) {
-      this._tmpCtx.globalAlpha = DIM_OPACITY;
-    }
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
     const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
