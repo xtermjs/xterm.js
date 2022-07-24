@@ -187,8 +187,8 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
-    this.dimensions.scaledCanvasHeight = width;
-    this.dimensions.scaledCanvasWidth = height;
+    this.dimensions.scaledCanvasHeight = height;
+    this.dimensions.scaledCanvasWidth = width;
     // Resize all render layers
     for (const l of this._renderLayers) {
       l.resize(this.dimensions);
