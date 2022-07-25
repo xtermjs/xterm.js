@@ -69,7 +69,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     else if ('queryLocalFonts' in window) {
       const fonts: Record<string, IFontMetadata[]> = {};
       try {
-        const fontsIterator = await (window as any).queryLocalFonts(); // await (navigator as unknown as IFontAccessNavigator).fonts.query();
+        const fontsIterator = await (window as any).queryLocalFonts();
         for (const metadata of fontsIterator) {
           if (!fonts.hasOwnProperty(metadata.family)) {
             fonts[metadata.family] = [];
