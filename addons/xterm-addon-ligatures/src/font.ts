@@ -106,7 +106,9 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     if (fonts.hasOwnProperty(family) && fonts[family].length > 0) {
       const font = fonts[family][0];
       if ('blob' in font) {
-        return loadBuffer(await (await font.blob()).arrayBuffer(), { cacheSize });
+        const bytes = await font.blob();
+        const buffer = await bytes.arrayBuffer();
+        return loadBuffer(buffer, { cacheSize });
       }
       return await loadFile(font.path, { cacheSize });
     }
