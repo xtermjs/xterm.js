@@ -315,7 +315,9 @@ function initOptions(term: TerminalType): void {
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
-  const numberOptions = [];
+  const numberOptions = [
+    'overviewRulerWidth'
+  ];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.options[o]) {
       case 'boolean':
@@ -325,7 +327,7 @@ function initOptions(term: TerminalType): void {
         numberOptions.push(o);
         break;
       default:
-        if (Object.keys(stringOptions).indexOf(o) === -1) {
+        if (Object.keys(stringOptions).indexOf(o) === -1 && numberOptions.indexOf(o) === -1 && booleanOptions.indexOf(o) === -1) {
           console.warn(`Unrecognized option: "${o}"`);
         }
     }
@@ -338,7 +340,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o]}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
@@ -373,7 +375,7 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
-      } else if(o === 'scrollback') {
+      } else if (o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
