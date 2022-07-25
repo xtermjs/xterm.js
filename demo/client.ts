@@ -99,6 +99,27 @@ const actionElements = {
 };
 const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
+const xtermjsTheme = {
+  foreground: '#F8F8F8',
+  background: '#2D2E2C',
+  selection: '#5DA5D533',
+  black: '#1E1E1D',
+  brightBlack: '#262625',
+  red: '#CE5C5C',
+  brightRed: '#FF7272',
+  green: '#5BCC5B',
+  brightGreen: '#72FF72',
+  yellow: '#CCCC5B',
+  brightYellow: '#FFFF72',
+  blue: '#5D5DD3',
+  brightBlue: '#7279FF',
+  magenta: '#BC5ED1',
+  brightMagenta: '#E572FF',
+  cyan: '#5DA5D5',
+  brightCyan: '#72F0FF',
+  white: '#F8F8F8',
+  brightWhite: '#FFFFFF'
+};
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();
@@ -175,7 +196,8 @@ function createTerminal(): void {
   term = new Terminal({
     allowTransparency: true,
     windowsMode: isWindows,
-    fontFamily: 'Fira Code, courier-new, courier, monospace'
+    fontFamily: 'Fira Code, courier-new, courier, monospace',
+    theme: xtermjsTheme
   } as ITerminalOptions);
 
   // Load addons
@@ -311,6 +333,7 @@ function initOptions(term: TerminalType): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
+    theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null
   };
   const options = Object.getOwnPropertyNames(term.options);
@@ -345,7 +368,8 @@ function initOptions(term: TerminalType): void {
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
     if (stringOptions[o]) {
-      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.options[o] === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+      const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
+      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
       html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
     }
@@ -387,7 +411,66 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      term.options[o] = input.value;
+      let value: any = input.value;
+      if (o === 'theme') {
+        switch (input.value) {
+          case 'default':
+            value = undefined;
+            break;
+          case 'xtermjs':
+            // Custom theme to match style of xterm.js logo
+            value = xtermjsTheme;
+          case 'sapphire':
+            // Color source: https://github.com/Tyriar/vscode-theme-sapphire
+            value = {
+              background: '#1c2431',
+              foreground: '#cccccc',
+              selectionBackground: '#399ef440',
+              black: '#666666',
+              blue: '#399ef4',
+              brightBlack: '#666666',
+              brightBlue: '#399ef4',
+              brightCyan: '#21c5c7',
+              brightGreen: '#4eb071',
+              brightMagenta: '#b168df',
+              brightRed: '#da6771',
+              brightWhite: '#efefef',
+              brightYellow: '#fff099',
+              cyan: '#21c5c7',
+              green: '#4eb071',
+              magenta: '#b168df',
+              red: '#da6771',
+              white: '#efefef',
+              yellow: '#fff099',
+            };
+            break;
+          case 'light':
+            // Color source: https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/light_plus.json
+            value = {
+              background: '#ffffff',
+              foreground: '#333333',
+              selectionBackground: '#add6ff',
+              black: '#000000',
+              blue: '#0451a5',
+              brightBlack: '#666666',
+              brightBlue: '#0451a5',
+              brightCyan: '#0598bc',
+              brightGreen: '#14ce14',
+              brightMagenta: '#bc05bc',
+              brightRed: '#cd3131',
+              brightWhite: '#a5a5a5',
+              brightYellow: '#b5ba00',
+              cyan: '#0598bc',
+              green: '#00bc00',
+              magenta: '#bc05bc',
+              red: '#cd3131',
+              white: '#555555',
+              yellow: '#949800',
+            };
+            break;
+        }
+      }
+      term.options[o] = value;
     });
   });
 }
