@@ -65,6 +65,22 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
         console.error(err.name, err.message);
       }
     }
+    // Latest proposal
+    else if ('queryLocalFonts' in window) {
+      const fonts: Record<string, IFontMetadata[]> = {};
+      try {
+        const fontsIterator = await (window as any).queryLocalFonts(); // await (navigator as unknown as IFontAccessNavigator).fonts.query();
+        for (const metadata of fontsIterator) {
+          if (!fonts.hasOwnProperty(metadata.family)) {
+            fonts[metadata.family] = [];
+          }
+          fonts[metadata.family].push(metadata);
+        }
+        fontsPromise = Promise.resolve(fonts);
+      } catch (err: any) {
+        console.error(err.name, err.message);
+      }
+    }
     // Node environment or no font access API
     else {
       try {
