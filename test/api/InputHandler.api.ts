@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { pollFor, openTerminal, getBrowserType, launchBrowser, writeSync } from './TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 import { IRenderDimensions } from 'browser/renderer/Types';
 
 const APP = 'http://127.0.0.1:3001/test';

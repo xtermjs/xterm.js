@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
+import * as playwright from '@playwright/test';
 import deepEqual = require('deep-equal');
 import { ITerminalOptions } from 'xterm';
 import { deepStrictEqual, fail } from 'assert';

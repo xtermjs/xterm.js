@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 import { fail } from 'assert';
 
 const APP = 'http://127.0.0.1:3001/test';
