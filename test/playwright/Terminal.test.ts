@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual, fail, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/Types';
 import { createTestContext, ITestContext, openTerminal, asyncThrows, pollFor, timeout} from './TestUtils';
 
@@ -82,6 +82,34 @@ test.describe('API integration', () => {
     strictEqual(await ctx.proxy.getOption('rendererType'), 'canvas');
     await ctx.proxy.setOption('rendererType', 'dom');
     strictEqual(await ctx.proxy.getOption('rendererType'), 'dom');
+  });
+
+  test.describe('options', () => {
+    test('getter', async () => {
+      await openTerminal(ctx);
+      strictEqual(await ctx.proxy.getOption('rendererType'), 'canvas');
+      strictEqual(await ctx.proxy.getOption(`cols`), 80);
+      strictEqual(await ctx.proxy.getOption(`rows`), 24);
+    });
+    test('setter', async () => {
+      await openTerminal(ctx);
+      try {
+        await ctx.proxy.setOption('cols', 40);
+        fail();
+      } catch {}
+      try {
+        await ctx.proxy.setOption('rows', 20);
+        fail();
+      } catch {}
+      await ctx.proxy.setOption('scrollback', 1);
+      strictEqual(await ctx.proxy.getOption(`scrollback`), 1);
+      await ctx.proxy.setOptions({
+        fontSize: 30,
+        fontFamily: 'Arial'
+      });
+      strictEqual(await ctx.proxy.getOption('fontSize'), 30);
+      strictEqual(await ctx.proxy.getOption('fontFamily'), 'Arial');
+    });
   });
 
   test.describe('renderer', () => {
