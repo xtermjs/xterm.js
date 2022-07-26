@@ -17,7 +17,7 @@ export interface ITestContext {
 
 export async function createTestContext(browser: Browser): Promise<ITestContext> {
   const page = await browser.newPage();
-  await page.goto('http://127.0.0.1:3000/test');
+  await page.goto('/test');
   const proxy = new TerminalProxy(page);
   proxy.initPage();
   return {
