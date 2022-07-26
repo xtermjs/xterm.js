@@ -100,6 +100,8 @@ jobs:
     displayName: 'Install Yarn'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: npx playwright install
+    displayName: 'Install PlayWright browsers'
   - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests'
 
@@ -127,6 +129,8 @@ jobs:
     displayName: 'Install Node.js'
   - script: yarn --frozen-lockfile
     displayName: 'Install dependencies and build'
+  - script: npx playwright install
+    displayName: 'Install PlayWright browsers'
   - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests'
 
