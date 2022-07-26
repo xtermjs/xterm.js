@@ -675,6 +675,9 @@ test.describe('API integration', () => {
   test.describe('registerLinkProvider', () => {
     test('should fire provideLinks when hovering cells', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -697,6 +700,9 @@ test.describe('API integration', () => {
 
     test('should fire hover and leave events on the link', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -732,6 +738,9 @@ test.describe('API integration', () => {
 
     test('should work fine when hover and leave callbacks are not provided', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -772,17 +781,13 @@ test.describe('API integration', () => {
 
     test('should fire activate events when clicking the link', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.proxy.write('a b c');
 
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
-
-      // Focus terminal to avoid a render event clearing the active link
-      const dims = await getDimensions();
-      await moveMouseCell(ctx, dims, 5, 5);
-      await ctx.page.mouse.down();
-      await ctx.page.mouse.up();
-      await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
 
       await ctx.page.evaluate(`
         window.calls = [];
@@ -799,6 +804,7 @@ test.describe('API integration', () => {
           }
         });
       `);
+      const dims = await getDimensions();
       await moveMouseCell(ctx, dims, 3, 1);
       await pollFor(ctx.page, `window.calls`, ['provide 1', 'hover 1']);
       await ctx.page.mouse.down();
@@ -819,6 +825,9 @@ test.describe('API integration', () => {
 
     test('should work when multiple links are provided on the same line', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -865,6 +874,9 @@ test.describe('API integration', () => {
 
     test('should dispose links when hovering away', async () => {
       await openTerminal(ctx, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await ctx.proxy.focus();
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
