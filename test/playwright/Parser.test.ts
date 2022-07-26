@@ -4,7 +4,7 @@
  */
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
-import { IDisposable } from 'xterm';
+import type { IDisposable } from 'xterm';
 import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
 
 let ctx: ITestContext;
