@@ -80,7 +80,6 @@ jobs:
 - job: Linux_IntegrationTests
   pool:
     vmImage: 'ubuntu-20.04'
-  container: mcr.microsoft.com/playwright:v1.24.0-focal
   steps:
   - script: |
       # source: https://github.com/microsoft/playwright/issues/1041
