@@ -5,7 +5,7 @@ import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
 import { PageFunction } from 'playwright-core/types/structs';
-import type { ICoreTerminal } from 'common/Types';
+import type { ICoreTerminal, IMarker } from 'common/Types';
 import type { IRenderDimensions } from 'browser/renderer/Types';
 import { IRenderService } from 'browser/services/Services';
 
@@ -167,6 +167,7 @@ export class TerminalProxy implements ITerminalProxy {
     }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
   public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
+  public async registerMarker(y: number): Promise<IMarker | undefined> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {

@@ -452,6 +452,31 @@ test.describe('API integration', () => {
         strictEqual(await (await line.getCell(2))!.getChars(), '');
         strictEqual(await (await line.getCell(2))!.getWidth(), 0);
       });
+
+      // TODO: Fix for @playwright/test
+      test.skip('clearMarkers', async () => {
+        await openTerminal(ctx, { cols: 5 });
+        await ctx.page.evaluate(`
+          window.disposeStack = [];
+        `);
+        await ctx.proxy.write('\\n\\n\\n\\n');
+        await ctx.proxy.write('\\n\\n\\n\\n');
+        await ctx.proxy.write('\\n\\n\\n\\n');
+        await ctx.proxy.write('\\n\\n\\n\\n');
+        await ctx.proxy.registerMarker(1);
+        await ctx.proxy.registerMarker(1);
+        await ctx.proxy.registerMarker(2);
+        await ctx.proxy.scrollLines(10);
+        await ctx.proxy.registerMarker(3);
+        await ctx.proxy.registerMarker(4);
+        await ctx.page.evaluate(`
+          for (let i = 0; i < window.term.markers.length; ++i) {
+              const marker = window.term.markers[i];
+              marker.onDispose(() => window.disposeStack.push(marker));
+          }`);
+        await ctx.proxy.clear();
+        strictEqual(await ctx.page.evaluate(`window.disposeStack.length`), 4);
+      });
     });
 
     test('active, normal, alternate', async () => {
@@ -587,6 +612,65 @@ test.describe('API integration', () => {
   //   await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
   //   await pollFor(ctx.page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   // });
+
+  // TODO: Fix for @playwright/test
+  test.describe('registerDecoration', () => {
+    test.describe('bufferDecorations', () => {
+      test.skip('should register decorations and render them when terminal open is called', async () => {
+        // await page.evaluate(`window.term = new Terminal({})`);
+        // await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        // await page.waitForSelector('.xterm-text-layer');
+        // await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        // await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
+        // await openTerminal(page);
+        // await pollFor(page, `document.querySelectorAll('.xterm-screen .xterm-decoration').length`, 2);
+      });
+      test.skip('should return undefined when the marker has already been disposed of', async () => {
+        // await openTerminal(page);
+        // await page.evaluate(`window.marker = window.term.addMarker(1)`);
+        // await page.evaluate(`window.marker.dispose()`);
+        // await pollFor(page, `window.decoration = window.term.registerDecoration({ marker: window.marker });`, undefined);
+      });
+      test.skip('should throw when a negative x offset is provided', async () => {
+      //   await openTerminal(page);
+      //   await page.evaluate(`window.marker = window.term.addMarker(1)`);
+      //   await page.evaluate(`
+      //   try {
+      //     window.decoration = window.term.registerDecoration({ marker: window.marker, x: -2 });
+      //   } catch (e) {
+      //     window.throwMessage = e.message;
+      //   }
+      // `);
+      //   await pollFor(page, 'window.throwMessage', 'This API only accepts positive integers');
+      });
+    });
+    test.describe('overviewRulerDecorations', () => {
+      test.skip('should not add an overview ruler when width is not set', async () => {
+        // await page.evaluate(`window.term = new Terminal({})`);
+        // await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        // await page.waitForSelector('.xterm-text-layer');
+        // await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        // await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
+        // await openTerminal(page);
+        // await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
+      });
+      test.skip('should add an overview ruler when width is set', async () => {
+        // await page.evaluate(`window.term = new Terminal({ overviewRulerWidth: 15 })`);
+        // await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        // await page.waitForSelector('.xterm-text-layer');
+        // await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        // await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        // await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
+        // await openTerminal(page);
+        // await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 1);
+      });
+    });
+  });
 
   test.describe('registerLinkProvider', () => {
     test('should fire provideLinks when hovering cells', async () => {
