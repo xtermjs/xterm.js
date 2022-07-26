@@ -6,6 +6,7 @@
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/Types';
+import type { IDisposable } from 'common/Types';
 import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
 
 let ctx: ITestContext;
@@ -16,6 +17,15 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 test.describe('InputHandler Integration Tests', function(): void {
+  const disposables: IDisposable[] = [];
+
+  test.afterEach(async () => {
+    for (const d of disposables) {
+      d.dispose();
+    }
+    disposables.length = 0;
+  });
+
   test.describe('CSI', () => {
     test.beforeEach(async () => await ctx.proxy.reset());
 
@@ -274,6 +284,75 @@ test.describe('InputHandler Integration Tests', function(): void {
         const d = await getDimensions();
         deepStrictEqual(calls, [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
+    });
+  });
+
+  test.describe('OSC 10 & 11 + 110 | 111 | 112', () => {
+    let recordedData: string[];
+    test.beforeEach(async () => {
+      await ctx.proxy.reset();
+      recordedData = [];
+      disposables.push(ctx.proxy.onData(e => recordedData.push(e)));
+    });
+
+    test('query FG color', async () => {
+      await ctx.proxy.write('\x1b]10;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+    });
+    test('query BG color', async () => {
+      await ctx.proxy.write('\x1b]11;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+    });
+    test('query FG & BG color in one call', async () => {
+      await ctx.proxy.write('\x1b]10;?;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+    });
+    test('set & query FG', async () => {
+      await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+      await ctx.proxy.write('\x1b]10;#ffffff\x07\x1b]10;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+    });
+    test('set & query BG', async () => {
+      await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+      await ctx.proxy.write('\x1b]11;#000000\x07\x1b]11;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+    });
+    test('set & query cursor color', async () => {
+      await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+      await ctx.proxy.write('\x1b]12;#ffffff\x07\x1b]12;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+    });
+    test('set & query FG & BG color in one call', async () => {
+      await ctx.proxy.write('\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:1212/3434/5656\x1b\\', '\x1b]11;rgb:aaaa/bbbb/cccc\x1b\\']);
+      await ctx.proxy.write('\x1b]10;#ffffff;#000000\x07');
+    });
+    test('OSC 110: restore FG color', async () => {
+      await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+      recordedData.length = 0;
+      // restore
+      await ctx.proxy.write('\x1b]110\x07\x1b]10;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+    });
+    test('OSC 111: restore BG color', async () => {
+      await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+      recordedData.length = 0;
+      // restore
+      await ctx.proxy.write('\x1b]111\x07\x1b]11;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+    });
+    test('OSC 112: restore cursor color', async () => {
+      await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+      recordedData.length = 0;
+      // restore
+      await ctx.proxy.write('\x1b]112\x07\x1b]12;?\x07');
+      deepStrictEqual(recordedData, ['\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
     });
   });
 
