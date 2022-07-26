@@ -144,7 +144,7 @@ export class TerminalProxy implements ITerminalProxy {
   public async clearSelection(): Promise<void> { return this.evaluate(([term]) => term.clearSelection()); }
   public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const); }
   public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const); }
-  public async getOption(key: keyof ITerminalOptions): Promise<any> { return this._page.evaluate(([term, key]) => term.options[key], [await this.getHandle(), key] as const); }
+  public async getOption<T extends keyof ITerminalOptions>(key: T): Promise<ITerminalOptions[T]> { return this._page.evaluate(([term, key]) => term.options[key as T], [await this.getHandle(), key] as const); }
   public async setOption<T extends keyof ITerminalOptions>(key: T, value: ITerminalOptions[T]): Promise<any> { return this._page.evaluate(([term, key, value]) => term.options[key as T] = (value as ITerminalOptions[T]), [await this.getHandle(), key, value] as const); }
   public async scrollToTop(): Promise<void> { return this.evaluate(([term]) => term.scrollToTop()); }
   public async scrollToBottom(): Promise<void> { return this.evaluate(([term]) => term.scrollToBottom()); }
