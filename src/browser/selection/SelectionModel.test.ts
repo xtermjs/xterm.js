@@ -116,6 +116,12 @@ describe('SelectionModel', () => {
       model.selectionStartLength = 4;
       assert.deepEqual(model.finalSelectionEnd, [2, 3]);
     });
+    it('should return the end on a different row when start + length overflows onto a following row with selectionEnd inbetween', () => {
+      model.selectionStart = [78, 2];
+      model.selectionEnd = [79, 2];
+      model.selectionStartLength = 4;
+      assert.deepEqual(model.finalSelectionEnd, [2, 3]);
+    });
     it('should return selection end if selection end is after selection start + length', () => {
       model.selectionStart = [2, 2];
       model.selectionStartLength = 2;

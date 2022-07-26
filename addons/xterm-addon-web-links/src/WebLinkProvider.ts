@@ -5,9 +5,10 @@
 
 import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
 
-interface ILinkProviderOptions {
+export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
   leave?(event: MouseEvent, text: string): void;
+  urlRegex?: RegExp;
 }
 
 export class WebLinkProvider implements ILinkProvider {
@@ -78,10 +79,17 @@ export class LinkComputer {
         endY++;
       }
 
+      let startX = stringIndex + 1;
+      let startY = startLineIndex + 1;
+      while (startX > terminal.cols) {
+        startX -= terminal.cols;
+        startY++;
+      }
+
       const range = {
         start: {
-          x: stringIndex + 1,
-          y: startLineIndex + 1
+          x: startX,
+          y: startY
         },
         end: {
           x: endX,

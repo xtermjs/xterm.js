@@ -5,10 +5,12 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IRenderDebouncer } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDisposable } from 'common/Types';
+import { IDecorationOptions, IDecoration } from 'xterm';
+import { IBufferService } from 'common/services/Services';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -47,15 +49,20 @@ export interface IRenderService extends IDisposable {
    * Fires when buffer changes are rendered. This does not fire when only cursor
    * or selections are rendered.
    */
-  onRenderedBufferChange: IEvent<{ start: number, end: number }>;
+  onRenderedViewportChange: IEvent<{ start: number, end: number }>;
+  /**
+   * Fires on render
+   */
+  onRender: IEvent<{ start: number, end: number }>;
   onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
 
+  addRefreshCallback(callback: FrameRequestCallback): number;
+
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
-  changeOptions(): void;
   setRenderer(renderer: IRenderer): void;
   setColors(colors: IColorSet): void;
   onDevicePixelRatioChange(): void;
@@ -95,6 +102,7 @@ export interface ISelectionService {
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;
   onMouseDown(event: MouseEvent): void;
+  isCellInSelection(x: number, y: number): boolean;
 }
 
 export const ISoundService = createDecorator<ISoundService>('SoundService');

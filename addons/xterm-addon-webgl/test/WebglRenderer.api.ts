@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { Browser, Page } from 'playwright';
 import { ITheme } from 'xterm';
-import { getBrowserType, launchBrowser, openTerminal, pollFor, writeSync } from '../../../out-test/api/TestUtils';
+import { getBrowserType, launchBrowser, openTerminal, pollFor, timeout, writeSync } from '../../../out-test/api/TestUtils';
 import { ITerminalOptions } from '../../../src/common/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -49,7 +49,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -73,8 +73,8 @@ describe('WebGL Renderer Integration Tests', async () => {
         brightWhite: '#161718'
       };
       await page.evaluate(`
-        window.term.setOption('theme', ${JSON.stringify(theme)});
-        window.term.setOption('drawBoldTextInBrightColors', true);
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.drawBoldTextInBrightColors = true;
       `);
       await writeSync(page, `\\x1b[1;30m█\\x1b[1;31m█\\x1b[1;32m█\\x1b[1;33m█\\x1b[1;34m█\\x1b[1;35m█\\x1b[1;36m█\\x1b[1;37m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
@@ -98,7 +98,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -121,7 +121,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[7;30m \\x1b[7;31m \\x1b[7;32m \\x1b[7;33m \\x1b[7;34m \\x1b[7;35m \\x1b[7;36m \\x1b[7;37m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -144,7 +144,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[7;40m█\\x1b[7;41m█\\x1b[7;42m█\\x1b[7;43m█\\x1b[7;44m█\\x1b[7;45m█\\x1b[7;46m█\\x1b[7;47m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -167,7 +167,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[8;30m \\x1b[8;31m \\x1b[8;32m \\x1b[8;33m \\x1b[8;34m \\x1b[8;35m \\x1b[8;36m \\x1b[8;37m `);
       await pollFor(page, () => getCellColor(1, 1), [0, 0, 0, 255]);
       await pollFor(page, () => getCellColor(2, 1), [0, 0, 0, 255]);
@@ -190,7 +190,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         cyan: '#131415',
         white: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[8;40m█\\x1b[8;41m█\\x1b[8;42m█\\x1b[8;43m█\\x1b[8;44m█\\x1b[8;45m█\\x1b[8;46m█\\x1b[8;47m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -213,7 +213,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         brightCyan: '#131415',
         brightWhite: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -236,7 +236,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         brightCyan: '#131415',
         brightWhite: '#161718'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, `\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
       await pollFor(page, () => getCellColor(1, 1), [1, 2, 3, 255]);
       await pollFor(page, () => getCellColor(2, 1), [4, 5, 6, 255]);
@@ -252,7 +252,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[38;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[38;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -260,9 +260,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -280,9 +280,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -300,9 +300,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -312,7 +312,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[7;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[7;48;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -320,9 +320,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -348,7 +348,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
-          data += `\\x1b[8;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+          data += `\\x1b[8;48;5;${16 + y * 16 + x}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -356,9 +356,9 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
           const cssColor = COLORS_16_TO_255[y * 16 + x];
-          const r = parseInt(cssColor.substr(1, 2), 16);
-          const g = parseInt(cssColor.substr(3, 2), 16);
-          const b = parseInt(cssColor.substr(5, 2), 16);
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
           await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
         }
       }
@@ -369,7 +369,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;${i};0;0m█\x1b[0m`;
+          data += `\\x1b[38;2;${i};0;0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -405,7 +405,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;0;${i};0m█\x1b[0m`;
+          data += `\\x1b[38;2;0;${i};0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -441,7 +441,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;0;0;${i}m█\x1b[0m`;
+          data += `\\x1b[38;2;0;0;${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -477,7 +477,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[38;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[38;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -567,7 +567,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;0;${i};0m█\x1b[0m`;
+          data += `\\x1b[7;48;2;0;${i};0m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -603,7 +603,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;0;0;${i}m█\x1b[0m`;
+          data += `\\x1b[7;48;2;0;0;${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -639,7 +639,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[7;48;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[7;48;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -674,7 +674,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const i = y * 16 + x;
-          data += `\\x1b[8;48;2;${i};${i};${i}m█\x1b[0m`;
+          data += `\\x1b[8;48;2;${i};${i};${i}m█\\x1b[0m`;
         }
         data += '\\r\\n';
       }
@@ -715,12 +715,13 @@ describe('WebGL Renderer Integration Tests', async () => {
         brightWhite: '#eeeeec'
       };
       await page.evaluate(`
-        window.term.setOption('theme', ${JSON.stringify(theme)});
-        window.term.setOption('minimumContrastRatio', 1);
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.minimumContrastRatio = 1;
       `);
+      // Block characters ignore block elements so a different char is used here
       await writeSync(page,
-        `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
-        `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
+        `\\x1b[30m■\\x1b[31m■\\x1b[32m■\\x1b[33m■\\x1b[34m■\\x1b[35m■\\x1b[36m■\\x1b[37m■\\r\\n` +
+        `\\x1b[90m■\\x1b[91m■\\x1b[92m■\\x1b[93m■\\x1b[94m■\\x1b[95m■\\x1b[96m■\\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
       await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
@@ -742,21 +743,21 @@ describe('WebGL Renderer Integration Tests', async () => {
       // Setting and check for minimum contrast values, note that these are note
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
-      await page.evaluate(`window.term.setOption('minimumContrastRatio', 10);`);
+      await page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       await pollFor(page, () => getCellColor(1, 1), [176, 180, 180, 255]);
       await pollFor(page, () => getCellColor(2, 1), [238, 158, 158, 255]);
-      await pollFor(page, () => getCellColor(3, 1), [197, 223, 171, 255]);
-      await pollFor(page, () => getCellColor(4, 1), [235, 221, 158, 255]);
-      await pollFor(page, () => getCellColor(5, 1), [124, 156, 198, 255]);
-      await pollFor(page, () => getCellColor(6, 1), [183, 165, 187, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [152, 198, 110, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [208, 179, 49, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [161, 183, 215, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [191, 174, 194, 255]);
       await pollFor(page, () => getCellColor(7, 1), [110, 197, 198, 255]);
       await pollFor(page, () => getCellColor(8, 1), [211, 215, 207, 255]);
       await pollFor(page, () => getCellColor(1, 2), [183, 185, 183, 255]);
       await pollFor(page, () => getCellColor(2, 2), [249, 156, 156, 255]);
       await pollFor(page, () => getCellColor(3, 2), [138, 226, 52, 255]);
       await pollFor(page, () => getCellColor(4, 2), [252, 233, 79, 255]);
-      await pollFor(page, () => getCellColor(5, 2), [114, 159, 207, 255]);
-      await pollFor(page, () => getCellColor(6, 2), [190, 152, 185, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [154, 186, 221, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [203, 173, 199, 255]);
       // Unchanged
       await pollFor(page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
       await pollFor(page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
@@ -783,12 +784,13 @@ describe('WebGL Renderer Integration Tests', async () => {
         brightWhite: '#eeeeec'
       };
       await page.evaluate(`
-        window.term.setOption('theme', ${JSON.stringify(theme)});
-        window.term.setOption('minimumContrastRatio', 1);
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.minimumContrastRatio = 1;
       `);
+      // Block characters ignore block elements so a different char is used here
       await writeSync(page,
-        `\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█\\r\\n` +
-        `\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`
+        `\\x1b[30m■\\x1b[31m■\\x1b[32m■\\x1b[33m■\\x1b[34m■\\x1b[35m■\\x1b[36m■\\x1b[37m■\\r\\n` +
+        `\\x1b[90m■\\x1b[91m■\\x1b[92m■\\x1b[93m■\\x1b[94m■\\x1b[95m■\\x1b[96m■\\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
       await pollFor(page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
@@ -810,21 +812,21 @@ describe('WebGL Renderer Integration Tests', async () => {
       // Setting and check for minimum contrast values, note that these are note
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
-      await page.evaluate(`window.term.setOption('minimumContrastRatio', 10);`);
+      await page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       await pollFor(page, () => getCellColor(1, 1), [46, 52, 54, 255]);
       await pollFor(page, () => getCellColor(2, 1), [132, 0, 0, 255]);
-      await pollFor(page, () => getCellColor(3, 1), [78, 154, 6, 255]);
-      await pollFor(page, () => getCellColor(4, 1), [114, 93, 0, 255]);
-      await pollFor(page, () => getCellColor(5, 1), [19, 40, 68, 255]);
-      await pollFor(page, () => getCellColor(6, 1), [60, 40, 64, 255]);
+      await pollFor(page, () => getCellColor(3, 1), [36, 72, 0, 255]);
+      await pollFor(page, () => getCellColor(4, 1), [72, 59, 0, 255]);
+      await pollFor(page, () => getCellColor(5, 1), [32, 64, 106, 255]);
+      await pollFor(page, () => getCellColor(6, 1), [75, 51, 80, 255]);
       await pollFor(page, () => getCellColor(7, 1), [0, 71, 72, 255]);
       await pollFor(page, () => getCellColor(8, 1), [64, 64, 63, 255]);
       await pollFor(page, () => getCellColor(1, 2), [61, 63, 59, 255]);
       await pollFor(page, () => getCellColor(2, 2), [125, 19, 19, 255]);
-      await pollFor(page, () => getCellColor(3, 2), [89, 146, 32, 255]);
-      await pollFor(page, () => getCellColor(4, 2), [105, 98, 32, 255]);
-      await pollFor(page, () => getCellColor(5, 2), [36, 52, 70, 255]);
-      await pollFor(page, () => getCellColor(6, 2), [64, 45, 63, 255]);
+      await pollFor(page, () => getCellColor(3, 2), [40, 67, 13, 255]);
+      await pollFor(page, () => getCellColor(4, 2), [67, 63, 19, 255]);
+      await pollFor(page, () => getCellColor(5, 2), [45, 65, 87, 255]);
+      await pollFor(page, () => getCellColor(6, 2), [81, 57, 78, 255]);
       await pollFor(page, () => getCellColor(7, 2), [13, 67, 67, 255]);
       await pollFor(page, () => getCellColor(8, 2), [64, 64, 64, 255]);
     });
@@ -843,7 +845,7 @@ describe('WebGL Renderer Integration Tests', async () => {
         background: '#00FF00',
         selection: '#0000FF'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, ` █\\x1b[7m█\\x1b[0m`);
       await pollFor(page, () => getCellColor(1, 1), [0, 255, 0, 255]);
       await pollFor(page, () => getCellColor(2, 1), [255, 0, 0, 255]);
@@ -867,11 +869,119 @@ describe('WebGL Renderer Integration Tests', async () => {
       const theme: ITheme = {
         background: '#ff000080'
       };
-      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
-      const data = `\\x1b[7m█\x1b[0m`;
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\\x1b[7m█\\x1b[0m`;
       await writeSync(page, data);
       // Inverse background should be opaque
       await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
+
+  describe('selectionForeground', () => {
+    if (areTestsEnabled) {
+      before(async () => setupBrowser({ rendererType: 'dom' }));
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
+
+    itWebgl('transparent background inverse', async () => {
+      const theme: ITheme = {
+        selectionForeground: '#ff0000'
+      };
+      await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\\x1b[7m█\\x1b[0m`;
+      await writeSync(page, data);
+      await page.evaluate(`window.term.selectAll()`);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
+
+  describe('decoration color overrides', async () => {
+    if (areTestsEnabled) {
+      before(async () => setupBrowser({ rendererType: 'dom' }));
+      after(async () => browser.close());
+      beforeEach(async () => page.evaluate(`window.term.reset()`));
+    }
+
+    itWebgl('foregroundColor', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `█`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    itWebgl('foregroundColor should ignore inverse', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\\x1b[7m█\\x1b[0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    itWebgl('foregroundColor should ignore inverse (only fg on decoration)', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          foregroundColor: '#ff0000'
+        });
+      `);
+      const data = `\\x1b[7m█ \\x1b[0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [255, 0, 0, 255]); // inverse foreground of '█' should be decoration fg override
+      await pollFor(page, () => getCellColor(2, 1), [255, 255, 255, 255]); // inverse background of ' ' should be default foreground
+    });
+    itWebgl('backgroundColor', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = ` `;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    itWebgl('backgroundColor should ignore inverse', async () => {
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\\x1b[7m \\x1b[0m`;
+      await writeSync(page, data);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    itWebgl('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+      const data = `\\x1b[7m█ \\x1b[0m`;
+      await writeSync(page, data);
+      await page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          backgroundColor: '#0000ff'
+        });
+      `);
+      await pollFor(page, () => getCellColor(1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
+      await pollFor(page, () => getCellColor(2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
     });
   });
 });

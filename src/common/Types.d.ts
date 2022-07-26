@@ -35,6 +35,8 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   termName?: string;
 }
 
+export type CursorStyle = 'block' | 'underline' | 'bar';
+
 export type XtermListener = (...args: any[]) => void;
 
 /**
@@ -50,6 +52,7 @@ export interface IKeyboardEvent {
   keyCode: number;
   key: string;
   type: string;
+  code: string;
 }
 
 export interface IScrollEvent {
@@ -102,6 +105,11 @@ export interface ICharset {
 }
 
 export type CharData = [number, string, number, number];
+
+export interface IColor {
+  css: string;
+  rgba: number; // 32-bit int with rgba in each byte
+}
 export type IColorRGB = [number, number, number];
 
 export interface IExtendedAttrs {

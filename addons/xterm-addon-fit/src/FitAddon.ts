@@ -63,6 +63,9 @@ export class FitAddon implements ITerminalAddon {
       return undefined;
     }
 
+    const scrollbarWidth = this._terminal.options.scrollback === 0 ?
+      0 : core.viewport.scrollBarWidth;
+
     const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
     const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
@@ -76,7 +79,7 @@ export class FitAddon implements ITerminalAddon {
     const elementPaddingVer = elementPadding.top + elementPadding.bottom;
     const elementPaddingHor = elementPadding.right + elementPadding.left;
     const availableHeight = parentElementHeight - elementPaddingVer;
-    const availableWidth = parentElementWidth - elementPaddingHor - core.viewport.scrollBarWidth;
+    const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
     const geometry = {
       cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
       rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))

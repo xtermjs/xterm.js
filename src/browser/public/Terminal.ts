@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
 import { ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -30,17 +30,21 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 
-    this._publicOptions = {};
+    this._publicOptions = { ... this._core.options };
+    const getter = (propName: string): any => {
+      return this._core.options[propName];
+    };
+    const setter = (propName: string, value: any): void => {
+      this._checkReadonlyOptions(propName);
+      this._core.options[propName] = value;
+    };
+
     for (const propName in this._core.options) {
-      Object.defineProperty(this._publicOptions, propName, {
-        get: () => {
-          return this._core.options[propName];
-        },
-        set: (value: any) => {
-          this._checkReadonlyOptions(propName);
-          this._core.options[propName] = value;
-        }
-      });
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this._publicOptions, propName, desc);
     }
   }
 
@@ -54,7 +58,7 @@ export class Terminal implements ITerminalApi {
   }
 
   private _checkProposedApi(): void {
-    if (!this._core.optionsService.options.allowProposedApi) {
+    if (!this._core.optionsService.rawOptions.allowProposedApi) {
       throw new Error('You must set the allowProposedApi option to true to use proposed API');
     }
   }
@@ -70,6 +74,7 @@ export class Terminal implements ITerminalApi {
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
@@ -162,10 +167,15 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
+  }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    this._checkProposedApi();
+    this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
+    return this._core.registerDecoration(decorationOptions);
   }
   public addMarker(cursorYOffset: number): IMarker | undefined {
     return this.registerMarker(cursorYOffset);
@@ -274,6 +284,14 @@ export class Terminal implements ITerminalApi {
     for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
+      }
+    }
+  }
+
+  private _verifyPositiveIntegers(...values: number[]): void {
+    for (const value of values) {
+      if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
+        throw new Error('This API only accepts positive integers');
       }
     }
   }

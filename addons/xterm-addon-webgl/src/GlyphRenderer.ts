@@ -6,14 +6,12 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_BG_OFFSET } from './RenderModel';
 import { fill } from 'common/TypedArrayUtils';
-import { slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, Attributes, FgFlags } from 'common/buffer/Constants';
+import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IBufferLine } from 'xterm';
-import { IColorSet, IColor } from 'browser/Types';
+import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 interface IVertices {
   attributes: Float32Array;
@@ -24,7 +22,6 @@ interface IVertices {
    * working on the next frame.
    */
   attributesBuffers: Float32Array[];
-  selectionAttributes: Float32Array;
   count: number;
 }
 
@@ -73,7 +70,7 @@ const INDICES_PER_CELL = 10;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
-export class GlyphRenderer {
+export class GlyphRenderer  extends Disposable {
   private _atlas: WebglCharAtlas | undefined;
 
   private _program: WebGLProgram;
@@ -91,8 +88,7 @@ export class GlyphRenderer {
     attributesBuffers: [
       new Float32Array(0),
       new Float32Array(0)
-    ],
-    selectionAttributes: new Float32Array(0)
+    ]
   };
 
   constructor(
@@ -101,9 +97,11 @@ export class GlyphRenderer {
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
+    super();
+
     const gl = this._gl;
-    const program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
-    this._program = program;
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
@@ -117,6 +115,7 @@ export class GlyphRenderer {
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     const unitQuadVerticesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadVerticesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, unitQuadVertices, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
@@ -126,11 +125,13 @@ export class GlyphRenderer {
     // unitQuadVertuces to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
     this._attributesBuffer = throwIfFalsy(gl.createBuffer());
+    this.register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.OFFSET);
     gl.vertexAttribPointer(VertexAttribLocations.OFFSET, 2, gl.FLOAT, false, BYTES_PER_CELL, 0);
@@ -150,6 +151,7 @@ export class GlyphRenderer {
 
     // Setup empty texture atlas
     this._atlasTexture = throwIfFalsy(gl.createTexture());
+    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture)));
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -167,11 +169,11 @@ export class GlyphRenderer {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars);
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string, lastBg: number): void {
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars, lastBg);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars?: string): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars: string, lastBg: number): void {
     const terminal = this._terminal;
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
@@ -187,6 +189,8 @@ export class GlyphRenderer {
     if (!this._atlas) {
       return;
     }
+
+    // Get the glyph
     if (chars && chars.length > 1) {
       rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
     } else {
@@ -199,136 +203,72 @@ export class GlyphRenderer {
       return;
     }
 
-    // a_origin
-    array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
-    array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
-    // a_size
-    array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
-    array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
-    // a_texcoord
-    array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x;
-    array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
-    // a_texsize
-    array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
-    array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    if (bg !== lastBg && rasterizedGlyph.offset.x > 0) {
+      const clippedPixels = rasterizedGlyph.offset.x;
+      // a_origin
+      array[i    ] = this._dimensions.scaledCharLeft;
+      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      // a_size
+      array[i + 2] = (rasterizedGlyph.size.x - clippedPixels) / this._dimensions.scaledCanvasWidth;
+      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      // a_texcoord
+      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x + clippedPixels / this._atlas.cacheCanvas.width;
+      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      // a_texsize
+      array[i + 6] = rasterizedGlyph.sizeClipSpace.x - clippedPixels / this._atlas.cacheCanvas.width;
+      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    } else {
+      // a_origin
+      array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
+      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      // a_size
+      array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
+      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      // a_texcoord
+      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x;
+      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      // a_texsize
+      array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
+      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+    }
     // a_cellpos only changes on resize
   }
 
-  public updateSelection(model: IRenderModel): void {
+  public clear(force?: boolean): void {
     const terminal = this._terminal;
+    const newCount = terminal.cols * terminal.rows * INDICES_PER_CELL;
 
-    this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
+    // Don't clear if not forced and the array length is correct
+    if (!force && this._vertices.count === newCount) {
+      return;
+    }
 
-    const bg = (this._colors.selectionOpaque.rgba >>> 8) | Attributes.CM_RGB;
-
-    if (model.selection.columnSelectMode) {
-      const startCol = model.selection.startCol;
-      const width = model.selection.endCol - startCol;
-      const height = model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow + 1;
-      for (let y = model.selection.viewportCappedStartRow; y < model.selection.viewportCappedStartRow + height; y++) {
-        this._updateSelectionRange(startCol, startCol + width, y, model, bg);
-      }
-    } else {
-      // Draw first row
-      const startCol = model.selection.viewportStartRow === model.selection.viewportCappedStartRow ? model.selection.startCol : 0;
-      const startRowEndCol = model.selection.viewportCappedStartRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-      this._updateSelectionRange(startCol, startRowEndCol, model.selection.viewportCappedStartRow, model, bg);
-
-      // Draw middle rows
-      const middleRowsCount = Math.max(model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow - 1, 0);
-      for (let y = model.selection.viewportCappedStartRow + 1; y <= model.selection.viewportCappedStartRow + middleRowsCount; y++) {
-        this._updateSelectionRange(0, startRowEndCol, y, model, bg);
-      }
-
-      // Draw final row
-      if (model.selection.viewportCappedStartRow !== model.selection.viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = model.selection.viewportEndRow === model.selection.viewportCappedEndRow ? model.selection.endCol : terminal.cols;
-        this._updateSelectionRange(0, endCol, model.selection.viewportCappedEndRow, model, bg);
+    // Clear vertices
+    this._vertices.count = newCount;
+    this._vertices.attributes = new Float32Array(newCount);
+    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+      this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+    }
+    let i = 0;
+    for (let y = 0; y < terminal.rows; y++) {
+      for (let x = 0; x < terminal.cols; x++) {
+        this._vertices.attributes[i + 8] = x / terminal.cols;
+        this._vertices.attributes[i + 9] = y / terminal.rows;
+        i += INDICES_PER_CELL;
       }
     }
-  }
-
-  private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number): void {
-    const terminal = this._terminal;
-    const row = y + terminal.buffer.active.viewportY;
-    let line: IBufferLine | undefined;
-    for (let x = startCol; x < endCol; x++) {
-      const offset = (y * this._terminal.cols + x) * RENDER_MODEL_INDICIES_PER_CELL;
-      const code = model.cells[offset];
-      let fg = model.cells[offset + RENDER_MODEL_FG_OFFSET];
-      if (fg & FgFlags.INVERSE) {
-        const workCell = new AttributeData();
-        workCell.fg = fg;
-        workCell.bg = model.cells[offset + RENDER_MODEL_BG_OFFSET];
-        // Get attributes from fg (excluding inverse) and resolve inverse by pullibng rgb colors
-        // from bg. This is needed since the inverse fg color should be based on the original bg
-        // color, not on the selection color
-        fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK | FgFlags.INVERSE);
-        switch (workCell.getBgColorMode()) {
-          case Attributes.CM_P16:
-          case Attributes.CM_P256:
-            const c = this._getColorFromAnsiIndex(workCell.getBgColor()).rgba;
-            fg |= (c >> 8) & Attributes.RED_MASK | (c >> 8) & Attributes.GREEN_MASK | (c >> 8) & Attributes.BLUE_MASK;
-          case Attributes.CM_RGB:
-            const arr = AttributeData.toColorRGB(workCell.getBgColor());
-            fg |= arr[0] << Attributes.RED_SHIFT | arr[1] << Attributes.GREEN_SHIFT | arr[2] << Attributes.BLUE_SHIFT;
-          case Attributes.CM_DEFAULT:
-          default:
-            const c2 = this._colors.background.rgba;
-            fg |= (c2 >> 8) & Attributes.RED_MASK | (c2 >> 8) & Attributes.GREEN_MASK | (c2 >> 8) & Attributes.BLUE_MASK;
-        }
-        fg |= Attributes.CM_RGB;
-      }
-      if (code & COMBINED_CHAR_BIT_MASK) {
-        if (!line) {
-          line = terminal.buffer.active.getLine(row);
-        }
-        const chars = line!.getCell(x)!.getChars();
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg, chars);
-      } else {
-        this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], bg, fg);
-      }
-    }
-  }
-
-  private _getColorFromAnsiIndex(idx: number): IColor {
-    if (idx >= this._colors.ansi.length) {
-      throw new Error('No color found for idx ' + idx);
-    }
-    return this._colors.ansi[idx];
   }
 
   public onResize(): void {
-    const terminal = this._terminal;
     const gl = this._gl;
-
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    // Update vertices
-    const newCount = terminal.cols * terminal.rows * INDICES_PER_CELL;
-    if (this._vertices.count !== newCount) {
-      this._vertices.count = newCount;
-      this._vertices.attributes = new Float32Array(newCount);
-      for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
-        this._vertices.attributesBuffers[i] = new Float32Array(newCount);
-      }
-
-      let i = 0;
-      for (let y = 0; y < terminal.rows; y++) {
-        for (let x = 0; x < terminal.cols; x++) {
-          this._vertices.attributes[i + 8] = x / terminal.cols;
-          this._vertices.attributes[i + 9] = y / terminal.rows;
-          i += INDICES_PER_CELL;
-        }
-      }
-    }
+    this.clear();
   }
 
   public setColors(): void {
   }
 
-  public render(renderModel: IRenderModel, isSelectionVisible: boolean): void {
+  public render(renderModel: IRenderModel): void {
     if (!this._atlas) {
       return;
     }
@@ -352,7 +292,7 @@ export class GlyphRenderer {
     let bufferLength = 0;
     for (let y = 0; y < renderModel.lineLengths.length; y++) {
       const si = y * this._terminal.cols * INDICES_PER_CELL;
-      const sub = (isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes).subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
+      const sub = this._vertices.attributes.subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
       activeBuffer.set(sub, bufferLength);
       bufferLength += sub.length;
     }

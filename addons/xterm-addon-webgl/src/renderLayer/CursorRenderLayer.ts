@@ -83,7 +83,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onOptionsChanged(terminal: Terminal): void {
-    if (terminal.getOption('cursorBlink')) {
+    if (terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
           this._render(terminal, true);
@@ -140,7 +140,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      const cursorStyle = terminal.getOption('cursorStyle');
+      const cursorStyle = terminal.options.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
         this._cursorRenderers[cursorStyle](terminal, cursorX, viewportRelativeCursorY, this._cell);
       } else {
@@ -150,7 +150,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
-      this._state.style = cursorStyle;
+      this._state.style = cursorStyle!;
       this._state.width = this._cell.getWidth();
       return;
     }
@@ -166,7 +166,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === isTerminalFocused(terminal) &&
-          this._state.style === terminal.getOption('cursorStyle') &&
+          this._state.style === terminal.options.cursorStyle &&
           this._state.width === this._cell.getWidth()) {
         return;
       }
@@ -174,13 +174,13 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[terminal.getOption('cursorStyle') || 'block'](terminal, cursorX, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, cursorX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
     this._state.x = cursorX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
-    this._state.style = terminal.getOption('cursorStyle');
+    this._state.style = terminal.options.cursorStyle!;
     this._state.width = this._cell.getWidth();
   }
 
@@ -205,7 +205,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this._fillLeftLineAtCell(x, y, terminal.getOption('cursorWidth'));
+    this._fillLeftLineAtCell(x, y, terminal.options.cursorWidth!);
     this._ctx.restore();
   }
 

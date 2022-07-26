@@ -40,7 +40,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public dispose(): void {
-    this._container.removeChild(this._canvas);
+    this._canvas.remove();
     if (this._charAtlas) {
       this._charAtlas.dispose();
     }
@@ -254,10 +254,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param isBold If we should use the bold fontWeight.
    */
   protected _getFont(terminal: Terminal, isBold: boolean, isItalic: boolean): string {
-    const fontWeight = isBold ? terminal.getOption('fontWeightBold') : terminal.getOption('fontWeight');
+    const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${terminal.getOption('fontSize') * window.devicePixelRatio}px ${terminal.getOption('fontFamily')}`;
+    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize! * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 

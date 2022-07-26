@@ -6,13 +6,13 @@
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
-import { acquireCharAtlas } from './atlas/CharAtlasCache';
+import { acquireCharAtlas, removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -23,6 +23,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { IDecorationService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -31,6 +32,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
+  private _workColors: { fg: number, bg: number } = { fg: 0, bg: 0 };
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -52,6 +54,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
+    private readonly _decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -95,8 +98,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
+    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();
@@ -109,6 +112,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.dispose();
     }
     this._canvas.parentElement?.removeChild(this._canvas);
+    removeTerminalFromCache(this._terminal);
     super.dispose();
   }
 
@@ -164,11 +168,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
     this._rectangleRenderer.onResize();
-    if (this._model.selection.hasSelection) {
-      // Update selection as dimensions have changed
-      this._rectangleRenderer.updateSelection(this._model.selection);
-    }
-
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -198,10 +197,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
-
     this._updateSelectionModel(start, end, columnSelectMode);
-
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._requestRedrawViewport();
   }
 
   public onCursorMove(): void {
@@ -243,10 +240,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._charAtlas?.clearTexture();
     this._model.clear();
     this._updateModel(0, this._terminal.rows - 1);
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._requestRedrawViewport();
   }
 
   public clear(): void {
+    this._model.clear();
+    this._glyphRenderer.clear(true);
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
@@ -287,12 +286,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Render
     this._rectangleRenderer.render();
-    this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
+    this._glyphRenderer.render(this._model);
   }
 
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
     let cell: ICellData = this._workCell;
+    let lastBg: number = 0;
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -300,7 +300,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._model.lineLengths[y] = 0;
       const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < terminal.cols; x++) {
+        lastBg = this._workColors.bg;
         line.loadCell(x, cell);
+
+        if (x === 0) {
+          lastBg = this._workColors.bg;
+        }
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -314,7 +319,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           const range = joinedRanges.shift()!;
 
           // We already know the exact start and end column of the joined range,
-          // so we get the string and width representing it directly
+          // so we get the string and width representing it directly.
           cell = new JoinedCellData(
             cell,
             line!.translateToString(true, range[0], range[1]),
@@ -329,14 +334,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
         let code = cell.getCode();
         const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
+        // Load colors/resolve overrides into work colors
+        this._loadColorsForCell(x, row);
+
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
         }
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === cell.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === cell.fg) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg) {
           continue;
         }
 
@@ -347,10 +355,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = cell.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = cell.fg;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
 
-        this._glyphRenderer.updateCell(x, y, code, cell.bg, cell.fg, chars);
+        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -359,19 +367,112 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR);
+            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workCell.bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workCell.fg;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
           }
         }
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
-    if (this._model.selection.hasSelection) {
-      // Model could be updated but the selection is unchanged
-      this._glyphRenderer.updateSelection(this._model);
+  }
+
+  /**
+   * Loads colors for the cell into the work colors object. This resolves overrides/inverse if
+   * necessary which is why the work cell object is not used.
+   */
+  private _loadColorsForCell(x: number, y: number): void {
+    this._workColors.bg = this._workCell.bg;
+    this._workColors.fg = this._workCell.fg;
+
+    // Get any foreground/background overrides, this happens on the model to avoid spreading
+    // override logic throughout the different sub-renderers
+    let bgOverride: number | undefined;
+    let fgOverride: number | undefined;
+
+    // Apply decorations on the bottom layer
+    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'bottom')) {
+      if (d.backgroundColorRGB) {
+        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
+      if (d.foregroundColorRGB) {
+        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
     }
+
+    // Apply the selection color if needed
+    if (this._isCellSelected(x, y)) {
+      bgOverride = this._colors.selectionOpaque.rgba >> 8 & 0xFFFFFF;
+      if (this._colors.selectionForeground) {
+        fgOverride = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+      }
+    }
+
+    // Apply decorations on the top layer
+    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'top')) {
+      if (d.backgroundColorRGB) {
+        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
+      if (d.foregroundColorRGB) {
+        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+      }
+    }
+
+    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+    // ahead of time in order to use the correct cache key
+    if (bgOverride !== undefined) {
+      // Non-RGB attributes from model + override + force RGB color mode
+      bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
+    }
+    if (fgOverride !== undefined) {
+      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
+      fgOverride = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
+    }
+
+    // Handle case where inverse was specified by only one of bgOverride or fgOverride was set,
+    // resolving the other inverse color and setting the inverse flag if needed.
+    if (this._workColors.fg & FgFlags.INVERSE) {
+      if (bgOverride !== undefined && fgOverride === undefined) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
+      }
+      if (bgOverride === undefined && fgOverride !== undefined) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
+      }
+    }
+
+    // Use the override if it exists
+    this._workColors.bg = bgOverride ?? this._workColors.bg;
+    this._workColors.fg = fgOverride ?? this._workColors.fg;
+  }
+
+  private _isCellSelected(x: number, y: number): boolean {
+    if (!this._model.selection.hasSelection) {
+      return false;
+    }
+    y -= this._terminal.buffer.active.viewportY;
+    if (this._model.selection.columnSelectMode) {
+      if (this._model.selection.startCol <= this._model.selection.endCol) {
+        return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
+          x < this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
+      }
+      return x < this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
+        x >= this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
+    }
+    return (y > this._model.selection.viewportStartRow && y < this._model.selection.viewportEndRow) ||
+      (this._model.selection.viewportStartRow === this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol && x < this._model.selection.endCol) ||
+      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportEndRow && x < this._model.selection.endCol) ||
+      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol);
   }
 
   private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
@@ -380,7 +481,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
       this._model.clearSelection();
-      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -393,7 +493,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // No need to draw the selection
     if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
       this._model.clearSelection();
-      this._rectangleRenderer.updateSelection(this._model.selection);
       return;
     }
 
@@ -405,8 +504,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
     this._model.selection.startCol = start[0];
     this._model.selection.endCol = end[0];
-
-    this._rectangleRenderer.updateSelection(this._model.selection);
   }
 
   /**
@@ -438,18 +535,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.getOption('lineHeight'));
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight!);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._terminal.getOption('lineHeight') === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.getOption('letterSpacing'));
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing!);
 
     // Calculate the x coordinate with a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.getOption('letterSpacing') / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing! / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
@@ -479,6 +576,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // This fixes 110% and 125%, not 150% or 175% though
     this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
     this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+  }
+
+  private _requestRedrawViewport(): void {
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 }
 

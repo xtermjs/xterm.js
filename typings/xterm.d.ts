@@ -266,6 +266,12 @@ declare module 'xterm' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    /**
+     * The width, in pixels, of the canvas for the overview ruler. The overview
+     * ruler will be hidden when not set.
+     */
+    overviewRulerWidth?: number;
   }
 
   /**
@@ -282,6 +288,8 @@ declare module 'xterm' {
     cursorAccent?: string;
     /** The selection background color (can be transparent) */
     selection?: string;
+    /** The selection foreground color */
+    selectionForeground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */
@@ -314,6 +322,8 @@ declare module 'xterm' {
     brightCyan?: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
     brightWhite?: string;
+    /** ANSI extended colors (16-255) */
+    extendedAnsi?: string[];
   }
 
   /**
@@ -380,29 +390,138 @@ declare module 'xterm' {
    * is trimmed and lines are added or removed. This is a single line that may
    * be part of a larger wrapped line.
    */
-  export interface IMarker extends IDisposable {
+  export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
      */
     readonly id: number;
 
     /**
-     * Whether this marker is disposed.
-     */
-    readonly isDisposed: boolean;
-
-    /**
      * The actual line index in the buffer at this point in time. This is set to
      * -1 if the marker has been disposed.
      */
     readonly line: number;
+  }
 
+  /**
+   * Represents a disposable that tracks is disposed state.
+   * @param onDispose event listener and
+   * @param isDisposed property.
+   */
+  export interface IDisposableWithEvent extends IDisposable {
     /**
-     * Event listener to get notified when the marker gets disposed. Automatic disposal
-     * might happen for a marker, that got invalidated by scrolling out or removal of
-     * a line from the buffer.
+     * Event listener to get notified when this gets disposed.
      */
     onDispose: IEvent<void>;
+
+    /**
+     * Whether this is disposed.
+     */
+    readonly isDisposed: boolean;
+  }
+
+  /**
+   * Represents a decoration in the terminal that is associated with a particular marker and DOM element.
+   */
+  export interface IDecoration extends IDisposableWithEvent {
+    /*
+     * The marker for the decoration in the terminal.
+     */
+    readonly marker: IMarker;
+
+    /**
+     * An event fired when the decoration
+     * is rendered, returns the dom element
+     * associated with the decoration.
+     */
+    readonly onRender: IEvent<HTMLElement>;
+
+    /**
+     * The element that the decoration is rendered to. This will be undefined
+     * until it is rendered for the first time by {@link IDecoration.onRender}.
+     * that.
+     */
+    element: HTMLElement | undefined;
+
+    /**
+     * The options for the overview ruler that can be updated.
+     * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
+     * were provided initially.
+     */
+    options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
+  }
+
+
+  /**
+   * Overview ruler decoration options
+   */
+  interface IDecorationOverviewRulerOptions {
+    color: string;
+    position?: 'left' | 'center' | 'right' | 'full';
+  }
+
+  /*
+   * Options that define the presentation of the decoration.
+   */
+  export interface IDecorationOptions {
+    /**
+     * The line in the terminal where
+     * the decoration will be displayed
+     */
+    readonly marker: IMarker;
+
+    /*
+     * Where the decoration will be anchored -
+     * defaults to the left edge
+     */
+    readonly anchor?: 'right' | 'left';
+
+    /**
+     * The x position offset relative to the anchor
+     */
+    readonly x?: number;
+
+
+    /**
+     * The width of the decoration in cells, defaults to 1.
+     */
+    readonly width?: number;
+
+    /**
+     * The height of the decoration in cells, defaults to 1.
+     */
+    readonly height?: number;
+
+    /**
+     * The background color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly backgroundColor?: string;
+
+    /**
+     * The foreground color of the cell(s). When 2 decorations both set the foreground color the
+     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     */
+    readonly foregroundColor?: string;
+
+    /**
+     * What layer to render the decoration at when {@link backgroundColor} or
+     * {@link foregroundColor} are used. `'bottom'` will render under the selection, `'top`' will
+     * render above the selection\*.
+     *
+     * *\* The selection will render on top regardless of layer on the canvas renderer due to how
+     * it renders selection separately.*
+     */
+    readonly layer?: 'bottom' | 'top';
+
+    /**
+     * When defined, renders the decoration in the overview ruler to the right
+     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
+     * in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
+     */
+    overviewRulerOptions?: IDecorationOverviewRulerOptions
   }
 
   /**
@@ -725,6 +844,17 @@ declare module 'xterm' {
     onRender: IEvent<{ start: number, end: number }>;
 
     /**
+     * Adds an event listener for when data has been parsed by the terminal,
+     * after {@link write} is called. This event is useful to listen for any
+     * changes in the buffer.
+     *
+     * This fires at most once per frame, after data parsing completes. Note
+     * that this can fire when there are still writes pending if there is a lot
+     * of data.
+     */
+    onWriteParsed: IEvent<void>;
+
+    /**
      * Adds an event listener for when the terminal is resized. The event value
      * contains the new size.
      * @returns an `IDisposable` to stop listening.
@@ -812,9 +942,9 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
-     * (EXPERIMENTAL) Registers a link provider, allowing a custom parser to
-     * be used to match and handle links. Multiple link providers can be used,
-     * they will be asked in the order in which they are registered.
+     * Registers a link provider, allowing a custom parser to be used to match
+     * and handle links. Multiple link providers can be used, they will be asked
+     * in the order in which they are registered.
      * @param linkProvider The link provider to use to detect links.
      */
     registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
@@ -863,12 +993,21 @@ declare module 'xterm' {
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset: number): IMarker | undefined;
+    registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /**
      * @deprecated use `registerMarker` instead.
      */
     addMarker(cursorYOffset: number): IMarker | undefined;
+
+    /**
+     * (EXPERIMENTAL) Adds a decoration to the terminal using
+     *  @param decorationOptions, which takes a marker and an optional anchor,
+     *  width, height, and x offset from the anchor. Returns the decoration or
+     *  undefined if the alt buffer is active or the marker has already been disposed of.
+     *  @throws when options include a negative x offset.
+     */
+    registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
     /**
      * Gets whether the terminal has an active selection.

@@ -267,6 +267,8 @@ declare module 'xterm-headless' {
     brightCyan?: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
     brightWhite?: string;
+    /** ANSI extended colors (16-255) */
+    extendedAnsi?: string[];
   }
 
   /**
@@ -535,6 +537,29 @@ declare module 'xterm-headless' {
     readonly modes: IModes;
 
     /**
+     * Gets or sets the terminal options. This supports setting multiple options.
+     *
+     * @example Get a single option
+     * ```typescript
+     * console.log(terminal.options.fontSize);
+     * ```
+     *
+     * @example Set a single option
+     * ```typescript
+     * terminal.options.fontSize = 12;
+     * ```
+     *
+     * @example Set multiple options
+     * ```typescript
+     * terminal.options = {
+     *   fontSize: 12,
+     *   fontFamily: 'Arial',
+     * };
+     * ```
+     */
+    options: ITerminalOptions;
+
+    /**
      * Natural language strings that can be localized.
      */
     static strings: ILocalizableStrings;
@@ -620,7 +645,7 @@ declare module 'xterm-headless' {
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset: number): IMarker | undefined;
+    registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /**
      * @deprecated use `registerMarker` instead.

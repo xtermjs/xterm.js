@@ -7,19 +7,61 @@ import { IEvent } from 'common/EventEmitter';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
+import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
+import { ITerminalOptions } from 'common/Types';
+
+/**
+ * The set of options that only have an effect when set in the Terminal constructor.
+ */
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 export class Terminal implements ITerminalApi {
   private _core: TerminalCore;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
+  private _publicOptions: ITerminalOptions;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
+
+    this._publicOptions = { ... this._core.options };
+    const getter = (propName: string): any => {
+      return this._core.options[propName];
+    };
+    const setter = (propName: string, value: any): void => {
+      this._checkReadonlyOptions(propName);
+      this._core.options[propName] = value;
+    };
+
+    for (const propName in this._core.options) {
+      Object.defineProperty(this._publicOptions, propName, {
+        get: () => {
+          return this._core.options[propName];
+        },
+        set: (value: any) => {
+          this._checkReadonlyOptions(propName);
+          this._core.options[propName] = value;
+        }
+      });
+      const desc = {
+        get: getter.bind(this, propName),
+        set: setter.bind(this, propName)
+      };
+      Object.defineProperty(this._publicOptions, propName, desc);
+    }
+  }
+
+  private _checkReadonlyOptions(propName: string): void {
+    // Throw an error if any constructor only option is modified
+    // from terminal.options
+    // Modifications from anywhere else are allowed
+    if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
+      throw new Error(`Option "${propName}" can only be set in the constructor`);
+    }
   }
 
   private _checkProposedApi(): void {
@@ -82,11 +124,19 @@ export class Terminal implements ITerminalApi {
       wraparoundMode: m.wraparound
     };
   }
+  public get options(): ITerminalOptions {
+    return this._publicOptions;
+  }
+  public set options(options: ITerminalOptions) {
+    for (const propName in options) {
+      this._publicOptions[propName] = options[propName];
+    }
+  }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public registerMarker(cursorYOffset: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);

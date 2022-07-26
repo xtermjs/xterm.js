@@ -9,9 +9,9 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'browser/Color';
+import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -87,11 +87,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
 
-    this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e));
-    this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e));
+    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
+    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
   }
 
   public dispose(): void {
@@ -107,8 +107,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _updateDimensions(): void {
     this.dimensions.scaledCharWidth = this._charSizeService.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.options.letterSpacing);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.options.lineHeight);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
@@ -161,16 +161,16 @@ export class DomRenderer extends Disposable implements IRenderer {
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
       ` color: ${this._colors.foreground.css};` +
-      ` font-family: ${this._optionsService.options.fontFamily};` +
-      ` font-size: ${this._optionsService.options.fontSize}px;` +
+      ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
+      ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       `}`;
     // Text styles
     styles +=
       `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-      ` font-weight: ${this._optionsService.options.fontWeight};` +
+      ` font-weight: ${this._optionsService.rawOptions.fontWeight};` +
       `}` +
       `${this._terminalSelector} span.${BOLD_CLASS} {` +
-      ` font-weight: ${this._optionsService.options.fontWeightBold};` +
+      ` font-weight: ${this._optionsService.rawOptions.fontWeightBold};` +
       `}` +
       `${this._terminalSelector} span.${ITALIC_CLASS} {` +
       ` font-style: italic;` +
@@ -210,7 +210,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` color: ${this._colors.cursorAccent.css};` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-      ` box-shadow: ${this._optionsService.options.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
+      ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
@@ -226,7 +226,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionTransparent.css};` +
+      ` background-color: ${this._colors.selectionOpaque.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {
@@ -281,6 +281,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
     }
 
+    this._rowFactory.onSelectionChanged(start, end, columnSelectMode);
+    this.renderRows(0, this._bufferService.rows - 1);
+
     // Selection does not exist
     if (!start || !end) {
       return;
@@ -301,8 +304,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     const documentFragment = document.createDocumentFragment();
 
     if (columnSelectMode) {
+      const isXFlipped = start[0] > end[0];
       documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, start[0], end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
+        this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
       );
     } else {
       // Draw first row
@@ -356,15 +360,14 @@ export class DomRenderer extends Disposable implements IRenderer {
   public renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
-    const cursorBlink = this._optionsService.options.cursorBlink;
+    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerText = '';
-
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
-      const cursorStyle = this._optionsService.options.cursorStyle;
+      const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
     }
   }

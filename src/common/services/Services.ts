@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { IEvent } from 'common/EventEmitter';
+import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -188,6 +189,12 @@ export const IOptionsService = createDecorator<IOptionsService>('OptionsService'
 export interface IOptionsService {
   serviceBrand: undefined;
 
+  /**
+   * Read only access to the raw options object, this is an internal-only fast path for accessing
+   * single options without any validation as we trust TypeScript to enforce correct usage
+   * internally.
+   */
+  readonly rawOptions: Readonly<ITerminalOptions>;
   readonly options: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;
@@ -210,7 +217,7 @@ export interface ITerminalOptions {
   cols: number;
   convertEol: boolean;
   cursorBlink: boolean;
-  cursorStyle: 'block' | 'underline' | 'bar';
+  cursorStyle: CursorStyle;
   cursorWidth: number;
   customGlyphs: boolean;
   disableStdin: boolean;
@@ -239,6 +246,7 @@ export interface ITerminalOptions {
   windowsMode: boolean;
   windowOptions: IWindowOptions;
   wordSeparator: string;
+  overviewRulerWidth?: number;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -251,6 +259,7 @@ export interface ITheme {
   cursor?: string;
   cursorAccent?: string;
   selection?: string;
+  selectionForeground?: string;
   black?: string;
   red?: string;
   green?: string;
@@ -267,6 +276,7 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+  extendedAnsi?: string[];
 }
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
@@ -291,4 +301,24 @@ export interface IUnicodeService {
 export interface IUnicodeVersionProvider {
   readonly version: string;
   wcwidth(ucs: number): 0 | 1 | 2;
+}
+
+export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
+export interface IDecorationService extends IDisposable {
+  serviceBrand: undefined;
+  readonly decorations: IterableIterator<IInternalDecoration>;
+  readonly onDecorationRegistered: IEvent<IInternalDecoration>;
+  readonly onDecorationRemoved: IEvent<IInternalDecoration>;
+  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
+  reset(): void;
+  /** Iterates over the decorations at a line (in no particular order). */
+  getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
+  /** Iterates over the decorations at a cell (in no particular order). */
+  getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration>;
+}
+export interface IInternalDecoration extends IDecoration {
+  readonly options: IDecorationOptions;
+  readonly backgroundColorRGB: IColor | undefined;
+  readonly foregroundColorRGB: IColor | undefined;
+  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
 }

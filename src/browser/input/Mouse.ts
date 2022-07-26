@@ -3,9 +3,15 @@
  * @license MIT
  */
 
-export function getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyle'>, event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
   const rect = element.getBoundingClientRect();
-  return [event.clientX - rect.left, event.clientY - rect.top];
+  const elementStyle = window.getComputedStyle(element);
+  const leftPadding = parseInt(elementStyle.getPropertyValue('padding-left'));
+  const topPadding = parseInt(elementStyle.getPropertyValue('padding-top'));
+  return [
+    event.clientX - rect.left - leftPadding,
+    event.clientY - rect.top - topPadding
+  ];
 }
 
 /**
@@ -20,13 +26,13 @@ export function getCoordsRelativeToElement(event: {clientX: number, clientY: num
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, actualCellWidth: number, actualCellHeight: number, isSelection?: boolean): [number, number] | undefined {
+export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, actualCellWidth: number, actualCellHeight: number, isSelection?: boolean): [number, number] | undefined {
   // Coordinates cannot be measured if there are no valid
   if (!hasValidCharSize) {
     return undefined;
   }
 
-  const coords = getCoordsRelativeToElement(event, element);
+  const coords = getCoordsRelativeToElement(window, event, element);
   if (!coords) {
     return undefined;
   }

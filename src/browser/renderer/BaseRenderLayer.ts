@@ -4,18 +4,18 @@
  */
 
 import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
-import { ICellData } from 'common/Types';
+import { ICellData, IColor } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
 import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IColorSet, IColor } from 'browser/Types';
+import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { channels, color, rgba } from 'browser/Color';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
@@ -28,6 +28,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCellHeight: number = 0;
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
+
+  private _selectionStart: [number, number] | undefined;
+  private _selectionEnd: [number, number] | undefined;
+  private _columnSelectMode: boolean = false;
 
   protected _charAtlas: BaseCharAtlas | undefined;
 
@@ -52,7 +56,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected _colors: IColorSet,
     private _rendererId: number,
     protected readonly _bufferService: IBufferService,
-    protected readonly _optionsService: IOptionsService
+    protected readonly _optionsService: IOptionsService,
+    protected readonly _decorationService: IDecorationService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -79,7 +84,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onFocus(): void {}
   public onCursorMove(): void {}
   public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
+
+  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    this._selectionStart = start;
+    this._selectionEnd = end;
+    this._columnSelectMode = columnSelectMode;
+  }
 
   public setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
@@ -112,7 +122,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._optionsService.options, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(this._optionsService.rawOptions, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     this._charAtlas.warmUp();
   }
 
@@ -267,7 +277,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Draw custom characters if applicable
     let drawSuccess = false;
-    if (this._optionsService.options.customGlyphs !== false) {
+    if (this._optionsService.rawOptions.customGlyphs !== false) {
       drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     }
 
@@ -294,7 +304,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
-    const contrastColor = this._getContrastColor(cell);
+    const contrastColor = this._getContrastColor(cell, x, y);
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
@@ -315,7 +325,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
     }
 
-    const drawInBrightColor = this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
+    const drawInBrightColor = this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -325,7 +335,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
-    const atlasDidDraw = this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
+
+    // Don't try cache the glyph if it uses any decoration foreground/background override.
+    let hasOverrides = false;
+    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+      if (d.backgroundColorRGB || d.foregroundColorRGB) {
+        hasOverrides = true;
+        break;
+      }
+    }
+
+    const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
     if (!atlasDidDraw) {
       this._drawUncachedChars(cell, x, y);
@@ -356,7 +376,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else {
         let bg = cell.getBgColor();
-        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
           bg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[bg].css;
@@ -370,7 +390,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
       } else {
         let fg = cell.getFgColor();
-        if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
           fg += 8;
         }
         this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -386,7 +406,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Draw custom characters if applicable
     let drawSuccess = false;
-    if (this._optionsService.options.customGlyphs !== false) {
+    if (this._optionsService.rawOptions.customGlyphs !== false) {
       drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
     }
 
@@ -421,21 +441,48 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param isBold If we should use the bold fontWeight.
    */
   protected _getFont(isBold: boolean, isItalic: boolean): string {
-    const fontWeight = isBold ? this._optionsService.options.fontWeightBold : this._optionsService.options.fontWeight;
+    const fontWeight = isBold ? this._optionsService.rawOptions.fontWeightBold : this._optionsService.rawOptions.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${this._optionsService.options.fontSize * window.devicePixelRatio}px ${this._optionsService.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * window.devicePixelRatio}px ${this._optionsService.rawOptions.fontFamily}`;
   }
 
-  private _getContrastColor(cell: CellData): IColor | undefined {
-    if (this._optionsService.options.minimumContrastRatio === 1) {
+  private _getContrastColor(cell: CellData, x: number, y: number): IColor | undefined {
+    // Get any decoration foreground/background overrides, this must be fetched before the early
+    // exist but applied after inverse
+    let bgOverride: number | undefined;
+    let fgOverride: number | undefined;
+    let isTop = false;
+    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+      if (d.options.layer !== 'top' && isTop) {
+        continue;
+      }
+      if (d.backgroundColorRGB) {
+        bgOverride = d.backgroundColorRGB.rgba;
+      }
+      if (d.foregroundColorRGB) {
+        fgOverride = d.foregroundColorRGB.rgba;
+      }
+      isTop = d.options.layer === 'top';
+    }
+
+    // Apply selection foreground if applicable
+    if (!isTop) {
+      if (this._colors.selectionForeground && this._isCellInSelection(x, y)) {
+        fgOverride = this._colors.selectionForeground.rgba;
+      }
+    }
+
+    if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode()))) {
       return undefined;
     }
 
-    // Try get from cache first
-    const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
-    if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+    if (!bgOverride && !fgOverride) {
+      // Try get from cache
+      const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
+      if (adjustedColor !== undefined) {
+        return adjustedColor || undefined;
+      }
     }
 
     let fgColor = cell.getFgColor();
@@ -453,13 +500,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       bgColorMode = temp2;
     }
 
-    const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, isInverse);
+    const bgRgba = this._resolveBackgroundRgba(bgOverride !== undefined ? Attributes.CM_RGB : bgColorMode, bgOverride ?? bgColor, isInverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
-    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._optionsService.options.minimumContrastRatio);
+    let result = rgba.ensureContrastRatio(bgOverride ?? bgRgba, fgOverride ?? fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
 
     if (!result) {
-      this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
-      return undefined;
+      if (!fgOverride) {
+        this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
+        return undefined;
+      }
+      // If it was an override and there was no contrast change, set as the result
+      result = fgOverride;
     }
 
     const color: IColor = {
@@ -470,7 +521,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       ),
       rgba: result
     };
-    this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+    if (!bgOverride && !fgOverride) {
+      this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
+    }
 
     return color;
   }
@@ -495,7 +548,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     switch (fgColorMode) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:
-        if (this._optionsService.options.drawBoldTextInBrightColors && bold && fgColor < 8) {
+        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && bold && fgColor < 8) {
           fgColor += 8;
         }
         return this._colors.ansi[fgColor].rgba;
@@ -508,6 +561,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         }
         return this._colors.foreground.rgba;
     }
+  }
+
+  private _isCellInSelection(x: number, y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    if (this._columnSelectMode) {
+      return x >= start[0] && y >= start[1] &&
+        x < end[0] && y < end[1];
+    }
+    return (y > start[1] && y < end[1]) ||
+        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+        (start[1] < end[1] && y === end[1] && x < end[0]) ||
+        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 

@@ -230,6 +230,8 @@ export function evaluateKeyboardEvent(
       // page up
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_UP;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[5~';
       }
@@ -238,6 +240,8 @@ export function evaluateKeyboardEvent(
       // page down
       if (ev.shiftKey) {
         result.type = KeyboardResultType.PAGE_DOWN;
+      } else if (ev.ctrlKey) {
+        result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
       } else {
         result.key = C0.ESC + '[6~';
       }
@@ -354,7 +358,23 @@ export function evaluateKeyboardEvent(
           result.key = C0.ESC + key;
         } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
-          result.key = C0.ESC + String.fromCharCode(keyCode);
+          let keyString = String.fromCharCode(keyCode);
+          if (ev.shiftKey) {
+            keyString = keyString.toUpperCase();
+          }
+          result.key = C0.ESC + keyString;
+        } else if (ev.key === 'Dead' && ev.code.startsWith('Key')) {
+          // Reference: https://github.com/xtermjs/xterm.js/issues/3725
+          // Alt will produce a "dead key" (initate composition) with some
+          // of the letters in US layout (e.g. N/E/U).
+          // It's safe to match against Key* since no other `code` values begin with "Key".
+          // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values#code_values_on_mac
+          let keyString = ev.code.slice(3, 4);
+          if (!ev.shiftKey) {
+            keyString = keyString.toLowerCase();
+          }
+          result.key = C0.ESC + keyString;
+          result.cancel = true;
         }
       } else if (isMac && !ev.altKey && !ev.ctrlKey && !ev.shiftKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
@@ -366,6 +386,9 @@ export function evaluateKeyboardEvent(
       } else if (ev.key && ev.ctrlKey) {
         if (ev.key === '_') { // ^_
           result.key = C0.US;
+        }
+        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
+          result.key = C0.NUL;
         }
       }
       break;

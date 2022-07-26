@@ -5,8 +5,9 @@
  * (EXPERIMENTAL) This Addon is still under development
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell } from 'xterm';
-
+import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
+import { IColorSet } from 'browser/Types';
+import { IAttributeData } from 'common/Types';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -19,18 +20,25 @@ abstract class BaseSerializeHandler {
   ) {
   }
 
-  public serialize(startRow: number, endRow: number): string {
+  public serialize(range: IBufferRange): string {
     // we need two of them to flip between old and new cell
     const cell1 = this._buffer.getNullCell();
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
+    const startRow = range.start.x;
+    const endRow = range.end.x;
+    const startColumn = range.start.y;
+    const endColumn = range.end.y;
+
     this._beforeSerialize(endRow - startRow, startRow, endRow);
 
-    for (let row = startRow; row < endRow; row++) {
+    for (let row = startRow; row <= endRow; row++) {
       const line = this._buffer.getLine(row);
       if (line) {
-        for (let col = 0; col < line.length; col++) {
+        const startLineColumn = row !== range.start.x ? 0 : startColumn;
+        const endLineColumn = row !== range.end.x ? line.length : endColumn;
+        for (let col = startLineColumn; col < endLineColumn; col++) {
           const c = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
           if (!c) {
             console.warn(`Can't get cell at row=${row}, col=${col}`);
@@ -40,7 +48,7 @@ abstract class BaseSerializeHandler {
           oldCell = c;
         }
       }
-      this._rowEnd(row, row === endRow - 1);
+      this._rowEnd(row, row === endRow);
     }
 
     this._afterSerialize();
@@ -55,17 +63,17 @@ abstract class BaseSerializeHandler {
   protected _serializeString(): string { return ''; }
 }
 
-function equalFg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalFg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.getFgColorMode() === cell2.getFgColorMode()
     && cell1.getFgColor() === cell2.getFgColor();
 }
 
-function equalBg(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.getBgColorMode() === cell2.getBgColorMode()
     && cell1.getBgColor() === cell2.getBgColor();
 }
 
-function equalFlags(cell1: IBufferCell, cell2: IBufferCell): boolean {
+function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.isInverse() === cell2.isInverse()
     && cell1.isBold() === cell2.isBold()
     && cell1.isUnderline() === cell2.isUnderline()
@@ -222,7 +230,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     this._nullCellCount = 0;
   }
 
-  private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): number[] {
+  private _diffStyle(cell: IBufferCell | IAttributeData, oldCell: IBufferCell): number[] {
     const sgrSeq: number[] = [];
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);
@@ -386,6 +394,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
       moveRight(realCursorCol - this._lastCursorCol);
     }
 
+    // Restore the cursor's current style, see https://github.com/xtermjs/xterm.js/issues/3677
+    // HACK: Internal API access since it's awkward to expose this in the API and serialize will
+    // likely be the only consumer
+    const curAttrData: IAttributeData = (this._terminal as any)._core._inputHandler._curAttrData;
+    const sgrSeq = this._diffStyle(curAttrData, this._cursorStyle);
+    if (sgrSeq.length > 0) {
+      content += `\u001b[${sgrSeq.join(';')}m`;
+    }
+
     return content;
   }
 }
@@ -403,7 +420,35 @@ export class SerializeAddon implements ITerminalAddon {
     const maxRows = buffer.length;
     const handler = new StringSerializeHandler(buffer, terminal);
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
-    return handler.serialize(maxRows - correctRows, maxRows);
+    return handler.serialize({
+      start: { x: maxRows - correctRows, y: 0 },
+      end: { x: maxRows - 1, y: terminal.cols }
+    });
+  }
+
+  private _serializeBufferAsHTML(terminal: Terminal, options: Partial<IHTMLSerializeOptions>): string {
+    const buffer = terminal.buffer.active;
+    const handler = new HTMLSerializeHandler(buffer, terminal, options);
+    const onlySelection = options.onlySelection ?? false;
+    if (!onlySelection) {
+      const maxRows = buffer.length;
+      const scrollback = options.scrollback;
+      const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
+      return handler.serialize({
+        start: { x: maxRows - correctRows, y: 0 },
+        end: { x: maxRows - 1, y: terminal.cols }
+      });
+    }
+
+    const selection = this._terminal?.getSelectionPosition();
+    if (selection !== undefined) {
+      return handler.serialize({
+        start: { x: selection.startRow, y: selection.startColumn },
+        end: { x: selection.endRow, y: selection.endColumn }
+      });
+    }
+
+    return '';
   }
 
   private _serializeModes(terminal: Terminal): string {
@@ -460,6 +505,14 @@ export class SerializeAddon implements ITerminalAddon {
     return content;
   }
 
+  public serializeAsHTML(options?: Partial<IHTMLSerializeOptions>): string {
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+
+    return this._serializeBufferAsHTML(this._terminal, options || {});
+  }
+
   public dispose(): void { }
 }
 
@@ -468,4 +521,151 @@ interface ISerializeOptions {
   scrollback?: number;
   excludeModes?: boolean;
   excludeAltBuffer?: boolean;
+}
+
+interface IHTMLSerializeOptions {
+  scrollback: number;
+  onlySelection: boolean;
+  includeGlobalBackground: boolean;
+}
+
+export class HTMLSerializeHandler extends BaseSerializeHandler {
+  private _currentRow: string = '';
+
+  private _htmlContent = '';
+
+  private _colors: IColorSet;
+
+  constructor(
+    buffer: IBuffer,
+    private readonly _terminal: Terminal,
+    private readonly _options: Partial<IHTMLSerializeOptions>
+  ) {
+    super(buffer);
+
+    // https://github.com/xtermjs/xterm.js/issues/3601
+    this._colors = (_terminal as any)._core._colorManager.colors;
+  }
+
+  private _padStart(target: string, targetLength: number, padString: string): string {
+    targetLength = targetLength >> 0;
+    padString = padString ?? ' ';
+    if (target.length > targetLength) {
+      return target;
+    }
+
+    targetLength -= target.length;
+    if (targetLength > padString.length) {
+      padString += padString.repeat(targetLength / padString.length);
+    }
+    return padString.slice(0, targetLength) + target;
+  }
+
+  protected _beforeSerialize(rows: number, start: number, end: number): void {
+    this._htmlContent += '<html><body><!--StartFragment--><pre>';
+
+    let foreground = '#000000';
+    let background = '#ffffff';
+    if (this._options.includeGlobalBackground ?? false) {
+      foreground = this._terminal.options.theme?.foreground ?? '#ffffff';
+      background = this._terminal.options.theme?.background ?? '#000000';
+    }
+
+    const globalStyleDefinitions = [];
+    globalStyleDefinitions.push('color: ' + foreground + ';');
+    globalStyleDefinitions.push('background-color: ' + background + ';');
+    globalStyleDefinitions.push('font-family: ' + this._terminal.options.fontFamily + ';');
+    globalStyleDefinitions.push('font-size: ' + this._terminal.options.fontSize + 'px;');
+    this._htmlContent += '<div style=\'' + globalStyleDefinitions.join(' ') + '\'>';
+  }
+
+  protected _afterSerialize(): void {
+    this._htmlContent += '</div>';
+    this._htmlContent += '</pre><!--EndFragment--></body></html>';
+  }
+
+  protected _rowEnd(row: number, isLastRow: boolean): void {
+    this._htmlContent += '<div><span>' + this._currentRow + '</span></div>';
+    this._currentRow = '';
+  }
+
+  private _getHexColor(cell: IBufferCell, isFg: boolean): string | undefined {
+    const color = isFg ? cell.getFgColor() : cell.getBgColor();
+    if (isFg ? cell.isFgRGB() : cell.isBgRGB()) {
+      const rgb = [
+        (color >> 16) & 255,
+        (color >>  8) & 255,
+        (color      ) & 255
+      ];
+      return rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
+    }
+    if (isFg ? cell.isFgPalette() : cell.isBgPalette()) {
+      return this._colors.ansi[color].css;
+    }
+    return undefined;
+  }
+
+  private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): string[] | undefined {
+    const content: string[] = [];
+
+    const fgChanged = !equalFg(cell, oldCell);
+    const bgChanged = !equalBg(cell, oldCell);
+    const flagsChanged = !equalFlags(cell, oldCell);
+
+    if (fgChanged || bgChanged || flagsChanged) {
+      const fgHexColor = this._getHexColor(cell, true);
+      if (fgHexColor) {
+        content.push('color: ' + fgHexColor + ';');
+      }
+
+      const bgHexColor = this._getHexColor(cell, false);
+      if (bgHexColor) {
+        content.push('background-color: ' + bgHexColor + ';');
+      }
+
+      if (cell.isInverse()) { content.push('color: #000000; background-color: #BFBFBF;'); }
+      if (cell.isBold()) { content.push('font-weight: bold;'); }
+      if (cell.isUnderline()) { content.push('text-decoration: underline;'); }
+      if (cell.isBlink()) { content.push('text-decoration: blink;'); }
+      if (cell.isInvisible()) { content.push('visibility: hidden;'); }
+      if (cell.isItalic()) { content.push('font-style: italic;'); }
+      if (cell.isDim()) { content.push('opacity: 0.5;'); }
+      if (cell.isStrikethrough()) { content.push('text-decoration: line-through;'); }
+
+      return content;
+    }
+
+    return undefined;
+  }
+
+  protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
+    // a width 0 cell don't need to be count because it is just a placeholder after a CJK character;
+    const isPlaceHolderCell = cell.getWidth() === 0;
+    if (isPlaceHolderCell) {
+      return;
+    }
+
+    // this cell don't have content
+    const isEmptyCell = cell.getChars() === '';
+
+    const styleDefinitions = this._diffStyle(cell, oldCell);
+
+    // handles style change
+    if (styleDefinitions) {
+      this._currentRow += styleDefinitions.length === 0 ?
+        '</span><span>' :
+        '</span><span style=\'' + styleDefinitions.join(' ') + '\'>';
+    }
+
+    // handles actual content
+    if (isEmptyCell) {
+      this._currentRow += ' ';
+    } else {
+      this._currentRow += cell.getChars();
+    }
+  }
+
+  protected _serializeString(): string {
+    return this._htmlContent;
+  }
 }

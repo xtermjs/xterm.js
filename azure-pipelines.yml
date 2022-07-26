@@ -39,7 +39,7 @@ jobs:
 
 - job: macOS
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-11'
   steps:
   - task: NodeTool@0
     inputs:
@@ -103,18 +103,19 @@ jobs:
   - script: yarn test-playwright --forbid-only
     displayName: 'Integration tests'
 
-- job: macOS_IntegrationTests
-  pool:
-    vmImage: 'macOS-10.15'
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '14.x'
-    displayName: 'Install Node.js'
-  - script: yarn --frozen-lockfile
-    displayName: 'Install dependencies and build'
-  - script: yarn test-playwright --forbid-only
-    displayName: 'Integration tests'
+# Integration tests are too flaky on macOS https://github.com/xtermjs/xterm.js/issues/3590
+# - job: macOS_IntegrationTests
+#   pool:
+#     vmImage: 'macOS-10.15'
+#   steps:
+#   - task: NodeTool@0
+#     inputs:
+#       versionSpec: '14.x'
+#     displayName: 'Install Node.js'
+#   - script: yarn --frozen-lockfile
+#     displayName: 'Install dependencies and build'
+#   - script: yarn test-playwright --forbid-only
+#     displayName: 'Integration tests'
 
 - job: Windows_IntegrationTests
   pool:
@@ -135,7 +136,7 @@ jobs:
   - macOS
   - Windows
   - Linux_IntegrationTests
-  - macOS_IntegrationTests
+  # - macOS_IntegrationTests
   - Windows_IntegrationTests
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:

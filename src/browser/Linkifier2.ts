@@ -18,6 +18,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _linkProviders: ILinkProvider[] = [];
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
+  private _mouseDownLink: ILinkWithState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
@@ -61,7 +62,8 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._clearCurrentLink();
     }));
     this.register(addDisposableDomListener(this._element, 'mousemove', this._onMouseMove.bind(this)));
-    this.register(addDisposableDomListener(this._element, 'click', this._onClick.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
   private _onMouseMove(event: MouseEvent): void {
@@ -129,7 +131,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     let linkProvided = false;
 
     // There is no link cached, so ask for one
-    this._linkProviders.forEach((linkProvider, i) => {
+    for (const [i, linkProvider] of this._linkProviders.entries()) {
       if (useLineCache) {
         const existingReply = this._activeProviderReplies?.get(i);
         // If there isn't a reply, the provider hasn't responded yet.
@@ -156,7 +158,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           }
         });
       }
-    });
+    }
   }
 
   private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
@@ -222,18 +224,21 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     return linkProvided;
   }
 
-  private _onClick(event: MouseEvent): void {
+  private _handleMouseDown(): void {
+    this._mouseDownLink = this._currentLink;
+  }
+
+  private _handleMouseUp(event: MouseEvent): void {
     if (!this._element || !this._mouseService || !this._currentLink) {
       return;
     }
 
     const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
-
     if (!position) {
       return;
     }
 
-    if (this._linkAtPosition(this._currentLink.link, position)) {
+    if (this._mouseDownLink === this._currentLink && this._linkAtPosition(this._currentLink.link, position)) {
       this._currentLink.link.activate(event, this._currentLink.link.text);
     }
   }
@@ -303,7 +308,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
       // Add listener for rerendering
       if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRenderedBufferChange(e => {
+        this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
           // When start is 0 a scroll most likely occurred, make sure links above the fold also get
           // cleared.
           const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;

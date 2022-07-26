@@ -11,7 +11,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IOptionsService, IBufferService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 
@@ -37,9 +37,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     rendererId: number,
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
-    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService
+    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService);
+    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = new GridCache<CharData>();
   }
 
@@ -176,6 +177,19 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = this._colors.ansi[cell.getBgColor()].css;
       }
 
+      // Get any decoration foreground/background overrides, this must be fetched before the early
+      // exist but applied after inverse
+      let isTop = false;
+      for (const d of this._decorationService.getDecorationsAtCell(x, this._bufferService.buffer.ydisp + y)) {
+        if (d.options.layer !== 'top' && isTop) {
+          continue;
+        }
+        if (d.backgroundColorRGB) {
+          nextFillStyle = d.backgroundColorRGB.css;
+        }
+        isTop = d.options.layer === 'top';
+      }
+
       if (prevFillStyle === null) {
         // This is either the first iteration, or the default background was set. Either way, we
         // don't need to draw anything.
@@ -225,7 +239,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
           } else {
             let bg = cell.getBgColor();
-            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
+            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
               bg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[bg].css;
@@ -237,7 +251,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
           } else {
             let fg = cell.getFgColor();
-            if (this._optionsService.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
             this._ctx.fillStyle = this._colors.ansi[fg].css;
@@ -271,7 +285,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   public onOptionsChanged(): void {
-    this._setTransparency(this._optionsService.options.allowTransparency);
+    this._setTransparency(this._optionsService.rawOptions.allowTransparency);
   }
 
   /**

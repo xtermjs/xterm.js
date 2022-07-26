@@ -14,7 +14,7 @@ let page: Page;
 const width = 800;
 const height = 600;
 
-const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, '\' +' + JSON.stringify(str) + '+ \'');
+const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, `' +` + JSON.stringify(str) + `+ '`);
 
 const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
   await writeRawSync(page, str);
@@ -83,7 +83,7 @@ describe('SerializeAddon', () => {
     const buffer3 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     await page.evaluate(`term.reset();`);
-    await writeRawSync(page, '1234567890n12345');
+    await writeRawSync(page, '123456789012345');
     const buffer4 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
     assert.throw(() => {

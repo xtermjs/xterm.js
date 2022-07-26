@@ -92,11 +92,34 @@ const addons: { [T in AddonType]: IDemoAddon<T>} = {
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
+  find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
-  findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
+  findPrevious: <HTMLInputElement>document.querySelector('#find-previous'),
+  findResults: document.querySelector('#find-results')
 };
 const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
+const xtermjsTheme = {
+  foreground: '#F8F8F8',
+  background: '#2D2E2C',
+  selection: '#5DA5D533',
+  black: '#1E1E1D',
+  brightBlack: '#262625',
+  red: '#CE5C5C',
+  brightRed: '#FF7272',
+  green: '#5BCC5B',
+  brightGreen: '#72FF72',
+  yellow: '#CCCC5B',
+  brightYellow: '#FFFF72',
+  blue: '#5D5DD3',
+  brightBlue: '#7279FF',
+  magenta: '#BC5ED1',
+  brightMagenta: '#E572FF',
+  cyan: '#5DA5D5',
+  brightCyan: '#72F0FF',
+  white: '#F8F8F8',
+  brightWhite: '#FFFFFF'
+};
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();
@@ -107,7 +130,15 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`
+    incremental: e.key !== `Enter`,
+    decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
+      matchBackground: '#232422',
+      matchBorder: '#555753',
+      matchOverviewRuler: '#555753',
+      activeMatchBackground: '#ef2929',
+      activeMatchBorder: '#ffffff',
+      activeMatchColorOverviewRuler: '#ef2929'
+    } : undefined
   };
 }
 
@@ -147,8 +178,12 @@ if (document.location.pathname === '/test') {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
+  document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
+  document.getElementById('add-decoration').addEventListener('click', addDecoration);
+  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
 
 function createTerminal(): void {
@@ -159,8 +194,10 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
+    allowTransparency: true,
     windowsMode: isWindows,
-    fontFamily: 'Fira Code, courier-new, courier, monospace'
+    fontFamily: 'Fira Code, courier-new, courier, monospace',
+    theme: xtermjsTheme
   } as ITerminalOptions);
 
   // Load addons
@@ -200,9 +237,14 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
   });
-
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+  });
+  addDomListener(actionElements.findNext, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
+  });
+  addDomListener(actionElements.findPrevious, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
   });
 
   // fit is called within a setTimeout, cols and rows need this.
@@ -291,11 +333,14 @@ function initOptions(term: TerminalType): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
     rendererType: ['dom', 'canvas'],
+    theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
-  const numberOptions = [];
+  const numberOptions = [
+    'overviewRulerWidth'
+  ];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.options[o]) {
       case 'boolean':
@@ -305,7 +350,7 @@ function initOptions(term: TerminalType): void {
         numberOptions.push(o);
         break;
       default:
-        if (Object.keys(stringOptions).indexOf(o) === -1) {
+        if (Object.keys(stringOptions).indexOf(o) === -1 && numberOptions.indexOf(o) === -1 && booleanOptions.indexOf(o) === -1) {
           console.warn(`Unrecognized option: "${o}"`);
         }
     }
@@ -318,12 +363,13 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o]}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
     if (stringOptions[o]) {
-      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.options[o] === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+      const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
+      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
       html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
     }
@@ -353,7 +399,7 @@ function initOptions(term: TerminalType): void {
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
         updateTerminalSize();
-      } else if(o === 'scrollback') {
+      } else if (o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
@@ -365,7 +411,66 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      term.options[o] = input.value;
+      let value: any = input.value;
+      if (o === 'theme') {
+        switch (input.value) {
+          case 'default':
+            value = undefined;
+            break;
+          case 'xtermjs':
+            // Custom theme to match style of xterm.js logo
+            value = xtermjsTheme;
+          case 'sapphire':
+            // Color source: https://github.com/Tyriar/vscode-theme-sapphire
+            value = {
+              background: '#1c2431',
+              foreground: '#cccccc',
+              selectionBackground: '#399ef440',
+              black: '#666666',
+              blue: '#399ef4',
+              brightBlack: '#666666',
+              brightBlue: '#399ef4',
+              brightCyan: '#21c5c7',
+              brightGreen: '#4eb071',
+              brightMagenta: '#b168df',
+              brightRed: '#da6771',
+              brightWhite: '#efefef',
+              brightYellow: '#fff099',
+              cyan: '#21c5c7',
+              green: '#4eb071',
+              magenta: '#b168df',
+              red: '#da6771',
+              white: '#efefef',
+              yellow: '#fff099',
+            };
+            break;
+          case 'light':
+            // Color source: https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/light_plus.json
+            value = {
+              background: '#ffffff',
+              foreground: '#333333',
+              selectionBackground: '#add6ff',
+              black: '#000000',
+              blue: '#0451a5',
+              brightBlack: '#666666',
+              brightBlue: '#0451a5',
+              brightCyan: '#0598bc',
+              brightGreen: '#14ce14',
+              brightMagenta: '#bc05bc',
+              brightRed: '#cd3131',
+              brightWhite: '#a5a5a5',
+              brightYellow: '#b5ba00',
+              cyan: '#0598bc',
+              green: '#00bc00',
+              magenta: '#bc05bc',
+              red: '#cd3131',
+              white: '#555555',
+              yellow: '#949800',
+            };
+            break;
+        }
+      }
+      term.options[o] = value;
     });
   });
 }
@@ -380,8 +485,11 @@ function initAddons(term: TerminalType): void {
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
-    if(name === 'unicode11' && checkbox.checked) {
+    if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
+    }
+    if (name === 'search' && checkbox.checked) {
+      addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
@@ -393,6 +501,8 @@ function initAddons(term: TerminalType): void {
           }, 0);
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
+        } else if (name === 'search') {
+          addon.instance.onDidChangeResults(e => updateFindResults(e));
         }
       } else {
         if (name === 'webgl') {
@@ -421,6 +531,16 @@ function initAddons(term: TerminalType): void {
   container.appendChild(fragment);
 }
 
+function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined) {
+  let content: string;
+  if (e === undefined) {
+    content = 'undefined';
+  } else {
+    content = `index: ${e.resultIndex}, count: ${e.resultCount}`;
+  }
+  actionElements.findResults.textContent = content;
+}
+
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
   term._core.register({ dispose: () => element.removeEventListener(type, handler) });
@@ -445,6 +565,21 @@ function serializeButtonHandler(): void {
     term.reset();
     term.write(output);
   }
+}
+
+function htmlSerializeButtonHandler(): void {
+  const output = addons.serialize.instance.serializeAsHTML();
+  document.getElementById('htmlserialize-output').innerText = output;
+
+  // Deprecated, but the most supported for now.
+  function listener(e: any) {
+    e.clipboardData.setData("text/html", output);
+    e.preventDefault();
+  }
+  document.addEventListener("copy", listener);
+  document.execCommand("copy");
+  document.removeEventListener("copy", listener);
+  document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
 }
 
 
@@ -525,3 +660,105 @@ function loadTest() {
     term._core._onData.fire('\x03');
   });
 }
+
+function powerlineSymbolTest() {
+  function s(char: string): string {
+    return `${char} \x1b[7m${char}\x1b[0m  `;
+  }
+  term.write('\n\n\r');
+  term.writeln('Standard powerline symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_  ${s('\ue0a0')}${s('\ue0a1')}${s('\ue0a2')}`);
+  term.writeln(`0xB_  ${s('\ue0b0')}${s('\ue0b1')}${s('\ue0b2')}${s('\ue0b3')}`);
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b1 \x1b[0;40m\ue0b0` +
+    ` 0 \ue0b1 \x1b[30;41m\ue0b0\x1b[39m` +
+    ` 1 \ue0b1 \x1b[31;42m\ue0b0\x1b[39m` +
+    ` 2 \ue0b1 \x1b[32;43m\ue0b0\x1b[39m` +
+    ` 3 \ue0b1 \x1b[33;44m\ue0b0\x1b[39m` +
+    ` 4 \ue0b1 \x1b[34;45m\ue0b0\x1b[39m` +
+    ` 5 \ue0b1 \x1b[35;46m\ue0b0\x1b[39m` +
+    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[39m` +
+    ` 7 \ue0b1 \x1b[37;49m\ue0b0\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b3 \x1b[0;7;40m\ue0b2\x1b[27m` +
+    ` 0 \ue0b3 \x1b[7;30;41m\ue0b2\x1b[27;39m` +
+    ` 1 \ue0b3 \x1b[7;31;42m\ue0b2\x1b[27;39m` +
+    ` 2 \ue0b3 \x1b[7;32;43m\ue0b2\x1b[27;39m` +
+    ` 3 \ue0b3 \x1b[7;33;44m\ue0b2\x1b[27;39m` +
+    ` 4 \ue0b3 \x1b[7;34;45m\ue0b2\x1b[27;39m` +
+    ` 5 \ue0b3 \x1b[7;35;46m\ue0b2\x1b[27;39m` +
+    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;39m` +
+    ` 7 \ue0b3 \x1b[7;37;49m\ue0b2\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b5 \x1b[0;40m\ue0b4` +
+    ` 0 \ue0b5 \x1b[30;41m\ue0b4\x1b[39m` +
+    ` 1 \ue0b5 \x1b[31;42m\ue0b4\x1b[39m` +
+    ` 2 \ue0b5 \x1b[32;43m\ue0b4\x1b[39m` +
+    ` 3 \ue0b5 \x1b[33;44m\ue0b4\x1b[39m` +
+    ` 4 \ue0b5 \x1b[34;45m\ue0b4\x1b[39m` +
+    ` 5 \ue0b5 \x1b[35;46m\ue0b4\x1b[39m` +
+    ` 6 \ue0b5 \x1b[36;47m\ue0b4\x1b[39m` +
+    ` 7 \ue0b5 \x1b[37;49m\ue0b4\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln(
+    `\x1b[7m` +
+    ` inverse \ue0b7 \x1b[0;7;40m\ue0b6\x1b[27m` +
+    ` 0 \ue0b7 \x1b[7;30;41m\ue0b6\x1b[27;39m` +
+    ` 1 \ue0b7 \x1b[7;31;42m\ue0b6\x1b[27;39m` +
+    ` 2 \ue0b7 \x1b[7;32;43m\ue0b6\x1b[27;39m` +
+    ` 3 \ue0b7 \x1b[7;33;44m\ue0b6\x1b[27;39m` +
+    ` 4 \ue0b7 \x1b[7;34;45m\ue0b6\x1b[27;39m` +
+    ` 5 \ue0b7 \x1b[7;35;46m\ue0b6\x1b[27;39m` +
+    ` 6 \ue0b7 \x1b[7;36;47m\ue0b6\x1b[27;39m` +
+    ` 7 \ue0b7 \x1b[7;37;49m\ue0b6\x1b[0m`
+  );
+  term.writeln('');
+  term.writeln('Powerline extra symbols:');
+  term.writeln('      0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F');
+  term.writeln(`0xA_                 ${s('\ue0a3')}`);
+  term.writeln(`0xB_                      ${s('\ue0b4')}${s('\ue0b5')}${s('\ue0b6')}${s('\ue0b7')}${s('\ue0b8')}${s('\ue0b9')}${s('\ue0ba')}${s('\ue0bb')}${s('\ue0bc')}${s('\ue0bd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xC_  ${s('\ue0c0')}${s('\ue0c1')}${s('\ue0c2')}${s('\ue0c3')}${s('\ue0c4')}${s('\ue0c5')}${s('\ue0c6')}${s('\ue0c7')}${s('\ue0c8')}${s('\ue0c9')}${s('\ue0ca')}${s('\ue0cb')}${s('\ue0cc')}${s('\ue0cd')}${s('\ue0be')}${s('\ue0bf')}`);
+  term.writeln(`0xD_  ${s('\ue0d0')}${s('\ue0d1')}${s('\ue0d2')}     ${s('\ue0d4')}`);
+  term.writeln('');
+  term.writeln('Sample of nerd fonts icons:');
+  term.writeln('    nf-linux-apple (\\uF302) \uf302');
+  term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
+}
+
+function addDecoration() {
+  term.options['overviewRulerWidth'] = 15;
+  const marker = term.addMarker(1);
+  const decoration = term.registerDecoration({
+    marker,
+    backgroundColor: '#00FF00',
+    foregroundColor: '#00FE00',
+    overviewRulerOptions: { color: '#ef292980', position: 'left' }
+  });
+  decoration.onRender((e: HTMLElement) => {
+    e.style.right = '100%';
+    e.style.backgroundColor = '#ef292980';
+  });
+}
+
+function addOverviewRuler() {
+  term.options['overviewRulerWidth'] = 15;
+  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+}
+

@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable, IViewportRange } from 'xterm';
-import { WebLinkProvider } from './WebLinkProvider';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
+import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
 const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
 const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,6})';
+const tldClause = '([a-z\\.]{2,18})';
 const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
 const localHostClause = '(localhost)';
 const portClause = '(:\\d{1,5})';
@@ -38,12 +38,6 @@ function handleLink(event: MouseEvent, uri: string): void {
   } else {
     console.warn('Opening link blocked as opener could not be cleared');
   }
-}
-
-interface ILinkProviderOptions {
-  hover?(event: MouseEvent, text: string, location: IViewportRange): void;
-  leave?(event: MouseEvent, text: string): void;
-  urlRegex?: RegExp;
 }
 
 export class WebLinksAddon implements ITerminalAddon {

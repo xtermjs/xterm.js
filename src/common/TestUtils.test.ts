@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -11,6 +11,7 @@ import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
+import { IDecorationOptions, IDecoration } from 'xterm';
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
@@ -120,12 +121,13 @@ export class MockLogService implements ILogService {
 
 export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
-  public options: ITerminalOptions = clone(DEFAULT_OPTIONS);
+  public readonly rawOptions: ITerminalOptions = clone(DEFAULT_OPTIONS);
+  public options: ITerminalOptions = this.rawOptions;
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
-        this.options[key] = testOptions[key];
+        this.rawOptions[key] = testOptions[key];
       }
     }
   }
@@ -156,4 +158,16 @@ export class MockUnicodeService implements IUnicodeService {
   public getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');
   }
+}
+
+export class MockDecorationService implements IDecorationService {
+  public serviceBrand: any;
+  public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); }
+  public onDecorationRegistered = new EventEmitter<IInternalDecoration>().event;
+  public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
+  public reset(): void { }
+  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> { }
+  public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> { }
+  public dispose(): void { }
 }

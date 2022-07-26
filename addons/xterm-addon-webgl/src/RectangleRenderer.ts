@@ -4,13 +4,14 @@
  */
 
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
-import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
-import { fill } from 'common/TypedArrayUtils';
+import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
 import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
-import { IColorSet, IColor } from 'browser/Types';
+import { IColor } from 'common/Types';
+import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -49,7 +50,6 @@ void main() {
 
 interface IVertices {
   attributes: Float32Array;
-  selection: Float32Array;
   count: number;
 }
 
@@ -58,7 +58,7 @@ const BYTES_PER_RECTANGLE = INDICES_PER_RECTANGLE * Float32Array.BYTES_PER_ELEME
 
 const INITIAL_BUFFER_RECTANGLE_CAPACITY = 20 * INDICES_PER_RECTANGLE;
 
-export class RectangleRenderer {
+export class RectangleRenderer extends Disposable {
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -66,12 +66,10 @@ export class RectangleRenderer {
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
   private _bgFloat!: Float32Array;
-  private _selectionFloat!: Float32Array;
 
   private _vertices: IVertices = {
     count: 0,
-    attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY),
-    selection: new Float32Array(3 * INDICES_PER_RECTANGLE)
+    attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY)
   };
 
   constructor(
@@ -80,9 +78,12 @@ export class RectangleRenderer {
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
+    super();
+
     const gl = this._gl;
 
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
@@ -95,6 +96,7 @@ export class RectangleRenderer {
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     const unitQuadVerticesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadVerticesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, unitQuadVertices, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
@@ -104,11 +106,13 @@ export class RectangleRenderer {
     // unitQuadVertuces to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
+    this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
     this._attributesBuffer = throwIfFalsy(gl.createBuffer());
+    this.register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.POSITION);
     gl.vertexAttribPointer(VertexAttribLocations.POSITION, 2, gl.FLOAT, false, BYTES_PER_RECTANGLE, 0);
@@ -137,11 +141,6 @@ export class RectangleRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributes, gl.DYNAMIC_DRAW);
     gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
-
-    // Bind selection buffer and draw
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this._vertices.selection, gl.DYNAMIC_DRAW);
-    gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, 3);
   }
 
   public onResize(): void {
@@ -155,7 +154,6 @@ export class RectangleRenderer {
 
   private _updateCachedColors(): void {
     this._bgFloat = this._colorToFloat32Array(this._colors.background);
-    this._selectionFloat = this._colorToFloat32Array(this._colors.selectionOpaque);
   }
 
   private _updateViewportRectangle(): void {
@@ -169,73 +167,6 @@ export class RectangleRenderer {
       this._terminal.rows * this._dimensions.scaledCellHeight,
       this._bgFloat
     );
-  }
-
-  public updateSelection(model: ISelectionRenderModel): void {
-    const terminal = this._terminal;
-
-    if (!model.hasSelection) {
-      fill(this._vertices.selection, 0, 0);
-      return;
-    }
-
-    if (model.columnSelectMode) {
-      const startCol = model.startCol;
-      const width = model.endCol - startCol;
-      const height = model.viewportCappedEndRow - model.viewportCappedStartRow + 1;
-      this._addRectangleFloat(
-        this._vertices.selection,
-        0,
-        startCol * this._dimensions.scaledCellWidth,
-        model.viewportCappedStartRow * this._dimensions.scaledCellHeight,
-        width * this._dimensions.scaledCellWidth,
-        height * this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-      fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE);
-    } else {
-      // Draw first row
-      const startCol = model.viewportStartRow === model.viewportCappedStartRow ? model.startCol : 0;
-      const startRowEndCol = model.viewportCappedStartRow === model.viewportEndRow ? model.endCol : terminal.cols;
-      this._addRectangleFloat(
-        this._vertices.selection,
-        0,
-        startCol * this._dimensions.scaledCellWidth,
-        model.viewportCappedStartRow * this._dimensions.scaledCellHeight,
-        (startRowEndCol - startCol) * this._dimensions.scaledCellWidth,
-        this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-
-      // Draw middle rows
-      const middleRowsCount = Math.max(model.viewportCappedEndRow - model.viewportCappedStartRow - 1, 0);
-      this._addRectangleFloat(
-        this._vertices.selection,
-        INDICES_PER_RECTANGLE,
-        0,
-        (model.viewportCappedStartRow + 1) * this._dimensions.scaledCellHeight,
-        terminal.cols * this._dimensions.scaledCellWidth,
-        middleRowsCount * this._dimensions.scaledCellHeight,
-        this._selectionFloat
-      );
-
-      // Draw final row
-      if (model.viewportCappedStartRow !== model.viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = model.viewportEndRow === model.viewportCappedEndRow ? model.endCol : terminal.cols;
-        this._addRectangleFloat(
-          this._vertices.selection,
-          INDICES_PER_RECTANGLE * 2,
-          0,
-          model.viewportCappedEndRow * this._dimensions.scaledCellHeight,
-          endCol * this._dimensions.scaledCellWidth,
-          this._dimensions.scaledCellHeight,
-          this._selectionFloat
-        );
-      } else {
-        fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE * 2);
-      }
-    }
   }
 
   public updateBackgrounds(model: IRenderModel): void {

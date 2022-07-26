@@ -11,10 +11,14 @@
     {
       "type": "npm",
       "script": "test",
-      "group": "test",
+      "group":{
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
+      "label": "watch",
       "type": "npm",
       "script": "watch",
       "group": "build",
@@ -25,9 +29,9 @@
       }
     },
     {
+      "label": "start",
       "type": "npm",
       "script": "start",
-      "dependsOn": "npm: watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
@@ -37,7 +41,7 @@
     },
     {
       "label": "Start demo",
-      "dependsOn": "npm: start",
+      "dependsOn": ["start", "watch"],
       "group": {
         "kind": "build",
         "isDefault": true

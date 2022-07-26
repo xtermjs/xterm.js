@@ -42,7 +42,7 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   '▘': [{ x: 0, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER LEFT
   '▙': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }], // QUADRANT UPPER LEFT AND LOWER LEFT AND LOWER RIGHT
   '▚': [{ x: 0, y: 0, w: 4, h: 4 }, { x: 4, y: 4, w: 4, h: 4 }], // QUADRANT UPPER LEFT AND LOWER RIGHT
-  '▛': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 0, w: 4, h: 8 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
+  '▛': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 4, y: 0, w: 4, h: 4 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
   '▜': [{ x: 0, y: 0, w: 8, h: 4 }, { x: 4, y: 0, w: 4, h: 8 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
   '▝': [{ x: 4, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER RIGHT
   '▞': [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }], // QUADRANT UPPER RIGHT AND LOWER LEFT
@@ -180,10 +180,16 @@ const enum Style {
 }
 
 /**
+ * @param xp The percentage of 15% of the x axis.
+ * @param yp The percentage of 15% of the x axis on the y axis.
+ */
+type DrawFunctionDefinition = (xp: number, yp: number) => string;
+
+/**
  * This contains the definitions of all box drawing characters in the format of SVG paths (ie. the
  * svg d attribute).
  */
-export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | ((xp: number, yp: number) => string) } | undefined } = {
+export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | DrawFunctionDefinition } | undefined } = {
   // Uniform normal and bold
   '─': { [Style.NORMAL]: Shapes.LEFT_TO_RIGHT },
   '━': { [Style.BOLD]:   Shapes.LEFT_TO_RIGHT },
@@ -319,10 +325,49 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
   '┋': { [Style.BOLD]:   Shapes.FOUR_DASHES_VERTICAL },
 
   // Curved
-  '╭': { [Style.NORMAL]: 'C.5,1,.5,.5,1,.5' },
-  '╮': { [Style.NORMAL]: 'C.5,1,.5,.5,0,.5' },
-  '╯': { [Style.NORMAL]: 'C.5,0,.5,.5,0,.5' },
-  '╰': { [Style.NORMAL]: 'C.5,0,.5,.5,1,.5' }
+  '╭': { [Style.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5` },
+  '╮': { [Style.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5` },
+  '╯': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5` },
+  '╰': { [Style.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5` }
+};
+
+interface IVectorShape {
+  d: string;
+  type: VectorType;
+  /** Padding to apply to the vector's x axis in CSS pixels. */
+  horizontalPadding?: number;
+}
+
+const enum VectorType {
+  FILL,
+  STROKE
+}
+
+/**
+ * This contains the definitions of the primarily used box drawing characters as vector shapes. The
+ * reason these characters are defined specially is to avoid common problems if a user's font has
+ * not been patched with powerline characters and also to get pixel perfect rendering as rendering
+ * issues can occur around AA/SPAA.
+ *
+ * Original symbols defined in https://github.com/powerline/fontpatcher
+ */
+export const powerlineDefinitions: { [index: string]: IVectorShape } = {
+  // Right triangle solid
+  '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.FILL },
+  // Right triangle line
+  '\u{E0B1}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.STROKE, horizontalPadding: 0.5 },
+  // Left triangle solid
+  '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL },
+  // Left triangle line
+  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE, horizontalPadding: 0.5 },
+  // Right semi-circle solid,
+  '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL },
+  // Right semi-circle line,
+  '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE },
+  // Left semi-circle solid,
+  '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL },
+  // Left semi-circle line,
+  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE }
 };
 
 /**
@@ -352,6 +397,12 @@ export function tryDrawCustomChar(
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
     drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    return true;
+  }
+
+  const powerlineDefinition = powerlineDefinitions[c];
+  if (powerlineDefinition) {
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
     return true;
   }
 
@@ -414,10 +465,10 @@ function drawPatternChar(
     let b: number;
     let a: number;
     if (fillStyle.startsWith('#')) {
-      r = parseInt(fillStyle.substr(1, 2), 16);
-      g = parseInt(fillStyle.substr(3, 2), 16);
-      b = parseInt(fillStyle.substr(5, 2), 16);
-      a = fillStyle.length > 7 && parseInt(fillStyle.substr(7, 2), 16) || 1;
+      r = parseInt(fillStyle.slice(1, 3), 16);
+      g = parseInt(fillStyle.slice(3, 5), 16);
+      b = parseInt(fillStyle.slice(5, 7), 16);
+      a = fillStyle.length > 7 && parseInt(fillStyle.slice(7, 9), 16) || 1;
     } else if (fillStyle.startsWith('rgba')) {
       ([r, g, b, a] = fillStyle.substring(5, fillStyle.length - 1).split(',').map(e => parseFloat(e)));
     } else {
@@ -518,6 +569,38 @@ function drawBoxDrawingChar(
   }
 }
 
+function drawPowerlineChar(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: IVectorShape,
+  xOffset: number,
+  yOffset: number,
+  scaledCellWidth: number,
+  scaledCellHeight: number
+): void {
+  ctx.beginPath();
+  ctx.lineWidth = window.devicePixelRatio;
+  for (const instruction of charDefinition.d.split(' ')) {
+    const type = instruction[0];
+    const f = svgToCanvasInstructionMap[type];
+    if (!f) {
+      console.error(`Could not find drawing instructions for "${type}"`);
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, charDefinition.horizontalPadding));
+  }
+  if (charDefinition.type === VectorType.STROKE) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
+  ctx.closePath();
+}
+
 function clamp(value: number, max: number, min: number = 0): number {
   return Math.max(Math.min(value, max), min);
 }
@@ -528,7 +611,7 @@ const svgToCanvasInstructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
 };
 
-function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number): number[] {
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, horizontalPadding: number = 0): number[] {
   const result = args.map(e => parseFloat(e) || parseInt(e));
 
   if (result.length < 2) {
@@ -537,14 +620,14 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
 
   for (let x = 0; x < result.length; x += 2) {
     // Translate from 0-1 to 0-cellWidth
-    result[x] *= cellWidth;
+    result[x] *= cellWidth - (horizontalPadding * 2 * window.devicePixelRatio);
     // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
     // line at 100% devicePixelRatio
     if (result[x] !== 0) {
       result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
     }
     // Apply the cell's offset (ie. x*cellWidth)
-    result[x] += xOffset;
+    result[x] += xOffset + (horizontalPadding * window.devicePixelRatio);
   }
 
   for (let y = 1; y < result.length; y += 2) {

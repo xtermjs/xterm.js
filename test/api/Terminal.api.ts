@@ -189,6 +189,10 @@ describe('API Integration Tests', function(): void {
       assert.equal(await page.evaluate(`window.term.options.fontSize`), 30);
       assert.equal(await page.evaluate(`window.term.options.fontFamily`), 'Arial');
     });
+    it('object.keys return the correct number of options', async () => {
+      await openTerminal(page);
+      assert.notEqual(await page.evaluate(`Object.keys(window.term.options).length`), 0);
+    });
   });
 
   describe('renderer', () => {
@@ -555,6 +559,29 @@ describe('API Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getChars()`), '');
         assert.equal(await page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
       });
+
+      it('clearMarkers', async () => {
+        await openTerminal(page, { cols: 5 });
+        await page.evaluate(`
+          window.disposeStack = [];
+          `);
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await writeSync(page, '\\n\\n\\n\\n');
+        await page.evaluate(`window.term.addMarker(1)`);
+        await page.evaluate(`window.term.addMarker(2)`);
+        await page.evaluate(`window.term.scrollLines(10)`);
+        await page.evaluate(`window.term.addMarker(3)`);
+        await page.evaluate(`window.term.addMarker(4)`);
+        await page.evaluate(`
+          for (let i = 0; i < window.term.markers.length; ++i) {
+              const marker = window.term.markers[i];
+              marker.onDispose(() => window.disposeStack.push(marker));
+          }`);
+        await page.evaluate(`window.term.clear()`);
+        assert.equal(await page.evaluate(`window.disposeStack.length`), 4);
+      });
     });
 
     it('active, normal, alternate', async () => {
@@ -704,9 +731,70 @@ describe('API Integration Tests', function(): void {
     await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
   });
 
+  describe('registerDecoration', () => {
+    describe('bufferDecorations', () => {
+      it('should register decorations and render them when terminal open is called', async () => {
+        await page.evaluate(`window.term = new Terminal({})`);
+        await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        await page.waitForSelector('.xterm-text-layer');
+        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
+        await openTerminal(page);
+        await pollFor(page, `document.querySelectorAll('.xterm-screen .xterm-decoration').length`, 2);
+      });
+      it('should return undefined when the marker has already been disposed of', async () => {
+        await openTerminal(page);
+        await page.evaluate(`window.marker = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker.dispose()`);
+        await pollFor(page, `window.decoration = window.term.registerDecoration({ marker: window.marker });`, undefined);
+      });
+      it('should throw when a negative x offset is provided', async () => {
+        await openTerminal(page);
+        await page.evaluate(`window.marker = window.term.addMarker(1)`);
+        await page.evaluate(`
+        try {
+          window.decoration = window.term.registerDecoration({ marker: window.marker, x: -2 });
+        } catch (e) {
+          window.throwMessage = e.message;
+        }
+      `);
+        await pollFor(page, 'window.throwMessage', 'This API only accepts positive integers');
+      });
+    });
+    describe('overviewRulerDecorations', () => {
+      it('should not add an overview ruler when width is not set', async () => {
+        await page.evaluate(`window.term = new Terminal({})`);
+        await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        await page.waitForSelector('.xterm-text-layer');
+        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
+        await openTerminal(page);
+        await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
+      });
+      it('should add an overview ruler when width is set', async () => {
+        await page.evaluate(`window.term = new Terminal({ overviewRulerWidth: 15 })`);
+        await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+        await page.waitForSelector('.xterm-text-layer');
+        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
+        await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
+        await openTerminal(page);
+        await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 1);
+      });
+    });
+  });
+
   describe('registerLinkProvider', () => {
     it('should fire provideLinks when hovering cells', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -726,6 +814,9 @@ describe('API Integration Tests', function(): void {
 
     it('should fire hover and leave events on the link', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -761,6 +852,9 @@ describe('API Integration Tests', function(): void {
 
     it('should work fine when hover and leave callbacks are not provided', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -801,18 +895,12 @@ describe('API Integration Tests', function(): void {
 
     it('should fire activate events when clicking the link', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'a b c');
-
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'a b c ');
-
-      // Focus terminal to avoid a render event clearing the active link
-      const dims = await getDimensions();
-      await moveMouseCell(page, dims, 5, 5);
-      await page.mouse.down();
-      await page.mouse.up();
-      await timeout(200); // Not sure how to avoid this timeout, checking for xterm-focus doesn't help
-
       await page.evaluate(`
         window.calls = [];
         window.disposable = window.term.registerLinkProvider({
@@ -828,6 +916,7 @@ describe('API Integration Tests', function(): void {
           }
         });
       `);
+      const dims = await getDimensions();
       await moveMouseCell(page, dims, 3, 1);
       await pollFor(page, `window.calls`, ['provide 1', 'hover 1']);
       await page.mouse.down();
@@ -848,6 +937,9 @@ describe('API Integration Tests', function(): void {
 
     it('should work when multiple links are provided on the same line', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');
@@ -894,6 +986,9 @@ describe('API Integration Tests', function(): void {
 
     it('should dispose links when hovering away', async () => {
       await openTerminal(page, { rendererType: 'dom' });
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
+      await page.evaluate('window.term.focus()');
       await writeSync(page, 'foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
       await pollFor(page, `document.querySelector('.xterm-rows').textContent`, 'foo bar baz ');

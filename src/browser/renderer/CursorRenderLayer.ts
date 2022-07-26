@@ -8,7 +8,7 @@ import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
-import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService } from 'browser/services/Services';
 
@@ -40,9 +40,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     @IBufferService bufferService: IBufferService,
     @IOptionsService optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IDecorationService decorationService: IDecorationService
   ) {
-    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService);
+    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = {
       x: 0,
       y: 0,
@@ -94,7 +95,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onOptionsChanged(): void {
-    if (this._optionsService.options.cursorBlink) {
+    if (this._optionsService.rawOptions.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(this._coreBrowserService.isFocused, () => {
           this._render(true);
@@ -148,7 +149,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
-      const cursorStyle = this._optionsService.options.cursorStyle;
+      const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
         this._cursorRenderers[cursorStyle](cursorX, viewportRelativeCursorY, this._cell);
       } else {
@@ -174,7 +175,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === this._coreBrowserService.isFocused &&
-          this._state.style === this._optionsService.options.cursorStyle &&
+          this._state.style === this._optionsService.rawOptions.cursorStyle &&
           this._state.width === this._cell.getWidth()) {
         return;
       }
@@ -182,13 +183,13 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._cursorRenderers[this._optionsService.options.cursorStyle || 'block'](cursorX, viewportRelativeCursorY, this._cell);
+    this._cursorRenderers[this._optionsService.rawOptions.cursorStyle || 'block'](cursorX, viewportRelativeCursorY, this._cell);
     this._ctx.restore();
 
     this._state.x = cursorX;
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
-    this._state.style = this._optionsService.options.cursorStyle;
+    this._state.style = this._optionsService.rawOptions.cursorStyle;
     this._state.width = this._cell.getWidth();
   }
 
@@ -213,7 +214,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this._fillLeftLineAtCell(x, y, this._optionsService.options.cursorWidth);
+    this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 

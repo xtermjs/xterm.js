@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet, IColorContrastCache } from 'browser/Types';
+import { IColorManager, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { channels, color, css } from 'browser/Color';
+import { channels, color, css } from 'common/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
-import { ColorIndex } from 'common/Types';
+import { ColorIndex, IColor } from 'common/Types';
 
 
 interface IRestoreColorSet {
@@ -104,15 +104,21 @@ export class ColorManager implements IColorManager {
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selectionTransparent: DEFAULT_SELECTION,
       selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      selectionForeground: undefined,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
     };
     this._updateRestoreColors();
   }
 
-  public onOptionsChange(key: string): void {
-    if (key === 'minimumContrastRatio') {
-      this._contrastCache.clear();
+  public onOptionsChange(key: string, value: any): void {
+    switch (key) {
+      case 'minimumContrastRatio':
+        this._contrastCache.clear();
+        break;
+      case 'allowTransparency':
+        this.allowTransparency = value;
+        break;
     }
   }
 
@@ -128,6 +134,15 @@ export class ColorManager implements IColorManager {
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selectionTransparent = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
     this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selectionTransparent);
+    const nullColor: IColor = {
+      css: '',
+      rgba: 0
+    };
+    this.colors.selectionForeground = theme.selectionForeground ? this._parseColor(theme.selectionForeground, nullColor) : undefined;
+    if (this.colors.selectionForeground === nullColor) {
+      this.colors.selectionForeground = undefined;
+    }
+
     /**
      * If selection color is opaque, blend it with background with 0.3 opacity
      * Issue #2737
@@ -136,6 +151,7 @@ export class ColorManager implements IColorManager {
       const opacity = 0.3;
       this.colors.selectionTransparent = color.opacity(this.colors.selectionTransparent, opacity);
     }
+    this.colors.ansi = DEFAULT_ANSI_COLORS.slice();
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
@@ -152,6 +168,12 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[13] = this._parseColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
     this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
+    if (theme.extendedAnsi) {
+      const colorCount = Math.min(this.colors.ansi.length - 16, theme.extendedAnsi.length);
+      for (let i = 0; i < colorCount; i++) {
+        this.colors.ansi[i + 16] = this._parseColor(theme.extendedAnsi[i], DEFAULT_ANSI_COLORS[i + 16]);
+      }
+    }
     // Clear our the cache
     this._contrastCache.clear();
     this._updateRestoreColors();
@@ -185,7 +207,7 @@ export class ColorManager implements IColorManager {
       foreground: this.colors.foreground,
       background: this.colors.background,
       cursor: this.colors.cursor,
-      ansi: [...this.colors.ansi]
+      ansi: this.colors.ansi.slice()
     };
   }
 

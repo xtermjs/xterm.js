@@ -5,7 +5,7 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ColorManager } from 'browser/ColorManager';
+import { ColorManager, DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 
 describe('ColorManager', () => {
   let cm: ColorManager;
@@ -34,7 +34,7 @@ describe('ColorManager', () => {
   describe('constructor', () => {
     it('should fill all colors with values', () => {
       for (const key of Object.keys(cm.colors)) {
-        if (key !== 'ansi' && key !== 'contrastCache') {
+        if (key !== 'ansi' && key !== 'contrastCache' && key !== 'selectionForeground') {
           // A #rrggbb or rgba(...)
           assert.ok((cm.colors as any)[key].css.length >= 7);
         }
@@ -308,6 +308,59 @@ describe('ColorManager', () => {
       assert.equal(cm.colors.background.css, '#0000FF');
       // FG reverts back to default
       assert.equal(cm.colors.foreground.css, '#ffffff');
+    });
+
+    it('should set all extended ansi colors in reverse order', () => {
+      cm.setTheme({
+        extendedAnsi: DEFAULT_ANSI_COLORS.map(a => a.css).slice().reverse()
+      });
+
+      for (let ansiColor = 16; ansiColor <= 255; ansiColor++) {
+        assert.equal(cm.colors.ansi[ansiColor].css, DEFAULT_ANSI_COLORS[255 + 16 - ansiColor].css);
+      }
+    });
+
+    it('should set one extended ansi color and keep the other default', () => {
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+      assert.equal(cm.colors.ansi[17].css, DEFAULT_ANSI_COLORS[17].css);
+    });
+
+    it('should set extended ansi colors to the default when they are unset', () => {
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+
+      cm.setTheme({
+        extendedAnsi: []
+      });
+      assert.equal(cm.colors.ansi[16].css, DEFAULT_ANSI_COLORS[16].css);
+
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+
+      cm.setTheme({});
+      assert.equal(cm.colors.ansi[16].css, DEFAULT_ANSI_COLORS[16].css);
+    });
+
+    it('should set extended ansi colors to the default when they are partially unset', () => {
+      cm.setTheme({
+        extendedAnsi: ['#ffffff', '#000000']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+      assert.equal(cm.colors.ansi[17].css, '#000000');
+
+      cm.setTheme({
+        extendedAnsi: ['#ffffff']
+      });
+      assert.equal(cm.colors.ansi[16].css, '#ffffff');
+      assert.equal(cm.colors.ansi[17].css, DEFAULT_ANSI_COLORS[17].css);
     });
   });
 });
