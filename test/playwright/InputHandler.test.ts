@@ -287,7 +287,7 @@ test.describe('InputHandler Integration Tests', function(): void {
     });
   });
 
-  test.describe('OSC 10 & 11 + 110 | 111 | 112', () => {
+  test.describe('OSC', () => {
     let recordedData: string[];
     test.beforeEach(async () => {
       await ctx.proxy.reset();
@@ -295,64 +295,139 @@ test.describe('InputHandler Integration Tests', function(): void {
       disposables.push(ctx.proxy.onData(e => recordedData.push(e)));
     });
 
-    test('query FG color', async () => {
-      await ctx.proxy.write('\x1b]10;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+    test.describe('OSC 4', () => {
+      test('query single color', async () => {
+        await ctx.proxy.write('\x1b]4;0;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\']);
+        await ctx.proxy.write('\x1b]4;77;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
+      });
+      test('query multiple colors', async () => {
+        await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
+      });
+      test('set & query single color', async () => {
+        await ctx.proxy.write('\x1b]4;0;?\x07');
+        const restore = recordedData.slice();
+        // set new color & query
+        await ctx.proxy.write('\x1b]4;0;rgb:01/02/03\x07\x1b]4;0;?\x07');
+        deepStrictEqual(recordedData, [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\']);
+        // restore should set old color
+        await ctx.proxy.write(restore[0] + '\x1b]4;0;?\x07');
+        deepStrictEqual(recordedData, [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\', restore[0]]);
+      });
+      test('query & set colors mixed', async () => {
+        await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
+        const restore = recordedData.slice();
+        recordedData.length = 0;
+        // mixed call - change 0, query 43, change 77
+        await ctx.proxy.write('\x1b]4;0;rgb:01/02/03;43;?;77;#aabbcc\x07');
+        deepStrictEqual(recordedData, ['\x1b]4;43;rgb:0000/d7d7/afaf\x1b\\']);
+        recordedData.length = 0;
+        // query new values for 0 + 77
+        await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:0101/0202/0303\x1b\\', '\x1b]4;77;rgb:aaaa/bbbb/cccc\x1b\\']);
+        recordedData.length = 0;
+        // restore old values for 0 + 77
+        await ctx.proxy.write(restore[0] + restore[1] + '\x1b]4;0;?;77;?\x07');
+        deepStrictEqual(recordedData, restore);
+      });
     });
-    test('query BG color', async () => {
-      await ctx.proxy.write('\x1b]11;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+    test.describe('OSC 4 & 104', () => {
+      test('change & restore single color', async () => {
+        // test for some random color slots
+        for (const i of [0, 43, 77, 255]) {
+          await ctx.proxy.write(`\x1b]4;${i};?\x07`);
+          const restore = recordedData.slice();
+          await ctx.proxy.write(`\x1b]4;${i};rgb:01/02/03\x07\x1b]4;${i};?\x07`);
+          deepStrictEqual(recordedData, [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`]);
+          // restore slot color
+          await ctx.proxy.write(`\x1b]104;${i}\x07\x1b]4;${i};?\x07`);
+          deepStrictEqual(recordedData, [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`, restore[0]]);
+          recordedData.length = 0;
+        }
+      });
+      test('restore multiple at once', async () => {
+        // change 3 random slots
+        await ctx.proxy.write(`\x1b]4;0;?;43;?;77;?\x07`);
+        const restore = recordedData.slice();
+        recordedData.length = 0;
+        await ctx.proxy.write(`\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore specific slots
+        await ctx.proxy.write(`\x1b]104;0;43;77\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        deepStrictEqual(recordedData, restore);
+      });
+      test('restore full table', async () => {
+        // change 3 random slots
+        await ctx.proxy.write(`\x1b]4;0;?;43;?;77;?\x07`);
+        const restore = recordedData.slice();
+        recordedData.length = 0;
+        await ctx.proxy.write(`\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
+        // restore all
+        await ctx.proxy.write(`\x1b]104\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
+        deepStrictEqual(recordedData, restore);
+      });
     });
-    test('query FG & BG color in one call', async () => {
-      await ctx.proxy.write('\x1b]10;?;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
-    });
-    test('set & query FG', async () => {
-      await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
-      await ctx.proxy.write('\x1b]10;#ffffff\x07\x1b]10;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
-    });
-    test('set & query BG', async () => {
-      await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
-      await ctx.proxy.write('\x1b]11;#000000\x07\x1b]11;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
-    });
-    test('set & query cursor color', async () => {
-      await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
-      await ctx.proxy.write('\x1b]12;#ffffff\x07\x1b]12;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
-    });
-    test('set & query FG & BG color in one call', async () => {
-      await ctx.proxy.write('\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:1212/3434/5656\x1b\\', '\x1b]11;rgb:aaaa/bbbb/cccc\x1b\\']);
-      await ctx.proxy.write('\x1b]10;#ffffff;#000000\x07');
-    });
-    test('OSC 110: restore FG color', async () => {
-      await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
-      recordedData.length = 0;
-      // restore
-      await ctx.proxy.write('\x1b]110\x07\x1b]10;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
-    });
-    test('OSC 111: restore BG color', async () => {
-      await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
-      recordedData.length = 0;
-      // restore
-      await ctx.proxy.write('\x1b]111\x07\x1b]11;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
-    });
-    test('OSC 112: restore cursor color', async () => {
-      await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
-      recordedData.length = 0;
-      // restore
-      await ctx.proxy.write('\x1b]112\x07\x1b]12;?\x07');
-      deepStrictEqual(recordedData, ['\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+    test.describe('OSC 10 & 11 + 110 | 111 | 112', () => {
+      test('query FG color', async () => {
+        await ctx.proxy.write('\x1b]10;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+      });
+      test('query BG color', async () => {
+        await ctx.proxy.write('\x1b]11;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+      });
+      test('query FG & BG color in one call', async () => {
+        await ctx.proxy.write('\x1b]10;?;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+      });
+      test('set & query FG', async () => {
+        await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+        await ctx.proxy.write('\x1b]10;#ffffff\x07\x1b]10;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+      });
+      test('set & query BG', async () => {
+        await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+        await ctx.proxy.write('\x1b]11;#000000\x07\x1b]11;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+      });
+      test('set & query cursor color', async () => {
+        await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+        await ctx.proxy.write('\x1b]12;#ffffff\x07\x1b]12;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+      });
+      test('set & query FG & BG color in one call', async () => {
+        await ctx.proxy.write('\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1212/3434/5656\x1b\\', '\x1b]11;rgb:aaaa/bbbb/cccc\x1b\\']);
+        await ctx.proxy.write('\x1b]10;#ffffff;#000000\x07');
+      });
+      test('OSC 110: restore FG color', async () => {
+        await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
+        // restore
+        await ctx.proxy.write('\x1b]110\x07\x1b]10;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+      });
+      test('OSC 111: restore BG color', async () => {
+        await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
+        // restore
+        await ctx.proxy.write('\x1b]111\x07\x1b]11;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+      });
+      test('OSC 112: restore cursor color', async () => {
+        await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
+        // restore
+        await ctx.proxy.write('\x1b]112\x07\x1b]12;?\x07');
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+      });
     });
   });
 
