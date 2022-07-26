@@ -54,6 +54,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this.onOptionsChanged(terminal);
   }
 
+  public override dispose(): void {
+    if (this._cursorBlinkStateManager) {
+      this._cursorBlinkStateManager.dispose();
+      this._cursorBlinkStateManager = undefined;
+    }
+    super.dispose();
+  }
+
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
