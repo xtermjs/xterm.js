@@ -734,7 +734,7 @@ describe('API Integration Tests', function(): void {
   describe('registerDecoration', () => {
     describe('bufferDecorations', () => {
       it('should register decorations and render them when terminal open is called', async () => {
-        await page.evaluate(`window.term = new Terminal({})`);
+        await page.evaluate(`window.term = new Terminal({ allowProposedApi: true })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
         await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
@@ -765,7 +765,7 @@ describe('API Integration Tests', function(): void {
     });
     describe('overviewRulerDecorations', () => {
       it('should not add an overview ruler when width is not set', async () => {
-        await page.evaluate(`window.term = new Terminal({})`);
+        await page.evaluate(`window.term = new Terminal({ allowProposedApi: true })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
         await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
@@ -776,7 +776,7 @@ describe('API Integration Tests', function(): void {
         await pollFor(page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
       });
       it('should add an overview ruler when width is set', async () => {
-        await page.evaluate(`window.term = new Terminal({ overviewRulerWidth: 15 })`);
+        await page.evaluate(`window.term = new Terminal({ allowProposedApi: true, overviewRulerWidth: 15 })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
         await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
