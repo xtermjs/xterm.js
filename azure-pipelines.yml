@@ -1,10 +1,10 @@
 pr:
-  -master
-  -v5
+  branches:
+    include: ["main", "v5"]
 
 trigger:
-  -master
-  -v5
+  branches:
+    include: ["main", "v5"]
 
 jobs:
 - job: Linux
