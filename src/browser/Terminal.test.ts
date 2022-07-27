@@ -8,7 +8,6 @@ import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
-import { IMouseZoneManager, IMouseZone } from 'browser/Types';
 import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
@@ -1417,16 +1416,3 @@ describe('Terminal', () => {
     });
   });
 });
-
-class TestMouseZoneManager implements IMouseZoneManager {
-  public dispose(): void {
-  }
-  public clears: number = 0;
-  public zones: IMouseZone[] = [];
-  public add(zone: IMouseZone): void {
-    this.zones.push(zone);
-  }
-  public clearAll(): void {
-    this.clears++;
-  }
-}
