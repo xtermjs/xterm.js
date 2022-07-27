@@ -296,11 +296,21 @@ class TerminalCoreProxy {
 
 export async function openTerminal(ctx: ITestContext, options: ITerminalOptions = {}): Promise<void> {
   await ctx.page.evaluate(`
-    if ('term' in window) {
-      window.term.dispose();
-    }
-    window.term = new Terminal(${JSON.stringify(options)});
-    window.term.open(document.querySelector('#terminal-container'));
+    return new Promise(r => {
+      if ('term' in window) {
+        window.term.dispose();
+      }
+      try {
+        window.term = new Terminal(${JSON.stringify(options)});
+        window.term.open(document.querySelector('#terminal-container'));
+        r();
+      } catch (e) {
+        setTimeout(() => {
+          window.term = new Terminal(${JSON.stringify(options)});
+          window.term.open(document.querySelector('#terminal-container'));
+          r();
+        }, 500);
+      }
   `);
   if (options.rendererType === 'dom') {
     await ctx.page.waitForSelector('.xterm-rows');
