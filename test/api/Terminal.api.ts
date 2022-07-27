@@ -154,13 +154,6 @@ describe('API Integration Tests', function(): void {
     }
   });
 
-  it('getOption, setOption', async () => {
-    await openTerminal(page);
-    assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'canvas');
-    await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
-    assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
-  });
-
   describe('options', () => {
     it('getter', async () => {
       await openTerminal(page);

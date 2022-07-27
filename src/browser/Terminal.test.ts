@@ -469,7 +469,7 @@ describe('Terminal', () => {
 
       describe('when scrollback === 0', () => {
         beforeEach(() => {
-          term.optionsService.setOption('scrollback', 0);
+          term.optionsService.options.scrollback = 0;
           assert.equal(term.buffer.lines.maxLength, INIT_ROWS);
         });
 
@@ -1346,7 +1346,7 @@ describe('Terminal', () => {
       term = new TestTerminal({});
       markers = [];
       disposeStack = [];
-      term.optionsService.setOption('scrollback', 1);
+      term.optionsService.options.scrollback = 1;
       term.resize(10, 5);
       markers.push(term.buffers.active.addMarker(term.buffers.active.y));
       await term.writeP('\x1b[r0\r\n');

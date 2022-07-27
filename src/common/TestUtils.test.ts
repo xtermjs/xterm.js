@@ -136,12 +136,6 @@ export class MockOptionsService implements IOptionsService {
       this.options[key] = options[key];
     }
   }
-  public setOption<T>(key: string, value: T): void {
-    throw new Error('Method not implemented.');
-  }
-  public getOption<T>(key: string): T {
-    throw new Error('Method not implemented.');
-  }
 }
 
 // defaults to V6 always to keep tests passing

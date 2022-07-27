@@ -109,10 +109,6 @@ export class OptionsService implements IOptionsService {
     }
   }
 
-  public setOption(key: string, value: any): void {
-    this.options[key] = value;
-  }
-
   private _sanitizeAndValidateOption(key: string, value: any): any {
     switch (key) {
       case 'cursorStyle':
@@ -169,10 +165,6 @@ export class OptionsService implements IOptionsService {
         break;
     }
     return value;
-  }
-
-  public getOption(key: string): any {
-    return this.options[key];
   }
 }
 

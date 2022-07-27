@@ -179,24 +179,6 @@ export class Terminal implements ITerminalApi {
     this._core.write(data);
     this._core.write('\r\n', callback);
   }
-  public getOption(key: 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-  public getOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord'): boolean;
-  public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-  public getOption(key: string): any;
-  public getOption(key: any): any {
-    return this._core.optionsService.getOption(key);
-  }
-  public setOption(key: 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
-  public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
-  public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;
-  public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord', value: boolean): void;
-  public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-  public setOption(key: 'cols' | 'rows', value: number): void;
-  public setOption(key: string, value: any): void;
-  public setOption(key: any, value: any): void {
-    this._core.optionsService.setOption(key, value);
-  }
   public reset(): void {
     this._core.reset();
   }

@@ -198,9 +198,6 @@ export interface IOptionsService {
   readonly options: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;
-
-  setOption<T>(key: string, value: T): void;
-  getOption<T>(key: string): T | undefined;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
