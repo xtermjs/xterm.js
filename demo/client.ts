@@ -54,7 +54,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -84,6 +84,7 @@ interface IDemoAddon<T extends AddonType> {
 
 const addons: { [T in AddonType]: IDemoAddon<T>} = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
+  canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
@@ -153,6 +154,7 @@ const disposeRecreateButtonHandler = () => {
     window.term = null;
     socket = null;
     addons.attach.instance = undefined;
+    addons.canvas.instance = undefined;
     addons.fit.instance = undefined;
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
@@ -630,7 +632,7 @@ function writeCustomGlyphHandler() {
 }
 
 function loadTest() {
-  const isWebglEnabled = !!addons.webgl.instance;
+  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -656,7 +658,7 @@ function loadTest() {
   term.write('', () => {
     const time = Math.round(performance.now() - start);
     const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
     // Send ^C to get a new prompt
     term._core._onData.fire('\x03');
   });

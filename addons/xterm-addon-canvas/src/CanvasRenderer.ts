@@ -18,7 +18,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 let nextRendererId = 1;
 
-export class Renderer extends Disposable implements IRenderer {
+export class CanvasRenderer extends Disposable implements IRenderer {
   private _id = nextRendererId++;
 
   private _renderLayers: IRenderLayer[];
