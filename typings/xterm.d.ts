@@ -317,50 +317,6 @@ declare module 'xterm' {
   }
 
   /**
-   * An object containing options for a link matcher.
-   */
-  export interface ILinkMatcherOptions {
-    /**
-     * The index of the link from the regex.match(text) call. This defaults to 0
-     * (for regular expressions without capture groups).
-     */
-    matchIndex?: number;
-
-    /**
-     * A callback that validates whether to create an individual link, pass
-     * whether the link is valid to the callback.
-     */
-    validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
-
-    /**
-     * A callback that fires when the mouse hovers over a link for a period of
-     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
-     */
-    tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
-
-    /**
-     * A callback that fires when the mouse leaves a link. Note that this can
-     * happen even when tooltipCallback hasn't fired for the link yet.
-     */
-    leaveCallback?: () => void;
-
-    /**
-     * The priority of the link matcher, this defines the order in which the
-     * link matcher is evaluated relative to others, from highest to lowest. The
-     * default value is 0.
-     */
-    priority?: number;
-
-    /**
-     * A callback that fires when the mousedown and click events occur that
-     * determines whether a link will be activated upon click. This enables
-     * only activating a link when a certain modifier is held down, if not the
-     * mouse event will continue propagation (eg. double click to select word).
-     */
-    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
-  }
-
-  /**
    * An object that can be disposed via a dispose function.
    */
   export interface IDisposable {
@@ -910,28 +866,6 @@ declare module 'xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
-     * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
-     * be matched and handled.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param regex The regular expression to search for, specifically this
-     * searches the textContent of the rows. You will want to use \s to match a
-     * space ' ' character for example.
-     * @param handler The callback when the link is called.
-     * @param options Options for the link matcher.
-     * @return The ID of the new matcher, this can be used to deregister.
-     */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
-
-    /**
-     * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param matcherId The link matcher's ID (returned after register)
-     */
-    deregisterLinkMatcher(matcherId: number): void;
-
-    /**
      * Registers a link provider, allowing a custom parser to be used to match
      * and handle links. Multiple link providers can be used, they will be asked
      * in the order in which they are registered.
@@ -1274,7 +1208,7 @@ declare module 'xterm' {
   /**
    * An object representing a range within the viewport of the terminal.
    */
-  export interface IViewportRange {
+   export interface IViewportRange {
     /**
      * The start of the range.
      */

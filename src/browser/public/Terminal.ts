@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
 import { ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -146,14 +146,6 @@ export class Terminal implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
-  }
-  public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
-    this._checkProposedApi();
-    return this._core.registerLinkMatcher(regex, handler, options);
-  }
-  public deregisterLinkMatcher(matcherId: number): void {
-    this._checkProposedApi();
-    this._core.deregisterLinkMatcher(matcherId);
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     this._checkProposedApi();
