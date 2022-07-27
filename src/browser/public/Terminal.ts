@@ -160,7 +160,6 @@ export class Terminal implements ITerminalApi {
     this._core.deregisterCharacterJoiner(joinerId);
   }
   public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
-    this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }
@@ -168,9 +167,6 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
     return this._core.registerDecoration(decorationOptions);
-  }
-  public addMarker(cursorYOffset: number): IMarker | undefined {
-    return this.registerMarker(cursorYOffset);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
