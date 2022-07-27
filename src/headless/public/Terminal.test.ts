@@ -114,12 +114,6 @@ describe('Headless API Tests', function (): void {
     }
   });
 
-  it('getOption, setOption', async () => {
-    strictEqual(term.getOption('scrollback'), 1000);
-    term.setOption('scrollback', 50);
-    strictEqual(term.getOption('scrollback'), 50);
-  });
-
   describe('options', () => {
     const termOptions = {
       cols: 80,
