@@ -198,10 +198,10 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   private _smoothScrollPercent(): number {
-    if (!this._optionsService.rawOptions.smoothScrollingDuration || !this._smoothScrollState.startTime) {
+    if (!this._optionsService.rawOptions.smoothScrollDuration || !this._smoothScrollState.startTime) {
       return 1;
     }
-    return Math.max(Math.min((Date.now() - this._smoothScrollState.startTime) / this._optionsService.rawOptions.smoothScrollingDuration, 1), 0);
+    return Math.max(Math.min((Date.now() - this._smoothScrollState.startTime) / this._optionsService.rawOptions.smoothScrollDuration, 1), 0);
   }
 
   private _clearSmoothScrollState(): void {
@@ -238,7 +238,7 @@ export class Viewport extends Disposable implements IViewport {
     if (amount === 0) {
       return false;
     }
-    if (!this._optionsService.rawOptions.smoothScrollingDuration) {
+    if (!this._optionsService.rawOptions.smoothScrollDuration) {
       this._viewportElement.scrollTop += amount;
     } else {
       this._smoothScrollState.startTime = Date.now();

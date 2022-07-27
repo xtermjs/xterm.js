@@ -191,7 +191,7 @@ declare module 'xterm-headless' {
      * The duration to smoothly scroll between the origin and the target. Set
      * this to 0 to disable smooth scrolling and scroll instantly.
      */
-     smoothScrollingDuration?: number;
+     smoothScrollDuration?: number;
 
     /**
      * The size of tab stops in the terminal.
