@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IRenderLayer } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderLayer } from './Types';
 import { ICellData, IColor } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
-import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
-import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
-import { acquireCharAtlas } from 'browser/renderer/atlas/CharAtlasCache';
+import { IGlyphIdentifier } from './atlas/Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/Constants';
+import { BaseCharAtlas } from './atlas/BaseCharAtlas';
+import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -17,7 +18,7 @@ import { IBufferService, IDecorationService, IOptionsService } from 'common/serv
 import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
+import { tryDrawCustomChar } from './CustomGlyphs';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

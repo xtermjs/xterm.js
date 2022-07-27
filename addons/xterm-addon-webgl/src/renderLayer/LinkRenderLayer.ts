@@ -5,7 +5,7 @@
 
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
 import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';

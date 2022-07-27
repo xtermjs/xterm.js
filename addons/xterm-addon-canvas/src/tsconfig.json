@@ -5,6 +5,7 @@
     "lib": [
       "dom",
       "es6",
+      "ES2017.Object"
     ],
     "rootDir": ".",
     "outDir": "../out",
@@ -21,6 +22,7 @@
     },
     "strict": true,
     "downlevelIteration": true,
+    "experimentalDecorators": true,
     "types": [
       "../../../node_modules/@types/mocha"
     ]

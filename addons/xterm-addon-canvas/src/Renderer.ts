@@ -3,16 +3,17 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from 'browser/renderer/TextRenderLayer';
-import { SelectionRenderLayer } from 'browser/renderer/SelectionRenderLayer';
-import { CursorRenderLayer } from 'browser/renderer/CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
+import { TextRenderLayer } from './TextRenderLayer';
+import { SelectionRenderLayer } from './SelectionRenderLayer';
+import { CursorRenderLayer } from './CursorRenderLayer';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderLayer } from './Types';
+import { LinkRenderLayer } from './LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
-import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
+import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 let nextRendererId = 1;

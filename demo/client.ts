@@ -10,6 +10,7 @@
 // Use tsc version (yarn watch)
 import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
+import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
@@ -60,6 +61,7 @@ interface IDemoAddon<T extends AddonType> {
   canChange: boolean;
   ctor:
     T extends 'attach' ? typeof AttachAddon :
+    T extends 'canvas' ? typeof CanvasAddon :
     T extends 'fit' ? typeof FitAddon :
     T extends 'search' ? typeof SearchAddon :
     T extends 'serialize' ? typeof SerializeAddon :
@@ -69,6 +71,7 @@ interface IDemoAddon<T extends AddonType> {
     typeof WebglAddon;
     instance?:
     T extends 'attach' ? AttachAddon :
+    T extends 'canvas' ? CanvasAddon :
     T extends 'fit' ? FitAddon :
     T extends 'search' ? SearchAddon :
     T extends 'serialize' ? SerializeAddon :

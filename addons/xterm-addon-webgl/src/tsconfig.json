@@ -5,6 +5,8 @@
     "lib": [
       "dom",
       "es6",
+      "es2016.Array.Include",
+      "ES2017.Object"
     ],
     "rootDir": ".",
     "outDir": "../out",

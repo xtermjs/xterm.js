@@ -4,15 +4,15 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { channels, color, rgba } from 'common/Color';
-import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
+import { color, rgba } from 'common/Color';
+import { tryDrawCustomChar } from '../CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,

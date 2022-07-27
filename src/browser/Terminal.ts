@@ -28,7 +28,6 @@ import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
 import { WindowsOptionsReportType } from '../common/InputHandler';
-import { Renderer } from 'browser/renderer/Renderer';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
@@ -609,7 +608,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier2);
+    return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
   }
 
   /**
