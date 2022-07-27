@@ -7,7 +7,7 @@ import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/rende
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent, ILinkifier, ILinkifier2 } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -47,7 +47,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
-    private readonly _linkifier: ILinkifier,
     private readonly _linkifier2: ILinkifier2,
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
@@ -86,9 +85,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
-
-    this.register(this._linkifier.onShowLinkUnderline(e => this._onLinkHover(e)));
-    this.register(this._linkifier.onHideLinkUnderline(e => this._onLinkLeave(e)));
 
     this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
     this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));

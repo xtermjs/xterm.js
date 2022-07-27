@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IMouseZoneManager, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -29,7 +29,6 @@ import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copy
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { Renderer } from 'browser/renderer/Renderer';
-import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
@@ -116,7 +115,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
-  public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
@@ -166,7 +164,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
-    this.linkifier = this._instantiationService.createInstance(Linkifier);
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
@@ -448,7 +445,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
     this.register(addDisposableDomListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
-    this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
   /**
@@ -583,7 +579,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
     this.register(this._mouseZoneManager);
     this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
-    this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     // This event listener must be registered aftre MouseZoneManager is created
@@ -627,8 +622,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2);
+      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier2);
+      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -909,15 +904,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   /**
-   * Queues linkification for the specified rows.
-   * @param start The row to start from (between 0 and this.rows - 1).
-   * @param end The row to end at (between start and this.rows - 1).
-   */
-  private _queueLinkification(start: number, end: number): void {
-    this.linkifier?.linkifyRows(start, end);
-  }
-
-  /**
    * Change the cursor style for different selection modes
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
@@ -958,32 +944,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
-  }
-
-  /**
-   * Registers a link matcher, allowing custom link patterns to be matched and
-   * handled.
-   * @param regex The regular expression to search for, specifically
-   * this searches the textContent of the rows. You will want to use \s to match
-   * a space ' ' character for example.
-   * @param handler The callback when the link is called.
-   * @param options Options for the link matcher.
-   * @return The ID of the new matcher, this can be used to deregister.
-   */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-    this.refresh(0, this.rows - 1);
-    return matcherId;
-  }
-
-  /**
-   * Deregisters a link matcher if it has been registered.
-   * @param matcherId The link matcher's ID (returned after register)
-   */
-  public deregisterLinkMatcher(matcherId: number): void {
-    if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-      this.refresh(0, this.rows - 1);
-    }
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

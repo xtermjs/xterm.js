@@ -9,7 +9,7 @@ import { CursorRenderLayer } from 'browser/renderer/CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { LinkRenderLayer } from 'browser/renderer/LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifier, ILinkifier2 } from 'browser/Types';
+import { IColorSet, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
 import { removeTerminalFromCache } from 'browser/renderer/atlas/CharAtlasCache';
@@ -31,7 +31,6 @@ export class Renderer extends Disposable implements IRenderer {
   constructor(
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
-    linkifier: ILinkifier,
     linkifier2: ILinkifier2,
     @IInstantiationService instantiationService: IInstantiationService,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -43,7 +42,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._renderLayers = [
       instantiationService.createInstance(TextRenderLayer, this._screenElement, 0, this._colors, allowTransparency, this._id),
       instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
-      instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier, linkifier2),
+      instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier2),
       instantiationService.createInstance(CursorRenderLayer, this._screenElement, 3, this._colors, this._id, this._onRequestRedraw)
     ];
     this.dimensions = {

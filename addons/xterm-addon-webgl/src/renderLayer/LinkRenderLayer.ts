@@ -15,8 +15,6 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
     super(container, 'link', zIndex, true, colors);
-    terminal.linkifier.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
-    terminal.linkifier.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
 
     terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
     terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
