@@ -102,13 +102,6 @@ declare module 'xterm-headless' {
     lineHeight?: number;
 
     /**
-     * The duration in milliseconds before link tooltip events fire when
-     * hovering on a link.
-     * @deprecated This will be removed when the link matcher API is removed.
-     */
-    linkTooltipHoverDuration?: number;
-
-    /**
      * What log level to use, this will log for all levels below and including
      * what is set:
      *
@@ -630,17 +623,12 @@ declare module 'xterm-headless' {
     resize(columns: number, rows: number): void;
 
     /**
-     * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
-     * alt buffer is active, undefined is returned.
+     * Adds a marker to the normal buffer and returns it. If the alt buffer is
+     * active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number): IMarker | undefined;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addMarker(cursorYOffset: number): IMarker | undefined;
 
     /*
       * Disposes of the terminal, detaching it from the DOM and removing any

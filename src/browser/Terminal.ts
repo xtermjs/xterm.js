@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IMouseZoneManager, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -33,7 +33,6 @@ import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
-import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
@@ -118,7 +117,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
-  private _mouseZoneManager: IMouseZoneManager | undefined;
   private _accessibilityManager: AccessibilityManager | undefined;
   private _colorManager: ColorManager | undefined;
   private _theme: ITheme | undefined;
@@ -576,12 +574,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
 
-    this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
-    this.register(this._mouseZoneManager);
-    this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
-    // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached

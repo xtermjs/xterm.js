@@ -736,7 +736,7 @@ function powerlineSymbolTest() {
 
 function addDecoration() {
   term.options['overviewRulerWidth'] = 15;
-  const marker = term.addMarker(1);
+  const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
     backgroundColor: '#00FF00',
@@ -751,13 +751,13 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
-  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
-  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
-  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+  term.registerDecoration({marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
 }
 

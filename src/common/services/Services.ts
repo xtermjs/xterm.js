@@ -228,7 +228,6 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
-  linkTooltipHoverDuration: number;
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;

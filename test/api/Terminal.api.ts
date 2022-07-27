@@ -569,11 +569,11 @@ describe('API Integration Tests', function(): void {
         await writeSync(page, '\\n\\n\\n\\n');
         await writeSync(page, '\\n\\n\\n\\n');
         await writeSync(page, '\\n\\n\\n\\n');
-        await page.evaluate(`window.term.addMarker(1)`);
-        await page.evaluate(`window.term.addMarker(2)`);
+        await page.evaluate(`window.term.registerMarker(1)`);
+        await page.evaluate(`window.term.registerMarker(2)`);
         await page.evaluate(`window.term.scrollLines(10)`);
-        await page.evaluate(`window.term.addMarker(3)`);
-        await page.evaluate(`window.term.addMarker(4)`);
+        await page.evaluate(`window.term.registerMarker(3)`);
+        await page.evaluate(`window.term.registerMarker(4)`);
         await page.evaluate(`
           for (let i = 0; i < window.term.markers.length; ++i) {
               const marker = window.term.markers[i];
@@ -737,8 +737,8 @@ describe('API Integration Tests', function(): void {
         await page.evaluate(`window.term = new Terminal({ allowProposedApi: true })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
-        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
-        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker1 })`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker2 })`);
         await openTerminal(page);
@@ -746,13 +746,13 @@ describe('API Integration Tests', function(): void {
       });
       it('should return undefined when the marker has already been disposed of', async () => {
         await openTerminal(page);
-        await page.evaluate(`window.marker = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker = window.term.registerMarker(1)`);
         await page.evaluate(`window.marker.dispose()`);
         await pollFor(page, `window.decoration = window.term.registerDecoration({ marker: window.marker });`, undefined);
       });
       it('should throw when a negative x offset is provided', async () => {
         await openTerminal(page);
-        await page.evaluate(`window.marker = window.term.addMarker(1)`);
+        await page.evaluate(`window.marker = window.term.registerMarker(1)`);
         await page.evaluate(`
         try {
           window.decoration = window.term.registerDecoration({ marker: window.marker, x: -2 });
@@ -768,8 +768,8 @@ describe('API Integration Tests', function(): void {
         await page.evaluate(`window.term = new Terminal({ allowProposedApi: true })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
-        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
-        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
         await openTerminal(page);
@@ -779,8 +779,8 @@ describe('API Integration Tests', function(): void {
         await page.evaluate(`window.term = new Terminal({ allowProposedApi: true, overviewRulerWidth: 15 })`);
         await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
         await page.waitForSelector('.xterm-text-layer');
-        await page.evaluate(`window.marker1 = window.term.addMarker(1)`);
-        await page.evaluate(`window.marker2 = window.term.addMarker(2)`);
+        await page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
+        await page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
         await page.evaluate(`window.term.registerDecoration({ marker: window.marker2, overviewRulerOptions: { color: 'blue', position: 'full' } })`);
         await openTerminal(page);

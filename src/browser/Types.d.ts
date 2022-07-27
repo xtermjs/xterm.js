@@ -177,23 +177,6 @@ export interface ILinkifier2 {
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 }
 
-export interface IMouseZoneManager extends IDisposable {
-  add(zone: IMouseZone): void;
-  clearAll(start?: number, end?: number): void;
-}
-
-export interface IMouseZone {
-  x1: number;
-  x2: number;
-  y1: number;
-  y2: number;
-  clickCallback: (e: MouseEvent) => any;
-  hoverCallback: (e: MouseEvent) => any | undefined;
-  tooltipCallback: (e: MouseEvent) => any | undefined;
-  leaveCallback: () => any | undefined;
-  willLinkActivate: (e: MouseEvent) => boolean;
-}
-
 interface ILinkProvider {
   provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }
