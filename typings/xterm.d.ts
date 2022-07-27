@@ -51,16 +51,6 @@ declare module 'xterm' {
     altClickMovesCursor?: boolean;
 
     /**
-     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
-     */
-    bellSound?: string;
-
-    /**
-     * The type of the bell notification the terminal will use.
-     */
-    bellStyle?: 'none' | 'sound';
-
-    /**
      * When enabled the cursor will be set to the beginning of the next line
      * with every new line. This is equivalent to sending '\r\n' for each '\n'.
      * Normally the termios settings of the underlying PTY deals with the
@@ -1128,13 +1118,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @deprecated Use `options` instead.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
+    getOption(key: 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      * @deprecated Use `options` instead.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -1160,7 +1150,7 @@ declare module 'xterm' {
      * @param value The option value.
      * @deprecated Use `options` instead.
      */
-    setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
+    setOption(key: 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -1181,13 +1171,6 @@ declare module 'xterm' {
      * @param value The option value.
      * @deprecated Use `options` instead.
      */
-    setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
     setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
     /**
      * Sets an option on the terminal.
@@ -1195,7 +1178,7 @@ declare module 'xterm' {
      * @param value The option value.
      * @deprecated Use `options` instead.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

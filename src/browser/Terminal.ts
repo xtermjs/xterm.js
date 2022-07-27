@@ -1398,18 +1398,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     ev.stopPropagation();
     return false;
   }
-
-  private _visualBell(): boolean {
-    return false;
-    // return this.options.bellStyle === 'visual' ||
-    //     this.options.bellStyle === 'both';
-  }
-
-  private _soundBell(): boolean {
-    return this.options.bellStyle === 'sound';
-    // return this.options.bellStyle === 'sound' ||
-    //     this.options.bellStyle === 'both';
-  }
 }
 
 /**

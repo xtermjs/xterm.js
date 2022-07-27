@@ -212,8 +212,6 @@ export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
   altClickMovesCursor: boolean;
-  bellSound: string;
-  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
   convertEol: boolean;
   cursorBlink: boolean;
