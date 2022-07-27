@@ -13,6 +13,12 @@ import { IRenderDimensions } from 'browser/renderer/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
+interface ISmoothScrollState {
+  startTime: number;
+  origin: number;
+  target: number;
+}
+
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
@@ -36,9 +42,11 @@ export class Viewport extends Disposable implements IViewport {
 
   private _refreshAnimationFrame: number | null = null;
   private _ignoreNextScrollEvent: boolean = false;
-  private _lastSmoothScrollOrigin?: number = undefined;
-  private _lastSmoothScrollTarget?: number = undefined;
-  private _lastSmoothScrollStartTime?: number = undefined;
+  private _smoothScrollState: ISmoothScrollState = {
+    startTime: 0,
+    origin: -1,
+    target: -1
+  };
 
   constructor(
     private readonly _scrollLines: (amount: number) => void,
@@ -173,29 +181,33 @@ export class Viewport extends Disposable implements IViewport {
 
   private _smoothScroll(): void {
     // Check valid state
-    if (this._isDisposed || this._lastSmoothScrollOrigin === undefined || this._lastSmoothScrollTarget === undefined) {
+    if (this._isDisposed || this._smoothScrollState.origin === -1 || this._smoothScrollState.target === -1) {
       return;
     }
 
     // Calculate position complete
     const percent = this._smoothScrollPercent();
-    this._viewportElement.scrollTop = this._lastSmoothScrollOrigin + Math.round(percent * (this._lastSmoothScrollTarget - this._lastSmoothScrollOrigin));
+    this._viewportElement.scrollTop = this._smoothScrollState.origin + Math.round(percent * (this._smoothScrollState.target - this._smoothScrollState.origin));
 
     // Continue or finish smooth scroll
     if (percent < 1) {
       window.requestAnimationFrame(() => this._smoothScroll());
     } else {
-      this._lastSmoothScrollStartTime = undefined;
-      this._lastSmoothScrollOrigin = undefined;
-      this._lastSmoothScrollTarget = undefined;
+      this._clearSmoothScrollState();
     }
   }
 
   private _smoothScrollPercent(): number {
-    if (!this._optionsService.rawOptions.smoothScrollingDuration || !this._lastSmoothScrollStartTime) {
+    if (!this._optionsService.rawOptions.smoothScrollingDuration || !this._smoothScrollState.startTime) {
       return 1;
     }
-    return Math.max(Math.min((Date.now() - this._lastSmoothScrollStartTime) / this._optionsService.rawOptions.smoothScrollingDuration, 1), 0);
+    return Math.max(Math.min((Date.now() - this._smoothScrollState.startTime) / this._optionsService.rawOptions.smoothScrollingDuration, 1), 0);
+  }
+
+  private _clearSmoothScrollState(): void {
+    this._smoothScrollState.startTime = 0;
+    this._smoothScrollState.origin = -1;
+    this._smoothScrollState.target = -1;
   }
 
   /**
@@ -229,20 +241,18 @@ export class Viewport extends Disposable implements IViewport {
     if (!this._optionsService.rawOptions.smoothScrollingDuration) {
       this._viewportElement.scrollTop += amount;
     } else {
-      this._lastSmoothScrollStartTime = Date.now();
+      this._smoothScrollState.startTime = Date.now();
       if (this._smoothScrollPercent() < 1) {
-        this._lastSmoothScrollOrigin = this._viewportElement.scrollTop;
-        if (this._lastSmoothScrollTarget === undefined) {
-          this._lastSmoothScrollTarget = this._viewportElement.scrollTop + amount;
+        this._smoothScrollState.origin = this._viewportElement.scrollTop;
+        if (this._smoothScrollState.target === -1) {
+          this._smoothScrollState.target = this._viewportElement.scrollTop + amount;
         } else {
-          this._lastSmoothScrollTarget += amount;
+          this._smoothScrollState.target += amount;
         }
-        this._lastSmoothScrollTarget = Math.max(Math.min(this._lastSmoothScrollTarget, this._viewportElement.scrollHeight), 0);
+        this._smoothScrollState.target = Math.max(Math.min(this._smoothScrollState.target, this._viewportElement.scrollHeight), 0);
         this._smoothScroll();
       } else {
-        this._lastSmoothScrollStartTime = undefined;
-        this._lastSmoothScrollOrigin = undefined;
-        this._lastSmoothScrollTarget = undefined;
+        this._clearSmoothScrollState();
       }
     }
     return this._bubbleScroll(ev, amount);
