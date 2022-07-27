@@ -44,7 +44,7 @@ export async function timeout(ms: number): Promise<void> {
 }
 
 export async function openTerminal(page: playwright.Page, options: ITerminalOptions = {}): Promise<void> {
-  await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
+  await page.evaluate(`window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
   if (options.rendererType === 'dom') {
     await page.waitForSelector('.xterm-rows');
