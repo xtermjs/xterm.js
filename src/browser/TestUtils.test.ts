@@ -137,9 +137,6 @@ export class MockTerminal implements ITerminal {
   public write(data: string): void {
     throw new Error('Method not implemented.');
   }
-  public writeUtf8(data: Uint8Array): void {
-    throw new Error('Method not implemented.');
-  }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
   public linkifier2!: ILinkifier2;

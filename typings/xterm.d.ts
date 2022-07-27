@@ -1022,14 +1022,6 @@ declare module 'xterm' {
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Write UTF8 data to the terminal.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
-     * @deprecated use `write` instead
-     */
-    writeUtf8(data: Uint8Array, callback?: () => void): void;
-
-    /**
      * Writes text to the terminal, performing the necessary transformations for pasted text.
      * @param data The text to write to the terminal.
      */

@@ -219,9 +219,6 @@ export class Terminal implements ITerminalApi {
   public write(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array, callback?: () => void): void {
-    this._core.write(data, callback);
-  }
   public writeln(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data);
     this._core.write('\r\n', callback);

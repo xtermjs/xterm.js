@@ -690,14 +690,6 @@ declare module 'xterm-headless' {
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Write UTF8 data to the terminal.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
-     * @deprecated use `write` instead
-     */
-    writeUtf8(data: Uint8Array, callback?: () => void): void;
-
-    /**
      * Perform a full reset (RIS, aka '\x1bc').
      */
     reset(): void;
