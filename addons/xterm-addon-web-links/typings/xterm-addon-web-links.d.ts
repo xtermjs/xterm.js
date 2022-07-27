@@ -35,8 +35,7 @@ declare module 'xterm-addon-web-links' {
    */
   export interface ILinkProviderOptions {
     /**
-     * A callback that fires when the mouse hovers over a link for a period of
-     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
+     * A callback that fires when the mouse hovers over a link.
      */
     hover?(event: MouseEvent, text: string, location: IViewportRange): void;
 
