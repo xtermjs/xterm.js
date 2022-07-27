@@ -324,8 +324,6 @@ function initOptions(term: TerminalType): void {
     'windowOptions'
   ];
   const stringOptions = {
-    bellSound: null,
-    bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
     fastScrollModifier: ['alt', 'ctrl', 'shift', undefined],
     fontFamily: null,

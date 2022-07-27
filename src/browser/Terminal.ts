@@ -34,7 +34,6 @@ import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
-import { SoundService } from 'browser/services/SoundService';
 import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
@@ -45,7 +44,7 @@ import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
@@ -89,7 +88,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _renderService: IRenderService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
-  private _soundService: ISoundService | undefined;
 
   /**
    * Records whether the keydown event has already been handled and triggered a data event, if so
@@ -174,7 +172,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
     // Setup InputHandler listeners
-    this.register(this._inputHandler.onRequestBell(() => this.bell()));
+    this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
@@ -537,8 +535,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._soundService = this._instantiationService.createInstance(SoundService);
-    this._instantiationService.setService(ISoundService, this._soundService);
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
@@ -1286,26 +1282,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   /**
-   * Ring the bell.
-   * Note: We could do sweet things with webaudio here
-   */
-  public bell(): void {
-    if (this._soundBell()) {
-      this._soundService?.playBellSound();
-    }
-
-    this._onBell.fire();
-
-    // if (this._visualBell()) {
-    //   this.element.classList.add('visual-bell-active');
-    //   clearTimeout(this._visualBellTimer);
-    //   this._visualBellTimer = window.setTimeout(() => {
-    //     this.element.classList.remove('visual-bell-active');
-    //   }, 200);
-    // }
-  }
-
-  /**
    * Resizes the terminal.
    *
    * @param x The number of columns to resize to.
@@ -1421,18 +1397,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     ev.preventDefault();
     ev.stopPropagation();
     return false;
-  }
-
-  private _visualBell(): boolean {
-    return false;
-    // return this.options.bellStyle === 'visual' ||
-    //     this.options.bellStyle === 'both';
-  }
-
-  private _soundBell(): boolean {
-    return this.options.bellStyle === 'sound';
-    // return this.options.bellStyle === 'sound' ||
-    //     this.options.bellStyle === 'both';
   }
 }
 
