@@ -182,9 +182,16 @@ declare module 'xterm-headless' {
     scrollback?: number;
 
     /**
-     * The scrolling speed multiplier used for adjusting normal scrolling speed.
+     * The duration to smoothly scroll between the origin and the target in
+     * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
      */
     scrollSensitivity?: number;
+
+    /**
+     * The duration to smoothly scroll between the origin and the target. Set
+     * this to 0 to disable smooth scrolling and scroll instantly.
+     */
+     smoothScrollingDuration?: number;
 
     /**
      * The size of tab stops in the terminal.

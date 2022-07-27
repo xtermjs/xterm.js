@@ -234,6 +234,12 @@ declare module 'xterm' {
     scrollSensitivity?: number;
 
     /**
+     * The duration to smoothly scroll between the origin and the target in
+     * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
+     */
+    smoothScrollingDuration?: number;
+
+    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;

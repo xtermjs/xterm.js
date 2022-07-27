@@ -241,6 +241,7 @@ export interface ITerminalOptions {
   screenReaderMode: boolean;
   scrollback: number;
   scrollSensitivity: number;
+  smoothScrollingDuration: number;
   tabStopWidth: number;
   theme: ITheme;
   windowsMode: boolean;

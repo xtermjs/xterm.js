@@ -36,6 +36,9 @@ export class Viewport extends Disposable implements IViewport {
 
   private _refreshAnimationFrame: number | null = null;
   private _ignoreNextScrollEvent: boolean = false;
+  private _lastSmoothScrollOrigin?: number = undefined;
+  private _lastSmoothScrollTarget?: number = undefined;
+  private _lastSmoothScrollStartTime?: number = undefined;
 
   constructor(
     private readonly _scrollLines: (amount: number) => void,
@@ -168,6 +171,33 @@ export class Viewport extends Disposable implements IViewport {
     this._scrollLines(diff);
   }
 
+  private _smoothScroll(): void {
+    // Check valid state
+    if (this._isDisposed || this._lastSmoothScrollOrigin === undefined || this._lastSmoothScrollTarget === undefined) {
+      return;
+    }
+
+    // Calculate position complete
+    const percent = this._smoothScrollPercent();
+    this._viewportElement.scrollTop = this._lastSmoothScrollOrigin + Math.round(percent * (this._lastSmoothScrollTarget - this._lastSmoothScrollOrigin));
+
+    // Continue or finish smooth scroll
+    if (percent < 1) {
+      window.requestAnimationFrame(() => this._smoothScroll());
+    } else {
+      this._lastSmoothScrollStartTime = undefined;
+      this._lastSmoothScrollOrigin = undefined;
+      this._lastSmoothScrollTarget = undefined;
+    }
+  }
+
+  private _smoothScrollPercent(): number {
+    if (!this._optionsService.rawOptions.smoothScrollingDuration || !this._lastSmoothScrollStartTime) {
+      return 1;
+    }
+    return Math.max(Math.min((Date.now() - this._lastSmoothScrollStartTime) / this._optionsService.rawOptions.smoothScrollingDuration, 1), 0);
+  }
+
   /**
    * Handles bubbling of scroll event in case the viewport has reached top or bottom
    * @param ev The scroll event.
@@ -196,7 +226,25 @@ export class Viewport extends Disposable implements IViewport {
     if (amount === 0) {
       return false;
     }
-    this._viewportElement.scrollTop += amount;
+    if (!this._optionsService.rawOptions.smoothScrollingDuration) {
+      this._viewportElement.scrollTop += amount;
+    } else {
+      this._lastSmoothScrollStartTime = Date.now();
+      if (this._smoothScrollPercent() < 1) {
+        this._lastSmoothScrollOrigin = this._viewportElement.scrollTop;
+        if (this._lastSmoothScrollTarget === undefined) {
+          this._lastSmoothScrollTarget = this._viewportElement.scrollTop + amount;
+        } else {
+          this._lastSmoothScrollTarget += amount;
+        }
+        this._lastSmoothScrollTarget = Math.max(Math.min(this._lastSmoothScrollTarget, this._viewportElement.scrollHeight), 0);
+        this._smoothScroll();
+      } else {
+        this._lastSmoothScrollStartTime = undefined;
+        this._lastSmoothScrollOrigin = undefined;
+        this._lastSmoothScrollTarget = undefined;
+      }
+    }
     return this._bubbleScroll(ev, amount);
   }
 
