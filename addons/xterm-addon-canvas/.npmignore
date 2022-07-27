@@ -1,0 +1,29 @@
+# Blacklist - exclude everything except npm defaults such as LICENSE, etc
+*
+!*/
+
+# Whitelist - lib/
+!lib/**/*.d.ts
+
+!lib/**/*.js
+!lib/**/*.js.map
+
+!lib/**/*.css
+
+# Whitelist - src/
+!src/**/*.ts
+!src/**/*.d.ts
+
+!src/**/*.js
+!src/**/*.js.map
+
+!src/**/*.css
+
+# Blacklist - src/ test files
+src/**/*.test.ts
+src/**/*.test.d.ts
+src/**/*.test.js
+src/**/*.test.js.map
+
+# Whitelist - typings/
+!typings/*.d.ts
