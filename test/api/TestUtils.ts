@@ -46,11 +46,7 @@ export async function timeout(ms: number): Promise<void> {
 export async function openTerminal(page: playwright.Page, options: ITerminalOptions = {}): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
-  if (options.rendererType === 'dom') {
-    await page.waitForSelector('.xterm-rows');
-  } else {
-    await page.waitForSelector('.xterm-text-layer');
-  }
+  await page.waitForSelector('.xterm-rows');
 }
 
 export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowser> | playwright.BrowserType<playwright.ChromiumBrowser> | playwright.BrowserType<playwright.FirefoxBrowser> {

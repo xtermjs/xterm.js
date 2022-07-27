@@ -331,7 +331,6 @@ function initOptions(term: TerminalType): void {
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
-    rendererType: ['dom', 'canvas'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null
   };

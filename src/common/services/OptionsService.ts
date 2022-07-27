@@ -37,7 +37,6 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   tabStopWidth: 8,
   theme: {},
   rightClickSelectsWord: isMac,
-  rendererType: 'canvas',
   windowOptions: {},
   windowsMode: false,
   wordSeparator: ' ()[]{}\',"`',
@@ -120,7 +119,6 @@ export class OptionsService implements IOptionsService {
         }
         break;
       case 'cursorStyle':
-      case 'rendererType':
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];

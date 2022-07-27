@@ -157,7 +157,6 @@ describe('API Integration Tests', function(): void {
   describe('options', () => {
     it('getter', async () => {
       await openTerminal(page);
-      assert.equal(await page.evaluate(`window.term.options.rendererType`), 'canvas');
       assert.equal(await page.evaluate(`window.term.options.cols`), 80);
       assert.equal(await page.evaluate(`window.term.options.rows`), 24);
     });
@@ -190,7 +189,7 @@ describe('API Integration Tests', function(): void {
 
   describe('renderer', () => {
     it('foreground', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       await writeSync(page, '\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -215,7 +214,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('background', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       await writeSync(page, '\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7');
       await pollFor(page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       assert.deepEqual(await page.evaluate(`
@@ -784,7 +783,7 @@ describe('API Integration Tests', function(): void {
 
   describe('registerLinkProvider', () => {
     it('should fire provideLinks when hovering cells', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');
@@ -806,7 +805,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('should fire hover and leave events on the link', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');
@@ -844,7 +843,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('should work fine when hover and leave callbacks are not provided', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');
@@ -887,7 +886,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('should fire activate events when clicking the link', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');
@@ -929,7 +928,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('should work when multiple links are provided on the same line', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');
@@ -978,7 +977,7 @@ describe('API Integration Tests', function(): void {
     });
 
     it('should dispose links when hovering away', async () => {
-      await openTerminal(page, { rendererType: 'dom' });
+      await openTerminal(page);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await page.evaluate('window.term.focus()');

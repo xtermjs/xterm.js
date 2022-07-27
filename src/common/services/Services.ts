@@ -203,8 +203,6 @@ export interface IOptionsService {
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
-export type RendererType = 'dom' | 'canvas';
-
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
@@ -229,7 +227,6 @@ export interface ITerminalOptions {
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
   minimumContrastRatio: number;
-  rendererType: RendererType;
   rightClickSelectsWord: boolean;
   rows: number;
   screenReaderMode: boolean;
