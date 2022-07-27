@@ -40,8 +40,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
   public dispose(): void {
     super.dispose();
-    this._onShowLinkUnderline.dispose();
-    this._onHideLinkUnderline.dispose();
     this._lastMouseEvent = undefined;
   }
 
