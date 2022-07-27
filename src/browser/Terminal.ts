@@ -168,7 +168,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
-    this.linkifier = this._instantiationService.createInstance(Linkifier);
+    this.linkifier = this.register(this._instantiationService.createInstance(Linkifier));
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
@@ -247,12 +247,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     super.dispose();
     this._renderService?.dispose();
     this._customKeyEventHandler = undefined;
-    this._overviewRulerRenderer?.dispose();
-    this._overviewRulerRenderer = undefined;
     this.write = () => { };
     this.element?.parentNode?.removeChild(this.element);
-    this.linkifier.dispose();
-    this.linkifier2.dispose();
   }
 
   protected _setup(): void {
@@ -612,11 +608,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     if (this.options.overviewRulerWidth) {
-      this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+      this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
     this.optionsService.onOptionChange(() => {
       if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
-        this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+        this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });
     // Measure the character size

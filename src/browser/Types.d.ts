@@ -192,7 +192,7 @@ export interface ILinkifierEvent {
   fg: number | undefined;
 }
 
-export interface ILinkifier {
+export interface ILinkifier extends IDisposable {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
   onLinkTooltip: IEvent<ILinkifierEvent>;
@@ -201,7 +201,6 @@ export interface ILinkifier {
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
-  dispose(): void;
 }
 
 interface ILinkState {
@@ -213,14 +212,13 @@ export interface ILinkWithState {
   state?: ILinkState;
 }
 
-export interface ILinkifier2 {
+export interface ILinkifier2 extends IDisposable {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
   readonly currentLink: ILinkWithState | undefined;
 
   attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
   registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
-  dispose(): void;
 }
 
 export interface ILinkMatcherOptions {

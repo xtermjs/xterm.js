@@ -6,6 +6,7 @@
 import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, IMouseZoneManager, IMouseZone, IRegisteredLinkMatcher } from 'browser/Types';
 import { IBufferStringIteratorResult } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 import { ILogService, IBufferService, IOptionsService, IUnicodeService } from 'common/services/Services';
 
 /**
@@ -18,7 +19,7 @@ const OVERSCAN_CHAR_LIMIT = 2000;
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
-export class Linkifier implements ILinkifier {
+export class Linkifier extends Disposable implements ILinkifier {
   /**
    * The time to wait after a row is changed before it is linkified. This prevents
    * the costly operation of searching every row multiple times, potentially a
@@ -35,11 +36,11 @@ export class Linkifier implements ILinkifier {
   private _nextLinkMatcherId = 0;
   private _rowsToLinkify: { start: number | undefined, end: number | undefined };
 
-  private _onShowLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
   public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
-  private _onHideLinkUnderline = new EventEmitter<ILinkifierEvent>();
+  private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
   public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
-  private _onLinkTooltip = new EventEmitter<ILinkifierEvent>();
+  private _onLinkTooltip = this.register(new EventEmitter<ILinkifierEvent>());
   public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(
@@ -47,16 +48,11 @@ export class Linkifier implements ILinkifier {
     @ILogService private readonly _logService: ILogService,
     @IUnicodeService private readonly _unicodeService: IUnicodeService
   ) {
+    super();
     this._rowsToLinkify = {
       start: undefined,
       end: undefined
     };
-  }
-
-  public dispose(): void {
-    this._onShowLinkUnderline.dispose();
-    this._onHideLinkUnderline.dispose();
-    this._onLinkTooltip.dispose();
   }
 
   /**

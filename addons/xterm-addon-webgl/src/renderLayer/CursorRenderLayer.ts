@@ -55,10 +55,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public override dispose(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
-      this._cursorBlinkStateManager = undefined;
-    }
+    this._cursorBlinkStateManager?.dispose();
+    this._cursorBlinkStateManager = undefined;
     super.dispose();
   }
 
