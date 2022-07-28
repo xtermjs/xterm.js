@@ -28,6 +28,7 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-attach'),
+  path.resolve(__dirname, '../addons/xterm-addon-canvas'),
   path.resolve(__dirname, '../addons/xterm-addon-fit'),
   path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
   path.resolve(__dirname, '../addons/xterm-addon-search'),
@@ -97,8 +98,9 @@ function getNextBetaVersion(packageJson) {
     process.exit(1);
   }
   const tag = 'beta';
-  const stableVersion = packageJson.version.split('.');
-  const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.0`;
+  // const stableVersion = packageJson.version.split('.');
+  // const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.0`;
+  const nextStableVersion = `5.0.0`;
   const publishedVersions = getPublishedVersions(packageJson, nextStableVersion, tag);
   if (publishedVersions.length === 0) {
     return `${nextStableVersion}-${tag}.1`;

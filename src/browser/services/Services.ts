@@ -105,14 +105,6 @@ export interface ISelectionService {
   isCellInSelection(x: number, y: number): boolean;
 }
 
-export const ISoundService = createDecorator<ISoundService>('SoundService');
-export interface ISoundService {
-  serviceBrand: undefined;
-
-  playBellSound(): void;
-}
-
-
 export const ICharacterJoinerService = createDecorator<ICharacterJoinerService>('CharacterJoinerService');
 export interface ICharacterJoinerService {
   serviceBrand: undefined;

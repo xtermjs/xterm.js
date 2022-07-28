@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
+import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';

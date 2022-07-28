@@ -4,13 +4,13 @@
  */
 
 import { IBufferLine, ICellData, IColor } from 'common/Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes, UnderlineStyle } from 'common/buffer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
-import { ICharacterJoinerService, ISelectionService } from 'browser/services/Services';
+import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';

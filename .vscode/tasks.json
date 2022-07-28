@@ -32,7 +32,6 @@
       "label": "start",
       "type": "npm",
       "script": "start",
-      "dependsOn": "watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
@@ -42,7 +41,7 @@
     },
     {
       "label": "Start demo",
-      "dependsOn": "start",
+      "dependsOn": ["start", "watch"],
       "group": {
         "kind": "build",
         "isDefault": true

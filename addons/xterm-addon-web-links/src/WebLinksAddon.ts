@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, IDisposable } from 'xterm';
+import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 const protocolClause = '(https?:\\/\\/)';
@@ -41,37 +41,23 @@ function handleLink(event: MouseEvent, uri: string): void {
 }
 
 export class WebLinksAddon implements ITerminalAddon {
-  private _linkMatcherId: number | undefined;
   private _terminal: Terminal | undefined;
   private _linkProvider: IDisposable | undefined;
 
   constructor(
     private _handler: (event: MouseEvent, uri: string) => void = handleLink,
-    private _options: ILinkMatcherOptions | ILinkProviderOptions = {},
-    private _useLinkProvider: boolean = false
+    private _options: ILinkProviderOptions = {}
   ) {
   }
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-
-    if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
-      const options = this._options as ILinkProviderOptions;
-      const regex = options.urlRegex || strictUrlRegex;
-      this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
-    } else {
-      // TODO: This should be removed eventually
-      const options = this._options as ILinkMatcherOptions;
-      options.matchIndex = 1;
-      this._linkMatcherId = (this._terminal as Terminal).registerLinkMatcher(strictUrlRegex, this._handler, options);
-    }
+    const options = this._options as ILinkProviderOptions;
+    const regex = options.urlRegex || strictUrlRegex;
+    this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
   }
 
   public dispose(): void {
-    if (this._linkMatcherId !== undefined && this._terminal !== undefined) {
-      this._terminal.deregisterLinkMatcher(this._linkMatcherId);
-    }
-
     this._linkProvider?.dispose();
   }
 }
