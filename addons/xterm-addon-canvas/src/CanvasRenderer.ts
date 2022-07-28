@@ -34,10 +34,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
     linkifier2: ILinkifier2,
-    @IInstantiationService instantiationService: IInstantiationService,
-    @IBufferService private readonly _bufferService: IBufferService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    instantiationService: IInstantiationService,
+    private readonly _bufferService: IBufferService,
+    private readonly _charSizeService: ICharSizeService,
+    private readonly _optionsService: IOptionsService
   ) {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
