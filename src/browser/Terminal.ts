@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -33,7 +33,7 @@ import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -993,16 +993,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this._selectionService ? this._selectionService.selectionText : '';
   }
 
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     if (!this._selectionService || !this._selectionService.hasSelection) {
       return undefined;
     }
 
     return {
-      startColumn: this._selectionService.selectionStart![0],
-      startRow: this._selectionService.selectionStart![1],
-      endColumn: this._selectionService.selectionEnd![0],
-      endRow: this._selectionService.selectionEnd![1]
+      start: {
+        x: this._selectionService.selectionStart![0],
+        y: this._selectionService.selectionStart![1]
+      },
+      end: {
+        x: this._selectionService.selectionEnd![0],
+        y: this._selectionService.selectionEnd![1]
+      }
     };
   }
 

@@ -917,7 +917,7 @@ declare module 'xterm' {
     /**
      * Gets the selection position or undefined if there is no selection.
      */
-    getSelectionPosition(): ISelectionPosition | undefined;
+    getSelectionPosition(): IBufferRange | undefined;
 
     /**
      * Clears the current terminal selection.
@@ -1045,31 +1045,6 @@ declare module 'xterm' {
      * This is called when the addon is activated.
      */
     activate(terminal: Terminal): void;
-  }
-
-  /**
-   * An object representing a selection within the terminal.
-   */
-  interface ISelectionPosition {
-    /**
-     * The start column of the selection.
-     */
-    startColumn: number;
-
-    /**
-     * The start row of the selection.
-     */
-    startRow: number;
-
-    /**
-     * The end column of the selection.
-     */
-    endColumn: number;
-
-    /**
-     * The end row of the selection.
-     */
-    endRow: number;
   }
 
   /**
