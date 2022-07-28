@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
+import { ICharAtlasConfig } from './Types';
 import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { IColorSet, IPartialColorSet } from 'browser/Types';
 import { ITerminalOptions } from 'common/services/Services';

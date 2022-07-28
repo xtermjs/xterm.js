@@ -28,7 +28,7 @@ describe('AttachAddon', () => {
   beforeEach(async () => await page.goto(APP));
 
   it('string', async function(): Promise<any> {
-    await openTerminal(page, { rendererType: 'dom' });
+    await openTerminal(page);
     const port = 8080;
     const server = new WebSocket.Server({ port });
     server.on('connection', socket => socket.send('foo'));
@@ -38,7 +38,7 @@ describe('AttachAddon', () => {
   });
 
   it('utf8', async function(): Promise<any> {
-    await openTerminal(page, { rendererType: 'dom' });
+    await openTerminal(page);
     const port = 8080;
     const server = new WebSocket.Server({ port });
     const data = new Uint8Array([102, 111, 111]);
