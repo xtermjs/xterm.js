@@ -5,8 +5,8 @@
 
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { CharData, ICellData } from 'common/Types';
-import { GridCache } from 'browser/renderer/GridCache';
-import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
+import { GridCache } from './GridCache';
+import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';

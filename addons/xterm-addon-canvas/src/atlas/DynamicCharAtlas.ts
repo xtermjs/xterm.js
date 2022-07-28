@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
-import { IGlyphIdentifier, ICharAtlasConfig } from 'browser/renderer/atlas/Types';
-import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/Constants';
+import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
+import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
-import { LRUMap } from 'browser/renderer/atlas/LRUMap';
+import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'common/Types';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';

@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ILinkMatcherOptions, ITerminal, ILinkifier, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer } from 'browser/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer, IBufferRange } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -95,12 +95,6 @@ export class MockTerminal implements ITerminal {
   public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
-    throw new Error('Method not implemented.');
-  }
-  public deregisterLinkMatcher(matcherId: number): void {
-    throw new Error('Method not implemented.');
-  }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     throw new Error('Method not implemented.');
   }
@@ -113,7 +107,7 @@ export class MockTerminal implements ITerminal {
   public getSelection(): string {
     throw new Error('Method not implemented.');
   }
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     throw new Error('Method not implemented.');
   }
   public clearSelection(): void {
@@ -143,12 +137,8 @@ export class MockTerminal implements ITerminal {
   public write(data: string): void {
     throw new Error('Method not implemented.');
   }
-  public writeUtf8(data: Uint8Array): void {
-    throw new Error('Method not implemented.');
-  }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
-  public linkifier!: ILinkifier;
   public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
   public options: ITerminalOptions = {};
