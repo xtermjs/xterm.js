@@ -21,23 +21,19 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, ILinkifier, IMouseZoneManager, LinkMatcherHandler, ILinkMatcherOptions, IViewport, ILinkifier2, CharacterJoinerHandler } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
 import { WindowsOptionsReportType } from '../common/InputHandler';
-import { Renderer } from 'browser/renderer/Renderer';
-import { Linkifier } from 'browser/Linkifier';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
-import { SoundService } from 'browser/services/SoundService';
-import { MouseZoneManager } from 'browser/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ISelectionPosition, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -45,7 +41,7 @@ import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ISoundService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
@@ -89,7 +85,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _renderService: IRenderService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
-  private _soundService: ISoundService | undefined;
 
   /**
    * Records whether the keydown event has already been handled and triggered a data event, if so
@@ -118,11 +113,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
-  public linkifier: ILinkifier;
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
-  private _mouseZoneManager: IMouseZoneManager | undefined;
   private _accessibilityManager: AccessibilityManager | undefined;
   private _colorManager: ColorManager | undefined;
   private _theme: ITheme | undefined;
@@ -168,13 +161,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
-    this.linkifier = this._instantiationService.createInstance(Linkifier);
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
     // Setup InputHandler listeners
-    this.register(this._inputHandler.onRequestBell(() => this.bell()));
+    this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
@@ -301,12 +293,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
           this._renderService.clear();
           this._renderService.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'rendererType':
-        if (this._renderService) {
-          this._renderService.setRenderer(this._createRenderer());
-          this._renderService.onResize(this.cols, this.rows);
         }
         break;
       case 'scrollback':
@@ -450,7 +436,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
     this.register(addDisposableDomListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
-    this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
   /**
@@ -537,8 +522,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._soundService = this._instantiationService.createInstance(SoundService);
-    this._instantiationService.setService(ISoundService, this._soundService);
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
@@ -584,13 +567,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
 
-    this._mouseZoneManager = this._instantiationService.createInstance(MouseZoneManager, this.element, this.screenElement);
-    this.register(this._mouseZoneManager);
-    this.register(this.onScroll(() => this._mouseZoneManager!.clearAll()));
-    this.linkifier.attachToDom(this.element, this._mouseZoneManager);
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
-    // This event listener must be registered aftre MouseZoneManager is created
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
@@ -630,11 +608,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    switch (this.options.rendererType) {
-      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier, this.linkifier2);
-      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
-    }
+    return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
   }
 
   /**
@@ -913,15 +887,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   /**
-   * Queues linkification for the specified rows.
-   * @param start The row to start from (between 0 and this.rows - 1).
-   * @param end The row to end at (between start and this.rows - 1).
-   */
-  private _queueLinkification(start: number, end: number): void {
-    this.linkifier?.linkifyRows(start, end);
-  }
-
-  /**
    * Change the cursor style for different selection modes
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
@@ -962,32 +927,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
-  }
-
-  /**
-   * Registers a link matcher, allowing custom link patterns to be matched and
-   * handled.
-   * @param regex The regular expression to search for, specifically
-   * this searches the textContent of the rows. You will want to use \s to match
-   * a space ' ' character for example.
-   * @param handler The callback when the link is called.
-   * @param options Options for the link matcher.
-   * @return The ID of the new matcher, this can be used to deregister.
-   */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-    this.refresh(0, this.rows - 1);
-    return matcherId;
-  }
-
-  /**
-   * Deregisters a link matcher if it has been registered.
-   * @param matcherId The link matcher's ID (returned after register)
-   */
-  public deregisterLinkMatcher(matcherId: number): void {
-    if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-      this.refresh(0, this.rows - 1);
-    }
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -1054,16 +993,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this._selectionService ? this._selectionService.selectionText : '';
   }
 
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     if (!this._selectionService || !this._selectionService.hasSelection) {
       return undefined;
     }
 
     return {
-      startColumn: this._selectionService.selectionStart![0],
-      startRow: this._selectionService.selectionStart![1],
-      endColumn: this._selectionService.selectionEnd![0],
-      endRow: this._selectionService.selectionEnd![1]
+      start: {
+        x: this._selectionService.selectionStart![0],
+        y: this._selectionService.selectionStart![1]
+      },
+      end: {
+        x: this._selectionService.selectionEnd![0],
+        y: this._selectionService.selectionEnd![1]
+      }
     };
   }
 
@@ -1286,26 +1229,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   /**
-   * Ring the bell.
-   * Note: We could do sweet things with webaudio here
-   */
-  public bell(): void {
-    if (this._soundBell()) {
-      this._soundService?.playBellSound();
-    }
-
-    this._onBell.fire();
-
-    // if (this._visualBell()) {
-    //   this.element.classList.add('visual-bell-active');
-    //   clearTimeout(this._visualBellTimer);
-    //   this._visualBellTimer = window.setTimeout(() => {
-    //     this.element.classList.remove('visual-bell-active');
-    //   }, 200);
-    // }
-  }
-
-  /**
    * Resizes the terminal.
    *
    * @param x The number of columns to resize to.
@@ -1421,18 +1344,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     ev.preventDefault();
     ev.stopPropagation();
     return false;
-  }
-
-  private _visualBell(): boolean {
-    return false;
-    // return this.options.bellStyle === 'visual' ||
-    //     this.options.bellStyle === 'both';
-  }
-
-  private _soundBell(): boolean {
-    return this.options.bellStyle === 'sound';
-    // return this.options.bellStyle === 'sound' ||
-    //     this.options.bellStyle === 'both';
   }
 }
 
