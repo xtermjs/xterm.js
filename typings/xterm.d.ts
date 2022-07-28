@@ -952,7 +952,8 @@ declare module 'xterm' {
 
     /*
      * Disposes of the terminal, detaching it from the DOM and removing any
-     * active listeners.
+     * active listeners. Once the terminal is disposed it should not be used
+     * again.
      */
     dispose(): void;
 
