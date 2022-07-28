@@ -28,7 +28,6 @@ import { Viewport } from 'browser/Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
 import { WindowsOptionsReportType } from '../common/InputHandler';
-import { Renderer } from 'browser/renderer/Renderer';
 import { SelectionService } from 'browser/services/SelectionService';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
@@ -294,12 +293,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
           this._renderService.clear();
           this._renderService.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'rendererType':
-        if (this._renderService) {
-          this._renderService.setRenderer(this._createRenderer());
-          this._renderService.onResize(this.cols, this.rows);
         }
         break;
       case 'scrollback':
@@ -615,11 +608,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    switch (this.options.rendererType) {
-      case 'canvas': return this._instantiationService.createInstance(Renderer, this._colorManager!.colors, this.screenElement!, this.linkifier2);
-      case 'dom': return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
-      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
-    }
+    return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
   }
 
   /**

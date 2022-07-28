@@ -4,7 +4,7 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/Types';
-import { BaseRenderLayer } from 'browser/renderer/BaseRenderLayer';
+import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 

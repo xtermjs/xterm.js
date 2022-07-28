@@ -21,11 +21,6 @@ declare module 'xterm' {
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
-   * A string representing a renderer type.
-   */
-  export type RendererType = 'dom' | 'canvas';
-
-  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -175,16 +170,6 @@ declare module 'xterm' {
      * - 21: White on black or black on white.
      */
     minimumContrastRatio?: number;
-
-    /**
-     * The type of renderer to use, this allows using the fallback DOM renderer
-     * when canvas is too slow for the environment. The following features do
-     * not work when the DOM renderer is used:
-     *
-     * - Letter spacing
-     * - Cursor blink
-     */
-    rendererType?: RendererType;
 
     /**
      * Whether to select the word under the cursor on right click, this is
