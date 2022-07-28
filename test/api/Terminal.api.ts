@@ -252,7 +252,7 @@ describe('API Integration Tests', function(): void {
     } else {
       assert.equal(await page.evaluate(`window.term.getSelection()`), '\n\nfoo\n\nbar\n\nbaz');
     }
-    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 0, startRow: 0, endColumn: 5, endRow: 6 });
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { start: { x: 0, y: 0 }, end: { x: 5, y: 6 } });
     await page.evaluate(`window.term.clearSelection()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
@@ -260,7 +260,7 @@ describe('API Integration Tests', function(): void {
     await page.evaluate(`window.term.select(1, 2, 2)`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
     assert.equal(await page.evaluate(`window.term.getSelection()`), 'oo');
-    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { start: { x: 1, y: 2 }, end: { x: 3, y: 2 } });
   });
 
   it('focus, blur', async () => {
