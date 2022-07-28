@@ -98,8 +98,9 @@ function getNextBetaVersion(packageJson) {
     process.exit(1);
   }
   const tag = 'beta';
-  const stableVersion = packageJson.version.split('.');
-  const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.0`;
+  // const stableVersion = packageJson.version.split('.');
+  // const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.0`;
+  const nextStableVersion = `5.0.0`;
   const publishedVersions = getPublishedVersions(packageJson, nextStableVersion, tag);
   if (publishedVersions.length === 0) {
     return `${nextStableVersion}-${tag}.1`;
