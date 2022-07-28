@@ -4,8 +4,7 @@
     "target": "es5",
     "lib": [
       "dom",
-      "es6",
-      "ES2017.Object"
+      "es6"
     ],
     "rootDir": ".",
     "outDir": "../out",
