@@ -1,7 +1,10 @@
-# Node.js
-# Build a general Node.js application with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/vsts/pipelines/languages/javascript
+pr:
+  branches:
+    include: ["main", "v5"]
+
+trigger:
+  branches:
+    include: ["main", "v5"]
 
 jobs:
 - job: Linux
