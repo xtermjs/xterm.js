@@ -49,7 +49,7 @@ describe('FitAddon', () => {
       await loadFit();
       const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
       assert.isAbove(dimensions.cols, 86);
-      assert.isBelow(dimensions.cols, 87);
+      assert.isBelow(dimensions.cols, 88);
       assert.isAbove(dimensions.rows, 24);
       assert.isBelow(dimensions.rows, 29);
     });
@@ -58,7 +58,7 @@ describe('FitAddon', () => {
       await loadFit(1008);
       const dimensions: {cols: number, rows: number} = await page.evaluate(`window.fit.proposeDimensions()`);
       assert.isAbove(dimensions.cols, 109);
-      assert.isBelow(dimensions.cols, 110);
+      assert.isBelow(dimensions.cols, 111);
       assert.isAbove(dimensions.rows, 24);
       assert.isBelow(dimensions.rows, 29);
     });
@@ -92,7 +92,7 @@ describe('FitAddon', () => {
       const cols: number = await page.evaluate(`window.term.cols`);
       const rows: number = await page.evaluate(`window.term.rows`);
       assert.isAbove(cols, 86);
-      assert.isBelow(cols, 87);
+      assert.isBelow(cols, 88);
       assert.isAbove(rows, 24);
       assert.isBelow(rows, 29);
     });
@@ -103,7 +103,7 @@ describe('FitAddon', () => {
       const cols: number = await page.evaluate(`window.term.cols`);
       const rows: number = await page.evaluate(`window.term.rows`);
       assert.isAbove(cols, 109);
-      assert.isBelow(cols, 110);
+      assert.isBelow(cols, 111);
       assert.isAbove(rows, 24);
       assert.isBelow(rows, 29);
     });
