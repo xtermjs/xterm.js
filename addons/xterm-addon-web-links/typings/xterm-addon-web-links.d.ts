@@ -4,7 +4,7 @@
  */
 
 
-import { Terminal, ILinkMatcherOptions, ITerminalAddon, IViewportRange } from 'xterm';
+import { Terminal, ITerminalAddon, IViewportRange } from 'xterm';
 
 declare module 'xterm-addon-web-links' {
   /**
@@ -14,13 +14,9 @@ declare module 'xterm-addon-web-links' {
     /**
      * Creates a new web links addon.
      * @param handler The callback when the link is called.
-     * @param options Options for the link matcher.
-     * @param useLinkProvider Whether to use the new link provider API to create
-     * the links. This is an option because use of both link matcher (old) and
-     * link provider (new) may cause issues. Link provider will eventually be
-     * the default and only option.
+     * @param options Options for the link provider.
      */
-    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions | ILinkProviderOptions, useLinkProvider?: boolean);
+    constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkProviderOptions);
 
     /**
      * Activates the addon
@@ -39,8 +35,7 @@ declare module 'xterm-addon-web-links' {
    */
   export interface ILinkProviderOptions {
     /**
-     * A callback that fires when the mouse hovers over a link for a period of
-     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
+     * A callback that fires when the mouse hovers over a link.
      */
     hover?(event: MouseEvent, text: string, location: IViewportRange): void;
 
@@ -50,7 +45,7 @@ declare module 'xterm-addon-web-links' {
      */
     leave?(event: MouseEvent, text: string): void;
 
-    /** 
+    /**
      * A callback to use instead of the default one.
     */
     urlRegex?: RegExp;

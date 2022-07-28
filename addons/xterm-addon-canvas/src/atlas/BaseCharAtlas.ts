@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IGlyphIdentifier } from 'browser/renderer/atlas/Types';
+import { IGlyphIdentifier } from './Types';
 import { IDisposable } from 'common/Types';
 
 export abstract class BaseCharAtlas implements IDisposable {
