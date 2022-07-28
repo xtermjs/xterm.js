@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { GridCache } from 'browser/renderer/GridCache';
+import { GridCache } from './GridCache';
 
 describe('GridCache', () => {
   let grid: GridCache<number>;

@@ -694,7 +694,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.getOption('altClickMovesCursor')) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.rawOptions.altClickMovesCursor) {
       if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseService.getCoords(
           event,
