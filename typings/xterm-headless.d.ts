@@ -637,9 +637,10 @@ declare module 'xterm-headless' {
     registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /*
-      * Disposes of the terminal, detaching it from the DOM and removing any
-      * active listeners.
-      */
+     * Disposes of the terminal, detaching it from the DOM and removing any
+     * active listeners. Once the terminal is disposed it should not be used
+     * again.
+     */
     dispose(): void;
 
     /**
