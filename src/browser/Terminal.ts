@@ -81,6 +81,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   // browser services
   private _decorationService: DecorationService;
   private _charSizeService: ICharSizeService | undefined;
+  private _coreBrowserService: ICoreBrowserService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
@@ -494,8 +495,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    const coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
-    this._instantiationService.setService(ICoreBrowserService, coreBrowserService);
+    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
+    this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
