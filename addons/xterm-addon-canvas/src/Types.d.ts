@@ -7,6 +7,7 @@ import { IDisposable } from 'common/Types';
 import { IColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 
+// TODO: Use core interfaces
 export interface IRenderDimensions {
   scaledCharWidth: number;
   scaledCharHeight: number;
@@ -53,4 +54,59 @@ export interface IRenderer extends IDisposable {
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
+}
+
+export interface IRenderLayer extends IDisposable {
+  readonly canvas: HTMLCanvasElement;
+
+  /**
+   * Called when the terminal loses focus.
+   */
+  onBlur(): void;
+
+  /**
+   * * Called when the terminal gets focus.
+   */
+  onFocus(): void;
+
+  /**
+   * Called when the cursor is moved.
+   */
+  onCursorMove(): void;
+
+  /**
+   * Called when options change.
+   */
+  onOptionsChanged(): void;
+
+  /**
+   * Called when the theme changes.
+   */
+  setColors(colorSet: IColorSet): void;
+
+  /**
+   * Called when the data in the grid has changed (or needs to be rendered
+   * again).
+   */
+  onGridChanged(startRow: number, endRow: number): void;
+
+  /**
+   * Calls when the selection changes.
+   */
+  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+
+  /**
+   * Resize the render layer.
+   */
+  resize(dim: IRenderDimensions): void;
+
+  /**
+   * Clear the state of the render layer.
+   */
+  reset(): void;
+
+  /**
+   * Clears the texture atlas.
+   */
+  clearTextureAtlas(): void;
 }

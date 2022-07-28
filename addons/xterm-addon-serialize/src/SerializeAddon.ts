@@ -443,8 +443,8 @@ export class SerializeAddon implements ITerminalAddon {
     const selection = this._terminal?.getSelectionPosition();
     if (selection !== undefined) {
       return handler.serialize({
-        start: { x: selection.startRow, y: selection.startColumn },
-        end: { x: selection.endRow, y: selection.endColumn }
+        start: { x: selection.start.y, y: selection.start.x },
+        end: { x: selection.end.y, y: selection.end.x }
       });
     }
 

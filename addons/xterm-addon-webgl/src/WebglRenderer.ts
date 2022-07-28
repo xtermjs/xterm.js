@@ -6,7 +6,7 @@
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
-import { acquireCharAtlas } from './atlas/CharAtlasCache';
+import { acquireCharAtlas, removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
@@ -114,6 +114,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.dispose();
     }
     this._canvas.parentElement?.removeChild(this._canvas);
+    removeTerminalFromCache(this._terminal);
     super.dispose();
   }
 

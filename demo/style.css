@@ -45,7 +45,6 @@ pre {
 
 #container {
     display: flex;
-    height: 75vh;
 }
 #grid {
     flex: 1;
