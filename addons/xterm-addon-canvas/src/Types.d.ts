@@ -57,6 +57,8 @@ export interface IRenderer extends IDisposable {
 }
 
 export interface IRenderLayer extends IDisposable {
+  readonly canvas: HTMLCanvasElement;
+
   /**
    * Called when the terminal loses focus.
    */
