@@ -8,6 +8,7 @@
     { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
     { "path": "./addons/xterm-addon-attach" },
+    { "path": "./addons/xterm-addon-canvas" },
     { "path": "./addons/xterm-addon-fit" },
     { "path": "./addons/xterm-addon-ligatures" },
     { "path": "./addons/xterm-addon-search" },

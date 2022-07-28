@@ -42,7 +42,7 @@ describe('SerializeAddon', () => {
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);
-    await openTerminal(page, { rows: 10, cols: 10, rendererType: 'dom' });
+    await openTerminal(page, { rows: 10, cols: 10 });
     await page.evaluate(`
       window.serializeAddon = new SerializeAddon();
       window.term.loadAddon(window.serializeAddon);

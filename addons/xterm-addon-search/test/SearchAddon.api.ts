@@ -60,35 +60,35 @@ describe('Search Tests', function (): void {
     await page.evaluate(`window.term.writeln('package.jsonc\\n')`);
     await writeSync(page, 'package.json pack package.lock');
     await page.evaluate(`window.search.findPrevious('pack', {incremental: true})`);
-    let line: string = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
-    let selectionPosition: { startColumn: number, startRow: number, endColumn: number, endRow: number } = await page.evaluate(`window.term.getSelectionPosition()`);
+    let line: string = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().start.y).translateToString()`);
+    let selectionPosition: { start: { x: number, y: number }, end: { x: number, y: number } } = await page.evaluate(`window.term.getSelectionPosition()`);
     // We look further ahead in the line to ensure that pack was selected from package.lock
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 8), 'package.lock');
     await page.evaluate(`window.search.findPrevious('package.j', {incremental: true})`);
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 3), 'package.json');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 3), 'package.json');
     await page.evaluate(`window.search.findPrevious('package.jsonc', {incremental: true})`);
     // We have to reevaluate line because it should have switched starting rows at this point
-    line = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    line = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().start.y).translateToString()`);
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
   });
   it('Incremental Find Next', async () => {
     await page.evaluate(`window.term.writeln('package.lock pack package.json package.ups\\n')`);
     await writeSync(page, 'package.jsonc');
     await page.evaluate(`window.search.findNext('pack', {incremental: true})`);
-    let line: string = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
-    let selectionPosition: { startColumn: number, startRow: number, endColumn: number, endRow: number } = await page.evaluate(`window.term.getSelectionPosition()`);
+    let line: string = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().start.y).translateToString()`);
+    let selectionPosition: { start: { x: number, y: number }, end: { x: number, y: number } } = await page.evaluate(`window.term.getSelectionPosition()`);
     // We look further ahead in the line to ensure that pack was selected from package.lock
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 8), 'package.lock');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 8), 'package.lock');
     await page.evaluate(`window.search.findNext('package.j', {incremental: true})`);
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn + 3), 'package.json');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 3), 'package.json');
     await page.evaluate(`window.search.findNext('package.jsonc', {incremental: true})`);
     // We have to reevaluate line because it should have switched starting rows at this point
-    line = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().startRow).translateToString()`);
+    line = await page.evaluate(`window.term.buffer.active.getLine(window.term.getSelectionPosition().start.y).translateToString()`);
     selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-    assert.deepEqual(line.substring(selectionPosition.startColumn, selectionPosition.endColumn), 'package.jsonc');
+    assert.deepEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
   });
   it('Simple Regex', async () => {
     await writeSync(page, 'abc123defABCD');
@@ -116,10 +116,14 @@ describe('Search Tests', function (): void {
     assert.deepEqual(await page.evaluate(`window.term.getSelection()`), '𝄞');
     assert.deepEqual(await page.evaluate(`window.search.findNext('𝄞')`), true);
     assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), {
-      startRow: 0,
-      endRow: 0,
-      startColumn: 7,
-      endColumn: 8
+      start: {
+        x: 7,
+        y: 0
+      },
+      end: {
+        x: 8,
+        y: 0
+      }
     });
   });
 
@@ -313,69 +317,70 @@ describe('Search Tests', function (): void {
         await writeSync(page, fixture);
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         let selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 76, endColumn: 30, endRow: 76 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 96, endColumn: 30, endRow: 96 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 114, endColumn: 7, endRow: 114 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 115, endColumn: 17, endRow: 115 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 126, endColumn: 7, endRow: 126 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 127, endColumn: 17, endRow: 127 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 135, endColumn: 7, endRow: 135 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
         // Wrap around to first result
         assert.deepEqual(await page.evaluate(`window.search.findNext('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
       });
-      it('should find all occurrences using findPrevious', async () => {
+
+      it('should y all occurrences using findPrevious', async () => {
         await writeSync(page, fixture);
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         let selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 135, endColumn: 7, endRow: 135 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 127, endColumn: 17, endRow: 127 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 126, endColumn: 7, endRow: 126 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 115, endColumn: 17, endRow: 115 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 1, startRow: 114, endColumn: 7, endRow: 114 });
+        assert.deepEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 96, endColumn: 30, endRow: 96 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 76, endColumn: 30, endRow: 76 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 24, startRow: 53, endColumn: 30, endRow: 53 });
+        assert.deepEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
         // Wrap around to first result
         assert.deepEqual(await page.evaluate(`window.search.findPrevious('opencv')`), true);
         selectionPosition = await page.evaluate(`window.term.getSelectionPosition()`);
-        assert.deepEqual(selectionPosition, { startColumn: 11, startRow: 136, endColumn: 17, endRow: 136 });
+        assert.deepEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
       });
     });
   });

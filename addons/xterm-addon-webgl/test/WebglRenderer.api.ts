@@ -860,7 +860,7 @@ describe('WebGL Renderer Integration Tests', async () => {
 
   describe('allowTransparency', async () => {
     if (areTestsEnabled) {
-      before(async () => setupBrowser({ rendererType: 'dom', allowTransparency: true }));
+      before(async () => setupBrowser({ allowTransparency: true }));
       after(async () => browser.close());
       beforeEach(async () => page.evaluate(`window.term.reset()`));
     }
@@ -879,7 +879,7 @@ describe('WebGL Renderer Integration Tests', async () => {
 
   describe('selectionForeground', () => {
     if (areTestsEnabled) {
-      before(async () => setupBrowser({ rendererType: 'dom' }));
+      before(async () => setupBrowser());
       after(async () => browser.close());
       beforeEach(async () => page.evaluate(`window.term.reset()`));
     }
@@ -898,7 +898,7 @@ describe('WebGL Renderer Integration Tests', async () => {
 
   describe('decoration color overrides', async () => {
     if (areTestsEnabled) {
-      before(async () => setupBrowser({ rendererType: 'dom' }));
+      before(async () => setupBrowser());
       after(async () => browser.close());
       beforeEach(async () => page.evaluate(`window.term.reset()`));
     }
@@ -1014,7 +1014,7 @@ async function getCellPixels(col: number, row: number): Promise<number[]> {
   return await page.evaluate(`Array.from(window.result)`);
 }
 
-async function setupBrowser(options: ITerminalOptions = { rendererType: 'dom' }): Promise<void> {
+async function setupBrowser(options: ITerminalOptions = {}): Promise<void> {
   browser = await launchBrowser();
   page = await (await browser.newContext()).newPage();
   await page.setViewportSize({ width, height });

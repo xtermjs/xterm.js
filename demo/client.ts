@@ -10,6 +10,7 @@
 // Use tsc version (yarn watch)
 import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
+import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
@@ -53,13 +54,14 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor:
     T extends 'attach' ? typeof AttachAddon :
+    T extends 'canvas' ? typeof CanvasAddon :
     T extends 'fit' ? typeof FitAddon :
     T extends 'search' ? typeof SearchAddon :
     T extends 'serialize' ? typeof SerializeAddon :
@@ -69,6 +71,7 @@ interface IDemoAddon<T extends AddonType> {
     typeof WebglAddon;
     instance?:
     T extends 'attach' ? AttachAddon :
+    T extends 'canvas' ? CanvasAddon :
     T extends 'fit' ? FitAddon :
     T extends 'search' ? SearchAddon :
     T extends 'serialize' ? SerializeAddon :
@@ -81,6 +84,7 @@ interface IDemoAddon<T extends AddonType> {
 
 const addons: { [T in AddonType]: IDemoAddon<T>} = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
+  canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
@@ -150,6 +154,7 @@ const disposeRecreateButtonHandler = () => {
     window.term = null;
     socket = null;
     addons.attach.instance = undefined;
+    addons.canvas.instance = undefined;
     addons.fit.instance = undefined;
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
@@ -194,6 +199,7 @@ function createTerminal(): void {
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
+    allowProposedApi: true,
     allowTransparency: true,
     windowsMode: isWindows,
     fontFamily: 'Fira Code, courier-new, courier, monospace',
@@ -324,15 +330,12 @@ function initOptions(term: TerminalType): void {
     'windowOptions'
   ];
   const stringOptions = {
-    bellSound: null,
-    bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
     fastScrollModifier: ['alt', 'ctrl', 'shift', undefined],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['debug', 'info', 'warn', 'error', 'off'],
-    rendererType: ['dom', 'canvas'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null
   };
@@ -629,7 +632,7 @@ function writeCustomGlyphHandler() {
 }
 
 function loadTest() {
-  const isWebglEnabled = !!addons.webgl.instance;
+  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -655,7 +658,7 @@ function loadTest() {
   term.write('', () => {
     const time = Math.round(performance.now() - start);
     const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${isWebglEnabled ? 'webgl' : 'canvas'} renderer)`);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
     // Send ^C to get a new prompt
     term._core._onData.fire('\x03');
   });
@@ -737,7 +740,7 @@ function powerlineSymbolTest() {
 
 function addDecoration() {
   term.options['overviewRulerWidth'] = 15;
-  const marker = term.addMarker(1);
+  const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
     backgroundColor: '#00FF00',
@@ -752,13 +755,13 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  term.registerDecoration({marker: term.addMarker(1), overviewRulerOptions: { color: '#ef2929' }});
-  term.registerDecoration({marker: term.addMarker(3), overviewRulerOptions: { color: '#8ae234' }});
-  term.registerDecoration({marker: term.addMarker(5), overviewRulerOptions: { color: '#729fcf' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.addMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
-  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.addMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+  term.registerDecoration({marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' }});
+  term.registerDecoration({marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' }});
+  term.registerDecoration({marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
+  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
+  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
 }
 

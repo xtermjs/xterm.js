@@ -38,7 +38,7 @@ describe('WebLinksAddon', () => {
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal(page, { rendererType: 'dom', cols: 40 });
+  await openTerminal(page, { cols: 40 });
   await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   const data = `  http://${hostname}  \\r\\n` +
     `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +

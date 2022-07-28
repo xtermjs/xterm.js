@@ -15,6 +15,7 @@
       "test/playwright/tsconfig.json",
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-attach/test/tsconfig.json",
+      "addons/xterm-addon-canvas/src/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-fit/test/tsconfig.json",
       "addons/xterm-addon-ligatures/src/tsconfig.json",

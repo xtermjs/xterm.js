@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
-import { ITerminal } from 'browser/Types';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
+import { IBufferRange, ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
@@ -147,14 +147,6 @@ export class Terminal implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
-  public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
-    this._checkProposedApi();
-    return this._core.registerLinkMatcher(regex, handler, options);
-  }
-  public deregisterLinkMatcher(matcherId: number): void {
-    this._checkProposedApi();
-    this._core.deregisterLinkMatcher(matcherId);
-  }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     this._checkProposedApi();
     return this._core.registerLinkProvider(linkProvider);
@@ -168,7 +160,6 @@ export class Terminal implements ITerminalApi {
     this._core.deregisterCharacterJoiner(joinerId);
   }
   public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
-    this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }
@@ -176,9 +167,6 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
     return this._core.registerDecoration(decorationOptions);
-  }
-  public addMarker(cursorYOffset: number): IMarker | undefined {
-    return this.registerMarker(cursorYOffset);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();
@@ -190,7 +178,7 @@ export class Terminal implements ITerminalApi {
   public getSelection(): string {
     return this._core.getSelection();
   }
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     return this._core.getSelectionPosition();
   }
   public clearSelection(): void {
@@ -231,37 +219,12 @@ export class Terminal implements ITerminalApi {
   public write(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data, callback);
   }
-  public writeUtf8(data: Uint8Array, callback?: () => void): void {
-    this._core.write(data, callback);
-  }
   public writeln(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data);
     this._core.write('\r\n', callback);
   }
   public paste(data: string): void {
     this._core.paste(data);
-  }
-  public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-  public getOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell'): boolean;
-  public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-  public getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
-  public getOption(key: string): any;
-  public getOption(key: any): any {
-    return this._core.optionsService.getOption(key);
-  }
-  public setOption(key: 'bellSound' | 'fontFamily' | 'termName' | 'wordSeparator', value: string): void;
-  public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
-  public setOption(key: 'logLevel', value: 'debug' | 'info' | 'warn' | 'error' | 'off'): void;
-  public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
-  public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'altClickMovesCursor' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell', value: boolean): void;
-  public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-  public setOption(key: 'theme', value: ITheme): void;
-  public setOption(key: 'cols' | 'rows', value: number): void;
-  public setOption(key: string, value: any): void;
-  public setOption(key: any, value: any): void {
-    this._checkReadonlyOptions(key);
-    this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
     this._verifyIntegers(start, end);

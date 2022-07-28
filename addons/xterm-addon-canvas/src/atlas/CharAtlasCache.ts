@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { generateConfig, configEquals } from 'browser/renderer/atlas/CharAtlasUtils';
-import { BaseCharAtlas } from 'browser/renderer/atlas/BaseCharAtlas';
-import { DynamicCharAtlas } from 'browser/renderer/atlas/DynamicCharAtlas';
-import { ICharAtlasConfig } from 'browser/renderer/atlas/Types';
+import { generateConfig, configEquals } from './CharAtlasUtils';
+import { BaseCharAtlas } from './BaseCharAtlas';
+import { DynamicCharAtlas } from './DynamicCharAtlas';
+import { ICharAtlasConfig } from './Types';
 import { IColorSet } from 'browser/Types';
 import { ITerminalOptions } from 'common/services/Services';
 
