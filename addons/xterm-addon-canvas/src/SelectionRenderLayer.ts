@@ -42,8 +42,11 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public resize(dim: IRenderDimensions): void {
     super.resize(dim);
-    // Resizing the canvas discards the contents of the canvas so clear state
-    this._clearState();
+    // On resize use the base render layer's cached selection values since resize clears _state
+    // inside reset.
+    if (this._selectionStart && this._selectionEnd) {
+      this.onSelectionChanged(this._selectionStart, this._selectionEnd, this._columnSelectMode);
+    }
   }
 
   public reset(): void {
