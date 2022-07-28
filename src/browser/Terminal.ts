@@ -586,11 +586,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     if (this.options.overviewRulerWidth) {
-      this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+      this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
     this.optionsService.onOptionChange(() => {
       if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
-        this._overviewRulerRenderer = this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement);
+        this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });
     // Measure the character size
