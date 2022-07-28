@@ -1,6 +1,6 @@
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, fail, ok } from 'assert';
-import { IBuffer, IBufferCell, IBufferLine, IModes, ISelectionPosition, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferRange, IModes, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -139,7 +139,7 @@ export class TerminalProxy implements ITerminalProxy {
   public async blur(): Promise<void> { return this.evaluate(([term]) => term.blur()); }
   public async hasSelection(): Promise<boolean> { return this.evaluate(([term]) => term.hasSelection()); }
   public async getSelection(): Promise<string> { return this.evaluate(([term]) => term.getSelection()); }
-  public async getSelectionPosition(): Promise<ISelectionPosition | undefined> { return this.evaluate(([term]) => term.getSelectionPosition()); }
+  public async getSelectionPosition(): Promise<IBufferRange | undefined> { return this.evaluate(([term]) => term.getSelectionPosition()); }
   public async selectAll(): Promise<void> { return this.evaluate(([term]) => term.selectAll()); }
   public async clearSelection(): Promise<void> { return this.evaluate(([term]) => term.clearSelection()); }
   public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const); }
@@ -302,11 +302,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
     window.term = new Terminal(${JSON.stringify(options)});
     window.term.open(document.querySelector('#terminal-container'));
   `);
-  if (options.rendererType === 'dom') {
-    await ctx.page.waitForSelector('.xterm-rows');
-  } else {
-    await ctx.page.waitForSelector('.xterm-text-layer');
-  }
+  await ctx.page.waitForSelector('.xterm-rows');
   ctx.termHandle = await ctx.page.evaluateHandle('window.term');
   await ctx.proxy.initTerm();
 }

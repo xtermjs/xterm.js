@@ -78,16 +78,9 @@ test.describe('API integration', () => {
     }
   });
 
-  test('getOption, setOption', async () => {
-    strictEqual(await ctx.proxy.getOption('rendererType'), 'canvas');
-    await ctx.proxy.setOption('rendererType', 'dom');
-    strictEqual(await ctx.proxy.getOption('rendererType'), 'dom');
-  });
-
   test.describe('options', () => {
     test('getter', async () => {
       await openTerminal(ctx);
-      strictEqual(await ctx.proxy.getOption('rendererType'), 'canvas');
       strictEqual(await ctx.proxy.getOption(`cols`), 80);
       strictEqual(await ctx.proxy.getOption(`rows`), 24);
     });
@@ -114,7 +107,7 @@ test.describe('API integration', () => {
 
   test.describe('renderer', () => {
     test('foreground', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       await ctx.proxy.write('\x1b[30m0\x1b[31m1\x1b[32m2\x1b[33m3\x1b[34m4\x1b[35m5\x1b[36m6\x1b[37m7');
       await pollFor(ctx.page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       deepStrictEqual(await ctx.page.evaluate(`
@@ -139,7 +132,7 @@ test.describe('API integration', () => {
     });
 
     test('background', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       await ctx.proxy.write('\x1b[40m0\x1b[41m1\x1b[42m2\x1b[43m3\x1b[44m4\x1b[45m5\x1b[46m6\x1b[47m7');
       await pollFor(ctx.page, `document.querySelectorAll('.xterm-rows > :nth-child(1) > *').length`, 9);
       deepStrictEqual(await ctx.page.evaluate(`
@@ -177,7 +170,7 @@ test.describe('API integration', () => {
     } else {
       strictEqual(await ctx.proxy.getSelection(), '\n\nfoo\n\nbar\n\nbaz');
     }
-    deepStrictEqual(await ctx.proxy.getSelectionPosition(), { startColumn: 0, startRow: 0, endColumn: 5, endRow: 6 });
+    deepStrictEqual(await ctx.proxy.getSelectionPosition(), { start: { x: 0, y: 0 }, end: { x: 5, y: 6 } });
     await ctx.proxy.clearSelection();
     strictEqual(await ctx.proxy.hasSelection(), false);
     strictEqual(await ctx.proxy.getSelection(), '');
@@ -185,7 +178,7 @@ test.describe('API integration', () => {
     await ctx.proxy.select(1, 2, 2);
     strictEqual(await ctx.proxy.hasSelection(), true);
     strictEqual(await ctx.proxy.getSelection(), 'oo');
-    deepStrictEqual(await ctx.proxy.getSelectionPosition(), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
+    deepStrictEqual(await ctx.proxy.getSelectionPosition(), { start: { x: 1, y: 2 }, end: { x: 3, y: 2 } });
   });
 
   test('focus, blur', async () => {
@@ -674,7 +667,7 @@ test.describe('API integration', () => {
 
   test.describe('registerLinkProvider', () => {
     test('should fire provideLinks when hovering cells', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
@@ -699,7 +692,7 @@ test.describe('API integration', () => {
     });
 
     test('should fire hover and leave events on the link', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
@@ -737,7 +730,7 @@ test.describe('API integration', () => {
     });
 
     test('should work fine when hover and leave callbacks are not provided', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
@@ -780,7 +773,7 @@ test.describe('API integration', () => {
     });
 
     test('should fire activate events when clicking the link', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
@@ -824,7 +817,7 @@ test.describe('API integration', () => {
     });
 
     test('should work when multiple links are provided on the same line', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
@@ -873,7 +866,7 @@ test.describe('API integration', () => {
     });
 
     test('should dispose links when hovering away', async () => {
-      await openTerminal(ctx, { rendererType: 'dom' });
+      await openTerminal(ctx);
       // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
       // active link
       await ctx.proxy.focus();
