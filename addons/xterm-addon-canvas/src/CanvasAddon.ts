@@ -12,8 +12,6 @@ import { ITerminalAddon, Terminal } from 'xterm';
 export class CanvasAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
-  // private _onContextLoss = new EventEmitter<void>();
-  // public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
 
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
@@ -27,7 +25,6 @@ export class CanvasAddon implements ITerminalAddon {
     const screenElement: HTMLElement = (terminal as any)._core.screenElement;
     const linkifier = (terminal as any)._core.linkifier2;
     this._renderer = instantiationService.createInstance(CanvasRenderer, colors, screenElement, linkifier);
-    // this._renderer.onContextLoss(() => this._onContextLoss.fire());
     renderService.setRenderer(this._renderer);
     renderService.onResize(bufferService.cols, bufferService.rows);
   }
@@ -42,12 +39,4 @@ export class CanvasAddon implements ITerminalAddon {
     this._renderer?.dispose();
     this._renderer = undefined;
   }
-
-  // public get textureAtlas(): HTMLCanvasElement | undefined {
-  //   return this._renderer?.textureAtlas;
-  // }
-
-  // public clearTextureAtlas(): void {
-  //   this._renderer?.clearCharAtlas();
-  // }
 }
