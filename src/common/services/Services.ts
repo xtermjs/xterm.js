@@ -198,22 +198,15 @@ export interface IOptionsService {
   readonly options: ITerminalOptions;
 
   readonly onOptionChange: IEvent<string>;
-
-  setOption<T>(key: string, value: T): void;
-  getOption<T>(key: string): T | undefined;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
-export type RendererType = 'dom' | 'canvas';
-
 export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
   altClickMovesCursor: boolean;
-  bellSound: string;
-  bellStyle: 'none' | 'sound' /* | 'visual' | 'both' */;
   cols: number;
   convertEol: boolean;
   cursorBlink: boolean;
@@ -230,12 +223,10 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
-  linkTooltipHoverDuration: number;
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;
   minimumContrastRatio: number;
-  rendererType: RendererType;
   rightClickSelectsWord: boolean;
   rows: number;
   screenReaderMode: boolean;

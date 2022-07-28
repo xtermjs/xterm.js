@@ -39,16 +39,6 @@ declare module 'xterm-headless' {
     altClickMovesCursor?: boolean;
 
     /**
-     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
-     */
-    bellSound?: string;
-
-    /**
-     * The type of the bell notification the terminal will use.
-     */
-    bellStyle?: 'none' | 'sound';
-
-    /**
      * When enabled the cursor will be set to the beginning of the next line
      * with every new line. This is equivalent to sending '\r\n' for each '\n'.
      * Normally the termios settings of the underlying PTY deals with the
@@ -110,13 +100,6 @@ declare module 'xterm-headless' {
      * The line height used to render text.
      */
     lineHeight?: number;
-
-    /**
-     * The duration in milliseconds before link tooltip events fire when
-     * hovering on a link.
-     * @deprecated This will be removed when the link matcher API is removed.
-     */
-    linkTooltipHoverDuration?: number;
 
     /**
      * What log level to use, this will log for all levels below and including
@@ -646,17 +629,12 @@ declare module 'xterm-headless' {
     resize(columns: number, rows: number): void;
 
     /**
-     * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
-     * alt buffer is active, undefined is returned.
+     * Adds a marker to the normal buffer and returns it. If the alt buffer is
+     * active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number): IMarker | undefined;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addMarker(cursorYOffset: number): IMarker | undefined;
 
     /*
       * Disposes of the terminal, detaching it from the DOM and removing any
@@ -718,96 +696,6 @@ declare module 'xterm-headless' {
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Write UTF8 data to the terminal.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
-     * @deprecated use `write` instead
-     */
-    writeUtf8(data: Uint8Array, callback?: () => void): void;
-
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: string): any;
-
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
-    /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
-    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
-    /**
-    * Sets an option on the terminal.
-    * @param key The option key.
-    * @param value The option value.
-    */
-    setOption(key: 'logLevel', value: LogLevel): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'theme', value: ITheme): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'cols' | 'rows', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: string, value: any): void;
-
-    /**
      * Perform a full reset (RIS, aka '\x1bc').
      */
     reset(): void;
@@ -827,31 +715,6 @@ declare module 'xterm-headless' {
      * This is called when the addon is activated.
      */
     activate(terminal: Terminal): void;
-  }
-
-  /**
-   * An object representing a selection within the terminal.
-   */
-  interface ISelectionPosition {
-    /**
-     * The start column of the selection.
-     */
-    startColumn: number;
-
-    /**
-     * The start row of the selection.
-     */
-    startRow: number;
-
-    /**
-     * The end column of the selection.
-     */
-    endColumn: number;
-
-    /**
-     * The end row of the selection.
-     */
-    endRow: number;
   }
 
   /**

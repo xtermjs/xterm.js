@@ -21,11 +21,6 @@ declare module 'xterm' {
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
-   * A string representing a renderer type.
-   */
-  export type RendererType = 'dom' | 'canvas';
-
-  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -49,16 +44,6 @@ declare module 'xterm' {
      * underneath the mouse. The default is true.
      */
     altClickMovesCursor?: boolean;
-
-    /**
-     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
-     */
-    bellSound?: string;
-
-    /**
-     * The type of the bell notification the terminal will use.
-     */
-    bellStyle?: 'none' | 'sound';
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
@@ -149,13 +134,6 @@ declare module 'xterm' {
     lineHeight?: number;
 
     /**
-     * The duration in milliseconds before link tooltip events fire when
-     * hovering on a link.
-     * @deprecated This will be removed when the link matcher API is removed.
-     */
-    linkTooltipHoverDuration?: number;
-
-    /**
      * What log level to use, this will log for all levels below and including
      * what is set:
      *
@@ -192,16 +170,6 @@ declare module 'xterm' {
      * - 21: White on black or black on white.
      */
     minimumContrastRatio?: number;
-
-    /**
-     * The type of renderer to use, this allows using the fallback DOM renderer
-     * when canvas is too slow for the environment. The following features do
-     * not work when the DOM renderer is used:
-     *
-     * - Letter spacing
-     * - Cursor blink
-     */
-    rendererType?: RendererType;
 
     /**
      * Whether to select the word under the cursor on right click, this is
@@ -330,50 +298,6 @@ declare module 'xterm' {
     brightWhite?: string;
     /** ANSI extended colors (16-255) */
     extendedAnsi?: string[];
-  }
-
-  /**
-   * An object containing options for a link matcher.
-   */
-  export interface ILinkMatcherOptions {
-    /**
-     * The index of the link from the regex.match(text) call. This defaults to 0
-     * (for regular expressions without capture groups).
-     */
-    matchIndex?: number;
-
-    /**
-     * A callback that validates whether to create an individual link, pass
-     * whether the link is valid to the callback.
-     */
-    validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
-
-    /**
-     * A callback that fires when the mouse hovers over a link for a period of
-     * time (defined by {@link ITerminalOptions.linkTooltipHoverDuration}).
-     */
-    tooltipCallback?: (event: MouseEvent, uri: string, location: IViewportRange) => boolean | void;
-
-    /**
-     * A callback that fires when the mouse leaves a link. Note that this can
-     * happen even when tooltipCallback hasn't fired for the link yet.
-     */
-    leaveCallback?: () => void;
-
-    /**
-     * The priority of the link matcher, this defines the order in which the
-     * link matcher is evaluated relative to others, from highest to lowest. The
-     * default value is 0.
-     */
-    priority?: number;
-
-    /**
-     * A callback that fires when the mousedown and click events occur that
-     * determines whether a link will be activated upon click. This enables
-     * only activating a link when a certain modifier is held down, if not the
-     * mouse event will continue propagation (eg. double click to select word).
-     */
-    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
   /**
@@ -731,9 +655,7 @@ declare module 'xterm' {
     readonly cols: number;
 
     /**
-     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
-     * normal buffer or the alt buffer depending on what's running in the
-     * terminal.
+     * Access to the terminal's normal and alt buffer.
      */
     readonly buffer: IBufferNamespace;
 
@@ -744,8 +666,7 @@ declare module 'xterm' {
     readonly markers: ReadonlyArray<IMarker>;
 
     /**
-     * (EXPERIMENTAL) Get the parser interface to register
-     * custom escape sequence handlers.
+     * Get the parser interface to register custom escape sequence handlers.
      */
     readonly parser: IParser;
 
@@ -926,28 +847,6 @@ declare module 'xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
-     * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
-     * be matched and handled.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param regex The regular expression to search for, specifically this
-     * searches the textContent of the rows. You will want to use \s to match a
-     * space ' ' character for example.
-     * @param handler The callback when the link is called.
-     * @param options Options for the link matcher.
-     * @return The ID of the new matcher, this can be used to deregister.
-     */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
-
-    /**
-     * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
-     * @deprecated The link matcher API is now deprecated in favor of the link
-     * provider API, see `registerLinkProvider`.
-     * @param matcherId The link matcher's ID (returned after register)
-     */
-    deregisterLinkMatcher(matcherId: number): void;
-
-    /**
      * Registers a link provider, allowing a custom parser to be used to match
      * and handle links. Multiple link providers can be used, they will be asked
      * in the order in which they are registered.
@@ -994,17 +893,12 @@ declare module 'xterm' {
     deregisterCharacterJoiner(joinerId: number): void;
 
     /**
-     * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
-     * alt buffer is active, undefined is returned.
+     * Adds a marker to the normal buffer and returns it. If the alt buffer is
+     * active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number): IMarker | undefined;
-
-    /**
-     * @deprecated use `registerMarker` instead.
-     */
-    addMarker(cursorYOffset: number): IMarker | undefined;
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
@@ -1029,7 +923,7 @@ declare module 'xterm' {
     /**
      * Gets the selection position or undefined if there is no selection.
      */
-    getSelectionPosition(): ISelectionPosition | undefined;
+    getSelectionPosition(): IBufferRange | undefined;
 
     /**
      * Clears the current terminal selection.
@@ -1116,120 +1010,10 @@ declare module 'xterm' {
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Write UTF8 data to the terminal.
-     * @param data The data to write to the terminal.
-     * @param callback Optional callback when data was processed.
-     * @deprecated use `write` instead
-     */
-    writeUtf8(data: Uint8Array, callback?: () => void): void;
-
-    /**
      * Writes text to the terminal, performing the necessary transformations for pasted text.
      * @param data The text to write to the terminal.
      */
     paste(data: string): void;
-
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     * @deprecated Use `options` instead.
-     */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'logLevel' | 'rendererType' | 'termName' | 'wordSeparator'): string;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     * @deprecated Use `options` instead.
-     */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'visualBell' | 'windowsMode'): boolean;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     * @deprecated Use `options` instead.
-     */
-    getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     * @deprecated Use `options` instead.
-     */
-    getOption(key: 'fontWeight' | 'fontWeightBold'): FontWeight;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     * @deprecated Use `options` instead.
-     */
-    getOption(key: string): any;
-
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'logLevel', value: LogLevel): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'disableStdin' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'visualBell' | 'windowsMode', value: boolean): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'theme', value: ITheme): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: 'cols' | 'rows', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     * @deprecated Use `options` instead.
-     */
-    setOption(key: string, value: any): void;
 
     /**
      * Tells the renderer to refresh terminal content between two rows
@@ -1270,34 +1054,9 @@ declare module 'xterm' {
   }
 
   /**
-   * An object representing a selection within the terminal.
-   */
-  interface ISelectionPosition {
-    /**
-     * The start column of the selection.
-     */
-    startColumn: number;
-
-    /**
-     * The start row of the selection.
-     */
-    startRow: number;
-
-    /**
-     * The end column of the selection.
-     */
-    endColumn: number;
-
-    /**
-     * The end row of the selection.
-     */
-    endRow: number;
-  }
-
-  /**
    * An object representing a range within the viewport of the terminal.
    */
-  export interface IViewportRange {
+   export interface IViewportRange {
     /**
      * The start of the range.
      */
