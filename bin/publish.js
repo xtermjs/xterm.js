@@ -99,7 +99,7 @@ function getNextBetaVersion(packageJson) {
   }
   const tag = 'beta';
   let nextStableVersion;
-  if (packageJson.name = 'xterm') {
+  if (packageJson.name === 'xterm') {
     nextStableVersion = `5.0.0`;
   } else {
     const stableVersion = packageJson.version.split('.');
