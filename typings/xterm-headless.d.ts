@@ -712,31 +712,6 @@ declare module 'xterm-headless' {
   }
 
   /**
-   * An object representing a selection within the terminal.
-   */
-  interface ISelectionPosition {
-    /**
-     * The start column of the selection.
-     */
-    startColumn: number;
-
-    /**
-     * The start row of the selection.
-     */
-    startRow: number;
-
-    /**
-     * The end column of the selection.
-     */
-    endColumn: number;
-
-    /**
-     * The end row of the selection.
-     */
-    endRow: number;
-  }
-
-  /**
    * An object representing a range within the viewport of the terminal.
    */
   export interface IViewportRange {

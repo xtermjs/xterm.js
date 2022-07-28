@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDecorationOptions, IDecoration, IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { IDecorationOptions, IDecoration, IDisposable, IMarker } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
@@ -62,7 +62,7 @@ export interface IPublicTerminal extends IDisposable {
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   hasSelection(): boolean;
   getSelection(): string;
-  getSelectionPosition(): ISelectionPosition | undefined;
+  getSelectionPosition(): IBufferRange | undefined;
   clearSelection(): void;
   select(column: number, row: number, length: number): void;
   selectAll(): void;

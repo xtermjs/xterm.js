@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
-import { ITerminal } from 'browser/Types';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
+import { IBufferRange, ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
@@ -178,7 +178,7 @@ export class Terminal implements ITerminalApi {
   public getSelection(): string {
     return this._core.getSelection();
   }
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  public getSelectionPosition(): IBufferRange | undefined {
     return this._core.getSelectionPosition();
   }
   public clearSelection(): void {
