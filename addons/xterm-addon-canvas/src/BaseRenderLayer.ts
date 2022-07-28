@@ -18,7 +18,7 @@ import { IBufferService, IDecorationService, IOptionsService } from 'common/serv
 import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
-import { tryDrawCustomChar } from './CustomGlyphs';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

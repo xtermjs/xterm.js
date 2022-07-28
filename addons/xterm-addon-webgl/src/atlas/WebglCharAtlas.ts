@@ -12,7 +12,7 @@ import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, rgba } from 'common/Color';
-import { tryDrawCustomChar } from '../CustomGlyphs';
+import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
