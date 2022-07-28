@@ -16,6 +16,7 @@ import { Terminal } from 'xterm';
 import { WebglAddon } from 'xterm-addon-webgl';
 
 const terminal = new Terminal();
+terminal.open(element);
 terminal.loadAddon(new WebglAddon());
 ```
 

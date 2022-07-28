@@ -7,7 +7,7 @@ import { IRenderLayer } from './Types';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { TEXT_BASELINE } from 'browser/renderer/atlas/Constants';
+import { TEXT_BASELINE } from 'browser/renderer/Constants';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WebglCharAtlas } from 'atlas/WebglCharAtlas';

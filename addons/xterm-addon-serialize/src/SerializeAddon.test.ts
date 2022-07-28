@@ -74,7 +74,7 @@ describe('xterm-addon-serialize', () => {
       }
     });
 
-    terminal = new Terminal({ cols: 10, rows: 2 });
+    terminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
     terminal.loadAddon(serializeAddon);
 
     selectionService = new TestSelectionService((terminal as any)._core._bufferService);
