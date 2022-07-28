@@ -19,9 +19,9 @@ export class LinkRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     rendererId: number,
     linkifier2: ILinkifier2,
-    @IBufferService bufferService: IBufferService,
-    @IOptionsService optionsService: IOptionsService,
-    @IDecorationService decorationService: IDecorationService
+    bufferService: IBufferService,
+    optionsService: IOptionsService,
+    decorationService: IDecorationService
   ) {
     super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
 

@@ -11,8 +11,8 @@ import { IRenderLayer } from './Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifier2 } from 'browser/Types';
-import { ICharSizeService } from 'browser/services/Services';
-import { IBufferService, IOptionsService, IInstantiationService } from 'common/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
+import { IBufferService, IOptionsService, IInstantiationService, IDecorationService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
@@ -34,18 +34,21 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
     linkifier2: ILinkifier2,
-    instantiationService: IInstantiationService,
     private readonly _bufferService: IBufferService,
     private readonly _charSizeService: ICharSizeService,
-    private readonly _optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService,
+    characterJoinerService: ICharacterJoinerService,
+    coreService: ICoreService,
+    coreBrowserService: ICoreBrowserService,
+    decorationService: IDecorationService
   ) {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      instantiationService.createInstance(TextRenderLayer, this._screenElement, 0, this._colors, allowTransparency, this._id),
-      instantiationService.createInstance(SelectionRenderLayer, this._screenElement, 1, this._colors, this._id),
-      instantiationService.createInstance(LinkRenderLayer, this._screenElement, 2, this._colors, this._id, linkifier2),
-      instantiationService.createInstance(CursorRenderLayer, this._screenElement, 3, this._colors, this._id, this._onRequestRedraw)
+      new TextRenderLayer(this._screenElement, 0, this._colors, allowTransparency, this._id, this._bufferService, this._optionsService, characterJoinerService, decorationService),
+      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, this._optionsService, decorationService),
+      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier2, this._bufferService, this._optionsService, decorationService),
+      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, coreBrowserService, decorationService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
