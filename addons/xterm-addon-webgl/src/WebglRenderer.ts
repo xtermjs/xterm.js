@@ -24,7 +24,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { IDecorationService } from 'common/services/Services';
+import { ICoreService, IDecorationService } from 'common/services/Services';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -56,6 +56,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private _colors: IColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _coreBrowserService: ICoreBrowserService,
+    coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
   ) {
@@ -65,7 +66,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._core, this._onRequestRedraw)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
