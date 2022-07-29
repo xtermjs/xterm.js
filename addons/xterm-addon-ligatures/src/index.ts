@@ -63,7 +63,9 @@ export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []
           // sure our font is still vaild.
           if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.FAILED;
-            console.warn(loadError, new Error('Failure while loading font'));
+            if (term.options.logLevel === 'debug') {
+              console.debug(loadError, new Error('Failure while loading font'));
+            }
             font = undefined;
             loadError = e;
           }
