@@ -218,7 +218,7 @@ export class DomRendererRowFactory {
       // If in the selection, force the element to be above the selection to improve contrast and
       // support opaque selections
       if (isInSelection) {
-        bgOverride = this._colors.selectionOpaque;
+        bgOverride = this._colors.selectionBackgroundOpaque;
         isTop = true;
       }
 

@@ -250,7 +250,7 @@ export interface ITheme {
   background?: string;
   cursor?: string;
   cursorAccent?: string;
-  selection?: string;
+  selectionBackground?: string;
   selectionForeground?: string;
   black?: string;
   red?: string;
