@@ -12,7 +12,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
@@ -25,6 +25,7 @@ import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/S
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
+import { color, rgba as rgbaNs } from 'common/Color';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

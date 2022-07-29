@@ -144,7 +144,6 @@ describe('xterm-addon-ligatures', () => {
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
     assert.isTrue(onRefresh.notCalled);
-    assert.throws(() => term.joiner!(input));
   });
 
   it('returns nothing if the font is not present on the system', async () => {
@@ -176,7 +175,6 @@ describe('xterm-addon-ligatures', () => {
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
     assert.isTrue(onRefresh.notCalled);
-    assert.throws(() => term.joiner!(input));
   });
 
   it('ensures no empty errors are thrown', async () => {
@@ -185,7 +183,6 @@ describe('xterm-addon-ligatures', () => {
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
     assert.isTrue(onRefresh.notCalled);
-    assert.throws(() => term.joiner!(input), 'Failure while loading font');
     (fontLigatures.loadFile as sinon.SinonStub).restore();
   });
 });
