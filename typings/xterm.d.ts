@@ -21,7 +21,7 @@ declare module 'xterm' {
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
-   * An object containing start up options for the terminal.
+   * An object containing options for the terminal.
    */
   export interface ITerminalOptions {
     /**
@@ -54,11 +54,6 @@ declare module 'xterm' {
      * useful.
      */
     convertEol?: boolean;
-
-    /**
-     * The number of columns in the terminal.
-     */
-    cols?: number;
 
     /**
      * Whether the cursor blinks.
@@ -178,11 +173,6 @@ declare module 'xterm' {
     rightClickSelectsWord?: boolean;
 
     /**
-     * The number of rows in the terminal.
-     */
-    rows?: number;
-
-    /**
      * Whether screen reader support is enabled. When on this will expose
      * supporting elements in the DOM to support NVDA on Windows and VoiceOver
      * on macOS.
@@ -200,6 +190,12 @@ declare module 'xterm' {
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
+
+    /**
+     * The duration to smoothly scroll between the origin and the target in
+     * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
+     */
+    smoothScrollDuration?: number;
 
     /**
      * The size of tab stops in the terminal.
@@ -240,6 +236,22 @@ declare module 'xterm' {
      * ruler will be hidden when not set.
      */
     overviewRulerWidth?: number;
+  }
+
+  /**
+   * An object containing additional options for the terminal that can only be
+   * set on start up.
+   */
+  export interface ITerminalInitOnlyOptions {
+    /**
+     * The number of columns in the terminal.
+     */
+    cols?: number;
+
+    /**
+     * The number of rows in the terminal.
+     */
+    rows?: number;
   }
 
   /**
@@ -708,7 +720,7 @@ declare module 'xterm' {
      *
      * @param options An object containing a set of options.
      */
-    constructor(options?: ITerminalOptions);
+    constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions);
 
     /**
      * Adds an event listener for when the bell is triggered.
@@ -946,7 +958,8 @@ declare module 'xterm' {
 
     /*
      * Disposes of the terminal, detaching it from the DOM and removing any
-     * active listeners.
+     * active listeners. Once the terminal is disposed it should not be used
+     * again.
      */
     dispose(): void;
 

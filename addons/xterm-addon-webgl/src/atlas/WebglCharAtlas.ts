@@ -499,15 +499,15 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     }
 
-    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible,
-    // try for a maximum of 5 pixels.
+    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
+    // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
           this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, this._config.allowTransparency);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
           if (!isBeyondCellBounds) {
             break;
           }
@@ -536,7 +536,12 @@ export class WebglCharAtlas implements IDisposable {
     );
 
     // Clear out the background color and determine if the glyph is empty.
-    const isEmpty = clearColor(imageData, backgroundColor, foregroundColor, this._config.allowTransparency);
+    let isEmpty: boolean;
+    if (!this._config.allowTransparency) {
+      isEmpty = clearColor(imageData, backgroundColor, foregroundColor);
+    } else {
+      isEmpty = checkCompletelyTransparent(imageData);
+    }
 
     // Handle empty glyphs
     if (isEmpty) {
@@ -680,7 +685,7 @@ export class WebglCharAtlas implements IDisposable {
  * transparent.
  * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
-function clearColor(imageData: ImageData, bg: IColor, fg: IColor, allowTransparency: boolean): boolean {
+function clearColor(imageData: ImageData, bg: IColor, fg: IColor): boolean {
   // Get color channels
   const r = bg.rgba >>> 24;
   const g = bg.rgba >>> 16 & 0xFF;
@@ -700,15 +705,14 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, allowTranspare
   // Set alpha channel of relevent pixels to 0
   let isEmpty = true;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
+    // Check exact match
     if (imageData.data[offset] === r &&
         imageData.data[offset + 1] === g &&
         imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
-      // Check the threshold only when transparency is not allowed only as overlapping isn't an
-      // issue for transparency glyphs.
-      if (!allowTransparency &&
-          (Math.abs(imageData.data[offset] - r) +
+      // Check the threshold based difference
+      if ((Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
@@ -719,6 +723,15 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, allowTranspare
   }
 
   return isEmpty;
+}
+
+function checkCompletelyTransparent(imageData: ImageData): boolean {
+  for (let offset = 0; offset < imageData.data.length; offset += 4) {
+    if (imageData.data[offset + 3] > 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function toPaddedHex(c: number): string {

@@ -37,11 +37,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     rendererId: number,
     private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
-    @IBufferService bufferService: IBufferService,
-    @IOptionsService optionsService: IOptionsService,
-    @ICoreService private readonly _coreService: ICoreService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IDecorationService decorationService: IDecorationService
+    bufferService: IBufferService,
+    optionsService: IOptionsService,
+    private readonly _coreService: ICoreService,
+    private readonly _coreBrowserService: ICoreBrowserService,
+    decorationService: IDecorationService
   ) {
     super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     this._state = {

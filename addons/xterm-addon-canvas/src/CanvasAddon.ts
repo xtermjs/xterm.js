@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { IRenderService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
-import { IBufferService, IInstantiationService } from 'common/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 
 export class CanvasAddon implements ITerminalAddon {
@@ -18,13 +18,18 @@ export class CanvasAddon implements ITerminalAddon {
       throw new Error('Cannot activate CanvasAddon before Terminal.open');
     }
     this._terminal = terminal;
-    const instantiationService: IInstantiationService = (terminal as any)._core._instantiationService;
-    const bufferService: IBufferService = (terminal as any)._core._renderService;
+    const bufferService: IBufferService = (terminal as any)._core._bufferService;
     const renderService: IRenderService = (terminal as any)._core._renderService;
+    const characterJoinerService: ICharacterJoinerService = (terminal as any)._core._characterJoinerService;
+    const charSizeService: ICharSizeService = (terminal as any)._core._charSizeService;
+    const coreService: ICoreService = (terminal as any)._core.coreService;
+    const coreBrowserService: ICoreBrowserService = (terminal as any)._core._coreBrowserService;
+    const decorationService: IDecorationService = (terminal as any)._core._decorationService;
+    const optionsService: IOptionsService = (terminal as any)._core.optionsService;
     const colors: IColorSet = (terminal as any)._core._colorManager.colors;
     const screenElement: HTMLElement = (terminal as any)._core.screenElement;
     const linkifier = (terminal as any)._core.linkifier2;
-    this._renderer = instantiationService.createInstance(CanvasRenderer, colors, screenElement, linkifier);
+    this._renderer = new CanvasRenderer(colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
     renderService.setRenderer(this._renderer);
     renderService.onResize(bufferService.cols, bufferService.rows);
   }

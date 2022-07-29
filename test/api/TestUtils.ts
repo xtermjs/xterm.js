@@ -5,7 +5,7 @@
 
 import * as playwright from 'playwright';
 import deepEqual = require('deep-equal');
-import { ITerminalOptions } from 'xterm';
+import { ITerminalInitOnlyOptions, ITerminalOptions } from 'xterm';
 import { deepStrictEqual, fail } from 'assert';
 
 export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number): Promise<void> {
@@ -43,7 +43,7 @@ export async function timeout(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
 }
 
-export async function openTerminal(page: playwright.Page, options: ITerminalOptions = {}): Promise<void> {
+export async function openTerminal(page: playwright.Page, options: ITerminalOptions & ITerminalInitOnlyOptions = {}): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
   await page.waitForSelector('.xterm-rows');

@@ -65,6 +65,22 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
         console.error(err.name, err.message);
       }
     }
+    // Latest proposal https://bugs.chromium.org/p/chromium/issues/detail?id=1312603
+    else if (typeof process !== 'object' && 'queryLocalFonts' in window) {
+      const fonts: Record<string, IFontMetadata[]> = {};
+      try {
+        const fontsIterator = await (window as any).queryLocalFonts();
+        for (const metadata of fontsIterator) {
+          if (!fonts.hasOwnProperty(metadata.family)) {
+            fonts[metadata.family] = [];
+          }
+          fonts[metadata.family].push(metadata);
+        }
+        fontsPromise = Promise.resolve(fonts);
+      } catch (err: any) {
+        console.error(err.name, err.message);
+      }
+    }
     // Node environment or no font access API
     else {
       try {
@@ -90,7 +106,9 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
     if (fonts.hasOwnProperty(family) && fonts[family].length > 0) {
       const font = fonts[family][0];
       if ('blob' in font) {
-        return loadBuffer(await (await font.blob()).arrayBuffer(), { cacheSize });
+        const bytes = await font.blob();
+        const buffer = await bytes.arrayBuffer();
+        return loadBuffer(buffer, { cacheSize });
       }
       return await loadFile(font.path, { cacheSize });
     }

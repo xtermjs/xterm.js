@@ -30,9 +30,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  private _selectionStart: [number, number] | undefined;
-  private _selectionEnd: [number, number] | undefined;
-  private _columnSelectMode: boolean = false;
+  protected _selectionStart: [number, number] | undefined;
+  protected _selectionEnd: [number, number] | undefined;
+  protected _columnSelectMode: boolean = false;
 
   protected _charAtlas: BaseCharAtlas | undefined;
 
@@ -48,6 +48,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     dim: false,
     italic: false
   };
+
+  public get canvas(): HTMLCanvasElement { return this._canvas; }
 
   constructor(
     private _container: HTMLElement,

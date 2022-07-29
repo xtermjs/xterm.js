@@ -11,11 +11,12 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
 import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
@@ -95,6 +96,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+    this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 
@@ -520,65 +522,61 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    // Calculate the scaled character width. Width is floored as it must be
-    // drawn to an integer grid in order for the CharAtlas "stamps" to not be
-    // blurry. When text is drawn to the grid not using the CharAtlas, it is
-    // clipped to ensure there is no overlap with the next cell.
-
-    // NOTE: ceil fixes sometime, floor does others :s
-
+    // Calculate the scaled character width. Width is floored as it must be drawn to an integer grid
+    // in order for the char atlas glyphs to not be blurry.
     this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
 
-    // Calculate the scaled character height. Height is ceiled in case
-    // devicePixelRatio is a floating point number in order to ensure there is
-    // enough space to draw the character to the cell.
+    // Calculate the scaled character height. Height is ceiled in case devicePixelRatio is a
+    // floating point number in order to ensure there is enough space to draw the character to the
+    // cell.
     this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
 
-    // Calculate the scaled cell height, if lineHeight is not 1 then the value
-    // will be floored because since lineHeight can never be lower then 1, there
-    // is a guarentee that the scaled line height will always be larger than
-    // scaled char height.
+    // Calculate the scaled cell height, if lineHeight is _not_ 1, the resulting value will be
+    // floored since lineHeight can never be lower then 1, this guarentees the scaled cell height
+    // will always be larger than scaled char height.
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight!);
 
-    // Calculate the y coordinate within a cell that text should draw from in
-    // order to draw in the center of a cell.
+    // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
+    // correctly within the cell.
     this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing!);
 
-    // Calculate the x coordinate with a cell that text should draw from in
-    // order to draw in the center of a cell.
+    // Calculate the x offset with a cell that text should draw from in order for it to be centered
+    // correctly within the cell.
     this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing! / 2);
 
-    // Recalculate the canvas dimensions; scaled* define the actual number of
-    // pixel in the canvas
+    // Recalculate the canvas dimensions, the scaled dimensions define the actual number of pixel in
+    // the canvas
     this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
     this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
 
-    // The the size of the canvas on the page. It's very important that this
-    // rounds to nearest integer and not ceils as browsers often set
-    // window.devicePixelRatio as something like 1.100000023841858, when it's
-    // actually 1.1. Ceiling causes blurriness as the backing canvas image is 1
-    // pixel too large for the canvas element size.
+    // The the size of the canvas on the page. It's important that this rounds to nearest integer
+    // and not ceils as browsers often have floating point precision issues where
+    // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
+    // it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
+    // large for the canvas element size.
     this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / this._devicePixelRatio);
     this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / this._devicePixelRatio);
 
-    // this.dimensions.scaledCanvasHeight = this.dimensions.canvasHeight * devicePixelRatio;
-    // this.dimensions.scaledCanvasWidth = this.dimensions.canvasWidth * devicePixelRatio;
-
-    // Get the _actual_ dimensions of an individual cell. This needs to be
-    // derived from the canvasWidth/Height calculated above which takes into
-    // account window.devicePixelRatio. CharMeasure.width/height by itself is
-    // insufficient when the page is not at 100% zoom level as CharMeasure is
-    // measured in CSS pixels, but the actual char size on the canvas can
-    // differ.
-    // this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
-    // this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
-
-    // This fixes 110% and 125%, not 150% or 175% though
+    // Get the CSS dimensions of an individual cell. This needs to be derived from the calculated
+    // device pixel canvas value above. CharMeasure.width/height by itself is insufficient when the
+    // page is not at 100% zoom level as CharMeasure is measured in CSS pixels, but the actual char
+    // size on the canvas can differ.
     this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
     this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+  }
+
+  private _setCanvasDevicePixelDimensions(width: number, height: number): void {
+    if (this.dimensions.scaledCanvasWidth === width && this.dimensions.scaledCanvasHeight === height) {
+      return;
+    }
+    this.dimensions.scaledCanvasWidth = width;
+    this.dimensions.scaledCanvasHeight = height;
+    this._canvas.width = width;
+    this._canvas.height = height;
+    this._requestRedrawViewport();
   }
 
   private _requestRedrawViewport(): void {

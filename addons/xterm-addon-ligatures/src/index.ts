@@ -54,7 +54,7 @@ export function enableLigatures(term: Terminal): void {
 
             // Only refresh things if we actually found a font
             if (f) {
-              term.refresh(0, term.options.rows! - 1);
+              term.refresh(0, term.rows - 1);
             }
           }
         })
