@@ -17,11 +17,14 @@ declare module 'xterm-addon-ligatures' {
   export class LigaturesAddon implements ITerminalAddon {
     /**
      * Creates a new ligatures addon.
+     *
+     * @param options Options for the ligatures addon.
      */
-    constructor();
+    constructor(options?: Partial<ILigatureOptions>);
 
     /**
      * Activates the addon
+     *
      * @param terminal The terminal the addon is being loaded in.
      */
     public activate(terminal: Terminal): void;
@@ -30,5 +33,26 @@ declare module 'xterm-addon-ligatures' {
      * Disposes the addon.
      */
     public dispose(): void;
+  }
+
+  /**
+   * Options for the ligatures addon.
+   */
+  export interface ILigatureOptions {
+    /**
+     * Fallback ligatures to use when the font access API is either not supported by the browser or
+     * access is denied. The default set of ligatures is taken from Iosevka's default "calt"
+     * ligation set: https://typeof.net/Iosevka/
+     *
+     * ```
+     * <-- <--- <<- <- -> ->> --> --->
+     * <== <=== <<= <= => =>> ==> ===> >= >>=
+     * <-> <--> <---> <----> <=> <==> <===> <====> -------->
+     * <~~ <~ ~> ~~> :: ::: == != === !==
+     * := :- :+ <* <*> *> <| <|> |> +: -: =: :>
+     * ++ +++ <!-- <!--- <***>
+     * ```
+     */
+    fallbackLigatures: string[]
   }
 }
