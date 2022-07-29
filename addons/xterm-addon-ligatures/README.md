@@ -33,15 +33,16 @@ This package locates the font file on disk for the font currently in use by the 
 
 Since this package depends on being able to find and resolve a system font from disk, it has to have system access that isn't available in the web browser. As a result, this package is mainly useful in environments that combine browser and Node.js runtimes (such as [Electron]).
 
+### Fallback Ligatures
+
+When ligatures cannot be fetched from the environment, a set of "fallback" ligatures is used to get the most common ligatures working. These fallback ligatures can be customized with options passed to `LigatureAddon.constructor`.
+
 ### Fonts
 
 This package makes use of the following fonts for testing:
 
- * [Fira Code][Fira Code] - [Licensed under the OFL][Fira Code License] by Nikita
-   Prokopov, Mozilla Foundation with reserved names Fira Code, Fira Mono, and
-   Fira Sans
- * [Iosevka] - [Licensed under the OFL][Iosevka License] by Belleve Invis with
-   reserved name Iosevka
+* [Fira Code][Fira Code] - [Licensed under the OFL][Fira Code License] by Nikita Prokopov, Mozilla Foundation with reserved names Fira Code, Fira Mono, and Fira Sans
+* [Iosevka] - [Licensed under the OFL][Iosevka License] by Belleve Invis with reserved name Iosevka
 
 [xterm.js]: https://github.com/xtermjs/xterm.js
 [Electron]: https://electronjs.org/

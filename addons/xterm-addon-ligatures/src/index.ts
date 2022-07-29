@@ -26,13 +26,13 @@ const CACHE_SIZE = 100000;
  * start to render them.
  * @param term Terminal instance from xterm.js
  */
-export function enableLigatures(term: Terminal): void {
+export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []): number {
   let currentFontName: string | undefined = undefined;
   let font: Font | undefined = undefined;
   let loadingState: LoadingState = LoadingState.UNLOADED;
   let loadError: any | undefined = undefined;
 
-  term.registerCharacterJoiner((text: string): [number, number][] => {
+  return term.registerCharacterJoiner((text: string): [number, number][] => {
     // If the font hasn't been loaded yet, load it and return an empty result
     const termFont = term.options.fontFamily;
     if (
@@ -63,6 +63,7 @@ export function enableLigatures(term: Terminal): void {
           // sure our font is still vaild.
           if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.FAILED;
+            console.warn(loadError, new Error('Failure while loading font'));
             font = undefined;
             loadError = e;
           }
@@ -76,10 +77,21 @@ export function enableLigatures(term: Terminal): void {
         range => [range[0], range[1]]
       );
     }
-    if (loadingState === LoadingState.FAILED) {
-      throw loadError || new Error('Failure while loading font');
-    }
 
-    return [];
+    return getFallbackRanges(text, fallbackLigatures);
   });
+}
+
+function getFallbackRanges(text: string, fallbackLigatures: string[]): [number, number][] {
+  const ranges: [number, number][] = [];
+  for (let i = 0; i < text.length; i++) {
+    for (let j = 0; j < fallbackLigatures.length; j++) {
+      if (text.startsWith(fallbackLigatures[j], i)) {
+        ranges.push([i, i + fallbackLigatures[j].length]);
+        i += fallbackLigatures[j].length - 1;
+        break;
+      }
+    }
+  }
+  return ranges;
 }
