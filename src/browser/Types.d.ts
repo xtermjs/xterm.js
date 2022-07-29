@@ -168,7 +168,7 @@ export interface ILinkWithState {
   state?: ILinkState;
 }
 
-export interface ILinkifier2 {
+export interface ILinkifier2 extends IDisposable {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
   readonly currentLink: ILinkWithState | undefined;

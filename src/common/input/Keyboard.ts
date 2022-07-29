@@ -83,10 +83,7 @@ export function evaluateKeyboardEvent(
       break;
     case 8:
       // backspace
-      if (ev.shiftKey) {
-        result.key = C0.BS; // ^H
-        break;
-      } else if (ev.altKey) {
+      if (ev.altKey) {
         result.key = C0.ESC + C0.DEL; // \e ^?
         break;
       }

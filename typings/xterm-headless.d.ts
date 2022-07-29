@@ -170,6 +170,12 @@ declare module 'xterm-headless' {
     scrollSensitivity?: number;
 
     /**
+     * The duration to smoothly scroll between the origin and the target in
+     * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
+     */
+    smoothScrollDuration?: number;
+
+    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;
@@ -631,9 +637,10 @@ declare module 'xterm-headless' {
     registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /*
-      * Disposes of the terminal, detaching it from the DOM and removing any
-      * active listeners.
-      */
+     * Disposes of the terminal, detaching it from the DOM and removing any
+     * active listeners. Once the terminal is disposed it should not be used
+     * again.
+     */
     dispose(): void;
 
     /**

@@ -200,7 +200,7 @@ export namespace rgba {
         const resultA = reduceLuminance(bgRgba, fgRgba, ratio);
         const resultARatio = contrastRatio(bgL, rgb.relativeLuminance(resultA >> 8));
         if (resultARatio < ratio) {
-          const resultB = increaseLuminance(bgRgba, bgRgba, ratio);
+          const resultB = increaseLuminance(bgRgba, fgRgba, ratio);
           const resultBRatio = contrastRatio(bgL, rgb.relativeLuminance(resultB >> 8));
           return resultARatio > resultBRatio ? resultA : resultB;
         }
@@ -209,7 +209,7 @@ export namespace rgba {
       const resultA = increaseLuminance(bgRgba, fgRgba, ratio);
       const resultARatio = contrastRatio(bgL, rgb.relativeLuminance(resultA >> 8));
       if (resultARatio < ratio) {
-        const resultB = reduceLuminance(bgRgba, bgRgba, ratio);
+        const resultB = reduceLuminance(bgRgba, fgRgba, ratio);
         const resultBRatio = contrastRatio(bgL, rgb.relativeLuminance(resultB >> 8));
         return resultARatio > resultBRatio ? resultA : resultB;
       }
