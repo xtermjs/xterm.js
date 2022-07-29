@@ -832,7 +832,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe('selection', async () => {
+  describe('selectionBackground', async () => {
     if (areTestsEnabled) {
       before(async () => setupBrowser());
       after(async () => browser.close());
