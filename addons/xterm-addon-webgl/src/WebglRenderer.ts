@@ -21,7 +21,7 @@ import { ITerminal, IColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IDecorationService } from 'common/services/Services';
@@ -55,6 +55,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private _terminal: Terminal,
     private _colors: IColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
+    private readonly _coreBrowserService: ICoreBrowserService,
     private readonly _decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
   ) {
@@ -187,12 +188,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.onBlur(this._terminal);
     }
+    // Request a redraw for active/inactive selection background
+    this._requestRedrawViewport();
   }
 
   public onFocus(): void {
     for (const l of this._renderLayers) {
       l.onFocus(this._terminal);
     }
+    // Request a redraw for active/inactive selection background
+    this._requestRedrawViewport();
   }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -405,7 +410,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Apply the selection color if needed
     if (this._isCellSelected(x, y)) {
-      bgOverride = this._colors.selectionBackgroundOpaque.rgba >> 8 & 0xFFFFFF;
+      bgOverride = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
       if (this._colors.selectionForeground) {
         fgOverride = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
       }
