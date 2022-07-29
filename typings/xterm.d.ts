@@ -270,6 +270,8 @@ declare module 'xterm' {
     selectionBackground?: string;
     /** The selection foreground color */
     selectionForeground?: string;
+    /** The selection background color when the terminal does not have focus (can be transparent) */
+    selectionInactiveBackground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */

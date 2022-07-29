@@ -102,9 +102,11 @@ export class ColorManager implements IColorManager {
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
+      selectionForeground: undefined,
       selectionBackgroundTransparent: DEFAULT_SELECTION,
       selectionBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
-      selectionForeground: undefined,
+      selectionInactiveBackgroundTransparent: DEFAULT_SELECTION,
+      selectionInactiveBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
     };
@@ -134,6 +136,8 @@ export class ColorManager implements IColorManager {
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
     this.colors.selectionBackgroundTransparent = this._parseColor(theme.selectionBackground, DEFAULT_SELECTION, true);
     this.colors.selectionBackgroundOpaque = color.blend(this.colors.background, this.colors.selectionBackgroundTransparent);
+    this.colors.selectionInactiveBackgroundTransparent = this._parseColor(theme.selectionInactiveBackground, this.colors.selectionBackgroundTransparent, true);
+    this.colors.selectionInactiveBackgroundOpaque = color.blend(this.colors.background, this.colors.selectionInactiveBackgroundTransparent);
     const nullColor: IColor = {
       css: '',
       rgba: 0
