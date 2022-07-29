@@ -115,9 +115,9 @@ export interface IColorSet {
   background: IColor;
   cursor: IColor;
   cursorAccent: IColor;
-  selectionTransparent: IColor;
+  selectionBackgroundTransparent: IColor;
   /** The selection blended on top of background. */
-  selectionOpaque: IColor;
+  selectionBackgroundOpaque: IColor;
   selectionForeground: IColor | undefined;
   ansi: IColor[];
   contrastCache: IColorContrastCache;
@@ -136,7 +136,7 @@ export interface IPartialColorSet {
   background: IColor;
   cursor?: IColor;
   cursorAccent?: IColor;
-  selection?: IColor;
+  selectionBackground?: IColor;
   ansi: IColor[];
 }
 

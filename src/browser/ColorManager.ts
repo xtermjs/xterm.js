@@ -102,8 +102,8 @@ export class ColorManager implements IColorManager {
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
-      selectionTransparent: DEFAULT_SELECTION,
-      selectionOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      selectionBackgroundTransparent: DEFAULT_SELECTION,
+      selectionBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       selectionForeground: undefined,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache
@@ -132,8 +132,8 @@ export class ColorManager implements IColorManager {
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
-    this.colors.selectionTransparent = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
-    this.colors.selectionOpaque = color.blend(this.colors.background, this.colors.selectionTransparent);
+    this.colors.selectionBackgroundTransparent = this._parseColor(theme.selectionBackground, DEFAULT_SELECTION, true);
+    this.colors.selectionBackgroundOpaque = color.blend(this.colors.background, this.colors.selectionBackgroundTransparent);
     const nullColor: IColor = {
       css: '',
       rgba: 0
@@ -147,9 +147,9 @@ export class ColorManager implements IColorManager {
      * If selection color is opaque, blend it with background with 0.3 opacity
      * Issue #2737
      */
-    if (color.isOpaque(this.colors.selectionTransparent)) {
+    if (color.isOpaque(this.colors.selectionBackgroundTransparent)) {
       const opacity = 0.3;
-      this.colors.selectionTransparent = color.opacity(this.colors.selectionTransparent, opacity);
+      this.colors.selectionBackgroundTransparent = color.opacity(this.colors.selectionBackgroundTransparent, opacity);
     }
     this.colors.ansi = DEFAULT_ANSI_COLORS.slice();
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);

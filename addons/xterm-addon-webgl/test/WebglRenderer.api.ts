@@ -832,7 +832,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  describe('selection', async () => {
+  describe('selectionBackground', async () => {
     if (areTestsEnabled) {
       before(async () => setupBrowser());
       after(async () => browser.close());
@@ -843,7 +843,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
         background: '#00FF00',
-        selection: '#0000FF'
+        selectionBackground: '#0000FF'
       };
       await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await writeSync(page, ` █\\x1b[7m█\\x1b[0m`);
