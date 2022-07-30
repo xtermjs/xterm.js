@@ -216,6 +216,10 @@ declare module 'xterm' {
      * - Reflow is disabled.
      * - Lines are assumed to be wrapped if the last character of the line is
      *   not whitespace.
+     *
+     * When using conpty on Windows 11 version >= 21376, it is recommended to
+     * disable this because native text wrapping sequences are output correctly
+     * thanks to https://github.com/microsoft/terminal/issues/405
      */
     windowsMode?: boolean;
 
@@ -267,9 +271,11 @@ declare module 'xterm' {
     /** The accent color of the cursor (fg color for a block cursor) */
     cursorAccent?: string;
     /** The selection background color (can be transparent) */
-    selection?: string;
+    selectionBackground?: string;
     /** The selection foreground color */
     selectionForeground?: string;
+    /** The selection background color when the terminal does not have focus (can be transparent) */
+    selectionInactiveBackground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */

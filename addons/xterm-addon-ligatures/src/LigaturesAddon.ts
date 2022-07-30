@@ -5,6 +5,7 @@
 
 import { Terminal } from 'xterm';
 import { enableLigatures } from '.';
+import { ILigatureOptions } from './Types';
 
 export interface ITerminalAddon {
   activate(terminal: Terminal): void;
@@ -12,12 +13,31 @@ export interface ITerminalAddon {
 }
 
 export class LigaturesAddon implements ITerminalAddon {
-  constructor() {}
+  private readonly _fallbackLigatures: string[];
 
-  public activate(terminal: Terminal): void {
-    enableLigatures(terminal);
+  private _terminal: Terminal | undefined;
+  private _characterJoinerId: number | undefined;
+
+  constructor(options?: Partial<ILigatureOptions>) {
+    this._fallbackLigatures = (options?.fallbackLigatures || [
+      '<--', '<---', '<<-', '<-', '->', '->>', '-->', '--->',
+      '<==', '<===', '<<=', '<=', '=>', '=>>', '==>', '===>', '>=', '>>=',
+      '<->', '<-->', '<--->', '<---->', '<=>', '<==>', '<===>', '<====>', '-------->',
+      '<~~', '<~', '~>', '~~>', '::', ':::', '==', '!=', '===', '!==',
+      ':=', ':-', ':+', '<*', '<*>', '*>', '<|', '<|>', '|>', '+:', '-:', '=:', ':>',
+      '++', '+++', '<!--', '<!---', '<***>'
+    ]).sort((a, b) => b.length - a.length);
   }
 
-  public dispose(): void {}
-}
+  public activate(terminal: Terminal): void {
+    this._terminal = terminal;
+    this._characterJoinerId = enableLigatures(terminal, this._fallbackLigatures);
+  }
 
+  public dispose(): void {
+    if (this._characterJoinerId !== undefined) {
+      this._terminal?.deregisterCharacterJoiner(this._characterJoinerId);
+      this._characterJoinerId = undefined;
+    }
+  }
+}

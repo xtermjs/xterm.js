@@ -5,7 +5,7 @@
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
-import { ICharacterJoinerService, ICharSizeService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer, IBufferRange } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
@@ -338,6 +338,11 @@ export class MockCompositionHelper implements ICompositionHelper {
   public keydown(ev: KeyboardEvent): boolean {
     return true;
   }
+}
+
+export class MockCoreBrowserService implements ICoreBrowserService {
+  public serviceBrand: undefined;
+  public isFocused: boolean = true;
 }
 
 export class MockCharSizeService implements ICharSizeService {

@@ -14,6 +14,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
+import { color, css } from 'common/Color';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -175,6 +176,12 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else if (cell.isBgPalette()) {
         nextFillStyle = this._colors.ansi[cell.getBgColor()].css;
+      }
+
+      // Apply dim to the background, this is relatively slow as the CSS is re-parsed but dim is
+      // rarely used
+      if (nextFillStyle && cell.isDim()) {
+        nextFillStyle = color.multiplyOpacity(css.toColor(nextFillStyle), 0.5).css;
       }
 
       // Get any decoration foreground/background overrides, this must be fetched before the early

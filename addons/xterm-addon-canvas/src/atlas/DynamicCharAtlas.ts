@@ -225,13 +225,18 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
     }
+    let result: IColor;
     if (glyph.bg === INVERTED_DEFAULT_COLOR) {
-      return this._config.colors.foreground;
+      result = this._config.colors.foreground;
+    } else if (glyph.bg < 256) {
+      result = this._getColorFromAnsiIndex(glyph.bg);
+    } else {
+      result = this._config.colors.background;
     }
-    if (glyph.bg < 256) {
-      return this._getColorFromAnsiIndex(glyph.bg);
+    if (glyph.dim) {
+      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, 0.5));
     }
-    return this._config.colors.background;
+    return result;
   }
 
   private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
@@ -274,6 +279,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     if (glyph.dim) {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
+
     // Draw the character
     this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight);
 

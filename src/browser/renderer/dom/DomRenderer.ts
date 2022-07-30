@@ -220,9 +220,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` z-index: 1;` +
       ` pointer-events: none;` +
       `}` +
+      `${this._terminalSelector}.focus .${SELECTION_CLASS} div {` +
+      ` position: absolute;` +
+      ` background-color: ${this._colors.selectionBackgroundOpaque.css};` +
+      `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionOpaque.css};` +
+      ` background-color: ${this._colors.selectionInactiveBackgroundOpaque.css};` +
       `}`;
     // Colors
     this._colors.ansi.forEach((c, i) => {

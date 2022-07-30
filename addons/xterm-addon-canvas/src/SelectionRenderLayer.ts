@@ -3,10 +3,12 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreBrowserService } from 'browser/services/Services';
+import { IEventEmitter } from 'common/EventEmitter';
 
 interface ISelectionState {
   start?: [number, number];
@@ -24,8 +26,9 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     rendererId: number,
     bufferService: IBufferService,
-    optionsService: IOptionsService,
-    decorationService: IDecorationService
+    private readonly _coreBrowserService: ICoreBrowserService,
+    decorationService: IDecorationService,
+    optionsService: IOptionsService
   ) {
     super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
     this._clearState();
@@ -45,7 +48,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // On resize use the base render layer's cached selection values since resize clears _state
     // inside reset.
     if (this._selectionStart && this._selectionEnd) {
-      this.onSelectionChanged(this._selectionStart, this._selectionEnd, this._columnSelectMode);
+      this._redrawSelection(this._selectionStart, this._selectionEnd, this._columnSelectMode);
     }
   }
 
@@ -56,9 +59,22 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
   }
 
+  public onBlur(): void {
+    this.reset();
+    this._redrawSelection(this._selectionStart, this._selectionEnd, this._columnSelectMode);
+  }
+
+  public onFocus(): void {
+    this.reset();
+    this._redrawSelection(this._selectionStart, this._selectionEnd, this._columnSelectMode);
+  }
+
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     super.onSelectionChanged(start, end, columnSelectMode);
+    this._redrawSelection(start, end, columnSelectMode);
+  }
 
+  private _redrawSelection(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;
@@ -85,7 +101,9 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    this._ctx.fillStyle = this._colors.selectionTransparent.css;
+    this._ctx.fillStyle = (this._coreBrowserService.isFocused
+      ? this._colors.selectionBackgroundTransparent
+      : this._colors.selectionInactiveBackgroundTransparent).css;
 
     if (columnSelectMode) {
       const startCol = start[0];

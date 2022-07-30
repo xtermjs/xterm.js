@@ -5,7 +5,7 @@
 
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
-import { Attributes, FgFlags } from 'common/buffer/Constants';
+import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
 import { IColorSet } from 'browser/Types';
@@ -244,8 +244,9 @@ export class RectangleRenderer extends Disposable {
     const r = ((rgba >> 24) & 0xFF) / 255;
     const g = ((rgba >> 16) & 0xFF) / 255;
     const b = ((rgba >> 8 ) & 0xFF) / 255;
+    const a =  bg & BgFlags.DIM ? 0.5 : 1;
 
-    this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, 1);
+    this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {

@@ -10,7 +10,7 @@ import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -38,6 +38,7 @@ export class DomRendererRowFactory {
     private _colors: IColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @ICoreService private readonly _coreService: ICoreService,
     @IDecorationService private readonly _decorationService: IDecorationService
   ) {
@@ -233,7 +234,7 @@ export class DomRendererRowFactory {
       // If in the selection, force the element to be above the selection to improve contrast and
       // support opaque selections
       if (isInSelection) {
-        bgOverride = this._colors.selectionOpaque;
+        bgOverride = this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque;
         isTop = true;
       }
 
@@ -262,6 +263,13 @@ export class DomRendererRowFactory {
           } else {
             resolvedBg = this._colors.background;
           }
+      }
+
+      // If there is no background override by now it's the original color, so apply dim if needed
+      if (!bgOverride) {
+        if (cell.isDim()) {
+          bgOverride = color.multiplyOpacity(resolvedBg, 0.5);
+        }
       }
 
       // Foreground

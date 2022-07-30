@@ -15,7 +15,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     background: colors.background,
     cursor: undefined,
     cursorAccent: undefined,
-    selection: undefined,
+    selectionBackground: undefined,
     ansi: colors.ansi.slice()
   };
   return {
