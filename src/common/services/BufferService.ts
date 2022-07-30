@@ -9,6 +9,7 @@ import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { ITerminalInitOnlyOptions } from 'xterm';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -33,11 +34,12 @@ export class BufferService extends Disposable implements IBufferService {
   private _cachedBlankLine: IBufferLine | undefined;
 
   constructor(
+    private _initOptions: ITerminalInitOnlyOptions,
     @IOptionsService private _optionsService: IOptionsService
   ) {
     super();
-    this.cols = Math.max(80 || 0, MINIMUM_COLS);
-    this.rows = Math.max(24 || 0, MINIMUM_ROWS);
+    this.cols = Math.max(_initOptions.cols || 0, MINIMUM_COLS);
+    this.rows = Math.max(_initOptions.rows || 0, MINIMUM_ROWS);
     this.buffers = new BufferSet(_optionsService, this);
   }
 

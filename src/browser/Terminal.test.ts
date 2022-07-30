@@ -1399,4 +1399,30 @@ describe('Terminal', () => {
       assert.deepEqual(markers.map(el => el.line), [-1, -1, 0, 1, 2]);
     });
   });
+
+  describe('options', () => {
+    const termOptions = {
+      cols: 80,
+      rows: 24
+    };
+
+    beforeEach(async () => {
+      term = new TestTerminal(termOptions);
+    });
+    it('get options', () => {
+      assert.equal(term.options.lineHeight, 1);
+      assert.equal(term.options.cursorWidth, 1);
+    });
+    it('set options', async () => {
+      term.options.scrollback = 1;
+      assert.equal(term.options.scrollback, 1);
+      // TODO: Fix with #3948
+      /*term.options = {
+        fontSize: 12,
+        fontFamily: 'Arial'
+      };
+      assert.equal(term.options.fontSize, 12);
+      assert.equal(term.options.fontFamily, 'Arial');*/
+    });
+  });
 });
