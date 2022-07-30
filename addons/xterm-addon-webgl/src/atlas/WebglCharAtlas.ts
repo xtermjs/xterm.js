@@ -451,8 +451,10 @@ export class WebglCharAtlas implements IDisposable {
           break;
         case UnderlineStyle.CURLY:
           const xMid = padding + this._config.scaledCharWidth / 2;
-          const yMidBot = Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
-          const yMidTop = Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+          // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
+          // made taller when the line width is  as otherwise it's not very clear otherwise.
+          const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+          const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
           // Clip the left and right edges of the underline such that it can be drawn just outside
           // the edge of the cell to ensure a continuous stroke when there are multiple underlined
           // glyphs adjacent to one another.
@@ -462,23 +464,23 @@ export class WebglCharAtlas implements IDisposable {
           // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
           this._tmpCtx.moveTo(xLeft - this._config.scaledCharWidth / 2, yMid);
           this._tmpCtx.bezierCurveTo(
-            xLeft - this._config.scaledCharWidth / 2, yMidTop,
-            xLeft, yMidTop,
+            xLeft - this._config.scaledCharWidth / 2, yCurlyTop,
+            xLeft, yCurlyTop,
             xLeft, yMid
           );
           this._tmpCtx.bezierCurveTo(
-            xLeft, yMidBot,
-            xMid, yMidBot,
+            xLeft, yCurlyBot,
+            xMid, yCurlyBot,
             xMid, yMid
           );
           this._tmpCtx.bezierCurveTo(
-            xMid, yMidTop,
-            xRight, yMidTop,
+            xMid, yCurlyTop,
+            xRight, yCurlyTop,
             xRight, yMid
           );
           this._tmpCtx.bezierCurveTo(
-            xRight, yMidBot,
-            xRight + this._config.scaledCellWidth / 2, yMidBot,
+            xRight, yCurlyBot,
+            xRight + this._config.scaledCellWidth / 2, yCurlyBot,
             xRight + this._config.scaledCellWidth / 2, yMid
           );
           break;
