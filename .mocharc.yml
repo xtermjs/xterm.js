@@ -1,0 +1,5 @@
+require:
+  - source-map-support/register
+reporter: spec
+color: true
+check-leaks: true
