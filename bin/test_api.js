@@ -17,9 +17,7 @@ let testFiles = [
 ];
 
 
-let flagArgs = [
-  '--config', ".mocharc-default.yml"
-];
+let flagArgs = [];
 
 if (process.argv.length > 2) {
   const args = process.argv.slice(2);

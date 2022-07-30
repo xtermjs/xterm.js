@@ -1,6 +1,9 @@
 {
-    "typescript.preferences.importModuleSpecifier": "non-relative",
-    "typescript.preferences.quoteStyle": "single",
-    "mochaExplorer.envPath": ".mocha.env",
-    "mochaExplorer.configFile": ".mocharc-unit.yml"
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.quoteStyle": "single",
+  "mochaExplorer.envPath": ".mocha.env",
+  "mochaExplorer.files": [
+    "out/**/*.test.js",
+    "addons/**/out/*.test.js"
+  ]
 }
