@@ -91,14 +91,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get options(): ITerminalOptions { return this.optionsService.options; }
   public set options(options: ITerminalOptions) {
     for (const key in options) {
-      if (this._isObjKey(key, this.optionsService.options)) {
-        this.optionsService.options[key] = options[key];
-      }
+      this.optionsService.options[key] = options[key];
     }
-  }
-
-  private _isObjKey<T>(key: PropertyKey, obj: T): key is keyof T {
-    return key in obj;
   }
 
   constructor(
