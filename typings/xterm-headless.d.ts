@@ -14,7 +14,7 @@ declare module 'xterm-headless' {
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
-   * An object containing start up options for the terminal.
+   * An object containing options for the terminal.
    */
   export interface ITerminalOptions {
     /**
