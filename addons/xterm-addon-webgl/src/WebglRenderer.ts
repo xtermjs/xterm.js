@@ -10,7 +10,7 @@ import { acquireCharAtlas, removeTerminalFromCache } from './atlas/CharAtlasCach
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
-import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
@@ -34,7 +34,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
-  private _workColors: { fg: number, bg: number } = { fg: 0, bg: 0 };
+  private _workColors: { fg: number, bg: number, ext: number } = { fg: 0, bg: 0, ext: 0 };
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -353,7 +353,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
             this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg) {
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
+            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
           continue;
         }
 
@@ -366,8 +367,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i] = code;
         this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
+        this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._workColors.ext;
 
-        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, chars, lastBg);
+        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, this._workColors.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -376,10 +378,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
+            this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._workColors.ext;
           }
         }
       }
@@ -394,7 +397,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _loadColorsForCell(x: number, y: number): void {
     this._workColors.bg = this._workCell.bg;
     this._workColors.fg = this._workCell.fg;
-
+    this._workColors.ext = this._workCell.bg & BgFlags.HAS_EXTENDED ? this._workCell.extended.ext : 0;
     // Get any foreground/background overrides, this happens on the model to avoid spreading
     // override logic throughout the different sub-renderers
     let bgOverride: number | undefined;

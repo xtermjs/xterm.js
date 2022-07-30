@@ -169,11 +169,11 @@ export class GlyphRenderer  extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string, lastBg: number): void {
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars, lastBg);
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, chars: string, lastBg: number): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
     const terminal = this._terminal;
 
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
@@ -185,16 +185,16 @@ export class GlyphRenderer  extends Disposable {
       return;
     }
 
-    let rasterizedGlyph: IRasterizedGlyph;
     if (!this._atlas) {
       return;
     }
 
     // Get the glyph
+    let rasterizedGlyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg);
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 
     // Fill empty if no glyph was found

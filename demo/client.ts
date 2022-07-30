@@ -187,6 +187,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
+  document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -200,7 +201,6 @@ function createTerminal(): void {
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     allowProposedApi: true,
-    allowTransparency: true,
     windowsMode: isWindows,
     fontFamily: 'Fira Code, courier-new, courier, monospace',
     theme: xtermjsTheme
@@ -212,6 +212,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
+  addons.webgl.instance = new WebglAddon();
   // TODO: Remove arguments when link provider API is the default
   addons['web-links'].instance = new WebLinksAddon(undefined, undefined, true);
   typedTerm.loadAddon(addons.fit.instance);
@@ -236,6 +237,10 @@ function createTerminal(): void {
 
   term.open(terminalContainer);
   addons.fit.instance!.fit();
+  typedTerm.loadAddon(addons.webgl.instance);
+  setTimeout(() => {
+    document.body.appendChild(addons.webgl.instance.textureAtlas);
+  }, 0);
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -736,6 +741,52 @@ function powerlineSymbolTest() {
   term.writeln('Sample of nerd fonts icons:');
   term.writeln('    nf-linux-apple (\\uF302) \uf302');
   term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
+}
+
+function underlineTest() {
+  function u(style: number): string {
+    return `\x1b[4:${style}m`;
+  }
+  function c(color: string): string {
+    return `\x1b[58:${color}m`;
+  }
+  term.write('\n\n\r');
+  term.writeln('Underline styles:');
+  term.writeln('');
+  term.writeln(`${u(0)}4:0m - No underline`);
+  term.writeln(`${u(1)}4:1m - Straight`);
+  term.writeln(`${u(2)}4:2m - Double`);
+  term.writeln(`${u(3)}4:3m - Curly`);
+  term.writeln(`${u(4)}4:4m - Dotted`);
+  term.writeln(`${u(5)}4:5m - Dashed\x1b[0m`);
+  term.writeln('');
+  term.writeln(`Underline colors (256 color mode):`);
+  term.writeln('');
+  for (let i = 0; i < 256; i++) {
+    term.write((i !== 0 ? '\x1b[0m, ' : '') + u(1 + i % 5) + c('5:' + i) + i);
+  }
+  term.writeln(`\x1b[0m\n\n\rUnderline colors (true color mode):`);
+  term.writeln('');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${v}:${v}:${v}`) + (i < 4 ? 'grey'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${v}:${0}:${0}`) + (i < 3 ? 'red'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${0}:${v}:${0}`) + (i < 5 ? 'green'[i] : ' '));
+  }
+  term.write('\n\r');
+  for (let i = 0; i < 80; i++) {
+    const v = Math.round(i / 79 * 255);
+    term.write(u(1) + c(`2:0:${0}:${0}:${v}`) + (i < 4 ? 'blue'[i] : ' '));
+  }
+  term.write('\x1b[0m\n\r');
 }
 
 function addDecoration() {

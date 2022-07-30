@@ -4,7 +4,7 @@
  */
 
 import { IAttributeData, IColorRGB, IExtendedAttrs } from 'common/Types';
-import { Attributes, FgFlags, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
+import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from 'common/buffer/Constants';
 
 export class AttributeData implements IAttributeData {
   public static toColorRGB(value: number): IColorRGB {
@@ -30,7 +30,7 @@ export class AttributeData implements IAttributeData {
   // data
   public fg = 0;
   public bg = 0;
-  public extended = new ExtendedAttrs();
+  public extended: IExtendedAttrs = new ExtendedAttrs();
 
   // flags
   public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
@@ -127,12 +127,33 @@ export class AttributeData implements IAttributeData {
  * Holds information about different underline styles and color.
  */
 export class ExtendedAttrs implements IExtendedAttrs {
+  private _ext: number = 0;
+  public get ext(): number { return this._ext; }
+  public set ext(value: number) { this._ext = value; }
+
+  public get underlineStyle(): UnderlineStyle {
+    return (this._ext & ExtFlags.UNDERLINE_STYLE) >> 26;
+  }
+  public set underlineStyle(value: UnderlineStyle) {
+    this._ext &= ~ExtFlags.UNDERLINE_STYLE;
+    this._ext |= (value << 26) & ExtFlags.UNDERLINE_STYLE;
+  }
+
+  public get underlineColor(): number {
+    return this._ext & (Attributes.CM_MASK | Attributes.RGB_MASK);
+  }
+  public set underlineColor(value: number) {
+    this._ext &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+    this._ext |= value & (Attributes.CM_MASK | Attributes.RGB_MASK);
+  }
+
   constructor(
-    // underline style, NONE is empty
-    public underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
-    // underline color, -1 is empty (same as FG)
-    public underlineColor: number = -1
-  ) {}
+    underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
+    underlineColor: number = -1
+  ) {
+    this.underlineStyle = underlineStyle;
+    this.underlineColor = underlineColor;
+  }
 
   public clone(): IExtendedAttrs {
     return new ExtendedAttrs(this.underlineStyle, this.underlineColor);

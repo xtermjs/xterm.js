@@ -55,7 +55,7 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
-  protected _extendedAttrs: {[index: number]: ExtendedAttrs} = {};
+  protected _extendedAttrs: {[index: number]: IExtendedAttrs} = {};
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {

@@ -191,12 +191,75 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
+  protected _fillBottomLineAtCells(x: number, y: number, width: number = 1, pixelOffset: number = 0): void {
     this._ctx.fillRect(
       x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+      (y + 1) * this._scaledCellHeight + pixelOffset - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
       width * this._scaledCellWidth,
       window.devicePixelRatio);
+  }
+
+  protected _curlyUnderlineAtCell(x: number, y: number, width: number = 1): void {
+    this._ctx.save();
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = this._ctx.fillStyle;
+    this._ctx.lineWidth = window.devicePixelRatio;
+    for (let xOffset = 0; xOffset < width; xOffset++) {
+      const xLeft = (x + xOffset) * this._scaledCellWidth;
+      const xMid = (x + xOffset + 0.5) * this._scaledCellWidth;
+      const xRight = (x + xOffset + 1) * this._scaledCellWidth;
+      const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
+      const yMidBot = yMid - window.devicePixelRatio;
+      const yMidTop = yMid + window.devicePixelRatio;
+      this._ctx.moveTo(xLeft, yMid);
+      this._ctx.bezierCurveTo(
+        xLeft, yMidBot,
+        xMid, yMidBot,
+        xMid, yMid
+      );
+      this._ctx.bezierCurveTo(
+        xMid, yMidTop,
+        xRight, yMidTop,
+        xRight, yMid
+      );
+    }
+    this._ctx.stroke();
+    this._ctx.restore();
+  }
+
+  protected _dottedUnderlineAtCell(x: number, y: number, width: number = 1): void {
+    this._ctx.save();
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = this._ctx.fillStyle;
+    this._ctx.lineWidth = window.devicePixelRatio;
+    this._ctx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+    const xLeft = x * this._scaledCellWidth;
+    const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
+    this._ctx.moveTo(xLeft, yMid);
+    for (let xOffset = 0; xOffset < width; xOffset++) {
+      // const xLeft = x * this._scaledCellWidth;
+      const xRight = (x + width + xOffset) * this._scaledCellWidth;
+      this._ctx.lineTo(xRight, yMid);
+    }
+    this._ctx.stroke();
+    this._ctx.closePath();
+    this._ctx.restore();
+  }
+
+  protected _dashedUnderlineAtCell(x: number, y: number, width: number = 1): void {
+    this._ctx.save();
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = this._ctx.fillStyle;
+    this._ctx.lineWidth = window.devicePixelRatio;
+    this._ctx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+    const xLeft = x * this._scaledCellWidth;
+    const xRight = (x + width) * this._scaledCellWidth;
+    const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
+    this._ctx.moveTo(xLeft, yMid);
+    this._ctx.lineTo(xRight, yMid);
+    this._ctx.stroke();
+    this._ctx.closePath();
+    this._ctx.restore();
   }
 
   /**

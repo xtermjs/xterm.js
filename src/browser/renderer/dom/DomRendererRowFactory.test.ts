@@ -6,7 +6,7 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes, UnderlineStyle } from 'common/buffer/Constants';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -130,14 +130,62 @@ describe('DomRendererRowFactory', () => {
         );
       });
 
-      it('should add class for underline', () => {
-        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
-        cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
-        lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
-        assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-underline">a</span>'
-        );
+      describe('underline', () => {
+        it('should add class for straight underline style', () => {
+          const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+          cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
+          cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
+          cell.extended.underlineStyle = UnderlineStyle.SINGLE;
+          lineData.setCell(0, cell);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+          assert.equal(getFragmentHtml(fragment),
+            '<span class="xterm-underline-1" style="text-decoration-color: rgb(255,255,255);">a</span>'
+          );
+        });
+        it('should add class for double underline style', () => {
+          const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+          cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
+          cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
+          cell.extended.underlineStyle = UnderlineStyle.DOUBLE;
+          lineData.setCell(0, cell);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+          assert.equal(getFragmentHtml(fragment),
+            '<span class="xterm-underline-2" style="text-decoration-color: rgb(255,255,255);">a</span>'
+          );
+        });
+        it('should add class for curly underline style', () => {
+          const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+          cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
+          cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
+          cell.extended.underlineStyle = UnderlineStyle.CURLY;
+          lineData.setCell(0, cell);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+          assert.equal(getFragmentHtml(fragment),
+            '<span class="xterm-underline-3" style="text-decoration-color: rgb(255,255,255);">a</span>'
+          );
+        });
+        it('should add class for double dotted style', () => {
+          const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+          cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
+          cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
+          cell.extended.underlineStyle = UnderlineStyle.DOTTED;
+          lineData.setCell(0, cell);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+          assert.equal(getFragmentHtml(fragment),
+            '<span class="xterm-underline-4" style="text-decoration-color: rgb(255,255,255);">a</span>'
+          );
+        });
+        it('should add class for dashed underline style', () => {
+          const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+          cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.UNDERLINE;
+          cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
+          cell.extended.underlineStyle = UnderlineStyle.DASHED;
+          lineData.setCell(0, cell);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
+          assert.equal(getFragmentHtml(fragment),
+            '<span class="xterm-underline-5" style="text-decoration-color: rgb(255,255,255);">a</span>'
+          );
+        });
       });
 
       it('should add class for strikethrough', () => {

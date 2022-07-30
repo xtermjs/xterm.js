@@ -45,7 +45,7 @@ describe('AttributeData', () => {
       assert.equal(attrs.getUnderlineColor(), 45);
 
       // should use FG color if underlineColor holds no value
-      attrs.extended.underlineColor = -1;
+      attrs.extended.underlineColor = 0;
       attrs.fg |= Attributes.CM_P256 | 123;
       assert.equal(attrs.getUnderlineColor(), 123);
     });
@@ -62,7 +62,7 @@ describe('AttributeData', () => {
       assert.equal(attrs.getUnderlineColor(), (1 << 16) | (2 << 8) | 3);
 
       // should use FG color if underlineColor holds no value
-      attrs.extended.underlineColor = -1;
+      attrs.extended.underlineColor = 0;
       attrs.fg |= Attributes.CM_P256 | 123;
       assert.equal(attrs.getUnderlineColor(), 123);
     });

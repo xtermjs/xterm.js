@@ -4,7 +4,7 @@
  */
 
 export interface IRasterizedGlyphSet {
-  [bg: number]: { [fg: number]: IRasterizedGlyph } | undefined;
+  [bg: number]: { [fg: number]: { [ext: number]: IRasterizedGlyph } } | undefined;
 }
 
 /**

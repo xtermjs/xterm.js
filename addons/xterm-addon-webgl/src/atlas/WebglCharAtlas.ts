@@ -6,7 +6,7 @@
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { DEFAULT_COLOR, Attributes } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
@@ -106,10 +106,12 @@ export class WebglCharAtlas implements IDisposable {
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
       this._cacheMap[i] = {
         [DEFAULT_COLOR]: {
-          [DEFAULT_COLOR]: rasterizedGlyph
+          [DEFAULT_COLOR]: {
+            [DEFAULT_EXT]: rasterizedGlyph
+          }
         }
       };
     }
@@ -137,48 +139,50 @@ export class WebglCharAtlas implements IDisposable {
     this._didWarmUp = false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
-    let rasterizedGlyphSet = this._cacheMapCombined[chars];
-    if (!rasterizedGlyphSet) {
-      rasterizedGlyphSet = {};
-      this._cacheMapCombined[chars] = rasterizedGlyphSet;
-    }
-    let rasterizedGlyph: IRasterizedGlyph | undefined;
-    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (rasterizedGlyphSetBg) {
-      rasterizedGlyph = rasterizedGlyphSetBg[fg];
-    }
-    if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, bg, fg);
-      if (!rasterizedGlyphSet[bg]) {
-        rasterizedGlyphSet[bg] = {};
-      }
-      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
-    }
-    return rasterizedGlyph;
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext);
+  }
+
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext);
   }
 
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
-    let rasterizedGlyphSet = this._cacheMap[code];
+  private _getFromCacheMap(
+    cacheMap: { [key: string | number]: IRasterizedGlyphSet },
+    key: string | number,
+    bg: number,
+    fg: number,
+    ext: number
+  ): IRasterizedGlyph {
+    let rasterizedGlyphSet = cacheMap[key];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
-      this._cacheMap[code] = rasterizedGlyphSet;
+      cacheMap[key] = rasterizedGlyphSet;
     }
+
+    let rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
+    if (!rasterizedGlyphSetBg) {
+      rasterizedGlyphSetBg = {};
+      rasterizedGlyphSet[bg] = rasterizedGlyphSetBg;
+    }
+
     let rasterizedGlyph: IRasterizedGlyph | undefined;
-    const rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (rasterizedGlyphSetBg) {
-      rasterizedGlyph = rasterizedGlyphSetBg[fg];
+    let rasterizedGlyphSetFg = rasterizedGlyphSetBg[fg];
+    if (!rasterizedGlyphSetFg) {
+      rasterizedGlyphSetFg = {};
+      rasterizedGlyphSetBg[fg] = rasterizedGlyphSetFg;
+    } else {
+      rasterizedGlyph = rasterizedGlyphSetFg[ext];
     }
+
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, bg, fg);
-      if (!rasterizedGlyphSet[bg]) {
-        rasterizedGlyphSet[bg] = {};
-      }
-      rasterizedGlyphSet[bg]![fg] = rasterizedGlyph;
+      rasterizedGlyph = this._drawToCache(key, bg, fg, ext);
+      rasterizedGlyphSetFg[ext] = rasterizedGlyph;
     }
+
     return rasterizedGlyph;
   }
 
@@ -334,9 +338,7 @@ export class WebglCharAtlas implements IDisposable {
     return color;
   }
 
-  private _drawToCache(code: number, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(chars: string, bg: number, fg: number): IRasterizedGlyph;
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
@@ -349,7 +351,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCanvas.width = allowedWidth;
     }
     // Include line height when drawing glyphs
-    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 4;
     if (this._tmpCanvas.height < allowedHeight) {
       this._tmpCanvas.height = allowedHeight;
     }
@@ -357,6 +359,7 @@ export class WebglCharAtlas implements IDisposable {
 
     this._workAttributeData.fg = fg;
     this._workAttributeData.bg = bg;
+    this._workAttributeData.extended.ext = ext;
 
     const invisible = !!this._workAttributeData.isInvisible();
     if (invisible) {
@@ -403,12 +406,121 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.fillStyle = foregroundColor.css;
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
-    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING;
+    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._config.customGlyphs !== false) {
       drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+    }
+
+    // Whether to clear pixels based on a threshold difference between the glyph color and the
+    // background color. This should be disabled when the glyph contains multiple colors such as
+    // underline colors to prevent important colors could get cleared.
+    let enableClearThresholdCheck = true;
+
+    // Draw underline
+    if (underline) {
+      this._tmpCtx.save();
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
+      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      this._tmpCtx.lineWidth = lineWidth;
+
+      // Underline color
+      if (this._workAttributeData.isUnderlineColorDefault()) {
+        this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      } else if (this._workAttributeData.isUnderlineColorRGB()) {
+        enableClearThresholdCheck = false;
+        this._tmpCtx.strokeStyle = `rgb(${AttributeData.toColorRGB(this._workAttributeData.getUnderlineColor()).join(',')})`;
+      } else {
+        enableClearThresholdCheck = false;
+        let fg = this._workAttributeData.getUnderlineColor();
+        if (this._config.drawBoldTextInBrightColors && this._workAttributeData.isBold() && fg < 8) {
+          fg += 8;
+        }
+        this._tmpCtx.strokeStyle = this._getColorFromAnsiIndex(fg).css;
+      }
+
+      // Underline style/stroke
+      this._tmpCtx.beginPath();
+      const xLeft = padding;
+      const xRight = padding + this._config.scaledCellWidth;
+      const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
+      const yMid = padding + this._config.scaledCharHeight - yOffset;
+      const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
+      switch (this._workAttributeData.extended.underlineStyle) {
+        case UnderlineStyle.DOUBLE:
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
+          this._tmpCtx.moveTo(xLeft, yBot);
+          this._tmpCtx.lineTo(xRight, yBot);
+          break;
+        case UnderlineStyle.CURLY:
+          const xMid = padding + this._config.scaledCellWidth / 2;
+          // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
+          // made taller when the line width is  as otherwise it's not very clear otherwise.
+          const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+          const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+          // Clip the left and right edges of the underline such that it can be drawn just outside
+          // the edge of the cell to ensure a continuous stroke when there are multiple underlined
+          // glyphs adjacent to one another.
+          const clipRegion = new Path2D();
+          clipRegion.rect(xLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
+          this._tmpCtx.clip(clipRegion);
+          // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+          this._tmpCtx.moveTo(xLeft - this._config.scaledCellWidth / 2, yMid);
+          this._tmpCtx.bezierCurveTo(
+            xLeft - this._config.scaledCellWidth / 2, yCurlyTop,
+            xLeft, yCurlyTop,
+            xLeft, yMid
+          );
+          this._tmpCtx.bezierCurveTo(
+            xLeft, yCurlyBot,
+            xMid, yCurlyBot,
+            xMid, yMid
+          );
+          this._tmpCtx.bezierCurveTo(
+            xMid, yCurlyTop,
+            xRight, yCurlyTop,
+            xRight, yMid
+          );
+          this._tmpCtx.bezierCurveTo(
+            xRight, yCurlyBot,
+            xRight + this._config.scaledCellWidth / 2, yCurlyBot,
+            xRight + this._config.scaledCellWidth / 2, yMid
+          );
+          break;
+        case UnderlineStyle.DOTTED:
+          this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
+        case UnderlineStyle.DASHED:
+          this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
+        case UnderlineStyle.SINGLE:
+        default:
+          this._tmpCtx.moveTo(xLeft, yMid);
+          this._tmpCtx.lineTo(xRight, yMid);
+          break;
+      }
+      this._tmpCtx.stroke();
+      this._tmpCtx.restore();
+
+      // Draw stroke in the background color for non custom characters in order to give an outline
+      // between the text and the underline
+      if (!drawSuccess) {
+        // This only works when transparency is disabled because it's not clear how to clear stroked
+        // text
+        if (!this._config.allowTransparency && chars !== ' ') {
+          // This translates to 1/2 the line width in either direction
+          this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
+          this._tmpCtx.strokeStyle = backgroundColor.css;
+          this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+        }
+      }
     }
 
     // Draw the character
@@ -419,12 +531,12 @@ export class WebglCharAtlas implements IDisposable {
     // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
     // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
           this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
             break;
           }
@@ -432,23 +544,16 @@ export class WebglCharAtlas implements IDisposable {
       }
     }
 
-    // Draw underline and strikethrough
-    if (underline || strikethrough) {
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize / 10));
+    // Draw strokethrough
+    if (strikethrough) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      if (underline) {
-        this._tmpCtx.moveTo(padding, padding + this._config.scaledCharHeight - yOffset);
-        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + this._config.scaledCharHeight - yOffset);
-      }
-      if (strikethrough) {
-        this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-        this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      }
+      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
-      this._tmpCtx.closePath();
     }
 
     this._tmpCtx.restore();
@@ -462,7 +567,7 @@ export class WebglCharAtlas implements IDisposable {
     // Clear out the background color and determine if the glyph is empty.
     let isEmpty: boolean;
     if (!this._config.allowTransparency) {
-      isEmpty = clearColor(imageData, backgroundColor, foregroundColor);
+      isEmpty = clearColor(imageData, backgroundColor, foregroundColor, enableClearThresholdCheck);
     } else {
       isEmpty = checkCompletelyTransparent(imageData);
     }
@@ -609,7 +714,7 @@ export class WebglCharAtlas implements IDisposable {
  * transparent.
  * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
-function clearColor(imageData: ImageData, bg: IColor, fg: IColor): boolean {
+function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThresholdCheck: boolean): boolean {
   // Get color channels
   const r = bg.rgba >>> 24;
   const g = bg.rgba >>> 16 & 0xFF;
@@ -636,7 +741,8 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor): boolean {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
-      if ((Math.abs(imageData.data[offset] - r) +
+      if (enableThresholdCheck &&
+          (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;

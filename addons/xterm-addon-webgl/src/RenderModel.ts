@@ -6,9 +6,10 @@
 import { IRenderModel, ISelectionRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 
-export const RENDER_MODEL_INDICIES_PER_CELL = 3;
+export const RENDER_MODEL_INDICIES_PER_CELL = 4;
 export const RENDER_MODEL_BG_OFFSET = 1;
 export const RENDER_MODEL_FG_OFFSET = 2;
+export const RENDER_MODEL_EXT_OFFSET = 3;
 
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 

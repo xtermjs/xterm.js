@@ -8,7 +8,7 @@ import { CharData, ICellData } from 'common/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
@@ -269,7 +269,36 @@ export class TextRenderLayer extends BaseRenderLayer {
           this._fillMiddleLineAtCells(x, y, cell.getWidth());
         }
         if (cell.isUnderline()) {
-          this._fillBottomLineAtCells(x, y, cell.getWidth());
+          if (!cell.isUnderlineColorDefault()) {
+            if (cell.isUnderlineColorRGB()) {
+              this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
+            } else {
+              let fg = cell.getUnderlineColor();
+              if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+                fg += 8;
+              }
+              this._ctx.fillStyle = this._colors.ansi[fg].css;
+            }
+          }
+          switch (cell.extended.underlineStyle) {
+            case UnderlineStyle.DOUBLE:
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), -window.devicePixelRatio);
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), window.devicePixelRatio);
+              break;
+            case UnderlineStyle.CURLY:
+              this._curlyUnderlineAtCell(x, y, cell.getWidth());
+              break;
+            case UnderlineStyle.DOTTED:
+              this._dottedUnderlineAtCell(x, y, cell.getWidth());
+              break;
+            case UnderlineStyle.DASHED:
+              this._dashedUnderlineAtCell(x, y, cell.getWidth());
+              break;
+            case UnderlineStyle.SINGLE:
+            default:
+              this._fillBottomLineAtCells(x, y, cell.getWidth());
+              break;
+          }
         }
         this._ctx.restore();
       }

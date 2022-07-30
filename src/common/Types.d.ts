@@ -113,6 +113,7 @@ export interface IColor {
 export type IColorRGB = [number, number, number];
 
 export interface IExtendedAttrs {
+  ext: number;
   underlineStyle: number;
   underlineColor: number;
   clone(): IExtendedAttrs;
