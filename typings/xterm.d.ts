@@ -216,6 +216,10 @@ declare module 'xterm' {
      * - Reflow is disabled.
      * - Lines are assumed to be wrapped if the last character of the line is
      *   not whitespace.
+     *
+     * When using conpty on Windows 11 version >= 21376, it is recommended to
+     * disable this because native text wrapping sequences are output correctly
+     * thanks to https://github.com/microsoft/terminal/issues/405
      */
     windowsMode?: boolean;
 
