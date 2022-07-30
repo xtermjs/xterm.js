@@ -12,7 +12,7 @@ import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { css } from 'common/Color';
-import { MockCharacterJoinerService } from 'browser/TestUtils.test';
+import { MockCharacterJoinerService, MockCoreBrowserService } from 'browser/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -49,6 +49,7 @@ describe('DomRendererRowFactory', () => {
       } as any,
       new MockCharacterJoinerService(),
       new MockOptionsService({ drawBoldTextInBrightColors: true }),
+      new MockCoreBrowserService(),
       new MockCoreService(),
       new MockDecorationService()
     );

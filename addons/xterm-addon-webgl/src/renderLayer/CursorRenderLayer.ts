@@ -10,6 +10,8 @@ import { CellData } from 'common/buffer/CellData';
 import { IColorSet, ITerminal } from 'browser/Types';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { IEventEmitter } from 'common/EventEmitter';
+import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreService } from 'common/services/Services';
 
 interface ICursorState {
   x: number;
@@ -35,8 +37,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    private readonly _terminal: ITerminal,
-    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>
+    private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>,
+    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _coreService: ICoreService
   ) {
     super(container, 'cursor', zIndex, true, colors);
     this._state = {
@@ -91,9 +94,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public onOptionsChanged(terminal: Terminal): void {
     if (terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
+        this._cursorBlinkStateManager = new CursorBlinkStateManager(() => {
           this._render(terminal, true);
-        });
+        }, this._coreBrowserService);
       }
     } else {
       this._cursorBlinkStateManager?.dispose();
@@ -118,8 +121,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _render(terminal: Terminal, triggeredByAnimationFrame: boolean): void {
     // Don't draw the cursor if it's hidden
-    // TODO: Need to expose API for this
-    if (!this._terminal.coreService.isCursorInitialized || this._terminal.coreService.isCursorHidden) {
+    if (!this._coreService.isCursorInitialized || this._coreService.isCursorHidden) {
       this._clearCursor();
       return;
     }
@@ -142,7 +144,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    if (!isTerminalFocused(terminal)) {
+    if (!this._coreBrowserService.isFocused) {
       this._clearCursor();
       this._ctx.save();
       this._ctx.fillStyle = this._colors.cursor.css;
@@ -171,7 +173,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       // The cursor is already in the correct spot, don't redraw
       if (this._state.x === cursorX &&
           this._state.y === viewportRelativeCursorY &&
-          this._state.isFocused === isTerminalFocused(terminal) &&
+          this._state.isFocused === this._coreBrowserService.isFocused &&
           this._state.style === terminal.options.cursorStyle &&
           this._state.width === this._cell.getWidth()) {
         return;
@@ -254,11 +256,11 @@ class CursorBlinkStateManager {
   private _animationTimeRestarted: number | undefined;
 
   constructor(
-    terminal: Terminal,
-    private _renderCallback: () => void
+    private _renderCallback: () => void,
+    coreBrowserService: ICoreBrowserService
   ) {
     this.isCursorVisible = true;
-    if (isTerminalFocused(terminal)) {
+    if (coreBrowserService.isFocused) {
       this._restartInterval();
     }
   }
@@ -372,8 +374,4 @@ class CursorBlinkStateManager {
     this._restartInterval();
     this.restartBlinkAnimation(terminal);
   }
-}
-
-function isTerminalFocused(terminal: Terminal): boolean {
-  return document.activeElement === terminal.textarea && document.hasFocus();
 }

@@ -36,7 +36,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     zIndex: number,
     colors: IColorSet,
     rendererId: number,
-    private _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
+    private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _coreService: ICoreService,
