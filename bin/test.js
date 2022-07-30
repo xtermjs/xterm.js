@@ -17,7 +17,9 @@ let testFiles = [
   './addons/**/out/*test.js',
 ];
 
-let flagArgs = [];
+let flagArgs = [
+  '--config', ".mocharc-default.yml"
+];
 
 if (process.argv.length > 2) {
   const args = process.argv.slice(2);
