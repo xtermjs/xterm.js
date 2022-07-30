@@ -421,6 +421,7 @@ export class WebglCharAtlas implements IDisposable {
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
+
       // Underline color
       if (this._workAttributeData.isUnderlineColorDefault()) {
         this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
@@ -433,12 +434,11 @@ export class WebglCharAtlas implements IDisposable {
         }
         this._tmpCtx.strokeStyle = this._getColorFromAnsiIndex(fg).css;
       }
+
       // Underline style/stroke
       this._tmpCtx.beginPath();
-
-      // TODO: Support letter spacing
       const xLeft = padding;
-      const xRight = padding + this._config.scaledCharWidth;
+      const xRight = padding + this._config.scaledCellWidth;
       const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
       const yMid = padding + this._config.scaledCharHeight - yOffset;
       const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
@@ -450,7 +450,7 @@ export class WebglCharAtlas implements IDisposable {
           this._tmpCtx.lineTo(xRight, yBot);
           break;
         case UnderlineStyle.CURLY:
-          const xMid = padding + this._config.scaledCharWidth / 2;
+          const xMid = padding + this._config.scaledCellWidth / 2;
           // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
           // made taller when the line width is  as otherwise it's not very clear otherwise.
           const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
@@ -462,9 +462,9 @@ export class WebglCharAtlas implements IDisposable {
           clipRegion.rect(xLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
           this._tmpCtx.clip(clipRegion);
           // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
-          this._tmpCtx.moveTo(xLeft - this._config.scaledCharWidth / 2, yMid);
+          this._tmpCtx.moveTo(xLeft - this._config.scaledCellWidth / 2, yMid);
           this._tmpCtx.bezierCurveTo(
-            xLeft - this._config.scaledCharWidth / 2, yCurlyTop,
+            xLeft - this._config.scaledCellWidth / 2, yCurlyTop,
             xLeft, yCurlyTop,
             xLeft, yMid
           );
