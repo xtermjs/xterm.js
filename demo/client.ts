@@ -688,7 +688,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b1 \x1b[33;44m\ue0b0\x1b[39m` +
     ` 4 \ue0b1 \x1b[34;45m\ue0b0\x1b[39m` +
     ` 5 \ue0b1 \x1b[35;46m\ue0b0\x1b[39m` +
-    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[39m` +
+    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[30m` +
     ` 7 \ue0b1 \x1b[37;49m\ue0b0\x1b[0m`
   );
   term.writeln('');
@@ -701,7 +701,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b3 \x1b[7;33;44m\ue0b2\x1b[27;39m` +
     ` 4 \ue0b3 \x1b[7;34;45m\ue0b2\x1b[27;39m` +
     ` 5 \ue0b3 \x1b[7;35;46m\ue0b2\x1b[27;39m` +
-    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;39m` +
+    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;30m` +
     ` 7 \ue0b3 \x1b[7;37;49m\ue0b2\x1b[0m`
   );
   term.writeln('');
@@ -714,7 +714,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b5 \x1b[33;44m\ue0b4\x1b[39m` +
     ` 4 \ue0b5 \x1b[34;45m\ue0b4\x1b[39m` +
     ` 5 \ue0b5 \x1b[35;46m\ue0b4\x1b[39m` +
-    ` 6 \ue0b5 \x1b[36;47m\ue0b4\x1b[39m` +
+    ` 6 \ue0b5 \x1b[36;47m\ue0b4\x1b[30m` +
     ` 7 \ue0b5 \x1b[37;49m\ue0b4\x1b[0m`
   );
   term.writeln('');
@@ -727,7 +727,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b7 \x1b[7;33;44m\ue0b6\x1b[27;39m` +
     ` 4 \ue0b7 \x1b[7;34;45m\ue0b6\x1b[27;39m` +
     ` 5 \ue0b7 \x1b[7;35;46m\ue0b6\x1b[27;39m` +
-    ` 6 \ue0b7 \x1b[7;36;47m\ue0b6\x1b[27;39m` +
+    ` 6 \ue0b7 \x1b[7;36;47m\ue0b6\x1b[27;30m` +
     ` 7 \ue0b7 \x1b[7;37;49m\ue0b6\x1b[0m`
   );
   term.writeln('');
