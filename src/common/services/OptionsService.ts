@@ -9,8 +9,6 @@ import { isMac } from 'common/Platform';
 import { CursorStyle } from 'common/Types';
 
 export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
-  cols: 80,
-  rows: 24,
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,

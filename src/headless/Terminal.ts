@@ -157,13 +157,6 @@ export class Terminal extends CoreTerminal {
    * using DECSTR (soft reset, CSI ! p) or RIS instead (hard reset, ESC c).
    */
   public reset(): void {
-    /**
-     * Since _setup handles a full terminal creation, we have to carry forward
-     * a few things that should not reset.
-     */
-    this.options.rows = this.rows;
-    this.options.cols = this.cols;
-
     this._setup();
     super.reset();
   }

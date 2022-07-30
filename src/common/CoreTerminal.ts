@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { IDisposable, IBufferLine, IAttributeData, ICoreTerminal, IKeyboardEvent, IScrollEvent, ScrollSource, ITerminalOptions as IPublicTerminalOptions } from 'common/Types';
+import { IDisposable, IBufferLine, IAttributeData, ICoreTerminal, IKeyboardEvent, IScrollEvent, ScrollSource } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -91,8 +91,14 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get options(): ITerminalOptions { return this.optionsService.options; }
   public set options(options: ITerminalOptions) {
     for (const key in options) {
-      this.optionsService.options[key] = options[key];
+      if (this._isObjKey(key, this.optionsService.options)) {
+        this.optionsService.options[key] = options[key];
+      }
     }
+  }
+
+  private _isObjKey<T>(key: PropertyKey, obj: T): key is keyof T {
+    return key in obj;
   }
 
   constructor(

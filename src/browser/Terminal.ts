@@ -33,7 +33,7 @@ import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration, ITerminalInitOnlyOptions } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -156,7 +156,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @alias module:xterm/src/xterm
    */
   constructor(
-    options: Partial<ITerminalOptions> = {}
+    options: Partial<ITerminalOptions> & Partial<ITerminalInitOnlyOptions> = {}
   ) {
     super(options);
 
@@ -1289,8 +1289,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
      * Since _setup handles a full terminal creation, we have to carry forward
      * a few things that should not reset.
      */
-    this.options.rows = this.rows;
-    this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
 
     this._setup();

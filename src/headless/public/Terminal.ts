@@ -7,7 +7,7 @@ import { IEvent } from 'common/EventEmitter';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
+import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalInitOnlyOptions, IUnicodeHandling, Terminal as ITerminalApi } from 'xterm-headless';
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
@@ -24,7 +24,7 @@ export class Terminal implements ITerminalApi {
   private _buffer: BufferNamespaceApi | undefined;
   private _publicOptions: ITerminalOptions;
 
-  constructor(options?: ITerminalOptions) {
+  constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 

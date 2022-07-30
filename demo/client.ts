@@ -256,7 +256,6 @@ function createTerminal(): void {
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(() => {
     initOptions(term);
-    // TODO: Clean this up, opt-cols/rows doesn't exist anymore
     (<HTMLInputElement>document.getElementById(`opt-cols`)).value = term.cols;
     (<HTMLInputElement>document.getElementById(`opt-rows`)).value = term.rows;
     paddingElement.value = '0';
@@ -342,6 +341,8 @@ function initOptions(term: TerminalType): void {
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
   const numberOptions = [
+    'cols',
+    'rows',
     'overviewRulerWidth'
   ];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {

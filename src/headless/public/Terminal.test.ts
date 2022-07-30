@@ -124,14 +124,10 @@ describe('Headless API Tests', function (): void {
       term = new Terminal(termOptions);
     });
     it('get options', () => {
-      const options: ITerminalOptions = term.options;
-      strictEqual(options.cols, 80);
-      strictEqual(options.rows, 24);
+      strictEqual(term.options.lineHeight, 1);
+      strictEqual(term.options.cursorWidth, 1);
     });
     it('set options', async () => {
-      const options: ITerminalOptions = term.options;
-      throws(() => options.cols = 40);
-      throws(() => options.rows = 20);
       term.options.scrollback = 1;
       strictEqual(term.options.scrollback, 1);
       term.options= {

@@ -1399,20 +1399,4 @@ describe('Terminal', () => {
       assert.deepEqual(markers.map(el => el.line), [-1, -1, 0, 1, 2]);
     });
   });
-
-  describe('options', () => {
-    beforeEach(async () => {
-      term = new TestTerminal({});
-    });
-    it('get options', () => {
-      assert.equal(term.options.cols, 80);
-      assert.equal(term.options.rows, 24);
-    });
-    it('set options', async () => {
-      term.options.cols = 40;
-      assert.equal(term.options.cols, 40);
-      term.options.rows = 20;
-      assert.equal(term.options.rows, 20);
-    });
-  });
 });

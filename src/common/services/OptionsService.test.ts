@@ -15,21 +15,21 @@ describe('OptionsService', () => {
     afterEach(() => {
       console.error = originalError;
     });
-    it('uses default value if invalid constructor option values passed for cols/rows', () => {
-      const optionsService = new OptionsService({ cols: undefined, rows: undefined });
-      assert.equal(optionsService.options.rows, DEFAULT_OPTIONS.rows);
-      assert.equal(optionsService.options.cols, DEFAULT_OPTIONS.cols);
+    it('uses default value if invalid constructor option values passed for lineHeight/cursorWidth', () => {
+      const optionsService = new OptionsService({ lineHeight: undefined, cursorWidth: undefined });
+      assert.equal(optionsService.options.lineHeight, DEFAULT_OPTIONS.lineHeight);
+      assert.equal(optionsService.options.cursorWidth, DEFAULT_OPTIONS.cursorWidth);
     });
     it('uses values from constructor option values if correctly passed', () => {
-      const optionsService = new OptionsService({ cols: 80, rows: 25 });
-      assert.equal(optionsService.options.rows, 25);
-      assert.equal(optionsService.options.cols, 80);
+      const optionsService = new OptionsService({ lineHeight: 2, cursorWidth: 2 });
+      assert.equal(optionsService.options.lineHeight, 2);
+      assert.equal(optionsService.options.cursorWidth, 2);
     });
     it('uses default value if invalid constructor option value passed', () => {
       assert.equal(new OptionsService({ tabStopWidth: 0 }).options.tabStopWidth, DEFAULT_OPTIONS.tabStopWidth);
     });
     it('object.keys return the correct number of options', () => {
-      const optionsService = new OptionsService({ cols: 80, rows: 25 });
+      const optionsService = new OptionsService({});
       assert.notEqual(Object.keys(optionsService.options).length, 0);
     });
   });

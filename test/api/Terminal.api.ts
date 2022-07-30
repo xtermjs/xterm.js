@@ -157,19 +157,11 @@ describe('API Integration Tests', function(): void {
   describe('options', () => {
     it('getter', async () => {
       await openTerminal(page);
-      assert.equal(await page.evaluate(`window.term.options.cols`), 80);
-      assert.equal(await page.evaluate(`window.term.options.rows`), 24);
+      assert.equal(await page.evaluate(`window.term.lineHeight`), 1);
+      assert.equal(await page.evaluate(`window.term.cursorWidth`), 1);
     });
     it('setter', async () => {
       await openTerminal(page);
-      try {
-        await page.evaluate('window.term.options.cols = 40');
-        fail();
-      } catch {}
-      try {
-        await page.evaluate('window.term.options.rows = 20');
-        fail();
-      } catch {}
       await page.evaluate('window.term.options.scrollback = 1');
       assert.equal(await page.evaluate(`window.term.options.scrollback`), 1);
       await page.evaluate(`

@@ -14,47 +14,15 @@ import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ITerminalOptions } from 'common/Types';
 
-/**
- * The set of options that only have an effect when set in the Terminal constructor.
- */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
-
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
-  private _publicOptions: ITerminalOptions;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
-
-    this._publicOptions = { ... this._core.options };
-    const getter = (propName: string): any => {
-      return this._core.options[propName];
-    };
-    const setter = (propName: string, value: any): void => {
-      this._checkReadonlyOptions(propName);
-      this._core.options[propName] = value;
-    };
-
-    for (const propName in this._core.options) {
-      const desc = {
-        get: getter.bind(this, propName),
-        set: setter.bind(this, propName)
-      };
-      Object.defineProperty(this._publicOptions, propName, desc);
-    }
-  }
-
-  private _checkReadonlyOptions(propName: string): void {
-    // Throw an error if any constructor only option is modified
-    // from terminal.options
-    // Modifications from anywhere else are allowed
-    if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
-      throw new Error(`Option "${propName}" can only be set in the constructor`);
-    }
   }
 
   private _checkProposedApi(): void {
@@ -124,11 +92,11 @@ export class Terminal implements ITerminalApi {
     };
   }
   public get options(): ITerminalOptions {
-    return this._publicOptions;
+    return this._core.options;
   }
   public set options(options: ITerminalOptions) {
     for (const propName in options) {
-      this._publicOptions[propName] = options[propName];
+      this._core.options[propName] = options[propName];
     }
   }
   public blur(): void {

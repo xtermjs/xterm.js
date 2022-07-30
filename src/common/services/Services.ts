@@ -207,7 +207,6 @@ export interface ITerminalOptions {
   allowProposedApi: boolean;
   allowTransparency: boolean;
   altClickMovesCursor: boolean;
-  cols: number;
   convertEol: boolean;
   cursorBlink: boolean;
   cursorStyle: CursorStyle;
@@ -228,7 +227,6 @@ export interface ITerminalOptions {
   macOptionClickForcesSelection: boolean;
   minimumContrastRatio: number;
   rightClickSelectsWord: boolean;
-  rows: number;
   screenReaderMode: boolean;
   scrollback: number;
   scrollSensitivity: number;
