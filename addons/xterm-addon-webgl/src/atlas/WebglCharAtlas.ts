@@ -414,6 +414,10 @@ export class WebglCharAtlas implements IDisposable {
       drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
+    // Whether to clear pixels based on a threshold difference between the glyph color and the
+    // background color. This should be disabled when the glyph contains multiple colors such as
+    // underline colors to prevent important colors could get cleared.
+    let enableClearThresholdCheck = true;
 
     // Draw underline
     if (underline) {
@@ -426,8 +430,10 @@ export class WebglCharAtlas implements IDisposable {
       if (this._workAttributeData.isUnderlineColorDefault()) {
         this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       } else if (this._workAttributeData.isUnderlineColorRGB()) {
+        enableClearThresholdCheck = false;
         this._tmpCtx.strokeStyle = `rgb(${AttributeData.toColorRGB(this._workAttributeData.getUnderlineColor()).join(',')})`;
       } else {
+        enableClearThresholdCheck = false;
         let fg = this._workAttributeData.getUnderlineColor();
         if (this._config.drawBoldTextInBrightColors && this._workAttributeData.isBold() && fg < 8) {
           fg += 8;
@@ -508,7 +514,7 @@ export class WebglCharAtlas implements IDisposable {
       if (!drawSuccess) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
-        if (!this._config.allowTransparency) {
+        if (!this._config.allowTransparency && chars !== ' ') {
           // This translates to 1/2 the line width in either direction
           this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
           this._tmpCtx.strokeStyle = backgroundColor.css;
@@ -525,12 +531,12 @@ export class WebglCharAtlas implements IDisposable {
     // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
     // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
           this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
             break;
           }
@@ -561,7 +567,7 @@ export class WebglCharAtlas implements IDisposable {
     // Clear out the background color and determine if the glyph is empty.
     let isEmpty: boolean;
     if (!this._config.allowTransparency) {
-      isEmpty = clearColor(imageData, backgroundColor, foregroundColor);
+      isEmpty = clearColor(imageData, backgroundColor, foregroundColor, enableClearThresholdCheck);
     } else {
       isEmpty = checkCompletelyTransparent(imageData);
     }
@@ -708,7 +714,7 @@ export class WebglCharAtlas implements IDisposable {
  * transparent.
  * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
-function clearColor(imageData: ImageData, bg: IColor, fg: IColor): boolean {
+function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThresholdCheck: boolean): boolean {
   // Get color channels
   const r = bg.rgba >>> 24;
   const g = bg.rgba >>> 16 & 0xFF;
@@ -735,7 +741,8 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor): boolean {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
-      if ((Math.abs(imageData.data[offset] - r) +
+      if (enableThresholdCheck &&
+          (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
