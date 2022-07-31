@@ -511,7 +511,7 @@ function initAddons(term: TerminalType): void {
         }
       } else {
         if (name === 'webgl') {
-          document.body.removeChild((addon.instance as WebglAddon).textureAtlas);
+          (addon.instance as WebglAddon).textureAtlas.remove();
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '6';
         }
