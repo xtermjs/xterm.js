@@ -239,8 +239,8 @@ function createTerminal(): void {
   addons.fit.instance!.fit();
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
-    document.body.appendChild(addons.webgl.instance.textureAtlas);
-    addons.webgl.instance.onChangeTextureAtlas(e => document.body.appendChild(e));
+    addTextureAtlas(addons.webgl.instance.textureAtlas);
+    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
   }, 0);
   term.focus();
 
@@ -412,6 +412,7 @@ function initOptions(term: TerminalType): void {
       }
       if (['cols', 'rows', 'letterSpacing', 'lineHeight'].includes(o)) {
         updateTerminalSize();
+      }
     });
   });
   Object.keys(stringOptions).forEach(o => {
@@ -503,7 +504,7 @@ function initAddons(term: TerminalType): void {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
         if (name === 'webgl') {
-          (addon.instance as WebglAddon).onChangeTextureAtlas(e => document.body.appendChild(e));
+          (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
         } else if (name === 'search') {
@@ -587,6 +588,9 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
 }
 
+function addTextureAtlas(e: HTMLCanvasElement) {
+  document.querySelector('#texture-atlas').appendChild(e);
+}
 
 function writeCustomGlyphHandler() {
   term.write('\n\r');
