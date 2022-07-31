@@ -139,7 +139,7 @@ describe('DomRendererRowFactory', () => {
           lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
           assert.equal(getFragmentHtml(fragment),
-            '<span class="xterm-underline-1" style="text-decoration-color: rgb(255,255,255);">a</span>'
+            '<span class="xterm-underline-1">a</span>'
           );
         });
         it('should add class for double underline style', () => {
@@ -150,7 +150,7 @@ describe('DomRendererRowFactory', () => {
           lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
           assert.equal(getFragmentHtml(fragment),
-            '<span class="xterm-underline-2" style="text-decoration-color: rgb(255,255,255);">a</span>'
+            '<span class="xterm-underline-2">a</span>'
           );
         });
         it('should add class for curly underline style', () => {
@@ -161,7 +161,7 @@ describe('DomRendererRowFactory', () => {
           lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
           assert.equal(getFragmentHtml(fragment),
-            '<span class="xterm-underline-3" style="text-decoration-color: rgb(255,255,255);">a</span>'
+            '<span class="xterm-underline-3">a</span>'
           );
         });
         it('should add class for double dotted style', () => {
@@ -172,7 +172,7 @@ describe('DomRendererRowFactory', () => {
           lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
           assert.equal(getFragmentHtml(fragment),
-            '<span class="xterm-underline-4" style="text-decoration-color: rgb(255,255,255);">a</span>'
+            '<span class="xterm-underline-4">a</span>'
           );
         });
         it('should add class for dashed underline style', () => {
@@ -183,7 +183,7 @@ describe('DomRendererRowFactory', () => {
           lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
           assert.equal(getFragmentHtml(fragment),
-            '<span class="xterm-underline-5" style="text-decoration-color: rgb(255,255,255);">a</span>'
+            '<span class="xterm-underline-5">a</span>'
           );
         });
       });

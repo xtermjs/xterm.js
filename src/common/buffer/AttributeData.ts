@@ -149,7 +149,7 @@ export class ExtendedAttrs implements IExtendedAttrs {
 
   constructor(
     underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
-    underlineColor: number = -1
+    underlineColor: number = Attributes.CM_DEFAULT
   ) {
     this.underlineStyle = underlineStyle;
     this.underlineColor = underlineColor;

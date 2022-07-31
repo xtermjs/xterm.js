@@ -438,8 +438,10 @@ export class WebglCharAtlas implements IDisposable {
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
-      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
+      // When the width is odd, draw at 0.5 position. Offset by an additional 1 dpr to bring the
+      // underline closer to the character
+      const yOffset = (lineWidth % 2 === 1 ? 0.5 : 0) + window.devicePixelRatio;
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
@@ -508,18 +510,18 @@ export class WebglCharAtlas implements IDisposable {
           break;
         case UnderlineStyle.DOTTED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.DASHED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.SINGLE:
         default:
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
       }
       this._tmpCtx.stroke();
