@@ -410,9 +410,8 @@ function initOptions(term: TerminalType): void {
       } else {
         term.options[o] = parseInt(input.value);
       }
-      if (['cols', 'rows', 'letterSpacing', 'lineHeight'].includes(o)) {
-        updateTerminalSize();
-      }
+      // Always update terminal size in case the option changes the dimensions
+      updateTerminalSize();
     });
   });
   Object.keys(stringOptions).forEach(o => {
