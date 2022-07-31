@@ -532,9 +532,17 @@ export class WebglCharAtlas implements IDisposable {
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
           // This translates to 1/2 the line width in either direction
+          this._tmpCtx.save();
+          // Clip the region to only draw in valid pixels near the underline to avoid a slight
+          // outline around the whole glyph, as well as additional pixels in the glyph at the top
+          // which would increase GPU memory demands
+          const clipRegion = new Path2D();
+          clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+          this._tmpCtx.clip(clipRegion);
           this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
           this._tmpCtx.strokeStyle = backgroundColor.css;
           this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+          this._tmpCtx.restore();
         }
       }
     }
