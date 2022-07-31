@@ -73,9 +73,6 @@ describe('BufferSet', () => {
   });
 
   describe('markers', () => {
-    beforeEach(() => {
-    });
-
     it('should clear the markers when the buffer is switched', () => {
       bufferSet.activateAltBuffer();
       bufferSet.alt.addMarker(1);
