@@ -12,6 +12,7 @@ import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { DIM_OPACITY } from 'browser/renderer/Constants';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -208,6 +209,7 @@ export class RectangleRenderer extends Disposable {
 
   private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
     let rgba: number | undefined;
+    let isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
@@ -233,6 +235,7 @@ export class RectangleRenderer extends Disposable {
         case Attributes.CM_DEFAULT:
         default:
           rgba = this._colors.background.rgba;
+          isDefault = true;
       }
     }
 
@@ -244,7 +247,7 @@ export class RectangleRenderer extends Disposable {
     const r = ((rgba >> 24) & 0xFF) / 255;
     const g = ((rgba >> 16) & 0xFF) / 255;
     const b = ((rgba >> 8 ) & 0xFF) / 255;
-    const a =  bg & BgFlags.DIM ? 0.5 : 1;
+    const a = (!isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
 
     this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, a);
   }
