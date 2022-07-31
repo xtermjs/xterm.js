@@ -241,7 +241,7 @@ export class WebglCharAtlas implements IDisposable {
     if (dim) {
       // Blend here instead of using opacity because transparent colors mess with clipping the
       // glyph's bounding box
-      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, 0.5));
+      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, DIM_OPACITY));
     }
 
     return result;
@@ -283,7 +283,7 @@ export class WebglCharAtlas implements IDisposable {
 
     // Apply dim to the color, opacity is fine to use for the foreground color
     if (dim) {
-      result = color.multiplyOpacity(result, 0.5);
+      result = color.multiplyOpacity(result, DIM_OPACITY);
     }
 
     return result;
