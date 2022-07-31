@@ -400,20 +400,18 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'cols' || o === 'rows') {
-        updateTerminalSize();
-      } else if (o === 'lineHeight') {
+      if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
-        updateTerminalSize();
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
-        updateTerminalSize();
       } else if (o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
         term.options[o] = parseInt(input.value);
       }
+      if (['cols', 'rows', 'letterSpacing', 'lineHeight'].includes(o)) {
+        updateTerminalSize();
     });
   });
   Object.keys(stringOptions).forEach(o => {
@@ -505,10 +503,7 @@ function initAddons(term: TerminalType): void {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
         if (name === 'webgl') {
-          setTimeout(() => {
-            document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
-            (addon.instance as WebglAddon).onChangeTextureAtlas(e => document.body.appendChild(e));
-          }, 0);
+          (addon.instance as WebglAddon).onChangeTextureAtlas(e => document.body.appendChild(e));
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
         } else if (name === 'search') {

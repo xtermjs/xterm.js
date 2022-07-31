@@ -25,7 +25,6 @@ import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/S
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
-import { color, rgba as rgbaNs } from 'common/Color';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
