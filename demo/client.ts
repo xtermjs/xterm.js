@@ -60,29 +60,29 @@ interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor:
-    T extends 'attach' ? typeof AttachAddon :
-    T extends 'canvas' ? typeof CanvasAddon :
-    T extends 'fit' ? typeof FitAddon :
-    T extends 'search' ? typeof SearchAddon :
-    T extends 'serialize' ? typeof SerializeAddon :
-    T extends 'web-links' ? typeof WebLinksAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    typeof WebglAddon;
-    instance?:
-    T extends 'attach' ? AttachAddon :
-    T extends 'canvas' ? CanvasAddon :
-    T extends 'fit' ? FitAddon :
-    T extends 'search' ? SearchAddon :
-    T extends 'serialize' ? SerializeAddon :
-    T extends 'web-links' ? WebLinksAddon :
-    T extends 'webgl' ? WebglAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    never;
+  T extends 'attach' ? typeof AttachAddon :
+  T extends 'canvas' ? typeof CanvasAddon :
+  T extends 'fit' ? typeof FitAddon :
+  T extends 'search' ? typeof SearchAddon :
+  T extends 'serialize' ? typeof SerializeAddon :
+  T extends 'web-links' ? typeof WebLinksAddon :
+  T extends 'unicode11' ? typeof Unicode11Addon :
+  T extends 'ligatures' ? typeof LigaturesAddon :
+  typeof WebglAddon;
+  instance?:
+  T extends 'attach' ? AttachAddon :
+  T extends 'canvas' ? CanvasAddon :
+  T extends 'fit' ? FitAddon :
+  T extends 'search' ? SearchAddon :
+  T extends 'serialize' ? SerializeAddon :
+  T extends 'web-links' ? WebLinksAddon :
+  T extends 'webgl' ? WebglAddon :
+  T extends 'unicode11' ? typeof Unicode11Addon :
+  T extends 'ligatures' ? typeof LigaturesAddon :
+  never;
 }
 
-const addons: { [T in AddonType]: IDemoAddon<T>} = {
+const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
@@ -230,17 +230,22 @@ function createTerminal(): void {
     const rows = size.rows;
     const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
-    fetch(url, {method: 'POST'});
+    fetch(url, { method: 'POST' });
   });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    document.body.appendChild(addons.webgl.instance.textureAtlas);
-  }, 0);
+  try {
+    typedTerm.loadAddon(addons.webgl.instance);
+    setTimeout(() => {
+      document.body.appendChild(addons.webgl.instance.textureAtlas);
+    }, 0);
+  }
+  catch {
+    addons.webgl.instance = undefined;
+  }
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -269,7 +274,7 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then((res) => {
       res.text().then((processId) => {
         pid = processId;
         socketURL += processId;
@@ -314,7 +319,7 @@ function runFakeTerminal(): void {
     if (ev.keyCode === 13) {
       term.prompt();
     } else if (ev.keyCode === 8) {
-     // Do not delete the prompt
+      // Do not delete the prompt
       if (term._core.buffer.x > 2) {
         term.write('\b \b');
       }
@@ -502,15 +507,22 @@ function initAddons(term: TerminalType): void {
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
-        term.loadAddon(addon.instance);
-        if (name === 'webgl') {
-          setTimeout(() => {
-            document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
-          }, 0);
-        } else if (name === 'unicode11') {
-          term.unicode.activeVersion = '11';
-        } else if (name === 'search') {
-          addon.instance.onDidChangeResults(e => updateFindResults(e));
+        try {
+          term.loadAddon(addon.instance);
+          if (name === 'webgl') {
+            setTimeout(() => {
+              document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
+            }, 0);
+          } else if (name === 'unicode11') {
+            term.unicode.activeVersion = '11';
+          } else if (name === 'search') {
+            addon.instance.onDidChangeResults(e => updateFindResults(e));
+          }
+        }
+        catch {
+          addon.instance = undefined;
+          checkbox.checked = false;
+          checkbox.disabled = true;
         }
       } else {
         if (name === 'webgl') {
@@ -806,13 +818,13 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  term.registerDecoration({marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' }});
-  term.registerDecoration({marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' }});
-  term.registerDecoration({marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
-  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+  term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
+  term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
+  term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
 }
 
