@@ -409,15 +409,15 @@ export class WebglCharAtlas implements IDisposable {
     const padding = powerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
-    let drawSuccess = false;
+    let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
     // background color. This should be disabled when the glyph contains multiple colors such as
     // underline colors to prevent important colors could get cleared.
-    let enableClearThresholdCheck = true;
+    let enableClearThresholdCheck = !powerlineGlyph;
 
     // Draw underline
     if (underline) {
@@ -511,7 +511,7 @@ export class WebglCharAtlas implements IDisposable {
 
       // Draw stroke in the background color for non custom characters in order to give an outline
       // between the text and the underline
-      if (!drawSuccess) {
+      if (!customGlyph) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
@@ -524,7 +524,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // Draw the character
-    if (!drawSuccess) {
+    if (!customGlyph) {
       this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     }
 
@@ -577,7 +577,10 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, padding);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
+    if (powerlineGlyph) {
+      console.log(`powerline glyph ${chars}`, rasterizedGlyph, this._workBoundingBox);
+    }
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Check if there is enough room in the current row and go to next if needed
@@ -610,10 +613,10 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, padding: number): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
-    const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
+    const width = restrictedGlyph ? this._config.scaledCellWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -685,8 +688,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + padding + (restrictedGlyph ? Math.floor(this._config.letterSpacing / 2) : 0),
-        y: -boundingBox.top + padding + (restrictedGlyph ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
+        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.round((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
+        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
   }
@@ -762,9 +765,4 @@ function checkCompletelyTransparent(imageData: ImageData): boolean {
     }
   }
   return true;
-}
-
-function toPaddedHex(c: number): string {
-  const s = c.toString(16);
-  return s.length < 2 ? '0' + s : s;
 }
