@@ -13,7 +13,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockDirtyRowService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService } from 'common/TestUtils.test';
 import { IBufferService, ICoreService } from 'common/services/Services';
-import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { DEFAULT_TERMINAL_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
@@ -202,32 +202,32 @@ describe('InputHandler', () => {
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([1]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([2]));
       assert.equal(optionsService.options['cursorStyle'], 'block');
       assert.equal(optionsService.options['cursorBlink'], false);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([3]));
       assert.equal(optionsService.options['cursorStyle'], 'underline');
       assert.equal(optionsService.options['cursorBlink'], true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([4]));
       assert.equal(optionsService.options['cursorStyle'], 'underline');
       assert.equal(optionsService.options['cursorBlink'], false);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([5]));
       assert.equal(optionsService.options['cursorStyle'], 'bar');
       assert.equal(optionsService.options['cursorBlink'], true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = clone(DEFAULT_TERMINAL_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([6]));
       assert.equal(optionsService.options['cursorStyle'], 'bar');
       assert.equal(optionsService.options['cursorBlink'], false);

@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { OptionsService, DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { OptionsService, DEFAULT_TERMINAL_OPTIONS } from 'common/services/OptionsService';
 
 describe('OptionsService', () => {
   describe('constructor', () => {
@@ -17,8 +17,8 @@ describe('OptionsService', () => {
     });
     it('uses default value if invalid constructor option values passed for cols/rows', () => {
       const optionsService = new OptionsService({ cols: undefined, rows: undefined });
-      assert.equal(optionsService.options.rows, DEFAULT_OPTIONS.rows);
-      assert.equal(optionsService.options.cols, DEFAULT_OPTIONS.cols);
+      assert.equal(optionsService.options.rows, DEFAULT_TERMINAL_OPTIONS.rows);
+      assert.equal(optionsService.options.cols, DEFAULT_TERMINAL_OPTIONS.cols);
     });
     it('uses values from constructor option values if correctly passed', () => {
       const optionsService = new OptionsService({ cols: 80, rows: 25 });
@@ -26,7 +26,7 @@ describe('OptionsService', () => {
       assert.equal(optionsService.options.cols, 80);
     });
     it('uses default value if invalid constructor option value passed', () => {
-      assert.equal(new OptionsService({ tabStopWidth: 0 }).options.tabStopWidth, DEFAULT_OPTIONS.tabStopWidth);
+      assert.equal(new OptionsService({ tabStopWidth: 0 }).options.tabStopWidth, DEFAULT_TERMINAL_OPTIONS.tabStopWidth);
     });
     it('object.keys return the correct number of options', () => {
       const optionsService = new OptionsService({ cols: 80, rows: 25 });
@@ -60,15 +60,15 @@ describe('OptionsService', () => {
     it('normalizes invalid fontWeight option values', () => {
       service.options.fontWeight = 350;
       assert.doesNotThrow(() => service.options.fontWeight = 10000), 'fontWeight should be normalized instead of throwing';
-      assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Values greater than 1000 should be reset to default');
+      assert.equal(service.options.fontWeight, DEFAULT_TERMINAL_OPTIONS.fontWeight, 'Values greater than 1000 should be reset to default');
 
       service.options.fontWeight = 350;
       service.options.fontWeight = -10;
-      assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Values less than 1 should be reset to default');
+      assert.equal(service.options.fontWeight, DEFAULT_TERMINAL_OPTIONS.fontWeight, 'Values less than 1 should be reset to default');
 
       service.options.fontWeight = 350;
       service.options.fontWeight = 'bold700' as any;
-      assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Wrong string literals should be reset to default');
+      assert.equal(service.options.fontWeight, DEFAULT_TERMINAL_OPTIONS.fontWeight, 'Wrong string literals should be reset to default');
     });
   });
 });

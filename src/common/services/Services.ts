@@ -215,7 +215,7 @@ export interface ITerminalOptions {
   customGlyphs: boolean;
   disableStdin: boolean;
   drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
+  fastScrollModifier: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity: number;
   fontSize: number;
   fontFamily: string;
@@ -238,7 +238,7 @@ export interface ITerminalOptions {
   windowsMode: boolean;
   windowOptions: IWindowOptions;
   wordSeparator: string;
-  overviewRulerWidth?: number;
+  overviewRulerWidth: number;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -246,30 +246,30 @@ export interface ITerminalOptions {
 }
 
 export interface ITheme {
-  foreground?: string;
-  background?: string;
-  cursor?: string;
-  cursorAccent?: string;
-  selectionForeground?: string;
-  selectionBackground?: string;
-  selectionInactiveBackground?: string;
-  black?: string;
-  red?: string;
-  green?: string;
-  yellow?: string;
-  blue?: string;
-  magenta?: string;
-  cyan?: string;
-  white?: string;
-  brightBlack?: string;
-  brightRed?: string;
-  brightGreen?: string;
-  brightYellow?: string;
-  brightBlue?: string;
-  brightMagenta?: string;
-  brightCyan?: string;
-  brightWhite?: string;
-  extendedAnsi?: string[];
+  foreground: string;
+  background: string;
+  cursor: string;
+  cursorAccent: string;
+  selectionForeground: string;
+  selectionBackground: string;
+  selectionInactiveBackground: string;
+  black: string;
+  red: string;
+  green: string;
+  yellow: string;
+  blue: string;
+  magenta: string;
+  cyan: string;
+  white: string;
+  brightBlack: string;
+  brightRed: string;
+  brightGreen: string;
+  brightYellow: string;
+  brightBlue: string;
+  brightMagenta: string;
+  brightCyan: string;
+  brightWhite: string;
+  extendedAnsi: string[];
 }
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');

@@ -6,7 +6,7 @@
 import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
-import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { DEFAULT_TERMINAL_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
@@ -121,7 +121,7 @@ export class MockLogService implements ILogService {
 
 export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
-  public readonly rawOptions: ITerminalOptions = clone(DEFAULT_OPTIONS);
+  public readonly rawOptions: ITerminalOptions = clone(DEFAULT_TERMINAL_OPTIONS);
   public options: ITerminalOptions = this.rawOptions;
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {

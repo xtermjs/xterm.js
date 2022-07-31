@@ -57,7 +57,7 @@ export class Terminal extends CoreTerminal {
    * @alias module:xterm/src/xterm
    */
   constructor(
-    options: ITerminalOptions = {}
+    options: Partial<ITerminalOptions> = {}
   ) {
     super(options);
 

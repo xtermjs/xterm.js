@@ -26,7 +26,7 @@ export class Terminal implements ITerminalApi {
   private _buffer: BufferNamespaceApi | undefined;
   private _publicOptions: ITerminalOptions;
 
-  constructor(options?: ITerminalOptions) {
+  constructor(options?: Partial<ITerminalOptions>) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 

@@ -39,7 +39,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     }
 
     itWebgl('foreground 0-15', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -62,7 +62,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('foreground 0-7 drawBoldTextInBrightColors', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         brightBlack: '#010203',
         brightRed: '#040506',
         brightGreen: '#070809',
@@ -88,7 +88,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('background 0-15', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -111,7 +111,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('foreground 0-15 inverse', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -134,7 +134,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('background 0-15 inverse', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -157,7 +157,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('foreground 0-15 inivisible', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -180,7 +180,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('background 0-15 inivisible', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#010203',
         red: '#040506',
         green: '#070809',
@@ -203,7 +203,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('foreground 0-15 bright', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         brightBlack: '#010203',
         brightRed: '#040506',
         brightGreen: '#070809',
@@ -226,7 +226,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('background 0-15 bright', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         brightBlack: '#010203',
         brightRed: '#040506',
         brightGreen: '#070809',
@@ -696,7 +696,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     }
 
     itWebgl('should adjust 0-15 colors on black background', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         black: '#2e3436',
         red: '#cc0000',
         green: '#4e9a06',
@@ -764,7 +764,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     });
 
     itWebgl('should adjust 0-15 colors on white background', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         background: '#ffffff',
         black: '#2e3436',
         red: '#cc0000',
@@ -840,7 +840,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     }
 
     itWebgl('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         foreground: '#FF0000',
         background: '#00FF00',
         selectionBackground: '#0000FF'
@@ -866,7 +866,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     }
 
     itWebgl('transparent background inverse', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         background: '#ff000080'
       };
       await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
@@ -885,7 +885,7 @@ describe('WebGL Renderer Integration Tests', async () => {
     }
 
     itWebgl('transparent background inverse', async () => {
-      const theme: ITheme = {
+      const theme: Partial<ITheme> = {
         selectionForeground: '#ff0000'
       };
       await page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
@@ -1014,7 +1014,7 @@ async function getCellPixels(col: number, row: number): Promise<number[]> {
   return await page.evaluate(`Array.from(window.result)`);
 }
 
-async function setupBrowser(options: ITerminalOptions = {}): Promise<void> {
+async function setupBrowser(options: Partial<ITerminalOptions> = {}): Promise<void> {
   browser = await launchBrowser();
   page = await (await browser.newContext()).newPage();
   await page.setViewportSize({ width, height });

@@ -68,28 +68,28 @@ function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
     return opts.setWinLines || false;
   }
   switch (n) {
-    case 1: return !!opts.restoreWin;
-    case 2: return !!opts.minimizeWin;
-    case 3: return !!opts.setWinPosition;
-    case 4: return !!opts.setWinSizePixels;
-    case 5: return !!opts.raiseWin;
-    case 6: return !!opts.lowerWin;
-    case 7: return !!opts.refreshWin;
-    case 8: return !!opts.setWinSizeChars;
-    case 9: return !!opts.maximizeWin;
-    case 10: return !!opts.fullscreenWin;
-    case 11: return !!opts.getWinState;
-    case 13: return !!opts.getWinPosition;
-    case 14: return !!opts.getWinSizePixels;
-    case 15: return !!opts.getScreenSizePixels;
-    case 16: return !!opts.getCellSizePixels;
-    case 18: return !!opts.getWinSizeChars;
-    case 19: return !!opts.getScreenSizeChars;
-    case 20: return !!opts.getIconTitle;
-    case 21: return !!opts.getWinTitle;
-    case 22: return !!opts.pushTitle;
-    case 23: return !!opts.popTitle;
-    case 24: return !!opts.setWinLines;
+    case 1: return opts.restoreWin;
+    case 2: return opts.minimizeWin;
+    case 3: return opts.setWinPosition;
+    case 4: return opts.setWinSizePixels;
+    case 5: return opts.raiseWin;
+    case 6: return opts.lowerWin;
+    case 7: return opts.refreshWin;
+    case 8: return opts.setWinSizeChars;
+    case 9: return opts.maximizeWin;
+    case 10: return opts.fullscreenWin;
+    case 11: return opts.getWinState;
+    case 13: return opts.getWinPosition;
+    case 14: return opts.getWinSizePixels;
+    case 15: return opts.getScreenSizePixels;
+    case 16: return opts.getCellSizePixels;
+    case 18: return opts.getWinSizeChars;
+    case 19: return opts.getScreenSizeChars;
+    case 20: return opts.getIconTitle;
+    case 21: return opts.getWinTitle;
+    case 22: return opts.pushTitle;
+    case 23: return opts.popTitle;
+    case 24: return opts.setWinLines;
   }
   return false;
 }

@@ -30,9 +30,9 @@ export interface IDisposable {
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
-  cancelEvents?: boolean;
-  convertEol?: boolean;
-  termName?: string;
+  cancelEvents: boolean;
+  convertEol: boolean;
+  termName: string;
 }
 
 export type CursorStyle = 'block' | 'underline' | 'bar';
@@ -334,28 +334,28 @@ export type CoreMouseEncoding = (event: ICoreMouseEvent) => string;
  * windowOptions
  */
 export interface IWindowOptions {
-  restoreWin?: boolean;
-  minimizeWin?: boolean;
-  setWinPosition?: boolean;
-  setWinSizePixels?: boolean;
-  raiseWin?: boolean;
-  lowerWin?: boolean;
-  refreshWin?: boolean;
-  setWinSizeChars?: boolean;
-  maximizeWin?: boolean;
-  fullscreenWin?: boolean;
-  getWinState?: boolean;
-  getWinPosition?: boolean;
-  getWinSizePixels?: boolean;
-  getScreenSizePixels?: boolean;
-  getCellSizePixels?: boolean;
-  getWinSizeChars?: boolean;
-  getScreenSizeChars?: boolean;
-  getIconTitle?: boolean;
-  getWinTitle?: boolean;
-  pushTitle?: boolean;
-  popTitle?: boolean;
-  setWinLines?: boolean;
+  restoreWin: boolean;
+  minimizeWin: boolean;
+  setWinPosition: boolean;
+  setWinSizePixels: boolean;
+  raiseWin: boolean;
+  lowerWin: boolean;
+  refreshWin: boolean;
+  setWinSizeChars: boolean;
+  maximizeWin: boolean;
+  fullscreenWin: boolean;
+  getWinState: boolean;
+  getWinPosition: boolean;
+  getWinSizePixels: boolean;
+  getScreenSizePixels: boolean;
+  getCellSizePixels: boolean;
+  getWinSizeChars: boolean;
+  getScreenSizeChars: boolean;
+  getIconTitle: boolean;
+  getWinTitle: boolean;
+  pushTitle: boolean;
+  popTitle: boolean;
+  setWinLines: boolean;
 }
 
 // color events from common, used for OSC 4/10/11/12 and 104/110/111/112

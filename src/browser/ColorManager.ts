@@ -129,7 +129,7 @@ export class ColorManager implements IColorManager {
    * @param theme The  theme to use. If a partial theme is provided then default
    * colors will be used where colors are not defined.
    */
-  public setTheme(theme: ITheme = {}): void {
+  public setTheme(theme: Partial<ITheme> = {}): void {
     this.colors.foreground = this._parseColor(theme.foreground, DEFAULT_FOREGROUND);
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);

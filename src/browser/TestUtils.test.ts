@@ -17,6 +17,7 @@ import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } fro
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
+import { DEFAULT_TERMINAL_OPTIONS } from 'common/services/OptionsService';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -141,7 +142,7 @@ export class MockTerminal implements ITerminal {
   public renderer!: IRenderer;
   public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
-  public options: ITerminalOptions = {};
+  public options: ITerminalOptions = DEFAULT_TERMINAL_OPTIONS;
   public element!: HTMLElement;
   public screenElement!: HTMLElement;
   public rowContainer!: HTMLElement;

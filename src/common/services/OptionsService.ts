@@ -3,12 +3,64 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
+import { IOptionsService, ITerminalOptions, FontWeight, ITheme } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
-import { CursorStyle } from 'common/Types';
+import { CursorStyle, IWindowOptions } from 'common/Types';
 
-export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
+export const DEFAULT_WINDOW_OPTIONS: IWindowOptions = {
+  restoreWin: false,
+  minimizeWin: false,
+  setWinPosition: false,
+  setWinSizePixels: false,
+  raiseWin: false,
+  lowerWin: false,
+  refreshWin: false,
+  setWinSizeChars: false,
+  maximizeWin: false,
+  fullscreenWin: false,
+  getWinState: false,
+  getWinPosition: false,
+  getWinSizePixels: false,
+  getScreenSizePixels: false,
+  getCellSizePixels: false,
+  getWinSizeChars: false,
+  getScreenSizeChars: false,
+  getIconTitle: false,
+  getWinTitle: false,
+  pushTitle: false,
+  popTitle: false,
+  setWinLines: false
+};
+
+export const DEFAULT_THEME: ITheme = {
+  foreground: '#FFFFFF',
+  background: '#000000',
+  cursor: '#000000',
+  cursorAccent: '#FFFFFF',
+  selectionForeground: '',
+  selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '',
+  black: '#1E1E1D',
+  brightBlack: '#262625',
+  red: '#CE5C5C',
+  brightRed: '#FF7272',
+  green: '#5BCC5B',
+  brightGreen: '#72FF72',
+  yellow: '#CCCC5B',
+  brightYellow: '#FFFF72',
+  blue: '#5D5DD3',
+  brightBlue: '#7279FF',
+  magenta: '#BC5ED1',
+  brightMagenta: '#E572FF',
+  cyan: '#5DA5D5',
+  brightCyan: '#72F0FF',
+  white: '#F8F8F8',
+  brightWhite: '#FFFFFF',
+  extendedAnsi: []
+};
+
+export const DEFAULT_TERMINAL_OPTIONS: Readonly<ITerminalOptions> = {
   cols: 80,
   rows: 24,
   cursorBlink: false,
@@ -36,16 +88,16 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   allowProposedApi: false,
   allowTransparency: false,
   tabStopWidth: 8,
-  theme: {},
+  theme: DEFAULT_THEME,
   rightClickSelectsWord: isMac,
-  windowOptions: {},
+  windowOptions: DEFAULT_WINDOW_OPTIONS,
   windowsMode: false,
   wordSeparator: ' ()[]{}\',"`',
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRulerWidth: undefined
+  overviewRulerWidth: 0
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -61,7 +113,7 @@ export class OptionsService implements IOptionsService {
 
   constructor(options: Partial<ITerminalOptions>) {
     // set the default value of each option
-    const defaultOptions = { ...DEFAULT_OPTIONS };
+    const defaultOptions = { ...DEFAULT_TERMINAL_OPTIONS };
     for (const key in options) {
       if (key in defaultOptions) {
         try {
@@ -75,20 +127,20 @@ export class OptionsService implements IOptionsService {
 
     // set up getters and setters for each option
     this.rawOptions = defaultOptions;
-    this.options = { ... defaultOptions };
+    this.options = { ...defaultOptions };
     this._setupOptions();
   }
 
   private _setupOptions(): void {
     const getter = (propName: string): any => {
-      if (!(propName in DEFAULT_OPTIONS)) {
+      if (!(propName in DEFAULT_TERMINAL_OPTIONS)) {
         throw new Error(`No option with key "${propName}"`);
       }
       return this.rawOptions[propName];
     };
 
     const setter = (propName: string, value: any): void => {
-      if (!(propName in DEFAULT_OPTIONS)) {
+      if (!(propName in DEFAULT_TERMINAL_OPTIONS)) {
         throw new Error(`No option with key "${propName}"`);
       }
 
@@ -113,7 +165,7 @@ export class OptionsService implements IOptionsService {
     switch (key) {
       case 'cursorStyle':
         if (!value) {
-          value = DEFAULT_OPTIONS[key];
+          value = DEFAULT_TERMINAL_OPTIONS[key];
         }
         if (!isCursorStyle(value)) {
           throw new Error(`"${value}" is not a valid value for ${key}`);
@@ -122,7 +174,7 @@ export class OptionsService implements IOptionsService {
       case 'cursorStyle':
       case 'wordSeparator':
         if (!value) {
-          value = DEFAULT_OPTIONS[key];
+          value = DEFAULT_TERMINAL_OPTIONS[key];
         }
         break;
       case 'fontWeight':
@@ -131,11 +183,11 @@ export class OptionsService implements IOptionsService {
           // already valid numeric value
           break;
         }
-        value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
+        value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_TERMINAL_OPTIONS[key];
         break;
       case 'cursorWidth':
         value = Math.floor(value);
-        // Fall through for bounds check
+      // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {

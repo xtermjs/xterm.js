@@ -29,7 +29,7 @@ declare module 'xterm' {
      * marked as experimental/proposed will throw an error. This defaults to
      * true currently, but will change to false in v5.0.
      */
-    allowProposedApi?: boolean;
+    allowProposedApi: boolean;
 
     /**
      * Whether background should support non-opaque color. It must be set before
@@ -37,13 +37,13 @@ declare module 'xterm' {
      * executing it again. Note that enabling this can negatively impact
      * performance.
      */
-    allowTransparency?: boolean;
+    allowTransparency: boolean;
 
     /**
      * If enabled, alt + click will move the prompt cursor to position
      * underneath the mouse. The default is true.
      */
-    altClickMovesCursor?: boolean;
+    altClickMovesCursor: boolean;
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
@@ -53,22 +53,22 @@ declare module 'xterm' {
      * deal with data from a non-PTY related source, this settings might be
      * useful.
      */
-    convertEol?: boolean;
+    convertEol: boolean;
 
     /**
      * Whether the cursor blinks.
      */
-    cursorBlink?: boolean;
+    cursorBlink: boolean;
 
     /**
      * The style of the cursor.
      */
-    cursorStyle?: 'block' | 'underline' | 'bar';
+    cursorStyle: 'block' | 'underline' | 'bar';
 
     /**
      * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
      */
-    cursorWidth?: number;
+    cursorWidth: number;
 
     /**
      * Whether to draw custom glyphs for block element and box drawing characters instead of using
@@ -76,57 +76,57 @@ declare module 'xterm' {
      * line height and letter spacing is used. Note that this doesn't work with the DOM renderer
      * which renders all characters using the font. The default is true.
      */
-    customGlyphs?: boolean;
+    customGlyphs: boolean;
 
     /**
      * Whether input should be disabled.
      */
-    disableStdin?: boolean;
+    disableStdin: boolean;
 
     /**
      * Whether to draw bold text in bright colors. The default is true.
      */
-    drawBoldTextInBrightColors?: boolean;
+    drawBoldTextInBrightColors: boolean;
 
     /**
      * The modifier key hold to multiply scroll speed.
      */
-    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
+    fastScrollModifier: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The scroll speed multiplier used for fast scrolling.
      */
-    fastScrollSensitivity?: number;
+    fastScrollSensitivity: number;
 
     /**
      * The font size used to render text.
      */
-    fontSize?: number;
+    fontSize: number;
 
     /**
      * The font family used to render text.
      */
-    fontFamily?: string;
+    fontFamily: string;
 
     /**
      * The font weight used to render non-bold text.
      */
-    fontWeight?: FontWeight;
+    fontWeight: FontWeight;
 
     /**
      * The font weight used to render bold text.
      */
-    fontWeightBold?: FontWeight;
+    fontWeightBold: FontWeight;
 
     /**
      * The spacing in whole pixels between characters.
      */
-    letterSpacing?: number;
+    letterSpacing: number;
 
     /**
      * The line height used to render text.
      */
-    lineHeight?: number;
+    lineHeight: number;
 
     /**
      * What log level to use, this will log for all levels below and including
@@ -138,12 +138,12 @@ declare module 'xterm' {
      * 4. error
      * 5. off
      */
-    logLevel?: LogLevel;
+    logLevel: LogLevel;
 
     /**
      * Whether to treat option as the meta key.
      */
-    macOptionIsMeta?: boolean;
+    macOptionIsMeta: boolean;
 
     /**
      * Whether holding a modifier key will force normal selection behavior,
@@ -152,7 +152,7 @@ declare module 'xterm' {
      * example, this allows you to use xterm.js' regular selection inside tmux
      * with mouse mode enabled.
      */
-    macOptionClickForcesSelection?: boolean;
+    macOptionClickForcesSelection: boolean;
 
     /**
      * The minimum contrast ratio for text in the terminal, setting this will
@@ -164,48 +164,53 @@ declare module 'xterm' {
      * - 7: Minimum for WCAG AAA compliance.
      * - 21: White on black or black on white.
      */
-    minimumContrastRatio?: number;
+    minimumContrastRatio: number;
 
     /**
      * Whether to select the word under the cursor on right click, this is
      * standard behavior in a lot of macOS applications.
      */
-    rightClickSelectsWord?: boolean;
+    rightClickSelectsWord: boolean;
 
     /**
      * Whether screen reader support is enabled. When on this will expose
      * supporting elements in the DOM to support NVDA on Windows and VoiceOver
      * on macOS.
      */
-    screenReaderMode?: boolean;
+    screenReaderMode: boolean;
 
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of
      * rows that are retained when lines are scrolled beyond the initial
      * viewport.
      */
-    scrollback?: number;
+    scrollback: number;
 
     /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
-    scrollSensitivity?: number;
+    scrollSensitivity: number;
 
     /**
      * The duration to smoothly scroll between the origin and the target in
      * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
      */
-    smoothScrollDuration?: number;
+    smoothScrollDuration: number;
 
     /**
      * The size of tab stops in the terminal.
      */
-    tabStopWidth?: number;
+    tabStopWidth: number;
 
     /**
      * The color theme of the terminal.
      */
-    theme?: ITheme;
+    get theme(): ITheme;
+
+    /**
+     * The color theme of the terminal.
+     */
+    set theme(theme: Partial<ITheme>);
 
     /**
      * Whether "Windows mode" is enabled. Because Windows backends winpty and
@@ -216,30 +221,32 @@ declare module 'xterm' {
      * - Reflow is disabled.
      * - Lines are assumed to be wrapped if the last character of the line is
      *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
      */
-    windowsMode?: boolean;
+    windowsMode: boolean;
 
     /**
      * A string containing all characters that are considered word separated by the
      * double click to select work logic.
     */
-    wordSeparator?: string;
+    wordSeparator: string;
 
     /**
      * Enable various window manipulation and report features.
      * All features are disabled by default for security reasons.
      */
-    windowOptions?: IWindowOptions;
+    get windowOptions(): IWindowOptions;
+
+    /**
+     * Enable various window manipulation and report features.
+     * All features are disabled by default for security reasons.
+     */
+    set windowOptions(windowOptions: Partial<IWindowOptions>);
 
     /**
      * The width, in pixels, of the canvas for the overview ruler. The overview
      * ruler will be hidden when not set.
      */
-    overviewRulerWidth?: number;
+    overviewRulerWidth: number;
   }
 
   /**
@@ -263,53 +270,53 @@ declare module 'xterm' {
    */
   export interface ITheme {
     /** The default foreground color */
-    foreground?: string;
+    foreground: string;
     /** The default background color */
-    background?: string;
+    background: string;
     /** The cursor color */
-    cursor?: string;
+    cursor: string;
     /** The accent color of the cursor (fg color for a block cursor) */
-    cursorAccent?: string;
+    cursorAccent: string;
     /** The selection background color (can be transparent) */
-    selectionBackground?: string;
+    selectionBackground: string;
     /** The selection foreground color */
-    selectionForeground?: string;
+    selectionForeground: string;
     /** The selection background color when the terminal does not have focus (can be transparent) */
-    selectionInactiveBackground?: string;
+    selectionInactiveBackground: string;
     /** ANSI black (eg. `\x1b[30m`) */
-    black?: string;
+    black: string;
     /** ANSI red (eg. `\x1b[31m`) */
-    red?: string;
+    red: string;
     /** ANSI green (eg. `\x1b[32m`) */
-    green?: string;
+    green: string;
     /** ANSI yellow (eg. `\x1b[33m`) */
-    yellow?: string;
+    yellow: string;
     /** ANSI blue (eg. `\x1b[34m`) */
-    blue?: string;
+    blue: string;
     /** ANSI magenta (eg. `\x1b[35m`) */
-    magenta?: string;
+    magenta: string;
     /** ANSI cyan (eg. `\x1b[36m`) */
-    cyan?: string;
+    cyan: string;
     /** ANSI white (eg. `\x1b[37m`) */
-    white?: string;
+    white: string;
     /** ANSI bright black (eg. `\x1b[1;30m`) */
-    brightBlack?: string;
+    brightBlack: string;
     /** ANSI bright red (eg. `\x1b[1;31m`) */
-    brightRed?: string;
+    brightRed: string;
     /** ANSI bright green (eg. `\x1b[1;32m`) */
-    brightGreen?: string;
+    brightGreen: string;
     /** ANSI bright yellow (eg. `\x1b[1;33m`) */
-    brightYellow?: string;
+    brightYellow: string;
     /** ANSI bright blue (eg. `\x1b[1;34m`) */
-    brightBlue?: string;
+    brightBlue: string;
     /** ANSI bright magenta (eg. `\x1b[1;35m`) */
-    brightMagenta?: string;
+    brightMagenta: string;
     /** ANSI bright cyan (eg. `\x1b[1;36m`) */
-    brightCyan?: string;
+    brightCyan: string;
     /** ANSI bright white (eg. `\x1b[1;37m`) */
-    brightWhite?: string;
+    brightWhite: string;
     /** ANSI extended colors (16-255) */
-    extendedAnsi?: string[];
+    extendedAnsi: string[];
   }
 
   /**
@@ -513,18 +520,18 @@ declare module 'xterm' {
      * Ps=1    De-iconify window.
      * No default implementation.
      */
-    restoreWin?: boolean;
+    restoreWin: boolean;
     /**
      * Ps=2    Iconify window.
      * No default implementation.
      */
-    minimizeWin?: boolean;
+    minimizeWin: boolean;
     /**
      * Ps=3 ; x ; y
      * Move window to [x, y].
      * No default implementation.
      */
-    setWinPosition?: boolean;
+    setWinPosition: boolean;
     /**
      * Ps = 4 ; height ; width
      * Resize the window to given `height` and `width` in pixels.
@@ -532,19 +539,19 @@ declare module 'xterm' {
      * Zero parameters should use the display's height or width.
      * No default implementation.
      */
-    setWinSizePixels?: boolean;
+    setWinSizePixels: boolean;
     /**
      * Ps=5    Raise the window to the front of the stacking order.
      * No default implementation.
      */
-    raiseWin?: boolean;
+    raiseWin: boolean;
     /**
      * Ps=6    Lower the xterm window to the bottom of the stacking order.
      * No default implementation.
      */
-    lowerWin?: boolean;
+    lowerWin: boolean;
     /** Ps=7    Refresh the window. */
-    refreshWin?: boolean;
+    refreshWin: boolean;
     /**
      * Ps = 8 ; height ; width
      * Resize the text area to given height and width in characters.
@@ -552,7 +559,7 @@ declare module 'xterm' {
      * Zero parameters use the display's height or width.
      * No default implementation.
      */
-    setWinSizeChars?: boolean;
+    setWinSizeChars: boolean;
     /**
      * Ps=9 ; 0   Restore maximized window.
      * Ps=9 ; 1   Maximize window (i.e., resize to screen size).
@@ -560,82 +567,82 @@ declare module 'xterm' {
      * Ps=9 ; 3   Maximize window horizontally.
      * No default implementation.
      */
-    maximizeWin?: boolean;
+    maximizeWin: boolean;
     /**
      * Ps=10 ; 0  Undo full-screen mode.
      * Ps=10 ; 1  Change to full-screen.
      * Ps=10 ; 2  Toggle full-screen.
      * No default implementation.
      */
-    fullscreenWin?: boolean;
+    fullscreenWin: boolean;
     /** Ps=11   Report xterm window state.
      * If the xterm window is non-iconified, it returns "CSI 1 t".
      * If the xterm window is iconified, it returns "CSI 2 t".
      * No default implementation.
      */
-    getWinState?: boolean;
+    getWinState: boolean;
     /**
      * Ps=13      Report xterm window position. Result is "CSI 3 ; x ; y t".
      * Ps=13 ; 2  Report xterm text-area position. Result is "CSI 3 ; x ; y t".
      * No default implementation.
      */
-    getWinPosition?: boolean;
+    getWinPosition: boolean;
     /**
      * Ps=14      Report xterm text area size in pixels. Result is "CSI 4 ; height ; width t".
      * Ps=14 ; 2  Report xterm window size in pixels. Result is "CSI  4 ; height ; width t".
      * Has a default implementation.
      */
-    getWinSizePixels?: boolean;
+    getWinSizePixels: boolean;
     /**
      * Ps=15    Report size of the screen in pixels. Result is "CSI 5 ; height ; width t".
      * No default implementation.
      */
-    getScreenSizePixels?: boolean;
+    getScreenSizePixels: boolean;
     /**
      * Ps=16  Report xterm character cell size in pixels. Result is "CSI 6 ; height ; width t".
      * Has a default implementation.
      */
-    getCellSizePixels?: boolean;
+    getCellSizePixels: boolean;
     /**
      * Ps=18  Report the size of the text area in characters. Result is "CSI 8 ; height ; width t".
      * Has a default implementation.
      */
-    getWinSizeChars?: boolean;
+    getWinSizeChars: boolean;
     /**
      * Ps=19  Report the size of the screen in characters. Result is "CSI 9 ; height ; width t".
      * No default implementation.
      */
-    getScreenSizeChars?: boolean;
+    getScreenSizeChars: boolean;
     /**
      * Ps=20  Report xterm window's icon label. Result is "OSC L label ST".
      * No default implementation.
      */
-    getIconTitle?: boolean;
+    getIconTitle: boolean;
     /**
      * Ps=21  Report xterm window's title. Result is "OSC l label ST".
      * No default implementation.
      */
-    getWinTitle?: boolean;
+    getWinTitle: boolean;
     /**
      * Ps=22 ; 0  Save xterm icon and window title on stack.
      * Ps=22 ; 1  Save xterm icon title on stack.
      * Ps=22 ; 2  Save xterm window title on stack.
      * All variants have a default implementation.
      */
-    pushTitle?: boolean;
+    pushTitle: boolean;
     /**
      * Ps=23 ; 0  Restore xterm icon and window title from stack.
      * Ps=23 ; 1  Restore xterm icon title from stack.
      * Ps=23 ; 2  Restore xterm window title from stack.
      * All variants have a default implementation.
      */
-    popTitle?: boolean;
+    popTitle: boolean;
     /**
      * Ps>=24  Resize to Ps lines (DECSLPP).
      * DECSLPP is not implemented. This settings is also used to
      * enable / disable DECCOLM (earlier variant of DECSLPP).
      */
-    setWinLines?: boolean;
+    setWinLines: boolean;
   }
 
   /**
@@ -694,12 +701,17 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
-     * Gets or sets the terminal options. This supports setting multiple options.
+     * Gets the terminal options. This supports setting multiple options.
      *
      * @example Get a single option
      * ```typescript
      * console.log(terminal.options.fontSize);
      * ```
+     */
+    get options(): ITerminalOptions;
+
+    /**
+     * Sets the terminal options. This supports setting multiple options.
      *
      * @example Set a single option
      * ```typescript
@@ -714,7 +726,7 @@ declare module 'xterm' {
      * };
      * ```
      */
-    options: ITerminalOptions;
+    set options(options: Partial<ITerminalOptions>);
 
     /**
      * Natural language strings that can be localized.
@@ -726,7 +738,7 @@ declare module 'xterm' {
      *
      * @param options An object containing a set of options.
      */
-    constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions);
+    constructor(options?: Partial<ITerminalOptions> & Partial<ITerminalInitOnlyOptions>);
 
     /**
      * Adds an event listener for when the bell is triggered.
@@ -1069,7 +1081,7 @@ declare module 'xterm' {
   /**
    * An object representing a range within the viewport of the terminal.
    */
-   export interface IViewportRange {
+  export interface IViewportRange {
     /**
      * The start of the range.
      */

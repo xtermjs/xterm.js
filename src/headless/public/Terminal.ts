@@ -24,7 +24,7 @@ export class Terminal implements ITerminalApi {
   private _buffer: BufferNamespaceApi | undefined;
   private _publicOptions: ITerminalOptions;
 
-  constructor(options?: ITerminalOptions) {
+  constructor(options?: Partial<ITerminalOptions>) {
     this._core = new TerminalCore(options);
     this._addonManager = new AddonManager();
 
@@ -127,7 +127,7 @@ export class Terminal implements ITerminalApi {
   public get options(): ITerminalOptions {
     return this._publicOptions;
   }
-  public set options(options: ITerminalOptions) {
+  public set options(options: Partial<ITerminalOptions>) {
     for (const propName in options) {
       this._publicOptions[propName] = options[propName];
     }

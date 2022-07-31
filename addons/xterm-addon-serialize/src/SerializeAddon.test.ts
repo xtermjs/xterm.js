@@ -208,7 +208,7 @@ describe('xterm-addon-serialize', () => {
       const output = serializeAddon.serializeAsHTML({
         includeGlobalBackground: true
       });
-      assert.equal((output.match(/color: #ffffff; background-color: #000000; font-family: courier-new, courier, monospace; font-size: 15px;/g) || []).length, 1, output);
+      assert.equal((output.match(/color: #FFFFFF; background-color: #000000; font-family: courier-new, courier, monospace; font-size: 15px;/g) || []).length, 1, output);
     });
   });
 });
