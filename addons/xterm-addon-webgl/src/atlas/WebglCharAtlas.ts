@@ -438,8 +438,8 @@ export class WebglCharAtlas implements IDisposable {
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
-      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
+      const yOffset = lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
