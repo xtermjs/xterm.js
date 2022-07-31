@@ -240,6 +240,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
     document.body.appendChild(addons.webgl.instance.textureAtlas);
+    addons.webgl.instance.onChangeTextureAtlas(e => document.body.appendChild(e));
   }, 0);
   term.focus();
 
@@ -506,6 +507,7 @@ function initAddons(term: TerminalType): void {
         if (name === 'webgl') {
           setTimeout(() => {
             document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
+            (addon.instance as WebglAddon).onChangeTextureAtlas(e => document.body.appendChild(e));
           }, 0);
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';

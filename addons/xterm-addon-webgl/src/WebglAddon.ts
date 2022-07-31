@@ -7,13 +7,16 @@ import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
 import { ICharacterJoinerService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 
 export class WebglAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
+
+  private _onChangeTextureAtlas = new EventEmitter<HTMLElement>();
+  public get onChangeTextureAtlas(): IEvent<HTMLElement> { return this._onChangeTextureAtlas.event; }
   private _onContextLoss = new EventEmitter<void>();
   public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
 
@@ -36,7 +39,8 @@ export class WebglAddon implements ITerminalAddon {
     const decorationService: IDecorationService = (terminal as any)._core._decorationService;
     const colors: IColorSet = (terminal as any)._core._colorManager.colors;
     this._renderer = new WebglRenderer(terminal, colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer);
-    this._renderer.onContextLoss(() => this._onContextLoss.fire());
+    forwardEvent(this._renderer.onContextLoss, this._onContextLoss);
+    forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
     renderService.setRenderer(this._renderer);
   }
 
