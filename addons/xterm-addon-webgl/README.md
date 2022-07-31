@@ -36,3 +36,7 @@ terminal.loadAddon(addon);
 ```
 
 Read more about handling WebGL context losses on the [Khronos wiki](https://www.khronos.org/webgl/wiki/HandlingContextLost).
+
+### See also
+
+- [xterm-addon-canvas](https://www.npmjs.com/package/xterm-addon-canvas) A renderer for xterm.js that uses a 2d canvas that can be used as a fallback when WebGL is not available
