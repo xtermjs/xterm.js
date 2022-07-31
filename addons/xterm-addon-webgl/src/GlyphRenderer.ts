@@ -203,10 +203,11 @@ export class GlyphRenderer  extends Disposable {
       return;
     }
 
-    if (bg !== lastBg && rasterizedGlyph.offset.x > 0) {
-      const clippedPixels = rasterizedGlyph.offset.x;
+    const leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
+    if (bg !== lastBg && rasterizedGlyph.offset.x > leftCellPadding) {
+      const clippedPixels = rasterizedGlyph.offset.x - leftCellPadding;
       // a_origin
-      array[i    ] = this._dimensions.scaledCharLeft;
+      array[i    ] = -(rasterizedGlyph.offset.x - clippedPixels) + this._dimensions.scaledCharLeft;
       array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
       // a_size
       array[i + 2] = (rasterizedGlyph.size.x - clippedPixels) / this._dimensions.scaledCanvasWidth;

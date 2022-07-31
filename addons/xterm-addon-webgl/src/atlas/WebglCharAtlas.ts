@@ -604,9 +604,6 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
-    if (powerlineGlyph) {
-      console.log(`powerline glyph ${chars}`, rasterizedGlyph, this._workBoundingBox);
-    }
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use
@@ -758,7 +755,7 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.round((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
+        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
