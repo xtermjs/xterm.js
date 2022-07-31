@@ -71,4 +71,17 @@ describe('BufferSet', () => {
       assert.equal(bufferSet.active.y, 10);
     });
   });
+
+  describe('markers', () => {
+    beforeEach(() => {
+    });
+
+    it('should clear the markers when the buffer is switched', () => {
+      bufferSet.activateAltBuffer();
+      bufferSet.alt.addMarker(1);
+      assert.equal(bufferSet.alt.markers.length, 1);
+      bufferSet.activateNormalBuffer();
+      assert.equal(bufferSet.alt.markers.length, 0);
+    });
+  });
 });
