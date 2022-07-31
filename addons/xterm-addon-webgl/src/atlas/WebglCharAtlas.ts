@@ -45,6 +45,12 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
 
+interface ICharAtlasActiveRow {
+  x: number;
+  y: number;
+  height: number;
+}
+
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
@@ -59,13 +65,22 @@ export class WebglCharAtlas implements IDisposable {
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
 
-  // Since glyphs are expected to be around the same height, the packing
-  // strategy used it to fill a row with glyphs while keeping track of the
-  // tallest glyph in the row. Once the row is full a new row is started at
-  // (0,lastRow+lastRowTallestGlyph).
-  private _currentRowY: number = 0;
-  private _currentRowX: number = 0;
-  private _currentRowHeight: number = 0;
+  // Texture atlas current positioning data. The texture packing strategy used is to fill from
+  // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
+  // row's height, the following happens:
+  //
+  // - The current row becomes the fixed height row A
+  // - A new fixed height row B the exact size of the glyph is created below the current row
+  // - A new dynamic height current row is created below B
+  //
+  // This strategy does a good job preventing space being wasted for very short glyphs such as
+  // underscores, hyphens etc. or those with underlines rendered.
+  private _currentRow: ICharAtlasActiveRow = {
+    x: 0,
+    y: 0,
+    height: 0
+  };
+  private readonly _fixedRows: ICharAtlasActiveRow[] = [];
 
   public hasCanvasChanged = false;
 
@@ -118,7 +133,7 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   public beginFrame(): boolean {
-    if (this._currentRowY > TEXTURE_CAPACITY) {
+    if (this._currentRow.y > TEXTURE_CAPACITY) {
       this.clearTexture();
       this.warmUp();
       return true;
@@ -127,15 +142,16 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   public clearTexture(): void {
-    if (this._currentRowX === 0 && this._currentRowY === 0) {
+    if (this._currentRow.x === 0 && this._currentRow.y === 0) {
       return;
     }
     this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
     this._cacheMap = {};
     this._cacheMapCombined = {};
-    this._currentRowHeight = 0;
-    this._currentRowX = 0;
-    this._currentRowY = 0;
+    this._currentRow.x = 0;
+    this._currentRow.y = 0;
+    this._currentRow.height = 0;
+    this._fixedRows.length = 0;
     this._didWarmUp = false;
   }
 
@@ -422,8 +438,10 @@ export class WebglCharAtlas implements IDisposable {
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
-      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
+      // When the width is odd, draw at 0.5 position. Offset by an additional 1 dpr to bring the
+      // underline closer to the character
+      const yOffset = (lineWidth % 2 === 1 ? 0.5 : 0) + window.devicePixelRatio;
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
@@ -492,18 +510,18 @@ export class WebglCharAtlas implements IDisposable {
           break;
         case UnderlineStyle.DOTTED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.DASHED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.SINGLE:
         default:
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
       }
       this._tmpCtx.stroke();
@@ -516,9 +534,17 @@ export class WebglCharAtlas implements IDisposable {
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
           // This translates to 1/2 the line width in either direction
+          this._tmpCtx.save();
+          // Clip the region to only draw in valid pixels near the underline to avoid a slight
+          // outline around the whole glyph, as well as additional pixels in the glyph at the top
+          // which would increase GPU memory demands
+          const clipRegion = new Path2D();
+          clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+          this._tmpCtx.clip(clipRegion);
           this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
           this._tmpCtx.strokeStyle = backgroundColor.css;
           this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+          this._tmpCtx.restore();
         }
       }
     }
@@ -583,22 +609,66 @@ export class WebglCharAtlas implements IDisposable {
     }
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
-    // Check if there is enough room in the current row and go to next if needed
-    if (this._currentRowX + rasterizedGlyph.size.x > TEXTURE_WIDTH) {
-      this._currentRowX = 0;
-      this._currentRowY += this._currentRowHeight;
-      this._currentRowHeight = 0;
+    // Find the best atlas row to use
+    let activeRow: ICharAtlasActiveRow;
+    while (true) {
+      // Select the ideal existing row, preferring fixed rows over the current row
+      activeRow = this._currentRow;
+      for (const row of this._fixedRows) {
+        if ((activeRow === this._currentRow || row.height < activeRow.height) && rasterizedGlyph.size.y <= row.height) {
+          activeRow = row;
+        }
+      }
+
+      // Create a new one if vertical space would be wasted, fixing the previously active row in the
+      // process as it now has a fixed height
+      if (activeRow.height > rasterizedGlyph.size.y * 2) {
+        // Fix the current row as the new row is being added below
+        if (this._currentRow.height > 0) {
+          this._fixedRows.push(this._currentRow);
+        }
+
+        // Create the new fixed height row
+        activeRow = {
+          x: 0,
+          y: this._currentRow.y + this._currentRow.height,
+          height: rasterizedGlyph.size.y
+        };
+        this._fixedRows.push(activeRow);
+
+        // Create the new current row below the new fixed height row
+        this._currentRow = {
+          x: 0,
+          y: activeRow.y + activeRow.height,
+          height: 0
+        };
+      }
+
+      // Exit the loop if there is enough room in the row
+      if (activeRow.x + rasterizedGlyph.size.x <= TEXTURE_WIDTH) {
+        break;
+      }
+
+      // If there is enough room in the current row, finish it and try again
+      if (activeRow === this._currentRow) {
+        activeRow.x = 0;
+        activeRow.y += activeRow.height;
+        activeRow.height = 0;
+      } else {
+        this._fixedRows.splice(this._fixedRows.indexOf(activeRow), 1);
+      }
     }
 
     // Record texture position
-    rasterizedGlyph.texturePosition.x = this._currentRowX;
-    rasterizedGlyph.texturePosition.y = this._currentRowY;
-    rasterizedGlyph.texturePositionClipSpace.x = this._currentRowX / TEXTURE_WIDTH;
-    rasterizedGlyph.texturePositionClipSpace.y = this._currentRowY / TEXTURE_HEIGHT;
+    rasterizedGlyph.texturePosition.x = activeRow.x;
+    rasterizedGlyph.texturePosition.y = activeRow.y;
+    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / TEXTURE_WIDTH;
+    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / TEXTURE_HEIGHT;
 
-    // Update atlas current row
-    this._currentRowHeight = Math.max(this._currentRowHeight, rasterizedGlyph.size.y);
-    this._currentRowX += rasterizedGlyph.size.x;
+    // Update atlas current row, for fixed rows the glyph height will never be larger than the row
+    // height
+    activeRow.height = Math.max(activeRow.height, rasterizedGlyph.size.y);
+    activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(clippedImageData, rasterizedGlyph.texturePosition.x, rasterizedGlyph.texturePosition.y);
