@@ -239,7 +239,8 @@ function createTerminal(): void {
   addons.fit.instance!.fit();
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
-    document.body.appendChild(addons.webgl.instance.textureAtlas);
+    addTextureAtlas(addons.webgl.instance.textureAtlas);
+    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
   }, 0);
   term.focus();
 
@@ -399,20 +400,18 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'cols' || o === 'rows') {
-        updateTerminalSize();
-      } else if (o === 'lineHeight') {
+      if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
-        updateTerminalSize();
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
-        updateTerminalSize();
       } else if (o === 'scrollback') {
         term.options.scrollback = parseInt(input.value);
         setTimeout(() => updateTerminalSize(), 5);
       } else {
         term.options[o] = parseInt(input.value);
       }
+      // Always update terminal size in case the option changes the dimensions
+      updateTerminalSize();
     });
   });
   Object.keys(stringOptions).forEach(o => {
@@ -504,9 +503,7 @@ function initAddons(term: TerminalType): void {
         addon.instance = new addon.ctor();
         term.loadAddon(addon.instance);
         if (name === 'webgl') {
-          setTimeout(() => {
-            document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
-          }, 0);
+          (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '11';
         } else if (name === 'search') {
@@ -590,6 +587,9 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
 }
 
+function addTextureAtlas(e: HTMLCanvasElement) {
+  document.querySelector('#texture-atlas').appendChild(e);
+}
 
 function writeCustomGlyphHandler() {
   term.write('\n\r');
@@ -688,7 +688,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b1 \x1b[33;44m\ue0b0\x1b[39m` +
     ` 4 \ue0b1 \x1b[34;45m\ue0b0\x1b[39m` +
     ` 5 \ue0b1 \x1b[35;46m\ue0b0\x1b[39m` +
-    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[39m` +
+    ` 6 \ue0b1 \x1b[36;47m\ue0b0\x1b[30m` +
     ` 7 \ue0b1 \x1b[37;49m\ue0b0\x1b[0m`
   );
   term.writeln('');
@@ -701,7 +701,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b3 \x1b[7;33;44m\ue0b2\x1b[27;39m` +
     ` 4 \ue0b3 \x1b[7;34;45m\ue0b2\x1b[27;39m` +
     ` 5 \ue0b3 \x1b[7;35;46m\ue0b2\x1b[27;39m` +
-    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;39m` +
+    ` 6 \ue0b3 \x1b[7;36;47m\ue0b2\x1b[27;30m` +
     ` 7 \ue0b3 \x1b[7;37;49m\ue0b2\x1b[0m`
   );
   term.writeln('');
@@ -714,7 +714,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b5 \x1b[33;44m\ue0b4\x1b[39m` +
     ` 4 \ue0b5 \x1b[34;45m\ue0b4\x1b[39m` +
     ` 5 \ue0b5 \x1b[35;46m\ue0b4\x1b[39m` +
-    ` 6 \ue0b5 \x1b[36;47m\ue0b4\x1b[39m` +
+    ` 6 \ue0b5 \x1b[36;47m\ue0b4\x1b[30m` +
     ` 7 \ue0b5 \x1b[37;49m\ue0b4\x1b[0m`
   );
   term.writeln('');
@@ -727,7 +727,7 @@ function powerlineSymbolTest() {
     ` 3 \ue0b7 \x1b[7;33;44m\ue0b6\x1b[27;39m` +
     ` 4 \ue0b7 \x1b[7;34;45m\ue0b6\x1b[27;39m` +
     ` 5 \ue0b7 \x1b[7;35;46m\ue0b6\x1b[27;39m` +
-    ` 6 \ue0b7 \x1b[7;36;47m\ue0b6\x1b[27;39m` +
+    ` 6 \ue0b7 \x1b[7;36;47m\ue0b6\x1b[27;30m` +
     ` 7 \ue0b7 \x1b[7;37;49m\ue0b6\x1b[0m`
   );
   term.writeln('');

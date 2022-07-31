@@ -417,23 +417,23 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
-    const powerLineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
+    const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
     const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
-    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
+    const padding = powerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
-    let drawSuccess = false;
+    let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
     // background color. This should be disabled when the glyph contains multiple colors such as
     // underline colors to prevent important colors could get cleared.
-    let enableClearThresholdCheck = true;
+    let enableClearThresholdCheck = !powerlineGlyph;
 
     // Draw underline
     if (underline) {
@@ -529,7 +529,7 @@ export class WebglCharAtlas implements IDisposable {
 
       // Draw stroke in the background color for non custom characters in order to give an outline
       // between the text and the underline
-      if (!drawSuccess) {
+      if (!customGlyph) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
@@ -550,7 +550,7 @@ export class WebglCharAtlas implements IDisposable {
     }
 
     // Draw the character
-    if (!drawSuccess) {
+    if (!customGlyph) {
       this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     }
 
@@ -603,7 +603,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerLineGlyph, drawSuccess);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use
@@ -680,10 +680,10 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
-    const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
+    const width = restrictedGlyph ? this._config.scaledCellWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -755,8 +755,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? Math.floor(this._config.letterSpacing / 2) : 0),
-        y: -boundingBox.top + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
+        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
+        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
   }
@@ -832,9 +832,4 @@ function checkCompletelyTransparent(imageData: ImageData): boolean {
     }
   }
   return true;
-}
-
-function toPaddedHex(c: number): string {
-  const s = c.toString(16);
-  return s.length < 2 ? '0' + s : s;
 }

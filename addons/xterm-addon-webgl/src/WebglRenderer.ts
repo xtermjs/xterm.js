@@ -25,7 +25,6 @@ import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/S
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
-import { color, rgba as rgbaNs } from 'common/Color';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -46,6 +45,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
 
+  private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
@@ -240,7 +241,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
-    this._charAtlas = atlas as WebglCharAtlas;
+    if (this._charAtlas !== atlas) {
+      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+    }
+    this._charAtlas = atlas;
     this._charAtlas.warmUp();
     this._glyphRenderer.setAtlas(this._charAtlas);
   }
