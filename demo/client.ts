@@ -509,9 +509,7 @@ function initAddons(term: TerminalType): void {
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            setTimeout(() => {
-              document.body.appendChild((addon.instance as WebglAddon).textureAtlas);
-            }, 0);
+            (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'search') {
