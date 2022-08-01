@@ -45,6 +45,12 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
 
+interface ICharAtlasActiveRow {
+  x: number;
+  y: number;
+  height: number;
+}
+
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
@@ -59,13 +65,22 @@ export class WebglCharAtlas implements IDisposable {
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
 
-  // Since glyphs are expected to be around the same height, the packing
-  // strategy used it to fill a row with glyphs while keeping track of the
-  // tallest glyph in the row. Once the row is full a new row is started at
-  // (0,lastRow+lastRowTallestGlyph).
-  private _currentRowY: number = 0;
-  private _currentRowX: number = 0;
-  private _currentRowHeight: number = 0;
+  // Texture atlas current positioning data. The texture packing strategy used is to fill from
+  // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
+  // row's height, the following happens:
+  //
+  // - The current row becomes the fixed height row A
+  // - A new fixed height row B the exact size of the glyph is created below the current row
+  // - A new dynamic height current row is created below B
+  //
+  // This strategy does a good job preventing space being wasted for very short glyphs such as
+  // underscores, hyphens etc. or those with underlines rendered.
+  private _currentRow: ICharAtlasActiveRow = {
+    x: 0,
+    y: 0,
+    height: 0
+  };
+  private readonly _fixedRows: ICharAtlasActiveRow[] = [];
 
   public hasCanvasChanged = false;
 
@@ -118,7 +133,7 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   public beginFrame(): boolean {
-    if (this._currentRowY > TEXTURE_CAPACITY) {
+    if (this._currentRow.y > TEXTURE_CAPACITY) {
       this.clearTexture();
       this.warmUp();
       return true;
@@ -127,15 +142,16 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   public clearTexture(): void {
-    if (this._currentRowX === 0 && this._currentRowY === 0) {
+    if (this._currentRow.x === 0 && this._currentRow.y === 0) {
       return;
     }
     this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
     this._cacheMap = {};
     this._cacheMapCombined = {};
-    this._currentRowHeight = 0;
-    this._currentRowX = 0;
-    this._currentRowY = 0;
+    this._currentRow.x = 0;
+    this._currentRow.y = 0;
+    this._currentRow.height = 0;
+    this._fixedRows.length = 0;
     this._didWarmUp = false;
   }
 
@@ -225,7 +241,7 @@ export class WebglCharAtlas implements IDisposable {
     if (dim) {
       // Blend here instead of using opacity because transparent colors mess with clipping the
       // glyph's bounding box
-      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, 0.5));
+      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, DIM_OPACITY));
     }
 
     return result;
@@ -267,7 +283,7 @@ export class WebglCharAtlas implements IDisposable {
 
     // Apply dim to the color, opacity is fine to use for the foreground color
     if (dim) {
-      result = color.multiplyOpacity(result, 0.5);
+      result = color.multiplyOpacity(result, DIM_OPACITY);
     }
 
     return result;
@@ -401,29 +417,31 @@ export class WebglCharAtlas implements IDisposable {
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
-    const powerLineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
+    const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
     const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
-    const padding = powerLineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
+    const padding = powerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
-    let drawSuccess = false;
+    let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
     // background color. This should be disabled when the glyph contains multiple colors such as
     // underline colors to prevent important colors could get cleared.
-    let enableClearThresholdCheck = true;
+    let enableClearThresholdCheck = !powerlineGlyph;
 
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
-      const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
+      // When the width is odd, draw at 0.5 position. Offset by an additional 1 dpr to bring the
+      // underline closer to the character
+      const yOffset = (lineWidth % 2 === 1 ? 0.5 : 0) + window.devicePixelRatio;
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
@@ -492,18 +510,18 @@ export class WebglCharAtlas implements IDisposable {
           break;
         case UnderlineStyle.DOTTED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.DASHED:
           this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
         case UnderlineStyle.SINGLE:
         default:
-          this._tmpCtx.moveTo(xLeft, yMid);
-          this._tmpCtx.lineTo(xRight, yMid);
+          this._tmpCtx.moveTo(xLeft, yTop);
+          this._tmpCtx.lineTo(xRight, yTop);
           break;
       }
       this._tmpCtx.stroke();
@@ -511,20 +529,28 @@ export class WebglCharAtlas implements IDisposable {
 
       // Draw stroke in the background color for non custom characters in order to give an outline
       // between the text and the underline
-      if (!drawSuccess) {
+      if (!customGlyph) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
           // This translates to 1/2 the line width in either direction
+          this._tmpCtx.save();
+          // Clip the region to only draw in valid pixels near the underline to avoid a slight
+          // outline around the whole glyph, as well as additional pixels in the glyph at the top
+          // which would increase GPU memory demands
+          const clipRegion = new Path2D();
+          clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+          this._tmpCtx.clip(clipRegion);
           this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
           this._tmpCtx.strokeStyle = backgroundColor.css;
           this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+          this._tmpCtx.restore();
         }
       }
     }
 
     // Draw the character
-    if (!drawSuccess) {
+    if (!customGlyph) {
       this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
     }
 
@@ -577,25 +603,69 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerLineGlyph, drawSuccess);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
-    // Check if there is enough room in the current row and go to next if needed
-    if (this._currentRowX + rasterizedGlyph.size.x > TEXTURE_WIDTH) {
-      this._currentRowX = 0;
-      this._currentRowY += this._currentRowHeight;
-      this._currentRowHeight = 0;
+    // Find the best atlas row to use
+    let activeRow: ICharAtlasActiveRow;
+    while (true) {
+      // Select the ideal existing row, preferring fixed rows over the current row
+      activeRow = this._currentRow;
+      for (const row of this._fixedRows) {
+        if ((activeRow === this._currentRow || row.height < activeRow.height) && rasterizedGlyph.size.y <= row.height) {
+          activeRow = row;
+        }
+      }
+
+      // Create a new one if vertical space would be wasted, fixing the previously active row in the
+      // process as it now has a fixed height
+      if (activeRow.height > rasterizedGlyph.size.y * 2) {
+        // Fix the current row as the new row is being added below
+        if (this._currentRow.height > 0) {
+          this._fixedRows.push(this._currentRow);
+        }
+
+        // Create the new fixed height row
+        activeRow = {
+          x: 0,
+          y: this._currentRow.y + this._currentRow.height,
+          height: rasterizedGlyph.size.y
+        };
+        this._fixedRows.push(activeRow);
+
+        // Create the new current row below the new fixed height row
+        this._currentRow = {
+          x: 0,
+          y: activeRow.y + activeRow.height,
+          height: 0
+        };
+      }
+
+      // Exit the loop if there is enough room in the row
+      if (activeRow.x + rasterizedGlyph.size.x <= TEXTURE_WIDTH) {
+        break;
+      }
+
+      // If there is enough room in the current row, finish it and try again
+      if (activeRow === this._currentRow) {
+        activeRow.x = 0;
+        activeRow.y += activeRow.height;
+        activeRow.height = 0;
+      } else {
+        this._fixedRows.splice(this._fixedRows.indexOf(activeRow), 1);
+      }
     }
 
     // Record texture position
-    rasterizedGlyph.texturePosition.x = this._currentRowX;
-    rasterizedGlyph.texturePosition.y = this._currentRowY;
-    rasterizedGlyph.texturePositionClipSpace.x = this._currentRowX / TEXTURE_WIDTH;
-    rasterizedGlyph.texturePositionClipSpace.y = this._currentRowY / TEXTURE_HEIGHT;
+    rasterizedGlyph.texturePosition.x = activeRow.x;
+    rasterizedGlyph.texturePosition.y = activeRow.y;
+    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / TEXTURE_WIDTH;
+    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / TEXTURE_HEIGHT;
 
-    // Update atlas current row
-    this._currentRowHeight = Math.max(this._currentRowHeight, rasterizedGlyph.size.y);
-    this._currentRowX += rasterizedGlyph.size.x;
+    // Update atlas current row, for fixed rows the glyph height will never be larger than the row
+    // height
+    activeRow.height = Math.max(activeRow.height, rasterizedGlyph.size.y);
+    activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(clippedImageData, rasterizedGlyph.texturePosition.x, rasterizedGlyph.texturePosition.y);
@@ -610,10 +680,10 @@ export class WebglCharAtlas implements IDisposable {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
-    const width = restrictedGlyph ? this._config.scaledCharWidth : allowedWidth;
+    const width = restrictedGlyph ? this._config.scaledCellWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -685,8 +755,8 @@ export class WebglCharAtlas implements IDisposable {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? Math.floor(this._config.letterSpacing / 2) : 0),
-        y: -boundingBox.top + (restrictedGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING) + (customGlyph ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
+        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
+        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
   }
@@ -762,9 +832,4 @@ function checkCompletelyTransparent(imageData: ImageData): boolean {
     }
   }
   return true;
-}
-
-function toPaddedHex(c: number): string {
-  const s = c.toString(16);
-  return s.length < 2 ? '0' + s : s;
 }

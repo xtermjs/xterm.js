@@ -12,6 +12,16 @@ declare module 'xterm-addon-webgl' {
   export class WebglAddon implements ITerminalAddon {
     public textureAtlas?: HTMLCanvasElement;
 
+    /**
+     * An event that is fired when the renderer loses its canvas context.
+     */
+     public get onContextLoss(): IEvent<void>;
+
+    /**
+     * An event that is fired when the texture atlas of the renderer changes.
+     */
+    public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement>;
+
     constructor(preserveDrawingBuffer?: boolean);
 
     /**
@@ -29,10 +39,5 @@ declare module 'xterm-addon-webgl' {
      * Clears the terminal's texture atlas and triggers a redraw.
      */
     public clearTextureAtlas(): void;
-
-    /**
-     * Fired when the WebglRenderer loses context
-     */
-    public get onContextLoss(): IEvent<void>;
   }
 }

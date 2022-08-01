@@ -14,7 +14,7 @@ declare module 'xterm-headless' {
   export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
-   * An object containing start up options for the terminal.
+   * An object containing options for the terminal.
    */
   export interface ITerminalOptions {
     /**
@@ -47,11 +47,6 @@ declare module 'xterm-headless' {
      * useful.
      */
     convertEol?: boolean;
-
-    /**
-     * The number of columns in the terminal.
-     */
-    cols?: number;
 
     /**
      * Whether the cursor blinks.
@@ -146,11 +141,6 @@ declare module 'xterm-headless' {
     rightClickSelectsWord?: boolean;
 
     /**
-     * The number of rows in the terminal.
-     */
-    rows?: number;
-
-    /**
      * Whether screen reader support is enabled. When on this will expose
      * supporting elements in the DOM to support NVDA on Windows and VoiceOver
      * on macOS.
@@ -208,6 +198,22 @@ declare module 'xterm-headless' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+  }
+
+  /**
+   * An object containing additional options for the terminal that can only be
+   * set on start up.
+   */
+  export interface ITerminalInitOnlyOptions {
+    /**
+     * The number of columns in the terminal.
+     */
+    cols?: number;
+
+    /**
+     * The number of rows in the terminal.
+     */
+    rows?: number;
   }
 
   /**
@@ -558,7 +564,7 @@ declare module 'xterm-headless' {
      *
      * @param options An object containing a set of options.
      */
-    constructor(options?: ITerminalOptions);
+    constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions);
 
     /**
      * Adds an event listener for when the bell is triggered.

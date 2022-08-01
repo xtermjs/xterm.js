@@ -25,7 +25,6 @@ import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/S
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
-import { color, rgba as rgbaNs } from 'common/Color';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -46,6 +45,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
 
+  private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
 
@@ -240,7 +241,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
-    this._charAtlas = atlas as WebglCharAtlas;
+    if (this._charAtlas !== atlas) {
+      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+    }
+    this._charAtlas = atlas;
     this._charAtlas.warmUp();
     this._glyphRenderer.setAtlas(this._charAtlas);
   }
@@ -402,6 +406,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // override logic throughout the different sub-renderers
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
+    let isSelected: boolean = false;
 
     // Apply decorations on the bottom layer
     for (const d of this._decorationService.getDecorationsAtCell(x, y, 'bottom')) {
@@ -414,7 +419,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Apply the selection color if needed
-    if (this._isCellSelected(x, y)) {
+    isSelected = this._isCellSelected(x, y);
+    if (isSelected) {
       bgOverride = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
       if (this._colors.selectionForeground) {
         fgOverride = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
@@ -434,8 +440,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key
     if (bgOverride !== undefined) {
-      // Non-RGB attributes from model + override + force RGB color mode
-      bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
+      if (isSelected) {
+        // Non-RGB attributes from model + force non-dim + override + force RGB color mode
+        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | bgOverride | Attributes.CM_RGB;
+      } else {
+        // Non-RGB attributes from model + override + force RGB color mode
+        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
+      }
     }
     if (fgOverride !== undefined) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode

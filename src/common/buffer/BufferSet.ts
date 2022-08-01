@@ -83,6 +83,7 @@ export class BufferSet extends Disposable implements IBufferSet {
     // The alt buffer should always be cleared when we switch to the normal
     // buffer. This frees up memory since the alt buffer should always be new
     // when activated.
+    this._alt.clearAllMarkers();
     this._alt.clear();
     this._activeBuffer = this._normal;
     this._onBufferActivate.fire({
