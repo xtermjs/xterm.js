@@ -82,7 +82,7 @@ interface IDemoAddon<T extends AddonType> {
     never;
 }
 
-const addons: { [T in AddonType]: IDemoAddon<T>} = {
+const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
@@ -230,18 +230,23 @@ function createTerminal(): void {
     const rows = size.rows;
     const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
-    fetch(url, {method: 'POST'});
+    fetch(url, { method: 'POST' });
   });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    addTextureAtlas(addons.webgl.instance.textureAtlas);
-    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
-  }, 0);
+  try {
+    typedTerm.loadAddon(addons.webgl.instance);
+    setTimeout(() => {
+      addTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+    }, 0);
+  }
+  catch {
+    addons.webgl.instance = undefined;
+  }
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -270,7 +275,7 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then((res) => {
       res.text().then((processId) => {
         pid = processId;
         socketURL += processId;
@@ -315,7 +320,7 @@ function runFakeTerminal(): void {
     if (ev.keyCode === 13) {
       term.prompt();
     } else if (ev.keyCode === 8) {
-     // Do not delete the prompt
+      // Do not delete the prompt
       if (term._core.buffer.x > 2) {
         term.write('\b \b');
       }
@@ -501,13 +506,20 @@ function initAddons(term: TerminalType): void {
     addDomListener(checkbox, 'change', () => {
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
-        term.loadAddon(addon.instance);
-        if (name === 'webgl') {
-          (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
-        } else if (name === 'unicode11') {
-          term.unicode.activeVersion = '11';
-        } else if (name === 'search') {
-          addon.instance.onDidChangeResults(e => updateFindResults(e));
+        try {
+          term.loadAddon(addon.instance);
+          if (name === 'webgl') {
+            (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
+          } else if (name === 'unicode11') {
+            term.unicode.activeVersion = '11';
+          } else if (name === 'search') {
+            addon.instance.onDidChangeResults(e => updateFindResults(e));
+          }
+        }
+        catch {
+          addon.instance = undefined;
+          checkbox.checked = false;
+          checkbox.disabled = true;
         }
       } else {
         if (name === 'webgl') {
@@ -806,13 +818,13 @@ function addDecoration() {
 
 function addOverviewRuler() {
   term.options['overviewRulerWidth'] = 15;
-  term.registerDecoration({marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' }});
-  term.registerDecoration({marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' }});
-  term.registerDecoration({marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' }});
-  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' }});
-  term.registerDecoration({marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' }});
+  term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
+  term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
+  term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
 }
 
