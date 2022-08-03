@@ -42,6 +42,6 @@
     "yauzl": "^2.10.0"
   },
   "peerDependencies": {
-    "xterm": "^4.0.0"
+    "xterm": "^5.0.0"
   }
 }
