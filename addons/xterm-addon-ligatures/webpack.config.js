@@ -11,7 +11,6 @@ const mainFile = 'xterm-addon-ligatures.js';
 module.exports = {
   entry: `./out/${addonName}.js`,
   devtool: 'source-map',
-  target: 'electron-renderer',
   module: {
     rules: [
       {
@@ -30,18 +29,19 @@ module.exports = {
   },
   mode: 'production',
   externals: {
-    'font-finder': 'font-finder',
+    'fs': 'fs',
+    'path': 'path',
     'stream': 'stream',
-    'os': 'os',
     'util': 'util'
   },
   resolve: {
     // The ligature modules contains fallbacks for node environments, we never want to browserify them
     fallback: {
-      stream: false,
-      util: false,
+      fs: false,
       os: false,
-      path: false
+      path: false,
+      stream: false,
+      util: false
     }
   }
 };
