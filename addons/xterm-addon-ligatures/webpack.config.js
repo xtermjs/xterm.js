@@ -11,7 +11,6 @@ const mainFile = 'xterm-addon-ligatures.js';
 module.exports = {
   entry: `./out/${addonName}.js`,
   devtool: 'source-map',
-  target: 'electron-renderer',
   module: {
     rules: [
       {
