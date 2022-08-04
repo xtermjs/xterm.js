@@ -188,6 +188,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
+  document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -799,6 +800,31 @@ function underlineTest() {
     term.write(u(1) + c(`2:0:${0}:${0}:${v}`) + (i < 4 ? 'blue'[i] : ' '));
   }
   term.write('\x1b[0m\n\r');
+}
+
+function ansiColorsTest() {
+  term.writeln(`\x1b[0m\n\n\rStandard colors:                        Bright colors:`);
+  for (let i = 0; i < 16; i++) {
+    term.write(`\x1b[48;5;${i}m ${i.toString().padEnd(2, ' ').padStart(3, ' ')} \x1b[0m`);
+  }
+
+  term.writeln(`\x1b[0m\n\n\rColors 17-231 from 256 palette:`);
+  for (let i = 0; i < 6; i++) {
+    const startId = 16 + i * 36;
+    const endId = 16 + (i + 1) * 36 - 1;
+    term.write(`${startId.toString().padStart(3, ' ')}-${endId.toString().padStart(3, ' ')} `);
+    for (let j = 0; j < 36; j++) {
+      const id = 16 + i * 36 + j;
+      term.write(`\x1b[48;5;${id}m${(id % 10).toString().padStart(2, ' ')}\x1b[0m`);
+    }
+    term.write(`\r\n`);
+  }
+
+  term.writeln(`\x1b[0m\n\rGreyscale from 256 palette:`);
+  term.write('232-255 ');
+  for (let i = 232; i < 256; i++) {
+    term.write(`\x1b[48;5;${i}m ${(i % 10)} \x1b[0m`);
+  }
 }
 
 function addDecoration() {
