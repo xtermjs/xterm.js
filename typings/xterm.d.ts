@@ -706,6 +706,10 @@ declare module 'xterm' {
     /**
      * Gets or sets the terminal options. This supports setting multiple options.
      *
+     * @example Set a single option
+     * ```typescript
+     * terminal.options.fontSize = 12;
+     * ```
      *
      * @example Set multiple options
      * ```typescript
