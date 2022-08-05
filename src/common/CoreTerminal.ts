@@ -88,7 +88,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
   public get buffers(): IBufferSet { return this._bufferService.buffers; }
-  public get options(): ITerminalOptions { return this.optionsService.options; }
+  public get options(): Required<ITerminalOptions> { return this.optionsService.options; }
   public set options(options: ITerminalOptions) {
     for (const key in options) {
       this.optionsService.options[key] = options[key];

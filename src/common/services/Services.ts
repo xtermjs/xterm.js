@@ -194,8 +194,8 @@ export interface IOptionsService {
    * single options without any validation as we trust TypeScript to enforce correct usage
    * internally.
    */
-  readonly rawOptions: Readonly<ITerminalOptions>;
-  readonly options: ITerminalOptions;
+  readonly rawOptions: Required<ITerminalOptions>;
+  readonly options: Required<ITerminalOptions>;
 
   readonly onOptionChange: IEvent<string>;
 }
@@ -204,40 +204,40 @@ export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '50
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
-  allowProposedApi: boolean;
-  allowTransparency: boolean;
-  altClickMovesCursor: boolean;
-  cols: number;
-  convertEol: boolean;
-  cursorBlink: boolean;
-  cursorStyle: CursorStyle;
-  cursorWidth: number;
-  customGlyphs: boolean;
-  disableStdin: boolean;
-  drawBoldTextInBrightColors: boolean;
-  fastScrollModifier: 'alt' | 'ctrl' | 'shift' | undefined;
-  fastScrollSensitivity: number;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: FontWeight;
-  fontWeightBold: FontWeight;
-  letterSpacing: number;
-  lineHeight: number;
-  logLevel: LogLevel;
-  macOptionIsMeta: boolean;
-  macOptionClickForcesSelection: boolean;
-  minimumContrastRatio: number;
-  rightClickSelectsWord: boolean;
-  rows: number;
-  screenReaderMode: boolean;
-  scrollback: number;
-  scrollSensitivity: number;
-  smoothScrollDuration: number;
-  tabStopWidth: number;
-  theme: ITheme;
-  windowsMode: boolean;
-  windowOptions: IWindowOptions;
-  wordSeparator: string;
+  allowProposedApi?: boolean;
+  allowTransparency?: boolean;
+  altClickMovesCursor?: boolean;
+  cols?: number;
+  convertEol?: boolean;
+  cursorBlink?: boolean;
+  cursorStyle?: CursorStyle;
+  cursorWidth?: number;
+  customGlyphs?: boolean;
+  disableStdin?: boolean;
+  drawBoldTextInBrightColors?: boolean;
+  fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
+  fastScrollSensitivity?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: FontWeight;
+  fontWeightBold?: FontWeight;
+  letterSpacing?: number;
+  lineHeight?: number;
+  logLevel?: LogLevel;
+  macOptionIsMeta?: boolean;
+  macOptionClickForcesSelection?: boolean;
+  minimumContrastRatio?: number;
+  rightClickSelectsWord?: boolean;
+  rows?: number;
+  screenReaderMode?: boolean;
+  scrollback?: number;
+  scrollSensitivity?: number;
+  smoothScrollDuration?: number;
+  tabStopWidth?: number;
+  theme?: ITheme;
+  windowsMode?: boolean;
+  windowOptions?: IWindowOptions;
+  wordSeparator?: string;
   overviewRulerWidth?: number;
 
   [key: string]: any;

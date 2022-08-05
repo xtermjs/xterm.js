@@ -121,8 +121,8 @@ export class MockLogService implements ILogService {
 
 export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
-  public readonly rawOptions: ITerminalOptions = clone(DEFAULT_OPTIONS);
-  public options: ITerminalOptions = this.rawOptions;
+  public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
+  public options: Required<ITerminalOptions> = this.rawOptions;
   public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {

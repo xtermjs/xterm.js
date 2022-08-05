@@ -8,7 +8,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { CursorStyle } from 'common/Types';
 
-export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
+export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
   rows: 24,
   cursorBlink: false,
@@ -45,7 +45,7 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRulerWidth: undefined
+  overviewRulerWidth: 0
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -53,8 +53,8 @@ const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '1
 export class OptionsService implements IOptionsService {
   public serviceBrand: any;
 
-  public readonly rawOptions: ITerminalOptions;
-  public options: ITerminalOptions;
+  public readonly rawOptions: Required<ITerminalOptions>;
+  public options: Required<ITerminalOptions>;
 
   private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
