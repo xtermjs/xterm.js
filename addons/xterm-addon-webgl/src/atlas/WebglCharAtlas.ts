@@ -356,7 +356,7 @@ export class WebglCharAtlas implements IDisposable {
 
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
-
+    console.log('_drawToCache', chars, ext);
     this.hasCanvasChanged = true;
 
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used

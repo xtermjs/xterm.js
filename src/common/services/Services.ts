@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -270,6 +270,18 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
   extendedAnsi?: string[];
+}
+
+export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
+export interface IOscLinkService {
+  serviceBrand: undefined;
+  /**
+   * Registers a link to the service, returning the link ID. The link data is managed by this
+   * service and will be freed when this current cursor position is trimmed off the buffer.
+   */
+  registerLink(linkData: IOscLinkData): number;
+  /** Get the link data associated with a link ID. */
+  getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
