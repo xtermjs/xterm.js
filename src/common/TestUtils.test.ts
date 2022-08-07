@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -135,6 +135,16 @@ export class MockOptionsService implements IOptionsService {
     for (const key of Object.keys(options)) {
       this.options[key] = options[key];
     }
+  }
+}
+
+export class MockOscLinkService implements IOscLinkService {
+  public serviceBrand: any;
+  public registerLink(linkData: IOscLinkData): number {
+    return 1;
+  }
+  public getLinkData(linkId: number): IOscLinkData | undefined {
+    return undefined;
   }
 }
 

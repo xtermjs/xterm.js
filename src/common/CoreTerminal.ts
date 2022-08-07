@@ -124,7 +124,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IOscLinkService, this._oscLinkService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this.coreMouseService, this.unicodeService);
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService);
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 

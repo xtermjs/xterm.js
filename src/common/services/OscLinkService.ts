@@ -10,6 +10,7 @@ export class OscLinkService implements IOscLinkService {
   }
 
   public registerLink(linkData: IOscLinkData): number {
+    console.log('register link');
     // TODO: Add and return properly
     return 1;
   }

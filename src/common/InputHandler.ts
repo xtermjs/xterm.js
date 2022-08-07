@@ -17,7 +17,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
@@ -264,10 +264,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onColor = new EventEmitter<IColorEvent>();
   public get onColor(): IEvent<IColorEvent> { return this._onColor.event; }
-  private _onStartHyperlink = new EventEmitter<IOscLinkData>();
-  public get onStartHyperlink(): IEvent<IOscLinkData> { return this._onStartHyperlink.event; }
-  private _onFinishHyperlink = new EventEmitter<void>();
-  public get onFinishHyperlink(): IEvent<void> { return this._onFinishHyperlink.event; }
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -284,6 +280,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
@@ -2937,11 +2934,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       id = parsedParams[idParamIndex].slice(3) || undefined;
     }
     this._currentHyperlink = { id, uri };
-    console.log('start hyperlink');
+    this._oscLinkService.registerLink(this._currentHyperlink);
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 1;
     this._curAttrData.updateExtended();
-    this._onStartHyperlink.fire(this._currentHyperlink);
     return true;
   }
 
@@ -2950,7 +2946,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
-    this._onFinishHyperlink.fire();
     this._currentHyperlink = undefined;
     return true;
   }
