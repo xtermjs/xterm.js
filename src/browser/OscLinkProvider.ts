@@ -65,7 +65,6 @@ export class OscLinkProvider implements ILinkProvider {
             // These ranges are 1-based
             range: {
               start: {
-                // TODO: Adjacent links aren't working correctly
                 x: currentStart + 1,
                 y
               },
@@ -80,12 +79,20 @@ export class OscLinkProvider implements ILinkProvider {
             leave: linkHandler?.leave
           });
         }
-        currentStart = -1;
-        currentLinkId = -1;
         finishLink = false;
+
+        // Clear link or start a new link if one starts immediately
+        if (cell.hasExtendedAttrs() && cell.extended.urlId) {
+          currentStart = x;
+          currentLinkId = cell.extended.urlId;
+        } else {
+          currentStart = -1;
+          currentLinkId = -1;
+        }
       }
     }
     // TODO: Handle fetching and returning other link ranges to underline other links with the same id
+    console.log('result', result);
     callback(result);
   }
 }

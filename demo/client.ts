@@ -834,7 +834,7 @@ function addAnsiHyperlink() {
   term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;\x07');
   term.writeln('\x1b]8;;https://xtermjs.org\x07https://xtermjs.org\x1b]8;;\x07\x1b[C<- null cell');
   term.writeln(`\nAdjacent links:`);
-  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;https://xtermjs.org\x07xterm.js\x1b]8;;\x07');
+  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;https://xtermjs.org\x07\x1b[32mxterm.js\x1b[0m\x1b]8;;\x07');
   term.writeln(`\nShared ID link (underline should be shared):`);
   term.writeln('╔════╗');
   term.writeln('║\x1b]8;id=testid;https://github.com\x07GitH\x1b]8;;\x07║');
