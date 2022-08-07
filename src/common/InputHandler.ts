@@ -2500,6 +2500,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 24) {
         // not underlined
         attr.fg &= ~FgFlags.UNDERLINE;
+        this._processUnderline(UnderlineStyle.NONE, attr);
       } else if (p === 25) {
         // not blink
         attr.fg &= ~FgFlags.BLINK;

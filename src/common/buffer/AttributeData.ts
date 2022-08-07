@@ -36,7 +36,7 @@ export class AttributeData implements IAttributeData {
   public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
   public isBold(): number          { return this.fg & FgFlags.BOLD; }
   public isUnderline(): number     {
-    if (this.hasExtendedAttrs() && this.extended.urlId) {
+    if (this.hasExtendedAttrs() && this.extended.underlineStyle !== UnderlineStyle.NONE) {
       return 1;
     }
     return this.fg & FgFlags.UNDERLINE;
