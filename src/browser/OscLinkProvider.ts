@@ -16,11 +16,6 @@ export class OscLinkProvider implements ILinkProvider {
   }
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
-    // OSC links only work when a link handler is set
-    // if (this._optionsService.rawOptions.linkHandler === null) {
-    //   return;
-    // }
-
     const line = this._bufferService.buffer.lines.get(y - 1);
     if (!line) {
       callback(undefined);
@@ -28,6 +23,7 @@ export class OscLinkProvider implements ILinkProvider {
     }
 
     const result: ILink[] = [];
+    const linkHandler = this._optionsService.rawOptions.linkHandler;
     const cell = new CellData();
     const lineLength = line.getTrimmedLength();
     let currentLinkId = -1;
@@ -58,7 +54,6 @@ export class OscLinkProvider implements ILinkProvider {
       if (finishLink || (currentStart !== -1 && x === lineLength - 1)) {
         const text = this._oscLinkService.getLinkData(currentLinkId)?.uri;
         if (text) {
-          const linkHandler = this._optionsService.rawOptions.linkHandler;
           // OSC links always use underline and pointer decorations
           result.push({
             text,
@@ -91,8 +86,8 @@ export class OscLinkProvider implements ILinkProvider {
         }
       }
     }
+
     // TODO: Handle fetching and returning other link ranges to underline other links with the same id
-    console.log('result', result);
     callback(result);
   }
 }

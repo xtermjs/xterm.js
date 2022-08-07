@@ -134,9 +134,7 @@ export class AttributeData implements IAttributeData {
 export class ExtendedAttrs implements IExtendedAttrs {
   private _ext: number = 0;
   public get ext(): number {
-    // TODO: How to handle previous underline style if link overrides it?
     if (this._urlId) {
-      console.log('ext, has url');
       return (
         (this._ext & ~ExtFlags.UNDERLINE_STYLE) |
         (this.underlineStyle << 26)
@@ -159,11 +157,6 @@ export class ExtendedAttrs implements IExtendedAttrs {
   }
 
   public get underlineColor(): number {
-    // Always return the URL color if it has one
-    if (this._urlId) {
-      // TODO: fix
-      return 0;
-    }
     return this._ext & (Attributes.CM_MASK | Attributes.RGB_MASK);
   }
   public set underlineColor(value: number) {

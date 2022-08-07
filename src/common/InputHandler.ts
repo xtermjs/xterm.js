@@ -2912,7 +2912,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setHyperlink(data: string): boolean {
     const args = data.split(';');
-    console.log('hyperlink', args);
     if (args.length < 2) {
       return false;
     }
@@ -2939,13 +2938,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
     this._curAttrData.extended.urlId = this._currentLinkId;
-    console.log('register', uri, `id=${this._curAttrData.extended.urlId}`);
     this._curAttrData.updateExtended();
     return true;
   }
 
   private _finishHyperlink(): boolean {
-    console.log('finish hyperlink');
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
