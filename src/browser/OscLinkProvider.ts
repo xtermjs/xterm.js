@@ -5,16 +5,22 @@
 
 import { ILink, ILinkProvider } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, IOscLinkService } from 'common/services/Services';
+import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @IOscLinkService private readonly _oscLinkService: IOscLinkService
   ) {
   }
 
   public provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void {
+    // OSC links only work when a link handler is set
+    // if (this._optionsService.rawOptions.linkHandler === null) {
+    //   return;
+    // }
+
     const line = this._bufferService.buffer.lines.get(y - 1);
     if (!line) {
       callback(undefined);
@@ -52,12 +58,14 @@ export class OscLinkProvider implements ILinkProvider {
       if (finishLink || (currentStart !== -1 && x === lineLength - 1)) {
         const text = this._oscLinkService.getLinkData(currentLinkId)?.uri;
         if (text) {
+          const linkHandler = this._optionsService.rawOptions.linkHandler;
           // OSC links always use underline and pointer decorations
           result.push({
             text,
             // These ranges are 1-based
             range: {
               start: {
+                // TODO: Adjacent links aren't working correctly
                 x: currentStart + 1,
                 y
               },
@@ -67,10 +75,9 @@ export class OscLinkProvider implements ILinkProvider {
                 y
               }
             },
-            activate(e, text) {
-              console.log('activate!', text);
-            }
-            // TODO: Embedder API to handle hover
+            activate: linkHandler?.activate || defaultActivate,
+            hover: linkHandler?.hover,
+            leave: linkHandler?.leave
           });
         }
         currentStart = -1;
@@ -80,5 +87,22 @@ export class OscLinkProvider implements ILinkProvider {
     }
     // TODO: Handle fetching and returning other link ranges to underline other links with the same id
     callback(result);
+  }
+}
+
+function defaultActivate(e: MouseEvent, uri: string): void {
+  const answer = confirm(`Do you want to navigate to ${uri}?`);
+  if (answer) {
+    const newWindow = window.open();
+    if (newWindow) {
+      try {
+        newWindow.opener = null;
+      } catch {
+        // no-op, Electron can throw
+      }
+      newWindow.location.href = uri;
+    } else {
+      console.warn('Opening link blocked as opener could not be cleared');
+    }
   }
 }

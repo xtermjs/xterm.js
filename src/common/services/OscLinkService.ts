@@ -24,7 +24,6 @@ export class OscLinkService implements IOscLinkService {
   }
 
   public registerLink(data: IOscLinkData): number {
-    // TODO: Extend range where appropriate
     const buffer = this._bufferService.buffer;
 
     // Links with no id will only ever be registered a single time
@@ -39,6 +38,7 @@ export class OscLinkService implements IOscLinkService {
       return entry.id;
     }
 
+    // Add the line to the link if it already exists
     const castData = data as Required<IOscLinkData>;
     const key = this._getEntryIdKey(castData);
     const match = this._entriesWithId.get(key);
@@ -47,6 +47,7 @@ export class OscLinkService implements IOscLinkService {
       return match.id;
     }
 
+    // Create the link
     const entry: IOscLinkEntryWithId = {
       id: this._nextId++,
       key: this._getEntryIdKey(castData),
@@ -64,7 +65,6 @@ export class OscLinkService implements IOscLinkService {
       return;
     }
     if (link.lines.every(e => e.line !== y)) {
-      console.log('  add new line', y);
       link.lines.push(this._bufferService.buffer.addMarker(y));
     }
   }

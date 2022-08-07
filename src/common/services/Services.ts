@@ -7,7 +7,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration } from 'xterm';
+import { IDecorationOptions, IDecoration, ILinkHandler } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -223,6 +223,7 @@ export interface ITerminalOptions {
   fontWeightBold: FontWeight;
   letterSpacing: number;
   lineHeight: number;
+  linkHandler: ILinkHandler | null;
   logLevel: LogLevel;
   macOptionIsMeta: boolean;
   macOptionClickForcesSelection: boolean;

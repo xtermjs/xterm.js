@@ -24,6 +24,7 @@ export const DEFAULT_OPTIONS: Readonly<ITerminalOptions> = {
   fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
+  linkHandler: null,
   logLevel: 'info',
   scrollback: 1000,
   scrollSensitivity: 1,
