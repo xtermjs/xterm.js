@@ -28,12 +28,14 @@ export class OscLinkProvider implements ILinkProvider {
     let currentStart = -1;
     let finishLink = false;
     for (let x = 0; x < lineLength; x++) {
-      if (!line.hasContent(x)) {
+      // Minor optimization, only check for content if there isn't a link in case the link ends with
+      // a null cell
+      if (currentStart === -1 && !line.hasContent(x)) {
         continue;
       }
 
       line.loadCell(x, cell);
-      if (cell.extended.urlId) {
+      if (cell.hasExtendedAttrs() && cell.extended.urlId) {
         if (currentStart === -1) {
           currentStart = x;
           currentLinkId = cell.extended.urlId;
@@ -55,8 +57,15 @@ export class OscLinkProvider implements ILinkProvider {
             text,
             // These ranges are 1-based
             range: {
-              start: { x: currentStart + 1, y },
-              end: { x: x + 1, y }
+              start: {
+                x: currentStart + 1,
+                y
+              },
+              end: {
+                // Offset end x if it's a link that ends on the last cell in the line
+                x: x + (!finishLink && x === lineLength - 1 ? 1 : 0),
+                y
+              }
             },
             activate(e, text) {
               console.log('activate!', text);
@@ -64,6 +73,9 @@ export class OscLinkProvider implements ILinkProvider {
             // TODO: Embedder API to handle hover
           });
         }
+        currentStart = -1;
+        currentLinkId = -1;
+        finishLink = false;
       }
     }
     // TODO: Handle fetching and returning other link ranges to underline other links with the same id

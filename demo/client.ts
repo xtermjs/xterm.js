@@ -189,6 +189,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
+  document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -825,6 +826,19 @@ function ansiColorsTest() {
   for (let i = 232; i < 256; i++) {
     term.write(`\x1b[48;5;${i}m ${(i % 10)} \x1b[0m`);
   }
+}
+
+function addAnsiHyperlink() {
+  term.write('\n\n\r');
+  term.writeln(`Regular link with no id:`);
+  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;\x07');
+  term.writeln('\x1b]8;;https://xtermjs.org\x07https://xtermjs.org\x1b]8;;\x07\x1b[C<- null cell');
+  term.writeln(`\nShared ID links:`);
+  term.writeln('╔════╗ ╔════╗');
+  term.writeln('║\x1b]8;;https://github.com\x07GitH\x1b]8;;\x07║ ║    ║');
+  term.writeln('║\x1b]8;;https://github.com\x07ub\x1b]8;;\x07  ║ ║    ║');
+  term.writeln('╚════╝ ╚════╝');
+  term.write('\x1b[3A\x1b[8C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[12D');
 }
 
 function addDecoration() {

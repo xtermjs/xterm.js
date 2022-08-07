@@ -2937,15 +2937,16 @@ export class InputHandler extends Disposable implements IInputHandler {
       id = parsedParams[idParamIndex].slice(3) || undefined;
     }
     this._currentHyperlink = { id, uri };
+    console.log('start hyperlink');
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 1;
     this._curAttrData.updateExtended();
-    console.log('hasExtendedAttrs?', this._curAttrData.hasExtendedAttrs());
     this._onStartHyperlink.fire(this._currentHyperlink);
     return true;
   }
 
   private _finishHyperlink(): boolean {
+    console.log('finish hyperlink');
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
