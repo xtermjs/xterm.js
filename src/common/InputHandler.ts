@@ -228,7 +228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
-  private _currentHyperlink?: IOscLinkData;
+  private _currentLinkId?: number;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
@@ -638,6 +638,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
+      }
+      if (this._currentLinkId !== undefined) {
+        this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // insert combining char at last cursor position
@@ -2924,7 +2927,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _createHyperlink(params: string, uri: string): boolean {
     // It's legal to open a new hyperlink without explicitly finishing the previous one
-    if (this._currentHyperlink) {
+    if (this._currentLinkId !== undefined) {
       this._finishHyperlink();
     }
     const parsedParams = params.split(':');
@@ -2933,10 +2936,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (idParamIndex !== -1) {
       id = parsedParams[idParamIndex].slice(3) || undefined;
     }
-    this._currentHyperlink = { id, uri };
-    this._oscLinkService.registerLink(this._currentHyperlink);
     this._curAttrData.extended = this._curAttrData.extended.clone();
-    this._curAttrData.extended.urlId = 1;
+    this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
+    this._curAttrData.extended.urlId = this._currentLinkId;
+    console.log('register', uri, `id=${this._curAttrData.extended.urlId}`);
     this._curAttrData.updateExtended();
     return true;
   }
@@ -2946,7 +2949,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
-    this._currentHyperlink = undefined;
+    this._currentLinkId = undefined;
     return true;
   }
 

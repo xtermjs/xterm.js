@@ -833,12 +833,19 @@ function addAnsiHyperlink() {
   term.writeln(`Regular link with no id:`);
   term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;\x07');
   term.writeln('\x1b]8;;https://xtermjs.org\x07https://xtermjs.org\x1b]8;;\x07\x1b[C<- null cell');
-  term.writeln(`\nShared ID links:`);
-  term.writeln('╔════╗ ╔════╗');
-  term.writeln('║\x1b]8;;https://github.com\x07GitH\x1b]8;;\x07║ ║    ║');
-  term.writeln('║\x1b]8;;https://github.com\x07ub\x1b]8;;\x07  ║ ║    ║');
-  term.writeln('╚════╝ ╚════╝');
-  term.write('\x1b[3A\x1b[8C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[12D');
+  term.writeln(`\nAdjacent links:`);
+  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;https://xtermjs.org\x07xterm.js\x1b]8;;\x07');
+  term.writeln(`\nShared ID link:`);
+  term.writeln('╔════╗');
+  term.writeln('║\x1b]8;id=testid;https://github.com\x07GitH\x1b]8;;\x07║');
+  term.writeln('║\x1b]8;id=testid;https://github.com\x07ub\x1b]8;;\x07  ║');
+  term.writeln('╚════╝');
+  term.writeln(`\nWrapped link with no ID (not meant to share underline):`);
+  term.writeln('╔════╗');
+  term.writeln('║    ║');
+  term.writeln('║    ║');
+  term.writeln('╚════╝');
+  term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
 }
 
 function addDecoration() {

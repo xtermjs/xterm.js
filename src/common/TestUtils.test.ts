@@ -146,6 +146,8 @@ export class MockOscLinkService implements IOscLinkService {
   public getLinkData(linkId: number): IOscLinkData | undefined {
     return undefined;
   }
+  public addLineToLink(linkId: number, y: number): void {
+  }
 }
 
 // defaults to V6 always to keep tests passing

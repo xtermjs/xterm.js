@@ -280,6 +280,10 @@ export interface IOscLinkService {
    * service and will be freed when this current cursor position is trimmed off the buffer.
    */
   registerLink(linkData: IOscLinkData): number;
+  /**
+   * Adds a line to a link if needed.
+   */
+  addLineToLink(linkId: number, y: number): void;
   /** Get the link data associated with a link ID. */
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
