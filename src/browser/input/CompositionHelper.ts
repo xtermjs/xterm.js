@@ -196,6 +196,8 @@ export class CompositionHelper {
           this._coreService.triggerDataEvent(diff, true);
         } else if (newValue.length < oldValue.length) {
           this._coreService.triggerDataEvent(`${C0.DEL}`, true);
+        } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
+          this._coreService.triggerDataEvent(newValue, true);
         }
 
       }
