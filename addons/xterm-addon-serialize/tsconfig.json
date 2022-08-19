@@ -1,9 +1,0 @@
-{
-  "files": [],
-  "include": [],
-  "references": [
-    { "path": "./src" },
-    { "path": "./test" },
-    { "path": "./benchmark" }
-  ]
-}
