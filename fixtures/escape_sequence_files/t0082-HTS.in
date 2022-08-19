@@ -1,8 +1,0 @@
-	1	2	3	4
-abcdeHFghijklmnopqrstuvHWxyz
-	H	1	2	W	3	4
-
-HTS at end: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdeHfgh
-	H	1	2	W	3	4	5	6	7	8	9	a	b
-
-HTS at end with clipping:             ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdeHMD!

@@ -1,4 +1,0 @@
--------- default: wraparound  ----------------------------------------------abcdefgh[?7h
---------     set: wraparound  ----------------------------------------------abcdefgh[?7l
---------   unset: no wraparound  -------------------------------------------abcdefgh
-   this should be immediately below "no wraparound"[?7h
