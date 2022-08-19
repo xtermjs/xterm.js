@@ -440,7 +440,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.save();
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
       // When the line width is odd, draw at a 0.5 position
-      const yOffset = (lineWidth % 2 === 1 ? 0.5 : 0) + window.devicePixelRatio;
+      const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
@@ -527,8 +527,9 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.restore();
 
       // Draw stroke in the background color for non custom characters in order to give an outline
-      // between the text and the underline
-      if (!customGlyph) {
+      // between the text and the underline. Only do this when font size is >= 12 as the underline
+      // looks odd when the font size is too small
+      if (!customGlyph && this._config.fontSize >= 12) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
