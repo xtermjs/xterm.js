@@ -560,7 +560,10 @@ export class WebglCharAtlas implements IDisposable {
       let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
-          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.save();
+          this._tmpCtx.fillStyle = backgroundColor.css;
+          this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.restore();
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
           isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
