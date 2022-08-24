@@ -94,7 +94,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
-const terminalContainer = document.getElementById('terminal-container');
+let terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
   find: <HTMLInputElement>document.querySelector('#find'),
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
@@ -169,6 +169,35 @@ const disposeRecreateButtonHandler = () => {
   }
 };
 
+const createNewWindowButtonHandler = () => {
+  if (term) {
+    disposeRecreateButtonHandler();
+  }
+  const win = window.open();
+  terminalContainer = win.document.createElement('div');
+  terminalContainer.id = 'terminal-container';
+  win.document.body.appendChild(terminalContainer);
+
+  // Stylesheets are needed to get the terminal in the popout window to render
+  // correctly. We also need to wait for them to load before creating the
+  // terminal, otherwise we will not compute the correct metrics when rendering.
+  let pendingStylesheets = 0;
+  for (const linkNode of document.querySelectorAll('head link[rel=stylesheet]')) {
+    const newLink = document.createElement('link');
+    newLink.rel = 'stylesheet';
+    newLink.href = (linkNode as HTMLLinkElement).href;
+    win.document.head.appendChild(newLink);
+
+    pendingStylesheets++;
+    newLink.addEventListener('load', () => {
+      pendingStylesheets--;
+      if (pendingStylesheets === 0) {
+        createTerminal();
+      }
+    });
+  }
+}
+
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
@@ -182,6 +211,7 @@ if (document.location.pathname === '/test') {
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+  document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
