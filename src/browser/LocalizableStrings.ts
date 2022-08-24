@@ -3,10 +3,8 @@
  * @license MIT
  */
 
-/*
- * note: intentional design, it's exposed to embedders of xterm.js
- * so they can change the strings to localize xterm.js. #4055
- */
+// This file contains strings that get exported in the API so they can be localized
+
 // eslint-disable-next-line prefer-const
 export let promptLabel = 'Terminal input';
 
