@@ -58,14 +58,14 @@ export class BufferSet extends Disposable implements IBufferSet {
   }
 
   /**
-   * Returns the normal Buffer of the BufferSet
+   * Returns the currently active Buffer of the BufferSet
    */
   public get active(): Buffer {
     return this._activeBuffer;
   }
 
   /**
-   * Returns the currently active Buffer of the BufferSet
+   * Returns the normal Buffer of the BufferSet
    */
   public get normal(): Buffer {
     return this._normal;
