@@ -606,7 +606,7 @@ function htmlSerializeButtonHandler(): void {
 }
 
 function addTextureAtlas(e: HTMLCanvasElement) {
-  document.querySelector('#texture-atlas').appendChild(e);
+  document.querySelector('#texture-atlas').replaceChildren(e);
 }
 
 function writeCustomGlyphHandler() {
