@@ -344,7 +344,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize);
     }
 
     // Draw the character
@@ -473,7 +473,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight);
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize);
     }
 
     // Draw the character

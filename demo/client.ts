@@ -203,7 +203,7 @@ function createTerminal(): void {
   term = new Terminal({
     allowProposedApi: true,
     windowsMode: isWindows,
-    fontFamily: 'Fira Code, courier-new, courier, monospace',
+    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
