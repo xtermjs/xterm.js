@@ -13,7 +13,7 @@ import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -418,6 +418,7 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
+    const restrictedPowerlineGlyph = chars.length === 1 && isRestrictedPowerlineGlyph(chars.charCodeAt(0));
     const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
 
@@ -606,7 +607,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use

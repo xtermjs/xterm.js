@@ -14,11 +14,15 @@ export function isPowerlineGlyph(codepoint: number): boolean {
   // Only return true for Powerline symbols which require
   // different padding and should be excluded from minimum contrast
   // ratio standards
-  return 0xE0A4 <= codepoint && codepoint <=  0xE0D6;
+  return 0xE0A4 <= codepoint && codepoint <= 0xE0D6;
+}
+
+export function isRestrictedPowerlineGlyph(codepoint: number): boolean {
+  return 0xE0B0 <= codepoint && codepoint <= 0xE0B7;
 }
 
 function isBoxOrBlockGlyph(codepoint: number): boolean {
-  return (0x2500 <= codepoint && codepoint <= 0x259F);
+  return 0x2500 <= codepoint && codepoint <= 0x259F;
 }
 
 export function excludeFromContrastRatioDemands(codepoint: number): boolean {
