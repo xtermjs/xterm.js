@@ -14,6 +14,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { IUnicodeService } from 'common/services/Services';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -89,7 +90,8 @@ export class WebglCharAtlas implements IDisposable {
 
   constructor(
     document: Document,
-    private _config: ICharAtlasConfig
+    private readonly _config: ICharAtlasConfig,
+    private readonly _unicodeService: IUnicodeService
   ) {
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
@@ -436,6 +438,13 @@ export class WebglCharAtlas implements IDisposable {
     // underline colors to prevent important colors could get cleared.
     let enableClearThresholdCheck = !powerlineGlyph;
 
+    let chWidth: number;
+    if (typeof codeOrChars === 'number') {
+      chWidth = this._unicodeService.wcwidth(codeOrChars);
+    } else {
+      chWidth = this._unicodeService.getStringCellWidth(codeOrChars);
+    }
+
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
@@ -462,69 +471,76 @@ export class WebglCharAtlas implements IDisposable {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const xRight = padding + this._config.scaledCellWidth;
+      const xRight = padding + this._config.scaledCellWidth * chWidth;
       const yTop = Math.ceil(padding + this._config.scaledCharHeight) - yOffset;
       const yMid = padding + this._config.scaledCharHeight + lineWidth - yOffset;
       const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth * 2) - yOffset;
-      switch (this._workAttributeData.extended.underlineStyle) {
-        case UnderlineStyle.DOUBLE:
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          this._tmpCtx.moveTo(xLeft, yBot);
-          this._tmpCtx.lineTo(xRight, yBot);
-          break;
-        case UnderlineStyle.CURLY:
-          const xMid = padding + this._config.scaledCellWidth / 2;
-          // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
-          // made taller when the line width is  as otherwise it's not very clear otherwise.
-          const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
-          const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
-          // Clip the left and right edges of the underline such that it can be drawn just outside
-          // the edge of the cell to ensure a continuous stroke when there are multiple underlined
-          // glyphs adjacent to one another.
-          const clipRegion = new Path2D();
-          clipRegion.rect(xLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
-          this._tmpCtx.clip(clipRegion);
-          // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
-          this._tmpCtx.moveTo(xLeft - this._config.scaledCellWidth / 2, yMid);
-          this._tmpCtx.bezierCurveTo(
-            xLeft - this._config.scaledCellWidth / 2, yCurlyTop,
-            xLeft, yCurlyTop,
-            xLeft, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xLeft, yCurlyBot,
-            xMid, yCurlyBot,
-            xMid, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xMid, yCurlyTop,
-            xRight, yCurlyTop,
-            xRight, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xRight, yCurlyBot,
-            xRight + this._config.scaledCellWidth / 2, yCurlyBot,
-            xRight + this._config.scaledCellWidth / 2, yMid
-          );
-          break;
-        case UnderlineStyle.DOTTED:
-          this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
-        case UnderlineStyle.DASHED:
-          this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
-        case UnderlineStyle.SINGLE:
-        default:
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
+
+      for (let i = 0; i < chWidth; i++) {
+        this._tmpCtx.save();
+        const xChLeft = xLeft + i * this._config.scaledCellWidth;
+        const xChRight = xLeft + (i + 1) * this._config.scaledCellWidth;
+        const xChMid = xChLeft + this._config.scaledCellWidth / 2;
+        switch (this._workAttributeData.extended.underlineStyle) {
+          case UnderlineStyle.DOUBLE:
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yBot);
+            this._tmpCtx.lineTo(xChRight, yBot);
+            break;
+          case UnderlineStyle.CURLY:
+            // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
+            // made taller when the line width is  as otherwise it's not very clear otherwise.
+            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+            // Clip the left and right edges of the underline such that it can be drawn just outside
+            // the edge of the cell to ensure a continuous stroke when there are multiple underlined
+            // glyphs adjacent to one another.
+            const clipRegion = new Path2D();
+            clipRegion.rect(xChLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
+            this._tmpCtx.clip(clipRegion);
+            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+            this._tmpCtx.moveTo(xChLeft - this._config.scaledCellWidth / 2, yMid);
+            this._tmpCtx.bezierCurveTo(
+              xChLeft - this._config.scaledCellWidth / 2, yCurlyTop,
+              xChLeft, yCurlyTop,
+              xChLeft, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChLeft, yCurlyBot,
+              xChMid, yCurlyBot,
+              xChMid, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChMid, yCurlyTop,
+              xChRight, yCurlyTop,
+              xChRight, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChRight, yCurlyBot,
+              xChRight + this._config.scaledCellWidth / 2, yCurlyBot,
+              xChRight + this._config.scaledCellWidth / 2, yMid
+            );
+            break;
+          case UnderlineStyle.DOTTED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+          case UnderlineStyle.DASHED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+          case UnderlineStyle.SINGLE:
+          default:
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+        }
+        this._tmpCtx.stroke();
+        this._tmpCtx.restore();
       }
-      this._tmpCtx.stroke();
       this._tmpCtx.restore();
 
       // Draw stroke in the background color for non custom characters in order to give an outline
@@ -590,7 +606,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
       this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth * chWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
     }
 
