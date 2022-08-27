@@ -438,9 +438,11 @@ export class WebglCharAtlas implements IDisposable {
     // underline colors to prevent important colors could get cleared.
     let enableClearThresholdCheck = !powerlineGlyph;
 
-    let chWidth: number = 1;
-    if (typeof codeOrChars === 'number' && (underline || strikethrough)) {
+    let chWidth: number;
+    if (typeof codeOrChars === 'number') {
       chWidth = this._unicodeService.wcwidth(codeOrChars);
+    } else {
+      chWidth = this._unicodeService.getStringCellWidth(codeOrChars);
     }
 
     // Draw underline
