@@ -775,7 +775,7 @@ function underlineTest() {
     for (let i = 0; i < 10; i++) {
       numbers += i.toString();
     }
-    return `${u(id)}4:${id}m - ${name}\x1b[4:0m`.padEnd(33, ' ') + `${u(id)}${alphabet} ${numbers} 汉语 한국어\x1b[4:0m`;
+    return `${u(id)}4:${id}m - ${name}\x1b[4:0m`.padEnd(33, ' ') + `${u(id)}${alphabet} ${numbers} 汉语 한국어 👽\x1b[4:0m`;
   }
   term.writeln(showSequence(0, 'No underline'));
   term.writeln(showSequence(1, 'Straight'));
