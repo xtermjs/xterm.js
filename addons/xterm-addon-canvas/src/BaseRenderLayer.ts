@@ -404,12 +404,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Don't try cache the glyph if it uses any decoration foreground/background override.
     let hasOverrides = false;
-    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+    this._decorationService.forEachDecorationAtCell(x, y, undefined, d => {
       if (d.backgroundColorRGB || d.foregroundColorRGB) {
         hasOverrides = true;
-        break;
       }
-    }
+    });
 
     const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
 
@@ -519,9 +518,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     let bgOverride: number | undefined;
     let fgOverride: number | undefined;
     let isTop = false;
-    for (const d of this._decorationService.getDecorationsAtCell(x, y)) {
+    this._decorationService.forEachDecorationAtCell(x, y, undefined, d => {
       if (d.options.layer !== 'top' && isTop) {
-        continue;
+        return;
       }
       if (d.backgroundColorRGB) {
         bgOverride = d.backgroundColorRGB.rgba;
@@ -530,7 +529,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         fgOverride = d.foregroundColorRGB.rgba;
       }
       isTop = d.options.layer === 'top';
-    }
+    });
 
     // Apply selection foreground if applicable
     if (!isTop) {
