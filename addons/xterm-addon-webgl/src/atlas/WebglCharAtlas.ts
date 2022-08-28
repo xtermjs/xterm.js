@@ -15,6 +15,7 @@ import { color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
+import { FourKeyMap } from 'common/MultiKeyMap';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -53,23 +54,15 @@ interface ICharAtlasActiveRow {
 }
 
 /** Work variables to avoid garbage collection. */
-const w: {
-  glyphSet: IRasterizedGlyphSet | undefined;
-  glyphSetBg: { [fg: number]: { [ext: number]: IRasterizedGlyph } } | undefined;
-  glyphSetFg: { [ext: number]: IRasterizedGlyph } | undefined;
-  glyph: IRasterizedGlyph | undefined;
-} = {
-  glyphSet: undefined,
-  glyphSetBg: undefined,
-  glyphSetFg: undefined,
+const w: { glyph: IRasterizedGlyph | undefined } = {
   glyph: undefined
 };
 
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
-  private _cacheMap: { [code: number]: IRasterizedGlyphSet } = {};
-  private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
+  private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
+  private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
 
   // The texture that the atlas is drawn to
   public cacheCanvas: HTMLCanvasElement;
@@ -137,13 +130,7 @@ export class WebglCharAtlas implements IDisposable {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
       const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-      this._cacheMap[i] = {
-        [DEFAULT_COLOR]: {
-          [DEFAULT_COLOR]: {
-            [DEFAULT_EXT]: rasterizedGlyph
-          }
-        }
-      };
+      this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
     }
   }
 
@@ -161,8 +148,8 @@ export class WebglCharAtlas implements IDisposable {
       return;
     }
     this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-    this._cacheMap = {};
-    this._cacheMapCombined = {};
+    this._cacheMap.clear();
+    this._cacheMapCombined.clear();
     this._currentRow.x = 0;
     this._currentRow.y = 0;
     this._currentRow.height = 0;
@@ -182,38 +169,17 @@ export class WebglCharAtlas implements IDisposable {
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
   private _getFromCacheMap(
-    cacheMap: { [key: string | number]: IRasterizedGlyphSet },
+    cacheMap: FourKeyMap<string | number, number, number, number, IRasterizedGlyph>,
     key: string | number,
     bg: number,
     fg: number,
     ext: number
   ): IRasterizedGlyph {
-    w.glyphSet = cacheMap[key];
-    if (!w.glyphSet) {
-      w.glyphSet = {};
-      cacheMap[key] = w.glyphSet;
-    }
-
-    w.glyphSetBg = w.glyphSet[bg];
-    if (!w.glyphSetBg) {
-      w.glyphSetBg = {};
-      w.glyphSet[bg] = w.glyphSetBg;
-    }
-
-    w.glyph = undefined;
-    w.glyphSetFg = w.glyphSetBg[fg];
-    if (!w.glyphSetFg) {
-      w.glyphSetFg = {};
-      w.glyphSetBg[fg] = w.glyphSetFg;
-    } else {
-      w.glyph = w.glyphSetFg[ext];
-    }
-
+    w.glyph = cacheMap.get(key, bg, fg, ext);
     if (!w.glyph) {
       w.glyph = this._drawToCache(key, bg, fg, ext);
-      w.glyphSetFg[ext] = w.glyph;
+      cacheMap.set(key, bg, fg, ext, w.glyph);
     }
-
     return w.glyph;
   }
 
