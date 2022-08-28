@@ -163,5 +163,6 @@ export class MockDecorationService implements IDecorationService {
   public reset(): void { }
   public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> { }
   public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> { }
+  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }
   public dispose(): void { }
 }

@@ -308,6 +308,11 @@ export interface IDecorationService extends IDisposable {
   getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
   /** Iterates over the decorations at a cell (in no particular order). */
   getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration>;
+  /**
+   * Trigger a callback over the decoration at a cell (in no particular order). This is a high
+   * performance, but less ergonomic, version of {@link getDecorationsAtCell}.
+   */
+  forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;

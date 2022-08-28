@@ -11,7 +11,7 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
@@ -25,6 +25,15 @@ import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/S
 import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
+
+/** Work variables to avoid garbage collection. */
+const w: { fg: number, bg: number, hasFg: boolean, hasBg: boolean, isSelected: boolean } = {
+  fg: 0,
+  bg: 0,
+  hasFg: false,
+  hasBg: false,
+  isSelected: false
+};
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -404,79 +413,89 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._workColors.ext = this._workCell.bg & BgFlags.HAS_EXTENDED ? this._workCell.extended.ext : 0;
     // Get any foreground/background overrides, this happens on the model to avoid spreading
     // override logic throughout the different sub-renderers
-    let bgOverride: number | undefined;
-    let fgOverride: number | undefined;
-    let isSelected: boolean = false;
+
+    // Reset overrides work variables
+    w.bg = 0;
+    w.fg = 0;
+    w.hasBg = false;
+    w.hasFg = false;
+    w.isSelected = false;
 
     // Apply decorations on the bottom layer
-    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'bottom')) {
+    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
       if (d.backgroundColorRGB) {
-        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
-    }
+    });
 
     // Apply the selection color if needed
-    isSelected = this._isCellSelected(x, y);
-    if (isSelected) {
-      bgOverride = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+    w.isSelected = this._isCellSelected(x, y);
+    if (w.isSelected) {
+      w.bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      w.hasBg = true;
       if (this._colors.selectionForeground) {
-        fgOverride = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        w.fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
     }
 
     // Apply decorations on the top layer
-    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'top')) {
+    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
       if (d.backgroundColorRGB) {
-        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
-    }
+    });
 
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key
-    if (bgOverride !== undefined) {
-      if (isSelected) {
+    if (w.hasBg) {
+      if (w.isSelected) {
         // Non-RGB attributes from model + force non-dim + override + force RGB color mode
-        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | bgOverride | Attributes.CM_RGB;
+        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | w.bg | Attributes.CM_RGB;
       } else {
         // Non-RGB attributes from model + override + force RGB color mode
-        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
+        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK) | w.bg | Attributes.CM_RGB;
       }
     }
-    if (fgOverride !== undefined) {
+    if (w.hasFg) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      fgOverride = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
+      w.fg = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | w.fg | Attributes.CM_RGB;
     }
 
-    // Handle case where inverse was specified by only one of bgOverride or fgOverride was set,
+    // Handle case where inverse was specified by only one of bg override or fg override was set,
     // resolving the other inverse color and setting the inverse flag if needed.
     if (this._workColors.fg & FgFlags.INVERSE) {
-      if (bgOverride !== undefined && fgOverride === undefined) {
+      if (w.hasBg && w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
       }
-      if (bgOverride === undefined && fgOverride !== undefined) {
+      if (w.hasBg && w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
       }
     }
 
     // Use the override if it exists
-    this._workColors.bg = bgOverride ?? this._workColors.bg;
-    this._workColors.fg = fgOverride ?? this._workColors.fg;
+    this._workColors.bg = w.bg ?? this._workColors.bg;
+    this._workColors.fg = w.fg ?? this._workColors.fg;
   }
 
   private _isCellSelected(x: number, y: number): boolean {
