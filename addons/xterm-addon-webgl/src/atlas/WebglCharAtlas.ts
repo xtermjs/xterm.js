@@ -52,6 +52,19 @@ interface ICharAtlasActiveRow {
   height: number;
 }
 
+/** Work variables to avoid garbage collection. */
+const w: {
+  glyphSet: IRasterizedGlyphSet | undefined;
+  glyphSetBg: { [fg: number]: { [ext: number]: IRasterizedGlyph } } | undefined;
+  glyphSetFg: { [ext: number]: IRasterizedGlyph } | undefined;
+  glyph: IRasterizedGlyph | undefined;
+} = {
+  glyphSet: undefined,
+  glyphSetBg: undefined,
+  glyphSetFg: undefined,
+  glyph: undefined
+};
+
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
@@ -175,33 +188,33 @@ export class WebglCharAtlas implements IDisposable {
     fg: number,
     ext: number
   ): IRasterizedGlyph {
-    let rasterizedGlyphSet = cacheMap[key];
-    if (!rasterizedGlyphSet) {
-      rasterizedGlyphSet = {};
-      cacheMap[key] = rasterizedGlyphSet;
+    w.glyphSet = cacheMap[key];
+    if (!w.glyphSet) {
+      w.glyphSet = {};
+      cacheMap[key] = w.glyphSet;
     }
 
-    let rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (!rasterizedGlyphSetBg) {
-      rasterizedGlyphSetBg = {};
-      rasterizedGlyphSet[bg] = rasterizedGlyphSetBg;
+    w.glyphSetBg = w.glyphSet[bg];
+    if (!w.glyphSetBg) {
+      w.glyphSetBg = {};
+      w.glyphSet[bg] = w.glyphSetBg;
     }
 
-    let rasterizedGlyph: IRasterizedGlyph | undefined;
-    let rasterizedGlyphSetFg = rasterizedGlyphSetBg[fg];
-    if (!rasterizedGlyphSetFg) {
-      rasterizedGlyphSetFg = {};
-      rasterizedGlyphSetBg[fg] = rasterizedGlyphSetFg;
+    w.glyph = undefined;
+    w.glyphSetFg = w.glyphSetBg[fg];
+    if (!w.glyphSetFg) {
+      w.glyphSetFg = {};
+      w.glyphSetBg[fg] = w.glyphSetFg;
     } else {
-      rasterizedGlyph = rasterizedGlyphSetFg[ext];
+      w.glyph = w.glyphSetFg[ext];
     }
 
-    if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(key, bg, fg, ext);
-      rasterizedGlyphSetFg[ext] = rasterizedGlyph;
+    if (!w.glyph) {
+      w.glyph = this._drawToCache(key, bg, fg, ext);
+      w.glyphSetFg[ext] = w.glyph;
     }
 
-    return rasterizedGlyph;
+    return w.glyph;
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {
