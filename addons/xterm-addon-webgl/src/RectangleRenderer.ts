@@ -28,12 +28,11 @@ layout (location = ${VertexAttribLocations.COLOR}) in vec4 a_color;
 layout (location = ${VertexAttribLocations.UNIT_QUAD}) in vec2 a_unitquad;
 
 uniform mat4 u_projection;
-uniform vec2 u_resolution;
 
 out vec4 v_color;
 
 void main() {
-  vec2 zeroToOne = (a_position + (a_unitquad * a_size)) / u_resolution;
+  vec2 zeroToOne = a_position + (a_unitquad * a_size);
   gl_Position = u_projection * vec4(zeroToOne, 0.0, 1.0);
   v_color = a_color;
 }`;
@@ -75,7 +74,6 @@ export class RectangleRenderer extends Disposable {
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
-  private _resolutionLocation: WebGLUniformLocation;
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
   private _bgFloat!: Float32Array;
@@ -99,7 +97,6 @@ export class RectangleRenderer extends Disposable {
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
-    this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
 
     // Create and set the vertex array object
@@ -116,7 +113,7 @@ export class RectangleRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertuces to allow is to draw 2 triangles from the vertices
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
@@ -148,7 +145,6 @@ export class RectangleRenderer extends Disposable {
     gl.bindVertexArray(this._vertexArrayObject);
 
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
-    gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Bind attributes buffer and draw
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
@@ -163,6 +159,10 @@ export class RectangleRenderer extends Disposable {
   public setColors(): void {
     this._updateCachedColors();
     this._updateViewportRectangle();
+  }
+
+  public setDimensions(dimensions: IRenderDimensions): void {
+    this._dimensions = dimensions;
   }
 
   private _updateCachedColors(): void {
@@ -276,10 +276,10 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {
-    array[offset    ] = x1;
-    array[offset + 1] = y1;
-    array[offset + 2] = width;
-    array[offset + 3] = height;
+    array[offset    ] = x1 / this._dimensions.scaledCanvasWidth;
+    array[offset + 1] = y1 / this._dimensions.scaledCanvasHeight;
+    array[offset + 2] = width / this._dimensions.scaledCanvasWidth;
+    array[offset + 3] = height / this._dimensions.scaledCanvasHeight;
     array[offset + 4] = r;
     array[offset + 5] = g;
     array[offset + 6] = b;
@@ -287,10 +287,10 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _addRectangleFloat(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, color: Float32Array): void {
-    array[offset    ] = x1;
-    array[offset + 1] = y1;
-    array[offset + 2] = width;
-    array[offset + 3] = height;
+    array[offset    ] = x1 / this._dimensions.scaledCanvasWidth;
+    array[offset + 1] = y1 / this._dimensions.scaledCanvasHeight;
+    array[offset + 2] = width / this._dimensions.scaledCanvasWidth;
+    array[offset + 3] = height / this._dimensions.scaledCanvasHeight;
     array[offset + 4] = color[0];
     array[offset + 5] = color[1];
     array[offset + 6] = color[2];
