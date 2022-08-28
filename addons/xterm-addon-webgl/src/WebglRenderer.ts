@@ -182,6 +182,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
+    this._rectangleRenderer.setDimensions(this.dimensions);
     this._rectangleRenderer.onResize();
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
@@ -622,11 +623,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
-    if (this.dimensions.scaledCanvasWidth === width && this.dimensions.scaledCanvasHeight === height) {
+    if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
-    this.dimensions.scaledCanvasWidth = width;
-    this.dimensions.scaledCanvasHeight = height;
+    // While the actual canvas size has changed, keep scaledCanvasWidth/Height as the value before
+    // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
     this._requestRedrawViewport();

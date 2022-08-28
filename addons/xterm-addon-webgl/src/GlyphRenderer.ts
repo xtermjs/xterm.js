@@ -130,7 +130,7 @@ export class GlyphRenderer  extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertuces to allow is to draw 2 triangles from the vertices
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
