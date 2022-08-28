@@ -475,27 +475,29 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Handle case where inverse was specified by only one of bg override or fg override was set,
     // resolving the other inverse color and setting the inverse flag if needed.
     if (this._workColors.fg & FgFlags.INVERSE) {
-      if (w.hasBg && w.hasFg) {
+      if (w.hasBg && !w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
           w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
+        w.hasFg = true;
       }
-      if (w.hasBg && w.hasFg) {
+      if (!w.hasBg && w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
           w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
+        w.hasBg = true;
       }
     }
 
     // Use the override if it exists
-    this._workColors.bg = w.bg ?? this._workColors.bg;
-    this._workColors.fg = w.fg ?? this._workColors.fg;
+    this._workColors.bg = w.hasBg ? w.bg : this._workColors.bg;
+    this._workColors.fg = w.hasFg ? w.fg : this._workColors.fg;
   }
 
   private _isCellSelected(x: number, y: number): boolean {
