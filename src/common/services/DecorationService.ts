@@ -62,10 +62,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations.clear();
   }
 
-  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> {
-    return this._decorations.getKeyIterator(line);
-  }
-
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
