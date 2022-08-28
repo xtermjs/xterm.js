@@ -22,7 +22,7 @@ import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
-import { CharData, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 
@@ -314,14 +314,28 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
     let cell: ICellData = this._workCell;
-    let lastBg: number = 0;
 
-    for (let y = start; y <= end; y++) {
-      const row = y + terminal.buffer.ydisp;
-      const line = terminal.buffer.lines.get(row)!;
+    // Declare variable ahead of time to avoid garbage collection
+    let lastBg: number;
+    let y: number;
+    let row: number;
+    let line: IBufferLine;
+    let joinedRanges: [number, number][];
+    let isJoined: boolean;
+    let lastCharX: number;
+    let range: [number, number];
+    let chars: string;
+    let code: number;
+    let i: number;
+    let x: number;
+    let j: number;
+
+    for (y = start; y <= end; y++) {
+      row = y + terminal.buffer.ydisp;
+      line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
-      const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
-      for (let x = 0; x < terminal.cols; x++) {
+      joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
+      for (x = 0; x < terminal.cols; x++) {
         lastBg = this._workColors.bg;
         line.loadCell(x, cell);
 
@@ -330,15 +344,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // If true, indicates that the current character(s) to draw were joined.
-        let isJoined = false;
-        let lastCharX = x;
+        isJoined = false;
+        lastCharX = x;
 
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
         if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
           isJoined = true;
-          const range = joinedRanges.shift()!;
+          range = joinedRanges.shift()!;
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly.
@@ -352,9 +366,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
           lastCharX = range[1] - 1;
         }
 
-        const chars = cell.getChars();
-        let code = cell.getCode();
-        const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        chars = cell.getChars();
+        code = cell.getCode();
+        i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
         this._loadColorsForCell(x, row);
@@ -390,7 +404,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
-            const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+            j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
