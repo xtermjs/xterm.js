@@ -59,6 +59,18 @@ const BYTES_PER_RECTANGLE = INDICES_PER_RECTANGLE * Float32Array.BYTES_PER_ELEME
 
 const INITIAL_BUFFER_RECTANGLE_CAPACITY = 20 * INDICES_PER_RECTANGLE;
 
+/** Work variables to avoid garbage collection. */
+const w: { rgba: number, isDefault: boolean, x1: number, y1: number, r: number, g: number, b: number, a: number } = {
+  rgba: 0,
+  isDefault: false,
+  x1: 0,
+  y1: 0,
+  r: 0,
+  g: 0,
+  b: 0,
+  a: 0
+};
+
 export class RectangleRenderer extends Disposable {
 
   private _program: WebGLProgram;
@@ -174,22 +186,34 @@ export class RectangleRenderer extends Disposable {
     const terminal = this._terminal;
     const vertices = this._vertices;
 
+    // Declare variable ahead of time to avoid garbage collection
     let rectangleCount = 1;
+    let y: number;
+    let x: number;
+    let currentStartX: number;
+    let currentBg: number;
+    let currentFg: number;
+    let currentInverse: boolean;
+    let modelIndex: number;
+    let bg: number;
+    let fg: number;
+    let inverse: boolean;
+    let offset: number;
 
-    for (let y = 0; y < terminal.rows; y++) {
-      let currentStartX = -1;
-      let currentBg = 0;
-      let currentFg = 0;
-      let currentInverse = false;
-      for (let x = 0; x < terminal.cols; x++) {
-        const modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-        const bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
-        const fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
-        const inverse = !!(fg & FgFlags.INVERSE);
+    for (y = 0; y < terminal.rows; y++) {
+      currentStartX = -1;
+      currentBg = 0;
+      currentFg = 0;
+      currentInverse = false;
+      for (x = 0; x < terminal.cols; x++) {
+        modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
+        fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
+        inverse = !!(fg & FgFlags.INVERSE);
         if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color
           if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
-            const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+            offset = rectangleCount++ * INDICES_PER_RECTANGLE;
             this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
           currentStartX = x;
@@ -200,7 +224,7 @@ export class RectangleRenderer extends Disposable {
       }
       // Finish rectangle if it's still going
       if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
-        const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+        offset = rectangleCount++ * INDICES_PER_RECTANGLE;
         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
     }
@@ -208,48 +232,47 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
-    let rgba: number | undefined;
-    let isDefault = false;
+    w.isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
+          w.rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          rgba = (fg & Attributes.RGB_MASK) << 8;
+          w.rgba = (fg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          rgba = this._colors.foreground.rgba;
+          w.rgba = this._colors.foreground.rgba;
       }
     } else {
       switch (bg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+          w.rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          rgba = (bg & Attributes.RGB_MASK) << 8;
+          w.rgba = (bg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          rgba = this._colors.background.rgba;
-          isDefault = true;
+          w.rgba = this._colors.background.rgba;
+          w.isDefault = true;
       }
     }
 
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
-    const x1 = startX * this._dimensions.scaledCellWidth;
-    const y1 = y * this._dimensions.scaledCellHeight;
-    const r = ((rgba >> 24) & 0xFF) / 255;
-    const g = ((rgba >> 16) & 0xFF) / 255;
-    const b = ((rgba >> 8 ) & 0xFF) / 255;
-    const a = (!isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
+    w.x1 = startX * this._dimensions.scaledCellWidth;
+    w.y1 = y * this._dimensions.scaledCellHeight;
+    w.r = ((w.rgba >> 24) & 0xFF) / 255;
+    w.g = ((w.rgba >> 16) & 0xFF) / 255;
+    w.b = ((w.rgba >> 8 ) & 0xFF) / 255;
+    w.a = (!w.isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
 
-    this._addRectangle(vertices.attributes, offset, x1, y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, r, g, b, a);
+    this._addRectangle(vertices.attributes, offset, w.x1, w.y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, w.r, w.g, w.b, w.a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {
