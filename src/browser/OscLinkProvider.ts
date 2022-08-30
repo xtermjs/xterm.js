@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import { ILink, ILinkProvider } from 'browser/Types';
+import { IBufferRange, ILink, ILinkProvider } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
-import { IBufferRange } from 'xterm';
 
 export class OscLinkProvider implements ILinkProvider {
   constructor(
