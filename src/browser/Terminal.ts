@@ -55,6 +55,7 @@ import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRe
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
+import { OscLinkProvider } from 'browser/OscLinkProvider';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -163,6 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._setup();
 
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
+    this.linkifier2.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
