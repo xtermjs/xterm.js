@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILink, ILinkProvider } from 'browser/Types';
+import { IBufferRange, ILink, ILinkProvider } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
 
@@ -54,24 +54,25 @@ export class OscLinkProvider implements ILinkProvider {
       if (finishLink || (currentStart !== -1 && x === lineLength - 1)) {
         const text = this._oscLinkService.getLinkData(currentLinkId)?.uri;
         if (text) {
+          // These ranges are 1-based
+          const range: IBufferRange = {
+            start: {
+              x: currentStart + 1,
+              y
+            },
+            end: {
+              // Offset end x if it's a link that ends on the last cell in the line
+              x: x + (!finishLink && x === lineLength - 1 ? 1 : 0),
+              y
+            }
+          };
           // OSC links always use underline and pointer decorations
           result.push({
             text,
-            // These ranges are 1-based
-            range: {
-              start: {
-                x: currentStart + 1,
-                y
-              },
-              end: {
-                // Offset end x if it's a link that ends on the last cell in the line
-                x: x + (!finishLink && x === lineLength - 1 ? 1 : 0),
-                y
-              }
-            },
-            activate: linkHandler?.activate || defaultActivate,
-            hover: linkHandler?.hover,
-            leave: linkHandler?.leave
+            range,
+            activate: (e, text) => (linkHandler?.activate(e, text, range) || defaultActivate(e, text)),
+            hover: (e, text) => linkHandler?.hover?.(e, text, range),
+            leave: (e, text) => linkHandler?.leave?.(e, text, range)
           });
         }
         finishLink = false;

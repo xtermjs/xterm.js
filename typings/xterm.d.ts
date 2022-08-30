@@ -1117,8 +1117,9 @@ declare module 'xterm' {
      * Calls when the link is activated.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
+     * @param range The buffer range of the link.
      */
-     activate(event: MouseEvent, text: string): void;
+     activate(event: MouseEvent, text: string, range: IBufferRange): void;
 
      /**
       * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
@@ -1126,15 +1127,17 @@ declare module 'xterm' {
       * that will cause mouse events to not fall through and activate other links.
       * @param event The mouse event triggering the callback.
       * @param text The text of the link.
+      * @param range The buffer range of the link.
       */
-     hover?(event: MouseEvent, text: string): void;
+     hover?(event: MouseEvent, text: string, range: IBufferRange): void;
 
      /**
       * Called when the mouse leaves the link.
       * @param event The mouse event triggering the callback.
       * @param text The text of the link.
+      * @param range The buffer range of the link.
       */
-     leave?(event: MouseEvent, text: string): void;
+     leave?(event: MouseEvent, text: string, range: IBufferRange): void;
   }
 
   /**
