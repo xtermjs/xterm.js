@@ -213,22 +213,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
           acc = 'ansi';
           ident = '4;' + req.index;
       }
-      if (acc) {
-        switch (req.type) {
-          case ColorRequestType.REPORT:
-            const channels = color.toColorRGB(acc === 'ansi'
-              ? this._colorManager.colors.ansi[req.index]
-              : this._colorManager.colors[acc]);
-            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
-            break;
-          case ColorRequestType.SET:
-            if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
-            else this._colorManager.colors[acc] = rgba.toColor(...req.color);
-            break;
-          case ColorRequestType.RESTORE:
-            this._colorManager.restoreColor(req.index);
-            break;
-        }
+      switch (req.type) {
+        case ColorRequestType.REPORT:
+          const channels = color.toColorRGB(acc === 'ansi'
+            ? this._colorManager.colors.ansi[req.index]
+            : this._colorManager.colors[acc]);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
+          break;
+        case ColorRequestType.SET:
+          if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+          else this._colorManager.colors[acc] = rgba.toColor(...req.color);
+          break;
+        case ColorRequestType.RESTORE:
+          this._colorManager.restoreColor(req.index);
+          break;
       }
     }
     this._renderService?.setColors(this._colorManager.colors);

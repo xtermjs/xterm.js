@@ -120,7 +120,6 @@ export class OptionsService implements IOptionsService {
           throw new Error(`"${value}" is not a valid value for ${key}`);
         }
         break;
-      case 'cursorStyle':
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];

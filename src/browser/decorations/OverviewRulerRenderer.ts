@@ -7,7 +7,7 @@ import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
 // Helper objects to avoid excessive calculation and garbage collection during rendering. These are
 // static values for each render and can be accessed using the decoration position as the key.

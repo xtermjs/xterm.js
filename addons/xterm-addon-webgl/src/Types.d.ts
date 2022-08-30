@@ -3,10 +3,6 @@
  * @license MIT
  */
 
-export interface IRasterizedGlyphSet {
-  [bg: number]: { [fg: number]: { [ext: number]: IRasterizedGlyph } } | undefined;
-}
-
 /**
  * Represents a rasterized glyph within a texture atlas. Some numbers are
  * tracked in CSS pixels as well in order to reduce calculations during the
