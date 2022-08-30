@@ -404,7 +404,7 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.fillStyle = foregroundColor.css;
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
-    const padding = powerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
+    const padding = restrictedPowerlineGlyph ? 0 : TMP_CANVAS_GLYPH_PADDING * 2;
 
     // Draw custom characters if applicable
     let customGlyph = false;
