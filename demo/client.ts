@@ -204,7 +204,7 @@ function createTerminal(): void {
   term = new Terminal({
     allowProposedApi: true,
     windowsMode: isWindows,
-    fontFamily: 'Fira Code, courier-new, courier, monospace',
+    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
@@ -407,7 +407,11 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'lineHeight') {
+      if (o === 'rows') {
+        term.resize(term.cols, parseInt(input.value));
+      } else if (o === 'cols') {
+        term.resize(parseInt(input.value), term.rows);
+      } else if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
@@ -767,12 +771,23 @@ function underlineTest() {
   term.write('\n\n\r');
   term.writeln('Underline styles:');
   term.writeln('');
-  term.writeln(`${u(0)}4:0m - No underline`);
-  term.writeln(`${u(1)}4:1m - Straight`);
-  term.writeln(`${u(2)}4:2m - Double`);
-  term.writeln(`${u(3)}4:3m - Curly`);
-  term.writeln(`${u(4)}4:4m - Dotted`);
-  term.writeln(`${u(5)}4:5m - Dashed\x1b[0m`);
+  function showSequence(id: number, name: string) {
+    let alphabet = '';
+    for (let i = 97; i < 123; i++) {
+      alphabet += String.fromCharCode(i);
+    }
+    let numbers = '';
+    for (let i = 0; i < 10; i++) {
+      numbers += i.toString();
+    }
+    return `${u(id)}4:${id}m - ${name}\x1b[4:0m`.padEnd(33, ' ') + `${u(id)}${alphabet} ${numbers} 汉语 한국어 👽\x1b[4:0m`;
+  }
+  term.writeln(showSequence(0, 'No underline'));
+  term.writeln(showSequence(1, 'Straight'));
+  term.writeln(showSequence(2, 'Double'));
+  term.writeln(showSequence(3, 'Curly'));
+  term.writeln(showSequence(4, 'Dotted'));
+  term.writeln(showSequence(5, 'Dashed'));
   term.writeln('');
   term.writeln(`Underline colors (256 color mode):`);
   term.writeln('');

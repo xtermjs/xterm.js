@@ -37,6 +37,11 @@ const enum Cell {
 
 export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
+/** Work variables to avoid garbage collection. */
+const w: { startIndex: number } = {
+  startIndex: 0
+};
+
 /**
  * Typed array based bufferline implementation.
  *
@@ -168,10 +173,10 @@ export class BufferLine implements IBufferLine {
    * to GC as it significantly reduced the amount of new objects/references needed.
    */
   public loadCell(index: number, cell: ICellData): ICellData {
-    const startIndex = index * CELL_SIZE;
-    cell.content = this._data[startIndex + Cell.CONTENT];
-    cell.fg = this._data[startIndex + Cell.FG];
-    cell.bg = this._data[startIndex + Cell.BG];
+    w.startIndex = index * CELL_SIZE;
+    cell.content = this._data[w.startIndex + Cell.CONTENT];
+    cell.fg = this._data[w.startIndex + Cell.FG];
+    cell.bg = this._data[w.startIndex + Cell.BG];
     if (cell.content & Content.IS_COMBINED_MASK) {
       cell.combinedData = this._combined[index];
     }

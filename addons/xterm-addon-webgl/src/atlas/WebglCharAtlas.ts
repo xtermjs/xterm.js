@@ -13,7 +13,9 @@ import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { IUnicodeService } from 'common/services/Services';
+import { FourKeyMap } from 'common/MultiKeyMap';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -51,11 +53,16 @@ interface ICharAtlasActiveRow {
   height: number;
 }
 
+/** Work variables to avoid garbage collection. */
+const w: { glyph: IRasterizedGlyph | undefined } = {
+  glyph: undefined
+};
+
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
-  private _cacheMap: { [code: number]: IRasterizedGlyphSet } = {};
-  private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
+  private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
+  private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
 
   // The texture that the atlas is drawn to
   public cacheCanvas: HTMLCanvasElement;
@@ -89,7 +96,8 @@ export class WebglCharAtlas implements IDisposable {
 
   constructor(
     document: Document,
-    private _config: ICharAtlasConfig
+    private readonly _config: ICharAtlasConfig,
+    private readonly _unicodeService: IUnicodeService
   ) {
     this.cacheCanvas = document.createElement('canvas');
     this.cacheCanvas.width = TEXTURE_WIDTH;
@@ -122,13 +130,7 @@ export class WebglCharAtlas implements IDisposable {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
       const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-      this._cacheMap[i] = {
-        [DEFAULT_COLOR]: {
-          [DEFAULT_COLOR]: {
-            [DEFAULT_EXT]: rasterizedGlyph
-          }
-        }
-      };
+      this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
     }
   }
 
@@ -146,8 +148,8 @@ export class WebglCharAtlas implements IDisposable {
       return;
     }
     this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-    this._cacheMap = {};
-    this._cacheMapCombined = {};
+    this._cacheMap.clear();
+    this._cacheMapCombined.clear();
     this._currentRow.x = 0;
     this._currentRow.y = 0;
     this._currentRow.height = 0;
@@ -167,39 +169,18 @@ export class WebglCharAtlas implements IDisposable {
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
   private _getFromCacheMap(
-    cacheMap: { [key: string | number]: IRasterizedGlyphSet },
+    cacheMap: FourKeyMap<string | number, number, number, number, IRasterizedGlyph>,
     key: string | number,
     bg: number,
     fg: number,
     ext: number
   ): IRasterizedGlyph {
-    let rasterizedGlyphSet = cacheMap[key];
-    if (!rasterizedGlyphSet) {
-      rasterizedGlyphSet = {};
-      cacheMap[key] = rasterizedGlyphSet;
+    w.glyph = cacheMap.get(key, bg, fg, ext);
+    if (!w.glyph) {
+      w.glyph = this._drawToCache(key, bg, fg, ext);
+      cacheMap.set(key, bg, fg, ext, w.glyph);
     }
-
-    let rasterizedGlyphSetBg = rasterizedGlyphSet[bg];
-    if (!rasterizedGlyphSetBg) {
-      rasterizedGlyphSetBg = {};
-      rasterizedGlyphSet[bg] = rasterizedGlyphSetBg;
-    }
-
-    let rasterizedGlyph: IRasterizedGlyph | undefined;
-    let rasterizedGlyphSetFg = rasterizedGlyphSetBg[fg];
-    if (!rasterizedGlyphSetFg) {
-      rasterizedGlyphSetFg = {};
-      rasterizedGlyphSetBg[fg] = rasterizedGlyphSetFg;
-    } else {
-      rasterizedGlyph = rasterizedGlyphSetFg[ext];
-    }
-
-    if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(key, bg, fg, ext);
-      rasterizedGlyphSetFg[ext] = rasterizedGlyph;
-    }
-
-    return rasterizedGlyph;
+    return w.glyph;
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {
@@ -418,6 +399,7 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
+    const restrictedPowerlineGlyph = chars.length === 1 && isRestrictedPowerlineGlyph(chars.charCodeAt(0));
     const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
 
@@ -427,7 +409,7 @@ export class WebglCharAtlas implements IDisposable {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.fontSize);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
@@ -435,13 +417,19 @@ export class WebglCharAtlas implements IDisposable {
     // underline colors to prevent important colors could get cleared.
     let enableClearThresholdCheck = !powerlineGlyph;
 
+    let chWidth: number;
+    if (typeof codeOrChars === 'number') {
+      chWidth = this._unicodeService.wcwidth(codeOrChars);
+    } else {
+      chWidth = this._unicodeService.getStringCellWidth(codeOrChars);
+    }
+
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
-      // When the width is odd, draw at 0.5 position. Offset by an additional 1 dpr to bring the
-      // underline closer to the character
-      const yOffset = (lineWidth % 2 === 1 ? 0.5 : 0) + window.devicePixelRatio;
+      // When the line width is odd, draw at a 0.5 position
+      const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
       this._tmpCtx.lineWidth = lineWidth;
 
       // Underline color
@@ -462,89 +450,105 @@ export class WebglCharAtlas implements IDisposable {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const xRight = padding + this._config.scaledCellWidth;
-      const yTop = Math.ceil(padding + this._config.scaledCharHeight - lineWidth) - yOffset;
-      const yMid = padding + this._config.scaledCharHeight - yOffset;
-      const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth) - yOffset;
-      switch (this._workAttributeData.extended.underlineStyle) {
-        case UnderlineStyle.DOUBLE:
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          this._tmpCtx.moveTo(xLeft, yBot);
-          this._tmpCtx.lineTo(xRight, yBot);
-          break;
-        case UnderlineStyle.CURLY:
-          const xMid = padding + this._config.scaledCellWidth / 2;
-          // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
-          // made taller when the line width is  as otherwise it's not very clear otherwise.
-          const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
-          const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
-          // Clip the left and right edges of the underline such that it can be drawn just outside
-          // the edge of the cell to ensure a continuous stroke when there are multiple underlined
-          // glyphs adjacent to one another.
-          const clipRegion = new Path2D();
-          clipRegion.rect(xLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
-          this._tmpCtx.clip(clipRegion);
-          // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
-          this._tmpCtx.moveTo(xLeft - this._config.scaledCellWidth / 2, yMid);
-          this._tmpCtx.bezierCurveTo(
-            xLeft - this._config.scaledCellWidth / 2, yCurlyTop,
-            xLeft, yCurlyTop,
-            xLeft, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xLeft, yCurlyBot,
-            xMid, yCurlyBot,
-            xMid, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xMid, yCurlyTop,
-            xRight, yCurlyTop,
-            xRight, yMid
-          );
-          this._tmpCtx.bezierCurveTo(
-            xRight, yCurlyBot,
-            xRight + this._config.scaledCellWidth / 2, yCurlyBot,
-            xRight + this._config.scaledCellWidth / 2, yMid
-          );
-          break;
-        case UnderlineStyle.DOTTED:
-          this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
-        case UnderlineStyle.DASHED:
-          this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
-        case UnderlineStyle.SINGLE:
-        default:
-          this._tmpCtx.moveTo(xLeft, yTop);
-          this._tmpCtx.lineTo(xRight, yTop);
-          break;
+      const xRight = padding + this._config.scaledCellWidth * chWidth;
+      const yTop = Math.ceil(padding + this._config.scaledCharHeight) - yOffset;
+      const yMid = padding + this._config.scaledCharHeight + lineWidth - yOffset;
+      const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth * 2) - yOffset;
+
+      for (let i = 0; i < chWidth; i++) {
+        this._tmpCtx.save();
+        const xChLeft = xLeft + i * this._config.scaledCellWidth;
+        const xChRight = xLeft + (i + 1) * this._config.scaledCellWidth;
+        const xChMid = xChLeft + this._config.scaledCellWidth / 2;
+        switch (this._workAttributeData.extended.underlineStyle) {
+          case UnderlineStyle.DOUBLE:
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yBot);
+            this._tmpCtx.lineTo(xChRight, yBot);
+            break;
+          case UnderlineStyle.CURLY:
+            // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
+            // made taller when the line width is  as otherwise it's not very clear otherwise.
+            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
+            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+            // Clip the left and right edges of the underline such that it can be drawn just outside
+            // the edge of the cell to ensure a continuous stroke when there are multiple underlined
+            // glyphs adjacent to one another.
+            const clipRegion = new Path2D();
+            clipRegion.rect(xChLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
+            this._tmpCtx.clip(clipRegion);
+            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+            this._tmpCtx.moveTo(xChLeft - this._config.scaledCellWidth / 2, yMid);
+            this._tmpCtx.bezierCurveTo(
+              xChLeft - this._config.scaledCellWidth / 2, yCurlyTop,
+              xChLeft, yCurlyTop,
+              xChLeft, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChLeft, yCurlyBot,
+              xChMid, yCurlyBot,
+              xChMid, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChMid, yCurlyTop,
+              xChRight, yCurlyTop,
+              xChRight, yMid
+            );
+            this._tmpCtx.bezierCurveTo(
+              xChRight, yCurlyBot,
+              xChRight + this._config.scaledCellWidth / 2, yCurlyBot,
+              xChRight + this._config.scaledCellWidth / 2, yMid
+            );
+            break;
+          case UnderlineStyle.DOTTED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+          case UnderlineStyle.DASHED:
+            this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+          case UnderlineStyle.SINGLE:
+          default:
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            break;
+        }
+        this._tmpCtx.stroke();
+        this._tmpCtx.restore();
       }
-      this._tmpCtx.stroke();
       this._tmpCtx.restore();
 
       // Draw stroke in the background color for non custom characters in order to give an outline
-      // between the text and the underline
-      if (!customGlyph) {
+      // between the text and the underline. Only do this when font size is >= 12 as the underline
+      // looks odd when the font size is too small
+      if (!customGlyph && this._config.fontSize >= 12) {
         // This only works when transparency is disabled because it's not clear how to clear stroked
         // text
         if (!this._config.allowTransparency && chars !== ' ') {
-          // This translates to 1/2 the line width in either direction
+          // Measure the text, only draw the stroke if there is a descent beyond an alphabetic text
+          // baseline
           this._tmpCtx.save();
-          // Clip the region to only draw in valid pixels near the underline to avoid a slight
-          // outline around the whole glyph, as well as additional pixels in the glyph at the top
-          // which would increase GPU memory demands
-          const clipRegion = new Path2D();
-          clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
-          this._tmpCtx.clip(clipRegion);
-          this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
-          this._tmpCtx.strokeStyle = backgroundColor.css;
-          this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+          this._tmpCtx.textBaseline = 'alphabetic';
+          const metrics = this._tmpCtx.measureText(chars);
           this._tmpCtx.restore();
+          if ('actualBoundingBoxDescent' in metrics && metrics.actualBoundingBoxDescent > 0) {
+            // This translates to 1/2 the line width in either direction
+            this._tmpCtx.save();
+            // Clip the region to only draw in valid pixels near the underline to avoid a slight
+            // outline around the whole glyph, as well as additional pixels in the glyph at the top
+            // which would increase GPU memory demands
+            const clipRegion = new Path2D();
+            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+            this._tmpCtx.clip(clipRegion);
+            this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
+            this._tmpCtx.strokeStyle = backgroundColor.css;
+            this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+            this._tmpCtx.restore();
+          }
         }
       }
     }
@@ -560,7 +564,10 @@ export class WebglCharAtlas implements IDisposable {
       let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
-          this._tmpCtx.clearRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.save();
+          this._tmpCtx.fillStyle = backgroundColor.css;
+          this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+          this._tmpCtx.restore();
           this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
           isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
@@ -578,7 +585,7 @@ export class WebglCharAtlas implements IDisposable {
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
       this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth * chWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
     }
 
@@ -603,7 +610,7 @@ export class WebglCharAtlas implements IDisposable {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, powerlineGlyph, customGlyph, padding);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
     const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use

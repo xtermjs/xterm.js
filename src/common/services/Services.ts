@@ -321,10 +321,11 @@ export interface IDecorationService extends IDisposable {
   readonly onDecorationRemoved: IEvent<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   reset(): void;
-  /** Iterates over the decorations at a line (in no particular order). */
-  getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
-  /** Iterates over the decorations at a cell (in no particular order). */
-  getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration>;
+  /**
+   * Trigger a callback over the decoration at a cell (in no particular order). This uses a callback
+   * instead of an iterator as it's typically used in hot code paths.
+   */
+  forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
