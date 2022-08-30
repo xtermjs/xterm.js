@@ -7,7 +7,7 @@ import { generateConfig, configEquals } from './CharAtlasUtils';
 import { WebglCharAtlas } from './WebglCharAtlas';
 import { ICharAtlasConfig } from './Types';
 import { Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 
 interface ICharAtlasCacheEntry {
   atlas: WebglCharAtlas;
@@ -64,8 +64,9 @@ export function acquireCharAtlas(
     }
   }
 
+  const core: ITerminal = (terminal as any)._core;
   const newEntry: ICharAtlasCacheEntry = {
-    atlas: new WebglCharAtlas(document, newConfig),
+    atlas: new WebglCharAtlas(document, newConfig, core.unicodeService),
     config: newConfig,
     ownedBy: [terminal]
   };

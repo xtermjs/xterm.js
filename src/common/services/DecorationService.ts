@@ -11,6 +11,12 @@ import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
 import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
 
+/** Work variables to avoid garbage collection. */
+const w = {
+  xmin: 0,
+  xmax: 0
+};
+
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;
 
@@ -56,10 +62,6 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations.clear();
   }
 
-  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> {
-    return this._decorations.getKeyIterator(line);
-  }
-
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
@@ -70,6 +72,16 @@ export class DecorationService extends Disposable implements IDecorationService 
         yield d;
       }
     }
+  }
+
+  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
+    this._decorations.forEachByKey(line, d => {
+      w.xmin = d.options.x ?? 0;
+      w.xmax = w.xmin + (d.options.width ?? 1);
+      if (x >= w.xmin && x < w.xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+        callback(d);
+      }
+    });
   }
 
   public dispose(): void {

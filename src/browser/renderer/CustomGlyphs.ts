@@ -349,25 +349,27 @@ const enum VectorType {
  * not been patched with powerline characters and also to get pixel perfect rendering as rendering
  * issues can occur around AA/SPAA.
  *
+ * The line variants draw beyond the cell and get clipped to ensure the end of the line is not visible.
+ *
  * Original symbols defined in https://github.com/powerline/fontpatcher
  */
 export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Right triangle solid
-  '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.FILL },
+  '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.FILL, rightPadding: 2 },
   // Right triangle line
-  '\u{E0B1}': { d: 'M0,0 L1,.5 L0,1', type: VectorType.STROKE, leftPadding: window.devicePixelRatio / 2, rightPadding: window.devicePixelRatio / 2 },
+  '\u{E0B1}': { d: 'M-1,-.5 L1,.5 L-1,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
   // Left triangle solid
-  '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL },
+  '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL, leftPadding: 2 },
   // Left triangle line
-  '\u{E0B3}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.STROKE, leftPadding: window.devicePixelRatio / 2, rightPadding: window.devicePixelRatio / 2 },
+  '\u{E0B3}': { d: 'M2,-.5 L0,.5 L2,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
   // Right semi-circle solid,
-  '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL },
+  '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL, rightPadding: 1 },
   // Right semi-circle line,
-  '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, rightPadding: window.devicePixelRatio / 2 },
+  '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, rightPadding: 1 },
   // Left semi-circle solid,
-  '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL },
+  '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL, leftPadding: 1 },
   // Left semi-circle line,
-  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: window.devicePixelRatio / 2 }
+  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 }
 };
 
 /**
@@ -380,7 +382,8 @@ export function tryDrawCustomChar(
   xOffset: number,
   yOffset: number,
   scaledCellWidth: number,
-  scaledCellHeight: number
+  scaledCellHeight: number,
+  fontSize: number
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
@@ -402,7 +405,7 @@ export function tryDrawCustomChar(
 
   const powerlineDefinition = powerlineDefinitions[c];
   if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, fontSize);
     return true;
   }
 
@@ -562,7 +565,7 @@ function drawBoxDrawingChar(
       if (!args[0] || !args[1]) {
         continue;
       }
-      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset));
+      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, true));
     }
     ctx.stroke();
     ctx.closePath();
@@ -575,10 +578,13 @@ function drawPowerlineChar(
   xOffset: number,
   yOffset: number,
   scaledCellWidth: number,
-  scaledCellHeight: number
+  scaledCellHeight: number,
+  fontSize: number
 ): void {
   ctx.beginPath();
-  ctx.lineWidth = window.devicePixelRatio;
+  // Scale the stroke with DPR and font size
+  const cssLineWidth = fontSize / 12;
+  ctx.lineWidth = window.devicePixelRatio * cssLineWidth;
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
     const f = svgToCanvasInstructionMap[type];
@@ -590,7 +596,16 @@ function drawPowerlineChar(
     if (!args[0] || !args[1]) {
       continue;
     }
-    f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, charDefinition.leftPadding, charDefinition.rightPadding));
+    f(ctx, translateArgs(
+      args,
+      scaledCellWidth,
+      scaledCellHeight,
+      xOffset,
+      yOffset,
+      false,
+      (charDefinition.leftPadding ?? 0) * (cssLineWidth / 2),
+      (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
+    ));
   }
   if (charDefinition.type === VectorType.STROKE) {
     ctx.strokeStyle = ctx.fillStyle;
@@ -611,7 +626,7 @@ const svgToCanvasInstructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
 };
 
-function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, leftPadding: number = 0, rightPadding: number = 0): number[] {
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, leftPadding: number = 0, rightPadding: number = 0): number[] {
   const result = args.map(e => parseFloat(e) || parseInt(e));
 
   if (result.length < 2) {
@@ -623,7 +638,7 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
     result[x] *= cellWidth - (leftPadding * window.devicePixelRatio) - (rightPadding * window.devicePixelRatio);
     // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
     // line at 100% devicePixelRatio
-    if (result[x] !== 0) {
+    if (doClamp && result[x] !== 0) {
       result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
     }
     // Apply the cell's offset (ie. x*cellWidth)
@@ -635,7 +650,7 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
     result[y] *= cellHeight;
     // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
     // line at 100% devicePixelRatio
-    if (result[y] !== 0) {
+    if (doClamp && result[y] !== 0) {
       result[y] = clamp(Math.round(result[y] + 0.5) - 0.5, cellHeight, 0);
     }
     // Apply the cell's offset (ie. x*cellHeight)
