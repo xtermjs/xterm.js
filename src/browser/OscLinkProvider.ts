@@ -70,7 +70,7 @@ export class OscLinkProvider implements ILinkProvider {
           result.push({
             text,
             range,
-            activate: (e, text) => (linkHandler?.activate(e, text, range) || defaultActivate(e, text)),
+            activate: (e, text) => (linkHandler ? linkHandler.activate(e, text, range) : defaultActivate(e, text)),
             hover: (e, text) => linkHandler?.hover?.(e, text, range),
             leave: (e, text) => linkHandler?.leave?.(e, text, range)
           });
