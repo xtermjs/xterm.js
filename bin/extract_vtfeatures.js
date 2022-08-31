@@ -362,7 +362,7 @@ function* parseMultiLineGen(filename, s) {
   if (!s.includes('@vt:')) {
     return;
   }
-  const lines = s.split('\n').map(el => el.trim().replace(/\*/, '').replace(/\s/, '')); // lgtm [js/incomplete-sanitization]
+  const lines = s.split('\n').map(el => el.trim().replace(/\*/, '').replace(/\s/, ''));
   let grabLine = false;
   let longDescription = [];
   let feature = undefined;
