@@ -53,6 +53,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _core: ITerminal;
   private _isAttached: boolean;
+  private _contextRestorationTimeout: number | undefined;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
   public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
@@ -61,8 +62,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _onContextLoss = new EventEmitter<void>();
   public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
-
-  private _contextRestorationTimeout: number | undefined;
 
   constructor(
     private _terminal: Terminal,
@@ -117,16 +116,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
       // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
       // If not, dispatch the onContextLoss notification to observers.
       this._contextRestorationTimeout = setTimeout(() => {
-        if (this._contextRestorationTimeout !== 0) {
-          console.log('webgl context not restored; firing onContextLoss');
-          this._onContextLoss.fire(e);
-        }
+        this._contextRestorationTimeout = undefined;
+        console.warn('webgl context not restored; firing onContextLoss');
+        this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
-      console.log('webglcontextrestored event received');
+      console.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
-      this._contextRestorationTimeout = 0;
+      this._contextRestorationTimeout = undefined;
       // The texture atlas and glyph renderer must be fully reinitialized
       // because their contents have been lost.
       removeTerminalFromCache(this._terminal);
