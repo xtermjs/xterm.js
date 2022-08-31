@@ -5,7 +5,7 @@
 
 import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
-import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
+import { IRasterizedGlyph, IBoundingBox } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
@@ -450,7 +450,6 @@ export class WebglCharAtlas implements IDisposable {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const xRight = padding + this._config.scaledCellWidth * chWidth;
       const yTop = Math.ceil(padding + this._config.scaledCharHeight) - yOffset;
       const yMid = padding + this._config.scaledCharHeight + lineWidth - yOffset;
       const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth * 2) - yOffset;

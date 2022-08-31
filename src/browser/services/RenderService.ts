@@ -9,7 +9,7 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IRenderDebouncer, IRenderDebouncerWithCallback } from 'browser/Types';
+import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
