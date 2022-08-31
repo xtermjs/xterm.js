@@ -1989,6 +1989,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
+          break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
           break;
@@ -2209,6 +2212,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
+          break;
+        case 1006: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;

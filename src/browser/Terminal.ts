@@ -645,7 +645,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
       // get mouse coordinates
-      const pos = self._mouseService!.getRawByteCoords(ev, self.screenElement!, self.cols, self.rows);
+      const pos = self._mouseService!.getMouseReportCoords(ev, self.screenElement!, self.cols, self.rows);
       if (!pos) {
         return false;
       }
@@ -699,8 +699,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
 
       return self.coreMouseService.triggerMouseEvent({
-        col: pos.x - 33, // FIXME: why -33 here?
-        row: pos.y - 33,
+        col: pos.col,
+        row: pos.row,
+        x: pos.x,
+        y: pos.y,
         button: but,
         action,
         ctrl: ev.ctrlKey,

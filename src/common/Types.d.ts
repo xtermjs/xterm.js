@@ -281,6 +281,9 @@ export interface ICoreMouseEvent {
   col: number;
   /** row (zero based). */
   row: number;
+  /** xy pixel positions. */
+  x: number;
+  y: number;
   /**
    * Button the action occured. Due to restrictions of the tracking protocols
    * it is not possible to report multiple buttons at once.

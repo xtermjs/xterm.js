@@ -48,17 +48,3 @@ export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: {clie
 
   return coords;
 }
-
-/**
- * Gets coordinates within the terminal for a particular mouse event, wrapping
- * them to the bounds of the terminal and adding 32 to both the x and y values
- * as expected by xterm.
- */
-export function getRawByteCoords(coords: [number, number] | undefined): { x: number, y: number } | undefined {
-  if (!coords) {
-    return undefined;
-  }
-
-  // xterm sends raw bytes and starts at 32 (SP) for each.
-  return { x: coords[0] + 32, y: coords[1] + 32 };
-}
