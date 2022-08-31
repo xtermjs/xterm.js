@@ -46,13 +46,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: RectangleRenderer;
-  private _glyphRenderer: GlyphRenderer;
+  private _rectangleRenderer!: RectangleRenderer;
+  private _glyphRenderer!: GlyphRenderer;
 
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
   private _isAttached: boolean;
+  private _contextRestorationTimeout: number | undefined;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
   public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
@@ -108,16 +109,34 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => {
+      console.log('webglcontextlost event received');
+      // Prevent the default behavior in order to enable WebGL context restoration.
+      e.preventDefault();
+      // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
+      // If not, dispatch the onContextLoss notification to observers.
+      this._contextRestorationTimeout = setTimeout(() => {
+        this._contextRestorationTimeout = undefined;
+        console.warn('webgl context not restored; firing onContextLoss');
+        this._onContextLoss.fire(e);
+      }, 3000 /* ms */);
+    }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
+      console.warn('webglcontextrestored event received');
+      clearTimeout(this._contextRestorationTimeout);
+      this._contextRestorationTimeout = undefined;
+      // The texture atlas and glyph renderer must be fully reinitialized
+      // because their contents have been lost.
+      removeTerminalFromCache(this._terminal);
+      this._initializeWebGLState();
+      this._requestRedrawViewport();
+    }));
+
     this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-
-    // Update dimensions and acquire char atlas
-    this.onCharSizeChanged();
+    this._initializeWebGLState();
 
     this._isAttached = document.body.contains(this._core.screenElement!);
   }
@@ -233,6 +252,21 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._updateDimensions();
     this._refreshCharAtlas();
+  }
+
+  /**
+   * Initializes members dependent on WebGL context state.
+   */
+  private _initializeWebGLState(): void {
+    // Dispose any previous rectangle and glyph renderers before creating new ones.
+    this._rectangleRenderer?.dispose();
+    this._glyphRenderer?.dispose();
+
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+
+    // Update dimensions and acquire char atlas
+    this.onCharSizeChanged();
   }
 
   /**
