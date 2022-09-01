@@ -29,31 +29,24 @@ export class MouseService implements IMouseService {
     );
   }
 
-  public getMouseReportCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { col: number, row: number, x: number, y: number } | undefined {
-    const pixelCoords = getCoordsRelativeToElement(window, event, element);
+  public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
+    const coords = getCoordsRelativeToElement(window, event, element);
 
-    // due to rounding issue in zoom state pixel values might be negative at the edges
-    // simply ignore the event effectively narrowing the active mouse area
-    if (pixelCoords[0] < 0 || pixelCoords[1] < 0) {
+    // due to rounding issues in zoom states pixel values might be negative or overflow actual canvas
+    // ignore those events effectively narrowing mouse area a tiny bit at the edges
+    if (!this._charSizeService.hasValidSize
+      || coords[0] < 0
+      || coords[1] < 0
+      || coords[0] >= this._renderService.dimensions.canvasWidth
+      || coords[1] >= this._renderService.dimensions.canvasHeight) {
       return undefined;
     }
-    // also ignore if we exceed real pixel area
-    if (pixelCoords[0] >= this._renderService.dimensions.canvasWidth || pixelCoords[1] >= this._renderService.dimensions.canvasHeight) {
-      return undefined;
-    }
 
-    pixelCoords[0] = Math.round(pixelCoords[0]);
-    pixelCoords[1] = Math.round(pixelCoords[1]);
-
-    const cellCoords = this.getCoords(event, element, colCount, rowCount);
-    if (!cellCoords) {
-      return undefined;
-    }
     return {
-      col: cellCoords[0] - 1,
-      row: cellCoords[1] - 1,
-      x: pixelCoords[0],
-      y: pixelCoords[1]
+      col: Math.floor(coords[0] / this._renderService.dimensions.actualCellWidth),
+      row: Math.floor(coords[1] / this._renderService.dimensions.actualCellHeight),
+      x: Math.floor(coords[0]),
+      y: Math.floor(coords[1])
     };
   }
 }
