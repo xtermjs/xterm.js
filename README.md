@@ -140,7 +140,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 - [**Hyper**](https://hyper.is): A terminal built on web technologies.
 - [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
-- [**GoTTY**](https://github.com/yudai/gotty): A simple command line tool that shares your terminal as a web application based on xterm.js.
+- [**GoTTY**](https://github.com/sorenisanerd/gotty): A simple command line tool that shares your terminal as a web application based on xterm.js.
 - [**genact**](https://github.com/svenstaro/genact): A nonsense activity generator.
 - [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
 - [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js.
