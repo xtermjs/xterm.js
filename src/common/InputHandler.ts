@@ -2261,7 +2261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  CSI   DECRQM  "Request Mode"  "CSI Ps $p"  "Request mode state."
    */
   public requestMode(params: IParams, ansi: boolean): boolean {
-    const f = (m: number, v: boolean | number) => this._coreService.triggerDataEvent(`${C0.ESC}[?${m};${2 - +v}$y`);
+    const f = (m: number, v: boolean | number): void => this._coreService.triggerDataEvent(`${C0.ESC}[?${m};${2 - +v}$y`);
     const p = params.params[0];
 
     if (ansi) {
