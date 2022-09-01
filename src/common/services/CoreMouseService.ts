@@ -9,7 +9,7 @@ import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventT
 /**
  * Supported default protocols.
  */
-const DEFAULT_PROTOCOLS: {[key: string]: ICoreMouseProtocol} = {
+const DEFAULT_PROTOCOLS: { [key: string]: ICoreMouseProtocol } = {
   /**
    * NONE
    * Events: none
@@ -117,7 +117,7 @@ const S = String.fromCharCode;
 /**
  * Supported default encodings.
  */
-const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
+const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
   /**
    * DEFAULT - CSI M Pb Px Py
    * Single byte encoding for coords and event code.
@@ -142,6 +142,10 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
   SGR: (e: ICoreMouseEvent) => {
     const final = (e.action === CoreMouseAction.UP && e.button !== CoreMouseButton.WHEEL) ? 'm' : 'M';
     return `\x1b[<${eventCode(e, true)};${e.col};${e.row}${final}`;
+  },
+  SGR_PIXELS: (e: ICoreMouseEvent) => {
+    const final = (e.action === CoreMouseAction.UP && e.button !== CoreMouseButton.WHEEL) ? 'm' : 'M';
+    return `\x1b[<${eventCode(e, true)};${e.x};${e.y}${final}`;
   }
 };
 
@@ -162,8 +166,8 @@ const DEFAULT_ENCODINGS: {[key: string]: CoreMouseEncoding} = {
  * To send a mouse event call `triggerMouseEvent`.
  */
 export class CoreMouseService implements ICoreMouseService {
-  private _protocols: {[name: string]: ICoreMouseProtocol} = {};
-  private _encodings: {[name: string]: CoreMouseEncoding} = {};
+  private _protocols: { [name: string]: ICoreMouseProtocol } = {};
+  private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
@@ -241,7 +245,7 @@ export class CoreMouseService implements ICoreMouseService {
   public triggerMouseEvent(e: ICoreMouseEvent): boolean {
     // range check for col/row
     if (e.col < 0 || e.col >= this._bufferService.cols
-        || e.row < 0 || e.row >= this._bufferService.rows) {
+      || e.row < 0 || e.row >= this._bufferService.rows) {
       return false;
     }
 
@@ -260,8 +264,11 @@ export class CoreMouseService implements ICoreMouseService {
     e.col++;
     e.row++;
 
-    // debounce move at grid level
-    if (e.action === CoreMouseAction.MOVE && this._lastEvent && this._compareEvents(this._lastEvent, e)) {
+    // debounce move events at grid or pixel level
+    if (e.action === CoreMouseAction.MOVE
+      && this._lastEvent
+      && this._equalEvents(this._lastEvent, e, this._activeEncoding === 'SGR_PIXELS')
+    ) {
       return false;
     }
 
@@ -286,7 +293,7 @@ export class CoreMouseService implements ICoreMouseService {
     return true;
   }
 
-  public explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+  public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     return {
       down: !!(events & CoreMouseEventType.DOWN),
       up: !!(events & CoreMouseEventType.UP),
@@ -296,9 +303,14 @@ export class CoreMouseService implements ICoreMouseService {
     };
   }
 
-  private _compareEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent): boolean {
-    if (e1.col !== e2.col) return false;
-    if (e1.row !== e2.row) return false;
+  private _equalEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent, pixels: boolean): boolean {
+    if (pixels) {
+      if (e1.x !== e2.x) return false;
+      if (e1.y !== e2.y) return false;
+    } else {
+      if (e1.col !== e2.col) return false;
+      if (e1.row !== e2.row) return false;
+    }
     if (e1.button !== e2.button) return false;
     if (e1.action !== e2.action) return false;
     if (e1.ctrl !== e2.ctrl) return false;

@@ -359,7 +359,7 @@ export class MockMouseService implements IMouseService {
     throw new Error('Not implemented');
   }
 
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
+  public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
     throw new Error('Not implemented');
   }
 }
