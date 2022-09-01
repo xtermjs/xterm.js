@@ -369,6 +369,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '$', final: 'p' }, params => this.requestMode(params, true));
+    this._parser.registerCsiHandler({ prefix: '?', intermediates: '$', final: 'p' }, params => this.requestMode(params, false));
 
     /**
      * execute handler
@@ -2215,7 +2217,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
-        case 1006: // sgr pixels mode mouse
+        case 1016: // sgr pixels mode mouse
           this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
@@ -2241,6 +2243,66 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.bracketedPasteMode = false;
           break;
       }
+    }
+    return true;
+  }
+
+  /**
+   * CSI Ps $ p Request ANSI Mode (DECRQM).
+   *
+   * Reports CSI Ps; Pm $ y (DECRPM), where Ps is the mode number as in SM/RM,
+   * and Pm is the mode value:
+   *    0 - not recognized
+   *    1 - set
+   *    2 - reset
+   *    3 - permanently set
+   *    4 - permanently reset
+   *
+   * @vt: #Y  CSI   DECRQM  "Request Mode"  "CSI Ps $p"  "Request mode state."
+   */
+  public requestMode(params: IParams, ansi: boolean): boolean {
+    const f = (m: number, v: boolean | number) => this._coreService.triggerDataEvent(`${C0.ESC}[?${m};${2 - +v}$y`);
+    const p = params.params[0];
+
+    if (ansi) {
+      switch (p) {
+        case 2:  f(p, -1); break;
+        case 4:  f(p, this._coreService.modes.insertMode); break;
+        case 12: f(p, -2); break;
+        case 20: f(p, -2); break;
+        default: f(p, 2);
+      }
+      return true;
+    }
+
+    // dec privates
+    switch (p) {
+      case 1: f(p, this._coreService.decPrivateModes.applicationCursorKeys); break;
+      case 3:
+        const cols = this._bufferService.cols;
+        f(p, this._optionsService.rawOptions.windowOptions.setWinLines ? (cols === 80 ? 0 : cols === 132 ? 1 : 2) : 2);
+        break;
+      case 6:    f(p, this._coreService.decPrivateModes.origin); break;
+      case 7:    f(p, this._coreService.decPrivateModes.wraparound); break;
+      case 9:    f(p, this._coreMouseService.activeProtocol === 'X10'); break;
+      case 12:   f(p, -2); break;
+      case 25:   f(p, !this._coreService.isCursorHidden); break;
+      case 45:   f(p, this._coreService.decPrivateModes.reverseWraparound); break;
+      case 66:   f(p, this._coreService.decPrivateModes.applicationKeypad); break;
+      case 1000: f(p, this._coreMouseService.activeProtocol === 'VT200'); break;
+      case 1002: f(p, this._coreMouseService.activeProtocol === 'DRAG'); break;
+      case 1003: f(p, this._coreMouseService.activeProtocol === 'ANY'); break;
+      case 1004: f(p, this._coreService.decPrivateModes.sendFocus); break;
+      case 1005: f(p, -2); break;
+      case 1006: f(p, this._coreMouseService.activeEncoding === 'SGR'); break;
+      case 1015: f(p, -2); break;
+      case 1016: f(p, this._coreMouseService.activeEncoding === 'SGR_PIXELS'); break;
+      case 47:
+      case 1047:
+      case 1048:
+      case 1049: f(p, this._bufferService.buffers.active === this._bufferService.buffers.alt); break;
+      case 2004: f(p, this._coreService.decPrivateModes.bracketedPasteMode); break;
+      default:   f(p, 2);
     }
     return true;
   }
