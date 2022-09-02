@@ -8,7 +8,7 @@ import { BaseCharAtlas } from './BaseCharAtlas';
 import { DynamicCharAtlas } from './DynamicCharAtlas';
 import { ICharAtlasConfig } from './Types';
 import { IColorSet } from 'browser/Types';
-import { ITerminalOptions } from 'common/services/Services';
+import { ITerminalOptions } from 'xterm';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
@@ -25,7 +25,7 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
  * one that is in use by another terminal.
  */
 export function acquireCharAtlas(
-  options: ITerminalOptions,
+  options: Required<ITerminalOptions>,
   rendererId: number,
   colors: IColorSet,
   scaledCharWidth: number,

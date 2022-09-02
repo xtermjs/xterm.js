@@ -30,7 +30,7 @@ import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
 
 export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
-  public get options(): IInitializedTerminalOptions { return this.optionsService.options; }
+  public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
 
   private _onBell = new EventEmitter<void>();
   public get onBell(): IEvent<void> { return this._onBell.event; }
