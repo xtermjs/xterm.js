@@ -8,7 +8,7 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal, IBufferLine } from 'xterm';
+import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -70,6 +70,14 @@ const INDICES_PER_CELL = 10;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
+/** Work variables to avoid garbage collection. */
+const w: { i: number, glyph: IRasterizedGlyph | undefined, leftCellPadding: number, clippedPixels: number } = {
+  i: 0,
+  glyph: undefined,
+  leftCellPadding: 0,
+  clippedPixels: 0
+};
+
 export class GlyphRenderer  extends Disposable {
   private _atlas: WebglCharAtlas | undefined;
 
@@ -122,7 +130,7 @@ export class GlyphRenderer  extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertuces to allow is to draw 2 triangles from the vertices
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices
     const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
@@ -170,18 +178,20 @@ export class GlyphRenderer  extends Disposable {
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+    // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
+    // should not instantiate any variables unless a new glyph is drawn to the cache where the
+    // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
+    // each glyph.
     this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg);
   }
 
   private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
-    const terminal = this._terminal;
-
-    const i = (y * terminal.cols + x) * INDICES_PER_CELL;
+    w.i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null character, allow space character to continue as it may have
     // underline/strikethrough styles
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
-      fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
+      fill(array, 0, w.i, w.i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
 
@@ -190,47 +200,40 @@ export class GlyphRenderer  extends Disposable {
     }
 
     // Get the glyph
-    let rasterizedGlyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
+      w.glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
+      w.glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 
-    // Fill empty if no glyph was found
-    if (!rasterizedGlyph) {
-      fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
-      return;
-    }
-
-    const leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
-    if (bg !== lastBg && rasterizedGlyph.offset.x > leftCellPadding) {
-      const clippedPixels = rasterizedGlyph.offset.x - leftCellPadding;
+    w.leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
+    if (bg !== lastBg && w.glyph.offset.x > w.leftCellPadding) {
+      w.clippedPixels = w.glyph.offset.x - w.leftCellPadding;
       // a_origin
-      array[i    ] = -(rasterizedGlyph.offset.x - clippedPixels) + this._dimensions.scaledCharLeft;
-      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      array[w.i    ] = -(w.glyph.offset.x - w.clippedPixels) + this._dimensions.scaledCharLeft;
+      array[w.i + 1] = -w.glyph.offset.y + this._dimensions.scaledCharTop;
       // a_size
-      array[i + 2] = (rasterizedGlyph.size.x - clippedPixels) / this._dimensions.scaledCanvasWidth;
-      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[w.i + 2] = (w.glyph.size.x - w.clippedPixels) / this._dimensions.scaledCanvasWidth;
+      array[w.i + 3] = w.glyph.size.y / this._dimensions.scaledCanvasHeight;
       // a_texcoord
-      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x + clippedPixels / this._atlas.cacheCanvas.width;
-      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      array[w.i + 4] = w.glyph.texturePositionClipSpace.x + w.clippedPixels / this._atlas.cacheCanvas.width;
+      array[w.i + 5] = w.glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[i + 6] = rasterizedGlyph.sizeClipSpace.x - clippedPixels / this._atlas.cacheCanvas.width;
-      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+      array[w.i + 6] = w.glyph.sizeClipSpace.x - w.clippedPixels / this._atlas.cacheCanvas.width;
+      array[w.i + 7] = w.glyph.sizeClipSpace.y;
     } else {
       // a_origin
-      array[i    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
-      array[i + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+      array[w.i    ] = -w.glyph.offset.x + this._dimensions.scaledCharLeft;
+      array[w.i + 1] = -w.glyph.offset.y + this._dimensions.scaledCharTop;
       // a_size
-      array[i + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
-      array[i + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[w.i + 2] = w.glyph.size.x / this._dimensions.scaledCanvasWidth;
+      array[w.i + 3] = w.glyph.size.y / this._dimensions.scaledCanvasHeight;
       // a_texcoord
-      array[i + 4] = rasterizedGlyph.texturePositionClipSpace.x;
-      array[i + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+      array[w.i + 4] = w.glyph.texturePositionClipSpace.x;
+      array[w.i + 5] = w.glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
-      array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
+      array[w.i + 6] = w.glyph.sizeClipSpace.x;
+      array[w.i + 7] = w.glyph.sizeClipSpace.y;
     }
     // a_cellpos only changes on resize
   }

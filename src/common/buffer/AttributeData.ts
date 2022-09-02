@@ -35,7 +35,12 @@ export class AttributeData implements IAttributeData {
   // flags
   public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
   public isBold(): number          { return this.fg & FgFlags.BOLD; }
-  public isUnderline(): number     { return this.fg & FgFlags.UNDERLINE; }
+  public isUnderline(): number     {
+    if (this.hasExtendedAttrs() && this.extended.underlineStyle !== UnderlineStyle.NONE) {
+      return 1;
+    }
+    return this.fg & FgFlags.UNDERLINE;
+  }
   public isBlink(): number         { return this.fg & FgFlags.BLINK; }
   public isInvisible(): number     { return this.fg & FgFlags.INVISIBLE; }
   public isItalic(): number        { return this.bg & BgFlags.ITALIC; }
@@ -128,10 +133,22 @@ export class AttributeData implements IAttributeData {
  */
 export class ExtendedAttrs implements IExtendedAttrs {
   private _ext: number = 0;
-  public get ext(): number { return this._ext; }
+  public get ext(): number {
+    if (this._urlId) {
+      return (
+        (this._ext & ~ExtFlags.UNDERLINE_STYLE) |
+        (this.underlineStyle << 26)
+      );
+    }
+    return this._ext;
+  }
   public set ext(value: number) { this._ext = value; }
 
   public get underlineStyle(): UnderlineStyle {
+    // Always return the URL style if it has one
+    if (this._urlId) {
+      return UnderlineStyle.DASHED;
+    }
     return (this._ext & ExtFlags.UNDERLINE_STYLE) >> 26;
   }
   public set underlineStyle(value: UnderlineStyle) {
@@ -147,16 +164,24 @@ export class ExtendedAttrs implements IExtendedAttrs {
     this._ext |= value & (Attributes.CM_MASK | Attributes.RGB_MASK);
   }
 
+  private _urlId: number = 0;
+  public get urlId(): number {
+    return this._urlId;
+  }
+  public set urlId(value: number) {
+    this._urlId = value;
+  }
+
   constructor(
-    underlineStyle: UnderlineStyle = UnderlineStyle.NONE,
-    underlineColor: number = Attributes.CM_DEFAULT
+    ext: number = 0,
+    urlId: number = 0
   ) {
-    this.underlineStyle = underlineStyle;
-    this.underlineColor = underlineColor;
+    this._ext = ext;
+    this._urlId = urlId;
   }
 
   public clone(): IExtendedAttrs {
-    return new ExtendedAttrs(this.underlineStyle, this.underlineColor);
+    return new ExtendedAttrs(this._ext, this._urlId);
   }
 
   /**
@@ -164,6 +189,6 @@ export class ExtendedAttrs implements IExtendedAttrs {
    * that needs to be persistant in the buffer.
    */
   public isEmpty(): boolean {
-    return this.underlineStyle === UnderlineStyle.NONE;
+    return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0;
   }
 }

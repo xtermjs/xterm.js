@@ -24,10 +24,12 @@ export function observeDevicePixelDimensions(element: HTMLElement, callback: (de
       return;
     }
 
-    callback(
-      entry.devicePixelContentBoxSize[0].inlineSize,
-      entry.devicePixelContentBoxSize[0].blockSize
-    );
+    // Fire the callback, ignore events where the dimensions are 0x0 as the canvas is likely hidden
+    const width = entry.devicePixelContentBoxSize[0].inlineSize;
+    const height = entry.devicePixelContentBoxSize[0].blockSize;
+    if (width > 0 && height > 0) {
+      callback(width, height);
+    }
   });
   observer.observe(element, { box: ['device-pixel-content-box'] } as any);
   return toDisposable(() => observer?.disconnect());

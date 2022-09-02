@@ -24,6 +24,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
+  linkHandler: null,
   logLevel: 'info',
   scrollback: 1000,
   scrollSensitivity: 1,
@@ -119,7 +120,6 @@ export class OptionsService implements IOptionsService {
           throw new Error(`"${value}" is not a valid value for ${key}`);
         }
         break;
-      case 'cursorStyle':
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];

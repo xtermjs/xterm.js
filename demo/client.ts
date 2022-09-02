@@ -189,6 +189,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
+  document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -203,7 +204,7 @@ function createTerminal(): void {
   term = new Terminal({
     allowProposedApi: true,
     windowsMode: isWindows,
-    fontFamily: 'Fira Code, courier-new, courier, monospace',
+    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
@@ -406,7 +407,11 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'lineHeight') {
+      if (o === 'rows') {
+        term.resize(term.cols, parseInt(input.value));
+      } else if (o === 'cols') {
+        term.resize(parseInt(input.value), term.rows);
+      } else if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
@@ -601,7 +606,7 @@ function htmlSerializeButtonHandler(): void {
 }
 
 function addTextureAtlas(e: HTMLCanvasElement) {
-  document.querySelector('#texture-atlas').appendChild(e);
+  document.querySelector('#texture-atlas').replaceChildren(e);
 }
 
 function writeCustomGlyphHandler() {
@@ -766,12 +771,23 @@ function underlineTest() {
   term.write('\n\n\r');
   term.writeln('Underline styles:');
   term.writeln('');
-  term.writeln(`${u(0)}4:0m - No underline`);
-  term.writeln(`${u(1)}4:1m - Straight`);
-  term.writeln(`${u(2)}4:2m - Double`);
-  term.writeln(`${u(3)}4:3m - Curly`);
-  term.writeln(`${u(4)}4:4m - Dotted`);
-  term.writeln(`${u(5)}4:5m - Dashed\x1b[0m`);
+  function showSequence(id: number, name: string) {
+    let alphabet = '';
+    for (let i = 97; i < 123; i++) {
+      alphabet += String.fromCharCode(i);
+    }
+    let numbers = '';
+    for (let i = 0; i < 10; i++) {
+      numbers += i.toString();
+    }
+    return `${u(id)}4:${id}m - ${name}\x1b[4:0m`.padEnd(33, ' ') + `${u(id)}${alphabet} ${numbers} 汉语 한국어 👽\x1b[4:0m`;
+  }
+  term.writeln(showSequence(0, 'No underline'));
+  term.writeln(showSequence(1, 'Straight'));
+  term.writeln(showSequence(2, 'Double'));
+  term.writeln(showSequence(3, 'Curly'));
+  term.writeln(showSequence(4, 'Dotted'));
+  term.writeln(showSequence(5, 'Dashed'));
   term.writeln('');
   term.writeln(`Underline colors (256 color mode):`);
   term.writeln('');
@@ -825,6 +841,26 @@ function ansiColorsTest() {
   for (let i = 232; i < 256; i++) {
     term.write(`\x1b[48;5;${i}m ${(i % 10)} \x1b[0m`);
   }
+}
+
+function addAnsiHyperlink() {
+  term.write('\n\n\r');
+  term.writeln(`Regular link with no id:`);
+  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;\x07');
+  term.writeln('\x1b]8;;https://xtermjs.org\x07https://xtermjs.org\x1b]8;;\x07\x1b[C<- null cell');
+  term.writeln(`\nAdjacent links:`);
+  term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;https://xtermjs.org\x07\x1b[32mxterm.js\x1b[0m\x1b]8;;\x07');
+  term.writeln(`\nShared ID link (underline should be shared):`);
+  term.writeln('╔════╗');
+  term.writeln('║\x1b]8;id=testid;https://github.com\x07GitH\x1b]8;;\x07║');
+  term.writeln('║\x1b]8;id=testid;https://github.com\x07ub\x1b]8;;\x07  ║');
+  term.writeln('╚════╝');
+  term.writeln(`\nWrapped link with no ID (not necessarily meant to share underline):`);
+  term.writeln('╔════╗');
+  term.writeln('║    ║');
+  term.writeln('║    ║');
+  term.writeln('╚════╝');
+  term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
 }
 
 function addDecoration() {

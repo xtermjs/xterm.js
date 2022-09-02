@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+// This file contains strings that get exported in the API so they can be localized
+
 // eslint-disable-next-line prefer-const
 export let promptLabel = 'Terminal input';
 

@@ -55,6 +55,7 @@ import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRe
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
+import { OscLinkProvider } from 'browser/OscLinkProvider';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -163,6 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._setup();
 
     this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
+    this.linkifier2.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
@@ -211,22 +213,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
           acc = 'ansi';
           ident = '4;' + req.index;
       }
-      if (acc) {
-        switch (req.type) {
-          case ColorRequestType.REPORT:
-            const channels = color.toColorRGB(acc === 'ansi'
-              ? this._colorManager.colors.ansi[req.index]
-              : this._colorManager.colors[acc]);
-            this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
-            break;
-          case ColorRequestType.SET:
-            if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
-            else this._colorManager.colors[acc] = rgba.toColor(...req.color);
-            break;
-          case ColorRequestType.RESTORE:
-            this._colorManager.restoreColor(req.index);
-            break;
-        }
+      switch (req.type) {
+        case ColorRequestType.REPORT:
+          const channels = color.toColorRGB(acc === 'ansi'
+            ? this._colorManager.colors.ansi[req.index]
+            : this._colorManager.colors[acc]);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
+          break;
+        case ColorRequestType.SET:
+          if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
+          else this._colorManager.colors[acc] = rgba.toColor(...req.color);
+          break;
+        case ColorRequestType.RESTORE:
+          this._colorManager.restoreColor(req.index);
+          break;
       }
     }
     this._renderService?.setColors(this._colorManager.colors);
@@ -645,7 +645,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
       // get mouse coordinates
-      const pos = self._mouseService!.getRawByteCoords(ev, self.screenElement!, self.cols, self.rows);
+      const pos = self._mouseService!.getMouseReportCoords(ev, self.screenElement!);
       if (!pos) {
         return false;
       }
@@ -699,8 +699,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
 
       return self.coreMouseService.triggerMouseEvent({
-        col: pos.x - 33, // FIXME: why -33 here?
-        row: pos.y - 33,
+        col: pos.col,
+        row: pos.row,
+        x: pos.x,
+        y: pos.y,
         button: but,
         action,
         ctrl: ev.ctrlKey,
@@ -1320,13 +1322,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     switch (type) {
       case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
-        const canvasWidth = this._renderService.dimensions.scaledCanvasWidth.toFixed(0);
-        const canvasHeight = this._renderService.dimensions.scaledCanvasHeight.toFixed(0);
+        const canvasWidth = this._renderService.dimensions.canvasWidth.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.canvasHeight.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
         break;
       case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
-        const cellWidth = this._renderService.dimensions.scaledCellWidth.toFixed(0);
-        const cellHeight = this._renderService.dimensions.scaledCellHeight.toFixed(0);
+        const cellWidth = this._renderService.dimensions.actualCellWidth.toFixed(0);
+        const cellHeight = this._renderService.dimensions.actualCellHeight.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
         break;
     }

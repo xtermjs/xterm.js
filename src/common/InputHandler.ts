@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, IOscLinkData } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,7 +17,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
@@ -214,8 +214,6 @@ class DECRQSS implements IDcsHandler {
  * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
  */
 
-
-
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
  * input from the Parser.
@@ -230,6 +228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
+  private _currentLinkId?: number;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
@@ -281,6 +280,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
@@ -403,6 +403,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
+    //   8 - create hyperlink (not in xterm spec, see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda)
+    this._parser.registerOscHandler(8, new OscHandler(data => this.setHyperlink(data)));
     //  10 - Change VT100 text foreground color to Pt.
     this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
@@ -636,6 +638,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
+      }
+      if (this._currentLinkId !== undefined) {
+        this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // insert combining char at last cursor position
@@ -1903,6 +1908,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Enable UTF-8 Mouse Mode.                                | #N      |
    * | 1006  | Enable SGR Mouse Mode.                                  | #Y      |
    * | 1015  | Enable urxvt Mouse Mode.                                | #N      |
+   * | 1016  | Enable SGR-Pixels Mouse Mode.                           | #Y      |
    * | 1047  | Use Alternate Screen Buffer.                            | #Y      |
    * | 1048  | Save cursor as in DECSC.                                | #Y      |
    * | 1049  | Save cursor and switch to alternate buffer clearing it. | #P[Does not clear the alternate buffer.] |
@@ -1983,6 +1989,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
+          break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
           break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
@@ -2144,6 +2153,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
    * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
    * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
+   * | 1006  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
    * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
    * | 1048  | Restore cursor as in DECRC.                             | #Y      |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
@@ -2204,6 +2214,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
+          break;
+        case 1006: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
@@ -2495,6 +2508,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 24) {
         // not underlined
         attr.fg &= ~FgFlags.UNDERLINE;
+        this._processUnderline(UnderlineStyle.NONE, attr);
       } else if (p === 25) {
         // not blink
         attr.fg &= ~FgFlags.BLINK;
@@ -2886,6 +2900,62 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (event.length) {
       this._onColor.fire(event);
     }
+    return true;
+  }
+
+  /**
+   * OSC 8 ; <params> ; <uri> ST - create hyperlink
+   * OSC 8 ; ; ST - finish hyperlink
+   *
+   * Test case:
+   *
+   * ```sh
+   * printf '\e]8;;http://example.com\e\\This is a link\e]8;;\e\\\n'
+   * ```
+   *
+   * @vt: #Y    OSC    8    "Create hyperlink"   "OSC 8 ; params ; uri BEL" "Create a hyperlink to `uri` using `params`."
+   * `uri` is a hyperlink starting with `http://`, `https://`, `ftp://`, `file://` or `mailto://`. `params` is an
+   * optional list of key=value assignments, separated by the : character. Example: `id=xyz123:foo=bar:baz=quux`.
+   * Currently only the id key is defined. Cells that share the same ID and URI share hover feedback.
+   * Use `OSC 8 ; ; BEL` to finish the current hyperlink.
+   */
+  public setHyperlink(data: string): boolean {
+    const args = data.split(';');
+    if (args.length < 2) {
+      return false;
+    }
+    if (args[1]) {
+      return this._createHyperlink(args[0], args[1]);
+    }
+    if (args[0]) {
+      return false;
+    }
+    return this._finishHyperlink();
+  }
+
+  private _createHyperlink(params: string, uri: string): boolean {
+    // It's legal to open a new hyperlink without explicitly finishing the previous one
+    if (this._currentLinkId !== undefined) {
+      this._finishHyperlink();
+    }
+    const parsedParams = params.split(':');
+    let id: string | undefined;
+    const idParamIndex = parsedParams.findIndex(e => e.startsWith('id='));
+    if (idParamIndex !== -1) {
+      id = parsedParams[idParamIndex].slice(3) || undefined;
+    }
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
+    this._curAttrData.extended.urlId = this._currentLinkId;
+    this._curAttrData.updateExtended();
+    return true;
+  }
+
+  private _finishHyperlink(): boolean {
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._curAttrData.extended.urlId = 0;
+    this._curAttrData.updateExtended();
+    this._currentLinkId = undefined;
     return true;
   }
 

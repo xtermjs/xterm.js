@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -138,6 +138,18 @@ export class MockOptionsService implements IOptionsService {
   }
 }
 
+export class MockOscLinkService implements IOscLinkService {
+  public serviceBrand: any;
+  public registerLink(linkData: IOscLinkData): number {
+    return 1;
+  }
+  public getLinkData(linkId: number): IOscLinkData | undefined {
+    return undefined;
+  }
+  public addLineToLink(linkId: number, y: number): void {
+  }
+}
+
 // defaults to V6 always to keep tests passing
 export class MockUnicodeService implements IUnicodeService {
   public serviceBrand: any;
@@ -161,7 +173,6 @@ export class MockDecorationService implements IDecorationService {
   public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
-  public *getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration> { }
-  public *getDecorationsAtCell(x: number, line: number): IterableIterator<IInternalDecoration> { }
+  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }
   public dispose(): void { }
 }

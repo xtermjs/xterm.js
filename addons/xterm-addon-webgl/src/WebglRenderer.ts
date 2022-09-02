@@ -11,7 +11,7 @@ import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal, IEvent } from 'xterm';
 import { IRenderLayer } from './renderLayer/Types';
@@ -22,9 +22,18 @@ import { EventEmitter } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
-import { CharData, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
+
+/** Work variables to avoid garbage collection. */
+const w: { fg: number, bg: number, hasFg: boolean, hasBg: boolean, isSelected: boolean } = {
+  fg: 0,
+  bg: 0,
+  hasFg: false,
+  hasBg: false,
+  isSelected: false
+};
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -37,13 +46,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: RectangleRenderer;
-  private _glyphRenderer: GlyphRenderer;
+  private _rectangleRenderer!: RectangleRenderer;
+  private _glyphRenderer!: GlyphRenderer;
 
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
   private _isAttached: boolean;
+  private _contextRestorationTimeout: number | undefined;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
   public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
@@ -99,16 +109,34 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => {
+      console.log('webglcontextlost event received');
+      // Prevent the default behavior in order to enable WebGL context restoration.
+      e.preventDefault();
+      // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
+      // If not, dispatch the onContextLoss notification to observers.
+      this._contextRestorationTimeout = setTimeout(() => {
+        this._contextRestorationTimeout = undefined;
+        console.warn('webgl context not restored; firing onContextLoss');
+        this._onContextLoss.fire(e);
+      }, 3000 /* ms */);
+    }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
+      console.warn('webglcontextrestored event received');
+      clearTimeout(this._contextRestorationTimeout);
+      this._contextRestorationTimeout = undefined;
+      // The texture atlas and glyph renderer must be fully reinitialized
+      // because their contents have been lost.
+      removeTerminalFromCache(this._terminal);
+      this._initializeWebGLState();
+      this._requestRedrawViewport();
+    }));
+
     this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-
-    // Update dimensions and acquire char atlas
-    this.onCharSizeChanged();
+    this._initializeWebGLState();
 
     this._isAttached = document.body.contains(this._core.screenElement!);
   }
@@ -173,6 +201,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
+    this._rectangleRenderer.setDimensions(this.dimensions);
     this._rectangleRenderer.onResize();
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
@@ -223,6 +252,21 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._updateDimensions();
     this._refreshCharAtlas();
+  }
+
+  /**
+   * Initializes members dependent on WebGL context state.
+   */
+  private _initializeWebGLState(): void {
+    // Dispose any previous rectangle and glyph renderers before creating new ones.
+    this._rectangleRenderer?.dispose();
+    this._glyphRenderer?.dispose();
+
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+
+    // Update dimensions and acquire char atlas
+    this.onCharSizeChanged();
   }
 
   /**
@@ -305,14 +349,28 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
     let cell: ICellData = this._workCell;
-    let lastBg: number = 0;
 
-    for (let y = start; y <= end; y++) {
-      const row = y + terminal.buffer.ydisp;
-      const line = terminal.buffer.lines.get(row)!;
+    // Declare variable ahead of time to avoid garbage collection
+    let lastBg: number;
+    let y: number;
+    let row: number;
+    let line: IBufferLine;
+    let joinedRanges: [number, number][];
+    let isJoined: boolean;
+    let lastCharX: number;
+    let range: [number, number];
+    let chars: string;
+    let code: number;
+    let i: number;
+    let x: number;
+    let j: number;
+
+    for (y = start; y <= end; y++) {
+      row = y + terminal.buffer.ydisp;
+      line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
-      const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
-      for (let x = 0; x < terminal.cols; x++) {
+      joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
+      for (x = 0; x < terminal.cols; x++) {
         lastBg = this._workColors.bg;
         line.loadCell(x, cell);
 
@@ -321,15 +379,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // If true, indicates that the current character(s) to draw were joined.
-        let isJoined = false;
-        let lastCharX = x;
+        isJoined = false;
+        lastCharX = x;
 
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
         if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
           isJoined = true;
-          const range = joinedRanges.shift()!;
+          range = joinedRanges.shift()!;
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly.
@@ -343,9 +401,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
           lastCharX = range[1] - 1;
         }
 
-        const chars = cell.getChars();
-        let code = cell.getCode();
-        const i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        chars = cell.getChars();
+        code = cell.getCode();
+        i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
         this._loadColorsForCell(x, row);
@@ -381,7 +439,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
-            const j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+            j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
@@ -404,79 +462,91 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._workColors.ext = this._workCell.bg & BgFlags.HAS_EXTENDED ? this._workCell.extended.ext : 0;
     // Get any foreground/background overrides, this happens on the model to avoid spreading
     // override logic throughout the different sub-renderers
-    let bgOverride: number | undefined;
-    let fgOverride: number | undefined;
-    let isSelected: boolean = false;
+
+    // Reset overrides work variables
+    w.bg = 0;
+    w.fg = 0;
+    w.hasBg = false;
+    w.hasFg = false;
+    w.isSelected = false;
 
     // Apply decorations on the bottom layer
-    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'bottom')) {
+    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
       if (d.backgroundColorRGB) {
-        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
-    }
+    });
 
     // Apply the selection color if needed
-    isSelected = this._isCellSelected(x, y);
-    if (isSelected) {
-      bgOverride = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+    w.isSelected = this._isCellSelected(x, y);
+    if (w.isSelected) {
+      w.bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      w.hasBg = true;
       if (this._colors.selectionForeground) {
-        fgOverride = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        w.fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
     }
 
     // Apply decorations on the top layer
-    for (const d of this._decorationService.getDecorationsAtCell(x, y, 'top')) {
+    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
       if (d.backgroundColorRGB) {
-        bgOverride = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        fgOverride = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        w.hasFg = true;
       }
-    }
+    });
 
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key
-    if (bgOverride !== undefined) {
-      if (isSelected) {
+    if (w.hasBg) {
+      if (w.isSelected) {
         // Non-RGB attributes from model + force non-dim + override + force RGB color mode
-        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | bgOverride | Attributes.CM_RGB;
+        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | w.bg | Attributes.CM_RGB;
       } else {
         // Non-RGB attributes from model + override + force RGB color mode
-        bgOverride = (this._workCell.bg & ~Attributes.RGB_MASK) | bgOverride | Attributes.CM_RGB;
+        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK) | w.bg | Attributes.CM_RGB;
       }
     }
-    if (fgOverride !== undefined) {
+    if (w.hasFg) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      fgOverride = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | fgOverride | Attributes.CM_RGB;
+      w.fg = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | w.fg | Attributes.CM_RGB;
     }
 
-    // Handle case where inverse was specified by only one of bgOverride or fgOverride was set,
+    // Handle case where inverse was specified by only one of bg override or fg override was set,
     // resolving the other inverse color and setting the inverse flag if needed.
     if (this._workColors.fg & FgFlags.INVERSE) {
-      if (bgOverride !== undefined && fgOverride === undefined) {
+      if (w.hasBg && !w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          fgOverride = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
+        w.hasFg = true;
       }
-      if (bgOverride === undefined && fgOverride !== undefined) {
+      if (!w.hasBg && w.hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          bgOverride = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
+        w.hasBg = true;
       }
     }
 
     // Use the override if it exists
-    this._workColors.bg = bgOverride ?? this._workColors.bg;
-    this._workColors.fg = fgOverride ?? this._workColors.fg;
+    this._workColors.bg = w.hasBg ? w.bg : this._workColors.bg;
+    this._workColors.fg = w.hasFg ? w.fg : this._workColors.fg;
   }
 
   private _isCellSelected(x: number, y: number): boolean {
@@ -587,11 +657,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
-    if (this.dimensions.scaledCanvasWidth === width && this.dimensions.scaledCanvasHeight === height) {
+    if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
-    this.dimensions.scaledCanvasWidth = width;
-    this.dimensions.scaledCanvasHeight = height;
+    // While the actual canvas size has changed, keep scaledCanvasWidth/Height as the value before
+    // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
     this._requestRedrawViewport();

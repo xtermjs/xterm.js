@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IEventEmitter } from 'common/EventEmitter';
 
 interface ISelectionState {
   start?: [number, number];

@@ -4,7 +4,7 @@
  * 
  * Script to test different mouse modes in terminal emulators.
  * Tests for protocols DECSET 9, 1000, 1002, 1003 with different
- * report encodings (default, UTF8, SGR, URXVT).
+ * report encodings (default, UTF8, SGR, URXVT, SGR-pixels).
  * 
  * VT200 Highlight mode (DECSET 1001) is not implemented.
  * 
@@ -152,12 +152,26 @@ const ENC = {
   ],
   'URXVT': [
     '\x1b[?1015h',
-    // format: CSI <button + 32> ; Prow ; Pcol M 
+    // format: CSI <button + 32> ; Prow ; Pcol M
     report => {
       // strip off introducer + M
       const sReport = report.toString().slice(2, -1);
       const [button, col, row] = sReport.split(';');
       return {state: evalButtonCode(button - 32), row, col};
+    }
+  ],
+  'SGR_PIXELS'  : [
+    '\x1b[?1016h',
+    // format: CSI < Pbutton ; Prow ; Pcol M
+    report => {
+      // strip off introducer + M
+      const sReport = report.toString().slice(3, -1);
+      const [buttonCode, col, row] = sReport.split(';');
+      const state = evalButtonCode(buttonCode);
+      if (report[report.length - 1] === 'm'.charCodeAt(0)) {
+        state.action = 'release';
+      }
+      return {state, row, col};
     }
   ]
 }
@@ -203,9 +217,12 @@ function activate() {
 
 function applyReportData(data) {
   let {state, row, col} = ENC[Object.keys(ENC)[activeEnc]][1](data);
-  console.log('\x1b[2KButton:', state.button, 'Action:', state.action, 'Modifier:', state.modifier, 'row:', row, 'col:', col);
-  // apply to cursor position
-  process.stdout.write(`\x1b[${row};${col}H`);
+  if (Object.keys(ENC)[activeEnc] !== 'SGR_PIXELS') {
+    console.log('\x1b[2KButton:', state.button, 'Action:', state.action, 'Modifier:', state.modifier, 'row:', row, 'col:', col);
+    process.stdout.write(`\x1b[${row};${col}H`);
+  } else {
+    console.log('\x1b[2KButton:', state.button, 'Action:', state.action, 'Modifier:', state.modifier, 'x:', row, 'y:', col);
+  }
 }
 
 printMenu();

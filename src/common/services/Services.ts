@@ -5,9 +5,9 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColorRGB, IColor, CursorStyle } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration } from 'xterm';
+import { IDecorationOptions, IDecoration, ILinkHandler } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -223,6 +223,7 @@ export interface ITerminalOptions {
   fontWeightBold?: FontWeight;
   letterSpacing?: number;
   lineHeight?: number;
+  linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
@@ -272,6 +273,22 @@ export interface ITheme {
   extendedAnsi?: string[];
 }
 
+export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
+export interface IOscLinkService {
+  serviceBrand: undefined;
+  /**
+   * Registers a link to the service, returning the link ID. The link data is managed by this
+   * service and will be freed when this current cursor position is trimmed off the buffer.
+   */
+  registerLink(linkData: IOscLinkData): number;
+  /**
+   * Adds a line to a link if needed.
+   */
+  addLineToLink(linkId: number, y: number): void;
+  /** Get the link data associated with a link ID. */
+  getLinkData(linkId: number): IOscLinkData | undefined;
+}
+
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
@@ -304,10 +321,11 @@ export interface IDecorationService extends IDisposable {
   readonly onDecorationRemoved: IEvent<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   reset(): void;
-  /** Iterates over the decorations at a line (in no particular order). */
-  getDecorationsAtLine(line: number): IterableIterator<IInternalDecoration>;
-  /** Iterates over the decorations at a cell (in no particular order). */
-  getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration>;
+  /**
+   * Trigger a callback over the decoration at a cell (in no particular order). This uses a callback
+   * instead of an iterator as it's typically used in hot code paths.
+   */
+  forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
