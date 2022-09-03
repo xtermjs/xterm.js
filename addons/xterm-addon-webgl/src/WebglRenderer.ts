@@ -622,18 +622,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Calculate the scaled cell height, if lineHeight is _not_ 1, the resulting value will be
     // floored since lineHeight can never be lower then 1, this guarentees the scaled cell height
     // will always be larger than scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight!);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
     this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing!);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
 
     // Calculate the x offset with a cell that text should draw from in order for it to be centered
     // correctly within the cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing! / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
 
     // Recalculate the canvas dimensions, the scaled dimensions define the actual number of pixel in
     // the canvas

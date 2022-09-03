@@ -16,7 +16,7 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   browser: IBrowser;
   buffer: IBuffer;
   viewport: IViewport | undefined;
-  options: ITerminalOptions;
+  options: Required<ITerminalOptions>;
   linkifier2: ILinkifier2;
 
   onBlur: IEvent<void>;

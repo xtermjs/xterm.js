@@ -91,7 +91,7 @@ declare module 'xterm' {
     /**
      * The modifier key hold to multiply scroll speed.
      */
-    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
+    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The scroll speed multiplier used for fast scrolling.
@@ -708,6 +708,11 @@ declare module 'xterm' {
      * ```typescript
      * console.log(terminal.options.fontSize);
      * ```
+     */
+    get options(): Required<ITerminalOptions>;
+
+    /**
+     * Gets or sets the terminal options. This supports setting multiple options.
      *
      * @example Set a single option
      * ```typescript
@@ -722,7 +727,7 @@ declare module 'xterm' {
      * };
      * ```
      */
-    options: ITerminalOptions;
+    set options(options: ITerminalOptions);
 
     /**
      * Natural language strings that can be localized.
@@ -1077,7 +1082,7 @@ declare module 'xterm' {
   /**
    * An object representing a range within the viewport of the terminal.
    */
-   export interface IViewportRange {
+  export interface IViewportRange {
     /**
      * The start of the range.
      */
