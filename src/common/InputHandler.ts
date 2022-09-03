@@ -1789,7 +1789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Insert Mode (IRM).                     | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Automatic Newline (LNM). Always off.   | #N      |
+   * | 20    | Automatic Newline (LNM).               | #Y      |
    */
   public setMode(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
@@ -1798,7 +1798,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = true;
           break;
         case 20:
-          // this._t.convertEol = true;
+          this._optionsService.options.convertEol = true;
           break;
       }
     }
@@ -1951,7 +1951,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
-          // this.cursorBlink = true;
+          this._optionsService.options.cursorBlink = true;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = true;
@@ -2035,7 +2035,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Replace Mode (IRM). (default)          | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Normal Linefeed (LNM). Always off.     | #N      |
+   * | 20    | Normal Linefeed (LNM).                 | #Y      |
    *
    *
    * FIXME: why is LNM commented out?
@@ -2047,7 +2047,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = false;
           break;
         case 20:
-          // this._t.convertEol = false;
+          this._optionsService.options.convertEol = false;
           break;
       }
     }
@@ -2189,7 +2189,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
-          // this.cursorBlink = false;
+          this._optionsService.options.cursorBlink = false;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = false;
@@ -2259,52 +2259,82 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    4 - permanently reset
    *
    * @vt: #Y  CSI   DECRQM  "Request Mode"  "CSI Ps $p"  "Request mode state."
+   * Returns a report as `CSI Ps; Pm $ y` (DECRPM), where `Ps` is the mode number as in SM/RM
+   * or DECSET/DECRST, and `Pm` is the mode value:
+   * - 0: not recognized
+   * - 1: set
+   * - 2: reset
+   * - 3: permanently set
+   * - 4: permanently reset
+   *
+   * For modes not understood xterm.js always returns `notRecognized`. In general this means,
+   * that a certain operation mode is not implemented and cannot be used.
+   *
+   * Modes changing the active terminal buffer (47, 1047, 1048, 1049) are not subqueried
+   * and only report, whether the alternate buffer is set.
+   *
+   * Mouse encodings and mouse protocols are handled mutual exclusive,
+   * thus only one of each of those can be set at a given time.
+   *
+   * There is a chance, that some mode reports are not fully in line with xterm.js' behavior,
+   * e.g. if the default implementation already exposes a certain behavior. If you find
+   * discrepancies in the mode reports, please file a bug.
    */
   public requestMode(params: IParams, ansi: boolean): boolean {
-    const f = (m: number, v: boolean | number): void => this._coreService.triggerDataEvent(`${C0.ESC}[?${m};${2 - +v}$y`);
+    // return value as in DECRPM
+    const enum V {
+      NOT_RECOGNIZED = 0,
+      SET = 1,
+      RESET = 2,
+      PERMANENTLY_SET = 3,
+      PERMANENTLY_RESET = 4
+    }
+
+    // access helpers
+    const dm = this._coreService.decPrivateModes;
+    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._coreMouseService;
+    const cs = this._coreService;
+    const { buffers, cols } = this._bufferService;
+    const { active, alt } = buffers;
+    const opts = this._optionsService.rawOptions;
+
+    const f = (m: number, v: V): boolean => {
+      cs.triggerDataEvent(`${C0.ESC}[${ansi ? '' : '?'}${m};${v}$y`);
+      return true;
+    };
+    const b2v = (value: boolean): V => value ? V.SET : V.RESET;
+
     const p = params.params[0];
 
     if (ansi) {
-      switch (p) {
-        case 2:  f(p, -1); break;
-        case 4:  f(p, this._coreService.modes.insertMode); break;
-        case 12: f(p, -2); break;
-        case 20: f(p, -2); break;
-        default: f(p, 2);
-      }
-      return true;
+      if (p === 2) return f(p, V.PERMANENTLY_SET);
+      if (p === 4) return f(p, b2v(cs.modes.insertMode));
+      if (p === 12) return f(p, V.PERMANENTLY_RESET);
+      if (p === 20) return f(p, b2v(opts.convertEol));
+      return f(p, V.NOT_RECOGNIZED);
     }
 
-    // dec privates
-    switch (p) {
-      case 1: f(p, this._coreService.decPrivateModes.applicationCursorKeys); break;
-      case 3:
-        const cols = this._bufferService.cols;
-        f(p, this._optionsService.rawOptions.windowOptions.setWinLines ? (cols === 80 ? 0 : cols === 132 ? 1 : 2) : 2);
-        break;
-      case 6:    f(p, this._coreService.decPrivateModes.origin); break;
-      case 7:    f(p, this._coreService.decPrivateModes.wraparound); break;
-      case 9:    f(p, this._coreMouseService.activeProtocol === 'X10'); break;
-      case 12:   f(p, -2); break;
-      case 25:   f(p, !this._coreService.isCursorHidden); break;
-      case 45:   f(p, this._coreService.decPrivateModes.reverseWraparound); break;
-      case 66:   f(p, this._coreService.decPrivateModes.applicationKeypad); break;
-      case 1000: f(p, this._coreMouseService.activeProtocol === 'VT200'); break;
-      case 1002: f(p, this._coreMouseService.activeProtocol === 'DRAG'); break;
-      case 1003: f(p, this._coreMouseService.activeProtocol === 'ANY'); break;
-      case 1004: f(p, this._coreService.decPrivateModes.sendFocus); break;
-      case 1005: f(p, -2); break;
-      case 1006: f(p, this._coreMouseService.activeEncoding === 'SGR'); break;
-      case 1015: f(p, -2); break;
-      case 1016: f(p, this._coreMouseService.activeEncoding === 'SGR_PIXELS'); break;
-      case 47:
-      case 1047:
-      case 1048:
-      case 1049: f(p, this._bufferService.buffers.active === this._bufferService.buffers.alt); break;
-      case 2004: f(p, this._coreService.decPrivateModes.bracketedPasteMode); break;
-      default:   f(p, 2);
-    }
-    return true;
+    if (p === 1) return f(p, b2v(dm.applicationCursorKeys));
+    if (p === 3) return f(p, opts.windowOptions.setWinLines ? (cols === 80 ? V.RESET : cols === 132 ? V.SET : V.NOT_RECOGNIZED) : V.NOT_RECOGNIZED);
+    if (p === 6) return f(p, b2v(dm.origin));
+    if (p === 7) return f(p, b2v(dm.wraparound));
+    if (p === 8) return f(p, V.PERMANENTLY_SET);
+    if (p === 9) return f(p, b2v(mouseProtocol === 'X10'));
+    if (p === 12) return f(p, b2v(opts.cursorBlink));
+    if (p === 25) return f(p, b2v(!cs.isCursorHidden));
+    if (p === 45) return f(p, b2v(dm.reverseWraparound));
+    if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
+    if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
+    if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));
+    if (p === 1004) return f(p, b2v(dm.sendFocus));
+    if (p === 1005) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1006) return f(p, b2v(mouseEncoding === 'SGR'));
+    if (p === 1015) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1016) return f(p, b2v(mouseEncoding === 'SGR_PIXELS'));
+    if (p === 47 || p === 1047 || p === 1048 || p === 1049) return f(p, b2v(active === alt));
+    if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    return f(p, V.NOT_RECOGNIZED);
   }
 
   /**
