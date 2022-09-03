@@ -334,10 +334,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'G' }, params => this.cursorCharAbsolute(params));
     this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
     this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
-    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params, true));
+    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params, true));
     this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
     this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
     this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
@@ -369,6 +369,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => this.selectProtected(params));
 
     /**
      * execute handler
@@ -1206,6 +1207,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
+  /**
+   * CSI Ps " q  Select Character Protection Attribute (DECSCA).
+   *
+   * @vt: #Y CSI DECSCA   "Select Character Protection Attribute"  "CSI Ps " q"  "Whether DECSED and DECSEL can erase (0=default, 2) or not (1)."
+   */
+  public selectProtected(params: IParams): boolean {
+    const p = params.params[0];
+    if (p === 1) this._curAttrData.bg |= BgFlags.PROTECTED;
+    if (p === 2 || p === 0) this._curAttrData.bg &= ~BgFlags.PROTECTED;
+    return true;
+  }
+
 
   /**
    * Helper method to erase cells in a terminal row.
@@ -1215,13 +1228,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    * @param cleanWrap clear the isWrapped flag
    */
-  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, protect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
-      this._eraseAttrData()
+      this._eraseAttrData(),
+      protect
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1233,9 +1247,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
    * @param y row index
    */
-  private _resetBufferLine(y: number): void {
+  private _resetBufferLine(y: number, protect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
+    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), protect);
     this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
     line.isWrapped = false;
   }
@@ -1262,18 +1276,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2  | Erase complete viewport.                                     |
    * | 3  | Erase scrollback.                                            |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
+   * @vt: #Y CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Same as ED with respecting protection flag."
    */
-  public eraseInDisplay(params: IParams): boolean {
+  public eraseInDisplay(params: IParams, protect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
-        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, protect);
         for (; j < this._bufferService.rows; j++) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, protect);
         }
         this._dirtyRowService.markDirty(j);
         break;
@@ -1281,13 +1295,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
-        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true);
+        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, protect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
           this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, protect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1295,7 +1309,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._bufferService.rows;
         this._dirtyRowService.markDirty(j - 1);
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, protect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1334,19 +1348,19 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1  | Erase from the beginning of the line through the cursor. |
    * | 2  | Erase complete line.                                     |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
+   * @vt: #Y CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Same as EL with respecting protecting flag."
    */
-  public eraseInLine(params: IParams): boolean {
+  public eraseInLine(params: IParams, protect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, protect);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, protect);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, protect);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);
