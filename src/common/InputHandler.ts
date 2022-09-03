@@ -2270,7 +2270,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * For modes not understood xterm.js always returns `notRecognized`. In general this means,
    * that a certain operation mode is not implemented and cannot be used.
    *
-   * Modes changing the active terminal buffer (47, 1047, 1048, 1049) are not subqueried
+   * Modes changing the active terminal buffer (47, 1047, 1049) are not subqueried
    * and only report, whether the alternate buffer is set.
    *
    * Mouse encodings and mouse protocols are handled mutual exclusive,
@@ -2332,7 +2332,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 1006) return f(p, b2v(mouseEncoding === 'SGR'));
     if (p === 1015) return f(p, V.PERMANENTLY_RESET);
     if (p === 1016) return f(p, b2v(mouseEncoding === 'SGR_PIXELS'));
-    if (p === 47 || p === 1047 || p === 1048 || p === 1049) return f(p, b2v(active === alt));
+    if (p === 1048) return f(p, V.SET); // xterm always returns SET here
+    if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
     return f(p, V.NOT_RECOGNIZED);
   }
