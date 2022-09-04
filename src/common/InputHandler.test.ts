@@ -2177,7 +2177,6 @@ describe('InputHandler', () => {
       coreService.onData(d => sendStack.push(d));
       // DCS $ q " q ST
       await inputHandler.parseP('\x1bP$q"q\x1b\\');
-      console.log(sendStack);
       // default - DECSCA unset (0 or 2)
       assert.deepEqual(sendStack.pop(), '\x1bP1$r0"q\x1b\\');
       // DECSCA 1 - protected set

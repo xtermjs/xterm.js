@@ -102,118 +102,6 @@ export enum WindowsOptionsReportType {
 // create a warning log if an async handler takes longer than the limit (in ms)
 const SLOW_ASYNC_LIMIT = 5000;
 
-/**
- * DCS subparser implementations
- */
-
-/**
- * DCS $ q Pt ST
- *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
- *   Request Status String (DECRQSS), VT420 and up.
- *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
- *
- * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
- * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
- * `ESC P 0 ST` for invalid requests.
- *
- * Supported requests and responses:
- *
- * | Type                             | Request           | Response (`Pt`)                                       |
- * | -------------------------------- | ----------------- | ----------------------------------------------------- |
- * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
- * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
- * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
- * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as 0)                  |
- * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
- *
- *
- * TODO:
- * - fix SGR report
- * - either check which conformance is better suited or remove the report completely
- *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
- */
-class DECRQSS implements IDcsHandler {
-  private _data: Uint32Array = new Uint32Array(0);
-
-  constructor(
-    private readonly _ih: InputHandler,
-    private readonly _bufferService: IBufferService,
-    private readonly _coreService: ICoreService,
-    private readonly _logService: ILogService,
-    private readonly _optionsService: IOptionsService
-  ) { }
-
-  public hook(params: IParams): void {
-    this._data = new Uint32Array(0);
-  }
-
-  public put(data: Uint32Array, start: number, end: number): void {
-    this._data = concat(this._data, data.subarray(start, end));
-  }
-
-  public unhook(success: boolean): boolean {
-    if (!success) {
-      this._data = new Uint32Array(0);
-      return true;
-    }
-    const data = utf32ToString(this._data);
-    this._data = new Uint32Array(0);
-    switch (data) {
-      // valid: DCS 1 $ r Pt ST (xterm)
-      case '"q': // DECSCA
-        const prot = this._ih.getAttrData().isProtected() ? 1 : 0;
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${prot}"q${C0.ESC}\\`);
-        break;
-      case '"p': // DECSCL
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
-        break;
-      case 'r': // DECSTBM
-        const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
-          ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
-        break;
-      case 'm': // SGR
-        // FIXME: report real settings instead of 0m
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
-        break;
-      case ' q': // DECSCUSR
-        const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
-        let style = STYLES[this._optionsService.rawOptions.cursorStyle];
-        style -= this._optionsService.rawOptions.cursorBlink ? 1 : 0;
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
-        break;
-      default:
-        // invalid: DCS 0 $ r Pt ST (xterm)
-        this._logService.debug('Unknown DCS $q %s', data);
-        this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
-    }
-    return true;
-  }
-}
-
-/**
- * DCS Ps; Ps| Pt ST
- *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
- *   not supported
- *
- * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
- */
-
-/**
- * DCS + q Pt ST (xterm)
- *   Request Terminfo String
- *   not implemented
- *
- * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
- */
-
-/**
- * DCS + p Pt ST (xterm)
- *   Set Terminfo Data
- *   not supported
- *
- * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
- */
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -484,7 +372,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this, this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DcsHandler((data, params) => this.requestStatusString(data, params)));
   }
 
   public dispose(): void {
@@ -3313,4 +3201,79 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._setCursor(0, 0);
     return true;
   }
+
+
+  /**
+   * DCS $ q Pt ST
+   *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
+   *   Request Status String (DECRQSS), VT420 and up.
+   *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
+   *
+   * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+   * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
+   * `ESC P 0 ST` for invalid requests.
+   *
+   * Supported requests and responses:
+   *
+   * | Type                             | Request           | Response (`Pt`)                                       |
+   * | -------------------------------- | ----------------- | ----------------------------------------------------- |
+   * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
+   * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
+   * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
+   * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as 0)                  |
+   * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
+   *
+   *
+   * TODO:
+   * - fix SGR report
+   * - either check which conformance is better suited or remove the report completely
+   *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
+   */
+  public requestStatusString(data: string, params: IParams): boolean {
+    const f = (s: string): boolean => {
+      this._coreService.triggerDataEvent(`${C0.ESC}${s}${C0.ESC}\\`);
+      return true;
+    };
+
+    // access helpers
+    const b = this._bufferService.buffer;
+    const opts = this._optionsService.rawOptions;
+    const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
+
+    if (data === '"q') return f(`P1$r${this._curAttrData.isProtected() ? 1 : 0}"q`);
+    if (data === '"p') return f(`P1$r61;1"p`);
+    if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
+    if (data === 'm') return f(`P1$r0m`);  // FIXME: report real settings instead of 0m
+    if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
+    return f(`P0$r`);
+  }
 }
+
+
+/**
+ * Unimplemented DCS functions (kept for documentation purpose)
+ */
+
+/**
+ * DCS Ps; Ps| Pt ST
+ *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
+ *   not supported
+ *
+ * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
+ */
+
+/**
+ * DCS + q Pt ST (xterm)
+ *   Request Terminfo String
+ *   not implemented
+ *
+ * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
+ */
+
+/**
+ * DCS + p Pt ST (xterm)
+ *   Set Terminfo Data
+ *   not supported
+ *
+ * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
+ */
