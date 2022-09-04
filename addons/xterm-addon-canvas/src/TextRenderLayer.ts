@@ -8,7 +8,7 @@ import { CharData, ICellData } from 'common/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, Content, UnderlineStyle, FgFlags } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
@@ -230,79 +230,145 @@ export class TextRenderLayer extends BaseRenderLayer {
     ctx.restore();
   }
 
+  /**
+   * Draws the foreground for a specified range of columns. Tries to batch adjacent
+   * cells of the same color together to reduce draw calls.
+   */
   private _drawForeground(firstRow: number, lastRow: number): void {
+    const cols = this._bufferService.cols;
+    let startX: number = 0;
+    let startY: number = 0;
+    let prevFillStyle: string | null = null;
+    let prevStyle: FgFlags | undefined = undefined;
+    let prevUnderlineStyle: UnderlineStyle = UnderlineStyle.NONE;
+
     this._forEachCell(firstRow, lastRow, (cell, x, y) => {
+      let nextFillStyle: string | null = null;
+      let nextStyle: FgFlags | undefined = undefined;
+      let nextUnderlineStyle: UnderlineStyle = UnderlineStyle.NONE;
+
       if (cell.isInvisible()) {
-        return;
+        nextFillStyle = null;
+        nextStyle = undefined;
+        nextUnderlineStyle = UnderlineStyle.NONE;
       }
-      this._drawChars(cell, x, y);
+      else {
+        this._drawChars(cell, x, y);
+      }
+
       if (cell.isUnderline() || cell.isStrikethrough()) {
-        this._ctx.save();
+        // this._ctx.save();
 
         if (cell.isInverse()) {
           if (cell.isBgDefault()) {
-            this._ctx.fillStyle = this._colors.background.css;
+            nextFillStyle = this._colors.background.css;
           } else if (cell.isBgRGB()) {
-            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
+            nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
           } else {
             let bg = cell.getBgColor();
             if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
               bg += 8;
             }
-            this._ctx.fillStyle = this._colors.ansi[bg].css;
+            nextFillStyle = this._colors.ansi[bg].css;
           }
         } else {
           if (cell.isFgDefault()) {
-            this._ctx.fillStyle = this._colors.foreground.css;
+            nextFillStyle = this._colors.foreground.css;
           } else if (cell.isFgRGB()) {
-            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+            nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
           } else {
             let fg = cell.getFgColor();
             if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
-            this._ctx.fillStyle = this._colors.ansi[fg].css;
+            nextFillStyle = this._colors.ansi[fg].css;
           }
         }
 
         if (cell.isStrikethrough()) {
-          this._fillMiddleLineAtCells(x, y, cell.getWidth());
+          nextStyle = (nextStyle || 0) + FgFlags.STRIKETHROUGH;
         }
         if (cell.isUnderline()) {
+          nextStyle = (nextStyle || 0) + FgFlags.UNDERLINE;
           if (!cell.isUnderlineColorDefault()) {
             if (cell.isUnderlineColorRGB()) {
-              this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
+              nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
             } else {
               let fg = cell.getUnderlineColor();
               if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
                 fg += 8;
               }
-              this._ctx.fillStyle = this._colors.ansi[fg].css;
+              nextFillStyle = this._colors.ansi[fg].css;
             }
           }
-          switch (cell.extended.underlineStyle) {
-            case UnderlineStyle.DOUBLE:
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), -window.devicePixelRatio);
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), window.devicePixelRatio);
-              break;
-            case UnderlineStyle.CURLY:
-              this._curlyUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.DOTTED:
-              this._dottedUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.DASHED:
-              this._dashedUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.SINGLE:
-            default:
-              this._fillBottomLineAtCells(x, y, cell.getWidth());
-              break;
-          }
+          nextUnderlineStyle = cell.extended.underlineStyle;
         }
-        this._ctx.restore();
       }
+
+      if (prevFillStyle === null) {
+        // This is either the first iteration, or the default foreground was set. Either way, we
+        // don't need to draw anything.
+        startX = x;
+        startY = y;
+      }
+
+      if (y !== startY) {
+        // our row changed, draw the previous row
+        this._drawForegroundHelper(startX, startY, cols - startX, prevFillStyle, prevStyle!, prevUnderlineStyle);
+        startX = x;
+        startY = y;
+      }
+      else if (prevFillStyle !== nextFillStyle || prevStyle !== nextStyle || prevUnderlineStyle !== nextUnderlineStyle) {
+        // something changed in the middle of a line
+        this._drawForegroundHelper(startX, startY, x - startX, prevFillStyle, prevStyle!, prevUnderlineStyle);
+        startX = x;
+        startY = y;
+      }
+
+      prevFillStyle = nextFillStyle;
+      prevStyle = nextStyle;
+      prevUnderlineStyle = nextUnderlineStyle;
     });
+
+    // flush the last style we encountered
+    if (prevFillStyle || prevStyle || prevUnderlineStyle) {
+      this._drawForegroundHelper(startX, startY, cols - startX, prevFillStyle, prevStyle, prevUnderlineStyle);
+    }
+
+    // this._ctx.restore();
+  }
+
+  private _drawForegroundHelper(startX: number, startY: number, width: number, fillStyle: string | null, style: FgFlags | undefined, underlineStyle: UnderlineStyle): void {
+    if (fillStyle) {
+      this._ctx.fillStyle = fillStyle;
+    }
+    if (style !== undefined) {
+
+      if (style & FgFlags.STRIKETHROUGH) {
+        this._fillMiddleLineAtCells(startX, startY, width);
+      }
+      if (style & FgFlags.UNDERLINE) {
+        switch (underlineStyle) {
+          case UnderlineStyle.DOUBLE:
+            this._fillBottomLineAtCells(startX, startY, width, -window.devicePixelRatio);
+            this._fillBottomLineAtCells(startX, startY, width, window.devicePixelRatio);
+            break;
+          case UnderlineStyle.CURLY:
+            this._curlyUnderlineAtCell(startX, startY, width);
+            break;
+          case UnderlineStyle.DOTTED:
+            this._dottedUnderlineAtCell(startX, startY, width);
+            break;
+          case UnderlineStyle.DASHED:
+            this._dashedUnderlineAtCell(startX, startY, width);
+            break;
+          case UnderlineStyle.SINGLE:
+          default:
+            this._fillBottomLineAtCells(startX, startY, width);
+            break;
+        }
+      }
+    }
   }
 
   public onGridChanged(firstRow: number, lastRow: number): void {

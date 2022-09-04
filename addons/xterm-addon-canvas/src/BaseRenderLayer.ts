@@ -82,11 +82,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(): void {}
-  public onBlur(): void {}
-  public onFocus(): void {}
-  public onCursorMove(): void {}
-  public onGridChanged(startRow: number, endRow: number): void {}
+  public onOptionsChanged(): void { }
+  public onBlur(): void { }
+  public onFocus(): void { }
+  public onCursorMove(): void { }
+  public onGridChanged(startRow: number, endRow: number): void { }
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this._selectionStart = start;
@@ -232,15 +232,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.beginPath();
     this._ctx.strokeStyle = this._ctx.fillStyle;
     this._ctx.lineWidth = window.devicePixelRatio;
-    this._ctx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+    this._ctx.setLineDash([window.devicePixelRatio, window.devicePixelRatio]);
     const xLeft = x * this._scaledCellWidth;
     const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
     this._ctx.moveTo(xLeft, yMid);
-    for (let xOffset = 0; xOffset < width; xOffset++) {
-      // const xLeft = x * this._scaledCellWidth;
-      const xRight = (x + width + xOffset) * this._scaledCellWidth;
-      this._ctx.lineTo(xRight, yMid);
-    }
+    const xRight = (x + width) * this._scaledCellWidth;
+    this._ctx.lineTo(xRight, yMid);
     this._ctx.stroke();
     this._ctx.closePath();
     this._ctx.restore();
@@ -639,9 +636,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         x < end[0] && y < end[1];
     }
     return (y > start[1] && y < end[1]) ||
-        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
-        (start[1] < end[1] && y === end[1] && x < end[0]) ||
-        (start[1] < end[1] && y === start[1] && x >= start[0]);
+      (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
+      (start[1] < end[1] && y === end[1] && x < end[0]) ||
+      (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 
