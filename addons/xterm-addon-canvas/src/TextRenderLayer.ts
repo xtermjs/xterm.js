@@ -242,6 +242,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     let prevStyle: FgFlags | undefined = undefined;
     let prevUnderlineStyle: UnderlineStyle = UnderlineStyle.NONE;
 
+    this._ctx.save();
+
     this._forEachCell(firstRow, lastRow, (cell, x, y) => {
       let nextFillStyle: string | null = null;
       let nextStyle: FgFlags | undefined = undefined;
@@ -257,8 +259,6 @@ export class TextRenderLayer extends BaseRenderLayer {
       }
 
       if (cell.isUnderline() || cell.isStrikethrough()) {
-        // this._ctx.save();
-
         if (cell.isInverse()) {
           if (cell.isBgDefault()) {
             nextFillStyle = this._colors.background.css;
@@ -335,7 +335,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       this._drawForegroundHelper(startX, startY, cols - startX, prevFillStyle, prevStyle, prevUnderlineStyle);
     }
 
-    // this._ctx.restore();
+    this._ctx.restore();
   }
 
   private _drawForegroundHelper(startX: number, startY: number, width: number, fillStyle: string | null, style: FgFlags | undefined, underlineStyle: UnderlineStyle): void {
