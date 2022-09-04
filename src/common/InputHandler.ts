@@ -3243,7 +3243,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (data === '"q') return f(`P1$r${this._curAttrData.isProtected() ? 1 : 0}"q`);
     if (data === '"p') return f(`P1$r61;1"p`);
     if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
-    if (data === 'm') return f(`P1$r0m`);  // FIXME: report real settings instead of 0m
+    // FIXME: report real SGR settings instead of 0m
+    if (data === 'm') return f(`P1$r0m`);
     if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
     return f(`P0$r`);
   }
