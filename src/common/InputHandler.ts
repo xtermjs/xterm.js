@@ -2060,7 +2060,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
    * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
    * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
-   * | 1006  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
+   * | 1016  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
    * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
    * | 1048  | Restore cursor as in DECRC.                             | #Y      |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
