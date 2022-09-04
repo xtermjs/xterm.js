@@ -82,14 +82,15 @@ This document lists xterm.js' support of terminal sequences. The sequences are g
 - OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9D\`, 8bit)
 
 Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
-any sequence of these types will be ignored. They are also not hookable by the API.
+any sequence of these types will be silently ignored. They are also not hookable by the API.
 
-Note that the list only contains sequences implemented in xterm.js' core codebase. Missing sequences are either
-not supported or unstable/experimental. Furthermore addons or integrations can provide additional custom sequences.
+Note that the list only marks sequences implemented in xterm.js' core codebase as supported. Missing sequences are either
+not supported or unstable/experimental. Furthermore addons or integrations can provide additional custom sequences
+(denoted as "External" where known).
 
 To denote the sequences the tables use the same abbreviations as xterm does:
 - \`Ps\`: A single (usually optional) numeric parameter, composed of one or more decimal digits.
-- \`Pm\`: A multiple numeric parameter composed of any number of single numeric parameters, separated by ; character(s),
+- \`Pm\`: Multiple numeric parameters composed of any number of single numeric parameters, separated by ; character(s),
   e.g. \` Ps ; Ps ; ... \`.
 - \`Pt\`: A text parameter composed of printable characters. Note that for most commands with \`Pt\` only
   ASCII printables are specified to work. Additionally the parser will let pass any codepoint greater than C1 as printable.
@@ -334,7 +335,9 @@ const MACRO = [
   // #P[reason] - partial support with a reason as title
   [/#P\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">Partial</span>`],
   // #B[reason] - supported but broken in a certain way, reason in title
-  [/#B\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">Broken</span>`]
+  [/#B\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">Broken</span>`],
+  // #E[notes] - support via external resource, eg. addon
+  [/#E\[(.*?)\]/g, (s, p1) => `<span title="${p1}" style="text-decoration: underline">External</span>`]
 ];
 
 function applyMacros(s) {

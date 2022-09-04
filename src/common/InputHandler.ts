@@ -47,10 +47,13 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 // @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
- * Document common VT features here that are currently unsupported
+ * Document xterm VT features here that are currently unsupported
  */
-// @vt: #N   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
-// @vt: #N   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
+// @vt: #E[Supported via xterm-addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
+// @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
+// @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
+// @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
+// @vt: #N  OSC   1           "Set Icon Name"           "OSC 1 ; Pt BEL"                "Set icon name."
 
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
@@ -2281,7 +2284,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
-   * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
+   * | 21        | Doubly underlined.                                       | #Y      |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
@@ -2309,6 +2312,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 47        | Background color: White.                                 | #Y      |
    * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
    * | 49        | Background color: Default (original).                    | #Y      |
+   * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
    *
@@ -2318,13 +2322,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | ------ | ------------------------------------------------------------- | ------- |
    * | 0      | No underline. Same as `SGR 24 m`.                             | #Y      |
    * | 1      | Single underline. Same as `SGR 4 m`.                          | #Y      |
-   * | 2      | Double underline.                                             | #P[Currently outputs a single underline.] |
-   * | 3      | Curly underline.                                              | #P[Currently outputs a single underline.] |
-   * | 4      | Dotted underline.                                             | #P[Currently outputs a single underline.] |
-   * | 5      | Dashed underline.                                             | #P[Currently outputs a single underline.] |
+   * | 2      | Double underline.                                             | #Y      |
+   * | 3      | Curly underline.                                              | #Y      |
+   * | 4      | Dotted underline.                                             | #Y      |
+   * | 5      | Dashed underline.                                             | #Y      |
    * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
-   * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
+   * Extended colors are supported for foreground (Ps=38), background (Ps=48) and underline (Ps=58) as follows:
    *
    * | Ps + 1 | Meaning                                                       | Support |
    * | ------ | ------------------------------------------------------------- | ------- |
@@ -3209,7 +3213,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Request Status String (DECRQSS), VT420 and up.
    *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
    *
-   * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+   * @vt: #P[Limited support, see below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
    * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
    * `ESC P 0 ST` for invalid requests.
    *
@@ -3220,7 +3224,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
    * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
    * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
-   * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as 0)                  |
+   * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as Ps = 0)             |
    * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
    *
    *
@@ -3249,32 +3253,3 @@ export class InputHandler extends Disposable implements IInputHandler {
     return f(`P0$r`);
   }
 }
-
-
-/**
- * Unimplemented DCS functions (kept for documentation purpose)
- */
-
-/**
- * DCS Ps; Ps| Pt ST
- *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
- *   not supported
- *
- * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
- */
-
-/**
- * DCS + q Pt ST (xterm)
- *   Request Terminfo String
- *   not implemented
- *
- * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
- */
-
-/**
- * DCS + p Pt ST (xterm)
- *   Set Terminfo Data
- *   not supported
- *
- * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
- */
