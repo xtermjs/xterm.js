@@ -123,13 +123,12 @@ const SLOW_ASYNC_LIMIT = 5000;
  * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
  * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
  * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
- * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported)      |
+ * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as 0)                  |
  * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
  *
  *
  * TODO:
  * - fix SGR report
- * - either implement DECSCA or remove the report
  * - either check which conformance is better suited or remove the report completely
  *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
  */
@@ -137,10 +136,11 @@ class DECRQSS implements IDcsHandler {
   private _data: Uint32Array = new Uint32Array(0);
 
   constructor(
-    private _bufferService: IBufferService,
-    private _coreService: ICoreService,
-    private _logService: ILogService,
-    private _optionsService: IOptionsService
+    private readonly _ih: InputHandler,
+    private readonly _bufferService: IBufferService,
+    private readonly _coreService: ICoreService,
+    private readonly _logService: ILogService,
+    private readonly _optionsService: IOptionsService
   ) { }
 
   public hook(params: IParams): void {
@@ -161,7 +161,8 @@ class DECRQSS implements IDcsHandler {
     switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
+        const prot = this._ih.getAttrData().isProtected() ? 1 : 0;
+        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${prot}"q${C0.ESC}\\`);
         break;
       case '"p': // DECSCL
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
@@ -172,7 +173,7 @@ class DECRQSS implements IDcsHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
         break;
       case 'm': // SGR
-        // TODO: report real settings instead of 0m
+        // FIXME: report real settings instead of 0m
         this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
         break;
       case ' q': // DECSCUSR
@@ -233,6 +234,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
+  public getAttrData(): IAttributeData { return this._curAttrData; }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
   private _activeBuffer: IBuffer;
@@ -482,7 +484,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this, this._bufferService, this._coreService, this._logService, this._optionsService));
   }
 
   public dispose(): void {

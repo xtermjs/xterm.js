@@ -150,6 +150,7 @@ export interface IAttributeData {
   isItalic(): number;
   isDim(): number;
   isStrikethrough(): number;
+  isProtected(): number;
 
   // color modes
   getFgColorMode(): number;
