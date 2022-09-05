@@ -163,12 +163,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._rectangleRenderer.setColors();
-    this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
 
     // Force a full refresh
-    this._model.clear();
+    this._clearModel(true);
   }
 
   public onDevicePixelRatioChange(): void {
@@ -209,7 +208,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._refreshCharAtlas();
 
     // Force a full refresh
-    this._model.clear();
+    this._clearModel(false);
   }
 
   public onCharSizeChanged(): void {
@@ -293,16 +292,27 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setAtlas(this._charAtlas);
   }
 
+  /**
+   * Clear the model.
+   * @param clearGlyphRenderer Whether to also clear the glyph renderer. This
+   * should be true generally to make sure it is in the same state as the model.
+   */
+  private _clearModel(clearGlyphRenderer: boolean): void {
+    this._model.clear();
+    if (clearGlyphRenderer) {
+      this._glyphRenderer.clear();
+    }
+  }
+
   public clearCharAtlas(): void {
     this._charAtlas?.clearTexture();
-    this._model.clear();
+    this._clearModel(true);
     this._updateModel(0, this._terminal.rows - 1);
     this._requestRedrawViewport();
   }
 
   public clear(): void {
-    this._model.clear();
-    this._glyphRenderer.clear(true);
+    this._clearModel(true);
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
@@ -334,7 +344,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
-      this._model.clear();
+      this._clearModel(true);
       this._updateSelectionModel(undefined, undefined);
     }
 
