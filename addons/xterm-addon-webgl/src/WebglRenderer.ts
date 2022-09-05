@@ -207,7 +207,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
-    // Force a full refresh
+    // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
+    // so there is no need to clear it again here.
     this._clearModel(false);
   }
 
