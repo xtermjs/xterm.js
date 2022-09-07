@@ -31,6 +31,11 @@ export function observeDevicePixelDimensions(element: HTMLElement, callback: (de
       callback(width, height);
     }
   });
-  observer.observe(element, { box: ['device-pixel-content-box'] } as any);
+  try {
+    observer.observe(element, { box: ['device-pixel-content-box'] } as any);
+  } catch {
+    observer.disconnect();
+    observer = undefined;
+  }
   return toDisposable(() => observer?.disconnect());
 }
