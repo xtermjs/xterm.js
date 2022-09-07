@@ -5,6 +5,7 @@
 
 import { IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
+import { C0 } from 'common/data/EscapeSequences';
 
 interface IPosition {
   start: number;
@@ -186,11 +187,19 @@ export class CompositionHelper {
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
+
         const diff = newValue.replace(oldValue, '');
-        if (diff.length > 0) {
-          this._dataAlreadySent = diff;
+
+        this._dataAlreadySent = diff;
+
+        if (newValue.length > oldValue.length) {
           this._coreService.triggerDataEvent(diff, true);
+        } else if (newValue.length < oldValue.length) {
+          this._coreService.triggerDataEvent(`${C0.DEL}`, true);
+        } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
+          this._coreService.triggerDataEvent(newValue, true);
         }
+
       }
     }, 0);
   }
