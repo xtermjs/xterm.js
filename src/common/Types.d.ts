@@ -9,6 +9,7 @@ import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBufferSet } from 'common/buffer/Types';
+import { UnderlineStyle } from 'common/buffer/Constants';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -114,10 +115,22 @@ export type IColorRGB = [number, number, number];
 
 export interface IExtendedAttrs {
   ext: number;
-  underlineStyle: number;
+  underlineStyle: UnderlineStyle;
   underlineColor: number;
+  urlId: number;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
+}
+
+/**
+ * Tracks the current hyperlink. Since these are treated as extended attirbutes, these get passed on
+ * to the linkifier when anything is printed. Doing it this way ensures that even when the cursor
+ * moves around unexpectedly the link is tracked, as opposed to using a start position and
+ * finalizing it at the end.
+ */
+export interface IOscLinkData {
+  id?: string;
+  uri: string;
 }
 
 /** Attribute data */
@@ -268,6 +281,9 @@ export interface ICoreMouseEvent {
   col: number;
   /** row (zero based). */
   row: number;
+  /** xy pixel positions. */
+  x: number;
+  y: number;
   /**
    * Button the action occured. Due to restrictions of the tracking protocols
    * it is not possible to report multiple buttons at once.

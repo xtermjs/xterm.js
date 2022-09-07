@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } 
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IRenderDebouncer, IBufferRange } from 'browser/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -141,7 +141,7 @@ export class MockTerminal implements ITerminal {
   public renderer!: IRenderer;
   public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
-  public options: ITerminalOptions = {};
+  public options!: Required<ITerminalOptions>;
   public element!: HTMLElement;
   public screenElement!: HTMLElement;
   public rowContainer!: HTMLElement;
@@ -359,7 +359,7 @@ export class MockMouseService implements IMouseService {
     throw new Error('Not implemented');
   }
 
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
+  public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
     throw new Error('Not implemented');
   }
 }

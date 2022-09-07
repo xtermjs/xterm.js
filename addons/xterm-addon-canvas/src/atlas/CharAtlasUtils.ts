@@ -6,9 +6,9 @@
 import { ICharAtlasConfig } from './Types';
 import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { IColorSet, IPartialColorSet } from 'browser/Types';
-import { ITerminalOptions } from 'common/services/Services';
+import { ITerminalOptions } from 'xterm';
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: ITerminalOptions, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: Required<ITerminalOptions>, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IPartialColorSet = {
     foreground: colors.foreground,

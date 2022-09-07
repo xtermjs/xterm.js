@@ -91,7 +91,7 @@ declare module 'xterm' {
     /**
      * The modifier key hold to multiply scroll speed.
      */
-    fastScrollModifier?: 'alt' | 'ctrl' | 'shift' | undefined;
+    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The scroll speed multiplier used for fast scrolling.
@@ -127,6 +127,14 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
+     * API if no link handler is set. Consider the security of users when using
+     * this, there should be some tooltip or prompt when hovering or activating
+     * the link.
+     */
+    linkHandler?: ILinkHandler | null;
 
     /**
      * What log level to use, this will log for all levels below and including
@@ -700,6 +708,11 @@ declare module 'xterm' {
      * ```typescript
      * console.log(terminal.options.fontSize);
      * ```
+     */
+    get options(): Required<ITerminalOptions>;
+
+    /**
+     * Gets or sets the terminal options. This supports setting multiple options.
      *
      * @example Set a single option
      * ```typescript
@@ -714,7 +727,7 @@ declare module 'xterm' {
      * };
      * ```
      */
-    options: ITerminalOptions;
+    set options(options: ITerminalOptions);
 
     /**
      * Natural language strings that can be localized.
@@ -1069,7 +1082,7 @@ declare module 'xterm' {
   /**
    * An object representing a range within the viewport of the terminal.
    */
-   export interface IViewportRange {
+  export interface IViewportRange {
     /**
      * The start of the range.
      */
@@ -1099,6 +1112,37 @@ declare module 'xterm' {
      * specific row.
      */
     y: number;
+  }
+
+  /**
+   * A link handler for OSC 8 hyperlinks.
+   */
+  interface ILinkHandler {
+    /**
+     * Calls when the link is activated.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     * @param range The buffer range of the link.
+     */
+     activate(event: MouseEvent, text: string, range: IBufferRange): void;
+
+     /**
+      * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
+      * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
+      * that will cause mouse events to not fall through and activate other links.
+      * @param event The mouse event triggering the callback.
+      * @param text The text of the link.
+      * @param range The buffer range of the link.
+      */
+     hover?(event: MouseEvent, text: string, range: IBufferRange): void;
+
+     /**
+      * Called when the mouse leaves the link.
+      * @param event The mouse event triggering the callback.
+      * @param text The text of the link.
+      * @param range The buffer range of the link.
+      */
+     leave?(event: MouseEvent, text: string, range: IBufferRange): void;
   }
 
   /**

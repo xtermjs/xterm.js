@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, FontWeight, IModes, IDecorationOptions, IDecoration } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, IModes, IDecorationOptions, IDecoration } from 'xterm';
 import { IBufferRange, ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -24,7 +24,7 @@ export class Terminal implements ITerminalApi {
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
-  private _publicOptions: ITerminalOptions;
+  private _publicOptions: Required<ITerminalOptions>;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
@@ -123,7 +123,7 @@ export class Terminal implements ITerminalApi {
       wraparoundMode: m.wraparound
     };
   }
-  public get options(): ITerminalOptions {
+  public get options(): Required<ITerminalOptions> {
     return this._publicOptions;
   }
   public set options(options: ITerminalOptions) {

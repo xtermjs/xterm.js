@@ -21,7 +21,7 @@ export class Terminal implements ITerminalApi {
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
-  private _publicOptions: ITerminalOptions;
+  private _publicOptions: Required<ITerminalOptions>;
 
   constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
     this._core = new TerminalCore(options);
@@ -123,7 +123,7 @@ export class Terminal implements ITerminalApi {
       wraparoundMode: m.wraparound
     };
   }
-  public get options(): ITerminalOptions {
+  public get options(): Required<ITerminalOptions> {
     return this._publicOptions;
   }
   public set options(options: ITerminalOptions) {

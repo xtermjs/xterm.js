@@ -9,7 +9,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService, IDecorationService } from 'common/services/Services';
+import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';

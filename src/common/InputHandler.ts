@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, IOscLinkData } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -17,7 +17,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionId
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
@@ -214,8 +214,6 @@ class DECRQSS implements IDcsHandler {
  * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
  */
 
-
-
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
  * input from the Parser.
@@ -230,6 +228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
+  private _currentLinkId?: number;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
@@ -281,6 +280,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
+    private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
@@ -369,6 +369,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '$', final: 'p' }, params => this.requestMode(params, true));
+    this._parser.registerCsiHandler({ prefix: '?', intermediates: '$', final: 'p' }, params => this.requestMode(params, false));
 
     /**
      * execute handler
@@ -403,6 +405,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     //   5 - Change Special Color Number
     //   6 - Enable/disable Special Color Number c
     //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
+    //   8 - create hyperlink (not in xterm spec, see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda)
+    this._parser.registerOscHandler(8, new OscHandler(data => this.setHyperlink(data)));
     //  10 - Change VT100 text foreground color to Pt.
     this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
     //  11 - Change VT100 text background color to Pt.
@@ -636,6 +640,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
+      }
+      if (this._currentLinkId !== undefined) {
+        this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // insert combining char at last cursor position
@@ -1782,7 +1789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Insert Mode (IRM).                     | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Automatic Newline (LNM). Always off.   | #N      |
+   * | 20    | Automatic Newline (LNM).               | #Y      |
    */
   public setMode(params: IParams): boolean {
     for (let i = 0; i < params.length; i++) {
@@ -1791,7 +1798,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = true;
           break;
         case 20:
-          // this._t.convertEol = true;
+          this._optionsService.options.convertEol = true;
           break;
       }
     }
@@ -1903,6 +1910,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Enable UTF-8 Mouse Mode.                                | #N      |
    * | 1006  | Enable SGR Mouse Mode.                                  | #Y      |
    * | 1015  | Enable urxvt Mouse Mode.                                | #N      |
+   * | 1016  | Enable SGR-Pixels Mouse Mode.                           | #Y      |
    * | 1047  | Use Alternate Screen Buffer.                            | #Y      |
    * | 1048  | Save cursor as in DECSC.                                | #Y      |
    * | 1049  | Save cursor and switch to alternate buffer clearing it. | #P[Does not clear the alternate buffer.] |
@@ -1943,7 +1951,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
-          // this.cursorBlink = true;
+          this._optionsService.options.cursorBlink = true;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = true;
@@ -1983,6 +1991,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
+          break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
           break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
@@ -2024,7 +2035,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2     | Keyboard Action Mode (KAM). Always on. | #N      |
    * | 4     | Replace Mode (IRM). (default)          | #Y      |
    * | 12    | Send/receive (SRM). Always off.        | #N      |
-   * | 20    | Normal Linefeed (LNM). Always off.     | #N      |
+   * | 20    | Normal Linefeed (LNM).                 | #Y      |
    *
    *
    * FIXME: why is LNM commented out?
@@ -2036,7 +2047,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = false;
           break;
         case 20:
-          // this._t.convertEol = false;
+          this._optionsService.options.convertEol = false;
           break;
       }
     }
@@ -2144,6 +2155,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
    * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
    * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
+   * | 1006  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
    * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
    * | 1048  | Restore cursor as in DECRC.                             | #Y      |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
@@ -2177,7 +2189,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
-          // this.cursorBlink = false;
+          this._optionsService.options.cursorBlink = false;
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = false;
@@ -2205,6 +2217,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
+        case 1016: // sgr pixels mode mouse
+          this._coreMouseService.activeEncoding = 'DEFAULT';
+          break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
           break;
@@ -2230,6 +2245,97 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     return true;
+  }
+
+  /**
+   * CSI Ps $ p Request ANSI Mode (DECRQM).
+   *
+   * Reports CSI Ps; Pm $ y (DECRPM), where Ps is the mode number as in SM/RM,
+   * and Pm is the mode value:
+   *    0 - not recognized
+   *    1 - set
+   *    2 - reset
+   *    3 - permanently set
+   *    4 - permanently reset
+   *
+   * @vt: #Y  CSI   DECRQM  "Request Mode"  "CSI Ps $p"  "Request mode state."
+   * Returns a report as `CSI Ps; Pm $ y` (DECRPM), where `Ps` is the mode number as in SM/RM
+   * or DECSET/DECRST, and `Pm` is the mode value:
+   * - 0: not recognized
+   * - 1: set
+   * - 2: reset
+   * - 3: permanently set
+   * - 4: permanently reset
+   *
+   * For modes not understood xterm.js always returns `notRecognized`. In general this means,
+   * that a certain operation mode is not implemented and cannot be used.
+   *
+   * Modes changing the active terminal buffer (47, 1047, 1049) are not subqueried
+   * and only report, whether the alternate buffer is set.
+   *
+   * Mouse encodings and mouse protocols are handled mutual exclusive,
+   * thus only one of each of those can be set at a given time.
+   *
+   * There is a chance, that some mode reports are not fully in line with xterm.js' behavior,
+   * e.g. if the default implementation already exposes a certain behavior. If you find
+   * discrepancies in the mode reports, please file a bug.
+   */
+  public requestMode(params: IParams, ansi: boolean): boolean {
+    // return value as in DECRPM
+    const enum V {
+      NOT_RECOGNIZED = 0,
+      SET = 1,
+      RESET = 2,
+      PERMANENTLY_SET = 3,
+      PERMANENTLY_RESET = 4
+    }
+
+    // access helpers
+    const dm = this._coreService.decPrivateModes;
+    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._coreMouseService;
+    const cs = this._coreService;
+    const { buffers, cols } = this._bufferService;
+    const { active, alt } = buffers;
+    const opts = this._optionsService.rawOptions;
+
+    const f = (m: number, v: V): boolean => {
+      cs.triggerDataEvent(`${C0.ESC}[${ansi ? '' : '?'}${m};${v}$y`);
+      return true;
+    };
+    const b2v = (value: boolean): V => value ? V.SET : V.RESET;
+
+    const p = params.params[0];
+
+    if (ansi) {
+      if (p === 2) return f(p, V.PERMANENTLY_SET);
+      if (p === 4) return f(p, b2v(cs.modes.insertMode));
+      if (p === 12) return f(p, V.PERMANENTLY_RESET);
+      if (p === 20) return f(p, b2v(opts.convertEol));
+      return f(p, V.NOT_RECOGNIZED);
+    }
+
+    if (p === 1) return f(p, b2v(dm.applicationCursorKeys));
+    if (p === 3) return f(p, opts.windowOptions.setWinLines ? (cols === 80 ? V.RESET : cols === 132 ? V.SET : V.NOT_RECOGNIZED) : V.NOT_RECOGNIZED);
+    if (p === 6) return f(p, b2v(dm.origin));
+    if (p === 7) return f(p, b2v(dm.wraparound));
+    if (p === 8) return f(p, V.PERMANENTLY_SET);
+    if (p === 9) return f(p, b2v(mouseProtocol === 'X10'));
+    if (p === 12) return f(p, b2v(opts.cursorBlink));
+    if (p === 25) return f(p, b2v(!cs.isCursorHidden));
+    if (p === 45) return f(p, b2v(dm.reverseWraparound));
+    if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
+    if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
+    if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));
+    if (p === 1004) return f(p, b2v(dm.sendFocus));
+    if (p === 1005) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1006) return f(p, b2v(mouseEncoding === 'SGR'));
+    if (p === 1015) return f(p, V.PERMANENTLY_RESET);
+    if (p === 1016) return f(p, b2v(mouseEncoding === 'SGR_PIXELS'));
+    if (p === 1048) return f(p, V.SET); // xterm always returns SET here
+    if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
+    if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    return f(p, V.NOT_RECOGNIZED);
   }
 
   /**
@@ -2495,6 +2601,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 24) {
         // not underlined
         attr.fg &= ~FgFlags.UNDERLINE;
+        this._processUnderline(UnderlineStyle.NONE, attr);
       } else if (p === 25) {
         // not blink
         attr.fg &= ~FgFlags.BLINK;
@@ -2886,6 +2993,62 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (event.length) {
       this._onColor.fire(event);
     }
+    return true;
+  }
+
+  /**
+   * OSC 8 ; <params> ; <uri> ST - create hyperlink
+   * OSC 8 ; ; ST - finish hyperlink
+   *
+   * Test case:
+   *
+   * ```sh
+   * printf '\e]8;;http://example.com\e\\This is a link\e]8;;\e\\\n'
+   * ```
+   *
+   * @vt: #Y    OSC    8    "Create hyperlink"   "OSC 8 ; params ; uri BEL" "Create a hyperlink to `uri` using `params`."
+   * `uri` is a hyperlink starting with `http://`, `https://`, `ftp://`, `file://` or `mailto://`. `params` is an
+   * optional list of key=value assignments, separated by the : character. Example: `id=xyz123:foo=bar:baz=quux`.
+   * Currently only the id key is defined. Cells that share the same ID and URI share hover feedback.
+   * Use `OSC 8 ; ; BEL` to finish the current hyperlink.
+   */
+  public setHyperlink(data: string): boolean {
+    const args = data.split(';');
+    if (args.length < 2) {
+      return false;
+    }
+    if (args[1]) {
+      return this._createHyperlink(args[0], args[1]);
+    }
+    if (args[0]) {
+      return false;
+    }
+    return this._finishHyperlink();
+  }
+
+  private _createHyperlink(params: string, uri: string): boolean {
+    // It's legal to open a new hyperlink without explicitly finishing the previous one
+    if (this._currentLinkId !== undefined) {
+      this._finishHyperlink();
+    }
+    const parsedParams = params.split(':');
+    let id: string | undefined;
+    const idParamIndex = parsedParams.findIndex(e => e.startsWith('id='));
+    if (idParamIndex !== -1) {
+      id = parsedParams[idParamIndex].slice(3) || undefined;
+    }
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
+    this._curAttrData.extended.urlId = this._currentLinkId;
+    this._curAttrData.updateExtended();
+    return true;
+  }
+
+  private _finishHyperlink(): boolean {
+    this._curAttrData.extended = this._curAttrData.extended.clone();
+    this._curAttrData.extended.urlId = 0;
+    this._curAttrData.updateExtended();
+    this._currentLinkId = undefined;
     return true;
   }
 

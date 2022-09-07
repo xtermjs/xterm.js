@@ -22,12 +22,12 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum, ITerminalOptions } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { IDisposable, IBufferLine, IAttributeData, ICoreTerminal, IKeyboardEvent, IScrollEvent, ScrollSource, ITerminalOptions as IPublicTerminalOptions } from 'common/Types';
+import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent, ScrollSource } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -39,6 +39,7 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
+import { OscLinkService } from 'common/services/OscLinkService';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -49,6 +50,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _logService: ILogService;
   protected readonly _charsetService: ICharsetService;
   protected readonly _dirtyRowService: IDirtyRowService;
+  protected readonly _oscLinkService: IOscLinkService;
 
   public readonly coreMouseService: ICoreMouseService;
   public readonly coreService: ICoreService;
@@ -88,7 +90,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
   public get buffers(): IBufferSet { return this._bufferService.buffers; }
-  public get options(): ITerminalOptions { return this.optionsService.options; }
+  public get options(): Required<ITerminalOptions> { return this.optionsService.options; }
   public set options(options: ITerminalOptions) {
     for (const key in options) {
       this.optionsService.options[key] = options[key];
@@ -118,9 +120,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
+    this._oscLinkService = this._instantiationService.createInstance(OscLinkService);
+    this._instantiationService.setService(IOscLinkService, this._oscLinkService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this.coreMouseService, this.unicodeService);
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService);
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 

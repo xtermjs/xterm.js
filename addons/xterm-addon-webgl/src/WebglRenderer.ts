@@ -46,13 +46,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: RectangleRenderer;
-  private _glyphRenderer: GlyphRenderer;
+  private _rectangleRenderer!: RectangleRenderer;
+  private _glyphRenderer!: GlyphRenderer;
 
   public dimensions: IRenderDimensions;
 
   private _core: ITerminal;
   private _isAttached: boolean;
+  private _contextRestorationTimeout: number | undefined;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
   public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
@@ -108,16 +109,34 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => { this._onContextLoss.fire(e); }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => {
+      console.log('webglcontextlost event received');
+      // Prevent the default behavior in order to enable WebGL context restoration.
+      e.preventDefault();
+      // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
+      // If not, dispatch the onContextLoss notification to observers.
+      this._contextRestorationTimeout = setTimeout(() => {
+        this._contextRestorationTimeout = undefined;
+        console.warn('webgl context not restored; firing onContextLoss');
+        this._onContextLoss.fire(e);
+      }, 3000 /* ms */);
+    }));
+    this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
+      console.warn('webglcontextrestored event received');
+      clearTimeout(this._contextRestorationTimeout);
+      this._contextRestorationTimeout = undefined;
+      // The texture atlas and glyph renderer must be fully reinitialized
+      // because their contents have been lost.
+      removeTerminalFromCache(this._terminal);
+      this._initializeWebGLState();
+      this._requestRedrawViewport();
+    }));
+
     this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions));
-
-    // Update dimensions and acquire char atlas
-    this.onCharSizeChanged();
+    this._initializeWebGLState();
 
     this._isAttached = document.body.contains(this._core.screenElement!);
   }
@@ -144,12 +163,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     this._rectangleRenderer.setColors();
-    this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
 
     // Force a full refresh
-    this._model.clear();
+    this._clearModel(true);
   }
 
   public onDevicePixelRatioChange(): void {
@@ -189,8 +207,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
-    // Force a full refresh
-    this._model.clear();
+    // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
+    // so there is no need to clear it again here.
+    this._clearModel(false);
   }
 
   public onCharSizeChanged(): void {
@@ -236,6 +255,21 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   /**
+   * Initializes members dependent on WebGL context state.
+   */
+  private _initializeWebGLState(): void {
+    // Dispose any previous rectangle and glyph renderers before creating new ones.
+    this._rectangleRenderer?.dispose();
+    this._glyphRenderer?.dispose();
+
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+
+    // Update dimensions and acquire char atlas
+    this.onCharSizeChanged();
+  }
+
+  /**
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param terminal The terminal.
    * @param colorSet The color set to use for the char atlas.
@@ -259,16 +293,27 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setAtlas(this._charAtlas);
   }
 
+  /**
+   * Clear the model.
+   * @param clearGlyphRenderer Whether to also clear the glyph renderer. This
+   * should be true generally to make sure it is in the same state as the model.
+   */
+  private _clearModel(clearGlyphRenderer: boolean): void {
+    this._model.clear();
+    if (clearGlyphRenderer) {
+      this._glyphRenderer.clear();
+    }
+  }
+
   public clearCharAtlas(): void {
     this._charAtlas?.clearTexture();
-    this._model.clear();
+    this._clearModel(true);
     this._updateModel(0, this._terminal.rows - 1);
     this._requestRedrawViewport();
   }
 
   public clear(): void {
-    this._model.clear();
-    this._glyphRenderer.clear(true);
+    this._clearModel(true);
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
@@ -300,7 +345,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
-      this._model.clear();
+      this._clearModel(true);
       this._updateSelectionModel(undefined, undefined);
     }
 
@@ -588,18 +633,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Calculate the scaled cell height, if lineHeight is _not_ 1, the resulting value will be
     // floored since lineHeight can never be lower then 1, this guarentees the scaled cell height
     // will always be larger than scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight!);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
     this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing!);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
 
     // Calculate the x offset with a cell that text should draw from in order for it to be centered
     // correctly within the cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing! / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
 
     // Recalculate the canvas dimensions, the scaled dimensions define the actual number of pixel in
     // the canvas

@@ -4,7 +4,7 @@
  */
 
 import { ICharSizeService, IRenderService, IMouseService } from './Services';
-import { getCoords, getRawByteCoords } from 'browser/input/Mouse';
+import { getCoords, getCoordsRelativeToElement } from 'browser/input/Mouse';
 
 export class MouseService implements IMouseService {
   public serviceBrand: undefined;
@@ -29,8 +29,24 @@ export class MouseService implements IMouseService {
     );
   }
 
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
-    const coords = this.getCoords(event, element, colCount, rowCount);
-    return getRawByteCoords(coords);
+  public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
+    const coords = getCoordsRelativeToElement(window, event, element);
+
+    // due to rounding issues in zoom states pixel values might be negative or overflow actual canvas
+    // ignore those events effectively narrowing mouse area a tiny bit at the edges
+    if (!this._charSizeService.hasValidSize
+      || coords[0] < 0
+      || coords[1] < 0
+      || coords[0] >= this._renderService.dimensions.canvasWidth
+      || coords[1] >= this._renderService.dimensions.canvasHeight) {
+      return undefined;
+    }
+
+    return {
+      col: Math.floor(coords[0] / this._renderService.dimensions.actualCellWidth),
+      row: Math.floor(coords[1] / this._renderService.dimensions.actualCellHeight),
+      x: Math.floor(coords[0]),
+      y: Math.floor(coords[1])
+    };
   }
 }
