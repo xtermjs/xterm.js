@@ -2189,6 +2189,79 @@ describe('InputHandler', () => {
       assert.deepEqual(sendStack.pop(), '\x1bP1$r0"q\x1b\\');  // reported as DECSCA 0
     });
   });
+  describe('DECRQM', () => {
+    const reportStack: string[] = [];
+    beforeEach(() => {
+      reportStack.length = 0;
+      coreService.onData(data => reportStack.push(data));
+    });
+    it('ANSI 2 (keyboard action mode)', async () => {
+      await inputHandler.parseP('\x1b[2$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[2;3$y');    // always set
+    });
+    it('ANSI 4 (insert mode)', async () => {
+      await inputHandler.parseP('\x1b[4$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[4;2$y');    // reset by default
+      await inputHandler.parseP('\x1b[4h');
+      await inputHandler.parseP('\x1b[4$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[4;1$y');    // now active
+      await inputHandler.parseP('\x1b[4l');
+      await inputHandler.parseP('\x1b[4$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[4;2$y');    // again reset
+    });
+    it('ANSI 12 (send/receive)', async () => {
+      await inputHandler.parseP('\x1b[12$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[12;4$y');   // always reset
+    });
+    it('ANSI 20 (newline mode)', async () => {
+      await inputHandler.parseP('\x1b[20$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[20;2$y');    // reset by default
+      await inputHandler.parseP('\x1b[20h');
+      await inputHandler.parseP('\x1b[20$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[20;1$y');    // now active
+      await inputHandler.parseP('\x1b[20l');
+      await inputHandler.parseP('\x1b[20$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[20;2$y');    // again reset
+    });
+    it('ANSI unknown', async () => {
+      await inputHandler.parseP('\x1b[1234$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[1234;0$y');  // not recognized
+    });
+    it('DEC privates with set/reset semantic', async () => {
+      // initially reset
+      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004];
+      for (const mode of reset) {
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // initial reset
+        await inputHandler.parseP(`\x1b[?${mode}h`);
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`);   // now active
+        await inputHandler.parseP(`\x1b[?${mode}l`);
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // again reset
+      }
+      // initially set
+      const set = [7, 25];
+      for (const mode of set) {
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`);   // initial set
+        await inputHandler.parseP(`\x1b[?${mode}l`);
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // now inactive
+        await inputHandler.parseP(`\x1b[?${mode}h`);
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`);   // again set
+      }
+    });
+    it('DEC privates perma modes', async () => {
+      // [mode number, state value]
+      const perma = [[3, 0], [8, 3], [1005, 4], [1015, 4], [1048, 1]];
+      for (const [mode, value] of perma) {
+        await inputHandler.parseP(`\x1b[?${mode}$p`);
+        assert.deepEqual(reportStack.pop(), `\x1b[?${mode};${value}$y`);
+      }
+    });
+  });
 });
 
 

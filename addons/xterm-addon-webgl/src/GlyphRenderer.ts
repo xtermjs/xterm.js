@@ -238,21 +238,24 @@ export class GlyphRenderer  extends Disposable {
     // a_cellpos only changes on resize
   }
 
-  public clear(force?: boolean): void {
+  public clear(): void {
     const terminal = this._terminal;
     const newCount = terminal.cols * terminal.rows * INDICES_PER_CELL;
 
-    // Don't clear if not forced and the array length is correct
-    if (!force && this._vertices.count === newCount) {
-      return;
-    }
-
     // Clear vertices
-    this._vertices.count = newCount;
-    this._vertices.attributes = new Float32Array(newCount);
-    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
-      this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+    if (this._vertices.count !== newCount) {
+      this._vertices.attributes = new Float32Array(newCount);
+    } else {
+      this._vertices.attributes.fill(0);
     }
+    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+      if (this._vertices.count !== newCount) {
+        this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+      } else {
+        this._vertices.attributesBuffers[i].fill(0);
+      }
+    }
+    this._vertices.count = newCount;
     let i = 0;
     for (let y = 0; y < terminal.rows; y++) {
       for (let x = 0; x < terminal.cols; x++) {
@@ -267,9 +270,6 @@ export class GlyphRenderer  extends Disposable {
     const gl = this._gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.clear();
-  }
-
-  public setColors(): void {
   }
 
   public render(renderModel: IRenderModel): void {
