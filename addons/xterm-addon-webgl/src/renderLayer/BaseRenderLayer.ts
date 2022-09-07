@@ -226,7 +226,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _fillCharTrueColor(terminal: Terminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = TEXT_BASELINE;
-    this._clipRow(terminal, y);
+    this._clipCell(x, y, cell.getWidth());
     this._ctx.fillText(
       cell.getChars(),
       x * this._scaledCellWidth + this._scaledCharLeft,
@@ -234,16 +234,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   /**
-   * Clips a row to ensure no pixels will be drawn outside the cells in the row.
-   * @param terminal The terminal.
+   * Clips a cell to ensure no pixels will be drawn outside of it.
+   * @param x The column to clip.
    * @param y The row to clip.
+   * @param width The number of columns to clip.
    */
-  private _clipRow(terminal: Terminal, y: number): void {
+  private _clipCell(x: number, y: number, width: number): void {
     this._ctx.beginPath();
     this._ctx.rect(
-      0,
+      x * this._scaledCellWidth,
       y * this._scaledCellHeight,
-      terminal.cols * this._scaledCellWidth,
+      width * this._scaledCellWidth,
       this._scaledCellHeight);
     this._ctx.clip();
   }
