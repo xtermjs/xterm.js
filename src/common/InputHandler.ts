@@ -1121,14 +1121,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    * @param cleanWrap clear the isWrapped flag
    */
-  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, protect: boolean = false): void {
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
       this._eraseAttrData(),
-      protect
+      respectProtect
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1140,9 +1140,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
    * @param y row index
    */
-  private _resetBufferLine(y: number, protect: boolean = false): void {
+  private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), protect);
+    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
     this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
     line.isWrapped = false;
   }
@@ -1171,16 +1171,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Same as ED with respecting protection flag."
    */
-  public eraseInDisplay(params: IParams, protect: boolean = false): boolean {
+  public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
-        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, protect);
+        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         for (; j < this._bufferService.rows; j++) {
-          this._resetBufferLine(j, protect);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(j);
         break;
@@ -1188,13 +1188,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
-        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, protect);
+        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
           this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
-          this._resetBufferLine(j, protect);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1202,7 +1202,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._bufferService.rows;
         this._dirtyRowService.markDirty(j - 1);
         while (j--) {
-          this._resetBufferLine(j, protect);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1243,17 +1243,17 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Same as EL with respecting protecting flag."
    */
-  public eraseInLine(params: IParams, protect: boolean = false): boolean {
+  public eraseInLine(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, protect);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, protect);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, protect);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);

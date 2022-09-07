@@ -303,9 +303,9 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData, protect: boolean = false): void {
-    // full branching on protect==true, hopefully getting fast JIT for standard case
-    if (protect) {
+  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData, respectProtect: boolean = false): void {
+    // full branching on respectProtect==true, hopefully getting fast JIT for standard case
+    if (respectProtect) {
       if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
         this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
       }
@@ -374,9 +374,9 @@ export class BufferLine implements IBufferLine {
   }
 
   /** fill a line with fillCharData */
-  public fill(fillCellData: ICellData, protect: boolean = false): void {
-    // full branching on protect==true, hopefully getting fast JIT for standard case
-    if (protect) {
+  public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+    // full branching on respectProtect==true, hopefully getting fast JIT for standard case
+    if (respectProtect) {
       for (let i = 0; i < this.length; ++i) {
         if (!this.isProtected(i)) {
           this.setCell(i, fillCellData);
