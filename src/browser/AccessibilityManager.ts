@@ -98,7 +98,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
-    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
     this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the

@@ -5,7 +5,7 @@
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IRenderService } from 'browser/services/Services';
+import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
@@ -51,7 +51,8 @@ export class OverviewRulerRenderer extends Disposable {
     @IBufferService private readonly _bufferService: IBufferService,
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IRenderService private readonly _renderService: IRenderService,
-    @IOptionsService private readonly _optionsService: IOptionsService
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @ICoreBrowserService private readonly _coreBrowseService: ICoreBrowserService
   ) {
     super();
     this._canvas = document.createElement('canvas');
@@ -112,7 +113,7 @@ export class OverviewRulerRenderer extends Disposable {
       }
     }));
     // device pixel ratio changed
-    this.register(addDisposableDomListener(window, 'resize', () => {
+    this.register(addDisposableDomListener(this._coreBrowseService.window, 'resize', () => {
       this._queueRefresh(true);
     }));
     // set the canvas dimensions
@@ -142,11 +143,11 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshDrawHeightConstants(): void {
-    drawHeight.full = Math.round(2 * window.devicePixelRatio);
+    drawHeight.full = Math.round(2 * this._coreBrowseService.dpr);
     // Calculate actual pixels per line
     const pixelsPerLine = this._canvas.height / this._bufferService.buffer.lines.length;
     // Clamp actual pixels within a range
-    const nonFullHeight = Math.round(Math.max(Math.min(pixelsPerLine, 12), 6) * window.devicePixelRatio);
+    const nonFullHeight = Math.round(Math.max(Math.min(pixelsPerLine, 12), 6) * this._coreBrowseService.dpr);
     drawHeight.left = nonFullHeight;
     drawHeight.center = nonFullHeight;
     drawHeight.right = nonFullHeight;
@@ -164,9 +165,9 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshCanvasDimensions(): void {
     this._canvas.style.width = `${this._width}px`;
-    this._canvas.width = Math.round(this._width * window.devicePixelRatio);
+    this._canvas.width = Math.round(this._width * this._coreBrowseService.dpr);
     this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.height = Math.round(this._screenElement.clientHeight * window.devicePixelRatio);
+    this._canvas.height = Math.round(this._screenElement.clientHeight * this._coreBrowseService.dpr);
     this._refreshDrawConstants();
     this._refreshColorZonePadding();
   }
@@ -220,7 +221,7 @@ export class OverviewRulerRenderer extends Disposable {
     if (this._animationFrame !== undefined) {
       return;
     }
-    this._animationFrame = window.requestAnimationFrame(() => {
+    this._animationFrame = this._coreBrowseService.window.requestAnimationFrame(() => {
       this._refreshDecorations();
       this._animationFrame = undefined;
     });

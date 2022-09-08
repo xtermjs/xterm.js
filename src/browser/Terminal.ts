@@ -495,7 +495,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea);
+    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);

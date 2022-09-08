@@ -8,6 +8,7 @@ import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/Constants';
+import { ICoreBrowserService } from 'browser/services/Services';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
@@ -30,7 +31,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet
+    protected _colors: IColorSet,
+    protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -93,7 +95,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
@@ -143,9 +145,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
       x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+      (y + 1) * this._scaledCellHeight - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
       width * this._scaledCellWidth,
-      window.devicePixelRatio);
+      this._coreBrowserService.dpr);
   }
 
   /**
@@ -158,7 +160,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillRect(
       x * this._scaledCellWidth,
       y * this._scaledCellHeight,
-      window.devicePixelRatio * width,
+      this._coreBrowserService.dpr * width,
       this._scaledCellHeight);
   }
 
@@ -169,12 +171,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected _strokeRectAtCell(x: number, y: number, width: number, height: number): void {
-    this._ctx.lineWidth = window.devicePixelRatio;
+    this._ctx.lineWidth = this._coreBrowserService.dpr;
     this._ctx.strokeRect(
-      x * this._scaledCellWidth + window.devicePixelRatio / 2,
-      y * this._scaledCellHeight + (window.devicePixelRatio / 2),
-      width * this._scaledCellWidth - window.devicePixelRatio,
-      (height * this._scaledCellHeight) - window.devicePixelRatio);
+      x * this._scaledCellWidth + this._coreBrowserService.dpr / 2,
+      y * this._scaledCellHeight + (this._coreBrowserService.dpr / 2),
+      width * this._scaledCellWidth - this._coreBrowserService.dpr,
+      (height * this._scaledCellHeight) - this._coreBrowserService.dpr);
   }
 
   /**
@@ -258,7 +260,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize! * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize! * this._coreBrowserService.dpr}px ${terminal.options.fontFamily}`;
   }
 }
 

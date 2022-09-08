@@ -409,7 +409,7 @@ export class WebglCharAtlas implements IDisposable {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.fontSize);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.fontSize, this._config.devicePixelRatio);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
@@ -427,7 +427,7 @@ export class WebglCharAtlas implements IDisposable {
     // Draw underline
     if (underline) {
       this._tmpCtx.save();
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 15));
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 15));
       // When the line width is odd, draw at a 0.5 position
       const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
       this._tmpCtx.lineWidth = lineWidth;
@@ -501,12 +501,12 @@ export class WebglCharAtlas implements IDisposable {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 2, this._config.devicePixelRatio]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;
           case UnderlineStyle.DASHED:
-            this._tmpCtx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;
@@ -543,7 +543,7 @@ export class WebglCharAtlas implements IDisposable {
             const clipRegion = new Path2D();
             clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
             this._tmpCtx.clip(clipRegion);
-            this._tmpCtx.lineWidth = window.devicePixelRatio * 3;
+            this._tmpCtx.lineWidth = this._config.devicePixelRatio * 3;
             this._tmpCtx.strokeStyle = backgroundColor.css;
             this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
             this._tmpCtx.restore();
@@ -578,7 +578,7 @@ export class WebglCharAtlas implements IDisposable {
 
     // Draw strokethrough
     if (strikethrough) {
-      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * window.devicePixelRatio / 10));
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;

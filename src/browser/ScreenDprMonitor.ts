@@ -18,10 +18,15 @@ export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRat
  * monitor with a different DPI.
  */
 export class ScreenDprMonitor extends Disposable {
-  private _currentDevicePixelRatio: number = window.devicePixelRatio;
+  private _currentDevicePixelRatio: number;
   private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
   private _listener: ScreenDprListener | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
+
+  constructor(private _parentWindow: Window) {
+    super();
+    this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
+  }
 
   public setListener(listener: ScreenDprListener): void {
     if (this._listener) {
@@ -32,7 +37,7 @@ export class ScreenDprMonitor extends Disposable {
       if (!this._listener) {
         return;
       }
-      this._listener(window.devicePixelRatio, this._currentDevicePixelRatio);
+      this._listener(this._parentWindow.devicePixelRatio, this._currentDevicePixelRatio);
       this._updateDpr();
     };
     this._updateDpr();
@@ -52,8 +57,8 @@ export class ScreenDprMonitor extends Disposable {
     this._resolutionMediaMatchList?.removeListener(this._outerListener);
 
     // Add listeners for new DPR
-    this._currentDevicePixelRatio = window.devicePixelRatio;
-    this._resolutionMediaMatchList = window.matchMedia(`screen and (resolution: ${window.devicePixelRatio}dppx)`);
+    this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
+    this._resolutionMediaMatchList = this._parentWindow.matchMedia(`screen and (resolution: ${this._parentWindow.devicePixelRatio}dppx)`);
     this._resolutionMediaMatchList.addListener(this._outerListener);
   }
 

@@ -25,11 +25,11 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     colors: IColorSet,
     rendererId: number,
     bufferService: IBufferService,
-    private readonly _coreBrowserService: ICoreBrowserService,
+    coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
     optionsService: IOptionsService
   ) {
-    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService);
+    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
     this._clearState();
   }
 

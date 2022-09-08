@@ -29,9 +29,10 @@ export function acquireCharAtlas(
   rendererId: number,
   colors: IColorSet,
   scaledCharWidth: number,
-  scaledCharHeight: number
+  scaledCharHeight: number,
+  devicePixelRatio: number
 ): BaseCharAtlas {
-  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, options, colors);
+  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, options, colors, devicePixelRatio);
 
   // Check to see if the renderer already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

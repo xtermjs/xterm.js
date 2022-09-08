@@ -28,6 +28,16 @@ export interface ICoreBrowserService {
   serviceBrand: undefined;
 
   readonly isFocused: boolean;
+  /**
+   * Parent window that the terminal is rendered into. DOM and rendering APIs
+   * (e.g. requestAnimationFrame) should be invoked in the context of this
+   * window.
+   */
+  readonly window: Window & typeof globalThis;
+  /**
+   * Helper for getting the devicePixelRatio of the parent window.
+   */
+  readonly dpr: number;
 }
 
 export const IMouseService = createDecorator<IMouseService>('MouseService');

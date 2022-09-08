@@ -39,16 +39,16 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     private readonly _optionsService: IOptionsService,
     characterJoinerService: ICharacterJoinerService,
     coreService: ICoreService,
-    coreBrowserService: ICoreBrowserService,
+    private readonly _coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService
   ) {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      new TextRenderLayer(this._screenElement, 0, this._colors, allowTransparency, this._id, this._bufferService, this._optionsService, characterJoinerService, decorationService),
-      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, coreBrowserService, decorationService, this._optionsService),
-      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier2, this._bufferService, this._optionsService, decorationService),
-      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, coreBrowserService, decorationService)
+      new TextRenderLayer(this._screenElement, 0, this._colors, allowTransparency, this._id, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService),
+      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, this._coreBrowserService, decorationService, this._optionsService),
+      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService),
+      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -64,10 +64,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
       actualCellWidth: 0,
       actualCellHeight: 0
     };
-    this._devicePixelRatio = window.devicePixelRatio;
+    this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
 
-    this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
+    this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this.onOptionsChanged();
   }
@@ -83,8 +83,8 @@ export class CanvasRenderer extends Disposable implements IRenderer {
   public onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
-    if (this._devicePixelRatio !== window.devicePixelRatio) {
-      this._devicePixelRatio = window.devicePixelRatio;
+    if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
+      this._devicePixelRatio = this._coreBrowserService.dpr;
       this.onResize(this._bufferService.cols, this._bufferService.rows);
     }
   }
@@ -175,16 +175,17 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
 
     // See the WebGL renderer for an explanation of this section.
-    this.dimensions.scaledCharWidth = Math.floor(this._charSizeService.width * window.devicePixelRatio);
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
+    const dpr = this._coreBrowserService.dpr;
+    this.dimensions.scaledCharWidth = Math.floor(this._charSizeService.width * dpr);
+    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.scaledCharTop = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
     this.dimensions.scaledCharLeft = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
     this.dimensions.scaledCanvasHeight = this._bufferService.rows * this.dimensions.scaledCellHeight;
     this.dimensions.scaledCanvasWidth = this._bufferService.cols * this.dimensions.scaledCellWidth;
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
   }

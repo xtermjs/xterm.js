@@ -6,7 +6,7 @@
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IViewport } from 'browser/Types';
-import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
@@ -56,7 +56,8 @@ export class Viewport extends Disposable implements IViewport {
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
 
@@ -88,18 +89,18 @@ export class Viewport extends Disposable implements IViewport {
     if (immediate) {
       this._innerRefresh();
       if (this._refreshAnimationFrame !== null) {
-        cancelAnimationFrame(this._refreshAnimationFrame);
+        this._coreBrowserService.window.cancelAnimationFrame(this._refreshAnimationFrame);
       }
       return;
     }
     if (this._refreshAnimationFrame === null) {
-      this._refreshAnimationFrame = requestAnimationFrame(() => this._innerRefresh());
+      this._refreshAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
     }
   }
 
   private _innerRefresh(): void {
     if (this._charSizeService.height > 0) {
-      this._currentRowHeight = this._renderService.dimensions.scaledCellHeight / window.devicePixelRatio;
+      this._currentRowHeight = this._renderService.dimensions.scaledCellHeight / this._coreBrowserService.dpr;
       this._currentScaledCellHeight = this._renderService.dimensions.scaledCellHeight;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
       const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.canvasHeight);
@@ -191,7 +192,7 @@ export class Viewport extends Disposable implements IViewport {
 
     // Continue or finish smooth scroll
     if (percent < 1) {
-      window.requestAnimationFrame(() => this._smoothScroll());
+      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll());
     } else {
       this._clearSmoothScrollState();
     }
