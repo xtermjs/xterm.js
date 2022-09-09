@@ -5,7 +5,7 @@
 
 import { CharData, IBufferLine, ICellData, IAttributeData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, BgFlags } from 'common/buffer/Constants';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
@@ -411,11 +411,17 @@ export class BufferLine implements IBufferLine {
         for (let i = 0; i < CELL_SIZE; i++) {
           this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
         }
+        if (srcData[(srcCol + cell) * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+          this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
+        }
       }
     } else {
       for (let cell = 0; cell < length; cell++) {
         for (let i = 0; i < CELL_SIZE; i++) {
           this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+        }
+        if (srcData[(srcCol + cell) * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
+          this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
         }
       }
     }
