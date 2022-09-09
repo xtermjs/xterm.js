@@ -343,6 +343,10 @@ export class MockCompositionHelper implements ICompositionHelper {
 export class MockCoreBrowserService implements ICoreBrowserService {
   public serviceBrand: undefined;
   public isFocused: boolean = true;
+  public get window(): Window & typeof globalThis {
+    throw Error('Window object not available in tests');
+  }
+  public dpr: number = 1;
 }
 
 export class MockCharSizeService implements ICharSizeService {

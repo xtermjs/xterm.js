@@ -10,7 +10,7 @@ import { IBufferLine } from 'common/Types';
 import { MockBufferService, MockOptionsService, MockCoreService } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { MockMouseService, MockRenderService } from 'browser/TestUtils.test';
+import { MockCoreBrowserService, MockMouseService, MockRenderService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderService } from 'browser/services/Services';
@@ -21,7 +21,7 @@ class TestSelectionService extends SelectionService {
     optionsService: IOptionsService,
     renderService: IRenderService
   ) {
-    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService);
+    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService, new MockCoreBrowserService());
   }
 
   public get model(): SelectionModel { return this._model; }

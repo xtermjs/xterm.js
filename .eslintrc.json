@@ -147,6 +147,29 @@
         ]
       }
     ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "CallExpression[callee.name='requestAnimationFrame']",
+        "message": "The global requestAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+      },
+      {
+        "selector": "CallExpression[callee.name='cancelAnimationFrame']",
+        "message": "The global cancelAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+      },
+      {
+        "selector": "CallExpression > MemberExpression[object.name='window'][property.name='requestAnimationFrame']",
+        "message": "window.requestAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+      },
+      {
+        "selector": "CallExpression > MemberExpression[object.name='window'][property.name='cancelAnimationFrame']",
+        "message": "window.cancelAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+      },
+      {
+        "selector": "MemberExpression[object.name='window'][property.name='devicePixelRatio']",
+        "message": "window.devicePixelRatio should be avoided, get it from ICoreBrowserService."
+      }
+    ],
     "no-trailing-spaces": "warn",
     "no-unsafe-finally": "warn",
     "no-var": "warn",

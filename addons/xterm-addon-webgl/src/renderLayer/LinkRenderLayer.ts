@@ -9,12 +9,19 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
 import { is256Color } from '../atlas/CharAtlasUtils';
 import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { ICoreBrowserService } from 'browser/services/Services';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ITerminal) {
-    super(container, 'link', zIndex, true, colors);
+  constructor(
+    container: HTMLElement,
+    zIndex: number,
+    colors: IColorSet,
+    terminal: ITerminal,
+    coreBrowserService: ICoreBrowserService
+  ) {
+    super(container, 'link', zIndex, true, colors, coreBrowserService);
 
     terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
     terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));

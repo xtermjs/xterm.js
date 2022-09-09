@@ -10,7 +10,7 @@ import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IMouseService, ISelectionService, IRenderService } from 'browser/services/Services';
+import { IMouseService, ISelectionService, IRenderService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferRange, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
@@ -128,7 +128,8 @@ export class SelectionService extends Disposable implements ISelectionService {
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseService private readonly _mouseService: IMouseService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
 
@@ -270,7 +271,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   public refresh(isLinuxMouseSelection?: boolean): void {
     // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
-      this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
+      this._refreshAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._refresh());
     }
 
     // If the platform is Linux and the refresh call comes from a mouse event,
@@ -406,7 +407,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = getCoordsRelativeToElement(window, event, this._screenElement)[1];
+    let offset = getCoordsRelativeToElement(this._coreBrowserService.window, event, this._screenElement)[1];
     const terminalHeight = this._renderService.dimensions.canvasHeight;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -491,7 +492,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
       this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     }
-    this._dragScrollIntervalTimer = window.setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
+    this._dragScrollIntervalTimer = this._coreBrowserService.window.setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
   /**
@@ -502,7 +503,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._screenElement.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
       this._screenElement.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     }
-    clearInterval(this._dragScrollIntervalTimer);
+    this._coreBrowserService.window.clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = undefined;
   }
 

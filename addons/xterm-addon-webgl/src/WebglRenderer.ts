@@ -77,7 +77,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core),
+      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core, this._coreBrowserService),
       new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
     ];
     this.dimensions = {
@@ -94,7 +94,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       actualCellWidth: 0,
       actualCellHeight: 0
     };
-    this._devicePixelRatio = window.devicePixelRatio;
+    this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
 
     this._canvas = document.createElement('canvas');
@@ -132,13 +132,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._requestRedrawViewport();
     }));
 
-    this.register(observeDevicePixelDimensions(this._canvas, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
+    this.register(observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this._core.screenElement!.appendChild(this._canvas);
 
     this._initializeWebGLState();
 
-    this._isAttached = document.body.contains(this._core.screenElement!);
+    this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
   }
 
   public dispose(): void {
@@ -173,8 +173,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
-    if (this._devicePixelRatio !== window.devicePixelRatio) {
-      this._devicePixelRatio = window.devicePixelRatio;
+    if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
+      this._devicePixelRatio = this._coreBrowserService.dpr;
       this.onResize(this._terminal.cols, this._terminal.rows);
     }
   }
@@ -281,7 +281,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
+    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
@@ -329,7 +329,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;

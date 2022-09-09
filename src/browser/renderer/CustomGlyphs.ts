@@ -383,7 +383,8 @@ export function tryDrawCustomChar(
   yOffset: number,
   scaledCellWidth: number,
   scaledCellHeight: number,
-  fontSize: number
+  fontSize: number,
+  devicePixelRatio: number
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
@@ -399,13 +400,13 @@ export function tryDrawCustomChar(
 
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, devicePixelRatio);
     return true;
   }
 
   const powerlineDefinition = powerlineDefinitions[c];
   if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, fontSize);
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, fontSize, devicePixelRatio);
     return true;
   }
 
@@ -540,12 +541,13 @@ function drawBoxDrawingChar(
   xOffset: number,
   yOffset: number,
   scaledCellWidth: number,
-  scaledCellHeight: number
+  scaledCellHeight: number,
+  devicePixelRatio: number
 ): void {
   ctx.strokeStyle = ctx.fillStyle;
   for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
     ctx.beginPath();
-    ctx.lineWidth = window.devicePixelRatio * Number.parseInt(fontWeight);
+    ctx.lineWidth = devicePixelRatio * Number.parseInt(fontWeight);
     let actualInstructions: string;
     if (typeof instructions === 'function') {
       const xp = .15;
@@ -565,7 +567,7 @@ function drawBoxDrawingChar(
       if (!args[0] || !args[1]) {
         continue;
       }
-      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, true));
+      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, true, devicePixelRatio));
     }
     ctx.stroke();
     ctx.closePath();
@@ -579,12 +581,13 @@ function drawPowerlineChar(
   yOffset: number,
   scaledCellWidth: number,
   scaledCellHeight: number,
-  fontSize: number
+  fontSize: number,
+  devicePixelRatio: number
 ): void {
   ctx.beginPath();
   // Scale the stroke with DPR and font size
   const cssLineWidth = fontSize / 12;
-  ctx.lineWidth = window.devicePixelRatio * cssLineWidth;
+  ctx.lineWidth = devicePixelRatio * cssLineWidth;
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
     const f = svgToCanvasInstructionMap[type];
@@ -626,7 +629,7 @@ const svgToCanvasInstructionMap: { [index: string]: any } = {
   'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
 };
 
-function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, leftPadding: number = 0, rightPadding: number = 0): number[] {
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {
   const result = args.map(e => parseFloat(e) || parseInt(e));
 
   if (result.length < 2) {
@@ -635,14 +638,14 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
 
   for (let x = 0; x < result.length; x += 2) {
     // Translate from 0-1 to 0-cellWidth
-    result[x] *= cellWidth - (leftPadding * window.devicePixelRatio) - (rightPadding * window.devicePixelRatio);
+    result[x] *= cellWidth - (leftPadding * devicePixelRatio) - (rightPadding * devicePixelRatio);
     // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
     // line at 100% devicePixelRatio
     if (doClamp && result[x] !== 0) {
       result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
     }
     // Apply the cell's offset (ie. x*cellWidth)
-    result[x] += xOffset + (leftPadding * window.devicePixelRatio);
+    result[x] += xOffset + (leftPadding * devicePixelRatio);
   }
 
   for (let y = 1; y < result.length; y += 2) {

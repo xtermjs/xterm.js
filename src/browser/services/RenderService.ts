@@ -11,7 +11,7 @@ import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
-import { ICharSizeService, IRenderService } from 'browser/services/Services';
+import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -55,16 +55,17 @@ export class RenderService extends Disposable implements IRenderService {
     @IOptionsService optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IDecorationService decorationService: IDecorationService,
-    @IBufferService bufferService: IBufferService
+    @IBufferService bufferService: IBufferService,
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService
   ) {
     super();
 
     this.register({ dispose: () => this._renderer.dispose() });
 
-    this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
+    this._renderDebouncer = new RenderDebouncer(coreBrowserService.window, (start, end) => this._renderRows(start, end));
     this.register(this._renderDebouncer);
 
-    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor = new ScreenDprMonitor(coreBrowserService.window);
     this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
@@ -84,12 +85,12 @@ export class RenderService extends Disposable implements IRenderService {
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    this.register(addDisposableDomListener(window, 'resize', () => this.onDevicePixelRatioChange()));
+    this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.onDevicePixelRatioChange()));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(e => this._onIntersectionChange(e[e.length - 1]), { threshold: 0 });
+    if ('IntersectionObserver' in coreBrowserService.window) {
+      const observer = new coreBrowserService.window.IntersectionObserver(e => this._onIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(screenElement);
       this.register({ dispose: () => observer.disconnect() });
     }

@@ -15,6 +15,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreBrowserService } from 'browser/services/Services';
 import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/RendererUtils';
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
@@ -60,7 +61,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     private _rendererId: number,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
-    protected readonly _decorationService: IDecorationService
+    protected readonly _decorationService: IDecorationService,
+    protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
@@ -125,7 +127,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._optionsService.rawOptions, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas = acquireCharAtlas(this._optionsService.rawOptions, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
@@ -180,9 +182,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const cellOffset = Math.ceil(this._scaledCellHeight * 0.5);
     this._ctx.fillRect(
       x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight - cellOffset - window.devicePixelRatio,
+      (y + 1) * this._scaledCellHeight - cellOffset - this._coreBrowserService.dpr,
       width * this._scaledCellWidth,
-      window.devicePixelRatio);
+      this._coreBrowserService.dpr);
   }
 
   /**
@@ -194,23 +196,24 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1, pixelOffset: number = 0): void {
     this._ctx.fillRect(
       x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight + pixelOffset - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+      (y + 1) * this._scaledCellHeight + pixelOffset - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
       width * this._scaledCellWidth,
-      window.devicePixelRatio);
+      this._coreBrowserService.dpr);
   }
 
   protected _curlyUnderlineAtCell(x: number, y: number, width: number = 1): void {
     this._ctx.save();
     this._ctx.beginPath();
     this._ctx.strokeStyle = this._ctx.fillStyle;
-    this._ctx.lineWidth = window.devicePixelRatio;
+    const lineWidth = this._coreBrowserService.dpr;
+    this._ctx.lineWidth = lineWidth;
     for (let xOffset = 0; xOffset < width; xOffset++) {
       const xLeft = (x + xOffset) * this._scaledCellWidth;
       const xMid = (x + xOffset + 0.5) * this._scaledCellWidth;
       const xRight = (x + xOffset + 1) * this._scaledCellWidth;
-      const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
-      const yMidBot = yMid - window.devicePixelRatio;
-      const yMidTop = yMid + window.devicePixelRatio;
+      const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
+      const yMidBot = yMid - lineWidth;
+      const yMidTop = yMid + lineWidth;
       this._ctx.moveTo(xLeft, yMid);
       this._ctx.bezierCurveTo(
         xLeft, yMidBot,
@@ -231,10 +234,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.save();
     this._ctx.beginPath();
     this._ctx.strokeStyle = this._ctx.fillStyle;
-    this._ctx.lineWidth = window.devicePixelRatio;
-    this._ctx.setLineDash([window.devicePixelRatio * 2, window.devicePixelRatio]);
+    const lineWidth = this._coreBrowserService.dpr;
+    this._ctx.lineWidth = lineWidth;
+    this._ctx.setLineDash([lineWidth * 2, lineWidth]);
     const xLeft = x * this._scaledCellWidth;
-    const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
+    const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
     this._ctx.moveTo(xLeft, yMid);
     for (let xOffset = 0; xOffset < width; xOffset++) {
       // const xLeft = x * this._scaledCellWidth;
@@ -250,11 +254,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.save();
     this._ctx.beginPath();
     this._ctx.strokeStyle = this._ctx.fillStyle;
-    this._ctx.lineWidth = window.devicePixelRatio;
-    this._ctx.setLineDash([window.devicePixelRatio * 4, window.devicePixelRatio * 3]);
+    const lineWidth = this._coreBrowserService.dpr;
+    this._ctx.lineWidth = lineWidth;
+    this._ctx.setLineDash([lineWidth * 4, lineWidth * 3]);
     const xLeft = x * this._scaledCellWidth;
     const xRight = (x + width) * this._scaledCellWidth;
-    const yMid = (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1;
+    const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
     this._ctx.moveTo(xLeft, yMid);
     this._ctx.lineTo(xRight, yMid);
     this._ctx.stroke();
@@ -272,7 +277,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillRect(
       x * this._scaledCellWidth,
       y * this._scaledCellHeight,
-      window.devicePixelRatio * width,
+      this._coreBrowserService.dpr * width,
       this._scaledCellHeight);
   }
 
@@ -283,12 +288,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected _strokeRectAtCell(x: number, y: number, width: number, height: number): void {
-    this._ctx.lineWidth = window.devicePixelRatio;
+    const lineWidth = this._coreBrowserService.dpr;
+    this._ctx.lineWidth = lineWidth;
     this._ctx.strokeRect(
-      x * this._scaledCellWidth + window.devicePixelRatio / 2,
-      y * this._scaledCellHeight + (window.devicePixelRatio / 2),
-      width * this._scaledCellWidth - window.devicePixelRatio,
-      (height * this._scaledCellHeight) - window.devicePixelRatio);
+      x * this._scaledCellWidth + lineWidth / 2,
+      y * this._scaledCellHeight + (lineWidth / 2),
+      width * this._scaledCellWidth - lineWidth,
+      (height * this._scaledCellHeight) - lineWidth);
   }
 
   /**
@@ -344,7 +350,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize);
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize, this._coreBrowserService.dpr);
     }
 
     // Draw the character
@@ -472,7 +478,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize);
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize, this._coreBrowserService.dpr);
     }
 
     // Draw the character
@@ -509,7 +515,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontWeight = isBold ? this._optionsService.rawOptions.fontWeightBold : this._optionsService.rawOptions.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * window.devicePixelRatio}px ${this._optionsService.rawOptions.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * this._coreBrowserService.dpr}px ${this._optionsService.rawOptions.fontFamily}`;
   }
 
   private _getContrastColor(cell: CellData, x: number, y: number): IColor | undefined {

@@ -8,7 +8,7 @@ import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSO
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
-import { ICharSizeService } from 'browser/services/Services';
+import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
@@ -51,7 +51,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
-    @IBufferService private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
     this._rowContainer = document.createElement('div');
@@ -101,16 +102,17 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _updateDimensions(): void {
-    this.dimensions.scaledCharWidth = this._charSizeService.width * window.devicePixelRatio;
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
+    const dpr = this._coreBrowserService.dpr;
+    this.dimensions.scaledCharWidth = this._charSizeService.width * dpr;
+    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
     this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._bufferService.rows;
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
 
