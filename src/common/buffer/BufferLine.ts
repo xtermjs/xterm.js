@@ -60,7 +60,7 @@ const w: { startIndex: number } = {
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
-  protected _extendedAttrs: {[index: number]: IExtendedAttrs} = {};
+  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
@@ -181,7 +181,7 @@ export class BufferLine implements IBufferLine {
       cell.combinedData = this._combined[index];
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
-      cell.extended = this._extendedAttrs[index];
+      cell.extended = this._extendedAttrs[index]!;
     }
     return cell;
   }
