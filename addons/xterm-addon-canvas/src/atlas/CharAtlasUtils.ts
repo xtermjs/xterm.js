@@ -8,7 +8,7 @@ import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { IColorSet, IPartialColorSet } from 'browser/Types';
 import { ITerminalOptions } from 'xterm';
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: Required<ITerminalOptions>, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, options: Required<ITerminalOptions>, colors: IColorSet, devicePixelRatio: number): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IPartialColorSet = {
     foreground: colors.foreground,
@@ -19,7 +19,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     ansi: colors.ansi.slice()
   };
   return {
-    devicePixelRatio: window.devicePixelRatio,
+    devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: options.fontFamily,

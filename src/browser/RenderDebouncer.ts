@@ -16,13 +16,14 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   private _refreshCallbacks: FrameRequestCallback[] = [];
 
   constructor(
+    private _parentWindow: Window,
     private _renderCallback: (start: number, end: number) => void
   ) {
   }
 
   public dispose(): void {
     if (this._animationFrame) {
-      window.cancelAnimationFrame(this._animationFrame);
+      this._parentWindow.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
   }
@@ -30,7 +31,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   public addRefreshCallback(callback: FrameRequestCallback): number {
     this._refreshCallbacks.push(callback);
     if (!this._animationFrame) {
-      this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+      this._animationFrame = this._parentWindow.requestAnimationFrame(() => this._innerRefresh());
     }
     return this._animationFrame;
   }
@@ -48,7 +49,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
       return;
     }
 
-    this._animationFrame = window.requestAnimationFrame(() => this._innerRefresh());
+    this._animationFrame = this._parentWindow.requestAnimationFrame(() => this._innerRefresh());
   }
 
   private _innerRefresh(): void {

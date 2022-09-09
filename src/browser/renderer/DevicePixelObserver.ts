@@ -6,12 +6,12 @@
 import { toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 
-export function observeDevicePixelDimensions(element: HTMLElement, callback: (deviceWidth: number, deviceHeight: number) => void): IDisposable {
+export function observeDevicePixelDimensions(element: HTMLElement, parentWindow: Window & typeof globalThis, callback: (deviceWidth: number, deviceHeight: number) => void): IDisposable {
   // Observe any resizes to the element and extract the actual pixel size of the element if the
   // devicePixelContentBoxSize API is supported. This allows correcting rounding errors when
   // converting between CSS pixels and device pixels which causes blurry rendering when device
   // pixel ratio is not a round number.
-  let observer: ResizeObserver | undefined = new ResizeObserver((entries) => {
+  let observer: ResizeObserver | undefined = new parentWindow.ResizeObserver((entries) => {
     const entry = entries.find((entry) => entry.target === element);
     if (!entry) {
       return;

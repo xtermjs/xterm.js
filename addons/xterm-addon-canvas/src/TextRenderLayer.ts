@@ -12,7 +12,7 @@ import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { color, css } from 'common/Color';
 
@@ -39,9 +39,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _characterJoinerService: ICharacterJoinerService,
-    decorationService: IDecorationService
+    decorationService: IDecorationService,
+    coreBrowserService: ICoreBrowserService
   ) {
-    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService);
+    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
   }
 
@@ -282,8 +283,8 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
           switch (cell.extended.underlineStyle) {
             case UnderlineStyle.DOUBLE:
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), -window.devicePixelRatio);
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), window.devicePixelRatio);
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), -this._coreBrowserService.dpr);
+              this._fillBottomLineAtCells(x, y, cell.getWidth(), this._coreBrowserService.dpr);
               break;
             case UnderlineStyle.CURLY:
               this._curlyUnderlineAtCell(x, y, cell.getWidth());
