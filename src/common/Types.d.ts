@@ -150,6 +150,7 @@ export interface IAttributeData {
   isItalic(): number;
   isDim(): number;
   isStrikethrough(): number;
+  isProtected(): number;
 
   // color modes
   getFgColorMode(): number;
@@ -203,9 +204,9 @@ export interface IBufferLine {
   addCodepointToCell(index: number, codePoint: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
   deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
-  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData): void;
+  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): void;
-  fill(fillCellData: ICellData): void;
+  fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;

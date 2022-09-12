@@ -168,6 +168,11 @@ export class BufferLine implements IBufferLine {
     return '';
   }
 
+  /** Get state of protected flag. */
+  public isProtected(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.BG] & BgFlags.PROTECTED;
+  }
+
   /**
    * Load data at `index` into `cell`. This is used to access cells in a way that's more friendly
    * to GC as it significantly reduced the amount of new objects/references needed.
@@ -298,7 +303,24 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData, respectProtect: boolean = false): void {
+    // full branching on respectProtect==true, hopefully getting fast JIT for standard case
+    if (respectProtect) {
+      if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
+        this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      }
+      if (end < this.length && this.getWidth(end - 1) === 2 && !this.isProtected(end)) {
+        this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      }
+      while (start < end  && start < this.length) {
+        if (!this.isProtected(start)) {
+          this.setCell(start, fillCellData);
+        }
+        start++;
+      }
+      return;
+    }
+
     // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
     if (start && this.getWidth(start - 1) === 2) {
       this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
@@ -352,7 +374,16 @@ export class BufferLine implements IBufferLine {
   }
 
   /** fill a line with fillCharData */
-  public fill(fillCellData: ICellData): void {
+  public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+    // full branching on respectProtect==true, hopefully getting fast JIT for standard case
+    if (respectProtect) {
+      for (let i = 0; i < this.length; ++i) {
+        if (!this.isProtected(i)) {
+          this.setCell(i, fillCellData);
+        }
+      }
+      return;
+    }
     this._combined = {};
     this._extendedAttrs = {};
     for (let i = 0; i < this.length; ++i) {

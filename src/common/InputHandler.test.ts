@@ -2146,6 +2146,49 @@ describe('InputHandler', () => {
       });
     });
   });
+
+  describe('DECSCA and DECSED/DECSEL', () => {
+    it('default is unprotected', async () => {
+      await inputHandler.parseP('some text');
+      await inputHandler.parseP('\x1b[?2K');
+      assert.deepEqual(getLines(bufferService, 2), ['', '']);
+      await inputHandler.parseP('some text');
+      await inputHandler.parseP('\x1b[?2J');
+      assert.deepEqual(getLines(bufferService, 2), ['', '']);
+    });
+    it('DECSCA 1 with DECSEL', async () => {
+      await inputHandler.parseP('###\x1b[1"qlineerase\x1b[0"q***');
+      await inputHandler.parseP('\x1b[?2K');
+      assert.deepEqual(getLines(bufferService, 2), ['   lineerase', '']);
+      // normal EL works as before
+      await inputHandler.parseP('\x1b[2K');
+      assert.deepEqual(getLines(bufferService, 2), ['', '']);
+    });
+    it('DECSCA 1 with DECSED', async () => {
+      await inputHandler.parseP('###\x1b[1"qdisplayerase\x1b[0"q***');
+      await inputHandler.parseP('\x1b[?2J');
+      assert.deepEqual(getLines(bufferService, 2), ['   displayerase', '']);
+      // normal ED works as before
+      await inputHandler.parseP('\x1b[2J');
+      assert.deepEqual(getLines(bufferService, 2), ['', '']);
+    });
+    it('DECRQSS reports correct DECSCA state', async () => {
+      const sendStack: string[] = [];
+      coreService.onData(d => sendStack.push(d));
+      // DCS $ q " q ST
+      await inputHandler.parseP('\x1bP$q"q\x1b\\');
+      // default - DECSCA unset (0 or 2)
+      assert.deepEqual(sendStack.pop(), '\x1bP1$r0"q\x1b\\');
+      // DECSCA 1 - protected set
+      await inputHandler.parseP('###\x1b[1"q');
+      await inputHandler.parseP('\x1bP$q"q\x1b\\');
+      assert.deepEqual(sendStack.pop(), '\x1bP1$r1"q\x1b\\');
+      // DECSCA 2 - protected reset (same as 0)
+      await inputHandler.parseP('###\x1b[2"q');
+      await inputHandler.parseP('\x1bP$q"q\x1b\\');
+      assert.deepEqual(sendStack.pop(), '\x1bP1$r0"q\x1b\\');  // reported as DECSCA 0
+    });
+  });
   describe('DECRQM', () => {
     const reportStack: string[] = [];
     beforeEach(() => {

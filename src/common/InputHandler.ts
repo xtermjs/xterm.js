@@ -4,13 +4,12 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, IOscLinkData } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
-import { concat } from 'common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -47,10 +46,13 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 // @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
- * Document common VT features here that are currently unsupported
+ * Document xterm VT features here that are currently unsupported
  */
-// @vt: #N   DCS   SIXEL   "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q 	Pt ST"   "Draw SIXEL image starting at cursor position."
-// @vt: #N   OSC    1   "Set Icon Name"  "OSC 1 ; Pt BEL"  "Set icon name."
+// @vt: #E[Supported via xterm-addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
+// @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
+// @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
+// @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
+// @vt: #N  OSC   1           "Set Icon Name"           "OSC 1 ; Pt BEL"                "Set icon name."
 
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
@@ -102,117 +104,6 @@ export enum WindowsOptionsReportType {
 // create a warning log if an async handler takes longer than the limit (in ms)
 const SLOW_ASYNC_LIMIT = 5000;
 
-/**
- * DCS subparser implementations
- */
-
-/**
- * DCS $ q Pt ST
- *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
- *   Request Status String (DECRQSS), VT420 and up.
- *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
- *
- * @vt: #P[See limited support below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
- * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
- * `ESC P 0 ST` for invalid requests.
- *
- * Supported requests and responses:
- *
- * | Type                             | Request           | Response (`Pt`)                                       |
- * | -------------------------------- | ----------------- | ----------------------------------------------------- |
- * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
- * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
- * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
- * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | always reporting `0 " q` (DECSCA is unsupported)      |
- * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
- *
- *
- * TODO:
- * - fix SGR report
- * - either implement DECSCA or remove the report
- * - either check which conformance is better suited or remove the report completely
- *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
- */
-class DECRQSS implements IDcsHandler {
-  private _data: Uint32Array = new Uint32Array(0);
-
-  constructor(
-    private _bufferService: IBufferService,
-    private _coreService: ICoreService,
-    private _logService: ILogService,
-    private _optionsService: IOptionsService
-  ) { }
-
-  public hook(params: IParams): void {
-    this._data = new Uint32Array(0);
-  }
-
-  public put(data: Uint32Array, start: number, end: number): void {
-    this._data = concat(this._data, data.subarray(start, end));
-  }
-
-  public unhook(success: boolean): boolean {
-    if (!success) {
-      this._data = new Uint32Array(0);
-      return true;
-    }
-    const data = utf32ToString(this._data);
-    this._data = new Uint32Array(0);
-    switch (data) {
-      // valid: DCS 1 $ r Pt ST (xterm)
-      case '"q': // DECSCA
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
-        break;
-      case '"p': // DECSCL
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r61;1"p${C0.ESC}\\`);
-        break;
-      case 'r': // DECSTBM
-        const pt = '' + (this._bufferService.buffer.scrollTop + 1) +
-          ';' + (this._bufferService.buffer.scrollBottom + 1) + 'r';
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
-        break;
-      case 'm': // SGR
-        // TODO: report real settings instead of 0m
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r0m${C0.ESC}\\`);
-        break;
-      case ' q': // DECSCUSR
-        const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
-        let style = STYLES[this._optionsService.rawOptions.cursorStyle];
-        style -= this._optionsService.rawOptions.cursorBlink ? 1 : 0;
-        this._coreService.triggerDataEvent(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
-        break;
-      default:
-        // invalid: DCS 0 $ r Pt ST (xterm)
-        this._logService.debug('Unknown DCS $q %s', data);
-        this._coreService.triggerDataEvent(`${C0.ESC}P0$r${C0.ESC}\\`);
-    }
-    return true;
-  }
-}
-
-/**
- * DCS Ps; Ps| Pt ST
- *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
- *   not supported
- *
- * @vt: #N  DCS   DECUDK   "User Defined Keys"  "DCS Ps ; Ps | Pt ST"   "Definitions for user-defined keys."
- */
-
-/**
- * DCS + q Pt ST (xterm)
- *   Request Terminfo String
- *   not implemented
- *
- * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String"  "DCS + q Pt ST"   "Request Terminfo String."
- */
-
-/**
- * DCS + p Pt ST (xterm)
- *   Set Terminfo Data
- *   not supported
- *
- * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"  "DCS + p Pt ST"   "Set Terminfo Data."
- */
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -233,6 +124,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
+  public getAttrData(): IAttributeData { return this._curAttrData; }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
   private _activeBuffer: IBuffer;
@@ -334,10 +226,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'G' }, params => this.cursorCharAbsolute(params));
     this._parser.registerCsiHandler({ final: 'H' }, params => this.cursorPosition(params));
     this._parser.registerCsiHandler({ final: 'I' }, params => this.cursorForwardTab(params));
-    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params));
-    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params));
+    this._parser.registerCsiHandler({ final: 'J' }, params => this.eraseInDisplay(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'J' }, params => this.eraseInDisplay(params, true));
+    this._parser.registerCsiHandler({ final: 'K' }, params => this.eraseInLine(params, false));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'K' }, params => this.eraseInLine(params, true));
     this._parser.registerCsiHandler({ final: 'L' }, params => this.insertLines(params));
     this._parser.registerCsiHandler({ final: 'M' }, params => this.deleteLines(params));
     this._parser.registerCsiHandler({ final: 'P' }, params => this.deleteChars(params));
@@ -369,6 +261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
+    this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => this.selectProtected(params));
     this._parser.registerCsiHandler({ intermediates: '$', final: 'p' }, params => this.requestMode(params, true));
     this._parser.registerCsiHandler({ prefix: '?', intermediates: '$', final: 'p' }, params => this.requestMode(params, false));
 
@@ -483,7 +376,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     /**
      * DCS handler
      */
-    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DECRQSS(this._bufferService, this._coreService, this._logService, this._optionsService));
+    this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DcsHandler((data, params) => this.requestStatusString(data, params)));
   }
 
   public dispose(): void {
@@ -1208,6 +1101,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
+  /**
+   * CSI Ps " q  Select Character Protection Attribute (DECSCA).
+   *
+   * @vt: #Y CSI DECSCA   "Select Character Protection Attribute"  "CSI Ps " q"  "Whether DECSED and DECSEL can erase (0=default, 2) or not (1)."
+   */
+  public selectProtected(params: IParams): boolean {
+    const p = params.params[0];
+    if (p === 1) this._curAttrData.bg |= BgFlags.PROTECTED;
+    if (p === 2 || p === 0) this._curAttrData.bg &= ~BgFlags.PROTECTED;
+    return true;
+  }
+
 
   /**
    * Helper method to erase cells in a terminal row.
@@ -1217,13 +1122,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param end   end - 1 is last erased cell
    * @param cleanWrap clear the isWrapped flag
    */
-  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     line.replaceCells(
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
-      this._eraseAttrData()
+      this._eraseAttrData(),
+      respectProtect
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -1235,9 +1141,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
    * @param y row index
    */
-  private _resetBufferLine(y: number): void {
+  private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()));
+    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
     this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
     line.isWrapped = false;
   }
@@ -1264,18 +1170,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 2  | Erase complete viewport.                                     |
    * | 3  | Erase scrollback.                                            |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Currently the same as ED."
+   * @vt: #Y CSI DECSED   "Selective Erase In Display"  "CSI ? Ps J"  "Same as ED with respecting protection flag."
    */
-  public eraseInDisplay(params: IParams): boolean {
+  public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     let j;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
-        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         for (; j < this._bufferService.rows; j++) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(j);
         break;
@@ -1283,13 +1189,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._activeBuffer.y;
         this._dirtyRowService.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
-        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true);
+        this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
           this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
         }
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1297,7 +1203,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._bufferService.rows;
         this._dirtyRowService.markDirty(j - 1);
         while (j--) {
-          this._resetBufferLine(j);
+          this._resetBufferLine(j, respectProtect);
         }
         this._dirtyRowService.markDirty(0);
         break;
@@ -1336,19 +1242,19 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1  | Erase from the beginning of the line through the cursor. |
    * | 2  | Erase complete line.                                     |
    *
-   * @vt: #P[Protection attributes are not supported.] CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Currently the same as EL."
+   * @vt: #Y CSI DECSEL   "Selective Erase In Line"  "CSI ? Ps K"  "Same as EL with respecting protecting flag."
    */
-  public eraseInLine(params: IParams): boolean {
+  public eraseInLine(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         break;
       case 1:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
         break;
     }
     this._dirtyRowService.markDirty(this._activeBuffer.y);
@@ -2155,7 +2061,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 1005  | Disable UTF-8 Mouse Mode.                               | #N      |
    * | 1006  | Disable SGR Mouse Mode.                                 | #Y      |
    * | 1015  | Disable urxvt Mouse Mode.                               | #N      |
-   * | 1006  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
+   * | 1016  | Disable SGR-Pixels Mouse Mode.                          | #Y      |
    * | 1047  | Use Normal Screen Buffer (clearing screen if in alt).   | #Y      |
    * | 1048  | Restore cursor as in DECRC.                             | #Y      |
    * | 1049  | Use Normal Screen Buffer and restore cursor.            | #Y      |
@@ -2470,7 +2376,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7         | Inverse. Flips foreground and background color.          | #Y      |
    * | 8         | Invisible (hidden).                                      | #Y      |
    * | 9         | Crossed-out characters (strikethrough).                  | #Y      |
-   * | 21        | Doubly underlined.                                       | #P[Currently outputs a single underline.] |
+   * | 21        | Doubly underlined.                                       | #Y      |
    * | 22        | Normal (neither bold nor faint).                         | #Y      |
    * | 23        | No italic.                                               | #Y      |
    * | 24        | Not underlined.                                          | #Y      |
@@ -2498,6 +2404,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 47        | Background color: White.                                 | #Y      |
    * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
    * | 49        | Background color: Default (original).                    | #Y      |
+   * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
    *
@@ -2507,13 +2414,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | ------ | ------------------------------------------------------------- | ------- |
    * | 0      | No underline. Same as `SGR 24 m`.                             | #Y      |
    * | 1      | Single underline. Same as `SGR 4 m`.                          | #Y      |
-   * | 2      | Double underline.                                             | #P[Currently outputs a single underline.] |
-   * | 3      | Curly underline.                                              | #P[Currently outputs a single underline.] |
-   * | 4      | Dotted underline.                                             | #P[Currently outputs a single underline.] |
-   * | 5      | Dashed underline.                                             | #P[Currently outputs a single underline.] |
+   * | 2      | Double underline.                                             | #Y      |
+   * | 3      | Curly underline.                                              | #Y      |
+   * | 4      | Dotted underline.                                             | #Y      |
+   * | 5      | Dashed underline.                                             | #Y      |
    * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
-   * Extended colors are supported for foreground (Ps=38) and background (Ps=48) as follows:
+   * Extended colors are supported for foreground (Ps=38), background (Ps=48) and underline (Ps=58) as follows:
    *
    * | Ps + 1 | Meaning                                                       | Support |
    * | ------ | ------------------------------------------------------------- | ------- |
@@ -3389,5 +3296,52 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._dirtyRowService.markAllDirty();
     this._setCursor(0, 0);
     return true;
+  }
+
+
+  /**
+   * DCS $ q Pt ST
+   *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
+   *   Request Status String (DECRQSS), VT420 and up.
+   *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
+   *
+   * @vt: #P[Limited support, see below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
+   * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
+   * `ESC P 0 ST` for invalid requests.
+   *
+   * Supported requests and responses:
+   *
+   * | Type                             | Request           | Response (`Pt`)                                       |
+   * | -------------------------------- | ----------------- | ----------------------------------------------------- |
+   * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
+   * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
+   * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
+   * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as Ps = 0)             |
+   * | Conformance Level (DECSCL)       | `DCS $ q " p ST`  | always reporting `61 ; 1 " p` (DECSCL is unsupported) |
+   *
+   *
+   * TODO:
+   * - fix SGR report
+   * - either check which conformance is better suited or remove the report completely
+   *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
+   */
+  public requestStatusString(data: string, params: IParams): boolean {
+    const f = (s: string): boolean => {
+      this._coreService.triggerDataEvent(`${C0.ESC}${s}${C0.ESC}\\`);
+      return true;
+    };
+
+    // access helpers
+    const b = this._bufferService.buffer;
+    const opts = this._optionsService.rawOptions;
+    const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
+
+    if (data === '"q') return f(`P1$r${this._curAttrData.isProtected() ? 1 : 0}"q`);
+    if (data === '"p') return f(`P1$r61;1"p`);
+    if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
+    // FIXME: report real SGR settings instead of 0m
+    if (data === 'm') return f(`P1$r0m`);
+    if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
+    return f(`P0$r`);
   }
 }
