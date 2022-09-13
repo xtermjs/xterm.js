@@ -42,6 +42,8 @@ const w: { startIndex: number } = {
   startIndex: 0
 };
 
+const EMPTY_DATA = new Uint32Array(0);
+
 /**
  * Typed array based bufferline implementation.
  *
@@ -64,7 +66,7 @@ export class BufferLine implements IBufferLine {
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
-    this._data = new Uint32Array(cols * CELL_SIZE);
+    this._data = cols ? new Uint32Array(cols * CELL_SIZE) : EMPTY_DATA;
     const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
@@ -339,25 +341,28 @@ export class BufferLine implements IBufferLine {
     if (cols === this.length) {
       return;
     }
+    const fourByteCells = cols * CELL_SIZE;
     if (cols > this.length) {
-      const data = new Uint32Array(cols * CELL_SIZE);
-      if (this.length) {
-        if (cols * CELL_SIZE < this._data.length) {
-          data.set(this._data.subarray(0, cols * CELL_SIZE));
-        } else {
+      if (this._data.buffer.byteLength >= fourByteCells * 4) {
+        // optimization: avoid alloc and data copy if buffer has enough room
+        this._data = new Uint32Array(this._data.buffer, 0, fourByteCells);
+      } else {
+        // slow path: new alloc and full data copy
+        const data = new Uint32Array(fourByteCells);
+        if (this.length && this._data.length <= fourByteCells) {
           data.set(this._data);
         }
+        this._data = data;
       }
-      this._data = data;
       for (let i = this.length; i < cols; ++i) {
         this.setCell(i, fillCellData);
       }
     } else {
       if (cols) {
-        const data = new Uint32Array(cols * CELL_SIZE);
-        data.set(this._data.subarray(0, cols * CELL_SIZE));
-        this._data = data;
-        // Remove any cut off combined data, FIXME: repeat this for extended attrs
+        // optimization: just shrink the view on existing buffer
+        // FIXME: register requestIdleCallback() to cleanup memory, if buffer >2x used view
+        this._data = this._data.subarray(0, fourByteCells);
+        // Remove any cut off combined data
         const keys = Object.keys(this._combined);
         for (let i = 0; i < keys.length; i++) {
           const key = parseInt(keys[i], 10);
@@ -365,9 +370,18 @@ export class BufferLine implements IBufferLine {
             delete this._combined[key];
           }
         }
+        // remove any cut off extended attributes
+        const extKeys = Object.keys(this._extendedAttrs);
+        for (let i = 0; i < extKeys.length; i++) {
+          const key = parseInt(extKeys[i], 10);
+          if (key >= cols) {
+            delete this._extendedAttrs[key];
+          }
+        }
       } else {
-        this._data = new Uint32Array(0);
+        this._data = EMPTY_DATA;
         this._combined = {};
+        this._extendedAttrs = {};
       }
     }
     this.length = cols;
