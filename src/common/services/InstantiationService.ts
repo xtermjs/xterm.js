@@ -30,7 +30,7 @@ export class ServiceCollection {
 
   public forEach(callback: (id: IServiceIdentifier<any>, instance: any) => any): void {
     for (const [key, value] of this._entries.entries()) {
-        callback(key, value);
+      callback(key, value);
     }
   }
 
