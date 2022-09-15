@@ -231,11 +231,11 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` background-color: ${this._colors.selectionInactiveBackgroundOpaque.css};` +
       `}`;
     // Colors
-    this._colors.ansi.forEach((c, i) => {
+    for (const [i, c] of this._colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
-    });
+    }
     styles +=
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;

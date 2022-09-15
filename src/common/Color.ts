@@ -99,7 +99,7 @@ export namespace color {
  */
 export namespace css {
   export function toColor(css: string): IColor {
-    if (css.match(/#[0-9a-f]{3,8}/i)) {
+    if (css.match(/#[\da-f]{3,8}/i)) {
       switch (css.length) {
         case 4: { // #rgb
           const r = parseInt(css.slice(1, 2).repeat(2), 16);
