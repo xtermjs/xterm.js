@@ -121,7 +121,9 @@ export class WebglCharAtlas implements IDisposable {
 
   public warmUp(): void {
     if (!this._didWarmUp) {
-      this._doWarmUp();
+      (typeof requestIdleCallback !== 'function' ? requestIdleCallback : setTimeout)(() => {
+        this._doWarmUp();
+      });
       this._didWarmUp = true;
     }
   }
@@ -129,8 +131,10 @@ export class WebglCharAtlas implements IDisposable {
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-      this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+      if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
+        const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
+        this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+      }
     }
   }
 
