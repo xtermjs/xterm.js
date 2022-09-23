@@ -33,7 +33,7 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   '▐': [{ x: 4, y: 0, w: 4, h: 8 }], // RIGHT HALF BLOCK
 
   // Block elements (0x2594-0x2595)
-  '▔': [{ x: 0, y: 0, w: 9, h: 1 }], // UPPER ONE EIGHTH BLOCK
+  '▔': [{ x: 0, y: 0, w: 8, h: 1 }], // UPPER ONE EIGHTH BLOCK
   '▕': [{ x: 7, y: 0, w: 1, h: 8 }], // RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (0x2596-0x259F)
