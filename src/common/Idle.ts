@@ -58,7 +58,7 @@ export class IdleTaskQueue {
       this._tasks[this._i++]();
       taskDuration = performance.now() - taskDuration;
       longestTask = Math.max(taskDuration, longestTask);
-      // Guess the following task will take a similar time to task that just finished, allow
+      // Guess the following task will take a similar time to the longest task in this batch, allow
       // additional room to try avoid exceeding the deadline
       if (longestTask * 1.5 > deadline.timeRemaining()) {
         this._start();
