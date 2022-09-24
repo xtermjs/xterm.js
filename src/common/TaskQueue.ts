@@ -6,6 +6,20 @@
 import { isNode } from 'common/Platform';
 
 interface ITaskQueue {
+  /**
+   * Adds a task to the queue which will run in a future idle callback.
+   */
+  enqueue(task: () => void): void;
+
+  /**
+   * Flushes the queue, running all remaining tasks synchronously.
+   */
+  flush(): void;
+
+  /**
+   * Clears any remaining tasks from the queue, these will not be run.
+   */
+  clear(): void;
 }
 
 interface ITaskDeadline {
@@ -21,17 +35,11 @@ abstract class TaskQueue implements ITaskQueue {
   protected abstract _requestCallback(callback: CallbackWithDeadline): number;
   protected abstract _cancelCallback(identifier: number): void;
 
-  /**
-   * Adds a task to the queue which will run in a future idle callback.
-   */
   public enqueue(task: () => void): void {
     this._tasks.push(task);
     this._start();
   }
 
-  /**
-   * Flushes the queue, running all remaining tasks synchronously.
-   */
   public flush(): void {
     while (this._i < this._tasks.length) {
       this._tasks[this._i++]();
@@ -39,9 +47,6 @@ abstract class TaskQueue implements ITaskQueue {
     this.clear();
   }
 
-  /**
-   * Clears any remaining tasks from the queue, these will not be run.
-   */
   public clear(): void {
     if (this._idleCallback) {
       cancelIdleCallback(this._idleCallback);
