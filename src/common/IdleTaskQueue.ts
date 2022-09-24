@@ -29,6 +29,28 @@ export class IdleTaskQueue {
     this._start();
   }
 
+  /**
+   * Flushes the queue, running all remaining tasks synchronously.
+   */
+  public flush(): void {
+    while (this._i < this._tasks.length) {
+      this._tasks[this._i++]();
+    }
+    this.clear();
+  }
+
+  /**
+   * Clears any remaining tasks from the queue, these will not be run.
+   */
+  public clear(): void {
+    if (this._idleCallback) {
+      cancelIdleCallback(this._idleCallback);
+      this._idleCallback = undefined;
+    }
+    this._i = 0;
+    this._tasks.length = 0;
+  }
+
   private _start(): void {
     if (!this._idleCallback) {
       this._idleCallback = requestIdleCallback(() => this._process());
@@ -45,8 +67,6 @@ export class IdleTaskQueue {
         return;
       }
     }
-    // Clear the queue
-    this._i = 0;
-    this._tasks.length = 0;
+    this.clear();
   }
 }
