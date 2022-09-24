@@ -5,6 +5,11 @@
 
 import { IColor, IColorRGB } from 'common/Types';
 
+let $r = 0;
+let $g = 0;
+let $b = 0;
+let $a = 0;
+
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
  */
@@ -29,8 +34,8 @@ export namespace channels {
  */
 export namespace color {
   export function blend(bg: IColor, fg: IColor): IColor {
-    const a = (fg.rgba & 0xFF) / 255;
-    if (a === 1) {
+    $a = (fg.rgba & 0xFF) / 255;
+    if ($a === 1) {
       return {
         css: fg.css,
         rgba: fg.rgba
@@ -42,11 +47,11 @@ export namespace color {
     const bgR = (bg.rgba >> 24) & 0xFF;
     const bgG = (bg.rgba >> 16) & 0xFF;
     const bgB = (bg.rgba >> 8) & 0xFF;
-    const r = bgR + Math.round((fgR - bgR) * a);
-    const g = bgG + Math.round((fgG - bgG) * a);
-    const b = bgB + Math.round((fgB - bgB) * a);
-    const css = channels.toCss(r, g, b);
-    const rgba = channels.toRgba(r, g, b);
+    $r = bgR + Math.round((fgR - bgR) * $a);
+    $g = bgG + Math.round((fgG - bgG) * $a);
+    $b = bgB + Math.round((fgB - bgB) * $a);
+    const css = channels.toCss($r, $g, $b);
+    const rgba = channels.toRgba($r, $g, $b);
     return { css, rgba };
   }
 
@@ -68,25 +73,25 @@ export namespace color {
 
   export function opaque(color: IColor): IColor {
     const rgbaColor = (color.rgba | 0xFF) >>> 0;
-    const [r, g, b] = rgba.toChannels(rgbaColor);
+    [$r, $g, $b] = rgba.toChannels(rgbaColor);
     return {
-      css: channels.toCss(r, g, b),
+      css: channels.toCss($r, $g, $b),
       rgba: rgbaColor
     };
   }
 
   export function opacity(color: IColor, opacity: number): IColor {
-    const a = Math.round(opacity * 0xFF);
-    const [r, g, b] = rgba.toChannels(color.rgba);
+    $a = Math.round(opacity * 0xFF);
+    [$r, $g, $b] = rgba.toChannels(color.rgba);
     return {
-      css: channels.toCss(r, g, b, a),
-      rgba: channels.toRgba(r, g, b, a)
+      css: channels.toCss($r, $g, $b, $a),
+      rgba: channels.toRgba($r, $g, $b, $a)
     };
   }
 
   export function multiplyOpacity(color: IColor, factor: number): IColor {
-    const a = color.rgba & 0xFF;
-    return opacity(color, (a * factor) / 0xFF);
+    $a = color.rgba & 0xFF;
+    return opacity(color, ($a * factor) / 0xFF);
   }
 
   export function toColorRGB(color: IColor): IColorRGB {
@@ -102,17 +107,17 @@ export namespace css {
     if (css.match(/#[0-9a-f]{3,8}/i)) {
       switch (css.length) {
         case 4: { // #rgb
-          const r = parseInt(css.slice(1, 2).repeat(2), 16);
-          const g = parseInt(css.slice(2, 3).repeat(2), 16);
-          const b = parseInt(css.slice(3, 4).repeat(2), 16);
-          return rgba.toColor(r, g, b);
+          $r = parseInt(css.slice(1, 2).repeat(2), 16);
+          $g = parseInt(css.slice(2, 3).repeat(2), 16);
+          $b = parseInt(css.slice(3, 4).repeat(2), 16);
+          return rgba.toColor($r, $g, $b);
         }
         case 5: { // #rgba
-          const r = parseInt(css.slice(1, 2).repeat(2), 16);
-          const g = parseInt(css.slice(2, 3).repeat(2), 16);
-          const b = parseInt(css.slice(3, 4).repeat(2), 16);
-          const a = parseInt(css.slice(4, 5).repeat(2), 16);
-          return rgba.toColor(r, g, b, a);
+          $r = parseInt(css.slice(1, 2).repeat(2), 16);
+          $g = parseInt(css.slice(2, 3).repeat(2), 16);
+          $b = parseInt(css.slice(3, 4).repeat(2), 16);
+          $a = parseInt(css.slice(4, 5).repeat(2), 16);
+          return rgba.toColor($r, $g, $b, $a);
         }
         case 7: // #rrggbb
           return {
@@ -128,11 +133,11 @@ export namespace css {
     }
     const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
     if (rgbaMatch) { // rgb() or rgba()
-      const r = parseInt(rgbaMatch[1]);
-      const g = parseInt(rgbaMatch[2]);
-      const b = parseInt(rgbaMatch[3]);
-      const a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
-      return rgba.toColor(r, g, b, a);
+      $r = parseInt(rgbaMatch[1]);
+      $g = parseInt(rgbaMatch[2]);
+      $b = parseInt(rgbaMatch[3]);
+      $a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
+      return rgba.toColor($r, $g, $b, $a);
     }
     throw new Error('css.toColor: Unsupported css format');
   }

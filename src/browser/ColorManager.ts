@@ -220,21 +220,29 @@ export class ColorManager implements IColorManager {
   }
 
   private _parseColor(
-    css: string | undefined,
+    cssString: string | undefined,
     fallback: IColor,
     allowTransparency: boolean = this.allowTransparency
   ): IColor {
-    if (css === undefined) {
+    if (cssString === undefined) {
       return fallback;
+    }
+
+    // Fast path: avoid parsing via canvas if it looks like #RGB[A] or #RRGGBB[AA]
+    if (cssString.startsWith('#')) {
+      const c = css.toColor(cssString);
+      if (c) {
+        return c;
+      }
     }
 
     // If parsing the value results in failure, then it must be ignored, and the attribute must
     // retain its previous value.
     // -- https://html.spec.whatwg.org/multipage/canvas.html#fill-and-stroke-styles
     this._ctx.fillStyle = this._litmusColor;
-    this._ctx.fillStyle = css;
+    this._ctx.fillStyle = cssString;
     if (typeof this._ctx.fillStyle !== 'string') {
-      console.warn(`Color: ${css} is invalid using fallback ${fallback.css}`);
+      console.warn(`Color: ${cssString} is invalid using fallback ${fallback.css}`);
       return fallback;
     }
 
@@ -261,7 +269,7 @@ export class ColorManager implements IColorManager {
         //
         // So let's just use the fallback color in this case instead.
         console.warn(
-          `Color: ${css} is using transparency, but allowTransparency is false. ` +
+          `Color: ${cssString} is using transparency, but allowTransparency is false. ` +
           `Using fallback ${fallback.css}.`
         );
         return fallback;
@@ -274,7 +282,7 @@ export class ColorManager implements IColorManager {
       const rgba: number = channels.toRgba(r, g, b, alpha);
       return {
         rgba,
-        css
+        css: cssString
       };
     }
 
