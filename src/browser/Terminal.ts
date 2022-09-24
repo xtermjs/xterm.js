@@ -517,11 +517,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
-    this._onWillOpen.fire(this.element);
-    if (!this._renderService.hasRenderer()) {
-      this._renderService.setRenderer(this._createRenderer());
-    }
-
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
@@ -529,6 +524,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
+
+    this._onWillOpen.fire(this.element);
+    if (!this._renderService.hasRenderer()) {
+      this._renderService.setRenderer(this._createRenderer());
+    }
 
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
