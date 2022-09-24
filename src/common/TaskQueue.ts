@@ -130,7 +130,7 @@ export const IdleTaskQueue = (!isNode && 'requestIdleCallback' in window) ? Idle
  * multiple times, only the last set task will run.
  */
 export class DebouncedIdleTask {
-  private _queue: IdleTaskQueueInternal | PriorityTaskQueue;
+  private _queue: ITaskQueue;
 
   constructor() {
     this._queue = new IdleTaskQueue();
