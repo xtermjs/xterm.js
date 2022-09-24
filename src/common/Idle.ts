@@ -9,7 +9,7 @@
  * and care should be taken to ensure they're non-urgent and will not introduce race conditions.
  */
 export class IdleTaskQueue {
-  private _tasks: Function[] = [];
+  private _tasks: (() => void)[] = [];
   private _idleCallback?: number;
   private _maxTaskDuration: number;
   private _i = 0;
@@ -24,9 +24,31 @@ export class IdleTaskQueue {
   /**
    * Adds a task to the queue which will run in a future idle callback.
    */
-  public enqueue(task: Function): void {
+  public enqueue(task: () => void): void {
     this._tasks.push(task);
     this._start();
+  }
+
+  /**
+   * Flushes the queue, running all remaining tasks synchronously.
+   */
+  public flush(): void {
+    while (this._i < this._tasks.length) {
+      this._tasks[this._i++]();
+    }
+    this.clear();
+  }
+
+  /**
+   * Clears any remaining tasks from the queue, these will not be run.
+   */
+  public clear(): void {
+    if (this._idleCallback) {
+      cancelIdleCallback(this._idleCallback);
+      this._idleCallback = undefined;
+    }
+    this._i = 0;
+    this._tasks.length = 0;
   }
 
   private _start(): void {
@@ -45,8 +67,26 @@ export class IdleTaskQueue {
         return;
       }
     }
-    // Clear the queue
-    this._i = 0;
-    this._tasks.length = 0;
+    this.clear();
+  }
+}
+
+export class DebouncedIdleTask {
+  private _queue: IdleTaskQueue;
+
+  /**
+   * @param targetFps The target frame rate.
+   */
+  constructor(targetFps: number = 240) {
+    this._queue = new IdleTaskQueue(targetFps);
+  }
+
+  public set(task: () => void): void {
+    this._queue.clear();
+    this._queue.enqueue(task);
+  }
+
+  public flush(): void {
+    this._queue.flush();
   }
 }
