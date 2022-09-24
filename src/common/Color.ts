@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { isNode } from 'common/Platform';
 import { IColor, IColorRGB } from 'common/Types';
 
 let $r = 0;
@@ -103,7 +104,29 @@ export namespace color {
  * Helper functions where the source type is "css" (string: '#rgb', '#rgba', '#rrggbb', '#rrggbbaa').
  */
 export namespace css {
+  let $ctx: CanvasRenderingContext2D | undefined;
+  let $litmusColor: CanvasGradient | undefined;
+  if (!isNode) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      $ctx = ctx;
+      $ctx.globalCompositeOperation = 'copy';
+      $litmusColor = $ctx.createLinearGradient(0, 0, 1, 1);
+    }
+  }
+
+  /**
+   * Converts a css string to an IColor, this should handle all valid CSS color strings and will
+   * throw if it's invalid. The ideal format to use is `#rrggbb[aa]` as it's the fastest to parse.
+   *
+   * Only `#rgb[a]`, `#rrggbb[aa]`, `rgb()` and `rgba()` formats are supported when run in a Node
+   * environment.
+   */
   export function toColor(css: string): IColor {
+    // Formats: #rgb[a] and #rrggbb[aa]
     if (css.match(/#[0-9a-f]{3,8}/i)) {
       switch (css.length) {
         case 4: { // #rgb
@@ -131,15 +154,45 @@ export namespace css {
           };
       }
     }
+
+    // Formats: rgb() or rgba()
     const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
-    if (rgbaMatch) { // rgb() or rgba()
+    if (rgbaMatch) {
       $r = parseInt(rgbaMatch[1]);
       $g = parseInt(rgbaMatch[2]);
       $b = parseInt(rgbaMatch[3]);
       $a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
       return rgba.toColor($r, $g, $b, $a);
     }
-    throw new Error('css.toColor: Unsupported css format');
+
+    // Validate the context is available for canvas-based color parsing
+    if (!$ctx || !$litmusColor) {
+      throw new Error('css.toColor: Unsupported css format');
+    }
+
+    // Validate the color using canvas fillStyle
+    // See https://html.spec.whatwg.org/multipage/canvas.html#fill-and-stroke-styles
+    $ctx.fillStyle = $litmusColor;
+    $ctx.fillStyle = css;
+    if (typeof $ctx.fillStyle !== 'string') {
+      throw new Error('css.toColor: Unsupported css format');
+    }
+
+    $ctx.fillRect(0, 0, 1, 1);
+    [$r, $g, $b, $a] = $ctx.getImageData(0, 0, 1, 1).data;
+
+    // Validate the color is non-transparent as color hue gets lost when drawn to the canvas
+    if ($a !== 0xFF) {
+      throw new Error('css.toColor: Unsupported css format');
+    }
+
+    // Extract the color from the canvas' fillStyle property which exposes the color value in rgba()
+    // format
+    // See https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+    return {
+      rgba: channels.toRgba($r, $g, $b, $a),
+      css
+    };
   }
 }
 
