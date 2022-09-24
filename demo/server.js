@@ -86,7 +86,7 @@ function startServer() {
       return (data) => {
         s += data;
         if (!sender) {
-          sender = setTimeout(() => {
+          sender = queueMicrotask(() => {
             socket.send(s);
             s = '';
             sender = null;
@@ -103,7 +103,7 @@ function startServer() {
         buffer.push(data);
         length += data.length;
         if (!sender) {
-          sender = setTimeout(() => {
+          sender = queueMicrotask(() => {
             socket.send(Buffer.concat(buffer, length));
             buffer = [];
             sender = null;
