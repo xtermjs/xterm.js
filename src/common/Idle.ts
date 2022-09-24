@@ -11,15 +11,7 @@
 export class IdleTaskQueue {
   private _tasks: (() => void)[] = [];
   private _idleCallback?: number;
-  private _maxTaskDuration: number;
   private _i = 0;
-
-  /**
-   * @param targetFps The target frame rate.
-   */
-  constructor(targetFps: number = 240) {
-    this._maxTaskDuration = 1000 / targetFps;
-  }
 
   /**
    * Adds a task to the queue which will run in a future idle callback.
@@ -53,16 +45,22 @@ export class IdleTaskQueue {
 
   private _start(): void {
     if (!this._idleCallback) {
-      this._idleCallback = requestIdleCallback(() => this._process());
+      this._idleCallback = requestIdleCallback(this._process.bind(this));
     }
   }
 
-  private _process(): void {
-    const start = performance.now();
+  private _process(deadline: IdleDeadline): void {
     this._idleCallback = undefined;
+    let taskDuration = 0;
+    let longestTask = 0;
     while (this._i < this._tasks.length) {
+      taskDuration = performance.now();
       this._tasks[this._i++]();
-      if (performance.now() - start > this._maxTaskDuration) {
+      taskDuration = performance.now() - taskDuration;
+      longestTask = Math.max(taskDuration, longestTask);
+      // Guess the following task will take a similar time to the longest task in this batch, allow
+      // additional room to try avoid exceeding the deadline
+      if (longestTask * 1.5 > deadline.timeRemaining()) {
         this._start();
         return;
       }
@@ -71,14 +69,15 @@ export class IdleTaskQueue {
   }
 }
 
+/**
+ * An object that tracks a single debounced task that will run on the next idle frame. When called
+ * multiple times, only the last set task will run.
+ */
 export class DebouncedIdleTask {
   private _queue: IdleTaskQueue;
 
-  /**
-   * @param targetFps The target frame rate.
-   */
-  constructor(targetFps: number = 240) {
-    this._queue = new IdleTaskQueue(targetFps);
+  constructor() {
+    this._queue = new IdleTaskQueue();
   }
 
   public set(task: () => void): void {
