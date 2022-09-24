@@ -12,7 +12,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { IdleTaskQueue } from 'common/IdleTaskQueue';
+import { DebouncedIdleTask } from 'common/Idle';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -106,7 +106,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
 
     if (!this._isPaused && this._needsFullRefresh) {
-      this._pausedResizeQueue.flush();
+      this._pausedResizeTask.flush();
       this.refreshRows(0, this._rowCount - 1);
       this._needsFullRefresh = false;
     }
@@ -205,11 +205,10 @@ export class RenderService extends Disposable implements IRenderService {
     this.refreshRows(0, this._rowCount - 1);
   }
 
-  private _pausedResizeQueue = new IdleTaskQueue();
+  private _pausedResizeTask = new DebouncedIdleTask();
   public onResize(cols: number, rows: number): void {
     if (this._isPaused) {
-      this._pausedResizeQueue.clear();
-      this._pausedResizeQueue.enqueue(() => this._renderer.onResize(cols, rows));
+      this._pausedResizeTask.set(() => this._renderer.onResize(cols, rows));
     } else {
       this._renderer.onResize(cols, rows);
     }

@@ -9,7 +9,7 @@
  * and care should be taken to ensure they're non-urgent and will not introduce race conditions.
  */
 export class IdleTaskQueue {
-  private _tasks: Function[] = [];
+  private _tasks: (() => void)[] = [];
   private _idleCallback?: number;
   private _maxTaskDuration: number;
   private _i = 0;
@@ -24,7 +24,7 @@ export class IdleTaskQueue {
   /**
    * Adds a task to the queue which will run in a future idle callback.
    */
-  public enqueue(task: Function): void {
+  public enqueue(task: () => void): void {
     this._tasks.push(task);
     this._start();
   }
@@ -68,5 +68,25 @@ export class IdleTaskQueue {
       }
     }
     this.clear();
+  }
+}
+
+export class DebouncedIdleTask {
+  private _queue: IdleTaskQueue;
+
+  /**
+   * @param targetFps The target frame rate.
+   */
+  constructor(targetFps: number = 240) {
+    this._queue = new IdleTaskQueue(targetFps);
+  }
+
+  public set(task: () => void): void {
+    this._queue.clear();
+    this._queue.enqueue(task);
+  }
+
+  public flush(): void {
+    this._queue.flush();
   }
 }
