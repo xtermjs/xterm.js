@@ -25,6 +25,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _screenDprMonitor: ScreenDprMonitor;
+  private _pausedResizeTask = new DebouncedIdleTask();
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -205,7 +206,6 @@ export class RenderService extends Disposable implements IRenderService {
     this.refreshRows(0, this._rowCount - 1);
   }
 
-  private _pausedResizeTask = new DebouncedIdleTask();
   public onResize(cols: number, rows: number): void {
     if (this._isPaused) {
       this._pausedResizeTask.set(() => this._renderer.onResize(cols, rows));
