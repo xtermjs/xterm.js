@@ -16,6 +16,7 @@ import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
+import { IdleTaskQueue } from 'common/IdleTaskQueue';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -124,20 +125,21 @@ export class WebglCharAtlas implements IDisposable {
 
   public warmUp(): void {
     if (!this._didWarmUp) {
-      (typeof requestIdleCallback !== 'function' ? requestIdleCallback : setTimeout)(() => {
-        this._doWarmUp();
-      });
+      this._doWarmUp();
       this._didWarmUp = true;
     }
   }
 
   private _doWarmUp(): void {
-    // Pre-fill with ASCII 33-126
+    // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
+    const queue = new IdleTaskQueue();
     for (let i = 33; i < 126; i++) {
-      if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
-        const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-        this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
-      }
+      queue.enqueue(() => {
+        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
+          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+        }
+      });
     }
   }
 
