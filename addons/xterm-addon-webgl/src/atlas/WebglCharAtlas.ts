@@ -16,7 +16,7 @@ import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
-import { IdleTaskQueue } from 'common/IdleTaskQueue';
+import { IdleTaskQueue } from 'common/Idle';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
