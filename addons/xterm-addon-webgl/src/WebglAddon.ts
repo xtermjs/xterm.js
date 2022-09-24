@@ -26,7 +26,8 @@ export class WebglAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
-      throw new Error('Cannot activate WebglAddon before Terminal.open');
+      (terminal as any)._core.onWillOpen(() => this.activate(terminal));
+      return;
     }
     if (isSafari) {
       throw new Error('Webgl is not currently supported on Safari');

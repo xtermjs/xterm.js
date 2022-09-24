@@ -267,18 +267,14 @@ function createTerminal(): void {
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
-  term.open(terminalContainer);
   addons.fit.instance!.fit();
-  try {
-    typedTerm.loadAddon(addons.webgl.instance);
-    setTimeout(() => {
-      addTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
-    }, 0);
-  }
-  catch {
-    addons.webgl.instance = undefined;
-  }
+  typedTerm.loadAddon(addons.webgl.instance);
+  setTimeout(() => {
+    addTextureAtlas(addons.webgl.instance.textureAtlas);
+    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+  }, 0);
+
+  term.open(terminalContainer);
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);

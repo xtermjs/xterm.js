@@ -143,6 +143,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
   private _onA11yTabEmitter = new EventEmitter<number>();
   public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  private _onWillOpen = new EventEmitter<HTMLElement>();
+  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
+
 
   /**
    * Creates a new `Terminal` object.
@@ -509,11 +512,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
     this._instantiationService.setService(ICharacterJoinerService, this._characterJoinerService);
 
-    const renderer = this._createRenderer();
-    this._renderService = this.register(this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement));
+    this._renderService = this.register(this._instantiationService.createInstance(RenderService, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
     this.register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
+
+    this._onWillOpen.fire(this.element);
+    if (!this._renderService.hasRenderer()) {
+      this._renderService.setRenderer(this._createRenderer());
+    }
 
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');

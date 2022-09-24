@@ -71,6 +71,7 @@ export interface IRenderService extends IDisposable {
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
+  hasRenderer(): boolean;
   setRenderer(renderer: IRenderer): void;
   setColors(colors: IColorSet): void;
   onDevicePixelRatioChange(): void;

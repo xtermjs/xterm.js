@@ -41,6 +41,7 @@ export class MockTerminal implements ITerminal {
   public onTitleChange!: IEvent<string>;
   public onBell!: IEvent<void>;
   public onScroll!: IEvent<number>;
+  public onWillOpen!: IEvent<HTMLElement>;
   public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
@@ -398,6 +399,9 @@ export class MockRenderService implements IRenderService {
     throw new Error('Method not implemented.');
   }
   public resize(cols: number, rows: number): void {
+    throw new Error('Method not implemented.');
+  }
+  public hasRenderer(): boolean {
     throw new Error('Method not implemented.');
   }
   public setRenderer(renderer: IRenderer): void {
