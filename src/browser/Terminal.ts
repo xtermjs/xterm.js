@@ -502,7 +502,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
     this._theme = this.options.theme || this._theme;
-    this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this._colorManager = new ColorManager();
     this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e, this.optionsService.rawOptions[e])));
     this._colorManager.setTheme(this._theme);
 

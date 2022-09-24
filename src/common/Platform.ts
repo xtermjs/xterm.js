@@ -13,7 +13,7 @@ interface INavigator {
 // we want this module to live in common.
 declare const navigator: INavigator;
 
-const isNode = (typeof navigator === 'undefined') ? true : false;
+export const isNode = (typeof navigator === 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
