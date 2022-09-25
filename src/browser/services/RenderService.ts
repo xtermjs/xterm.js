@@ -12,7 +12,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { DebouncedIdleTask } from 'common/Idle';
+import { DebouncedIdleTask } from 'common/TaskQueue';
 
 interface ISelectionState {
   start: [number, number] | undefined;
