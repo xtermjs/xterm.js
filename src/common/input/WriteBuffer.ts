@@ -105,7 +105,7 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
-      setTimeout(() => this._innerWrite());
+      queueMicrotask(() => this._innerWrite());
     }
 
     this._pendingData += data.length;
@@ -217,7 +217,7 @@ export class WriteBuffer {
         this._callbacks = this._callbacks.slice(this._bufferOffset);
         this._bufferOffset = 0;
       }
-      setTimeout(() => this._innerWrite());
+      queueMicrotask(() => this._innerWrite());
     } else {
       this._writeBuffer.length = 0;
       this._callbacks.length = 0;
