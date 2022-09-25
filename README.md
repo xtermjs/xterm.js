@@ -102,6 +102,8 @@ Note that some APIs are marked *experimental*, these are added to enable experim
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
 
+<details><summary>Examples</summary>
+
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, and powerful open source code editor that provides an integrated terminal based on xterm.js.
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js.
@@ -195,7 +197,9 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Cratecode**](https://cratecode.com): Learn to program for free through interactive online lessons. Cratecode uses xterm.js to give users access to their own Linux environment.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
-Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
+</details>
+  
+Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it as an example. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
 
 ## Releases
 
