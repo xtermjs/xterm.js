@@ -33,12 +33,6 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-// queueMicrotask polyfill for nodejs < v11
-const qmt: (cb: () => void) => void = (typeof queueMicrotask === 'undefined')
-  ? (cb: () => void) => { Promise.resolve().then(cb); }
-  : queueMicrotask;
-
-
 export class WriteBuffer {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
@@ -194,7 +188,7 @@ export class WriteBuffer {
         // 2. spawn a promise immediately resolving to `true`
         // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
-          qmt(() => {throw err;});
+          queueMicrotask(() => {throw err;});
           return Promise.resolve(false);
         }).then(continuation);
         return;
