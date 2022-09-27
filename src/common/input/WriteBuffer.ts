@@ -217,7 +217,7 @@ export class WriteBuffer {
         this._callbacks = this._callbacks.slice(this._bufferOffset);
         this._bufferOffset = 0;
       }
-      queueMicrotask(() => this._innerWrite());
+      setTimeout(() => this._innerWrite());
     } else {
       this._writeBuffer.length = 0;
       this._callbacks.length = 0;
