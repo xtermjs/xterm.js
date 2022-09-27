@@ -49,7 +49,7 @@ abstract class TaskQueue implements ITaskQueue {
 
   public clear(): void {
     if (this._idleCallback) {
-      cancelIdleCallback(this._idleCallback);
+      this._cancelCallback(this._idleCallback);
       this._idleCallback = undefined;
     }
     this._i = 0;
@@ -58,11 +58,11 @@ abstract class TaskQueue implements ITaskQueue {
 
   private _start(): void {
     if (!this._idleCallback) {
-      this._idleCallback = requestIdleCallback(this._process.bind(this));
+      this._idleCallback = this._requestCallback(this._process.bind(this));
     }
   }
 
-  private _process(deadline: IdleDeadline): void {
+  private _process(deadline: ITaskDeadline): void {
     this._idleCallback = undefined;
     let taskDuration = 0;
     let longestTask = 0;
