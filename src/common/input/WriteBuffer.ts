@@ -40,10 +40,15 @@ export class WriteBuffer {
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
+  private _didUserInput = false;
   public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
   private _onWriteParsed = new EventEmitter<void>();
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
+
+  public handleUserInput(): void {
+    this._didUserInput = true;
+  }
 
   /**
    * @deprecated Unreliable, to be removed soon.
@@ -99,7 +104,15 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
-      queueMicrotask(() => this._innerWrite());
+      // If this is the first write call after the user has done some input,
+      // parse it immediately in an upcoming microtask to minimize reduce input,
+      // otherwise schedule for the next event
+      if (this._didUserInput) {
+        this._didUserInput = false;
+        queueMicrotask(() => this._innerWrite());
+      } else {
+        setTimeout(() => this._innerWrite());
+      }
     }
 
     this._pendingData += data.length;
