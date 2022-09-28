@@ -347,7 +347,7 @@ export class BufferLine implements IBufferLine {
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
     if (cols === this.length) {
-      return this._data.length * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
+      return this._data.length * 4 * CLEANUP_THRESHOLD < this._data.buffer.byteLength;
     }
     const uint32Cells = cols * CELL_SIZE;
     if (cols > this.length) {
@@ -384,7 +384,7 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
-    return uint32Cells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
+    return uint32Cells * 4 * CLEANUP_THRESHOLD < this._data.buffer.byteLength;
   }
 
   /**
@@ -393,8 +393,8 @@ export class BufferLine implements IBufferLine {
    * memory by a factor of CLEANUP_THRESHOLD.
    * Returns 0 or 1 indicating whether a cleanup happened.
    */
-  public cleanupBuffer(): number {
-    if (this._data.length * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD) {
+  public cleanupMemory(): number {
+    if (this._data.length * 4 * CLEANUP_THRESHOLD < this._data.buffer.byteLength) {
       const data = new Uint32Array(this._data.length);
       data.set(this._data);
       this._data = data;

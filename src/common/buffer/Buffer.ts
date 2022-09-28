@@ -14,6 +14,7 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { DebouncedIdleTask } from 'common/TaskQueue';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -151,6 +152,9 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
+    // defer memory cleanup of bufferlines
+    let needsCleanup = 0;
+
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -164,7 +168,7 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -243,13 +247,34 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
 
     this._cols = newCols;
     this._rows = newRows;
+
+    if (needsCleanup) {
+      this._memoryCleanupTask.set(() => this._cleanupMemory());
+    } else {
+      // FIXME: DebouncedIdleTask has no clear method?
+      this._memoryCleanupTask.set(() => {});
+    }
+  }
+
+  private _memoryCleanupTask: DebouncedIdleTask = new DebouncedIdleTask();
+
+  private _cleanupMemory(): void {
+    let counted = 0;
+    for (let i = 0; i < this.lines.length; i++) {
+      counted += this.lines.get(i)!.cleanupMemory();
+      // throttle to 5k lines
+      if (counted > 5000) {
+        this._memoryCleanupTask.set(() => this._cleanupMemory());
+        break;
+      }
+    }
   }
 
   private get _isReflowEnabled(): boolean {

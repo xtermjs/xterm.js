@@ -206,6 +206,7 @@ export interface IBufferLine {
   deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
   replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
+  cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
