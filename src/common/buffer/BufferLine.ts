@@ -42,7 +42,8 @@ const w: { startIndex: number } = {
   startIndex: 0
 };
 
-const EMPTY_DATA = new Uint32Array(0);
+/** Factor when to cleanup underlying array buffer after shrinking. */
+const CLEANUP_THRESHOLD = 2;
 
 /**
  * Typed array based bufferline implementation.
@@ -66,7 +67,7 @@ export class BufferLine implements IBufferLine {
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
-    this._data = cols ? new Uint32Array(cols * CELL_SIZE) : EMPTY_DATA;
+    this._data = new Uint32Array(cols * CELL_SIZE);
     const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
@@ -337,9 +338,10 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public resize(cols: number, fillCellData: ICellData): void {
+  public resize(cols: number, fillCellData: ICellData): boolean {
+    let needsCleanup = false;
     if (cols === this.length) {
-      return;
+      return needsCleanup;
     }
     const fourByteCells = cols * CELL_SIZE;
     if (cols > this.length) {
@@ -358,33 +360,44 @@ export class BufferLine implements IBufferLine {
         this.setCell(i, fillCellData);
       }
     } else {
-      if (cols) {
-        // optimization: just shrink the view on existing buffer
-        // FIXME: register requestIdleCallback() to cleanup memory, if buffer >2x used view
-        this._data = this._data.subarray(0, fourByteCells);
-        // Remove any cut off combined data
-        const keys = Object.keys(this._combined);
-        for (let i = 0; i < keys.length; i++) {
-          const key = parseInt(keys[i], 10);
-          if (key >= cols) {
-            delete this._combined[key];
-          }
+      // optimization: just shrink the view on existing buffer
+      this._data = this._data.subarray(0, fourByteCells);
+      needsCleanup = fourByteCells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
+      // Remove any cut off combined data
+      const keys = Object.keys(this._combined);
+      for (let i = 0; i < keys.length; i++) {
+        const key = parseInt(keys[i], 10);
+        if (key >= cols) {
+          delete this._combined[key];
         }
-        // remove any cut off extended attributes
-        const extKeys = Object.keys(this._extendedAttrs);
-        for (let i = 0; i < extKeys.length; i++) {
-          const key = parseInt(extKeys[i], 10);
-          if (key >= cols) {
-            delete this._extendedAttrs[key];
-          }
+      }
+      // remove any cut off extended attributes
+      const extKeys = Object.keys(this._extendedAttrs);
+      for (let i = 0; i < extKeys.length; i++) {
+        const key = parseInt(extKeys[i], 10);
+        if (key >= cols) {
+          delete this._extendedAttrs[key];
         }
-      } else {
-        this._data = EMPTY_DATA;
-        this._combined = {};
-        this._extendedAttrs = {};
       }
     }
     this.length = cols;
+    return needsCleanup;
+  }
+
+  /**
+   * Cleanup underlying array buffer.
+   * A cleanup will be triggered if the array buffer exceeds the actual used
+   * memory by a factor of CLEANUP_THRESHOLD.
+   * Returns 0 or 1 indicating whether a cleanup happened.
+   */
+  public cleanupBuffer(): number {
+    if (this._data.length * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD) {
+      const data = new Uint32Array(this._data.length);
+      data.set(this._data);
+      this._data = data;
+      return 1;
+    }
+    return 0;
   }
 
   /** fill a line with fillCharData */
