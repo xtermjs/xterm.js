@@ -104,15 +104,20 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
+
       // If this is the first write call after the user has done some input,
       // parse it immediately in an upcoming microtask to minimize reduce input,
       // otherwise schedule for the next event
       if (this._didUserInput) {
         this._didUserInput = false;
-        queueMicrotask(() => this._innerWrite());
-      } else {
-        setTimeout(() => this._innerWrite());
+        this._pendingData += data.length;
+        this._writeBuffer.push(data);
+        this._callbacks.push(callback);
+        this._innerWrite();
+        return;
       }
+
+      setTimeout(() => this._innerWrite());
     }
 
     this._pendingData += data.length;
