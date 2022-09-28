@@ -79,14 +79,25 @@ function startServer() {
     console.log('Connected to terminal ' + term.pid);
     ws.send(logs[term.pid]);
 
+    // unbuffered delivery after user input
+    let userInput = false;
+
     // string message buffering
-    function buffer(socket, timeout) {
+    function buffer(socket, timeout, maxSize) {
       let s = '';
       let sender = null;
       return (data) => {
         s += data;
-        if (!sender) {
-          sender = queueMicrotask(() => {
+        if (s.length > maxSize || userInput) {
+          userInput = false;
+          socket.send(s);
+          s = '';
+          if (sender) {
+            clearTimeout(sender);
+            sender = null;
+          }
+        } else if (!sender) {
+          sender = setTimeout(() => {
             socket.send(s);
             s = '';
             sender = null;
@@ -95,15 +106,24 @@ function startServer() {
       };
     }
     // binary message buffering
-    function bufferUtf8(socket, timeout) {
+    function bufferUtf8(socket, timeout, maxSize) {
       let buffer = [];
       let sender = null;
       let length = 0;
       return (data) => {
         buffer.push(data);
         length += data.length;
-        if (!sender) {
-          sender = queueMicrotask(() => {
+        if (length > maxSize || userInput) {
+          userInput = false;
+          socket.send(Buffer.concat(buffer, length));
+          buffer = [];
+          length = 0;
+          if (sender) {
+            clearTimeout(sender);
+            sender = null;
+          }
+        } else if (!sender) {
+          sender = setTimeout(() => {
             socket.send(Buffer.concat(buffer, length));
             buffer = [];
             sender = null;
@@ -112,7 +132,7 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = (USE_BINARY ? bufferUtf8 : buffer)(ws, 2, 262144);
 
     // WARNING: This is a naive implementation that will not throttle the flow of data. This means
     // it could flood the communication channel and make the terminal unresponsive. Learn more about
@@ -126,6 +146,7 @@ function startServer() {
     });
     ws.on('message', function(msg) {
       term.write(msg);
+      userInput = true;
     });
     ws.on('close', function () {
       term.kill();
