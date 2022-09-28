@@ -357,9 +357,7 @@ export class BufferLine implements IBufferLine {
       } else {
         // slow path: new alloc and full data copy
         const data = new Uint32Array(fourByteCells);
-        if (this.length && this._data.length <= fourByteCells) {
-          data.set(this._data);
-        }
+        data.set(this._data);
         this._data = data;
       }
       for (let i = this.length; i < cols; ++i) {
