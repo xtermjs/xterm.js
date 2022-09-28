@@ -338,10 +338,16 @@ export class BufferLine implements IBufferLine {
     }
   }
 
+  /**
+   * Resize BufferLine to `cols` filling excess cells with `fillCellData`.
+   * The underlying array buffer will not change if there is still enough space
+   * to hold the new buffer line data.
+   * Returns a boolean indicating, whether a `cleanBuffer` call would free
+   * excess memory (after shrinking > CLEANUP_THRESHOLD).
+   */
   public resize(cols: number, fillCellData: ICellData): boolean {
-    let needsCleanup = false;
     if (cols === this.length) {
-      return needsCleanup;
+      return this._data.length * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
     }
     const fourByteCells = cols * CELL_SIZE;
     if (cols > this.length) {
@@ -362,7 +368,6 @@ export class BufferLine implements IBufferLine {
     } else {
       // optimization: just shrink the view on existing buffer
       this._data = this._data.subarray(0, fourByteCells);
-      needsCleanup = fourByteCells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
       // Remove any cut off combined data
       const keys = Object.keys(this._combined);
       for (let i = 0; i < keys.length; i++) {
@@ -381,7 +386,7 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
-    return needsCleanup;
+    return fourByteCells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
   }
 
   /**
