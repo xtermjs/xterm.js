@@ -349,14 +349,14 @@ export class BufferLine implements IBufferLine {
     if (cols === this.length) {
       return this._data.length * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
     }
-    const fourByteCells = cols * CELL_SIZE;
+    const uint32Cells = cols * CELL_SIZE;
     if (cols > this.length) {
-      if (this._data.buffer.byteLength >= fourByteCells * 4) {
+      if (this._data.buffer.byteLength >= uint32Cells * 4) {
         // optimization: avoid alloc and data copy if buffer has enough room
-        this._data = new Uint32Array(this._data.buffer, 0, fourByteCells);
+        this._data = new Uint32Array(this._data.buffer, 0, uint32Cells);
       } else {
         // slow path: new alloc and full data copy
-        const data = new Uint32Array(fourByteCells);
+        const data = new Uint32Array(uint32Cells);
         data.set(this._data);
         this._data = data;
       }
@@ -365,7 +365,7 @@ export class BufferLine implements IBufferLine {
       }
     } else {
       // optimization: just shrink the view on existing buffer
-      this._data = this._data.subarray(0, fourByteCells);
+      this._data = this._data.subarray(0, uint32Cells);
       // Remove any cut off combined data
       const keys = Object.keys(this._combined);
       for (let i = 0; i < keys.length; i++) {
@@ -384,7 +384,7 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
-    return fourByteCells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
+    return uint32Cells * 4 < this._data.buffer.byteLength * CLEANUP_THRESHOLD;
   }
 
   /**
