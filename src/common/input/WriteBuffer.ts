@@ -106,7 +106,7 @@ export class WriteBuffer {
       this._bufferOffset = 0;
 
       // If this is the first write call after the user has done some input,
-      // parse it immediately in an upcoming microtask to minimize reduce input,
+      // parse it immediately to minimize reduce input,
       // otherwise schedule for the next event
       if (this._didUserInput) {
         this._didUserInput = false;
