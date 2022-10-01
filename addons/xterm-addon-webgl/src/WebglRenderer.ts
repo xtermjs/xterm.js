@@ -54,8 +54,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _contextRestorationTimeout: number | undefined;
 
   public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
-  public readonly onRequestRedraw      = initEvent<IRequestRedrawEvent>();
-  public readonly onContextLoss        = initEvent<void>();
+  public readonly onRequestRedraw = initEvent<IRequestRedrawEvent>();
+  public readonly onContextLoss = initEvent<void>();
 
   constructor(
     private _terminal: Terminal,
@@ -419,9 +419,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
           continue;
         }
 
