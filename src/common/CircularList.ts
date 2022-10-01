@@ -25,11 +25,11 @@ export class CircularList<T> implements ICircularList<T> {
   private _startIndex: number;
   private _length: number;
 
-  public onDeleteEmitter = new EventEmitter<IDeleteEvent>();
+  public readonly onDeleteEmitter = new EventEmitter<IDeleteEvent>();
   public readonly onDelete = this.onDeleteEmitter.event;
-  public onInsertEmitter = new EventEmitter<IInsertEvent>();
+  public readonly onInsertEmitter = new EventEmitter<IInsertEvent>();
   public readonly onInsert = this.onInsertEmitter.event;
-  public onTrimEmitter = new EventEmitter<number>();
+  public readonly onTrimEmitter = new EventEmitter<number>();
   public readonly onTrim = this.onTrimEmitter.event;
 
   constructor(

@@ -34,11 +34,11 @@ export class CoreService extends Disposable implements ICoreService {
   // Circular dependency, this must be unset or memory will leak after Terminal.dispose
   private _scrollToBottom: (() => void) | undefined;
 
-  private _onData = this.register(new EventEmitter<string>());
+  private readonly _onData = this.register(new EventEmitter<string>());
   public readonly onData = this._onData.event;
-  private _onUserInput = this.register(new EventEmitter<void>());
+  private readonly _onUserInput = this.register(new EventEmitter<void>());
   public readonly onUserInput = this._onUserInput.event;
-  private _onBinary = this.register(new EventEmitter<string>());
+  private readonly _onBinary = this.register(new EventEmitter<string>());
   public readonly onBinary = this._onBinary.event;
 
   constructor(

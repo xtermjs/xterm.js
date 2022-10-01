@@ -27,9 +27,9 @@ export class DecorationService extends Disposable implements IDecorationService 
    */
   private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
 
-  private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
+  private readonly _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
-  private _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
+  private readonly _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
   public readonly onDecorationRemoved = this._onDecorationRemoved.event;
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }

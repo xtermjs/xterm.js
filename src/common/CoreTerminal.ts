@@ -61,15 +61,15 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
-  private _onBinary = new EventEmitter<string>();
+  private readonly _onBinary = new EventEmitter<string>();
   public readonly onBinary = this._onBinary.event;
-  private _onData = new EventEmitter<string>();
+  private readonly _onData = new EventEmitter<string>();
   public readonly onData = this._onData.event;
   protected _onLineFeed = new EventEmitter<void>();
   public readonly onLineFeed = this._onLineFeed.event;
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public readonly onResize = this._onResize.event;
-  protected _onWriteParsed = new EventEmitter<void>();
+  protected readonly _onWriteParsed = new EventEmitter<void>();
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   /**

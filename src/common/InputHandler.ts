@@ -129,32 +129,32 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private _onRequestBell = new EventEmitter<void>();
+  private readonly _onRequestBell = new EventEmitter<void>();
   public readonly onRequestBell = this._onRequestBell.event;
-  private _onRequestRefreshRows = new EventEmitter<number, number>();
+  private readonly _onRequestRefreshRows = new EventEmitter<number, number>();
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
-  private _onRequestReset = new EventEmitter<void>();
+  private readonly _onRequestReset = new EventEmitter<void>();
   public readonly onRequestReset = this._onRequestReset.event;
-  private _onRequestSendFocus = new EventEmitter<void>();
+  private readonly _onRequestSendFocus = new EventEmitter<void>();
   public readonly onRequestSendFocus = this._onRequestSendFocus.event;
-  private _onRequestSyncScrollBar = new EventEmitter<void>();
+  private readonly _onRequestSyncScrollBar = new EventEmitter<void>();
   public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
-  private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
+  private readonly _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
   public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private _onA11yChar = new EventEmitter<string>();
+  private readonly _onA11yChar = new EventEmitter<string>();
   public readonly onA11yChar = this._onA11yChar.event;
-  private _onA11yTab = new EventEmitter<number>();
+  private readonly _onA11yTab = new EventEmitter<number>();
   public readonly onA11yTab = this._onA11yTab.event;
-  private _onCursorMove = new EventEmitter<void>();
+  private readonly _onCursorMove = new EventEmitter<void>();
   public readonly onCursorMove = this._onCursorMove.event;
-  private _onLineFeed = new EventEmitter<void>();
+  private readonly _onLineFeed = new EventEmitter<void>();
   public readonly onLineFeed = this._onLineFeed.event;
-  private _onScroll = new EventEmitter<number>();
+  private readonly _onScroll = new EventEmitter<number>();
   public readonly onScroll = this._onScroll.event;
-  private _onTitleChange = new EventEmitter<string>();
+  private readonly _onTitleChange = new EventEmitter<string>();
   public readonly onTitleChange = this._onTitleChange.event;
-  private _onColor = new EventEmitter<IColorEvent>();
+  private readonly _onColor = new EventEmitter<IColorEvent>();
   public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {

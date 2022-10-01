@@ -12,7 +12,7 @@ export class BufferNamespaceApi implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
 
-  private _onBufferChange = new EventEmitter<IBufferApi>();
+  private readonly _onBufferChange = new EventEmitter<IBufferApi>();
   public readonly onBufferChange = this._onBufferChange.event;
 
   constructor(private _core: ICoreTerminal) {

@@ -172,7 +172,7 @@ export class CoreMouseService implements ICoreMouseService {
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
 
-  private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
+  private readonly _onProtocolChange = new EventEmitter<CoreMouseEventType>();
   public readonly onProtocolChange =  this._onProtocolChange.event;
 
   constructor(

@@ -39,13 +39,13 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
+  private readonly _onDimensionsChange = new EventEmitter<IRenderDimensions>();
   public readonly onDimensionsChange =  this._onDimensionsChange.event;
-  private _onRenderedViewportChange = new EventEmitter<{ start: number, end: number }>();
+  private readonly _onRenderedViewportChange = new EventEmitter<{ start: number, end: number }>();
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
-  private _onRender = new EventEmitter<{ start: number, end: number }>();
+  private readonly _onRender = new EventEmitter<{ start: number, end: number }>();
   public readonly onRender = this._onRender.event;
-  private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
+  private readonly _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
   public get dimensions(): IRenderDimensions { return this._renderer.dimensions; }

@@ -111,13 +111,13 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _oldSelectionStart: [number, number] | undefined = undefined;
   private _oldSelectionEnd: [number, number] | undefined = undefined;
 
-  private _onLinuxMouseSelection = this.register(new EventEmitter<string>());
+  private readonly _onLinuxMouseSelection = this.register(new EventEmitter<string>());
   public readonly onLinuxMouseSelection = this._onLinuxMouseSelection.event;
-  private _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
+  private readonly _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
   public readonly onRequestRedraw = this._onRedrawRequest.event;
-  private _onSelectionChange = this.register(new EventEmitter<void>());
+  private readonly _onSelectionChange = this.register(new EventEmitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
-  private _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
+  private readonly _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   constructor(

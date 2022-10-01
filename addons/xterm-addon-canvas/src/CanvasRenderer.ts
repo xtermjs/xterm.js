@@ -27,7 +27,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public readonly onRequestRedraw = this._onRequestRedraw.event;
 
   constructor(

@@ -19,7 +19,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
 
-  private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
+  private readonly _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
   public readonly onBufferActivate = this._onBufferActivate.event;
 
   /**

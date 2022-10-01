@@ -42,7 +42,7 @@ export class WriteBuffer {
   private _syncCalls = 0;
   private _didUserInput = false;
 
-  private _onWriteParsed = new EventEmitter<void>();
+  private readonly _onWriteParsed = new EventEmitter<void>();
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }

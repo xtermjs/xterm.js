@@ -14,7 +14,7 @@ export class UnicodeService implements IUnicodeService {
   private _active: string = '';
   private _activeProvider: IUnicodeVersionProvider;
 
-  private _onChange = new EventEmitter<string>();
+  private readonly _onChange = new EventEmitter<string>();
   public readonly onChange = this._onChange.event;
 
   constructor() {
