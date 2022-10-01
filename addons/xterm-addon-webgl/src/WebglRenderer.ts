@@ -18,7 +18,7 @@ import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
 import { ITerminal, IColorSet } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, initEvent } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
@@ -53,12 +53,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
-  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
-  public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onContextLoss = new EventEmitter<void>();
-  public readonly onContextLoss = this._onContextLoss.event;
+  public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
+  public readonly onRequestRedraw      = initEvent<IRequestRedrawEvent>();
+  public readonly onContextLoss        = initEvent<void>();
 
   constructor(
     private _terminal: Terminal,
@@ -75,7 +72,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core, this._coreBrowserService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this.onRequestRedraw, this._coreBrowserService, coreService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -115,7 +112,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
         console.warn('webgl context not restored; firing onContextLoss');
-        this._onContextLoss.fire(e);
+        this.onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
@@ -283,7 +280,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
     if (this._charAtlas !== atlas) {
-      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+      this.onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -676,7 +673,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _requestRedrawViewport(): void {
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this.onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 }
 

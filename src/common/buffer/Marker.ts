@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { initEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IMarker } from 'common/Types';
 
@@ -15,8 +15,7 @@ export class Marker extends Disposable implements IMarker {
 
   public get id(): number { return this._id; }
 
-  private readonly _onDispose = new EventEmitter<void>();
-  public readonly onDispose = this._onDispose.event;
+  public readonly onDispose = initEvent<void>();
 
   constructor(
     public line: number
@@ -31,7 +30,7 @@ export class Marker extends Disposable implements IMarker {
     this.isDisposed = true;
     this.line = -1;
     // Emit before super.dispose such that dispose listeners get a change to react
-    this._onDispose.fire();
+    this.onDispose.fire();
     super.dispose();
   }
 }

@@ -14,9 +14,11 @@ export interface IEvent<T, U = void> {
 }
 
 export interface IEventEmitter<T, U = void> {
-  event: IEvent<T, U>;
   fire(arg1: T, arg2: U): void;
   dispose(): void;
+}
+
+export interface IEventWithEmitter<T, U = void> extends IEventEmitter<T, U>, IEvent<T, U> {
 }
 
 export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
@@ -62,6 +64,18 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
     }
     this._disposed = true;
   }
+}
+
+export function initEvent<T, U = void>(): IEventWithEmitter<T, U> {
+  const emitter = new EventEmitter<T, U>();
+  const event = emitter.event;
+  Object.defineProperty(event, 'fire', {
+    value: emitter.fire.bind(emitter)
+  });
+  Object.defineProperty(event, 'dispose', {
+    value: emitter.dispose.bind(emitter)
+  });
+  return event as any;
 }
 
 export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): IDisposable {

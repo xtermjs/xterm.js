@@ -5,7 +5,7 @@
 
 import { IRenderer, IRenderDimensions } from 'browser/renderer/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
@@ -39,14 +39,10 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private readonly _onDimensionsChange = new EventEmitter<IRenderDimensions>();
-  public readonly onDimensionsChange =  this._onDimensionsChange.event;
-  private readonly _onRenderedViewportChange = new EventEmitter<{ start: number, end: number }>();
-  public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
-  private readonly _onRender = new EventEmitter<{ start: number, end: number }>();
-  public readonly onRender = this._onRender.event;
-  private readonly _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
-  public readonly onRefreshRequest = this._onRefreshRequest.event;
+  public readonly onDimensionsChange = initEvent<IRenderDimensions>();
+  public readonly onRenderedViewportChange = initEvent<{ start: number, end: number }>();
+  public readonly onRender = initEvent<{ start: number, end: number }>();
+  public readonly onRefreshRequest = initEvent<{ start: number, end: number }>();
 
   public get dimensions(): IRenderDimensions { return this._renderer.dimensions; }
 
@@ -135,9 +131,9 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {
-      this._onRenderedViewportChange.fire({ start, end });
+      this.onRenderedViewportChange.fire({ start, end });
     }
-    this._onRender.fire({ start, end });
+    this.onRender.fire({ start, end });
     this._isNextRenderRedrawOnly = true;
   }
 
@@ -157,7 +153,7 @@ export class RenderService extends Disposable implements IRenderService {
     if (this._renderer.dimensions.canvasWidth === this._canvasWidth && this._renderer.dimensions.canvasHeight === this._canvasHeight) {
       return;
     }
-    this._onDimensionsChange.fire(this._renderer.dimensions);
+    this.onDimensionsChange.fire(this._renderer.dimensions);
   }
 
   public dispose(): void {
