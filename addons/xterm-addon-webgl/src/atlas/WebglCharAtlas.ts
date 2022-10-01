@@ -54,10 +54,8 @@ interface ICharAtlasActiveRow {
   height: number;
 }
 
-/** Work variables to avoid garbage collection. */
-const w: { glyph: IRasterizedGlyph | undefined } = {
-  glyph: undefined
-};
+// Work variables to avoid garbage collection
+let $glyph = undefined;
 
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
@@ -184,12 +182,12 @@ export class WebglCharAtlas implements IDisposable {
     fg: number,
     ext: number
   ): IRasterizedGlyph {
-    w.glyph = cacheMap.get(key, bg, fg, ext);
-    if (!w.glyph) {
-      w.glyph = this._drawToCache(key, bg, fg, ext);
-      cacheMap.set(key, bg, fg, ext, w.glyph);
+    $glyph = cacheMap.get(key, bg, fg, ext);
+    if (!$glyph) {
+      $glyph = this._drawToCache(key, bg, fg, ext);
+      cacheMap.set(key, bg, fg, ext, $glyph);
     }
-    return w.glyph;
+    return $glyph;
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {
