@@ -12,11 +12,11 @@ import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
@@ -104,6 +104,8 @@ export enum WindowsOptionsReportType {
 // create a warning log if an async handler takes longer than the limit (in ms)
 const SLOW_ASYNC_LIMIT = 5000;
 
+// Work variables to avoid garbage collection
+let $temp = 0;
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -120,6 +122,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _windowTitle = '';
   private _iconName = '';
   private _currentLinkId?: number;
+  private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
@@ -169,7 +172,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _bufferService: IBufferService,
     private readonly _charsetService: ICharsetService,
     private readonly _coreService: ICoreService,
-    private readonly _dirtyRowService: IDirtyRowService,
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _oscLinkService: IOscLinkService,
@@ -179,6 +181,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   ) {
     super();
     this.register(this._parser);
+    this._dirtyRowTracker = new DirtyRowTracker(this._bufferService);
 
     // Track properties used in performance critical code manually to avoid using slow getters
     this._activeBuffer = this._bufferService.buffer;
@@ -459,7 +462,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // Clear the dirty row service so we know which lines changed as a result of parsing
     // Important: do not clear between async calls, otherwise we lost pending update information.
     if (!wasPaused) {
-      this._dirtyRowService.clearRange();
+      this._dirtyRowTracker.clearRange();
     }
 
     // process big data in smaller chunks
@@ -493,7 +496,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Refresh any dirty rows accumulated as part of parsing
-    this._onRequestRefreshRows.fire(this._dirtyRowService.start, this._dirtyRowService.end);
+    this._onRequestRefreshRows.fire(this._dirtyRowTracker.start, this._dirtyRowTracker.end);
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
@@ -507,7 +510,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const curAttr = this._curAttrData;
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
 
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
@@ -635,7 +638,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.setCellFromCodePoint(this._activeBuffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -699,7 +702,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y   C0    FF   "Form Feed"            "\f, \x0C"  "Treated as LF."
    */
   public lineFeed(): boolean {
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     if (this._optionsService.rawOptions.convertEol) {
       this._activeBuffer.x = 0;
     }
@@ -714,7 +717,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._activeBuffer.x >= this._bufferService.cols) {
       this._activeBuffer.x--;
     }
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
     this._onLineFeed.fire();
     return true;
@@ -842,14 +845,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y = this._coreService.decPrivateModes.origin
       ? Math.min(this._activeBuffer.scrollBottom, Math.max(this._activeBuffer.scrollTop, this._activeBuffer.y))
       : Math.min(this._bufferService.rows - 1, Math.max(0, this._activeBuffer.y));
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
    * Set absolute cursor position.
    */
   private _setCursor(x: number, y: number): void {
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     if (this._coreService.decPrivateModes.origin) {
       this._activeBuffer.x = x;
       this._activeBuffer.y = this._activeBuffer.scrollTop + y;
@@ -858,7 +861,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.y = y;
     }
     this._restrictCursor();
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -1178,16 +1181,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
-        this._dirtyRowService.markDirty(j);
+        this._dirtyRowTracker.markDirty(j);
         this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
         for (; j < this._bufferService.rows; j++) {
           this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(j);
+        this._dirtyRowTracker.markDirty(j);
         break;
       case 1:
         j = this._activeBuffer.y;
-        this._dirtyRowService.markDirty(j);
+        this._dirtyRowTracker.markDirty(j);
         // Deleted front part of line and everything before. This line will no longer be wrapped.
         this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
@@ -1197,15 +1200,15 @@ export class InputHandler extends Disposable implements IInputHandler {
         while (j--) {
           this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(0);
+        this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
         j = this._bufferService.rows;
-        this._dirtyRowService.markDirty(j - 1);
+        this._dirtyRowTracker.markDirty(j - 1);
         while (j--) {
           this._resetBufferLine(j, respectProtect);
         }
-        this._dirtyRowService.markDirty(0);
+        this._dirtyRowTracker.markDirty(0);
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
@@ -1257,7 +1260,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
         break;
     }
-    this._dirtyRowService.markDirty(this._activeBuffer.y);
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     return true;
   }
 
@@ -1289,7 +1292,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
     this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
@@ -1323,7 +1326,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
 
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
     this._activeBuffer.x = 0; // see https://vt100.net/docs/vt220-rm/chapter4.html - vt220 only?
     return true;
   }
@@ -1349,7 +1352,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1375,7 +1378,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -1395,7 +1398,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1411,7 +1414,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 1);
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 0, this._activeBuffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1443,7 +1446,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1476,7 +1479,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1499,7 +1502,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1522,7 +1525,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
       line.isWrapped = false;
     }
-    this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+    this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
 
@@ -1544,7 +1547,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._activeBuffer.getNullCell(this._eraseAttrData()),
         this._eraseAttrData()
       );
-      this._dirtyRowService.markDirty(this._activeBuffer.y);
+      this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
     return true;
   }
@@ -3220,7 +3223,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const scrollRegionHeight = this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop;
       this._activeBuffer.lines.shiftElements(this._activeBuffer.ybase + this._activeBuffer.y, scrollRegionHeight, 1);
       this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._eraseAttrData()));
-      this._dirtyRowService.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
+      this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     } else {
       this._activeBuffer.y--;
       this._restrictCursor(); // quickfix to not run out of bounds
@@ -3293,7 +3296,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         line.isWrapped = false;
       }
     }
-    this._dirtyRowService.markAllDirty();
+    this._dirtyRowTracker.markAllDirty();
     this._setCursor(0, 0);
     return true;
   }
@@ -3343,5 +3346,61 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (data === 'm') return f(`P1$r0m`);
     if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
     return f(`P0$r`);
+  }
+
+  public markRangeDirty(y1: number, y2: number): void {
+    this._dirtyRowTracker.markRangeDirty(y1, y2);
+  }
+}
+
+export interface IDirtyRowTracker {
+  readonly start: number;
+  readonly end: number;
+
+  clearRange(): void;
+  markDirty(y: number): void;
+  markRangeDirty(y1: number, y2: number): void;
+  markAllDirty(): void;
+}
+
+class DirtyRowTracker implements IDirtyRowTracker {
+  public start!: number;
+  public end!: number;
+
+  constructor(
+    @IBufferService private readonly _bufferService: IBufferService
+  ) {
+    this.clearRange();
+  }
+
+  public clearRange(): void {
+    this.start = this._bufferService.buffer.y;
+    this.end = this._bufferService.buffer.y;
+  }
+
+  public markDirty(y: number): void {
+    if (y < this.start) {
+      this.start = y;
+    } else if (y > this.end) {
+      this.end = y;
+    }
+  }
+
+  public markRangeDirty(y1: number, y2: number): void {
+    if (y1 > y2) {
+      $temp = y1;
+      y1 = y2;
+      y2 = $temp;
+    }
+    if (y1 < this.start) {
+      this.start = y1;
+    }
+    if (y2 > this.end) {
+      this.end = y2;
+    }
+  }
+
+  public markAllDirty(): void {
+    this.markRangeDirty(0, this._bufferService.rows - 1);
   }
 }
