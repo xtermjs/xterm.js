@@ -6,7 +6,7 @@
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
 
@@ -22,10 +22,10 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  public readonly onResize = this._onResize.event;
+  private readonly _onScroll = new EventEmitter<number>();
+  public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }
 

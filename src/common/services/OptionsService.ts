@@ -57,8 +57,8 @@ export class OptionsService implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private _onOptionChange = new EventEmitter<string>();
-  public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
+  private readonly _onOptionChange = new EventEmitter<string>();
+  public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
     // set the default value of each option

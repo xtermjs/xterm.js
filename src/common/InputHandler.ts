@@ -129,33 +129,33 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private _onRequestBell = new EventEmitter<void>();
-  public get onRequestBell(): IEvent<void> { return this._onRequestBell.event; }
-  private _onRequestRefreshRows = new EventEmitter<number, number>();
-  public get onRequestRefreshRows(): IEvent<number, number> { return this._onRequestRefreshRows.event; }
-  private _onRequestReset = new EventEmitter<void>();
-  public get onRequestReset(): IEvent<void> { return this._onRequestReset.event; }
-  private _onRequestSendFocus = new EventEmitter<void>();
-  public get onRequestSendFocus(): IEvent<void> { return this._onRequestSendFocus.event; }
-  private _onRequestSyncScrollBar = new EventEmitter<void>();
-  public get onRequestSyncScrollBar(): IEvent<void> { return this._onRequestSyncScrollBar.event; }
-  private _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
-  public get onRequestWindowsOptionsReport(): IEvent<WindowsOptionsReportType> { return this._onRequestWindowsOptionsReport.event; }
+  private readonly _onRequestBell = new EventEmitter<void>();
+  public readonly onRequestBell = this._onRequestBell.event;
+  private readonly _onRequestRefreshRows = new EventEmitter<number, number>();
+  public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
+  private readonly _onRequestReset = new EventEmitter<void>();
+  public readonly onRequestReset = this._onRequestReset.event;
+  private readonly _onRequestSendFocus = new EventEmitter<void>();
+  public readonly onRequestSendFocus = this._onRequestSendFocus.event;
+  private readonly _onRequestSyncScrollBar = new EventEmitter<void>();
+  public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
+  private readonly _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
+  public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private _onA11yChar = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yChar.event; }
-  private _onA11yTab = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTab.event; }
-  private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
-  private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onColor = new EventEmitter<IColorEvent>();
-  public get onColor(): IEvent<IColorEvent> { return this._onColor.event; }
+  private readonly _onA11yChar = new EventEmitter<string>();
+  public readonly onA11yChar = this._onA11yChar.event;
+  private readonly _onA11yTab = new EventEmitter<number>();
+  public readonly onA11yTab = this._onA11yTab.event;
+  private readonly _onCursorMove = new EventEmitter<void>();
+  public readonly onCursorMove = this._onCursorMove.event;
+  private readonly _onLineFeed = new EventEmitter<void>();
+  public readonly onLineFeed = this._onLineFeed.event;
+  private readonly _onScroll = new EventEmitter<number>();
+  public readonly onScroll = this._onScroll.event;
+  private readonly _onTitleChange = new EventEmitter<string>();
+  public readonly onTitleChange = this._onTitleChange.event;
+  private readonly _onColor = new EventEmitter<IColorEvent>();
+  public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {
     paused: false,

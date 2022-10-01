@@ -170,8 +170,10 @@ export class CoreMouseService implements ICoreMouseService {
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
-  private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
   private _lastEvent: ICoreMouseEvent | null = null;
+
+  private readonly _onProtocolChange = new EventEmitter<CoreMouseEventType>();
+  public readonly onProtocolChange =  this._onProtocolChange.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
@@ -223,13 +225,6 @@ export class CoreMouseService implements ICoreMouseService {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
     this._lastEvent = null;
-  }
-
-  /**
-   * Event to announce changes in mouse tracking.
-   */
-  public get onProtocolChange(): IEvent<CoreMouseEventType> {
-    return this._onProtocolChange.event;
   }
 
   /**

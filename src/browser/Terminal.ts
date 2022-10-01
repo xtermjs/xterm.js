@@ -122,27 +122,27 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _colorManager: ColorManager | undefined;
   private _theme: ITheme | undefined;
 
-  private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
-  private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
-  private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
+  private readonly _onCursorMove = new EventEmitter<void>();
+  public readonly onCursorMove = this._onCursorMove.event;
+  private readonly _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
+  public readonly onKey = this._onKey.event;
+  private readonly _onRender = new EventEmitter<{ start: number, end: number }>();
+  public readonly onRender = this._onRender.event;
+  private readonly _onSelectionChange = new EventEmitter<void>();
+  public readonly onSelectionChange = this._onSelectionChange.event;
+  private readonly _onTitleChange = new EventEmitter<string>();
+  public readonly onTitleChange = this._onTitleChange.event;
+  private readonly _onBell = new EventEmitter<void>();
+  public readonly onBell = this._onBell.event;
 
-  private _onFocus = new EventEmitter<void>();
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
-  private _onBlur = new EventEmitter<void>();
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  private _onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
-  private _onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  private readonly _onFocus = new EventEmitter<void>();
+  public readonly onFocus = this._onFocus.event;
+  private readonly _onBlur = new EventEmitter<void>();
+  public readonly onBlur = this._onBlur.event;
+  private readonly _onA11yCharEmitter = new EventEmitter<string>();
+  public readonly onA11yChar = this._onA11yCharEmitter.event;
+  private readonly _onA11yTabEmitter = new EventEmitter<number>();
+  public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
    * Creates a new `Terminal` object.

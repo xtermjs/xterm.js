@@ -15,8 +15,8 @@ export class Marker extends Disposable implements IMarker {
 
   public get id(): number { return this._id; }
 
-  private _onDispose = new EventEmitter<void>();
-  public get onDispose(): IEvent<void> { return this._onDispose.event; }
+  private readonly _onDispose = new EventEmitter<void>();
+  public readonly onDispose = this._onDispose.event;
 
   constructor(
     public line: number
