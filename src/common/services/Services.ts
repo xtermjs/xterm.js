@@ -122,19 +122,6 @@ export interface ICharsetService {
   setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
-export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
-export interface IDirtyRowService {
-  serviceBrand: undefined;
-
-  readonly start: number;
-  readonly end: number;
-
-  clearRange(): void;
-  markDirty(y: number): void;
-  markRangeDirty(y1: number, y2: number): void;
-  markAllDirty(): void;
-}
-
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
