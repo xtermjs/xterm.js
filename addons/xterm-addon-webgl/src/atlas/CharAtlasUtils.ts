@@ -70,8 +70,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.scaledCharHeight === b.scaledCharHeight &&
       a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&
       a.minimumContrastRatio === b.minimumContrastRatio &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
+      a.colors.foreground.rgba === b.colors.foreground.rgba &&
+      a.colors.background.rgba === b.colors.background.rgba;
 }
 
 export function is256Color(colorCode: number): boolean {
