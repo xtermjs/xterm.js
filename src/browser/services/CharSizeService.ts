@@ -17,7 +17,7 @@ export class CharSizeService implements ICharSizeService {
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
   private _onCharSizeChange = new EventEmitter<void>();
-  public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
+  public readonly onCharSizeChange = this._onCharSizeChange.event;
 
   constructor(
     document: Document,

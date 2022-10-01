@@ -62,21 +62,22 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _windowsMode: IDisposable | undefined;
 
   private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  public readonly onBinary = this._onBinary.event;
   private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  public readonly onData = this._onData.event;
   protected _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  public readonly onLineFeed = this._onLineFeed.event;
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  protected _onScroll = new EventEmitter<IScrollEvent, void>();
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
+  public readonly onResize = this._onResize.event;
   protected _onWriteParsed = new EventEmitter<void>();
+  public readonly onWriteParsed = this._onWriteParsed.event;
+
   /**
    * Internally we track the source of the scroll but this is meaningless outside the library so
    * it's filtered out.
    */
   protected _onScrollApi?: EventEmitter<number, void>;
+  protected _onScroll = new EventEmitter<IScrollEvent, void>();
   public get onScroll(): IEvent<number, void> {
     if (!this._onScrollApi) {
       this._onScrollApi = new EventEmitter<number, void>();

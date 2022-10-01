@@ -123,26 +123,26 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _theme: ITheme | undefined;
 
   private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  public readonly onCursorMove = this._onCursorMove.event;
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  public readonly onKey = this._onKey.event;
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public readonly onRender = this._onRender.event;
   private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  public readonly onSelectionChange = this._onSelectionChange.event;
   private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  public readonly onTitleChange = this._onTitleChange.event;
   private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
+  public readonly onBell = this._onBell.event;
 
   private _onFocus = new EventEmitter<void>();
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  public readonly onFocus = this._onFocus.event;
   private _onBlur = new EventEmitter<void>();
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
+  public readonly onBlur = this._onBlur.event;
   private _onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  public readonly onA11yChar = this._onA11yCharEmitter.event;
   private _onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
    * Creates a new `Terminal` object.

@@ -16,9 +16,9 @@ export class WebglAddon implements ITerminalAddon {
   private _renderer?: WebglRenderer;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLElement>();
-  public get onChangeTextureAtlas(): IEvent<HTMLElement> { return this._onChangeTextureAtlas.event; }
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
   private _onContextLoss = new EventEmitter<void>();
-  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
+  public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
     private _preserveDrawingBuffer?: boolean

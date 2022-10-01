@@ -56,12 +56,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _contextRestorationTimeout: number | undefined;
 
   private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
-  public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
   private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
-  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
-
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
   private _onContextLoss = new EventEmitter<void>();
-  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
+  public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
     private _terminal: Terminal,

@@ -35,11 +35,11 @@ export class CoreService extends Disposable implements ICoreService {
   private _scrollToBottom: (() => void) | undefined;
 
   private _onData = this.register(new EventEmitter<string>());
-  public get onData(): IEvent<string> { return this._onData.event; }
+  public readonly onData = this._onData.event;
   private _onUserInput = this.register(new EventEmitter<void>());
-  public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
+  public readonly onUserInput = this._onUserInput.event;
   private _onBinary = this.register(new EventEmitter<string>());
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  public readonly onBinary = this._onBinary.event;
 
   constructor(
     // TODO: Move this into a service

@@ -20,7 +20,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _activeBuffer!: Buffer;
 
   private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
-  public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
+  public readonly onBufferActivate = this._onBufferActivate.event;
 
   /**
    * Create a new BufferSet for the given terminal.

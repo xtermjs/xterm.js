@@ -41,8 +41,9 @@ export class WriteBuffer {
   private _isSyncWriting = false;
   private _syncCalls = 0;
   private _didUserInput = false;
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
+
   private _onWriteParsed = new EventEmitter<void>();
+  public readonly onWriteParsed = this._onWriteParsed.event;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
 

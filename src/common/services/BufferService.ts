@@ -23,9 +23,9 @@ export class BufferService extends Disposable implements IBufferService {
   public isUserScrolling: boolean = false;
 
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  public readonly onResize = this._onResize.event;
   private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }
 

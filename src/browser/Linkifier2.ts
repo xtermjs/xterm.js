@@ -27,9 +27,9 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _activeLine: number = -1;
 
   private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
+  public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
   private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
+  public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService

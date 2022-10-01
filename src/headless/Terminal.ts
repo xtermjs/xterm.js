@@ -33,16 +33,15 @@ export class Terminal extends CoreTerminal {
   public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
 
   private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
+  public readonly onBell = this._onBell.event;
   private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  public readonly onCursorMove = this._onCursorMove.event;
   private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-
+  public readonly onTitleChange = this._onTitleChange.event;
   private _onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  public readonly onA11yChar = this._onA11yCharEmitter.event;
   private _onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
    * Creates a new `Terminal` object.

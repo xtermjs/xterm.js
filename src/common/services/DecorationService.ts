@@ -28,9 +28,9 @@ export class DecorationService extends Disposable implements IDecorationService 
   private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
 
   private _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
-  public get onDecorationRegistered(): IEvent<IInternalDecoration> { return this._onDecorationRegistered.event; }
+  public readonly onDecorationRegistered = this._onDecorationRegistered.event;
   private _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
-  public get onDecorationRemoved(): IEvent<IInternalDecoration> { return this._onDecorationRemoved.event; }
+  public readonly onDecorationRemoved = this._onDecorationRemoved.event;
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
 
@@ -99,7 +99,7 @@ class Decoration extends Disposable implements IInternalDecoration {
 
   public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
   public readonly onRender = this.onRenderEmitter.event;
-  private _onDispose = this.register(new EventEmitter<void>());
+  private readonly _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
   private _cachedBg: IColor | undefined | null = null;
