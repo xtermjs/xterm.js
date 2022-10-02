@@ -4,19 +4,17 @@
  */
 
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { IRasterizedGlyph, IBoundingBox } from '../Types';
+import { IBoundingBox } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
-import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/shared/RendererUtils';
+import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.

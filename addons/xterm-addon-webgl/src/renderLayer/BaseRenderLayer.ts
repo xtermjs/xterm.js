@@ -11,7 +11,7 @@ import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
-import { throwIfFalsy } from '../WebglUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

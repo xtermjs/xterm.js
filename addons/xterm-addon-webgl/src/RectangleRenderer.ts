@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
+import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
@@ -13,6 +13,7 @@ import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { DIM_OPACITY } from 'browser/renderer/shared/Constants';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,
