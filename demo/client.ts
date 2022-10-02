@@ -222,6 +222,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
+  document.getElementById('sgr-test').addEventListener('click', sgrTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -882,6 +883,65 @@ function ansiColorsTest(): void {
   term.write('232-255 ');
   for (let i = 232; i < 256; i++) {
     term.write(`\x1b[48;5;${i}m ${(i % 10)} \x1b[0m`);
+  }
+}
+
+function writeTestString(): string {
+  let alphabet = '';
+  for (let i = 97; i < 123; i++) {
+    alphabet += String.fromCharCode(i);
+  }
+  let numbers = '';
+  for (let i = 0; i < 10; i++) {
+    numbers += i.toString();
+  }
+  return `${alphabet} ${numbers} 汉语 한국어 👽`;
+}
+const testString = writeTestString();
+
+function sgrTest(): void {
+  term.write('\n\n\r');
+  term.writeln(`Character Attributes (SGR, Select Graphic Rendition)`);
+  const entries: { ps: number, name: string }[] = [
+    { ps: 0, name: 'Normal' },
+    { ps: 1, name: 'Bold' },
+    { ps: 2, name: 'Faint/dim' },
+    { ps: 3, name: 'Italicized' },
+    { ps: 4, name: 'Underlined' },
+    { ps: 5, name: 'Blink' },
+    { ps: 7, name: 'Inverse' },
+    { ps: 8, name: 'Invisible' },
+    { ps: 9, name: 'Crossed-out characters' },
+    { ps: 21, name: 'Doubly-underlined' },
+    { ps: 22, name: 'Normal' },
+    { ps: 23, name: 'Not italicized' },
+    { ps: 24, name: 'Not underlined' },
+    { ps: 25, name: 'Steady (not blink)' },
+    { ps: 27, name: 'Positive (not inverse)' },
+    { ps: 28, name: 'Visible (not hidden)' },
+    { ps: 29, name: 'Not crossed-out' },
+    { ps: 30, name: 'Foreground Black' },
+    { ps: 31, name: 'Foreground Red' },
+    { ps: 32, name: 'Foreground Green' },
+    { ps: 33, name: 'Foreground Yellow' },
+    { ps: 34, name: 'Foreground Blue' },
+    { ps: 35, name: 'Foreground Magenta' },
+    { ps: 36, name: 'Foreground Cyan' },
+    { ps: 37, name: 'Foreground White' },
+    { ps: 39, name: 'Foreground default' },
+    { ps: 40, name: 'Background Black' },
+    { ps: 41, name: 'Background Red' },
+    { ps: 42, name: 'Background Green' },
+    { ps: 43, name: 'Background Yellow' },
+    { ps: 44, name: 'Background Blue' },
+    { ps: 45, name: 'Background Magenta' },
+    { ps: 46, name: 'Background Cyan' },
+    { ps: 47, name: 'Background White' },
+    { ps: 49, name: 'Background default' }
+  ];
+  const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
+  for (const e of entries) {
+    term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
   }
 }
 
