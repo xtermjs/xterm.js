@@ -5,7 +5,7 @@
 
 import { IColorManager, IColorSet, IColorContrastCache } from 'browser/Types';
 import { ITheme } from 'common/services/Services';
-import { channels, color, css } from 'common/Color';
+import { channels, color, css, NULL_COLOR } from 'common/Color';
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 import { ColorIndex, IColor } from 'common/Types';
 
@@ -124,12 +124,8 @@ export class ColorManager implements IColorManager {
     this.colors.selectionBackgroundOpaque = color.blend(this.colors.background, this.colors.selectionBackgroundTransparent);
     this.colors.selectionInactiveBackgroundTransparent = this._parseColor(theme.selectionInactiveBackground, this.colors.selectionBackgroundTransparent);
     this.colors.selectionInactiveBackgroundOpaque = color.blend(this.colors.background, this.colors.selectionInactiveBackgroundTransparent);
-    const nullColor: IColor = {
-      css: '',
-      rgba: 0
-    };
-    this.colors.selectionForeground = theme.selectionForeground ? this._parseColor(theme.selectionForeground, nullColor) : undefined;
-    if (this.colors.selectionForeground === nullColor) {
+    this.colors.selectionForeground = theme.selectionForeground ? this._parseColor(theme.selectionForeground, NULL_COLOR) : undefined;
+    if (this.colors.selectionForeground === NULL_COLOR) {
       this.colors.selectionForeground = undefined;
     }
 

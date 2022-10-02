@@ -16,6 +16,7 @@ import { IBufferService, IOptionsService, IDecorationService, ICoreService } fro
 import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
+import { Terminal } from 'xterm';
 
 let nextRendererId = 1;
 
@@ -31,6 +32,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
   public readonly onRequestRedraw = this._onRequestRedraw.event;
 
   constructor(
+    private readonly _terminal: Terminal,
     private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
     linkifier2: ILinkifier2,
@@ -45,10 +47,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      new TextRenderLayer(this._screenElement, 0, this._colors, allowTransparency, this._id, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService),
-      new SelectionRenderLayer(this._screenElement, 1, this._colors, this._id, this._bufferService, this._coreBrowserService, decorationService, this._optionsService),
-      new LinkRenderLayer(this._screenElement, 2, this._colors, this._id, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService),
-      new CursorRenderLayer(this._screenElement, 3, this._colors, this._id, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
+      new TextRenderLayer(this._terminal, this._screenElement, 0, this._colors, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService),
+      new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._colors, this._bufferService, this._coreBrowserService, decorationService, this._optionsService),
+      new LinkRenderLayer(this._terminal, this._screenElement, 2, this._colors, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService),
+      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._colors, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -77,7 +79,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
       l.dispose();
     }
     super.dispose();
-    removeTerminalFromCache(this._id);
+    removeTerminalFromCache(this._terminal);
   }
 
   public onDevicePixelRatioChange(): void {

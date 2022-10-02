@@ -8,6 +8,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { IColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICoreBrowserService } from 'browser/services/Services';
+import { Terminal } from 'xterm';
 
 interface ISelectionState {
   start?: [number, number];
@@ -20,16 +21,16 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   private _state!: ISelectionState;
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    rendererId: number,
     bufferService: IBufferService,
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
     optionsService: IOptionsService
   ) {
-    super(container, 'selection', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'selection', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
     this._clearState();
   }
 

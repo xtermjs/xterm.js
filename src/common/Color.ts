@@ -11,6 +11,11 @@ let $g = 0;
 let $b = 0;
 let $a = 0;
 
+export const NULL_COLOR: IColor = {
+  css: '#00000000',
+  rgba: 0
+};
+
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
  */

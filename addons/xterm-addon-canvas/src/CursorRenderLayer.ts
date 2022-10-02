@@ -11,6 +11,7 @@ import { IColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService } from 'browser/services/Services';
+import { Terminal } from 'xterm';
 
 interface ICursorState {
   x: number;
@@ -32,10 +33,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cell: ICellData = new CellData();
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    rendererId: number,
     private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
@@ -43,7 +44,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService
   ) {
-    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'cursor', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = {
       x: 0,
       y: 0,

@@ -20,6 +20,7 @@ import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/
 import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
+import { Terminal } from 'xterm';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -53,12 +54,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public get canvas(): HTMLCanvasElement { return this._canvas; }
 
   constructor(
+    private readonly _terminal: Terminal,
     private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
     protected _colors: IColorSet,
-    private _rendererId: number,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
@@ -127,7 +128,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._optionsService.rawOptions, this._rendererId, colorSet, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 

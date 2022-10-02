@@ -15,6 +15,7 @@ import { IOptionsService, IBufferService, IDecorationService } from 'common/serv
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { color, css } from 'common/Color';
+import { Terminal } from 'xterm';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -31,18 +32,18 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _workCell = new CellData();
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
     alpha: boolean,
-    rendererId: number,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _characterJoinerService: ICharacterJoinerService,
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService
   ) {
-    super(container, 'text', zIndex, alpha, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'text', zIndex, alpha, colors, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
   }
 

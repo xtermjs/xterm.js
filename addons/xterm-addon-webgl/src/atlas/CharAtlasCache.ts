@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { generateConfig, configEquals } from './CharAtlasUtils';
 import { WebglCharAtlas } from './WebglCharAtlas';
-import { ICharAtlasConfig } from './Types';
 import { Terminal } from 'xterm';
 import { IColorSet, ITerminal } from 'browser/Types';
+import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
+import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
   atlas: WebglCharAtlas;

@@ -4,24 +4,20 @@
  */
 
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/Constants';
-import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
+import { IGlyphIdentifier } from './Types';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'common/Types';
 import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { color } from 'common/Color';
+import { color, NULL_COLOR } from 'common/Color';
+import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 1024;
-
-const TRANSPARENT_COLOR = {
-  css: 'rgba(0, 0, 0, 0)',
-  rgba: 0
-};
 
 // Drawing to the cache is expensive: If we have to draw more than this number of glyphs to the
 // cache in a single frame, give up on trying to cache anything else, and try to finish the current
@@ -223,7 +219,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
-      return TRANSPARENT_COLOR;
+      return NULL_COLOR;
     }
     let result: IColor;
     if (glyph.bg === INVERTED_DEFAULT_COLOR) {

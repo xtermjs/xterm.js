@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
 import { IRasterizedGlyph, IBoundingBox } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
@@ -11,12 +10,13 @@ import { throwIfFalsy } from '../WebglUtils';
 import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { color, rgba } from 'common/Color';
+import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
+import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -29,12 +29,6 @@ const TEXTURE_HEIGHT = 1024;
  * this prevent juggling multiple textures in the GL context.
  */
 const TEXTURE_CAPACITY = Math.floor(TEXTURE_HEIGHT * 0.8);
-
-const TRANSPARENT_COLOR = {
-  css: 'rgba(0, 0, 0, 0)',
-  rgba: 0
-};
-
 /**
  * A shared object which is used to draw nothing for a particular cell.
  */
@@ -202,7 +196,7 @@ export class WebglCharAtlas implements IDisposable {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
-      return TRANSPARENT_COLOR;
+      return NULL_COLOR;
     }
 
     let result: IColor;
