@@ -132,3 +132,10 @@ export interface IVector {
   x: number;
   y: number;
 }
+
+export interface IBoundingBox {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}

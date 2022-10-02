@@ -3,13 +3,6 @@
  * @license MIT
  */
 
-export interface IBoundingBox {
-  top: number;
-  left: number;
-  right: number;
-  bottom: number;
-}
-
 export interface IRenderModel {
   cells: Uint32Array;
   lineLengths: Uint32Array;

@@ -4,7 +4,6 @@
  */
 
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { IBoundingBox } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -14,7 +13,7 @@ import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlin
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -49,7 +48,7 @@ interface ICharAtlasActiveRow {
 // Work variables to avoid garbage collection
 let $glyph = undefined;
 
-export class WebglCharAtlas implements ITextureAtlas {
+export class TextureAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
 
   private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();

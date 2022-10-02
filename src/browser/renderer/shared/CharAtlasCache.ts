@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { WebglCharAtlas } from './WebglCharAtlas';
+import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { Terminal } from 'xterm';
 import { IColorSet, ITerminal } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
 
-interface ICharAtlasCacheEntry {
+interface ITextureAtlasCacheEntry {
   atlas: ITextureAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
@@ -17,7 +17,7 @@ interface ICharAtlasCacheEntry {
   ownedBy: Terminal[];
 }
 
-const charAtlasCache: ICharAtlasCacheEntry[] = [];
+const charAtlasCache: ITextureAtlasCacheEntry[] = [];
 
 /**
  * Acquires a char atlas, either generating a new one or returning an existing
@@ -25,7 +25,7 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
  * @param terminal The terminal.
  * @param colors The colors to use.
  */
-export function acquireCharAtlas(
+export function acquireTextureAtlas(
   terminal: Terminal,
   colors: IColorSet,
   scaledCellWidth: number,
@@ -66,8 +66,8 @@ export function acquireCharAtlas(
   }
 
   const core: ITerminal = (terminal as any)._core;
-  const newEntry: ICharAtlasCacheEntry = {
-    atlas: new WebglCharAtlas(document, newConfig, core.unicodeService),
+  const newEntry: ITextureAtlasCacheEntry = {
+    atlas: new TextureAtlas(document, newConfig, core.unicodeService),
     config: newConfig,
     ownedBy: [terminal]
   };

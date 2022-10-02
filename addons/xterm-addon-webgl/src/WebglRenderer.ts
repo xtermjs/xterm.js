@@ -6,7 +6,7 @@
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
-import { acquireCharAtlas, removeTerminalFromCache } from './atlas/CharAtlasCache';
+import { acquireTextureAtlas, removeTerminalFromCache } from '../../../src/browser/renderer/shared/CharAtlasCache';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
@@ -277,7 +277,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
+    const atlas = acquireTextureAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }

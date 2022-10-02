@@ -4,7 +4,7 @@
  */
 
 import { IRenderLayer } from './Types';
-import { acquireCharAtlas } from '../atlas/CharAtlasCache';
+import { acquireTextureAtlas } from '../../../../src/browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
@@ -94,7 +94,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
