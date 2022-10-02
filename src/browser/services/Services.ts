@@ -4,7 +4,7 @@
  */
 
 import { IEvent } from 'common/EventEmitter';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
+import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
