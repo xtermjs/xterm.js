@@ -4,7 +4,7 @@
  */
 
 import { IRenderLayer } from './Types';
-import { acquireTextureAtlas } from '../../../../src/browser/renderer/shared/CharAtlasCache';
+import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';

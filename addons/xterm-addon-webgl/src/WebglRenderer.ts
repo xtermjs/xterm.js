@@ -6,7 +6,7 @@
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
-import { acquireTextureAtlas, removeTerminalFromCache } from '../../../src/browser/renderer/shared/CharAtlasCache';
+import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
