@@ -111,6 +111,10 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     }
   }
 
+  public override get cacheCanvas(): HTMLCanvasElement {
+    return this._cacheCanvas!;
+  }
+
   public beginFrame(): void {
     this._drawToCacheCount = 0;
   }
@@ -372,6 +376,10 @@ export class DynamicCharAtlas extends BaseCharAtlas {
 export class NoneCharAtlas extends BaseCharAtlas {
   constructor(document: Document, config: ICharAtlasConfig) {
     super();
+  }
+
+  public override get cacheCanvas(): HTMLCanvasElement {
+    return null!;
   }
 
   public draw(

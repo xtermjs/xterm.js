@@ -52,6 +52,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   };
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
+  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.cacheCanvas!; }
 
   constructor(
     private readonly _terminal: Terminal,

@@ -545,7 +545,15 @@ function initAddons(term: TerminalType): void {
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
+            setTimeout(() => {
+              addTextureAtlas(addons.webgl.instance.textureAtlas);
+              addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+            }, 0);
+          } else if (name === 'canvas') {
+            setTimeout(() => {
+              addTextureAtlas(addons.canvas.instance.textureAtlas);
+              addons.canvas.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+            }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'search') {
@@ -559,7 +567,9 @@ function initAddons(term: TerminalType): void {
         }
       } else {
         if (name === 'webgl') {
-          (addon.instance as WebglAddon).textureAtlas.remove();
+          addons.webgl.instance.textureAtlas.remove();
+        } else if (name === 'canvas') {
+          addons.canvas.instance.textureAtlas.remove();
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '6';
         }

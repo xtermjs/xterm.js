@@ -14,15 +14,11 @@ import { IColorSet, ILinkifier2 } from 'browser/Types';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferService, IOptionsService, IDecorationService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from './atlas/CharAtlasCache';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { Terminal } from 'xterm';
 
-let nextRendererId = 1;
-
 export class CanvasRenderer extends Disposable implements IRenderer {
-  private _id = nextRendererId++;
-
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
 
@@ -30,6 +26,8 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
   public readonly onRequestRedraw = this._onRequestRedraw.event;
+  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -80,6 +78,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
     super.dispose();
     removeTerminalFromCache(this._terminal);
+  }
+
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._renderLayers[0].cacheCanvas;
   }
 
   public onDevicePixelRatioChange(): void {

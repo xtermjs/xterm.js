@@ -8,6 +8,7 @@ import { IDisposable } from 'common/Types';
 
 export abstract class BaseCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
+  public abstract readonly cacheCanvas: HTMLCanvasElement;
 
   public dispose(): void { }
 
