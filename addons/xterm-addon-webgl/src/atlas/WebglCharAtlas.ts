@@ -16,7 +16,7 @@ import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlin
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
+import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -51,7 +51,7 @@ interface ICharAtlasActiveRow {
 // Work variables to avoid garbage collection
 let $glyph = undefined;
 
-export class WebglCharAtlas implements IDisposable {
+export class WebglCharAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
 
   private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();

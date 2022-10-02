@@ -9,9 +9,8 @@ import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
-import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
 import { throwIfFalsy } from '../WebglUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
@@ -24,7 +23,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: WebglCharAtlas | undefined;
+  protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
     private _container: HTMLElement,

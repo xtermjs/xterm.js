@@ -6,11 +6,11 @@
 import { WebglCharAtlas } from './WebglCharAtlas';
 import { Terminal } from 'xterm';
 import { IColorSet, ITerminal } from 'browser/Types';
-import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
+import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
-  atlas: WebglCharAtlas;
+  atlas: ITextureAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
@@ -33,7 +33,7 @@ export function acquireCharAtlas(
   scaledCharWidth: number,
   scaledCharHeight: number,
   devicePixelRatio: number
-): WebglCharAtlas {
+): ITextureAtlas {
   const newConfig = generateConfig(scaledCellWidth, scaledCellHeight, scaledCharWidth, scaledCharHeight, terminal, colors, devicePixelRatio);
 
   // Check to see if the terminal already owns this config

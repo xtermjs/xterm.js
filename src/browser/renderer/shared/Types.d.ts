@@ -74,3 +74,61 @@ export interface IRenderer extends IDisposable {
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
 }
+
+export interface ITextureAtlas extends IDisposable {
+  readonly cacheCanvas: HTMLCanvasElement;
+  // TODO: Add endFrame and make this readonly
+  hasCanvasChanged: boolean;
+
+  /**
+   * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.
+   */
+  warmUp(): void;
+
+  /**
+   * Call when a frame is being drawn, this will return true if the atlas was cleared to make room
+   * for a new set of glyphs.
+   */
+  beginFrame(): boolean;
+
+  /**
+   * Clear all glyphs from the texture atlas.
+   */
+  clearTexture(): void;
+  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number): IRasterizedGlyph;
+  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph;
+}
+
+/**
+ * Represents a rasterized glyph within a texture atlas. Some numbers are
+ * tracked in CSS pixels as well in order to reduce calculations during the
+ * render loop.
+ */
+export interface IRasterizedGlyph {
+  /**
+   * The x and y offset between the glyph's top/left and the top/left of a cell
+   * in pixels.
+   */
+  offset: IVector;
+  /**
+   * the x and y position of the glyph in the texture in pixels.
+   */
+  texturePosition: IVector;
+  /**
+   * the x and y position of the glyph in the texture in clip space coordinates.
+   */
+  texturePositionClipSpace: IVector;
+  /**
+   * The width and height of the glyph in the texture in pixels.
+   */
+  size: IVector;
+  /**
+   * The width and height of the glyph in the texture in clip space coordinates.
+   */
+  sizeClipSpace: IVector;
+}
+
+export interface IVector {
+  x: number;
+  y: number;
+}
