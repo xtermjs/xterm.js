@@ -4,7 +4,7 @@
  */
 
 import { css } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, initEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
@@ -25,10 +25,8 @@ export class DecorationService extends Disposable implements IDecorationService 
    */
   private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
 
-  private readonly _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
-  public readonly onDecorationRegistered = this._onDecorationRegistered.event;
-  private readonly _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
-  public readonly onDecorationRemoved = this._onDecorationRemoved.event;
+  public readonly onDecorationRegistered = this.register(initEvent<IInternalDecoration>());
+  public readonly onDecorationRemoved = this.register(initEvent<IInternalDecoration>());
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
 
@@ -42,13 +40,13 @@ export class DecorationService extends Disposable implements IDecorationService 
       decoration.onDispose(() => {
         if (decoration) {
           if (this._decorations.delete(decoration)) {
-            this._onDecorationRemoved.fire(decoration);
+            this.onDecorationRemoved.fire(decoration);
           }
           markerDispose.dispose();
         }
       });
       this._decorations.insert(decoration);
-      this._onDecorationRegistered.fire(decoration);
+      this.onDecorationRegistered.fire(decoration);
     }
     return decoration;
   }
@@ -84,7 +82,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   public dispose(): void {
     for (const d of this._decorations.values()) {
-      this._onDecorationRemoved.fire(d);
+      this.onDecorationRemoved.fire(d);
     }
     this.reset();
   }
@@ -95,10 +93,8 @@ class Decoration extends Disposable implements IInternalDecoration {
   public element: HTMLElement | undefined;
   public isDisposed: boolean = false;
 
-  public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
-  public readonly onRender = this.onRenderEmitter.event;
-  private readonly _onDispose = this.register(new EventEmitter<void>());
-  public readonly onDispose = this._onDispose.event;
+  public readonly onRender = this.register(initEvent<HTMLElement>());
+  public readonly onDispose = this.register(initEvent<void>());
 
   private _cachedBg: IColor | undefined | null = null;
   public get backgroundColorRGB(): IColor | undefined {
@@ -139,7 +135,7 @@ class Decoration extends Disposable implements IInternalDecoration {
       return;
     }
     this._isDisposed = true;
-    this._onDispose.fire();
+    this.onDispose.fire();
     super.dispose();
   }
 }

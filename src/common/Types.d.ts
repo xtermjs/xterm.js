@@ -4,7 +4,7 @@
  */
 
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { IEvent, IEventEmitter, IEventWithEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
@@ -71,12 +71,9 @@ export interface ICircularList<T> {
   maxLength: number;
   isFull: boolean;
 
-  onDeleteEmitter: IEventEmitter<IDeleteEvent>;
-  onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: IEventEmitter<IInsertEvent>;
-  onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: IEventEmitter<number>;
-  onTrim: IEvent<number>;
+  onDelete: IEventWithEmitter<IDeleteEvent>;
+  onInsert: IEventWithEmitter<IInsertEvent>;
+  onTrim: IEventWithEmitter<number>;
 
   get(index: number): T | undefined;
   set(index: number, value: T): void;
