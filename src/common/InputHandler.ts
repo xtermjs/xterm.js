@@ -11,7 +11,7 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -132,33 +132,20 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private readonly _onRequestBell = new EventEmitter<void>();
-  public readonly onRequestBell = this._onRequestBell.event;
-  private readonly _onRequestRefreshRows = new EventEmitter<number, number>();
-  public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
-  private readonly _onRequestReset = new EventEmitter<void>();
-  public readonly onRequestReset = this._onRequestReset.event;
-  private readonly _onRequestSendFocus = new EventEmitter<void>();
-  public readonly onRequestSendFocus = this._onRequestSendFocus.event;
-  private readonly _onRequestSyncScrollBar = new EventEmitter<void>();
-  public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
-  private readonly _onRequestWindowsOptionsReport = new EventEmitter<WindowsOptionsReportType>();
-  public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
+  public readonly onRequestBell = initEvent<void>();
+  public readonly onRequestRefreshRows = initEvent<number, number>();
+  public readonly onRequestReset = initEvent<void>();
+  public readonly onRequestSendFocus = initEvent<void>();
+  public readonly onRequestSyncScrollBar = initEvent<void>();
+  public readonly onRequestWindowsOptionsReport = initEvent<WindowsOptionsReportType>();
 
-  private readonly _onA11yChar = new EventEmitter<string>();
-  public readonly onA11yChar = this._onA11yChar.event;
-  private readonly _onA11yTab = new EventEmitter<number>();
-  public readonly onA11yTab = this._onA11yTab.event;
-  private readonly _onCursorMove = new EventEmitter<void>();
-  public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onLineFeed = new EventEmitter<void>();
-  public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onScroll = new EventEmitter<number>();
-  public readonly onScroll = this._onScroll.event;
-  private readonly _onTitleChange = new EventEmitter<string>();
-  public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onColor = new EventEmitter<IColorEvent>();
-  public readonly onColor = this._onColor.event;
+  public readonly onA11yChar = initEvent<string>();
+  public readonly onA11yTab = initEvent<number>();
+  public readonly onCursorMove = initEvent<void>();
+  public readonly onLineFeed = initEvent<void>();
+  public readonly onScroll = initEvent<number>();
+  public readonly onTitleChange = initEvent<string>();
+  public readonly onColor = initEvent<IColorEvent>();
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -492,11 +479,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     if (this._activeBuffer.x !== cursorStartX || this._activeBuffer.y !== cursorStartY) {
-      this._onCursorMove.fire();
+      this.onCursorMove.fire();
     }
 
     // Refresh any dirty rows accumulated as part of parsing
-    this._onRequestRefreshRows.fire(this._dirtyRowTracker.start, this._dirtyRowTracker.end);
+    this.onRequestRefreshRows.fire(this._dirtyRowTracker.start, this._dirtyRowTracker.end);
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
@@ -535,7 +522,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._onA11yChar.fire(stringFromCodePoint(code));
+        this.onA11yChar.fire(stringFromCodePoint(code));
       }
       if (this._currentLinkId !== undefined) {
         this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
@@ -687,7 +674,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * and `ITerminalOptions.bellSound`.
    */
   public bell(): boolean {
-    this._onRequestBell.fire();
+    this.onRequestBell.fire();
     return true;
   }
 
@@ -719,7 +706,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
-    this._onLineFeed.fire();
+    this.onLineFeed.fire();
     return true;
   }
 
@@ -808,7 +795,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._activeBuffer.x;
     this._activeBuffer.x = this._activeBuffer.nextStop();
     if (this._optionsService.rawOptions.screenReaderMode) {
-      this._onA11yTab.fire(this._activeBuffer.x - originalX);
+      this.onA11yTab.fire(this._activeBuffer.x - originalX);
     }
     return true;
   }
@@ -1218,7 +1205,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._activeBuffer.ybase = Math.max(this._activeBuffer.ybase - scrollBackSize, 0);
           this._activeBuffer.ydisp = Math.max(this._activeBuffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
-          this._onScroll.fire(0);
+          this.onScroll.fire(0);
         }
         break;
     }
@@ -1849,7 +1836,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            */
           if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(132, this._bufferService.rows);
-            this._onRequestReset.fire();
+            this.onRequestReset.fire();
           }
           break;
         case 6:
@@ -1868,7 +1855,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
-          this._onRequestSyncScrollBar.fire();
+          this.onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1890,7 +1877,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // focusin: ^[[I
           // focusout: ^[[O
           this._coreService.decPrivateModes.sendFocus = true;
-          this._onRequestSendFocus.fire();
+          this.onRequestSendFocus.fire();
           break;
         case 1005: // utf8 ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1005 not supported (see #2507)');
@@ -1917,8 +1904,8 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._onRequestSyncScrollBar.fire();
+          this.onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this.onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
@@ -2087,7 +2074,7 @@ export class InputHandler extends Disposable implements IInputHandler {
            */
           if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(80, this._bufferService.rows);
-            this._onRequestReset.fire();
+            this.onRequestReset.fire();
           }
           break;
         case 6:
@@ -2106,7 +2093,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
-          this._onRequestSyncScrollBar.fire();
+          this.onRequestSyncScrollBar.fire();
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -2145,8 +2132,8 @@ export class InputHandler extends Disposable implements IInputHandler {
             this.restoreCursor();
           }
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
-          this._onRequestSyncScrollBar.fire();
+          this.onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this.onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
@@ -2645,7 +2632,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public softReset(params: IParams): boolean {
     this._coreService.isCursorHidden = false;
-    this._onRequestSyncScrollBar.fire();
+    this.onRequestSyncScrollBar.fire();
     this._activeBuffer.scrollTop = 0;
     this._activeBuffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
@@ -2765,11 +2752,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
         if (second !== 2) {
-          this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_WIN_SIZE_PIXELS);
+          this.onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_WIN_SIZE_PIXELS);
         }
         break;
       case 16:  // GetCellSizePixels, returns CSI 6 ; height ; width t
-        this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_CELL_SIZE_PIXELS);
+        this.onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_CELL_SIZE_PIXELS);
         break;
       case 18:  // GetWinSizeChars, returns CSI 8 ; height ; width t
         if (this._bufferService) {
@@ -2859,7 +2846,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setTitle(data: string): boolean {
     this._windowTitle = data;
-    this._onTitleChange.fire(data);
+    this.onTitleChange.fire(data);
     return true;
   }
 
@@ -2901,7 +2888,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     if (event.length) {
-      this._onColor.fire(event);
+      this.onColor.fire(event);
     }
     return true;
   }
@@ -2975,11 +2962,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < slots.length; ++i, ++offset) {
       if (offset >= this._specialColors.length) break;
       if (slots[i] === '?') {
-        this._onColor.fire([{ type: ColorRequestType.REPORT, index: this._specialColors[offset] }]);
+        this.onColor.fire([{ type: ColorRequestType.REPORT, index: this._specialColors[offset] }]);
       } else {
         const color = parseColor(slots[i]);
         if (color) {
-          this._onColor.fire([{ type: ColorRequestType.SET, index: this._specialColors[offset], color }]);
+          this.onColor.fire([{ type: ColorRequestType.SET, index: this._specialColors[offset], color }]);
         }
       }
     }
@@ -3040,7 +3027,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public restoreIndexedColor(data: string): boolean {
     if (!data) {
-      this._onColor.fire([{ type: ColorRequestType.RESTORE }]);
+      this.onColor.fire([{ type: ColorRequestType.RESTORE }]);
       return true;
     }
     const event: IColorEvent = [];
@@ -3054,7 +3041,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     if (event.length) {
-      this._onColor.fire(event);
+      this.onColor.fire(event);
     }
     return true;
   }
@@ -3065,7 +3052,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
    */
   public restoreFgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
+    this.onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
     return true;
   }
 
@@ -3075,7 +3062,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
    */
   public restoreBgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
+    this.onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
     return true;
   }
 
@@ -3085,7 +3072,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
    */
   public restoreCursorColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
+    this.onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
     return true;
   }
 
@@ -3112,7 +3099,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadApplicationMode(): boolean {
     this._logService.debug('Serial port requested application keypad.');
     this._coreService.decPrivateModes.applicationKeypad = true;
-    this._onRequestSyncScrollBar.fire();
+    this.onRequestSyncScrollBar.fire();
     return true;
   }
 
@@ -3124,7 +3111,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public keypadNumericMode(): boolean {
     this._logService.debug('Switching back to normal keypad.');
     this._coreService.decPrivateModes.applicationKeypad = false;
-    this._onRequestSyncScrollBar.fire();
+    this.onRequestSyncScrollBar.fire();
     return true;
   }
 
@@ -3238,7 +3225,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public fullReset(): boolean {
     this._parser.reset();
-    this._onRequestReset.fire();
+    this.onRequestReset.fire();
     return true;
   }
 

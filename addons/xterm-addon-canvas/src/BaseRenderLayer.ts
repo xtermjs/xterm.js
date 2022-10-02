@@ -420,6 +420,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     if (this._charAtlas) {
       // const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
+      const contrastColor = this._getContrastColor(cell, x, y);
+      console.log('contrast color', contrastColor);
       const glyph = this._charAtlas.getRasterizedGlyph(this._currentGlyphIdentifier.code, this._currentGlyphIdentifier.bg, this._currentGlyphIdentifier.fg, 0);
       this._drawGlyph(glyph, x, y);
     } else {
@@ -444,6 +446,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     );
     this._ctx.restore();
     // TODO: Bitmap optimizations?
+    // TODO: Glyph background not correct?
   }
 
   /**

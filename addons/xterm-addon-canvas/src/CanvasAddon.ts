@@ -8,14 +8,13 @@ import { IColorSet } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { forwardEvent, initEvent } from 'common/EventEmitter';
 
 export class CanvasAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLElement>();
-  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
 
   public activate(terminal: Terminal): void {
     if (!terminal.element) {
@@ -34,7 +33,7 @@ export class CanvasAddon implements ITerminalAddon {
     const screenElement: HTMLElement = (terminal as any)._core.screenElement;
     const linkifier = (terminal as any)._core.linkifier2;
     this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
-    forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
+    forwardEvent(this._renderer.onChangeTextureAtlas, this.onChangeTextureAtlas);
     renderService.setRenderer(this._renderer);
     renderService.onResize(bufferService.cols, bufferService.rows);
   }
