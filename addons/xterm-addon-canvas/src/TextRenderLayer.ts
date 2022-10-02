@@ -233,78 +233,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(firstRow: number, lastRow: number): void {
-    this._forEachCell(firstRow, lastRow, (cell, x, y) => {
-      if (cell.isInvisible()) {
-        return;
-      }
-      this._drawChars(cell, x, y);
-      if (cell.isUnderline() || cell.isStrikethrough()) {
-        this._ctx.save();
-
-        if (cell.isInverse()) {
-          if (cell.isBgDefault()) {
-            this._ctx.fillStyle = this._colors.background.css;
-          } else if (cell.isBgRGB()) {
-            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
-          } else {
-            let bg = cell.getBgColor();
-            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
-              bg += 8;
-            }
-            this._ctx.fillStyle = this._colors.ansi[bg].css;
-          }
-        } else {
-          if (cell.isFgDefault()) {
-            this._ctx.fillStyle = this._colors.foreground.css;
-          } else if (cell.isFgRGB()) {
-            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-          } else {
-            let fg = cell.getFgColor();
-            if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
-              fg += 8;
-            }
-            this._ctx.fillStyle = this._colors.ansi[fg].css;
-          }
-        }
-
-        if (cell.isStrikethrough()) {
-          this._fillMiddleLineAtCells(x, y, cell.getWidth());
-        }
-        if (cell.isUnderline()) {
-          if (!cell.isUnderlineColorDefault()) {
-            if (cell.isUnderlineColorRGB()) {
-              this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getUnderlineColor()).join(',')})`;
-            } else {
-              let fg = cell.getUnderlineColor();
-              if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
-                fg += 8;
-              }
-              this._ctx.fillStyle = this._colors.ansi[fg].css;
-            }
-          }
-          switch (cell.extended.underlineStyle) {
-            case UnderlineStyle.DOUBLE:
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), -this._coreBrowserService.dpr);
-              this._fillBottomLineAtCells(x, y, cell.getWidth(), this._coreBrowserService.dpr);
-              break;
-            case UnderlineStyle.CURLY:
-              this._curlyUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.DOTTED:
-              this._dottedUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.DASHED:
-              this._dashedUnderlineAtCell(x, y, cell.getWidth());
-              break;
-            case UnderlineStyle.SINGLE:
-            default:
-              this._fillBottomLineAtCells(x, y, cell.getWidth());
-              break;
-          }
-        }
-        this._ctx.restore();
-      }
-    });
+    this._forEachCell(firstRow, lastRow, (cell, x, y) => this._drawChars(cell, x, y));
   }
 
   public onGridChanged(firstRow: number, lastRow: number): void {

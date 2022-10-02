@@ -3,23 +3,21 @@
  * @license MIT
  */
 
-import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { IRenderLayer } from './Types';
-import { ICellData, IColor } from 'common/Types';
-import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
-import { IGlyphIdentifier } from './atlas/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { removeElementFromParent } from 'browser/Dom';
+import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
+import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
+import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
+import { BgFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICoreBrowserService } from 'browser/services/Services';
-import { excludeFromContrastRatioDemands, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { channels, color, rgba } from 'common/Color';
-import { removeElementFromParent } from 'browser/Dom';
-import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
+import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
-import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
+import { IGlyphIdentifier } from './atlas/Types';
+import { IRenderLayer } from './Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -35,7 +33,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
 
-  protected _charAtlas: ITextureAtlas | undefined;
+  protected _charAtlas!: ITextureAtlas;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
@@ -70,6 +68,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
+    this._refreshCharAtlas(this._colors);
   }
 
   public dispose(): void {
@@ -367,70 +366,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   /**
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
-   * @param chars The character or characters.
-   * @param code The character code.
-   * @param width The width of the characters.
-   * @param x The column to draw at.
-   * @param y The row to draw at.
-   * @param fg The foreground color, in the format stored within the attributes.
-   * @param bg The background color, in the format stored within the attributes.
-   * This is used to validate whether a cached image can be used.
-   * @param bold Whether the text is bold.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
-    const contrastColor = this._getContrastColor(cell, x, y);
-
-    // skip cache right away if we draw in RGB
-    // Note: to avoid bad runtime JoinedCellData will be skipped
-    //       in the cache handler itself (atlasDidDraw == false) and
-    //       fall through to uncached later down below
-    if (contrastColor || cell.isFgRGB() || cell.isBgRGB()) {
-      this._drawUncachedChars(cell, x, y, contrastColor);
-      return;
-    }
-
-    let fg;
-    let bg;
-    if (cell.isInverse()) {
-      fg = (cell.isBgDefault()) ? INVERTED_DEFAULT_COLOR : cell.getBgColor();
-      bg = (cell.isFgDefault()) ? INVERTED_DEFAULT_COLOR : cell.getFgColor();
-    } else {
-      bg = (cell.isBgDefault()) ? DEFAULT_COLOR : cell.getBgColor();
-      fg = (cell.isFgDefault()) ? DEFAULT_COLOR : cell.getFgColor();
-    }
-
-    const drawInBrightColor = this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8;
-
-    fg += drawInBrightColor ? 8 : 0;
-    this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
-    this._currentGlyphIdentifier.code = cell.getCode() || WHITESPACE_CELL_CODE;
-    this._currentGlyphIdentifier.bg = bg;
-    this._currentGlyphIdentifier.fg = fg;
-    this._currentGlyphIdentifier.bold = !!cell.isBold();
-    this._currentGlyphIdentifier.dim = !!cell.isDim();
-    this._currentGlyphIdentifier.italic = !!cell.isItalic();
-
-    // Don't try cache the glyph if it uses any decoration foreground/background override.
-    let hasOverrides = false;
-    this._decorationService.forEachDecorationAtCell(x, y, undefined, d => {
-      if (d.backgroundColorRGB || d.foregroundColorRGB) {
-        hasOverrides = true;
-      }
-    });
-
-    if (this._charAtlas) {
-      // const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
-      const contrastColor = this._getContrastColor(cell, x, y);
-      console.log('contrast color', contrastColor);
-      const glyph = this._charAtlas.getRasterizedGlyph(this._currentGlyphIdentifier.code, this._currentGlyphIdentifier.bg, this._currentGlyphIdentifier.fg, 0);
-      this._drawGlyph(glyph, x, y);
-    } else {
-      this._drawUncachedChars(cell, x, y);
-    }
-  }
-
-  // Does fg override work?
-  private _drawGlyph(glyph: IRasterizedGlyph, x: number, y: number): void {
+    const glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
     this._ctx.save();
     this._clipRow(y);
     this._ctx.drawImage(
@@ -445,79 +383,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       glyph.size.y
     );
     this._ctx.restore();
-    // TODO: Bitmap optimizations?
-    // TODO: Glyph background not correct?
+    // TODO: Verify selection
+    // TODO: Verify fg override
+    // TODO: Verify bg override
+    // TODO: Verify min contrast ratio
   }
-
-  /**
-   * Draws one or more characters at one or more cells. The character(s) will be
-   * clipped to ensure that they fit with the cell(s), including the cell to the
-   * right if the last character is a wide character.
-   * @param chars The character.
-   * @param width The width of the character.
-   * @param fg The foreground color, in the format stored within the attributes.
-   * @param x The column to draw at.
-   * @param y The row to draw at.
-   */
-  private _drawUncachedChars(cell: ICellData, x: number, y: number, fgOverride?: IColor): void {
-    this._ctx.save();
-    this._ctx.font = this._getFont(!!cell.isBold(), !!cell.isItalic());
-    this._ctx.textBaseline = TEXT_BASELINE;
-
-    if (cell.isInverse()) {
-      if (fgOverride) {
-        this._ctx.fillStyle = fgOverride.css;
-      } else if (cell.isBgDefault()) {
-        this._ctx.fillStyle = color.opaque(this._colors.background).css;
-      } else if (cell.isBgRGB()) {
-        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
-      } else {
-        let bg = cell.getBgColor();
-        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && bg < 8) {
-          bg += 8;
-        }
-        this._ctx.fillStyle = this._colors.ansi[bg].css;
-      }
-    } else {
-      if (fgOverride) {
-        this._ctx.fillStyle = fgOverride.css;
-      } else if (cell.isFgDefault()) {
-        this._ctx.fillStyle = this._colors.foreground.css;
-      } else if (cell.isFgRGB()) {
-        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-      } else {
-        let fg = cell.getFgColor();
-        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
-          fg += 8;
-        }
-        this._ctx.fillStyle = this._colors.ansi[fg].css;
-      }
-    }
-
-    this._clipRow(y);
-
-    // Apply alpha to dim the character
-    if (cell.isDim()) {
-      this._ctx.globalAlpha = DIM_OPACITY;
-    }
-
-    // Draw custom characters if applicable
-    let drawSuccess = false;
-    if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize, this._coreBrowserService.dpr);
-    }
-
-    // Draw the character
-    if (!drawSuccess) {
-      this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
-    }
-
-    this._ctx.restore();
-  }
-
 
   /**
    * Clips a row to ensure no pixels will be drawn outside the cells in the row.
@@ -542,138 +412,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontStyle = isItalic ? 'italic' : '';
 
     return `${fontStyle} ${fontWeight} ${this._optionsService.rawOptions.fontSize * this._coreBrowserService.dpr}px ${this._optionsService.rawOptions.fontFamily}`;
-  }
-
-  private _getContrastColor(cell: CellData, x: number, y: number): IColor | undefined {
-    // Get any decoration foreground/background overrides, this must be fetched before the early
-    // exist but applied after inverse
-    let bgOverride: number | undefined;
-    let fgOverride: number | undefined;
-    let isTop = false;
-    this._decorationService.forEachDecorationAtCell(x, y, undefined, d => {
-      if (d.options.layer !== 'top' && isTop) {
-        return;
-      }
-      if (d.backgroundColorRGB) {
-        bgOverride = d.backgroundColorRGB.rgba;
-      }
-      if (d.foregroundColorRGB) {
-        fgOverride = d.foregroundColorRGB.rgba;
-      }
-      isTop = d.options.layer === 'top';
-    });
-
-    // Apply selection foreground if applicable
-    if (!isTop) {
-      if (this._colors.selectionForeground && this._isCellInSelection(x, y)) {
-        fgOverride = this._colors.selectionForeground.rgba;
-      }
-    }
-
-    if (!bgOverride && !fgOverride && (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode()))) {
-      return undefined;
-    }
-
-    if (!bgOverride && !fgOverride) {
-      // Try get from cache
-      const adjustedColor = this._colors.contrastCache.getColor(cell.bg, cell.fg);
-      if (adjustedColor !== undefined) {
-        return adjustedColor || undefined;
-      }
-    }
-
-    let fgColor = cell.getFgColor();
-    let fgColorMode = cell.getFgColorMode();
-    let bgColor = cell.getBgColor();
-    let bgColorMode = cell.getBgColorMode();
-    const isInverse = !!cell.isInverse();
-    const isBold = !!cell.isInverse();
-    if (isInverse) {
-      const temp = fgColor;
-      fgColor = bgColor;
-      bgColor = temp;
-      const temp2 = fgColorMode;
-      fgColorMode = bgColorMode;
-      bgColorMode = temp2;
-    }
-
-    const bgRgba = this._resolveBackgroundRgba(bgOverride !== undefined ? Attributes.CM_RGB : bgColorMode, bgOverride ?? bgColor, isInverse);
-    const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, isInverse, isBold);
-    let result = rgba.ensureContrastRatio(bgOverride ?? bgRgba, fgOverride ?? fgRgba, this._optionsService.rawOptions.minimumContrastRatio);
-
-    if (!result) {
-      if (!fgOverride) {
-        this._colors.contrastCache.setColor(cell.bg, cell.fg, null);
-        return undefined;
-      }
-      // If it was an override and there was no contrast change, set as the result
-      result = fgOverride;
-    }
-
-    const color: IColor = {
-      css: channels.toCss(
-        (result >> 24) & 0xFF,
-        (result >> 16) & 0xFF,
-        (result >> 8) & 0xFF
-      ),
-      rgba: result
-    };
-    if (!bgOverride && !fgOverride) {
-      this._colors.contrastCache.setColor(cell.bg, cell.fg, color);
-    }
-
-    return color;
-  }
-
-  private _resolveBackgroundRgba(bgColorMode: number, bgColor: number, inverse: boolean): number {
-    switch (bgColorMode) {
-      case Attributes.CM_P16:
-      case Attributes.CM_P256:
-        return this._colors.ansi[bgColor].rgba;
-      case Attributes.CM_RGB:
-        return bgColor << 8;
-      case Attributes.CM_DEFAULT:
-      default:
-        if (inverse) {
-          return this._colors.foreground.rgba;
-        }
-        return this._colors.background.rgba;
-    }
-  }
-
-  private _resolveForegroundRgba(fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean): number {
-    switch (fgColorMode) {
-      case Attributes.CM_P16:
-      case Attributes.CM_P256:
-        if (this._optionsService.rawOptions.drawBoldTextInBrightColors && bold && fgColor < 8) {
-          fgColor += 8;
-        }
-        return this._colors.ansi[fgColor].rgba;
-      case Attributes.CM_RGB:
-        return fgColor << 8;
-      case Attributes.CM_DEFAULT:
-      default:
-        if (inverse) {
-          return this._colors.background.rgba;
-        }
-        return this._colors.foreground.rgba;
-    }
-  }
-
-  private _isCellInSelection(x: number, y: number): boolean {
-    const start = this._selectionStart;
-    const end = this._selectionEnd;
-    if (!start || !end) {
-      return false;
-    }
-    if (this._columnSelectMode) {
-      return x >= start[0] && y >= start[1] &&
-        x < end[0] && y < end[1];
-    }
-    return (y > start[1] && y < end[1]) ||
-        (start[1] === end[1] && y === start[1] && x >= start[0] && x < end[0]) ||
-        (start[1] < end[1] && y === end[1] && x < end[0]) ||
-        (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
 }
 
