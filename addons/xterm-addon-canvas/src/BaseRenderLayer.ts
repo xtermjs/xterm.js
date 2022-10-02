@@ -8,7 +8,7 @@ import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -368,7 +368,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * the character atlas to reduce draw time.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
-    const glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
+    const chars = cell.getChars();
+    let glyph: IRasterizedGlyph;
+    if (chars && chars.length > 1) {
+      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
+    } else {
+      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
+    }
     this._ctx.save();
     this._clipRow(y);
     this._ctx.drawImage(
@@ -387,7 +393,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // TODO: Verify fg override
     // TODO: Verify bg override
     // TODO: Verify min contrast ratio
-    // TODO: Verify emoji
   }
 
   /**
