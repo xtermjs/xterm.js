@@ -6,7 +6,7 @@
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IRenderLayer } from './Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { Disposable } from 'common/Lifecycle';
@@ -15,7 +15,7 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from '
 import { IBufferService, IOptionsService, IDecorationService, ICoreService } from 'common/services/Services';
 import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
+import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { Terminal } from 'xterm';
 
 let nextRendererId = 1;

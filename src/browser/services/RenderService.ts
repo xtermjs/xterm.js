@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';

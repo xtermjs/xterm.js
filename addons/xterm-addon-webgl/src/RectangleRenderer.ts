@@ -9,10 +9,10 @@ import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { DIM_OPACITY } from 'browser/renderer/Constants';
+import { DIM_OPACITY } from 'browser/renderer/shared/Constants';
 
 const enum VertexAttribLocations {
   POSITION = 0,

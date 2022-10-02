@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/Constants';
+import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { IRasterizedGlyph, IBoundingBox } from '../Types';
 import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { throwIfFalsy } from '../WebglUtils';
@@ -11,8 +11,8 @@ import { IColor } from 'common/Types';
 import { IDisposable } from 'xterm';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, NULL_COLOR, rgba } from 'common/Color';
-import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
+import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
+import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';

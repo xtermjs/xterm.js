@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';

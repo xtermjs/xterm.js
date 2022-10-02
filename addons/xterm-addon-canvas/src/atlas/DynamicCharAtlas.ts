@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/Constants';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { IGlyphIdentifier } from './Types';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'common/Types';
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { color, NULL_COLOR } from 'common/Color';
 import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
 
