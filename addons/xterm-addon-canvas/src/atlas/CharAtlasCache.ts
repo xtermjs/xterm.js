@@ -4,13 +4,13 @@
  */
 
 import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
-import { DynamicCharAtlas } from './DynamicCharAtlas';
+import { CanvasCharAtlas } from './CanvasCharAtlas';
 import { IColorSet } from 'browser/Types';
 import { Terminal } from 'xterm';
 import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
 
 interface ICharAtlasCacheEntry {
-  atlas: DynamicCharAtlas;
+  atlas: CanvasCharAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
@@ -31,7 +31,7 @@ export function acquireCharAtlas(
   scaledCharWidth: number,
   scaledCharHeight: number,
   devicePixelRatio: number
-): DynamicCharAtlas {
+): CanvasCharAtlas {
   const newConfig = generateConfig(scaledCellWidth, scaledCellHeight, scaledCharWidth, scaledCharHeight, terminal, colors, devicePixelRatio);
 
   // Check to see if the renderer already owns this config
@@ -64,7 +64,7 @@ export function acquireCharAtlas(
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    atlas: new DynamicCharAtlas(
+    atlas: new CanvasCharAtlas(
       document,
       newConfig
     ),

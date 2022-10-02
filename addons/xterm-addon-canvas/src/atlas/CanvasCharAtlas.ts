@@ -51,7 +51,7 @@ export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   return glyph.code << 21 | glyph.bg << 12 | glyph.fg << 3 | (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
 }
 
-export class DynamicCharAtlas {
+export class CanvasCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
   private _cacheMap: LRUMap<IGlyphCacheValue>;

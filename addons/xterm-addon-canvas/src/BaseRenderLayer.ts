@@ -20,7 +20,7 @@ import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { Terminal } from 'xterm';
-import { DynamicCharAtlas } from 'atlas/DynamicCharAtlas';
+import { CanvasCharAtlas } from 'atlas/CanvasCharAtlas';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -36,7 +36,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
 
-  protected _charAtlas: DynamicCharAtlas | undefined;
+  protected _charAtlas: CanvasCharAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
