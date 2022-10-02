@@ -22,7 +22,7 @@ export interface IEventWithEmitter<T, U = void> extends IEventEmitter<T, U>, IEv
 }
 
 export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
-  private _listeners: IListener<T, U>[] = [];
+  private readonly _listeners: IListener<T, U>[] = [];
   private _event?: IEvent<T, U>;
   private _disposed: boolean = false;
 
@@ -82,6 +82,9 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
 export function initEvent<T, U = void>(): IEventWithEmitter<T, U> {
   const emitter = new EventEmitter<T, U>();
   const event = emitter.event;
+  Object.defineProperty(event, '_listeners', {
+    value: (emitter as any)._listeners
+  });
   Object.defineProperty(event, 'fire', {
     value: emitter.fire.bind(emitter)
   });
