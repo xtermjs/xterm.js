@@ -387,6 +387,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // TODO: Verify fg override
     // TODO: Verify bg override
     // TODO: Verify min contrast ratio
+    // TODO: Verify emoji
   }
 
   /**

@@ -941,7 +941,7 @@ function sgrTest(): void {
   ];
   const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
   for (const e of entries) {
-    term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
+    term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.ps.toString().padEnd(2, ' ')} ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
   }
 }
 
