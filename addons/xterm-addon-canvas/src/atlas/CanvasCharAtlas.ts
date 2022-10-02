@@ -92,7 +92,10 @@ export class CanvasCharAtlas {
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = this._config.scaledCharWidth;
     tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
+    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', {
+      alpha: this._config.allowTransparency,
+      willReadFrequently: true
+    }));
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
