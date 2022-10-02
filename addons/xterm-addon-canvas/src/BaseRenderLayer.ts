@@ -9,7 +9,6 @@ import { ICellData, IColor } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from './atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { BaseCharAtlas } from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
@@ -21,6 +20,7 @@ import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { Terminal } from 'xterm';
+import { DynamicCharAtlas } from 'atlas/DynamicCharAtlas';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -36,7 +36,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
 
-  protected _charAtlas: BaseCharAtlas | undefined;
+  protected _charAtlas: DynamicCharAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.

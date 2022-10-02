@@ -5,7 +5,6 @@
 
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { IGlyphIdentifier } from './Types';
-import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
@@ -52,14 +51,16 @@ export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   return glyph.code << 21 | glyph.bg << 12 | glyph.fg << 3 | (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
 }
 
-export class DynamicCharAtlas extends BaseCharAtlas {
+export class DynamicCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
   private _cacheMap: LRUMap<IGlyphCacheValue>;
 
   // The texture that the atlas is drawn to
   private _cacheCanvas: HTMLCanvasElement;
+  public get cacheCanvas(): HTMLCanvasElement { return this._cacheCanvas; }
   private _cacheCtx: CanvasRenderingContext2D;
+  private _didWarmUp: boolean = false;
 
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
@@ -80,7 +81,6 @@ export class DynamicCharAtlas extends BaseCharAtlas {
   private _bitmap: ImageBitmap | null = null;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
-    super();
     this._cacheCanvas = document.createElement('canvas');
     this._cacheCanvas.width = TEXTURE_WIDTH;
     this._cacheCanvas.height = TEXTURE_HEIGHT;
@@ -111,9 +111,22 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     }
   }
 
-  public override get cacheCanvas(): HTMLCanvasElement {
-    return this._cacheCanvas!;
+  /**
+   * Perform any work needed to warm the cache before it can be used. May be called multiple times.
+   * Implement _doWarmUp instead if you only want to get called once.
+   */
+  public warmUp(): void {
+    if (!this._didWarmUp) {
+      this._doWarmUp();
+      this._didWarmUp = true;
+    }
   }
+
+  /**
+   * Perform any work needed to warm the cache before it can be used. Used by the default
+   * implementation of warmUp(), and will only be called once.
+   */
+  private _doWarmUp(): void { }
 
   public beginFrame(): void {
     this._drawToCacheCount = 0;
@@ -368,27 +381,6 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       }
     });
     this._bitmapCommitTimeout = null;
-  }
-}
-
-// This is used for debugging the renderer, just swap out `new DynamicCharAtlas` with
-// `new NoneCharAtlas`.
-export class NoneCharAtlas extends BaseCharAtlas {
-  constructor(document: Document, config: ICharAtlasConfig) {
-    super();
-  }
-
-  public override get cacheCanvas(): HTMLCanvasElement {
-    return null!;
-  }
-
-  public draw(
-    ctx: CanvasRenderingContext2D,
-    glyph: IGlyphIdentifier,
-    x: number,
-    y: number
-  ): boolean {
-    return false;
   }
 }
 
