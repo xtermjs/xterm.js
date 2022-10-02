@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { IRenderLayer } from './Types';
 import { ICellData, IColor } from 'common/Types';
 import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, Attributes } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from './atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -20,7 +19,7 @@ import { channels, color, rgba } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { Terminal } from 'xterm';
-import { CanvasCharAtlas } from 'atlas/CanvasCharAtlas';
+import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -36,7 +35,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
 
-  protected _charAtlas: CanvasCharAtlas | undefined;
+  protected _charAtlas: ITextureAtlas | undefined;
 
   /**
    * An object that's reused when drawing glyphs in order to reduce GC.
@@ -129,7 +128,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    // this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
@@ -156,7 +156,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public abstract reset(): void;
 
   public clearTextureAtlas(): void {
-    this._charAtlas?.clear();
+    this._charAtlas?.clearTexture();
   }
 
   /**
@@ -418,11 +418,32 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     });
 
-    const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
-
-    if (!atlasDidDraw) {
+    if (this._charAtlas) {
+      // const atlasDidDraw = hasOverrides ? false : this._charAtlas?.draw(this._ctx, this._currentGlyphIdentifier, x * this._scaledCellWidth + this._scaledCharLeft, y * this._scaledCellHeight + this._scaledCharTop);
+      const glyph = this._charAtlas.getRasterizedGlyph(this._currentGlyphIdentifier.code, this._currentGlyphIdentifier.bg, this._currentGlyphIdentifier.fg, 0);
+      this._drawGlyph(glyph, x, y);
+    } else {
       this._drawUncachedChars(cell, x, y);
     }
+  }
+
+  // Does fg override work?
+  private _drawGlyph(glyph: IRasterizedGlyph, x: number, y: number): void {
+    this._ctx.save();
+    this._clipRow(y);
+    this._ctx.drawImage(
+      this._charAtlas!.cacheCanvas,
+      glyph.texturePosition.x,
+      glyph.texturePosition.y,
+      glyph.size.x,
+      glyph.size.y,
+      x * this._scaledCellWidth - glyph.offset.x,
+      y * this._scaledCellHeight - glyph.offset.y,
+      glyph.size.x,
+      glyph.size.y
+    );
+    this._ctx.restore();
+    // TODO: Bitmap optimizations?
   }
 
   /**
