@@ -336,7 +336,8 @@ export class TextureAtlas implements ITextureAtlas {
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
-    console.log(`draw to cache "${chars}"`, bg, fg, ext);
+    // Uncomment for debugging
+    // console.log(`draw to cache "${chars}"`, bg, fg, ext);
 
     this.hasCanvasChanged = true;
 
