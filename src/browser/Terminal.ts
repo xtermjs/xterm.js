@@ -115,6 +115,21 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
+  /**
+   * Event listener state handling.
+   * We listen to the onProtocolChange event of CoreMouseService and put
+   * requested listeners in `requestedEvents`. With this the listeners
+   * have all bits to do the event listener juggling.
+   * Note: 'mousedown' currently is "always on" and not managed
+   * by onProtocolChange.
+   */
+  private _requestedEvents: { [key: string]: ((ev: Event) => void) | null } = {
+    mouseup: null,
+    wheel: null,
+    mousedrag: null,
+    mousemove: null
+  };
+
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
@@ -265,6 +280,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
         // When the font changes the size of the cells may change which requires a renderer clear
         this._renderService?.clear();
         this._charSizeService?.measure();
+        break;
+      case 'allowMouseReporting':
+        if (this._requestedEvents.wheel) {
+          const ev = this._requestedEvents.wheel;
+          const el = this.element!;
+          if (this.optionsService.rawOptions.allowMouseReporting) {
+            el.addEventListener('wheel', ev, { passive: false });
+          } else {
+            el.removeEventListener('wheel', ev);
+          }
+        }
         break;
       case 'cursorBlink':
       case 'cursorStyle':
@@ -700,28 +726,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
       });
     }
 
-    /**
-     * Event listener state handling.
-     * We listen to the onProtocolChange event of CoreMouseService and put
-     * requested listeners in `requestedEvents`. With this the listeners
-     * have all bits to do the event listener juggling.
-     * Note: 'mousedown' currently is "always on" and not managed
-     * by onProtocolChange.
-     */
-    const requestedEvents: { [key: string]: ((ev: Event) => void) | null } = {
-      mouseup: null,
-      wheel: null,
-      mousedrag: null,
-      mousemove: null
-    };
     const eventListeners: { [key: string]: (ev: any) => void | boolean } = {
       mouseup: (ev: MouseEvent) => {
         sendEvent(ev);
         if (!ev.buttons) {
           // if no other button is held remove global handlers
-          this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
-          if (requestedEvents.mousedrag) {
-            this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
+          this._document!.removeEventListener('mouseup', this._requestedEvents.mouseup!);
+          if (this._requestedEvents.mousedrag) {
+            this._document!.removeEventListener('mousemove', this._requestedEvents.mousedrag);
           }
         }
         return this.cancel(ev);
@@ -760,33 +772,35 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // add/remove handlers from requestedEvents
 
       if (!(events & CoreMouseEventType.MOVE)) {
-        el.removeEventListener('mousemove', requestedEvents.mousemove!);
-        requestedEvents.mousemove = null;
-      } else if (!requestedEvents.mousemove) {
+        el.removeEventListener('mousemove', this._requestedEvents.mousemove!);
+        this._requestedEvents.mousemove = null;
+      } else if (!this._requestedEvents.mousemove) {
         el.addEventListener('mousemove', eventListeners.mousemove);
-        requestedEvents.mousemove = eventListeners.mousemove;
+        this._requestedEvents.mousemove = eventListeners.mousemove;
       }
 
       if (!(events & CoreMouseEventType.WHEEL)) {
-        el.removeEventListener('wheel', requestedEvents.wheel!);
-        requestedEvents.wheel = null;
-      } else if (!requestedEvents.wheel) {
-        el.addEventListener('wheel', eventListeners.wheel, { passive: false });
-        requestedEvents.wheel = eventListeners.wheel;
+        el.removeEventListener('wheel', this._requestedEvents.wheel!);
+        this._requestedEvents.wheel = null;
+      } else if (!this._requestedEvents.wheel) {
+        if (this.optionsService.rawOptions.allowMouseReporting) {
+          el.addEventListener('wheel', eventListeners.wheel, { passive: false });
+        }
+        this._requestedEvents.wheel = eventListeners.wheel;
       }
 
       if (!(events & CoreMouseEventType.UP)) {
-        this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
-        requestedEvents.mouseup = null;
-      } else if (!requestedEvents.mouseup) {
-        requestedEvents.mouseup = eventListeners.mouseup;
+        this._document!.removeEventListener('mouseup', this._requestedEvents.mouseup!);
+        this._requestedEvents.mouseup = null;
+      } else if (!this._requestedEvents.mouseup) {
+        this._requestedEvents.mouseup = eventListeners.mouseup;
       }
 
       if (!(events & CoreMouseEventType.DRAG)) {
-        this._document!.removeEventListener('mousemove', requestedEvents.mousedrag!);
-        requestedEvents.mousedrag = null;
-      } else if (!requestedEvents.mousedrag) {
-        requestedEvents.mousedrag = eventListeners.mousedrag;
+        this._document!.removeEventListener('mousemove', this._requestedEvents.mousedrag!);
+        this._requestedEvents.mousedrag = null;
+      } else if (!this._requestedEvents.mousedrag) {
+        this._requestedEvents.mousedrag = eventListeners.mousedrag;
       }
     }));
     // force initial onProtocolChange so we dont miss early mouse requests
@@ -812,11 +826,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // of the terminal element.
       // Note: Other emulators also do this for 'mousedown' while a button
       // is held, we currently limit 'mousedown' to the terminal only.
-      if (requestedEvents.mouseup) {
-        this._document!.addEventListener('mouseup', requestedEvents.mouseup);
+      if (this._requestedEvents.mouseup) {
+        this._document!.addEventListener('mouseup', this._requestedEvents.mouseup);
       }
-      if (requestedEvents.mousedrag) {
-        this._document!.addEventListener('mousemove', requestedEvents.mousedrag);
+      if (this._requestedEvents.mousedrag) {
+        this._document!.addEventListener('mousemove', this._requestedEvents.mousedrag);
       }
 
       return this.cancel(ev);
@@ -824,7 +838,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
       // do nothing, if app side handles wheel itself
-      if (requestedEvents.wheel) return;
+      if (this._requestedEvents.wheel) return;
 
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
@@ -837,12 +851,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
         }
 
         // Construct and send sequences
-        const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-        let data = '';
-        for (let i = 0; i < Math.abs(amount); i++) {
-          data += sequence;
+        if (this.optionsService.rawOptions.allowMouseReporting) {
+          const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
+          let data = '';
+          for (let i = 0; i < Math.abs(amount); i++) {
+            data += sequence;
+          }
+          this.coreService.triggerDataEvent(data, true);
         }
-        this.coreService.triggerDataEvent(data, true);
         return this.cancel(ev, true);
       }
 
