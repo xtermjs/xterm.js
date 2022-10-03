@@ -36,6 +36,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   disableStdin: false,
   allowProposedApi: false,
   allowTransparency: false,
+  allowMouseReporting: true,
   tabStopWidth: 8,
   theme: {},
   rightClickSelectsWord: isMac,
