@@ -13,19 +13,12 @@ import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRen
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, BgFlags, FgFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
-
-// Work variables to avoid garbage collection
-let $fg = 0;
-let $bg = 0;
-let $hasFg = false;
-let $hasBg = false;
-let $isSelected = false;
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -37,9 +30,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _selectionStart: [number, number] | undefined;
-  protected _selectionEnd: [number, number] | undefined;
-  protected _columnSelectMode: boolean = false;
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cellColorResolver: CellColorResolver;
 
@@ -89,10 +79,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onGridChanged(startRow: number, endRow: number): void {}
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    // TODO: Remove these other variables in favor of the selection model
-    this._selectionStart = start;
-    this._selectionEnd = end;
-    this._columnSelectMode = columnSelectMode;
     this._selectionModel.update(this._terminal, start, end, columnSelectMode);
   }
 

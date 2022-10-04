@@ -15,6 +15,8 @@ class SelectionRenderModel implements ISelectionRenderModel {
   public viewportCappedEndRow!: number;
   public startCol!: number;
   public endCol!: number;
+  public selectionStart: [number, number] | undefined;
+  public selectionEnd: [number, number] | undefined;
 
   constructor() {
     this.clear();
@@ -29,9 +31,13 @@ class SelectionRenderModel implements ISelectionRenderModel {
     this.viewportCappedEndRow = 0;
     this.startCol = 0;
     this.endCol = 0;
+    this.selectionStart = undefined;
+    this.selectionEnd = undefined;
   }
 
   public update(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    this.selectionStart = start;
+    this.selectionEnd = end;
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
       this.clear();

@@ -149,6 +149,8 @@ export interface ISelectionRenderModel {
   readonly viewportCappedEndRow: number;
   readonly startCol: number;
   readonly endCol: number;
+  readonly selectionStart: [number, number] | undefined;
+  readonly selectionEnd: [number, number] | undefined;
   clear(): void;
   update(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode?: boolean): void;
   isCellSelected(terminal: Terminal, x: number, y: number): boolean;
