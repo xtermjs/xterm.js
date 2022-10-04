@@ -77,7 +77,6 @@ export interface IRenderer extends IDisposable {
 
 export interface ITextureAtlas extends IDisposable {
   readonly cacheCanvas: HTMLCanvasElement;
-  // TODO: Add endFrame and make this readonly
   hasCanvasChanged: boolean;
 
   /**

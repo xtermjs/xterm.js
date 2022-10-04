@@ -32,6 +32,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cellColorResolver: CellColorResolver;
+  private _bitmapGenerator?: BitmapGenerator;
 
   protected _charAtlas!: ITextureAtlas;
 
@@ -115,6 +116,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
+    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.cacheCanvas);
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -353,6 +355,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * the character atlas to reduce draw time.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
+    if (this._charAtlas.hasCanvasChanged) {
+      this._bitmapGenerator?.refresh();
+      this._charAtlas.hasCanvasChanged = false;
+    }
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, y);
     let glyph: IRasterizedGlyph;
@@ -363,8 +369,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     this._ctx.save();
     this._clipRow(y);
+    // Draw the image, use the bitmap if it's available
     this._ctx.drawImage(
-      this._charAtlas!.cacheCanvas,
+      this._bitmapGenerator?.bitmap || this._charAtlas!.cacheCanvas,
       glyph.texturePosition.x,
       glyph.texturePosition.y,
       glyph.size.x,
@@ -403,3 +410,53 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 }
 
+/**
+ * The number of milliseconds to wait before generating the ImageBitmap, this is to debounce/batch
+ * the operation as window.createImageBitmap is asynchronous.
+ */
+const GLYPH_BITMAP_COMMIT_DELAY = 100;
+
+const enum BitmapGeneratorState {
+  IDLE = 0,
+  GENERATING = 1,
+  GENERATING_INVALID = 2
+}
+
+class BitmapGenerator {
+  private _state: BitmapGeneratorState = BitmapGeneratorState.IDLE;
+  private _commitTimeout: number | undefined = undefined;
+  private _bitmap: ImageBitmap | undefined = undefined;
+  public get bitmap(): ImageBitmap | undefined { return this._bitmap; }
+
+  constructor(private readonly _canvas: HTMLCanvasElement) {
+  }
+
+  public refresh(): void {
+    // Clear the bitmap immediately as it's stale
+    this._bitmap = undefined;
+    if (this._commitTimeout === undefined) {
+      this._commitTimeout = window.setTimeout(() => this._generate(), GLYPH_BITMAP_COMMIT_DELAY);
+    }
+    if (this._state === BitmapGeneratorState.GENERATING) {
+      this._state = BitmapGeneratorState.GENERATING_INVALID;
+    }
+  }
+
+  private _generate(): void {
+    if (this._state === BitmapGeneratorState.IDLE) {
+      this._bitmap = undefined;
+      this._state = BitmapGeneratorState.GENERATING;
+      window.createImageBitmap(this._canvas).then(bitmap => {
+        if (this._state === BitmapGeneratorState.GENERATING_INVALID) {
+          this.refresh();
+        } else {
+          this._bitmap = bitmap;
+        }
+        this._state = BitmapGeneratorState.IDLE;
+      });
+      if (this._commitTimeout) {
+        this._commitTimeout = undefined;
+      }
+    }
+  }
+}
