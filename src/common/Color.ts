@@ -134,7 +134,7 @@ export namespace css {
    */
   export function toColor(css: string): IColor {
     // Formats: #rgb[a] and #rrggbb[aa]
-    if (css.match(/#[0-9a-f]{3,8}/i)) {
+    if (css.match(/#[\da-f]{3,8}/i)) {
       switch (css.length) {
         case 4: { // #rgb
           $r = parseInt(css.slice(1, 2).repeat(2), 16);
