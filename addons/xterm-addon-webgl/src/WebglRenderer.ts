@@ -229,7 +229,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
-    this._updateSelectionModel(start, end, columnSelectMode);
+    this._model.selection.update(this._terminal, start, end, columnSelectMode);
     this._requestRedrawViewport();
   }
 
@@ -336,7 +336,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
-      this._updateSelectionModel(undefined, undefined);
+      this._model.selection.clear();
     }
 
     // Update model to reflect what's drawn
@@ -484,7 +484,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     });
 
     // Apply the selection color if needed
-    $isSelected = this._isCellSelected(x, y);
+    $isSelected = this._model.selection.isCellSelected(this._terminal, x, y);
     if ($isSelected) {
       $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
       $hasBg = true;
@@ -548,56 +548,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Use the override if it exists
     this._workColors.bg = $hasBg ? $bg : this._workColors.bg;
     this._workColors.fg = $hasFg ? $fg : this._workColors.fg;
-  }
-
-  private _isCellSelected(x: number, y: number): boolean {
-    if (!this._model.selection.hasSelection) {
-      return false;
-    }
-    y -= this._terminal.buffer.active.viewportY;
-    if (this._model.selection.columnSelectMode) {
-      if (this._model.selection.startCol <= this._model.selection.endCol) {
-        return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
-          x < this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
-      }
-      return x < this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
-        x >= this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
-    }
-    return (y > this._model.selection.viewportStartRow && y < this._model.selection.viewportEndRow) ||
-      (this._model.selection.viewportStartRow === this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol && x < this._model.selection.endCol) ||
-      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportEndRow && x < this._model.selection.endCol) ||
-      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol);
-  }
-
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    const terminal = this._terminal;
-
-    // Selection does not exist
-    if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
-      this._model.clearSelection();
-      return;
-    }
-
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
-      this._model.clearSelection();
-      return;
-    }
-
-    this._model.selection.hasSelection = true;
-    this._model.selection.columnSelectMode = columnSelectMode;
-    this._model.selection.viewportStartRow = viewportStartRow;
-    this._model.selection.viewportEndRow = viewportEndRow;
-    this._model.selection.viewportCappedStartRow = viewportCappedStartRow;
-    this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
-    this._model.selection.startCol = start[0];
-    this._model.selection.endCol = end[0];
   }
 
   /**

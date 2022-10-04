@@ -9,6 +9,7 @@ import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -16,7 +17,6 @@ import { Attributes, BgFlags, FgFlags, WHITESPACE_CELL_CODE } from 'common/buffe
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
-import { IGlyphIdentifier } from './atlas/Types';
 import { IRenderLayer } from './Types';
 
 // Work variables to avoid garbage collection
@@ -39,16 +39,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionStart: [number, number] | undefined;
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
-  protected _selectionModel: ISelectionRenderModel = {
-    hasSelection: false,
-    columnSelectMode: false,
-    viewportStartRow: 0,
-    viewportEndRow: 0,
-    viewportCappedStartRow: 0,
-    viewportCappedEndRow: 0,
-    startCol: 0,
-    endCol: 0
-  };
+  protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
 
   protected _charAtlas!: ITextureAtlas;
 
@@ -99,7 +90,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._selectionStart = start;
     this._selectionEnd = end;
     this._columnSelectMode = columnSelectMode;
-    this._updateSelectionModel(start, end, columnSelectMode);
+    this._selectionModel.update(this._terminal, start, end, columnSelectMode);
   }
 
   public setColors(colorSet: IColorSet): void {
@@ -430,9 +421,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     });
 
-    // TODO: Selection?
     // Apply the selection color if needed
-    $isSelected = this._isCellSelected(x, y);
+    $isSelected = this._selectionModel.isCellSelected(this._terminal, x, y);
     if ($isSelected) {
       $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
       $hasBg = true;
@@ -496,66 +486,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // Use the override if it exists
     workColors.bg = $hasBg ? $bg : workColors.bg;
     workColors.fg = $hasFg ? $fg : workColors.fg;
-  }
-
-  private _isCellSelected(x: number, y: number): boolean {
-    if (!this._selectionStart) {
-      return false;
-    }
-    y -= this._terminal.buffer.active.viewportY;
-    if (this._selectionModel.columnSelectMode) {
-      if (this._selectionModel.startCol <= this._selectionModel.endCol) {
-        return x >= this._selectionModel.startCol && y >= this._selectionModel.viewportCappedStartRow &&
-          x < this._selectionModel.endCol && y <= this._selectionModel.viewportCappedEndRow;
-      }
-      return x < this._selectionModel.startCol && y >= this._selectionModel.viewportCappedStartRow &&
-        x >= this._selectionModel.endCol && y <= this._selectionModel.viewportCappedEndRow;
-    }
-    return (y > this._selectionModel.viewportStartRow && y < this._selectionModel.viewportEndRow) ||
-      (this._selectionModel.viewportStartRow === this._selectionModel.viewportEndRow && y === this._selectionModel.viewportStartRow && x >= this._selectionModel.startCol && x < this._selectionModel.endCol) ||
-      (this._selectionModel.viewportStartRow < this._selectionModel.viewportEndRow && y === this._selectionModel.viewportEndRow && x < this._selectionModel.endCol) ||
-      (this._selectionModel.viewportStartRow < this._selectionModel.viewportEndRow && y === this._selectionModel.viewportStartRow && x >= this._selectionModel.startCol);
-  }
-
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    const terminal = this._terminal;
-
-    // Selection does not exist
-    if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
-      this._clearSelectionMoidel();
-      return;
-    }
-
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
-      this._clearSelectionMoidel();
-      return;
-    }
-
-    this._selectionModel.hasSelection = true;
-    this._selectionModel.columnSelectMode = columnSelectMode;
-    this._selectionModel.viewportStartRow = viewportStartRow;
-    this._selectionModel.viewportEndRow = viewportEndRow;
-    this._selectionModel.viewportCappedStartRow = viewportCappedStartRow;
-    this._selectionModel.viewportCappedEndRow = viewportCappedEndRow;
-    this._selectionModel.startCol = start[0];
-    this._selectionModel.endCol = end[0];
-  }
-
-  private _clearSelectionMoidel(): void {
-    this._selectionModel.hasSelection = false;
-    this._selectionModel.viewportStartRow = 0;
-    this._selectionModel.viewportEndRow = 0;
-    this._selectionModel.viewportCappedStartRow = 0;
-    this._selectionModel.viewportCappedEndRow = 0;
-    this._selectionModel.startCol = 0;
-    this._selectionModel.endCol = 0;
   }
 
   /**

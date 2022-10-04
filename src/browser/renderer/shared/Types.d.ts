@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { FontWeight } from 'xterm';
+import { FontWeight, Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
@@ -141,12 +141,15 @@ export interface IBoundingBox {
 }
 
 export interface ISelectionRenderModel {
-  hasSelection: boolean;
-  columnSelectMode: boolean;
-  viewportStartRow: number;
-  viewportEndRow: number;
-  viewportCappedStartRow: number;
-  viewportCappedEndRow: number;
-  startCol: number;
-  endCol: number;
+  readonly hasSelection: boolean;
+  readonly columnSelectMode: boolean;
+  readonly viewportStartRow: number;
+  readonly viewportEndRow: number;
+  readonly viewportCappedStartRow: number;
+  readonly viewportCappedEndRow: number;
+  readonly startCol: number;
+  readonly endCol: number;
+  clear(): void;
+  update(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode?: boolean): void;
+  isCellSelected(terminal: Terminal, x: number, y: number): boolean;
 }
