@@ -3,21 +3,12 @@
  * @license MIT
  */
 
+import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
+
 export interface IRenderModel {
   cells: Uint32Array;
   lineLengths: Uint32Array;
   selection: ISelectionRenderModel;
-}
-
-export interface ISelectionRenderModel {
-  hasSelection: boolean;
-  columnSelectMode: boolean;
-  viewportStartRow: number;
-  viewportEndRow: number;
-  viewportCappedStartRow: number;
-  viewportCappedEndRow: number;
-  startCol: number;
-  endCol: number;
 }
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {

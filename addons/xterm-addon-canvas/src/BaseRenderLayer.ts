@@ -8,16 +8,23 @@ import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { BgFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, BgFlags, FgFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IGlyphIdentifier } from './atlas/Types';
 import { IRenderLayer } from './Types';
+
+// Work variables to avoid garbage collection
+let $fg = 0;
+let $bg = 0;
+let $hasFg = false;
+let $hasBg = false;
+let $isSelected = false;
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -32,21 +39,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionStart: [number, number] | undefined;
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
+  protected _selectionModel: ISelectionRenderModel = {
+    hasSelection: false,
+    columnSelectMode: false,
+    viewportStartRow: 0,
+    viewportEndRow: 0,
+    viewportCappedStartRow: 0,
+    viewportCappedEndRow: 0,
+    startCol: 0,
+    endCol: 0
+  };
 
   protected _charAtlas!: ITextureAtlas;
-
-  /**
-   * An object that's reused when drawing glyphs in order to reduce GC.
-   */
-  private _currentGlyphIdentifier: IGlyphIdentifier = {
-    chars: '',
-    code: 0,
-    bg: 0,
-    fg: 0,
-    bold: false,
-    dim: false,
-    italic: false
-  };
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
   public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.cacheCanvas!; }
@@ -91,9 +95,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onGridChanged(startRow: number, endRow: number): void {}
 
   public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    // TODO: Remove these other variables in favor of the selection model
     this._selectionStart = start;
     this._selectionEnd = end;
     this._columnSelectMode = columnSelectMode;
+    this._updateSelectionModel(start, end, columnSelectMode);
   }
 
   public setColors(colorSet: IColorSet): void {
@@ -127,7 +133,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    // this._charAtlas = acquireCharAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
@@ -363,17 +368,20 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
+  private _workColors: { fg: number, bg: number, ext: number } = { fg: 0, bg: 0, ext: 0 };
+
   /**
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
+    this._loadColorsForCell(x, y, cell, this._workColors);
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
+      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._workColors.bg, this._workColors.fg, this._workColors.ext);
     } else {
-      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, cell.bg, cell.fg, cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0);
+      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._workColors.bg, this._workColors.fg, this._workColors.ext);
     }
     this._ctx.save();
     this._clipRow(y);
@@ -389,10 +397,165 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       glyph.size.y
     );
     this._ctx.restore();
-    // TODO: Verify selection
-    // TODO: Verify fg override
-    // TODO: Verify bg override
-    // TODO: Verify min contrast ratio
+    // TODO: Move both renderers to use shared load color code
+  }
+
+  /**
+   * Loads colors for the cell into the work colors object. This resolves overrides/inverse if
+   * necessary which is why the work cell object is not used.
+   */
+  private _loadColorsForCell(x: number, y: number, cell: ICellData, workColors: { fg: number, bg: number, ext: number }): void {
+    workColors.bg = cell.bg;
+    workColors.fg = cell.fg;
+    workColors.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
+    // Get any foreground/background overrides, this happens on the model to avoid spreading
+    // override logic throughout the different sub-renderers
+
+    // Reset overrides work variables
+    $bg = 0;
+    $fg = 0;
+    $hasBg = false;
+    $hasFg = false;
+    $isSelected = false;
+
+    // Apply decorations on the bottom layer
+    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
+      if (d.backgroundColorRGB) {
+        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasBg = true;
+      }
+      if (d.foregroundColorRGB) {
+        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
+      }
+    });
+
+    // TODO: Selection?
+    // Apply the selection color if needed
+    $isSelected = this._isCellSelected(x, y);
+    if ($isSelected) {
+      $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      $hasBg = true;
+      if (this._colors.selectionForeground) {
+        $fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
+      }
+    }
+
+    // Apply decorations on the top layer
+    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
+      if (d.backgroundColorRGB) {
+        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasBg = true;
+      }
+      if (d.foregroundColorRGB) {
+        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
+      }
+    });
+
+    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+    // ahead of time in order to use the correct cache key
+    if ($hasBg) {
+      if ($isSelected) {
+        // Non-RGB attributes from model + force non-dim + override + force RGB color mode
+        $bg = (cell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | $bg | Attributes.CM_RGB;
+      } else {
+        // Non-RGB attributes from model + override + force RGB color mode
+        $bg = (cell.bg & ~Attributes.RGB_MASK) | $bg | Attributes.CM_RGB;
+      }
+    }
+    if ($hasFg) {
+      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
+      $fg = (cell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | $fg | Attributes.CM_RGB;
+    }
+
+    // Handle case where inverse was specified by only one of bg override or fg override was set,
+    // resolving the other inverse color and setting the inverse flag if needed.
+    if (workColors.fg & FgFlags.INVERSE) {
+      if ($hasBg && !$hasFg) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        if ((workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          $fg = (workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          $fg = (workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
+        $hasFg = true;
+      }
+      if (!$hasBg && $hasFg) {
+        // Resolve bg color type (default color has a different meaning in fg vs bg)
+        if ((workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
+          $bg = (workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+        } else {
+          $bg = (workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+        }
+        $hasBg = true;
+      }
+    }
+
+    // Use the override if it exists
+    workColors.bg = $hasBg ? $bg : workColors.bg;
+    workColors.fg = $hasFg ? $fg : workColors.fg;
+  }
+
+  private _isCellSelected(x: number, y: number): boolean {
+    if (!this._selectionStart) {
+      return false;
+    }
+    y -= this._terminal.buffer.active.viewportY;
+    if (this._selectionModel.columnSelectMode) {
+      if (this._selectionModel.startCol <= this._selectionModel.endCol) {
+        return x >= this._selectionModel.startCol && y >= this._selectionModel.viewportCappedStartRow &&
+          x < this._selectionModel.endCol && y <= this._selectionModel.viewportCappedEndRow;
+      }
+      return x < this._selectionModel.startCol && y >= this._selectionModel.viewportCappedStartRow &&
+        x >= this._selectionModel.endCol && y <= this._selectionModel.viewportCappedEndRow;
+    }
+    return (y > this._selectionModel.viewportStartRow && y < this._selectionModel.viewportEndRow) ||
+      (this._selectionModel.viewportStartRow === this._selectionModel.viewportEndRow && y === this._selectionModel.viewportStartRow && x >= this._selectionModel.startCol && x < this._selectionModel.endCol) ||
+      (this._selectionModel.viewportStartRow < this._selectionModel.viewportEndRow && y === this._selectionModel.viewportEndRow && x < this._selectionModel.endCol) ||
+      (this._selectionModel.viewportStartRow < this._selectionModel.viewportEndRow && y === this._selectionModel.viewportStartRow && x >= this._selectionModel.startCol);
+  }
+
+  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    const terminal = this._terminal;
+
+    // Selection does not exist
+    if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
+      this._clearSelectionMoidel();
+      return;
+    }
+
+    // Translate from buffer position to viewport position
+    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
+    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
+    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
+    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
+
+    // No need to draw the selection
+    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
+      this._clearSelectionMoidel();
+      return;
+    }
+
+    this._selectionModel.hasSelection = true;
+    this._selectionModel.columnSelectMode = columnSelectMode;
+    this._selectionModel.viewportStartRow = viewportStartRow;
+    this._selectionModel.viewportEndRow = viewportEndRow;
+    this._selectionModel.viewportCappedStartRow = viewportCappedStartRow;
+    this._selectionModel.viewportCappedEndRow = viewportCappedEndRow;
+    this._selectionModel.startCol = start[0];
+    this._selectionModel.endCol = end[0];
+  }
+
+  private _clearSelectionMoidel(): void {
+    this._selectionModel.hasSelection = false;
+    this._selectionModel.viewportStartRow = 0;
+    this._selectionModel.viewportEndRow = 0;
+    this._selectionModel.viewportCappedStartRow = 0;
+    this._selectionModel.viewportCappedEndRow = 0;
+    this._selectionModel.startCol = 0;
+    this._selectionModel.endCol = 0;
   }
 
   /**

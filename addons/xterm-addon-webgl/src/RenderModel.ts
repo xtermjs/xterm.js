@@ -3,8 +3,9 @@
  * @license MIT
  */
 
-import { IRenderModel, ISelectionRenderModel } from './Types';
+import { IRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
+import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 
 export const RENDER_MODEL_INDICIES_PER_CELL = 4;
 export const RENDER_MODEL_BG_OFFSET = 1;

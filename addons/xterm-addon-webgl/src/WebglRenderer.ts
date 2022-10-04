@@ -275,9 +275,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     const atlas = acquireTextureAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
-    if (!('getRasterizedGlyph' in atlas)) {
-      throw new Error('The webgl renderer only works with the webgl char atlas');
-    }
     if (this._charAtlas !== atlas) {
       this.onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }

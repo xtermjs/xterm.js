@@ -139,3 +139,14 @@ export interface IBoundingBox {
   right: number;
   bottom: number;
 }
+
+export interface ISelectionRenderModel {
+  hasSelection: boolean;
+  columnSelectMode: boolean;
+  viewportStartRow: number;
+  viewportEndRow: number;
+  viewportCappedStartRow: number;
+  viewportCappedEndRow: number;
+  startCol: number;
+  endCol: number;
+}
