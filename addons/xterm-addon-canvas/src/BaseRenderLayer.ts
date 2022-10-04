@@ -375,7 +375,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       glyph.size.y
     );
     this._ctx.restore();
-    // TODO: Move both renderers to use shared load color code
   }
 
   /**
