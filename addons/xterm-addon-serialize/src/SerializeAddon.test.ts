@@ -78,7 +78,7 @@ describe('xterm-addon-serialize', () => {
     terminal.loadAddon(serializeAddon);
 
     selectionService = new TestSelectionService((terminal as any)._core._bufferService);
-    cm = new ColorManager(document, false);
+    cm = new ColorManager();
     (terminal as any)._core._colorManager = cm;
     (terminal as any)._core._selectionService = selectionService;
   });

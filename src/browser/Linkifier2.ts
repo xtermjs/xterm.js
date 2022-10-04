@@ -7,7 +7,7 @@ import { ILinkifier2, ILinkProvider, IBufferCellPosition, ILink, ILinkifierEvent
 import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 
@@ -26,10 +26,8 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
-  private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
-  private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
+  public readonly onShowLinkUnderline = this.register(initEvent<ILinkifierEvent>());
+  public readonly onHideLinkUnderline = this.register(initEvent<ILinkifierEvent>());
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
@@ -343,7 +341,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     const range = link.range;
     const scrollOffset = this._bufferService.buffer.ydisp;
     const event = this._createLinkUnderlineEvent(range.start.x - 1, range.start.y - scrollOffset - 1, range.end.x, range.end.y - scrollOffset - 1, undefined);
-    const emitter = showEvent ? this._onShowLinkUnderline : this._onHideLinkUnderline;
+    const emitter = showEvent ? this.onShowLinkUnderline : this.onHideLinkUnderline;
     emitter.fire(event);
   }
 

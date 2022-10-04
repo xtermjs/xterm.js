@@ -6,7 +6,7 @@
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { Disposable } from 'common/Lifecycle';
 
@@ -19,8 +19,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
 
-  private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
-  public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
+  public readonly onBufferActivate = this.register(initEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
 
   /**
    * Create a new BufferSet for the given terminal.
@@ -42,7 +41,7 @@ export class BufferSet extends Disposable implements IBufferSet {
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
     this._alt = new Buffer(false, this._optionsService, this._bufferService);
     this._activeBuffer = this._normal;
-    this._onBufferActivate.fire({
+    this.onBufferActivate.fire({
       activeBuffer: this._normal,
       inactiveBuffer: this._alt
     });
@@ -86,7 +85,7 @@ export class BufferSet extends Disposable implements IBufferSet {
     this._alt.clearAllMarkers();
     this._alt.clear();
     this._activeBuffer = this._normal;
-    this._onBufferActivate.fire({
+    this.onBufferActivate.fire({
       activeBuffer: this._normal,
       inactiveBuffer: this._alt
     });
@@ -105,7 +104,7 @@ export class BufferSet extends Disposable implements IBufferSet {
     this._alt.x = this._normal.x;
     this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;
-    this._onBufferActivate.fire({
+    this.onBufferActivate.fire({
       activeBuffer: this._alt,
       inactiveBuffer: this._normal
     });

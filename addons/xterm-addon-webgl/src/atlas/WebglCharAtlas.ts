@@ -16,6 +16,7 @@ import { tryDrawCustomChar } from 'browser/renderer/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph } from 'browser/renderer/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
+import { IdleTaskQueue } from 'common/TaskQueue';
 
 // For debugging purposes, it can be useful to set this to a really tiny value,
 // to verify that LRU eviction works.
@@ -53,10 +54,8 @@ interface ICharAtlasActiveRow {
   height: number;
 }
 
-/** Work variables to avoid garbage collection. */
-const w: { glyph: IRasterizedGlyph | undefined } = {
-  glyph: undefined
-};
+// Work variables to avoid garbage collection
+let $glyph = undefined;
 
 export class WebglCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
@@ -110,7 +109,10 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCanvas = document.createElement('canvas');
     this._tmpCanvas.width = this._config.scaledCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCanvas.height = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
+    this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {
+      alpha: this._config.allowTransparency,
+      willReadFrequently: true
+    }));
   }
 
   public dispose(): void {
@@ -127,10 +129,15 @@ export class WebglCharAtlas implements IDisposable {
   }
 
   private _doWarmUp(): void {
-    // Pre-fill with ASCII 33-126
+    // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
+    const queue = new IdleTaskQueue();
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-      this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+      queue.enqueue(() => {
+        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
+          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+        }
+      });
     }
   }
 
@@ -175,12 +182,12 @@ export class WebglCharAtlas implements IDisposable {
     fg: number,
     ext: number
   ): IRasterizedGlyph {
-    w.glyph = cacheMap.get(key, bg, fg, ext);
-    if (!w.glyph) {
-      w.glyph = this._drawToCache(key, bg, fg, ext);
-      cacheMap.set(key, bg, fg, ext, w.glyph);
+    $glyph = cacheMap.get(key, bg, fg, ext);
+    if (!$glyph) {
+      $glyph = this._drawToCache(key, bg, fg, ext);
+      cacheMap.set(key, bg, fg, ext, $glyph);
     }
-    return w.glyph;
+    return $glyph;
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {

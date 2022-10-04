@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { IEvent, IEventEmitter, IEventWithEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -120,19 +120,6 @@ export interface ICharsetService {
    * @param charset
    */
   setgCharset(g: number, charset: ICharset | undefined): void;
-}
-
-export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
-export interface IDirtyRowService {
-  serviceBrand: undefined;
-
-  readonly start: number;
-  readonly end: number;
-
-  clearRange(): void;
-  markDirty(y: number): void;
-  markRangeDirty(y1: number, y2: number): void;
-  markAllDirty(): void;
 }
 
 export interface IServiceIdentifier<T> {
@@ -331,5 +318,5 @@ export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
-  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
+  readonly onRender: IEventWithEmitter<HTMLElement>;
 }

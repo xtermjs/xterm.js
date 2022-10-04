@@ -118,7 +118,7 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
       const countToRemove = toRemove[++nextToRemoveIndex];
 
       // Tell markers that there was a deletion
-      lines.onDeleteEmitter.fire({
+      lines.onDelete.fire({
         index: i - countRemovedSoFar,
         amount: countToRemove
       });

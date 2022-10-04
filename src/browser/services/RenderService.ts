@@ -5,13 +5,14 @@
 
 import { IRenderer, IRenderDimensions } from 'browser/renderer/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { DebouncedIdleTask } from 'common/TaskQueue';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -24,6 +25,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _screenDprMonitor: ScreenDprMonitor;
+  private _pausedResizeTask = new DebouncedIdleTask();
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -37,14 +39,10 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
-  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
-  private _onRenderedViewportChange = new EventEmitter<{ start: number, end: number }>();
-  public get onRenderedViewportChange(): IEvent<{ start: number, end: number }> { return this._onRenderedViewportChange.event; }
-  private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
-  public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
+  public readonly onDimensionsChange = initEvent<IRenderDimensions>();
+  public readonly onRenderedViewportChange = initEvent<{ start: number, end: number }>();
+  public readonly onRender = initEvent<{ start: number, end: number }>();
+  public readonly onRefreshRequest = initEvent<{ start: number, end: number }>();
 
   public get dimensions(): IRenderDimensions { return this._renderer.dimensions; }
 
@@ -105,6 +103,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
 
     if (!this._isPaused && this._needsFullRefresh) {
+      this._pausedResizeTask.flush();
       this.refreshRows(0, this._rowCount - 1);
       this._needsFullRefresh = false;
     }
@@ -132,9 +131,9 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Fire render event only if it was not a redraw
     if (!this._isNextRenderRedrawOnly) {
-      this._onRenderedViewportChange.fire({ start, end });
+      this.onRenderedViewportChange.fire({ start, end });
     }
-    this._onRender.fire({ start, end });
+    this.onRender.fire({ start, end });
     this._isNextRenderRedrawOnly = true;
   }
 
@@ -154,7 +153,7 @@ export class RenderService extends Disposable implements IRenderService {
     if (this._renderer.dimensions.canvasWidth === this._canvasWidth && this._renderer.dimensions.canvasHeight === this._canvasHeight) {
       return;
     }
-    this._onDimensionsChange.fire(this._renderer.dimensions);
+    this.onDimensionsChange.fire(this._renderer.dimensions);
   }
 
   public dispose(): void {
@@ -204,7 +203,11 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public onResize(cols: number, rows: number): void {
-    this._renderer.onResize(cols, rows);
+    if (this._isPaused) {
+      this._pausedResizeTask.set(() => this._renderer.onResize(cols, rows));
+    } else {
+      this._renderer.onResize(cols, rows);
+    }
     this._fullRefresh();
   }
 

@@ -166,7 +166,7 @@ export class DomRendererRowFactory {
       if (cell.isUnderline()) {
         charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
         if (charElement.textContent === ' ') {
-          charElement.innerHTML = '&nbsp;';
+          charElement.textContent = '\xa0'; // = &nbsp;
         }
         if (!cell.isUnderlineColorDefault()) {
           if (cell.isUnderlineColorRGB()) {

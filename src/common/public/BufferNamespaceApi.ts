@@ -5,19 +5,19 @@
 
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from 'xterm';
 import { BufferApiView } from 'common/public/BufferApiView';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IEvent, EventEmitter, initEvent } from 'common/EventEmitter';
 import { ICoreTerminal } from 'common/Types';
 
 export class BufferNamespaceApi implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
-  private _onBufferChange = new EventEmitter<IBufferApi>();
-  public get onBufferChange(): IEvent<IBufferApi> { return this._onBufferChange.event; }
+
+  public readonly onBufferChange = initEvent<IBufferApi>();
 
   constructor(private _core: ICoreTerminal) {
     this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
     this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
-    this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
+    this._core.buffers.onBufferActivate(() => this.onBufferChange.fire(this.active));
   }
   public get active(): IBufferApi {
     if (this._core.buffers.active === this._core.buffers.normal) { return this.normal; }

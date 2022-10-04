@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 
 /**
@@ -170,8 +170,9 @@ export class CoreMouseService implements ICoreMouseService {
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
-  private _onProtocolChange = new EventEmitter<CoreMouseEventType>();
   private _lastEvent: ICoreMouseEvent | null = null;
+
+  public readonly onProtocolChange = initEvent<CoreMouseEventType>();
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
@@ -205,7 +206,7 @@ export class CoreMouseService implements ICoreMouseService {
       throw new Error(`unknown protocol "${name}"`);
     }
     this._activeProtocol = name;
-    this._onProtocolChange.fire(this._protocols[name].events);
+    this.onProtocolChange.fire(this._protocols[name].events);
   }
 
   public get activeEncoding(): string {
@@ -223,13 +224,6 @@ export class CoreMouseService implements ICoreMouseService {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
     this._lastEvent = null;
-  }
-
-  /**
-   * Event to announce changes in mouse tracking.
-   */
-  public get onProtocolChange(): IEvent<CoreMouseEventType> {
-    return this._onProtocolChange.event;
   }
 
   /**

@@ -45,8 +45,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.allowTransparency === b.allowTransparency &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
+      a.colors.foreground.rgba === b.colors.foreground.rgba &&
+      a.colors.background.rgba === b.colors.background.rgba;
 }
 
 export function is256Color(colorCode: number): boolean {

@@ -4,7 +4,7 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { initEvent } from 'common/EventEmitter';
 
 export interface IInsertEvent {
   index: number;
@@ -25,12 +25,9 @@ export class CircularList<T> implements ICircularList<T> {
   private _startIndex: number;
   private _length: number;
 
-  public onDeleteEmitter = new EventEmitter<IDeleteEvent>();
-  public get onDelete(): IEvent<IDeleteEvent> { return this.onDeleteEmitter.event; }
-  public onInsertEmitter = new EventEmitter<IInsertEvent>();
-  public get onInsert(): IEvent<IInsertEvent> { return this.onInsertEmitter.event; }
-  public onTrimEmitter = new EventEmitter<number>();
-  public get onTrim(): IEvent<number> { return this.onTrimEmitter.event; }
+  public readonly onDelete =  initEvent<IDeleteEvent>();
+  public readonly onInsert = initEvent<IInsertEvent>();
+  public readonly onTrim = initEvent<number>();
 
   constructor(
     private _maxLength: number
@@ -107,7 +104,7 @@ export class CircularList<T> implements ICircularList<T> {
     this._array[this._getCyclicIndex(this._length)] = value;
     if (this._length === this._maxLength) {
       this._startIndex = ++this._startIndex % this._maxLength;
-      this.onTrimEmitter.fire(1);
+      this.onTrim.fire(1);
     } else {
       this._length++;
     }
@@ -123,7 +120,7 @@ export class CircularList<T> implements ICircularList<T> {
       throw new Error('Can only recycle when the buffer is full');
     }
     this._startIndex = ++this._startIndex % this._maxLength;
-    this.onTrimEmitter.fire(1);
+    this.onTrim.fire(1);
     return this._array[this._getCyclicIndex(this._length - 1)]!;
   }
 
@@ -158,7 +155,7 @@ export class CircularList<T> implements ICircularList<T> {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
-      this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
+      this.onDelete.fire({ index: start, amount: deleteCount });
     }
 
     // Add items
@@ -169,7 +166,7 @@ export class CircularList<T> implements ICircularList<T> {
       this._array[this._getCyclicIndex(start + i)] = items[i];
     }
     if (items.length) {
-      this.onInsertEmitter.fire({ index: start, amount: items.length });
+      this.onInsert.fire({ index: start, amount: items.length });
     }
 
     // Adjust length as needed
@@ -177,7 +174,7 @@ export class CircularList<T> implements ICircularList<T> {
       const countToTrim = (this._length + items.length) - this._maxLength;
       this._startIndex += countToTrim;
       this._length = this._maxLength;
-      this.onTrimEmitter.fire(countToTrim);
+      this.onTrim.fire(countToTrim);
     } else {
       this._length += items.length;
     }
@@ -193,7 +190,7 @@ export class CircularList<T> implements ICircularList<T> {
     }
     this._startIndex += count;
     this._length -= count;
-    this.onTrimEmitter.fire(count);
+    this.onTrim.fire(count);
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -217,7 +214,7 @@ export class CircularList<T> implements ICircularList<T> {
         while (this._length > this._maxLength) {
           this._length--;
           this._startIndex++;
-          this.onTrimEmitter.fire(1);
+          this.onTrim.fire(1);
         }
       }
     } else {

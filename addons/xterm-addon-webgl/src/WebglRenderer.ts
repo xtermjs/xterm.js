@@ -18,7 +18,7 @@ import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
 import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
 import { ITerminal, IColorSet } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, initEvent } from 'common/EventEmitter';
 import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
@@ -26,14 +26,12 @@ import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 
-/** Work variables to avoid garbage collection. */
-const w: { fg: number, bg: number, hasFg: boolean, hasBg: boolean, isSelected: boolean } = {
-  fg: 0,
-  bg: 0,
-  hasFg: false,
-  hasBg: false,
-  isSelected: false
-};
+// Work variables to avoid garbage collection
+let $fg = 0;
+let $bg = 0;
+let $hasFg = false;
+let $hasBg = false;
+let $isSelected = false;
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -55,13 +53,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  private _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
-  public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement> { return this._onChangeTextureAtlas.event; }
-  private _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
-  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return this._onRequestRedraw.event; }
-
-  private _onContextLoss = new EventEmitter<void>();
-  public get onContextLoss(): IEvent<void> { return this._onContextLoss.event; }
+  public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
+  public readonly onRequestRedraw = initEvent<IRequestRedrawEvent>();
+  public readonly onContextLoss = initEvent<void>();
 
   constructor(
     private _terminal: Terminal,
@@ -78,7 +72,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core, this._coreBrowserService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this.onRequestRedraw, this._coreBrowserService, coreService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -118,7 +112,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
         console.warn('webgl context not restored; firing onContextLoss');
-        this._onContextLoss.fire(e);
+        this.onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
@@ -286,7 +280,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
     if (this._charAtlas !== atlas) {
-      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+      this.onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -425,9 +419,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
           continue;
         }
 
@@ -475,89 +469,89 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // override logic throughout the different sub-renderers
 
     // Reset overrides work variables
-    w.bg = 0;
-    w.fg = 0;
-    w.hasBg = false;
-    w.hasFg = false;
-    w.isSelected = false;
+    $bg = 0;
+    $fg = 0;
+    $hasBg = false;
+    $hasFg = false;
+    $isSelected = false;
 
     // Apply decorations on the bottom layer
     this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
       if (d.backgroundColorRGB) {
-        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        w.hasBg = true;
+        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        w.hasFg = true;
+        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
       }
     });
 
     // Apply the selection color if needed
-    w.isSelected = this._isCellSelected(x, y);
-    if (w.isSelected) {
-      w.bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
-      w.hasBg = true;
+    $isSelected = this._isCellSelected(x, y);
+    if ($isSelected) {
+      $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      $hasBg = true;
       if (this._colors.selectionForeground) {
-        w.fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
-        w.hasFg = true;
+        $fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
       }
     }
 
     // Apply decorations on the top layer
     this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
       if (d.backgroundColorRGB) {
-        w.bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        w.hasBg = true;
+        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        w.fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        w.hasFg = true;
+        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $hasFg = true;
       }
     });
 
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key
-    if (w.hasBg) {
-      if (w.isSelected) {
+    if ($hasBg) {
+      if ($isSelected) {
         // Non-RGB attributes from model + force non-dim + override + force RGB color mode
-        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | w.bg | Attributes.CM_RGB;
+        $bg = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | $bg | Attributes.CM_RGB;
       } else {
         // Non-RGB attributes from model + override + force RGB color mode
-        w.bg = (this._workCell.bg & ~Attributes.RGB_MASK) | w.bg | Attributes.CM_RGB;
+        $bg = (this._workCell.bg & ~Attributes.RGB_MASK) | $bg | Attributes.CM_RGB;
       }
     }
-    if (w.hasFg) {
+    if ($hasFg) {
       // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      w.fg = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | w.fg | Attributes.CM_RGB;
+      $fg = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | $fg | Attributes.CM_RGB;
     }
 
     // Handle case where inverse was specified by only one of bg override or fg override was set,
     // resolving the other inverse color and setting the inverse flag if needed.
     if (this._workColors.fg & FgFlags.INVERSE) {
-      if (w.hasBg && !w.hasFg) {
+      if ($hasBg && !$hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          w.fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          $fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
-        w.hasFg = true;
+        $hasFg = true;
       }
-      if (!w.hasBg && w.hasFg) {
+      if (!$hasBg && $hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
-          w.bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
+          $bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
-        w.hasBg = true;
+        $hasBg = true;
       }
     }
 
     // Use the override if it exists
-    this._workColors.bg = w.hasBg ? w.bg : this._workColors.bg;
-    this._workColors.fg = w.hasFg ? w.fg : this._workColors.fg;
+    this._workColors.bg = $hasBg ? $bg : this._workColors.bg;
+    this._workColors.fg = $hasFg ? $fg : this._workColors.fg;
   }
 
   private _isCellSelected(x: number, y: number): boolean {
@@ -679,7 +673,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _requestRedrawViewport(): void {
-    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this.onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 }
 

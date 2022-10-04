@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { IEvent, EventEmitter, initEvent } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
@@ -17,8 +17,8 @@ export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
-  public onScroll: IEvent<number> = new EventEmitter<number>().event;
+  public onResize: IEvent<{ cols: number, rows: number }> = initEvent<{ cols: number, rows: number }>();
+  public onScroll: IEvent<number> = initEvent<number>();
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -60,7 +60,7 @@ export class MockCoreMouseService implements ICoreMouseService {
   public addProtocol(name: string): void { }
   public reset(): void { }
   public triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
-  public onProtocolChange: IEvent<CoreMouseEventType> = new EventEmitter<CoreMouseEventType>().event;
+  public onProtocolChange: IEvent<CoreMouseEventType> = initEvent<CoreMouseEventType>();
   public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
   }
@@ -92,22 +92,12 @@ export class MockCoreService implements ICoreService {
     sendFocus: false,
     wraparound: true
   };
-  public onData: IEvent<string> = new EventEmitter<string>().event;
-  public onUserInput: IEvent<void> = new EventEmitter<void>().event;
-  public onBinary: IEvent<string> = new EventEmitter<string>().event;
+  public onData: IEvent<string> = initEvent<string>();
+  public onUserInput: IEvent<void> = initEvent<void>();
+  public onBinary: IEvent<string> = initEvent<string>();
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }
-}
-
-export class MockDirtyRowService implements IDirtyRowService {
-  public serviceBrand: any;
-  public start: number = 0;
-  public end: number = 0;
-  public clearRange(): void { }
-  public markDirty(y: number): void { }
-  public markRangeDirty(y1: number, y2: number): void { }
-  public markAllDirty(): void { }
 }
 
 export class MockLogService implements ILogService {
@@ -123,7 +113,7 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
-  public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
+  public onOptionChange: IEvent<string> = initEvent<string>();
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
@@ -159,7 +149,7 @@ export class MockUnicodeService implements IUnicodeService {
   }
   public versions: string[] = [];
   public activeVersion: string = '';
-  public onChange: IEvent<string> = new EventEmitter<string>().event;
+  public onChange: IEvent<string> = initEvent<string>();
   public wcwidth = (codepoint: number): number => this._provider.wcwidth(codepoint);
   public getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');
@@ -169,8 +159,8 @@ export class MockUnicodeService implements IUnicodeService {
 export class MockDecorationService implements IDecorationService {
   public serviceBrand: any;
   public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); }
-  public onDecorationRegistered = new EventEmitter<IInternalDecoration>().event;
-  public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
+  public onDecorationRegistered = initEvent<IInternalDecoration>();
+  public onDecorationRemoved = initEvent<IInternalDecoration>();
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }

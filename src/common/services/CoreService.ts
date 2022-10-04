@@ -4,7 +4,7 @@
  */
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
 import { IDecPrivateModes, IModes } from 'common/Types';
 import { clone } from 'common/Clone';
 import { Disposable } from 'common/Lifecycle';
@@ -34,12 +34,9 @@ export class CoreService extends Disposable implements ICoreService {
   // Circular dependency, this must be unset or memory will leak after Terminal.dispose
   private _scrollToBottom: (() => void) | undefined;
 
-  private _onData = this.register(new EventEmitter<string>());
-  public get onData(): IEvent<string> { return this._onData.event; }
-  private _onUserInput = this.register(new EventEmitter<void>());
-  public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
-  private _onBinary = this.register(new EventEmitter<string>());
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  public readonly onData = this.register(initEvent<string>());
+  public readonly onUserInput = this.register(initEvent<void>());
+  public readonly onBinary = this.register(initEvent<string>());
 
   constructor(
     // TODO: Move this into a service
@@ -74,12 +71,12 @@ export class CoreService extends Disposable implements ICoreService {
 
     // Fire onUserInput so listeners can react as well (eg. clear selection)
     if (wasUserInput) {
-      this._onUserInput.fire();
+      this.onUserInput.fire();
     }
 
     // Fire onData API
     this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
-    this._onData.fire(data);
+    this.onData.fire(data);
   }
 
   public triggerBinaryEvent(data: string): void {
@@ -87,6 +84,6 @@ export class CoreService extends Disposable implements ICoreService {
       return;
     }
     this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
-    this._onBinary.fire(data);
+    this.onBinary.fire(data);
   }
 }

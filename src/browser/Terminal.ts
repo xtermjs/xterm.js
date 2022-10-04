@@ -37,7 +37,7 @@ import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecor
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent, forwardEvent, initEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
@@ -122,27 +122,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _colorManager: ColorManager | undefined;
   private _theme: ITheme | undefined;
 
-  private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
-  private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
-  private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
-
-  private _onFocus = new EventEmitter<void>();
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
-  private _onBlur = new EventEmitter<void>();
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  private _onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
-  private _onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  public readonly onCursorMove = initEvent<void>();
+  public readonly onKey = initEvent<{ key: string, domEvent: KeyboardEvent }>();
+  public readonly onRender = initEvent<{ start: number, end: number }>();
+  public readonly onSelectionChange = initEvent<void>();
+  public readonly onTitleChange = initEvent<string>();
+  public readonly onBell = initEvent<void>();
+  public readonly onFocus = initEvent<void>();
+  public readonly onBlur = initEvent<void>();
+  public readonly onA11yChar = initEvent<string>();
+  public readonly onA11yTab = initEvent<number>();
 
   /**
    * Creates a new `Terminal` object.
@@ -169,16 +158,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IDecorationService, this._decorationService);
 
     // Setup InputHandler listeners
-    this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
+    this.register(this._inputHandler.onRequestBell(() => this.onBell.fire()));
     this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
-    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this.register(forwardEvent(this._inputHandler.onCursorMove, this.onCursorMove));
+    this.register(forwardEvent(this._inputHandler.onTitleChange, this.onTitleChange));
+    this.register(forwardEvent(this._inputHandler.onA11yChar, this.onA11yChar));
+    this.register(forwardEvent(this._inputHandler.onA11yTab, this.onA11yTab));
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
@@ -326,7 +315,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.updateCursorStyle(ev);
     this.element!.classList.add('focus');
     this._showCursor();
-    this._onFocus.fire();
+    this.onFocus.fire();
   }
 
   /**
@@ -349,7 +338,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.coreService.triggerDataEvent(C0.ESC + '[O');
     }
     this.element!.classList.remove('focus');
-    this._onBlur.fire();
+    this.onBlur.fire();
   }
 
   private _syncTextArea(): void {
@@ -502,7 +491,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
     this._theme = this.options.theme || this._theme;
-    this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this._colorManager = new ColorManager();
     this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e, this.optionsService.rawOptions[e])));
     this._colorManager.setTheme(this._theme);
 
@@ -512,7 +501,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     const renderer = this._createRenderer();
     this._renderService = this.register(this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
-    this.register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
+    this.register(this._renderService.onRenderedViewportChange(e => this.onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._compositionView = document.createElement('div');
@@ -552,7 +541,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
-    this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
+    this.register(this._selectionService.onSelectionChange(() => this.onSelectionChange.fire()));
     this.register(this._selectionService.onRequestRedraw(e => this._renderService!.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
@@ -1101,7 +1090,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.textarea!.value = '';
     }
 
-    this._onKey.fire({ key: result.key, domEvent: event });
+    this.onKey.fire({ key: result.key, domEvent: event });
     this._showCursor();
     this.coreService.triggerDataEvent(result.key, true);
 
@@ -1184,7 +1173,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     key = String.fromCharCode(key);
 
-    this._onKey.fire({ key, domEvent: ev });
+    this.onKey.fire({ key, domEvent: ev });
     this._showCursor();
     this.coreService.triggerDataEvent(key, true);
 
