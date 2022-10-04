@@ -59,7 +59,7 @@ describe('OptionsService', () => {
     });
     it('normalizes invalid fontWeight option values', () => {
       service.options.fontWeight = 350;
-      assert.doesNotThrow(() => service.options.fontWeight = 10000), 'fontWeight should be normalized instead of throwing';
+      assert.doesNotThrow(() => service.options.fontWeight = 10000, 'fontWeight should be normalized instead of throwing');
       assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Values greater than 1000 should be reset to default');
 
       service.options.fontWeight = 350;
