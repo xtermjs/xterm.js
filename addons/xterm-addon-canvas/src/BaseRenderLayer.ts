@@ -18,6 +18,7 @@ import { IBufferService, IDecorationService, IOptionsService } from 'common/serv
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
+import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 
 // Work variables to avoid garbage collection
 let $fg = 0;
@@ -40,6 +41,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _selectionEnd: [number, number] | undefined;
   protected _columnSelectMode: boolean = false;
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
+  private _cellColorResolver: CellColorResolver;
 
   protected _charAtlas!: ITextureAtlas;
 
@@ -58,6 +60,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected readonly _decorationService: IDecorationService,
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._colors, this._selectionModel, this._decorationService, this._coreBrowserService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
@@ -359,20 +362,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  private _workColors: { fg: number, bg: number, ext: number } = { fg: 0, bg: 0, ext: 0 };
-
   /**
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
-    this._loadColorsForCell(x, y, cell, this._workColors);
+    this._cellColorResolver.resolve(cell, x, y);
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._workColors.bg, this._workColors.fg, this._workColors.ext);
+      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     } else {
-      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._workColors.bg, this._workColors.fg, this._workColors.ext);
+      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     }
     this._ctx.save();
     this._clipRow(y);
@@ -389,103 +390,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     );
     this._ctx.restore();
     // TODO: Move both renderers to use shared load color code
-  }
-
-  /**
-   * Loads colors for the cell into the work colors object. This resolves overrides/inverse if
-   * necessary which is why the work cell object is not used.
-   */
-  private _loadColorsForCell(x: number, y: number, cell: ICellData, workColors: { fg: number, bg: number, ext: number }): void {
-    workColors.bg = cell.bg;
-    workColors.fg = cell.fg;
-    workColors.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
-    // Get any foreground/background overrides, this happens on the model to avoid spreading
-    // override logic throughout the different sub-renderers
-
-    // Reset overrides work variables
-    $bg = 0;
-    $fg = 0;
-    $hasBg = false;
-    $hasFg = false;
-    $isSelected = false;
-
-    // Apply decorations on the bottom layer
-    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
-      if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasBg = true;
-      }
-      if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    });
-
-    // Apply the selection color if needed
-    $isSelected = this._selectionModel.isCellSelected(this._terminal, x, y);
-    if ($isSelected) {
-      $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
-      $hasBg = true;
-      if (this._colors.selectionForeground) {
-        $fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    }
-
-    // Apply decorations on the top layer
-    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
-      if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasBg = true;
-      }
-      if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    });
-
-    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
-    // ahead of time in order to use the correct cache key
-    if ($hasBg) {
-      if ($isSelected) {
-        // Non-RGB attributes from model + force non-dim + override + force RGB color mode
-        $bg = (cell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | $bg | Attributes.CM_RGB;
-      } else {
-        // Non-RGB attributes from model + override + force RGB color mode
-        $bg = (cell.bg & ~Attributes.RGB_MASK) | $bg | Attributes.CM_RGB;
-      }
-    }
-    if ($hasFg) {
-      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      $fg = (cell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | $fg | Attributes.CM_RGB;
-    }
-
-    // Handle case where inverse was specified by only one of bg override or fg override was set,
-    // resolving the other inverse color and setting the inverse flag if needed.
-    if (workColors.fg & FgFlags.INVERSE) {
-      if ($hasBg && !$hasFg) {
-        // Resolve bg color type (default color has a different meaning in fg vs bg)
-        if ((workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $fg = (workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
-        } else {
-          $fg = (workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
-        }
-        $hasFg = true;
-      }
-      if (!$hasBg && $hasFg) {
-        // Resolve bg color type (default color has a different meaning in fg vs bg)
-        if ((workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $bg = (workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
-        } else {
-          $bg = (workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
-        }
-        $hasBg = true;
-      }
-    }
-
-    // Use the override if it exists
-    workColors.bg = $hasBg ? $bg : workColors.bg;
-    workColors.fg = $hasFg ? $fg : workColors.fg;
   }
 
   /**
