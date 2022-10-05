@@ -3,44 +3,37 @@
  * @license MIT
  */
 
-import { GlyphRenderer } from './GlyphRenderer';
-import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
-import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
-import { acquireCharAtlas, removeTerminalFromCache } from './atlas/CharAtlasCache';
-import { WebglCharAtlas } from './atlas/WebglCharAtlas';
-import { RectangleRenderer } from './RectangleRenderer';
-import { IWebGL2RenderingContext } from './Types';
-import { RenderModel, COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { Disposable } from 'common/Lifecycle';
-import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal, IEvent } from 'xterm';
-import { IRenderLayer } from './renderLayer/Types';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { observeDevicePixelDimensions } from 'browser/renderer/DevicePixelObserver';
-import { ITerminal, IColorSet } from 'browser/Types';
-import { EventEmitter, initEvent } from 'common/EventEmitter';
-import { CellData } from 'common/buffer/CellData';
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
+import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
+import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { CellData } from 'common/buffer/CellData';
+import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { initEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService } from 'common/services/Services';
-
-// Work variables to avoid garbage collection
-let $fg = 0;
-let $bg = 0;
-let $hasFg = false;
-let $hasBg = false;
-let $isSelected = false;
+import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { Terminal } from 'xterm';
+import { GlyphRenderer } from './GlyphRenderer';
+import { RectangleRenderer } from './RectangleRenderer';
+import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
+import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
+import { IRenderLayer } from './renderLayer/Types';
+import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _charAtlas: WebglCharAtlas | undefined;
+  private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
-  private _workColors: { fg: number, bg: number, ext: number } = { fg: 0, bg: 0, ext: 0 };
+  private _cellColorResolver: CellColorResolver;
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
@@ -67,6 +60,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     preserveDrawingBuffer?: boolean
   ) {
     super();
+
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._colors, this._model.selection, this._decorationService, this._coreBrowserService);
 
     this._core = (this._terminal as any)._core;
 
@@ -156,6 +151,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     }
 
+    this._cellColorResolver.setColors(colors);
     this._rectangleRenderer.setColors();
 
     this._refreshCharAtlas();
@@ -230,7 +226,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
-    this._updateSelectionModel(start, end, columnSelectMode);
+    this._model.selection.update(this._terminal, start, end, columnSelectMode);
     this._requestRedrawViewport();
   }
 
@@ -275,10 +271,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
-    if (!('getRasterizedGlyph' in atlas)) {
-      throw new Error('The webgl renderer only works with the webgl char atlas');
-    }
+    const atlas = acquireTextureAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
     if (this._charAtlas !== atlas) {
       this.onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }
@@ -340,7 +333,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
-      this._updateSelectionModel(undefined, undefined);
+      this._model.selection.clear();
     }
 
     // Update model to reflect what's drawn
@@ -376,11 +369,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
-        lastBg = this._workColors.bg;
+        lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
 
         if (x === 0) {
-          lastBg = this._workColors.bg;
+          lastBg = this._cellColorResolver.result.bg;
         }
 
         // If true, indicates that the current character(s) to draw were joined.
@@ -411,7 +404,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
-        this._loadColorsForCell(x, row);
+        this._cellColorResolver.resolve(cell, x, row);
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
@@ -419,9 +412,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._workColors.bg &&
-          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._workColors.fg &&
-          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._workColors.ext) {
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
           continue;
         }
 
@@ -432,11 +425,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
-        this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._workColors.ext;
+        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
+        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
+        this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
 
-        this._glyphRenderer.updateCell(x, y, code, this._workColors.bg, this._workColors.fg, this._workColors.ext, chars, lastBg);
+        this._glyphRenderer.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -447,161 +440,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._workColors.bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._workColors.fg;
-            this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._workColors.ext;
+            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
+            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
+            this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
           }
         }
       }
     }
     this._rectangleRenderer.updateBackgrounds(this._model);
-  }
-
-  /**
-   * Loads colors for the cell into the work colors object. This resolves overrides/inverse if
-   * necessary which is why the work cell object is not used.
-   */
-  private _loadColorsForCell(x: number, y: number): void {
-    this._workColors.bg = this._workCell.bg;
-    this._workColors.fg = this._workCell.fg;
-    this._workColors.ext = this._workCell.bg & BgFlags.HAS_EXTENDED ? this._workCell.extended.ext : 0;
-    // Get any foreground/background overrides, this happens on the model to avoid spreading
-    // override logic throughout the different sub-renderers
-
-    // Reset overrides work variables
-    $bg = 0;
-    $fg = 0;
-    $hasBg = false;
-    $hasFg = false;
-    $isSelected = false;
-
-    // Apply decorations on the bottom layer
-    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
-      if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasBg = true;
-      }
-      if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    });
-
-    // Apply the selection color if needed
-    $isSelected = this._isCellSelected(x, y);
-    if ($isSelected) {
-      $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
-      $hasBg = true;
-      if (this._colors.selectionForeground) {
-        $fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    }
-
-    // Apply decorations on the top layer
-    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
-      if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasBg = true;
-      }
-      if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
-        $hasFg = true;
-      }
-    });
-
-    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
-    // ahead of time in order to use the correct cache key
-    if ($hasBg) {
-      if ($isSelected) {
-        // Non-RGB attributes from model + force non-dim + override + force RGB color mode
-        $bg = (this._workCell.bg & ~Attributes.RGB_MASK & ~BgFlags.DIM) | $bg | Attributes.CM_RGB;
-      } else {
-        // Non-RGB attributes from model + override + force RGB color mode
-        $bg = (this._workCell.bg & ~Attributes.RGB_MASK) | $bg | Attributes.CM_RGB;
-      }
-    }
-    if ($hasFg) {
-      // Non-RGB attributes from model + force disable inverse + override + force RGB color mode
-      $fg = (this._workCell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | $fg | Attributes.CM_RGB;
-    }
-
-    // Handle case where inverse was specified by only one of bg override or fg override was set,
-    // resolving the other inverse color and setting the inverse flag if needed.
-    if (this._workColors.fg & FgFlags.INVERSE) {
-      if ($hasBg && !$hasFg) {
-        // Resolve bg color type (default color has a different meaning in fg vs bg)
-        if ((this._workColors.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
-        } else {
-          $fg = (this._workColors.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this._workColors.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
-        }
-        $hasFg = true;
-      }
-      if (!$hasBg && $hasFg) {
-        // Resolve bg color type (default color has a different meaning in fg vs bg)
-        if ((this._workColors.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
-        } else {
-          $bg = (this._workColors.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this._workColors.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
-        }
-        $hasBg = true;
-      }
-    }
-
-    // Use the override if it exists
-    this._workColors.bg = $hasBg ? $bg : this._workColors.bg;
-    this._workColors.fg = $hasFg ? $fg : this._workColors.fg;
-  }
-
-  private _isCellSelected(x: number, y: number): boolean {
-    if (!this._model.selection.hasSelection) {
-      return false;
-    }
-    y -= this._terminal.buffer.active.viewportY;
-    if (this._model.selection.columnSelectMode) {
-      if (this._model.selection.startCol <= this._model.selection.endCol) {
-        return x >= this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
-          x < this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
-      }
-      return x < this._model.selection.startCol && y >= this._model.selection.viewportCappedStartRow &&
-        x >= this._model.selection.endCol && y <= this._model.selection.viewportCappedEndRow;
-    }
-    return (y > this._model.selection.viewportStartRow && y < this._model.selection.viewportEndRow) ||
-      (this._model.selection.viewportStartRow === this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol && x < this._model.selection.endCol) ||
-      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportEndRow && x < this._model.selection.endCol) ||
-      (this._model.selection.viewportStartRow < this._model.selection.viewportEndRow && y === this._model.selection.viewportStartRow && x >= this._model.selection.startCol);
-  }
-
-  private _updateSelectionModel(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    const terminal = this._terminal;
-
-    // Selection does not exist
-    if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
-      this._model.clearSelection();
-      return;
-    }
-
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= terminal.rows || viewportCappedEndRow < 0) {
-      this._model.clearSelection();
-      return;
-    }
-
-    this._model.selection.hasSelection = true;
-    this._model.selection.columnSelectMode = columnSelectMode;
-    this._model.selection.viewportStartRow = viewportStartRow;
-    this._model.selection.viewportEndRow = viewportEndRow;
-    this._model.selection.viewportCappedStartRow = viewportCappedStartRow;
-    this._model.selection.viewportCappedEndRow = viewportCappedEndRow;
-    this._model.selection.startCol = start[0];
-    this._model.selection.endCol = end[0];
   }
 
   /**

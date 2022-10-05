@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
-import { WebglCharAtlas } from './atlas/WebglCharAtlas';
-import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
+import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
+import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -77,7 +77,7 @@ let $leftCellPadding = 0;
 let $clippedPixels = 0;
 
 export class GlyphRenderer  extends Disposable {
-  private _atlas: WebglCharAtlas | undefined;
+  private _atlas: ITextureAtlas | undefined;
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -321,7 +321,7 @@ export class GlyphRenderer  extends Disposable {
     gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
-  public setAtlas(atlas: WebglCharAtlas): void {
+  public setAtlas(atlas: ITextureAtlas): void {
     const gl = this._gl;
     this._atlas = atlas;
 

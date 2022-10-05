@@ -3,29 +3,30 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { is256Color } from './atlas/CharAtlasUtils';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
+import { Terminal } from 'xterm';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
     colors: IColorSet,
-    rendererId: number,
     linkifier2: ILinkifier2,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService
   ) {
-    super(container, 'link', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'link', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
 
     linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
     linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));

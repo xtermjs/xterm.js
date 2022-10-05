@@ -5,11 +5,11 @@
 
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
-import { is256Color } from '../atlas/CharAtlasUtils';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
+import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;

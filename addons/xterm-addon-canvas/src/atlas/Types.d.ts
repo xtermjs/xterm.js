@@ -15,15 +15,3 @@ export interface IGlyphIdentifier {
   dim: boolean;
   italic: boolean;
 }
-
-export interface ICharAtlasConfig {
-  devicePixelRatio: number;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: FontWeight;
-  fontWeightBold: FontWeight;
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  allowTransparency: boolean;
-  colors: IPartialColorSet;
-}

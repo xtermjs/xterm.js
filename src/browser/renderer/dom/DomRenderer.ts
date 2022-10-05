@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';

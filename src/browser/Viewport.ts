@@ -9,7 +9,7 @@ import { IColorSet, IViewport } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 

@@ -4,15 +4,14 @@
  */
 
 import { IRenderLayer } from './Types';
-import { acquireCharAtlas } from '../atlas/CharAtlasCache';
+import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { TEXT_BASELINE } from 'browser/renderer/Constants';
+import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
-import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
-import { throwIfFalsy } from '../WebglUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -24,7 +23,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: WebglCharAtlas | undefined;
+  protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
     private _container: HTMLElement,
@@ -95,7 +94,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
